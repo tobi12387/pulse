@@ -1,0 +1,36 @@
+{
+  "name": "@coaching-os/backend",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@coaching-os/shared": "*",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/jwt": "^9.0.0",
+    "argon2": "^0.41.0",
+    "bullmq": "^5.0.0",
+    "drizzle-orm": "^0.45.0",
+    "fastify": "^5.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "pg": "^8.13.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "dotenv": "^16.0.0",
+    "drizzle-kit": "^0.30.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.0.0"
+  }
+}
