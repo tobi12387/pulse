@@ -5,3 +5,7 @@ dist/
 .DS_Store
 coverage/
 *.tsbuildinfo
+.vscode/
+.idea/
+build/
+.cache/
