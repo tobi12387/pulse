@@ -1,0 +1,18 @@
+{
+  "name": "@coaching-os/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/types/api.js",
+  "types": "./dist/types/api.d.ts",
+  "exports": {
+    "./api": { "import": "./dist/types/api.js", "types": "./dist/types/api.d.ts" },
+    "./coaching": { "import": "./dist/types/coaching.js", "types": "./dist/types/coaching.d.ts" },
+    "./health": { "import": "./dist/types/health.js", "types": "./dist/types/health.d.ts" }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
