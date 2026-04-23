@@ -1,9 +1,9 @@
 module.exports = {
   apps: [{
     name: 'coaching-os-v2',
-    script: './backend/dist/server.js',
+    script: 'node',
+    args: '--env-file=/root/coaching-os-v2/.env /root/coaching-os-v2/backend/dist/server.js',
     cwd: '/root/coaching-os-v2',
-    env_file: '.env',
     instances: 1,
     autorestart: true,
     watch: false,
