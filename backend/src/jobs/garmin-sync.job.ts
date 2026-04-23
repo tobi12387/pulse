@@ -1,0 +1,72 @@
+import type { FastifyInstance } from 'fastify';
+import type Redis from 'ioredis';
+import { redis } from '../lib/redis.js';
+import { createQueue, createWorker } from '../lib/queue.js';
+import type { Queue, Worker } from 'bullmq';
+import { syncGarminDay } from '../routes/garmin.js';
+import { db } from '../lib/db.js';
+import { users } from '../db/schema.js';
+
+export const CIRCUIT_FAILURES_KEY = 'garmin:circuit:failures';
+export const CIRCUIT_OPEN_KEY     = 'garmin:circuit:open';
+
+const QUEUE_NAME = 'garmin-sync';
+
+export async function runWithCircuitBreaker(
+  redisClient: Redis,
+  fn: () => Promise<void>,
+): Promise<void> {
+  const isOpen = await redisClient.exists(CIRCUIT_OPEN_KEY);
+  if (isOpen) return;
+
+  try {
+    await fn();
+    await redisClient.del(CIRCUIT_FAILURES_KEY);
+  } catch (err) {
+    const errMsg = String(err);
+    const isAuthError = errMsg.includes('401') || errMsg.includes('403');
+
+    if (isAuthError) {
+      await redisClient.set(CIRCUIT_OPEN_KEY, '1', 'EX', 3600);
+      await redisClient.del(CIRCUIT_FAILURES_KEY);
+    } else {
+      const count = await redisClient.incr(CIRCUIT_FAILURES_KEY);
+      if (count >= 3) {
+        await redisClient.set(CIRCUIT_OPEN_KEY, '1', 'EX', 3600);
+      }
+    }
+    throw err;
+  }
+}
+
+export function startGarminSyncJob(app: FastifyInstance): { queue: Queue; worker: Worker } {
+  const queue  = createQueue(QUEUE_NAME);
+  const worker = createWorker(QUEUE_NAME, async (job) => {
+    const [user] = await db.select({ id: users.id }).from(users).limit(1);
+    if (!user) return;
+
+    const today     = new Date();
+    const yesterday = new Date(Date.now() - 86_400_000);
+    const dates     = job.name === 'sync-nightly' ? [yesterday, today] : [today];
+
+    await runWithCircuitBreaker(redis, async () => {
+      for (const date of dates) {
+        await syncGarminDay(user.id, date, app);
+      }
+    });
+  });
+
+  const repeatOpts = (pattern: string) => ({
+    repeat: { pattern },
+    removeOnComplete: { count: 100 },
+    removeOnFail:     { count: 50 },
+  } as const);
+
+  void queue.add('sync-nightly',     {}, repeatOpts('0 2 * * *'));
+  void queue.add('sync-intraday-08', {}, repeatOpts('0 8 * * *'));
+  void queue.add('sync-intraday-14', {}, repeatOpts('0 14 * * *'));
+  void queue.add('sync-intraday-19', {}, repeatOpts('0 19 * * *'));
+
+  app.log.info('[garmin-sync] BullMQ job scheduled (nightly 02:00 + intraday 08/14/19 UTC)');
+  return { queue, worker };
+}
