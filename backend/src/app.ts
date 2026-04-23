@@ -49,5 +49,16 @@ export async function buildApp() {
   // Health check
   app.get('/api/ping', async () => ({ status: 'ok', version: '2.0.0' }));
 
+  // BullMQ Garmin sync job (not in test mode)
+  if (env.NODE_ENV !== 'test') {
+    const { startGarminSyncJob } = await import('./jobs/garmin-sync.job.js');
+    const { queue, worker } = startGarminSyncJob(app);
+
+    app.addHook('onClose', async () => {
+      await worker.close();
+      await queue.close();
+    });
+  }
+
   return app;
 }
