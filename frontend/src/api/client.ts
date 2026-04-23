@@ -52,4 +52,31 @@ export const api = {
     sync: () =>
       request<{ synced: string[] }>('/garmin/sync', { method: 'POST' }),
   },
+  health: {
+    summary: () =>
+      request<{
+        today: {
+          date: string;
+          hrvRmssd: number | null;
+          hrvStatus: string | null;
+          sleepDurationH: number | null;
+          sleepScore: number | null;
+          restingHr: number | null;
+          steps: number | null;
+          caloriesActive: number | null;
+          bodyBatteryMin: number | null;
+          bodyBatteryMax: number | null;
+          stressAvg: number | null;
+        } | null;
+        trend7d: Array<{
+          date: string;
+          sleepDurationH: number | null;
+          restingHr: number | null;
+          bodyBatteryMax: number | null;
+          steps: number | null;
+        }>;
+        lastSync: string | null;
+        circuitOpen: boolean;
+      }>('/health/summary'),
+  },
 };
