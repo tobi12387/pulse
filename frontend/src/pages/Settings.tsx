@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +8,11 @@ import { Badge } from '@/components/ui/badge';
 interface GarminStatus {
   connected: boolean;
   lastSync: string | null;
-  syncStatus: 'ok' | 'stale' | 'error' | 'never';
+  syncStatus: 'ok' | 'stale' | 'never';
   errorMessage: string | null;
 }
 
 export default function Settings() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -24,32 +22,13 @@ export default function Settings() {
     refetchInterval: 30_000,
   });
 
-  useEffect(() => {
-    const garmin = searchParams.get('garmin');
-    if (garmin === 'connected') {
-      setMessage({ text: 'Garmin erfolgreich verbunden!', type: 'success' });
-      setSearchParams(new URLSearchParams(), { replace: true });
-    } else if (garmin === 'error') {
-      setMessage({ text: 'Garmin-Verbindung fehlgeschlagen. Bitte erneut versuchen.', type: 'error' });
-      setSearchParams(new URLSearchParams(), { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
-
-  async function handleConnect() {
-    try {
-      const { url } = await api.garmin.getConnectUrl();
-      window.location.href = url;
-    } catch {
-      setMessage({ text: 'Verbindung konnte nicht gestartet werden.', type: 'error' });
-    }
-  }
-
   async function handleSync() {
     setSyncing(true);
+    setMessage(null);
     try {
       await api.garmin.sync();
       await refetch();
-      setMessage({ text: 'Sync erfolgreich!', type: 'success' });
+      setMessage({ text: 'Sync erfolgreich! Garmin-Daten aktualisiert.', type: 'success' });
     } catch (err) {
       setMessage({ text: err instanceof Error ? err.message : 'Sync fehlgeschlagen.', type: 'error' });
     } finally {
@@ -60,13 +39,11 @@ export default function Settings() {
   function StatusBadge() {
     switch (garminStatus?.syncStatus) {
       case 'ok':
-        return <Badge className="bg-green-700 text-white border-0">Synced</Badge>;
+        return <Badge className="bg-green-700 text-white border-0">Aktuell</Badge>;
       case 'stale':
         return <Badge className="bg-yellow-600 text-white border-0">Veraltet</Badge>;
-      case 'error':
-        return <Badge variant="destructive">Fehler</Badge>;
       default:
-        return <Badge variant="outline">Nicht verbunden</Badge>;
+        return <Badge variant="outline" className="text-muted-foreground">Noch kein Sync</Badge>;
     }
   }
 
@@ -90,10 +67,13 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Status</span>
+            <span className="text-sm text-muted-foreground">Verbindung</span>
+            <Badge className="bg-green-700 text-white border-0">Verbunden</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Datenstatus</span>
             <StatusBadge />
           </div>
-
           {garminStatus?.lastSync && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Letzter Sync</span>
@@ -102,36 +82,13 @@ export default function Settings() {
               </span>
             </div>
           )}
-
-          {garminStatus?.errorMessage && (
-            <p className="text-xs text-destructive">{garminStatus.errorMessage}</p>
-          )}
-
-          <div className="flex gap-2 pt-1">
-            {!garminStatus?.connected ? (
-              <Button onClick={handleConnect} className="flex-1 bg-primary text-primary-foreground">
-                Garmin verbinden
-              </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={handleSync}
-                  variant="outline"
-                  className="flex-1 border-border text-foreground hover:bg-card"
-                  disabled={syncing}
-                >
-                  {syncing ? 'Syncing...' : 'Jetzt syncen'}
-                </Button>
-                <Button
-                  onClick={handleConnect}
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground text-xs"
-                >
-                  Neu verbinden
-                </Button>
-              </>
-            )}
-          </div>
+          <Button
+            onClick={handleSync}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-2"
+            disabled={syncing}
+          >
+            {syncing ? 'Synchronisiere...' : 'Jetzt syncen'}
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -11,9 +11,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   APP_URL: z.string().url().default('http://localhost:3000'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  GARMIN_CLIENT_ID: z.string().min(1),
-  GARMIN_CLIENT_SECRET: z.string().min(1),
-  GARMIN_CALLBACK_URL: z.string().url(),
+  GARMIN_EMAIL: z.string().email(),
+  GARMIN_PASSWORD: z.string().min(1),
 });
 
 function validateEnv() {
