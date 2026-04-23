@@ -40,8 +40,14 @@ export default async function healthDataRoutes(app: FastifyInstance) {
 
     let circuitOpen = false;
     try {
-      circuitOpen = (await redis.exists(CIRCUIT_OPEN_KEY)) === 1;
-    } catch { /* Redis unavailable — default false */ }
+      const result = await Promise.race([
+        redis.exists(CIRCUIT_OPEN_KEY),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('redis timeout')), 500)
+        ),
+      ]);
+      circuitOpen = result === 1;
+    } catch { /* Redis unavailable or slow — default false */ }
 
     return { today, trend7d, lastSync, circuitOpen };
   });

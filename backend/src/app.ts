@@ -47,7 +47,7 @@ export async function buildApp() {
   await app.register(import('./routes/health-data.js'), { prefix: '/api/health' });
 
   // Health check
-  app.get('/api/health', async () => ({ status: 'ok', version: '2.0.0' }));
+  app.get('/api/ping', async () => ({ status: 'ok', version: '2.0.0' }));
 
   return app;
 }
