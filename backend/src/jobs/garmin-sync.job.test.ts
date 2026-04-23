@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import {
   runWithCircuitBreaker,
   CIRCUIT_FAILURES_KEY,
@@ -64,6 +64,13 @@ describe('runWithCircuitBreaker', () => {
 
   it('opens circuit immediately on auth error (401)', async () => {
     const fn = vi.fn().mockRejectedValue(new Error('HTTP 401 Unauthorized'));
+    await expect(runWithCircuitBreaker(redis, fn)).rejects.toThrow();
+    const isOpen = await redis.exists(CIRCUIT_OPEN_KEY);
+    expect(isOpen).toBe(1);
+  });
+
+  it('opens circuit immediately on auth error (403)', async () => {
+    const fn = vi.fn().mockRejectedValue(new Error('HTTP 403 Forbidden'));
     await expect(runWithCircuitBreaker(redis, fn)).rejects.toThrow();
     const isOpen = await redis.exists(CIRCUIT_OPEN_KEY);
     expect(isOpen).toBe(1);

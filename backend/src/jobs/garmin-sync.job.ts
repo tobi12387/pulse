@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type Redis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { redis } from '../lib/redis.js';
 import { createQueue, createWorker } from '../lib/queue.js';
 import type { Queue, Worker } from 'bullmq';
@@ -62,10 +62,10 @@ export function startGarminSyncJob(app: FastifyInstance): { queue: Queue; worker
     removeOnFail:     { count: 50 },
   } as const);
 
-  void queue.add('sync-nightly',     {}, repeatOpts('0 2 * * *'));
-  void queue.add('sync-intraday-08', {}, repeatOpts('0 8 * * *'));
-  void queue.add('sync-intraday-14', {}, repeatOpts('0 14 * * *'));
-  void queue.add('sync-intraday-19', {}, repeatOpts('0 19 * * *'));
+  void queue.add('sync-nightly',     {}, repeatOpts('0 2 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
+  void queue.add('sync-intraday-08', {}, repeatOpts('0 8 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
+  void queue.add('sync-intraday-14', {}, repeatOpts('0 14 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
+  void queue.add('sync-intraday-19', {}, repeatOpts('0 19 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
 
   app.log.info('[garmin-sync] BullMQ job scheduled (nightly 02:00 + intraday 08/14/19 UTC)');
   return { queue, worker };
