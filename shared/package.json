@@ -7,7 +7,8 @@
   "exports": {
     "./api": { "import": "./dist/types/api.js", "types": "./dist/types/api.d.ts" },
     "./coaching": { "import": "./dist/types/coaching.js", "types": "./dist/types/coaching.d.ts" },
-    "./health": { "import": "./dist/types/health.js", "types": "./dist/types/health.d.ts" }
+    "./health": { "import": "./dist/types/health.js", "types": "./dist/types/health.d.ts" },
+    "./coach": { "import": "./dist/types/coach.js", "types": "./dist/types/coach.d.ts" }
   },
   "scripts": {
     "build": "tsc"

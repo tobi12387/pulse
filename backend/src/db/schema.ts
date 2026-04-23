@@ -123,6 +123,42 @@ export const trainingSessions = pgTable('training_sessions', {
   actualHrAvg: integer('actual_hr_avg'),
 });
 
+// ─── Daily Check-ins (Phase 2) ────────────────────────────────────────────────
+export const checkIns = pgTable('check_ins', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  energyLevel: integer('energy_level').notNull(),
+  stressLevel: integer('stress_level').notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('check_ins_user_date_idx').on(t.userId, t.date),
+]);
+
+export const dailyBriefings = pgTable('daily_briefings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  triggerType: varchar('trigger_type', { length: 30 }).notNull(),
+  garminSnapshot: jsonb('garmin_snapshot'),
+  checkinSnapshot: jsonb('checkin_snapshot'),
+  briefingText: text('briefing_text').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('daily_briefings_user_date_idx').on(t.userId, t.date),
+]);
+
+export const chatMessages = pgTable('chat_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 10 }).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('chat_messages_user_created_idx').on(t.userId, t.createdAt),
+]);
+
 // ─── Coach & Chat ─────────────────────────────────────────────────────────────
 export const coachMessages = pgTable('coach_messages', {
   id: uuid('id').primaryKey().defaultRandom(),
