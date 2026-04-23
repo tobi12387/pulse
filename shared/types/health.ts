@@ -38,3 +38,18 @@ export interface HealthTrend {
   weightLogs: WeightLog[];
   nutritionLogs: NutritionLog[];
 }
+
+export interface HealthSummaryTrendDay {
+  date: string;
+  sleepDurationH: number | null;
+  restingHr: number | null;
+  bodyBatteryMax: number | null;
+  steps: number | null;
+}
+
+export interface HealthSummaryResponse {
+  today: GarminDailyHealth | null;
+  trend7d: HealthSummaryTrendDay[];
+  lastSync: string | null;
+  circuitOpen: boolean;
+}
