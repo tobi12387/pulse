@@ -58,6 +58,14 @@ export async function buildApp() {
       await worker.close();
       await queue.close();
     });
+
+    const { startBriefingGenerationWorker } = await import('./jobs/briefing-generation.job.js');
+    const { queue: bQueue, worker: bWorker } = startBriefingGenerationWorker(app);
+
+    app.addHook('onClose', async () => {
+      await bWorker.close();
+      await bQueue.close();
+    });
   }
 
   return app;
