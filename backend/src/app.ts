@@ -45,6 +45,8 @@ export async function buildApp() {
   await app.register(import('./routes/auth.js'), { prefix: '/api/auth' });
   await app.register(import('./routes/garmin.js'), { prefix: '/api/garmin' });
   await app.register(import('./routes/health-data.js'), { prefix: '/api/health' });
+  await app.register(import('./routes/checkin.js'),  { prefix: '/api/checkin' });
+  await app.register(import('./routes/briefing.js'), { prefix: '/api/briefing' });
 
   // Health check
   app.get('/api/ping', async () => ({ status: 'ok', version: '2.0.0' }));
