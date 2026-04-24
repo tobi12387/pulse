@@ -4,6 +4,8 @@ import { db } from '../lib/db.js';
 import { users, garminDailyHealth, checkIns, dailyBriefings } from '../db/schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { Job } from 'bullmq';
+import { eq } from 'drizzle-orm';
+import { processBriefingJob } from './briefing-generation.job.js';
 import type { BriefingJobData } from './briefing-generation.job.js';
 
 vi.mock('../lib/llm.js', () => ({
@@ -45,7 +47,6 @@ beforeEach(async () => {
 
 describe('processBriefingJob', () => {
   it('generates and saves a briefing for check-in trigger', async () => {
-    const { processBriefingJob } = await import('./briefing-generation.job.js');
     const date = '2026-04-23';
 
     await db.insert(garminDailyHealth).values({
@@ -66,7 +67,7 @@ describe('processBriefingJob', () => {
     await processBriefingJob(job, mockApp);
 
     const [saved] = await db.select().from(dailyBriefings).where(
-      (await import('drizzle-orm')).eq(dailyBriefings.userId, userId)
+      eq(dailyBriefings.userId, userId)
     );
     expect(saved).toBeDefined();
     expect(saved!.triggerType).toBe('check-in');
@@ -75,7 +76,6 @@ describe('processBriefingJob', () => {
   });
 
   it('generates a briefing for garmin-alarm trigger (no check-in)', async () => {
-    const { processBriefingJob } = await import('./briefing-generation.job.js');
     const date = '2026-04-23';
 
     await db.insert(garminDailyHealth).values({
@@ -87,14 +87,13 @@ describe('processBriefingJob', () => {
     await processBriefingJob(job, mockApp);
 
     const [saved] = await db.select().from(dailyBriefings).where(
-      (await import('drizzle-orm')).eq(dailyBriefings.userId, userId)
+      eq(dailyBriefings.userId, userId)
     );
     expect(saved!.triggerType).toBe('garmin-alarm');
     expect(saved!.checkinSnapshot).toBeNull();
   });
 
   it('generates briefing even with no garmin data', async () => {
-    const { processBriefingJob } = await import('./briefing-generation.job.js');
     const date = '2026-04-24';
 
     const job = { data: { userId, triggerType: 'check-in', date } } as Job<BriefingJobData>;

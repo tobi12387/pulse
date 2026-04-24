@@ -26,7 +26,7 @@ Fokus: Erholung, Trainingsbereitschaft, konkrete Empfehlung für heute.`;
 function buildBriefingUserContent(
   garmin: GarminRow | null,
   checkin: CheckInRow | null,
-  triggerType: string,
+  triggerType: 'check-in' | 'garmin-alarm',
 ): string {
   const garminPart = garmin
     ? `Garmin-Daten: Schlaf ${garmin.sleepDurationH ?? '–'}h (Score: ${garmin.sleepScore ?? '–'}), HRV-Status: ${garmin.hrvStatus ?? '–'}, Ruhepuls: ${garmin.restingHr ?? '–'} bpm, Body Battery: ${garmin.bodyBatteryMax ?? '–'}, Schritte: ${garmin.steps ?? '–'}`
@@ -77,7 +77,7 @@ export function startBriefingGenerationWorker(
   app: FastifyInstance,
 ): { queue: Queue; worker: Worker } {
   const queue  = createQueue(BRIEFING_QUEUE_NAME);
-  const worker = createWorker(BRIEFING_QUEUE_NAME, (job) => processBriefingJob(job as Job<BriefingJobData>, app));
+  const worker = createWorker(BRIEFING_QUEUE_NAME, (job: Job<BriefingJobData>) => processBriefingJob(job, app));
   app.log.info('[briefing] Worker started');
   return { queue, worker };
 }
