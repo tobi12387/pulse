@@ -4,6 +4,7 @@ import {
   runWithCircuitBreaker,
   CIRCUIT_FAILURES_KEY,
   CIRCUIT_OPEN_KEY,
+  detectAlarms,
 } from './garmin-sync.job.js';
 
 const redis = new Redis(process.env['REDIS_URL'] ?? 'redis://localhost:6380', {
@@ -74,5 +75,31 @@ describe('runWithCircuitBreaker', () => {
     await expect(runWithCircuitBreaker(redis, fn)).rejects.toThrow();
     const isOpen = await redis.exists(CIRCUIT_OPEN_KEY);
     expect(isOpen).toBe(1);
+  });
+});
+
+describe('detectAlarms', () => {
+  it('returns true when HRV is poor', () => {
+    expect(detectAlarms({ hrvStatus: 'poor', sleepDurationH: 8, bodyBatteryMax: 60 })).toBe(true);
+  });
+
+  it('returns true when sleep < 6h', () => {
+    expect(detectAlarms({ hrvStatus: 'balanced', sleepDurationH: 5.9, bodyBatteryMax: 60 })).toBe(true);
+  });
+
+  it('returns true when body battery < 20', () => {
+    expect(detectAlarms({ hrvStatus: 'balanced', sleepDurationH: 7, bodyBatteryMax: 19 })).toBe(true);
+  });
+
+  it('returns false when all values are good', () => {
+    expect(detectAlarms({ hrvStatus: 'balanced', sleepDurationH: 7, bodyBatteryMax: 60 })).toBe(false);
+  });
+
+  it('returns false when all values are null', () => {
+    expect(detectAlarms({ hrvStatus: null, sleepDurationH: null, bodyBatteryMax: null })).toBe(false);
+  });
+
+  it('returns false when HRV is unbalanced (not poor)', () => {
+    expect(detectAlarms({ hrvStatus: 'unbalanced', sleepDurationH: 7, bodyBatteryMax: 60 })).toBe(false);
   });
 });
