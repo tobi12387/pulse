@@ -4,6 +4,7 @@ import { db } from '../lib/db.js';
 import { users, chatMessages } from '../db/schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
+import { eq } from 'drizzle-orm';
 
 vi.mock('../lib/llm.js', () => ({
   FAST_MODEL: 'test-model',
@@ -65,7 +66,6 @@ describe('POST /api/chat/message', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json<{ response: string }>().response).toBe('Zone 2 heute, 45 Minuten.');
 
-    const { eq } = await import('drizzle-orm');
     const rows = await db.select().from(chatMessages).where(eq(chatMessages.userId, userId));
     expect(rows.length).toBe(2);
     expect(rows[0]!.role).toBe('user');

@@ -45,16 +45,19 @@ export default async function chatRoutes(app: FastifyInstance) {
 
     await db.insert(chatMessages).values({ userId, role: 'user', content: parsed.data.message });
 
-    const rows = await db.select({ role: chatMessages.role, content: chatMessages.content })
+    // Fetch the last MAX_HISTORY messages in chronological order
+    const allRows = await db.select({ role: chatMessages.role, content: chatMessages.content })
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId))
-      .orderBy(desc(chatMessages.createdAt))
-      .limit(MAX_HISTORY);
+      .orderBy(asc(chatMessages.createdAt));
 
-    const history: LLMMessage[] = rows.reverse().map(r => ({
-      role:    r.role as 'user' | 'assistant',
-      content: r.content,
-    }));
+    const rows = allRows.slice(-MAX_HISTORY);
+
+    const history: LLMMessage[] = rows
+      .filter((r): r is typeof r & { role: 'user' | 'assistant' } =>
+        r.role === 'user' || r.role === 'assistant'
+      )
+      .map(r => ({ role: r.role, content: r.content }));
 
     const systemPrompt = await buildChatSystemPrompt(userId);
     const response     = await llmChat(
