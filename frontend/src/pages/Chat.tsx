@@ -35,7 +35,7 @@ export default function Chat() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [historyData?.messages.length]);
+  }, [historyData?.messages.at(-1)?.id]);
 
   function handleSend() {
     const msg = input.trim();
@@ -108,6 +108,7 @@ export default function Chat() {
             className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <Button
+            aria-label="Nachricht senden"
             onClick={handleSend}
             disabled={!input.trim() || sendMessage.isPending}
             className="bg-primary hover:bg-primary/90 text-primary-foreground self-end"
@@ -116,6 +117,7 @@ export default function Chat() {
           </Button>
         </div>
         <button
+          type="button"
           onClick={() => clearHistory.mutate()}
           disabled={clearHistory.isPending}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
