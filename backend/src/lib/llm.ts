@@ -1,71 +1,59 @@
 import { env } from './env.js';
 
-const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
-
 export const FAST_MODEL  = env.FAST_MODEL;
 export const SMART_MODEL = env.SMART_MODEL;
 
 export interface LLMMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
-export interface LLMOptions {
-  model?: string;
-  maxTokens?: number;
-  temperature?: number;
-}
-
-export interface LLMResponse {
-  content: string;
-  model: string;
-  inputTokens: number;
-  outputTokens: number;
-}
-
-export async function llmChat(
-  messages: LLMMessage[],
-  options: LLMOptions = {},
-): Promise<LLMResponse> {
-  const model = options.model ?? SMART_MODEL;
-  const maxTokens = options.maxTokens ?? 1024;
-
-  const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+export async function llmComplete(
+  systemPrompt: string,
+  userContent: string,
+  model: string,
+): Promise<string> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
       'HTTP-Referer': env.APP_URL,
       'X-Title': 'Coaching OS v2',
     },
     body: JSON.stringify({
       model,
-      messages,
-      max_tokens: maxTokens,
-      temperature: options.temperature ?? 0.7,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
     }),
   });
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`OpenRouter API Fehler ${res.status}: ${err}`);
-  }
+  if (!res.ok) throw new Error(`OpenRouter error: ${res.status}`);
+  const data = await res.json() as { choices: Array<{ message: { content: string } }> };
+  const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error('Empty LLM response');
+  return content;
+}
 
-  const data = await res.json() as {
-    choices: Array<{ message: { content: string } }>;
-    model: string;
-    usage: { prompt_tokens: number; completion_tokens: number };
-  };
+export async function llmChat(messages: LLMMessage[], model: string): Promise<string> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': env.APP_URL,
+      'X-Title': 'Coaching OS v2',
+    },
+    body: JSON.stringify({ model, messages }),
+  });
 
-  const content = data.choices[0]?.message.content.trim() ?? '';
-  if (!content) throw new Error('Leere Antwort von OpenRouter');
-
-  return {
-    content,
-    model: data.model ?? model,
-    inputTokens: data.usage?.prompt_tokens ?? 0,
-    outputTokens: data.usage?.completion_tokens ?? 0,
-  };
+  if (!res.ok) throw new Error(`OpenRouter error: ${res.status}`);
+  const data = await res.json() as { choices: Array<{ message: { content: string } }> };
+  const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error('Empty LLM response');
+  return content;
 }
 
 export function llmAvailable(): boolean {
