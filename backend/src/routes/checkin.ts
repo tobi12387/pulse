@@ -4,9 +4,10 @@ import { db } from '../lib/db.js';
 import { checkIns } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { createQueue } from '../lib/queue.js';
+import { BRIEFING_QUEUE_NAME } from '../jobs/briefing-generation.job.js';
 import type { BriefingJobData } from '../jobs/briefing-generation.job.js';
 
-const briefingQueue = createQueue('briefing');
+const briefingQueue = createQueue(BRIEFING_QUEUE_NAME);
 
 const checkinSchema = z.object({
   energy_level: z.number().int().min(1).max(10),
@@ -34,6 +35,7 @@ export default async function checkinRoutes(app: FastifyInstance) {
       stressLevel: parsed.data.stress_level,
       notes: parsed.data.notes ?? null,
     }).returning();
+    if (!checkin) return reply.status(500).send({ error: 'Check-in konnte nicht gespeichert werden' });
 
     const jobData: BriefingJobData = { userId, triggerType: 'check-in', date: today };
     void briefingQueue.add('generate-briefing', jobData, {
@@ -42,11 +44,11 @@ export default async function checkinRoutes(app: FastifyInstance) {
     }).catch(err => app.log.error('[checkin] briefing queue error:', err));
 
     return reply.status(201).send({
-      id:           checkin!.id,
-      date:         checkin!.date,
-      energy_level: checkin!.energyLevel,
-      stress_level: checkin!.stressLevel,
-      notes:        checkin!.notes,
+      id:           checkin.id,
+      date:         checkin.date,
+      energy_level: checkin.energyLevel,
+      stress_level: checkin.stressLevel,
+      notes:        checkin.notes,
     });
   });
 

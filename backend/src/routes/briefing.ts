@@ -5,7 +5,13 @@ import { eq, desc } from 'drizzle-orm';
 
 export default async function briefingRoutes(app: FastifyInstance) {
   app.get('/latest', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const [briefing] = await db.select()
+    const [briefing] = await db.select({
+      id:           dailyBriefings.id,
+      date:         dailyBriefings.date,
+      triggerType:  dailyBriefings.triggerType,
+      briefingText: dailyBriefings.briefingText,
+      createdAt:    dailyBriefings.createdAt,
+    })
       .from(dailyBriefings)
       .where(eq(dailyBriefings.userId, req.user.sub))
       .orderBy(desc(dailyBriefings.createdAt))

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users, dailyBriefings } from '../db/schema.js';
@@ -30,6 +30,10 @@ afterAll(async () => {
   await db.delete(dailyBriefings);
   await db.delete(users);
   await app.close();
+});
+
+beforeEach(async () => {
+  await db.delete(dailyBriefings);
 });
 
 describe('GET /api/briefing/latest', () => {
