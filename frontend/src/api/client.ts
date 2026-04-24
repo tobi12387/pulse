@@ -79,4 +79,34 @@ export const api = {
         circuitOpen: boolean;
       }>('/health/summary'),
   },
+  checkin: {
+    today: () =>
+      request<{ checkin: { id: string; date: string; energy_level: number; stress_level: number; notes: string | null } | null }>(
+        '/checkin/today'
+      ),
+    submit: (body: { energy_level: number; stress_level: number; notes?: string }) =>
+      request<{ id: string; date: string; energy_level: number; stress_level: number; notes: string | null }>(
+        '/checkin',
+        { method: 'POST', body: JSON.stringify(body) }
+      ),
+  },
+  briefing: {
+    latest: () =>
+      request<{ briefing: { id: string; date: string; trigger_type: string; briefing_text: string; created_at: string } | null }>(
+        '/briefing/latest'
+      ),
+  },
+  chat: {
+    history: () =>
+      request<{ messages: Array<{ id: string; role: string; content: string; created_at: string }> }>(
+        '/chat/history'
+      ),
+    sendMessage: (message: string) =>
+      request<{ response: string }>(
+        '/chat/message',
+        { method: 'POST', body: JSON.stringify({ message }) }
+      ),
+    deleteHistory: () =>
+      request<void>('/chat/history', { method: 'DELETE' }),
+  },
 };
