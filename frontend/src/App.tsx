@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import Settings from '@/pages/Settings';
+import Chat from '@/pages/Chat';
 import Layout from '@/components/Layout';
 
 const queryClient = new QueryClient({
@@ -34,6 +35,7 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="chat" element={<Chat />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
