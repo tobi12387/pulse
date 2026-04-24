@@ -76,26 +76,13 @@ function CheckInForm() {
   const [energy, setEnergy]   = useState(5);
   const [stress, setStress]   = useState(5);
   const [notes, setNotes]     = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
   const mutation = useMutation({
     mutationFn: () => api.checkin.submit({ energy_level: energy, stress_level: stress, notes: notes || undefined }),
     onSuccess: () => {
-      setSubmitted(true);
       void queryClient.invalidateQueries({ queryKey: ['checkin-today'] });
       void queryClient.invalidateQueries({ queryKey: ['briefing-latest'] });
     },
   });
-
-  if (submitted) {
-    return (
-      <Card className="bg-card border-border">
-        <CardContent className="px-4 py-4 text-sm text-muted-foreground">
-          Check-in gespeichert. Briefing wird generiert…
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="bg-card border-border">
@@ -104,13 +91,13 @@ function CheckInForm() {
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-3">
         <div>
-          <label className="text-xs text-muted-foreground">Energielevel: <span className="text-foreground font-semibold">{energy}/10</span></label>
-          <input type="range" min={1} max={10} value={energy} onChange={e => setEnergy(Number(e.target.value))}
+          <label htmlFor="energy-range" className="text-xs text-muted-foreground">Energielevel: <span className="text-foreground font-semibold">{energy}/10</span></label>
+          <input id="energy-range" type="range" min={1} max={10} value={energy} onChange={e => setEnergy(Number(e.target.value))}
             className="w-full accent-primary mt-1" />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Stresslevel: <span className="text-foreground font-semibold">{stress}/10</span></label>
-          <input type="range" min={1} max={10} value={stress} onChange={e => setStress(Number(e.target.value))}
+          <label htmlFor="stress-range" className="text-xs text-muted-foreground">Stresslevel: <span className="text-foreground font-semibold">{stress}/10</span></label>
+          <input id="stress-range" type="range" min={1} max={10} value={stress} onChange={e => setStress(Number(e.target.value))}
             className="w-full accent-primary mt-1" />
         </div>
         <textarea
@@ -166,7 +153,7 @@ export default function Dashboard() {
   const today  = data?.today ?? null;
   const trend  = data?.trend7d ?? [];
   const briefing  = briefingData?.briefing ?? null;
-  const hasCheckin = checkinData?.checkin !== null && checkinData?.checkin !== undefined;
+  const hasCheckin = checkinData !== undefined && checkinData.checkin != null;
 
   return (
     <div className="space-y-4">
@@ -183,7 +170,12 @@ export default function Dashboard() {
         )
       }
 
-      {!hasCheckin && <CheckInForm />}
+      {checkinData !== undefined && !hasCheckin && <CheckInForm />}
+      {checkinData !== undefined && hasCheckin && (
+        <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          Check-in gespeichert. Briefing wird generiert…
+        </div>
+      )}
 
       {today === null ? (
         <p className="text-sm text-muted-foreground">Noch keine Garmin-Daten für heute.</p>
