@@ -48,6 +48,7 @@ export async function buildApp() {
   await app.register(import('./routes/checkin.js'),  { prefix: '/api/checkin' });
   await app.register(import('./routes/briefing.js'), { prefix: '/api/briefing' });
   await app.register(import('./routes/chat.js'), { prefix: '/api/chat' });
+  await app.register(import('./pulse/plugin.js'), { prefix: '/api/pulse' });
 
   // Health check
   app.get('/api/ping', async () => ({ status: 'ok', version: '2.0.0' }));
@@ -69,6 +70,10 @@ export async function buildApp() {
       await bWorker.close();
       await bQueue.close();
     });
+
+    const { startPulseWorkers } = await import('./pulse/queues/workers.js');
+    const shutdownPulse = startPulseWorkers();
+    app.addHook('onClose', async () => { await shutdownPulse(); });
   }
 
   return app;
