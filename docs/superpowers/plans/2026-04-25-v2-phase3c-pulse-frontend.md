@@ -35,10 +35,45 @@
 ## Task 1: Pulse API Client + Hooks
 
 **Files:**
+- Modify: `frontend/package.json` (add shared dep)
 - Create: `frontend/src/pulse/api-client.ts`
 - Create: `frontend/src/pulse/hooks.ts`
 
-- [ ] **Step 1: Create `frontend/src/pulse/api-client.ts`**
+- [ ] **Step 1: Add `@coaching-os/shared` to frontend dependencies**
+
+`frontend/package.json` currently does NOT list `@coaching-os/shared`. The api-client imports types from it, so it must be declared.
+
+In `frontend/package.json`, add to the `"dependencies"` block:
+```json
+"@coaching-os/shared": "*"
+```
+
+Full updated dependencies block:
+```json
+"dependencies": {
+  "@base-ui/react": "^1.4.1",
+  "@coaching-os/shared": "*",
+  "@fontsource-variable/geist": "^5.2.8",
+  "@tanstack/react-query": "^5.99.2",
+  "class-variance-authority": "^0.7.1",
+  "clsx": "^2.1.1",
+  "lucide-react": "^1.8.0",
+  "react": "^19.2.5",
+  "react-dom": "^19.2.5",
+  "shadcn": "^4.4.0",
+  "tailwind-merge": "^3.5.0",
+  "tw-animate-css": "^1.4.0",
+  "zustand": "^5.0.12"
+}
+```
+
+Then install from the repo root so the workspace link is created:
+```bash
+npm install -w frontend
+```
+Expected: `node_modules/@coaching-os/shared` symlinks to `shared/`.
+
+- [ ] **Step 2: Create `frontend/src/pulse/api-client.ts`**
 
 ```typescript
 // Typed fetch wrapper for /api/pulse/* endpoints.
@@ -255,7 +290,7 @@ Expected: no errors.
 - [ ] **Step 4: Commit**
 
 ```bash
-git -C /root/coaching-os-v2 add frontend/src/pulse/api-client.ts frontend/src/pulse/hooks.ts
+git -C /root/coaching-os-v2 add frontend/package.json frontend/src/pulse/api-client.ts frontend/src/pulse/hooks.ts
 git -C /root/coaching-os-v2 commit -m "feat: add pulse frontend api-client + TanStack Query hooks"
 ```
 

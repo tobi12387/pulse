@@ -364,10 +364,10 @@ git -C /root/coaching-os-v2 commit -m "feat: add pulse DB schema (14 tables, pul
 ## Task 2: Shared Types + Package Exports
 
 **Files:**
-- Create: `shared/src/pulse/types.ts`
+- Create: `shared/types/pulse.ts` — NOTE: must be in `types/` not `src/`, because `shared/tsconfig.json` has `"include": ["types/**/*.ts"]`. A file under `src/` would not be compiled.
 - Modify: `shared/package.json`
 
-- [ ] **Step 1: Create `shared/src/pulse/types.ts`**
+- [ ] **Step 1: Create `shared/types/pulse.ts`**
 
 ```typescript
 // TypeScript interfaces for Pulse data — no Drizzle dependency.
@@ -518,7 +518,8 @@ export interface PulseHomeScreenData {
 
 - [ ] **Step 2: Update `shared/package.json` exports**
 
-Replace the existing `exports` block:
+Add the `./pulse` export entry. Because the file is at `shared/types/pulse.ts`, tsc compiles it to `dist/types/pulse.js`:
+
 ```json
 {
   "name": "@coaching-os/shared",
@@ -527,11 +528,11 @@ Replace the existing `exports` block:
   "main": "./dist/types/api.js",
   "types": "./dist/types/api.d.ts",
   "exports": {
-    "./api":    { "import": "./dist/types/api.js",      "types": "./dist/types/api.d.ts" },
+    "./api":      { "import": "./dist/types/api.js",      "types": "./dist/types/api.d.ts" },
     "./coaching": { "import": "./dist/types/coaching.js", "types": "./dist/types/coaching.d.ts" },
-    "./health": { "import": "./dist/types/health.js",   "types": "./dist/types/health.d.ts" },
-    "./coach":  { "import": "./dist/types/coach.js",    "types": "./dist/types/coach.d.ts" },
-    "./pulse":  { "import": "./dist/pulse/types.js",    "types": "./dist/pulse/types.d.ts" }
+    "./health":   { "import": "./dist/types/health.js",   "types": "./dist/types/health.d.ts" },
+    "./coach":    { "import": "./dist/types/coach.js",    "types": "./dist/types/coach.d.ts" },
+    "./pulse":    { "import": "./dist/types/pulse.js",    "types": "./dist/types/pulse.d.ts" }
   },
   "scripts": {
     "build": "tsc"
@@ -551,7 +552,7 @@ Read `shared/tsconfig.json`. If `include` is not set (or is `["**/*.ts"]`), no c
 ```bash
 cd /root/coaching-os-v2/shared && npm run build
 ```
-Expected: `dist/pulse/types.js` and `dist/pulse/types.d.ts` created, no errors.
+Expected: `dist/types/pulse.js` and `dist/types/pulse.d.ts` created (alongside existing `dist/types/api.js` etc.), no errors.
 
 - [ ] **Step 5: Verify backend can import from `@coaching-os/shared/pulse`**
 
@@ -567,7 +568,7 @@ Expected: no errors. Remove the temporary import.
 - [ ] **Step 6: Commit**
 
 ```bash
-git -C /root/coaching-os-v2 add shared/src/pulse/types.ts shared/package.json shared/dist/
+git -C /root/coaching-os-v2 add shared/types/pulse.ts shared/package.json shared/dist/
 git -C /root/coaching-os-v2 commit -m "feat: add pulse shared types + package export"
 ```
 
