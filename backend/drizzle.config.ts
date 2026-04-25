@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 config({ path: '../.env' });
 
 export default defineConfig({
-  schema: './src/db/schema.ts',
+  schema: ['./src/db/schema.ts', './src/db/pulse-schema.ts'],
   out: './src/db/migrations',
   dialect: 'postgresql',
   dbCredentials: {
