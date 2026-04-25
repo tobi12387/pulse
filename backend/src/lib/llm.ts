@@ -19,7 +19,7 @@ export async function llmComplete(
       'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': env.APP_URL,
-      'X-Title': 'Coaching OS v2',
+      'X-Title': 'Pulse',
     },
     body: JSON.stringify({
       model,
@@ -44,7 +44,7 @@ export async function llmChat(messages: LLMMessage[], model: string): Promise<st
       'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': env.APP_URL,
-      'X-Title': 'Coaching OS v2',
+      'X-Title': 'Pulse',
     },
     body: JSON.stringify({ model, messages }),
   });

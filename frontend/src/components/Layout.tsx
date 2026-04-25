@@ -23,7 +23,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="border-b border-border px-4 py-3 flex items-center justify-between">
-        <span className="text-primary font-bold tracking-wider text-sm">COACHING OS</span>
+        <span className="text-primary font-bold tracking-wider text-sm">PULSE</span>
         <div className="flex items-center gap-3">
           <span className="text-muted-foreground text-sm">{user?.name}</span>
           <button
