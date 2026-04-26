@@ -106,11 +106,9 @@ export function startGarminSyncJob(app: FastifyInstance): { queue: Queue; worker
     removeOnFail:     { count: 50 },
   } as const);
 
-  void queue.add('sync-nightly',     {}, repeatOpts('0 2 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
-  void queue.add('sync-intraday-08', {}, repeatOpts('0 8 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
-  void queue.add('sync-intraday-14', {}, repeatOpts('0 14 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
-  void queue.add('sync-intraday-19', {}, repeatOpts('0 19 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
+  void queue.add('sync-nightly',   {}, repeatOpts('0 2 * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
+  void queue.add('sync-intraday',  {}, repeatOpts('*/30 * * * *')).catch(err => app.log.error('[garmin-sync] schedule error:', err));
 
-  app.log.info('[garmin-sync] BullMQ job scheduled (nightly 02:00 + intraday 08/14/19 UTC)');
+  app.log.info('[garmin-sync] BullMQ job scheduled (nightly 02:00 + every 30 min)');
   return { queue, worker };
 }

@@ -26,16 +26,12 @@ export async function buildApp() {
     sign: { expiresIn: '30d' },
   });
 
-  // Auth decorator
+  // Auth decorator — passthrough for single-user local instance
   app.decorate('authenticate', async function(
     req: FastifyRequest,
-    reply: FastifyReply
+    _reply: FastifyReply
   ) {
-    try {
-      await req.jwtVerify();
-    } catch {
-      reply.status(401).send({ error: 'Unauthorized' });
-    }
+    req.user = { sub: '00000000-0000-0000-0000-000000000001' };
   });
 
   // CORS

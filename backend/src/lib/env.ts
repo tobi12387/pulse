@@ -18,7 +18,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET:   z.string().optional(),
   APPLE_WEBHOOK_SECRET:   z.string().optional(),
   LLM_MONTHLY_BUDGET_USD: z.coerce.number().default(50),
-  OPENAI_API_KEY: z.string().min(1).optional(), // für Whisper
+  OPENAI_API_KEY: z.string().optional().transform(v => v || undefined), // für Whisper
 });
 
 function validateEnv() {
