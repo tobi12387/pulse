@@ -91,6 +91,9 @@ function MetricCard({ title, primary, secondary, rating, tooltip }: {
 export default function Home() {
   const { data, isLoading, error } = usePulseHome();
   const sync = useGarminSync();
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    return localStorage.getItem('prognosis-dismissed') === new Date().toDateString();
+  });
 
   const { data: briefing } = useQuery({
     queryKey: ['briefing-latest'],
@@ -159,6 +162,27 @@ export default function Home() {
             <p className="text-sm text-foreground leading-relaxed">{msg.briefing_text}</p>
           </CardContent>
         </Card>
+      )}
+
+      {data.prognosis.alert && !dismissed && (
+        <div
+          className="relative rounded-xl p-4 text-sm text-white"
+          style={{ background: 'linear-gradient(135deg, #1e3a5f, #1e4a3f)' }}
+        >
+          <button
+            onClick={() => {
+              setDismissed(true);
+              localStorage.setItem('prognosis-dismissed', new Date().toDateString());
+            }}
+            className="absolute top-2 right-3 text-white/50 hover:text-white text-xs"
+            aria-label="Schließen"
+          >✕</button>
+          <div className="text-[10px] text-white/60 mb-1 font-medium tracking-widest">⚡ PULSE COACH</div>
+          <p className="leading-relaxed">{data.prognosis.message}</p>
+          <div className="mt-2 text-[10px] text-white/50">
+            Basierend auf: {data.prognosis.factors.join(' · ')}
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-3 gap-2">
