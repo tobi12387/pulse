@@ -15,7 +15,8 @@ import {
 import { eq, desc, and, gte } from 'drizzle-orm';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
-import { getCoachReply } from './services/coach-engine.js';
+import { getCoachReply, classifyAndExtractCheckin } from './services/coach-engine.js';
+import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts } from './services/plan-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { pulseQueues } from './queues/queues.js';
@@ -202,6 +203,97 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }).returning();
 
     return reply.status(201).send(checkin);
+  });
+
+  // POST /api/pulse/checkin/voice
+  app.post('/checkin/voice', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      audio:    z.string().min(1),   // base64
+      mimeType: z.string().default('audio/webm'),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Anfrage' });
+
+    const userId = req.user.sub;
+    const today  = new Date().toISOString().split('T')[0]!;
+
+    // 1. Transkription
+    let transcript: string;
+    try {
+      transcript = await transcribeAudio(parsed.data.audio, parsed.data.mimeType);
+    } catch (err) {
+      app.log.error(`[voice-checkin] Whisper error: ${err}`);
+      return reply.status(502).send({ error: 'Transkription fehlgeschlagen, bitte als Text eingeben.' });
+    }
+
+    // 2. Check-in-Erkennung + Extraktion
+    const classification = await classifyAndExtractCheckin(transcript);
+
+    // 3. Falls Check-in: in DB speichern
+    let checkinId: string | null = null;
+    if (classification.isCheckin && classification.extraction) {
+      const ex = classification.extraction;
+      const [existing] = await db.select({ id: pulseMentalCheckins.id, notes: pulseMentalCheckins.notes })
+        .from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today)));
+
+      if (existing) {
+        const updatedNotes = [existing.notes, transcript].filter(Boolean).join('\n---\n');
+        await db.update(pulseMentalCheckins)
+          .set({
+            mood:       ex.mood,
+            energy:     ex.energy,
+            stress:     ex.stress,
+            motivation: ex.motivation,
+            themes:     ex.themes,
+            notes:      updatedNotes,
+            source:     'voice',
+          })
+          .where(eq(pulseMentalCheckins.id, existing.id));
+        checkinId = existing.id;
+      } else {
+        const [inserted] = await db.insert(pulseMentalCheckins).values({
+          userId,
+          date:       today,
+          mood:       ex.mood,
+          energy:     ex.energy,
+          stress:     ex.stress,
+          motivation: ex.motivation,
+          themes:     ex.themes,
+          notes:      transcript,
+          source:     'voice',
+          coachQuestions: ex.followUpQuestions.map(q => ({ question: q, answer: null })),
+        }).returning({ id: pulseMentalCheckins.id });
+        checkinId = inserted!.id;
+      }
+    }
+
+    // 4. Coach-Antwort in Session speichern
+    const userMsg: PulseCoachMessage = { role: 'user',      content: transcript,                timestamp: new Date().toISOString() };
+    const botMsg:  PulseCoachMessage = { role: 'assistant', content: classification.coachReply, timestamp: new Date().toISOString() };
+
+    const [session] = await db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })
+      .from(pulseCoachSessions)
+      .where(eq(pulseCoachSessions.userId, userId))
+      .orderBy(desc(pulseCoachSessions.lastMessageAt))
+      .limit(1);
+
+    if (session) {
+      const msgs = session.messages as PulseCoachMessage[];
+      await db.update(pulseCoachSessions)
+        .set({ messages: [...msgs.slice(-20), userMsg, botMsg], lastMessageAt: new Date() })
+        .where(eq(pulseCoachSessions.id, session.id));
+    } else {
+      await db.insert(pulseCoachSessions).values({ userId, messages: [userMsg, botMsg] });
+    }
+
+    return {
+      transcript,
+      reply:             classification.coachReply,
+      isCheckin:         classification.isCheckin,
+      followUpQuestions: classification.extraction?.followUpQuestions ?? [],
+      checkinId,
+    };
   });
 
   // ─── Sleep sessions ───────────────────────────────────────────────────────────
