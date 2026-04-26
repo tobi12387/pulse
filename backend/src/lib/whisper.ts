@@ -13,7 +13,8 @@ function getClient(): OpenAI {
 
 export async function transcribeAudio(audioBase64: string, mimeType: string): Promise<string> {
   const buffer = Buffer.from(audioBase64, 'base64');
-  const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'mp4' : 'ogg';
+  const extMap: Record<string, string> = { webm: 'webm', mp4: 'mp4', ogg: 'ogg', wav: 'wav', mpeg: 'mp3', m4a: 'm4a' };
+  const ext = Object.entries(extMap).find(([k]) => mimeType.includes(k))?.[1] ?? 'webm';
   const filename = `audio.${ext}`;
 
   const file = new File([buffer], filename, { type: mimeType });
