@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard';
 import Settings from '@/pages/Settings';
 import Chat from '@/pages/Chat';
 import Layout from '@/components/Layout';
+import { PulseRouter } from '@/pulse/routing';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="settings" element={<Settings />} />
             <Route path="chat" element={<Chat />} />
+            <Route path="pulse/*" element={<PulseRouter />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

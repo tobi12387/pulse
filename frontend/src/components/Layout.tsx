@@ -3,10 +3,9 @@ import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/chat', label: 'Chat', icon: '💬', end: false },
-  { to: '/tracking', label: 'Tracking', icon: '📈', end: false },
-  { to: '/plan', label: 'Plan', icon: '📅', end: false },
+  { to: '/',       label: 'Dashboard', icon: '📊', end: true  },
+  { to: '/chat',   label: 'Chat',      icon: '💬', end: false },
+  { to: '/pulse',  label: 'Pulse',     icon: '⚡', end: false },
   { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
 ];
 
