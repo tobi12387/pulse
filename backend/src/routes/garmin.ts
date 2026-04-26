@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
-import { pulseDailyMetrics, pulseSleepSessions } from '../db/pulse-schema.js';
+import { pulseDailyMetrics, pulseSleepSessions, pulseActivities } from '../db/pulse-schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
 
@@ -140,6 +140,65 @@ export async function syncGarminDay(
       target: [pulseSleepSessions.userId, pulseSleepSessions.date],
       set: { durationH: sleepDurationH, sleepScore, deepSleepH, remSleepH, lightSleepH, awakeH: awakeSleepH },
     });
+  }
+
+  // Sync activities for this date
+  try {
+    const activities = await (gc as any).getActivities(0, 20) as any[];
+    const dayActivities = (activities ?? []).filter((a: any) => {
+      const start = a.startTimeGMT ?? a.startTimeLocal ?? '';
+      return start.startsWith(dateStr);
+    });
+
+    for (const a of dayActivities) {
+      const typeKey: string = (a.activityType?.typeKey ?? '').toLowerCase();
+      const activityType =
+        typeKey.includes('running') || typeKey.includes('run') ? 'run' :
+        typeKey.includes('cycling') || typeKey.includes('biking') || typeKey.includes('bike') ? 'bike' :
+        typeKey.includes('swimming') || typeKey.includes('swim') ? 'swim' :
+        typeKey.includes('strength') || typeKey.includes('weight') ? 'strength' :
+        typeKey.includes('hiking') || typeKey.includes('hike') ? 'hike' : 'other';
+
+      const externalId = String(a.activityId);
+      const startTime = new Date(a.startTimeGMT ? `${a.startTimeGMT}Z` : a.startTimeLocal);
+      const vals = {
+        userId,
+        externalId,
+        source: 'garmin' as const,
+        startTime,
+        activityType: activityType as 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other',
+        name: a.activityName ?? null,
+        durationSec: a.duration != null ? Math.round(a.duration) : null,
+        distanceM: a.distance ?? null,
+        avgHr: a.averageHR ?? null,
+        maxHr: a.maxHR ?? null,
+        avgPowerW: a.avgPower != null ? Math.round(a.avgPower) : null,
+        normalizedPowerW: a.normPower != null ? Math.round(a.normPower) : null,
+        tss: a.trainingStressScore ?? null,
+        calories: a.calories != null ? Math.round(a.calories) : null,
+        elevationGainM: a.elevationGain ?? null,
+        trainingEffectAerobic: a.aerobicTrainingEffect ?? null,
+        trainingEffectAnaerobic: a.anaerobicTrainingEffect ?? null,
+        vo2maxEstimate: a.vO2MaxValue ?? null,
+      };
+
+      await db.insert(pulseActivities).values(vals)
+        .onConflictDoUpdate({
+          target: [pulseActivities.externalId, pulseActivities.source],
+          set: {
+            name: vals.name, durationSec: vals.durationSec, distanceM: vals.distanceM,
+            avgHr: vals.avgHr, maxHr: vals.maxHr, avgPowerW: vals.avgPowerW,
+            normalizedPowerW: vals.normalizedPowerW, tss: vals.tss, calories: vals.calories,
+            elevationGainM: vals.elevationGainM, trainingEffectAerobic: vals.trainingEffectAerobic,
+            trainingEffectAnaerobic: vals.trainingEffectAnaerobic, vo2maxEstimate: vals.vo2maxEstimate,
+          },
+        });
+    }
+    if (dayActivities.length > 0) {
+      app.log.info(`[garmin-sync] ${dateStr} activities: ${dayActivities.length}`);
+    }
+  } catch (err) {
+    app.log.warn(`[garmin-sync] activity fetch failed for ${dateStr}: ${err}`);
   }
 
   app.log.info(`[garmin-sync] ${dateStr} ✓`);

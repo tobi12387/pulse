@@ -1,5 +1,7 @@
 import { usePulseHome, useGarminSync } from '@/pulse/hooks';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,13 +27,58 @@ function ReadinessBadge({ score, label }: { score: number; label: string }) {
   return <Badge className={color}>{score}/100 · {labelMap[label] ?? label}</Badge>;
 }
 
-function MetricCard({ title, primary, secondary }: {
-  title: string; primary: React.ReactNode; secondary?: string;
+type Rating = 'good' | 'moderate' | 'bad' | 'neutral';
+
+const ratingColor: Record<Rating, string> = {
+  good:     'bg-emerald-500',
+  moderate: 'bg-yellow-500',
+  bad:      'bg-red-500',
+  neutral:  'bg-muted-foreground/40',
+};
+
+function Tooltip({ text }: { text: string }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  return (
+    <span
+      className="ml-1 inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-muted-foreground/40 text-muted-foreground/60 text-[9px] font-bold cursor-help select-none leading-none shrink-0"
+      onMouseEnter={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setPos({ x: r.left + r.width / 2, y: r.top });
+      }}
+      onMouseLeave={() => setPos(null)}
+    >
+      ?
+      {pos && createPortal(
+        <div
+          className="fixed z-[9999] w-56 rounded-md bg-popover border border-border px-3 py-2 text-xs text-popover-foreground shadow-lg pointer-events-none whitespace-normal"
+          style={{ left: pos.x, top: pos.y - 8, transform: 'translate(-50%, -100%)' }}
+        >
+          {text}
+        </div>,
+        document.body,
+      )}
+    </span>
+  );
+}
+
+function MetricCard({ title, primary, secondary, rating, tooltip }: {
+  title: string;
+  primary: React.ReactNode;
+  secondary?: string;
+  rating?: Rating;
+  tooltip?: string;
 }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-1 pt-4 px-4">
-        <CardTitle className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          {rating && rating !== 'neutral' && (
+            <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${ratingColor[rating]}`} />
+          )}
+          <CardTitle className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</CardTitle>
+          {tooltip && <Tooltip text={tooltip} />}
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="text-2xl font-bold text-foreground">{primary}</div>
@@ -58,6 +105,41 @@ export default function Home() {
   const m = data.todayMetrics;
   const msg = briefing?.briefing;
 
+  function rateSleep(h: number | null | undefined): Rating {
+    if (h == null) return 'neutral';
+    if (h >= 7 && h <= 9) return 'good';
+    if (h >= 6) return 'moderate';
+    return 'bad';
+  }
+  function rateHrv(ms: number | null | undefined, status: string | null | undefined): Rating {
+    if (status) {
+      if (status === 'balanced') return 'good';
+      if (status === 'unbalanced') return 'moderate';
+      if (status === 'low') return 'bad';
+    }
+    if (ms == null) return 'neutral';
+    if (ms >= 50) return 'good';
+    if (ms >= 30) return 'moderate';
+    return 'bad';
+  }
+  function rateBattery(max: number | null | undefined): Rating {
+    if (max == null) return 'neutral';
+    if (max >= 70) return 'good';
+    if (max >= 40) return 'moderate';
+    return 'bad';
+  }
+  function rateSteps(steps: number | null | undefined): Rating {
+    if (steps == null) return 'neutral';
+    if (steps >= 10_000) return 'good';
+    if (steps >= 5_000) return 'moderate';
+    return 'bad';
+  }
+  function rateTsb(tsb: number): Rating {
+    if (tsb >= -10 && tsb <= 25) return 'good';
+    if (tsb > 25 || (tsb < -10 && tsb >= -30)) return 'moderate';
+    return 'bad';
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -80,16 +162,44 @@ export default function Home() {
       )}
 
       <div className="grid grid-cols-3 gap-2">
-        <MetricCard title="Fitness" primary={data.fitnessLoad.ctl.toFixed(0)} secondary="CTL" />
-        <MetricCard title="Ermüdung" primary={data.fitnessLoad.atl.toFixed(0)} secondary="ATL" />
-        <MetricCard title="Form" primary={data.fitnessLoad.tsb.toFixed(0)} secondary="TSB" />
+        <MetricCard
+          title="Fitness" primary={data.fitnessLoad.ctl.toFixed(0)} secondary="CTL"
+          rating="neutral"
+          tooltip="CTL (Chronic Training Load) misst deine langfristige Fitness über ~42 Tage. Höher = fitter. Typischer Bereich für Ausdauersportler: 40–100."
+        />
+        <MetricCard
+          title="Ermüdung" primary={data.fitnessLoad.atl.toFixed(0)} secondary="ATL"
+          rating="neutral"
+          tooltip="ATL (Acute Training Load) zeigt deine kurzfristige Ermüdung der letzten ~7 Tage. Ein hoher Wert bedeutet viel Trainingsbelastung in den letzten Tagen."
+        />
+        <MetricCard
+          title="Form" primary={data.fitnessLoad.tsb.toFixed(0)} secondary="TSB"
+          rating={rateTsb(data.fitnessLoad.tsb)}
+          tooltip="TSB (Training Stress Balance) = Fitness − Ermüdung. Positiv (0–25): frisch, gut für Wettkämpfe. Leicht negativ (−10 bis 0): normaler Trainingsbereich. Sehr negativ (< −30): Überbelastung."
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <MetricCard title="Schlaf" primary={fmt(m?.sleepHours, 1, 'h')} secondary={m?.sleepScore ? `Score ${m.sleepScore}` : undefined} />
-        <MetricCard title="HRV" primary={fmt(m?.hrvRmssd, 0, ' ms')} secondary={m?.hrvStatus ?? undefined} />
-        <MetricCard title="Batterie" primary={fmt(m?.bodyBatteryMax, 0, '%')} secondary={m?.bodyBatteryMin ? `Min ${m.bodyBatteryMin}%` : undefined} />
-        <MetricCard title="Schritte" primary={m?.steps?.toLocaleString('de') ?? '–'} />
+        <MetricCard
+          title="Schlaf" primary={fmt(m?.sleepHours, 1, 'h')} secondary={m?.sleepScore ? `Score ${m.sleepScore}` : undefined}
+          rating={rateSleep(m?.sleepHours)}
+          tooltip="Optimale Schlafdauer: 7–9 Stunden. Unter 6h erhöht das Verletzungsrisiko und beeinträchtigt die Regeneration deutlich."
+        />
+        <MetricCard
+          title="HRV" primary={fmt(m?.hrvRmssd, 0, ' ms')} secondary={m?.hrvStatus ?? undefined}
+          rating={rateHrv(m?.hrvRmssd, m?.hrvStatus)}
+          tooltip="HRV (Herzratenvariabilität) ist ein Maß für Erholung und Stressbelastung des Nervensystems. Höher = besser erholt. 'Balanced' bedeutet gute Regeneration, 'Low' signalisiert Stress oder Überbelastung."
+        />
+        <MetricCard
+          title="Batterie" primary={fmt(m?.bodyBatteryMax, 0, '%')} secondary={m?.bodyBatteryMin ? `Min ${m.bodyBatteryMin}%` : undefined}
+          rating={rateBattery(m?.bodyBatteryMax)}
+          tooltip="Garmin Body Battery zeigt deine Energiereserven (0–100%). Über 70%: gut erholt. 40–70%: moderat. Unter 40%: erschöpft — leichtes Training bevorzugen."
+        />
+        <MetricCard
+          title="Schritte" primary={m?.steps?.toLocaleString('de') ?? '–'}
+          rating={rateSteps(m?.steps)}
+          tooltip="10.000 Schritte täglich gelten als Zielwert für allgemeine Gesundheit. Weniger als 5.000 Schritte ist sehr inaktiv."
+        />
       </div>
 
       {data.nextWorkout && (
