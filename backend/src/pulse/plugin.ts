@@ -15,6 +15,7 @@ import {
 import { eq, desc, and, gte } from 'drizzle-orm';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
+import { getPrognosis } from './services/prognosis-engine.js';
 import { getCoachReply, classifyAndExtractCheckin, type CheckinClassification } from './services/coach-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts } from './services/plan-engine.js';
@@ -60,7 +61,10 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .orderBy(pulsePlannedWorkouts.plannedDate)
       .limit(1);
 
-    const fitnessLoad = await computeFitnessLoad(userId, today);
+    const [fitnessLoad, prognosis] = await Promise.all([
+      computeFitnessLoad(userId, today),
+      getPrognosis(userId),
+    ]);
 
     const mentalScore = mental
       ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
@@ -104,6 +108,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         distanceKm: nextWorkout.distanceKm, targetTss: nextWorkout.targetTss,
         description: nextWorkout.description, status: nextWorkout.status as PulseWorkoutStatus,
       } : null,
+      prognosis,
     };
   });
 
