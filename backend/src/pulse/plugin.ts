@@ -15,7 +15,7 @@ import {
 import { eq, desc, and, gte } from 'drizzle-orm';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
-import { getCoachReply, classifyAndExtractCheckin } from './services/coach-engine.js';
+import { getCoachReply, classifyAndExtractCheckin, type CheckinClassification } from './services/coach-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts } from './services/plan-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
@@ -227,7 +227,13 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }
 
     // 2. Check-in-Erkennung + Extraktion
-    const classification = await classifyAndExtractCheckin(transcript);
+    let classification: CheckinClassification;
+    try {
+      classification = await classifyAndExtractCheckin(transcript);
+    } catch (err) {
+      app.log.error(`[voice-checkin] LLM classification error: ${err}`);
+      return reply.status(502).send({ error: 'Coach-Analyse fehlgeschlagen, bitte erneut versuchen.' });
+    }
 
     // 3. Falls Check-in: in DB speichern
     let checkinId: string | null = null;
@@ -241,30 +247,31 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const updatedNotes = [existing.notes, transcript].filter(Boolean).join('\n---\n');
         await db.update(pulseMentalCheckins)
           .set({
-            mood:       ex.mood,
-            energy:     ex.energy,
-            stress:     ex.stress,
-            motivation: ex.motivation,
-            themes:     ex.themes,
-            notes:      updatedNotes,
-            source:     'voice',
+            mood:           ex.mood,
+            energy:         ex.energy,
+            stress:         ex.stress,
+            motivation:     ex.motivation,
+            themes:         ex.themes,
+            notes:          updatedNotes,
+            source:         'voice',
+            coachQuestions: ex.followUpQuestions.map(q => ({ question: q, answer: null })),
           })
           .where(eq(pulseMentalCheckins.id, existing.id));
         checkinId = existing.id;
       } else {
         const [inserted] = await db.insert(pulseMentalCheckins).values({
           userId,
-          date:       today,
-          mood:       ex.mood,
-          energy:     ex.energy,
-          stress:     ex.stress,
-          motivation: ex.motivation,
-          themes:     ex.themes,
-          notes:      transcript,
-          source:     'voice',
+          date:           today,
+          mood:           ex.mood,
+          energy:         ex.energy,
+          stress:         ex.stress,
+          motivation:     ex.motivation,
+          themes:         ex.themes,
+          notes:          transcript,
+          source:         'voice',
           coachQuestions: ex.followUpQuestions.map(q => ({ question: q, answer: null })),
         }).returning({ id: pulseMentalCheckins.id });
-        checkinId = inserted!.id;
+        checkinId = inserted?.id ?? null;
       }
     }
 
