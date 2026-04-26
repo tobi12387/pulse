@@ -30,7 +30,7 @@ Claude analysiert das Transkript mit einem System-Prompt der unterscheidet:
 - **Frage/Auftrag:** normaler Coach-Flow, kein Check-in gespeichert
 
 ### Nachfragen
-Nach einem erkannten Check-in stellt Claude **maximal 2 gezielte Nachfragen** — basierend auf dem was im Transkript unklar oder relevant erscheint. Beispiele:
+Nach einem erkannten Check-in stellt Claude **gezielte Nachfragen** — so viele wie nötig um ein vollständiges Bild zu bekommen, basierend auf dem was im Transkript unklar oder relevant erscheint. Beispiele:
 - "Du hast Rückenprobleme erwähnt — schon länger oder nur heute?"
 - "Wie viel steht heute noch an bei der Arbeit?"
 
