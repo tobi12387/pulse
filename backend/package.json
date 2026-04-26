@@ -21,6 +21,7 @@
     "fastify": "^5.0.0",
     "garmin-connect": "^1.6.2",
     "jsonwebtoken": "^9.0.0",
+    "openai": "^6.34.0",
     "pg": "^8.13.0",
     "zod": "^3.22.0"
   },
