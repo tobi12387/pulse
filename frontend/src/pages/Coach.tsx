@@ -25,30 +25,37 @@ function MicButton({ onResult }: { onResult: (transcript: string, reply: string)
   const qc = useQueryClient();
 
   const start = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-    chunksRef.current = [];
-    mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    mr.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop());
-      const blob   = new Blob(chunksRef.current, { type: 'audio/webm' });
-      const base64 = await blobToBase64(blob);
-      setLoading(true);
-      try {
-        const res = await pulseApi.checkin.voice(base64, 'audio/webm');
-        onResult(res.transcript, res.reply);
-        if (res.isCheckin) {
-          void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'today'] });
+    let stream: MediaStream;
+    try {
+      // Safari doesn't support audio/webm — pick a supported mimeType
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType });
+      chunksRef.current = [];
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob   = new Blob(chunksRef.current, { type: mimeType });
+        const base64 = await blobToBase64(blob);
+        setLoading(true);
+        try {
+          const res = await pulseApi.checkin.voice(base64, mimeType);
+          onResult(res.transcript, res.reply);
+          if (res.isCheckin) {
+            void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'today'] });
+          }
+        } catch {
+          onResult('', 'Transkription fehlgeschlagen — bitte als Text eingeben.');
+        } finally {
+          setLoading(false);
         }
-      } catch {
-        onResult('', 'Transkription fehlgeschlagen — bitte als Text eingeben.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    mediaRef.current = mr;
-    mr.start();
-    setRecording(true);
+      };
+      mediaRef.current = mr;
+      mr.start();
+      setRecording(true);
+    } catch {
+      onResult('', 'Mikrofon nicht verfügbar — bitte Berechtigung erteilen.');
+    }
   }, [onResult, qc]);
 
   const stop = useCallback(() => {
