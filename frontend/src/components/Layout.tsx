@@ -3,10 +3,11 @@ import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
 
 const NAV_ITEMS = [
-  { to: '/',       label: 'Dashboard', icon: '📊', end: true  },
-  { to: '/chat',   label: 'Chat',      icon: '💬', end: false },
-  { to: '/pulse',  label: 'Pulse',     icon: '⚡', end: false },
-  { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
+  { to: '/',        label: 'Home',    icon: '⚡', end: true  },
+  { to: '/coach',   label: 'Coach',   icon: '💬', end: false },
+  { to: '/data',    label: 'Daten',   icon: '📊', end: false },
+  { to: '/plan',    label: 'Plan',    icon: '📅', end: false },
+  { to: '/settings',label: 'Settings',icon: '⚙️', end: false },
 ];
 
 export default function Layout() {
@@ -22,7 +23,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="border-b border-border px-4 py-3 flex items-center justify-between">
-        <span className="text-primary font-bold tracking-wider text-sm">PULSE</span>
+        <span className="text-primary font-bold tracking-widest text-sm">PULSE</span>
         <div className="flex items-center gap-3">
           <span className="text-muted-foreground text-sm">{user?.name}</span>
           <button
@@ -34,11 +35,11 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 max-w-2xl mx-auto w-full">
+      <main className="flex-1 p-4 max-w-2xl mx-auto w-full overflow-y-auto">
         <Outlet />
       </main>
 
-      <nav className="border-t border-border px-2 py-2 flex justify-around">
+      <nav className="border-t border-border px-2 py-2 flex justify-around shrink-0">
         {NAV_ITEMS.map(({ to, label, icon, end }) => (
           <NavLink
             key={to}

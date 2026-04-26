@@ -2,11 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import Login from '@/pages/Login';
-import Dashboard from '@/pages/Dashboard';
+import Home from '@/pages/Home';
+import Coach from '@/pages/Coach';
+import Data from '@/pages/Data';
+import Plan from '@/pages/Plan';
 import Settings from '@/pages/Settings';
-import Chat from '@/pages/Chat';
 import Layout from '@/components/Layout';
-import { PulseRouter } from '@/pulse/routing';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,10 +35,11 @@ export default function App() {
               </AuthGuard>
             }
           >
-            <Route index element={<Dashboard />} />
+            <Route index element={<Home />} />
+            <Route path="coach" element={<Coach />} />
+            <Route path="data" element={<Data />} />
+            <Route path="plan" element={<Plan />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="chat" element={<Chat />} />
-            <Route path="pulse/*" element={<PulseRouter />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
