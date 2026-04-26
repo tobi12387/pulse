@@ -59,3 +59,44 @@ describe('getCoachReply', () => {
     expect(llmComplete).toHaveBeenCalled();
   });
 });
+
+describe('classifyAndExtractCheckin', () => {
+  it('erkennt einen Check-in und extrahiert Scores', async () => {
+    const { llmComplete } = await import('../../lib/llm.js');
+    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
+      isCheckin: true,
+      extraction: {
+        mood: 4,
+        energy: 3,
+        stress: 5,
+        motivation: 4,
+        themes: ['Schlaf', 'Rücken'],
+        followUpQuestions: ['Seit wann hast du Rückenschmerzen?'],
+      },
+      coachReply: 'Ich höre, dass du dich heute müde fühlst und Rückenschmerzen hast.',
+    }));
+    const { classifyAndExtractCheckin } = await import('./coach-engine.js');
+    const result = await classifyAndExtractCheckin(
+      'Ich fühl mich heute ziemlich müde, hab schlecht geschlafen, Rücken schmerzt etwas. Stimmung geht so.'
+    );
+    expect(result.isCheckin).toBe(true);
+    expect(result.extraction).toBeDefined();
+    expect(result.extraction!.mood).toBeGreaterThanOrEqual(1);
+    expect(result.extraction!.mood).toBeLessThanOrEqual(10);
+    expect(result.extraction!.themes).toContain('Schlaf');
+  });
+
+  it('erkennt eine Frage als kein Check-in', async () => {
+    const { llmComplete } = await import('../../lib/llm.js');
+    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
+      isCheckin: false,
+      coachReply: 'Diese Woche solltest du etwa 40-50 km laufen, abhängig von deiner aktuellen Fitness.',
+    }));
+    const { classifyAndExtractCheckin } = await import('./coach-engine.js');
+    const result = await classifyAndExtractCheckin(
+      'Wie viele Kilometer sollte ich diese Woche laufen?'
+    );
+    expect(result.isCheckin).toBe(false);
+    expect(result.extraction).toBeUndefined();
+  });
+});

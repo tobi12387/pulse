@@ -1,4 +1,4 @@
-import { llmComplete, FAST_MODEL } from '../../lib/llm.js';
+import { llmComplete, FAST_MODEL, SMART_MODEL } from '../../lib/llm.js';
 
 export interface CoachContext {
   readiness: number;
@@ -93,4 +93,62 @@ export async function getCoachReply(message: string, ctx: CoachContext): Promise
 Kontext: Readiness ${ctx.readiness}/100, Schlaf ${ctx.sleepHours?.toFixed(1) ?? 'unbekannt'}h, HRV ${ctx.hrvStatus ?? 'unbekannt'}, TSB ${ctx.tsb}.`;
 
   return llmComplete(systemPrompt, message, FAST_MODEL);
+}
+
+export interface CheckinExtraction {
+  mood:       number; // 1-10
+  energy:     number; // 1-10
+  stress:     number; // 1-10
+  motivation: number; // 1-10
+  themes:     string[];
+  followUpQuestions: string[];
+}
+
+export interface CheckinClassification {
+  isCheckin:  boolean;
+  extraction: CheckinExtraction | undefined;
+  coachReply: string;
+}
+
+const CHECKIN_SYSTEM_PROMPT = `Du bist Pulse, ein persönlicher Gesundheits- und Leistungscoach.
+
+Analysiere die Nachricht des Nutzers und bestimme:
+1. Ist dies ein Check-in (der Nutzer beschreibt seine aktuelle Befindlichkeit, Energie, Stimmung, Stressoren, Tagesgeschehen)?
+2. Oder ist dies eine Frage oder ein Auftrag?
+
+Antworte AUSSCHLIESSLICH mit folgendem JSON-Format (kein Markdown, kein Text davor oder danach):
+
+{
+  "isCheckin": true/false,
+  "extraction": {          // nur wenn isCheckin=true
+    "mood":       5,       // 1-10: wie gut fühlt sich der Nutzer emotional
+    "energy":     6,       // 1-10: physische und mentale Energie
+    "stress":     4,       // 1-10: Stresslevel (10 = maximal gestresst)
+    "motivation": 7,       // 1-10: Motivation und Antrieb
+    "themes":     ["Schlaf", "Rücken", "Arbeit"],  // erkannte Themen, auf Deutsch
+    "followUpQuestions": ["Seit wann hast du Rückenschmerzen?"]  // gezielte Nachfragen
+  },
+  "coachReply": "Ich höre, dass du dich heute müde fühlst..."  // natürliche Coach-Antwort auf Deutsch
+}
+
+Bei isCheckin=false: extraction weglassen, coachReply ist normale Antwort auf die Frage.`;
+
+export async function classifyAndExtractCheckin(text: string): Promise<CheckinClassification> {
+  const raw = await llmComplete(CHECKIN_SYSTEM_PROMPT, text, SMART_MODEL);
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      isCheckin: boolean;
+      extraction?: CheckinExtraction;
+      coachReply: string;
+    };
+    return {
+      isCheckin:  parsed.isCheckin ?? false,
+      extraction: parsed.isCheckin ? parsed.extraction : undefined,
+      coachReply: parsed.coachReply ?? '',
+    };
+  } catch {
+    // JSON-Parse-Fehler → als Frage behandeln, rohe Antwort nutzen
+    return { isCheckin: false, extraction: undefined, coachReply: raw };
+  }
 }
