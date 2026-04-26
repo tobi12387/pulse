@@ -19,7 +19,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const isPost = options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH';
+  const body = options.body ?? (isPost ? '{}' : undefined);
+
+  const res = await fetch(`${BASE}${path}`, { ...options, headers, body });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Unbekannter Fehler' })) as { error?: string };
