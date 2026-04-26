@@ -74,13 +74,9 @@ export async function syncGarminDay(
     if (dto?.lightSleepSeconds != null)           lightSleepH = dto.lightSleepSeconds / 3600;
     if (dto?.remSleepSeconds   != null)           remSleepH   = dto.remSleepSeconds   / 3600;
     if (dto?.awakeSleepSeconds != null)           awakeSleepH = dto.awakeSleepSeconds / 3600;
-    // HRV from sleep
-    if (dto?.hrvStatus) hrvStatus = String(dto.hrvStatus).toLowerCase();
-    const hrv5day = dto?.hrv?.lastNight ?? dto?.hrv?.weeklyAvg ?? null;
-    if (hrv5day != null && !hrvStatus) {
-      hrvStatus = hrv5day > 50 ? 'balanced' : hrv5day > 30 ? 'unbalanced' : 'poor';
-    }
-    if (hrv5day != null) hrvRmssd = hrv5day;
+    // HRV is at top-level sleep object, not inside dailySleepDTO
+    if (sleep?.avgOvernightHrv != null) hrvRmssd = sleep.avgOvernightHrv;
+    if (sleep?.hrvStatus)               hrvStatus = String(sleep.hrvStatus).toLowerCase();
   } catch { /* sleep data may not be available for all dates */ }
 
   let restingHr: number | null      = null;
