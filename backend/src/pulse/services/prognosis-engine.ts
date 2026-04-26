@@ -25,7 +25,7 @@ export function buildPrognosis(input: {
 
   // 1. HRV-Trend
   const hrvTrend = computeLinearTrend(input.hrv7d);
-  if (hrvTrend < -1.5) factors.push('HRV fällt seit mehreren Tagen');
+  if (input.hrv7d.length >= 3 && hrvTrend < -1.5) factors.push('HRV fällt seit mehreren Tagen');
 
   // 2. Mentaler Durchschnitt
   if (input.mentalLast5.length >= 3) {
