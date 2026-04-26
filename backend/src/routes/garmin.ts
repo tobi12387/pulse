@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
+import { pulseDailyMetrics, pulseSleepSessions } from '../db/pulse-schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
 
@@ -51,19 +52,27 @@ export async function syncGarminDay(
   const gc      = await getGarminClient();
   const dateStr = date.toISOString().split('T')[0]!;
 
+  // Get display name once (needed for the usersummary API URL)
+  const profile = await (gc as any).getUserProfile() as any;
+  const displayName: string = profile?.displayName ?? '';
+
   let sleepDurationH: number | null = null;
   let sleepScore: number | null     = null;
   let hrvStatus: string | null      = null;
+  let hrvRmssd: number | null       = null;
 
   try {
     const sleep = await gc.getSleepData(date) as any;
     const dto   = sleep?.dailySleepDTO ?? sleep;
     if (dto?.sleepTimeSeconds)                    sleepDurationH = dto.sleepTimeSeconds / 3600;
     if (dto?.sleepScores?.overall?.value != null) sleepScore     = dto.sleepScores.overall.value;
+    // HRV from sleep
+    if (dto?.hrvStatus) hrvStatus = String(dto.hrvStatus).toLowerCase();
     const hrv5day = dto?.hrv?.lastNight ?? dto?.hrv?.weeklyAvg ?? null;
-    if (hrv5day != null) {
+    if (hrv5day != null && !hrvStatus) {
       hrvStatus = hrv5day > 50 ? 'balanced' : hrv5day > 30 ? 'unbalanced' : 'poor';
     }
+    if (hrv5day != null) hrvRmssd = hrv5day;
   } catch { /* sleep data may not be available for all dates */ }
 
   let restingHr: number | null      = null;
@@ -72,57 +81,59 @@ export async function syncGarminDay(
   let bodyBatteryMin: number | null = null;
   let bodyBatteryMax: number | null = null;
   let stressAvg: number | null      = null;
-  let hrvRmssd: number | null       = null;
 
   try {
-    const stats = await gc.getHeartRate(date) as any;
-    if (stats?.restingHeartRate) restingHr = stats.restingHeartRate;
+    const hr = await gc.getHeartRate(date) as any;
+    if (hr?.restingHeartRate) restingHr = hr.restingHeartRate;
   } catch { /* ignore */ }
 
+  // Daily summary via direct Garmin API — steps, stress, calories, body battery
   try {
-    const summary = await gc.getDailySummary(date) as any;
-    if (summary?.totalSteps)            steps          = summary.totalSteps;
-    if (summary?.activeCalories)        caloriesActive = summary.activeCalories;
-    if (summary?.minBodyBattery != null) bodyBatteryMin = summary.minBodyBattery;
-    if (summary?.maxBodyBattery != null) bodyBatteryMax = summary.maxBodyBattery;
-    if (summary?.averageStressLevel)    stressAvg      = summary.averageStressLevel;
-  } catch { /* ignore */ }
+    const summary = await (gc as any).get(
+      `https://connectapi.garmin.com/usersummary-service/usersummary/daily/${displayName}?calendarDate=${dateStr}`,
+    ) as any;
+    if (summary?.totalSteps != null)                  steps          = summary.totalSteps;
+    if (summary?.averageStressLevel != null)           stressAvg      = summary.averageStressLevel;
+    if (summary?.activeKilocalories != null)           caloriesActive = summary.activeKilocalories;
+    if (summary?.minBodyBatteryLevel != null)          bodyBatteryMin = summary.minBodyBatteryLevel;
+    if (summary?.bodyBatteryMostRecentValue != null)   bodyBatteryMax = summary.bodyBatteryMostRecentValue;
+  } catch { /* daily summary unavailable */ }
 
-  try {
-    const hrv = await gc.getHrvData(date) as any;
-    const rmssd = hrv?.hrvSummary?.lastNight ?? hrv?.hrvSummary?.weekly5DayAvg ?? null;
-    if (rmssd != null) hrvRmssd = rmssd;
-  } catch { /* ignore */ }
+  const upsertSet = {
+    hrvRmssd, hrvStatus, sleepDurationH, sleepScore,
+    restingHr, steps, caloriesActive, bodyBatteryMin, bodyBatteryMax, stressAvg,
+    syncedAt: new Date(),
+  };
 
-  await db.insert(garminDailyHealth).values({
-    userId,
-    date: dateStr,
-    hrvRmssd,
-    hrvStatus,
-    sleepDurationH,
-    sleepScore,
-    restingHr,
-    steps,
-    caloriesActive,
-    bodyBatteryMin,
-    bodyBatteryMax,
-    stressAvg,
+  await db.insert(garminDailyHealth).values({ userId, date: dateStr, ...upsertSet })
+    .onConflictDoUpdate({ target: [garminDailyHealth.userId, garminDailyHealth.date], set: upsertSet });
+
+  // Also write to pulse_daily_metrics so pulse screens have fresh data
+  await db.insert(pulseDailyMetrics).values({
+    userId, date: dateStr,
+    hrvRmssd, hrvStatus, restingHr,
+    sleepHours: sleepDurationH, sleepScore,
+    bodyBatteryMin, bodyBatteryMax, stressAvg, steps,
+    caloriesActive, source: 'garmin', syncedAt: new Date(),
   }).onConflictDoUpdate({
-    target: [garminDailyHealth.userId, garminDailyHealth.date],
+    target: [pulseDailyMetrics.userId, pulseDailyMetrics.date],
     set: {
-      hrvRmssd,
-      hrvStatus,
-      sleepDurationH,
-      sleepScore,
-      restingHr,
-      steps,
-      caloriesActive,
-      bodyBatteryMin,
-      bodyBatteryMax,
-      stressAvg,
-      syncedAt: new Date(),
+      hrvRmssd, hrvStatus, restingHr,
+      sleepHours: sleepDurationH, sleepScore,
+      bodyBatteryMin, bodyBatteryMax, stressAvg, steps,
+      caloriesActive, syncedAt: new Date(),
     },
   });
+
+  // Write sleep session if we have sleep data
+  if (sleepDurationH != null) {
+    await db.insert(pulseSleepSessions).values({
+      userId, date: dateStr, durationH: sleepDurationH, sleepScore, source: 'garmin',
+    }).onConflictDoUpdate({
+      target: [pulseSleepSessions.userId, pulseSleepSessions.date],
+      set: { durationH: sleepDurationH, sleepScore },
+    });
+  }
 
   app.log.info(`[garmin-sync] ${dateStr} ✓`);
 }
