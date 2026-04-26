@@ -51,6 +51,12 @@ export const pulseApi = {
       mood: number; energy: number; stress: number; motivation: number; notes?: string;
     }): Promise<PulseMentalCheckin> =>
       request('/checkin', { method: 'POST', body: JSON.stringify(data) }),
+    voice: (audio: string, mimeType: string): Promise<{
+      transcript: string; reply: string; isCheckin: boolean; followUpQuestions: string[]; checkinId: string | null;
+    }> =>
+      request('/checkin/voice', { method: 'POST', body: JSON.stringify({ audio, mimeType }) }),
+    today: (): Promise<{ checkin: { id: string; date: string } | null }> =>
+      request('/checkin/today'),
   },
 
   sleep: {

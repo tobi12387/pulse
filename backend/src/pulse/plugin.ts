@@ -308,6 +308,16 @@ export default async function pulsePlugin(app: FastifyInstance) {
     };
   });
 
+  // GET /api/pulse/checkin/today
+  app.get('/checkin/today', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today  = new Date().toISOString().split('T')[0]!;
+    const [checkin] = await db.select({ id: pulseMentalCheckins.id, date: pulseMentalCheckins.date })
+      .from(pulseMentalCheckins)
+      .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today)));
+    return { checkin: checkin ?? null };
+  });
+
   // ─── Sleep sessions ───────────────────────────────────────────────────────────
   app.get('/sleep', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;

@@ -9,6 +9,7 @@ export const pulseKeys = {
   plan:       ['pulse', 'plan'] as const,
   goals:      ['pulse', 'goals'] as const,
   review:     ['pulse', 'review', 'latest'] as const,
+  checkinToday: ['pulse', 'checkin', 'today'] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -59,6 +60,14 @@ export function usePulseReview() {
     queryKey: pulseKeys.review,
     queryFn: pulseApi.review.latest,
     staleTime: 60 * 60_000,
+  });
+}
+
+export function useCheckinToday() {
+  return useQuery({
+    queryKey: pulseKeys.checkinToday,
+    queryFn: pulseApi.checkin.today,
+    staleTime: 60_000,
   });
 }
 
