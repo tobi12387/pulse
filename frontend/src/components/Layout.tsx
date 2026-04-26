@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
+import { useCheckinToday } from '@/pulse/hooks';
 
 const NAV_ITEMS = [
   { to: '/',        label: 'Home',    icon: '⚡', end: true  },
@@ -13,6 +14,8 @@ const NAV_ITEMS = [
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
+  const { data: checkinData } = useCheckinToday();
+  const hasCheckin = !!checkinData?.checkin;
 
   async function handleLogout() {
     await api.auth.logout().catch(() => {});
@@ -51,7 +54,16 @@ export default function Layout() {
               }`
             }
           >
-            <span className="text-lg leading-none">{icon}</span>
+            {to === '/coach' ? (
+              <span className="relative text-lg leading-none">
+                {icon}
+                {!hasCheckin && (
+                  <span className="absolute -top-0.5 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </span>
+            ) : (
+              <span className="text-lg leading-none">{icon}</span>
+            )}
             <span>{label}</span>
           </NavLink>
         ))}

@@ -1,8 +1,82 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
 import { usePulseHome } from '@/pulse/hooks';
+import { pulseApi } from '@/pulse/api-client';
 import { Button } from '@/components/ui/button';
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1]!);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function MicButton({ onResult }: { onResult: (transcript: string, reply: string) => void }) {
+  const [recording, setRecording] = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const mediaRef  = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const qc = useQueryClient();
+
+  const start = useCallback(async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    chunksRef.current = [];
+    mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    mr.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob   = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const base64 = await blobToBase64(blob);
+      setLoading(true);
+      try {
+        const res = await pulseApi.checkin.voice(base64, 'audio/webm');
+        onResult(res.transcript, res.reply);
+        if (res.isCheckin) {
+          void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'today'] });
+        }
+      } catch {
+        onResult('', 'Transkription fehlgeschlagen — bitte als Text eingeben.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    mediaRef.current = mr;
+    mr.start();
+    setRecording(true);
+  }, [onResult, qc]);
+
+  const stop = useCallback(() => {
+    mediaRef.current?.stop();
+    setRecording(false);
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onMouseDown={start}
+      onMouseUp={stop}
+      onTouchStart={start}
+      onTouchEnd={stop}
+      disabled={loading}
+      aria-label={recording ? 'Aufnahme läuft' : 'Sprachaufnahme starten'}
+      className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors self-end ${
+        recording
+          ? 'bg-red-500 text-white animate-pulse'
+          : loading
+          ? 'bg-muted text-muted-foreground'
+          : 'bg-muted text-foreground hover:bg-muted/80'
+      }`}
+    >
+      {loading ? '…' : '🎙'}
+    </button>
+  );
+}
 
 export default function Coach() {
   const queryClient = useQueryClient();
@@ -43,6 +117,11 @@ export default function Coach() {
       e.preventDefault();
       handleSend();
     }
+  }
+
+  function handleVoiceResult(_transcript: string, _reply: string) {
+    // History reloads via the invalidateQueries in MicButton
+    void queryClient.invalidateQueries({ queryKey: ['chat-history'] });
   }
 
   return (
@@ -86,6 +165,7 @@ export default function Coach() {
 
       <div className="border-t border-border pt-3 space-y-2 shrink-0">
         <div className="flex gap-2">
+          <MicButton onResult={handleVoiceResult} />
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
