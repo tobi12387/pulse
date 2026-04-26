@@ -75,7 +75,17 @@ export interface PulseMentalCheckin {
   stress: number;
   motivation: number;
   notes: string | null;
+  themes: string[] | null;
+  source: string;
+  coachQuestions: Array<{ question: string; answer: string | null }> | null;
   createdAt: string;
+}
+
+export interface PulsePrognosis {
+  alert: boolean;
+  message: string;
+  horizon_days: number;
+  factors: string[];
 }
 
 export interface PulseCoachMessage {
@@ -141,4 +151,5 @@ export interface PulseHomeScreenData {
   fitnessLoad: PulseFitnessLoad;
   recentActivities: PulseActivity[];
   nextWorkout: PulsePlannedWorkout | null;
+  prognosis: PulsePrognosis;
 }

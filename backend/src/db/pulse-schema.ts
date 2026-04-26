@@ -122,15 +122,18 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
 
 // ─── Mental check-ins ─────────────────────────────────────────────────────────
 export const pulseMentalCheckins = pgTable('pulse_mental_checkins', {
-  id:         uuid('id').primaryKey().defaultRandom(),
-  userId:     uuid('user_id').notNull(),
-  date:       date('date').notNull(),
-  mood:       integer('mood').notNull(),
-  energy:     integer('energy').notNull(),
-  stress:     integer('stress').notNull(),
-  motivation: integer('motivation').notNull(),
-  notes:      text('notes'),
-  createdAt:  timestamp('created_at').notNull().defaultNow(),
+  id:              uuid('id').primaryKey().defaultRandom(),
+  userId:          uuid('user_id').notNull(),
+  date:            date('date').notNull(),
+  mood:            integer('mood').notNull(),
+  energy:          integer('energy').notNull(),
+  stress:          integer('stress').notNull(),
+  motivation:      integer('motivation').notNull(),
+  notes:           text('notes'),
+  themes:          text('themes').array(),
+  source:          text('source').default('text'),
+  coachQuestions:  jsonb('coach_questions'),
+  createdAt:       timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   uniqueIndex('pulse_mental_checkins_user_date_idx').on(t.userId, t.date),
 ]);
