@@ -305,6 +305,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
       isCheckin:         classification.isCheckin,
       followUpQuestions: classification.extraction?.followUpQuestions ?? [],
       checkinId,
+      extraction:        classification.extraction
+        ? {
+            mood:       classification.extraction.mood,
+            energy:     classification.extraction.energy,
+            stress:     classification.extraction.stress,
+            motivation: classification.extraction.motivation,
+            themes:     classification.extraction.themes,
+          }
+        : null,
     };
   });
 
