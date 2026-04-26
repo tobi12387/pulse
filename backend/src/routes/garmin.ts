@@ -60,12 +60,20 @@ export async function syncGarminDay(
   let sleepScore: number | null     = null;
   let hrvStatus: string | null      = null;
   let hrvRmssd: number | null       = null;
+  let deepSleepH: number | null     = null;
+  let remSleepH: number | null      = null;
+  let lightSleepH: number | null    = null;
+  let awakeSleepH: number | null    = null;
 
   try {
     const sleep = await gc.getSleepData(date) as any;
     const dto   = sleep?.dailySleepDTO ?? sleep;
     if (dto?.sleepTimeSeconds)                    sleepDurationH = dto.sleepTimeSeconds / 3600;
     if (dto?.sleepScores?.overall?.value != null) sleepScore     = dto.sleepScores.overall.value;
+    if (dto?.deepSleepSeconds  != null)           deepSleepH  = dto.deepSleepSeconds  / 3600;
+    if (dto?.lightSleepSeconds != null)           lightSleepH = dto.lightSleepSeconds / 3600;
+    if (dto?.remSleepSeconds   != null)           remSleepH   = dto.remSleepSeconds   / 3600;
+    if (dto?.awakeSleepSeconds != null)           awakeSleepH = dto.awakeSleepSeconds / 3600;
     // HRV from sleep
     if (dto?.hrvStatus) hrvStatus = String(dto.hrvStatus).toLowerCase();
     const hrv5day = dto?.hrv?.lastNight ?? dto?.hrv?.weeklyAvg ?? null;
@@ -128,10 +136,13 @@ export async function syncGarminDay(
   // Write sleep session if we have sleep data
   if (sleepDurationH != null) {
     await db.insert(pulseSleepSessions).values({
-      userId, date: dateStr, durationH: sleepDurationH, sleepScore, source: 'garmin',
+      userId, date: dateStr,
+      durationH: sleepDurationH, sleepScore,
+      deepSleepH, remSleepH, lightSleepH, awakeH: awakeSleepH,
+      source: 'garmin',
     }).onConflictDoUpdate({
       target: [pulseSleepSessions.userId, pulseSleepSessions.date],
-      set: { durationH: sleepDurationH, sleepScore },
+      set: { durationH: sleepDurationH, sleepScore, deepSleepH, remSleepH, lightSleepH, awakeH: awakeSleepH },
     });
   }
 
