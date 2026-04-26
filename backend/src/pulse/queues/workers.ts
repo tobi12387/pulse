@@ -2,36 +2,41 @@ import type { Job, Worker } from 'bullmq';
 import { createWorker } from '../../lib/queue.js';
 import { pulseQueues } from './queues.js';
 import type { PulseJobData } from './queues.js';
+import { syncGarminForDate } from '../adapters/garmin-client.js';
+import { generateWeeklyReview } from '../services/review-engine.js';
 
 async function handleGarminSync(job: Job<PulseJobData>): Promise<void> {
   const { userId, date } = job.data;
   const targetDate = date ?? new Date().toISOString().split('T')[0]!;
-  console.log(`[pulse-garmin-sync] userId=${userId} date=${targetDate}`);
-  // Phase 3b: call garmin adapter here
+  await syncGarminForDate(userId, targetDate);
 }
 
 async function handleCalendarSync(job: Job<PulseJobData>): Promise<void> {
   const { userId } = job.data;
   console.log(`[pulse-calendar-sync] userId=${userId}`);
-  // Phase 3b: call calendar adapter here
+  // Phase 3c: call calendar adapter here
 }
 
 async function handleMorningBrief(job: Job<PulseJobData>): Promise<void> {
   const { userId } = job.data;
   console.log(`[pulse-morning-brief] userId=${userId}`);
-  // Phase 3b: generate morning briefing here
+  // Phase 3c: generate morning briefing here
 }
 
 async function handleWeeklyReview(job: Job<PulseJobData>): Promise<void> {
   const { userId } = job.data;
-  console.log(`[pulse-weekly-review] userId=${userId}`);
-  // Phase 3b: call review engine here
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dayOfWeek - 7); // previous week
+  const weekStartStr = weekStart.toISOString().split('T')[0]!;
+  await generateWeeklyReview(userId, weekStartStr);
 }
 
 async function handleInsightPrecompute(job: Job<PulseJobData>): Promise<void> {
   const { userId } = job.data;
   console.log(`[pulse-insight-precompute] userId=${userId}`);
-  // Phase 3b: call insight engine here
+  // Phase 3c: call insight engine here
 }
 
 export function startPulseWorkers(): () => Promise<void> {

@@ -7,95 +7,22 @@ import {
   pulseActivities,
   pulsePlannedWorkouts,
   pulseCoachSessions,
+  pulseSleepSessions,
+  pulseGoals,
+  pulseUserProfile,
+  pulseWeeklyReviews,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
-import type { PulseHomeScreenData, PulseReadiness, PulseCoachMessage } from '@coaching-os/shared/pulse';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function computeReadiness(metrics: {
-  sleepHours: number | null;
-  hrvStatus: string | null;
-  bodyBatteryMax: number | null;
-  stressAvg: number | null;
-  mentalMood: number | null;
-  mentalEnergy: number | null;
-  mentalMotivation: number | null;
-  mentalStress: number | null;
-  tsb: number;
-}): PulseReadiness {
-  const sleep = metrics.sleepHours != null
-    ? Math.min(metrics.sleepHours / 8, 1) * 100
-    : 60;
-
-  const hrv = metrics.hrvStatus != null ? ({
-    poor: 25, below_normal: 50, balanced: 75, normal: 75, above_normal: 100,
-  }[metrics.hrvStatus] ?? 60) : 60;
-
-  const tsb = Math.max(0, Math.min(100, (metrics.tsb + 30) / 60 * 100));
-
-  const battery = metrics.bodyBatteryMax ?? 60;
-
-  const mental = metrics.mentalMood != null
-    ? ((metrics.mentalMood + (metrics.mentalEnergy ?? 5) + (metrics.mentalMotivation ?? 5)) / 3) * 10
-    : 60;
-
-  const stress = metrics.stressAvg != null
-    ? Math.max(0, (100 - metrics.stressAvg))
-    : metrics.mentalStress != null
-      ? (10 - metrics.mentalStress) * 10
-      : 60;
-
-  const score = Math.round(
-    sleep   * 0.25 +
-    hrv     * 0.25 +
-    tsb     * 0.20 +
-    battery * 0.15 +
-    mental  * 0.10 +
-    stress  * 0.05,
-  );
-
-  const label: PulseReadiness['label'] =
-    score >= 80 ? 'excellent' :
-    score >= 65 ? 'good' :
-    score >= 45 ? 'moderate' : 'low';
-
-  return {
-    score,
-    components: { sleep, hrv, tsb, battery, mental, stress },
-    label,
-  };
-}
+import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
+import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
+import { getCoachReply } from './services/coach-engine.js';
+import { generateWeekWorkouts } from './services/plan-engine.js';
+import { generateWeeklyReview } from './services/review-engine.js';
+import { pulseQueues } from './queues/queues.js';
 
 const coachMessageSchema = z.object({
   message: z.string().min(1).max(2000),
 });
-
-function simpleCoachReply(message: string, readiness: PulseReadiness): string {
-  const m = message.toLowerCase();
-
-  if (/^(hallo|hi|hey|guten morgen|servus|moin)/.test(m)) {
-    return `Hallo! Deine heutige Readiness liegt bei ${readiness.score}/100 (${readiness.label}). Wie kann ich dir helfen?`;
-  }
-  if (/(schlaf|schlafen|müde)/.test(m)) {
-    const s = Math.round(readiness.components.sleep);
-    return `Dein Schlaf-Score heute: ${s}/100. ${s < 60 ? 'Lass heute das intensive Training lieber aus.' : 'Gute Basis für das Training!'}`;
-  }
-  if (/(hrv|herzrate|herzratenvariabil)/.test(m)) {
-    return `Dein HRV-Score heute: ${Math.round(readiness.components.hrv)}/100. ${readiness.components.hrv < 50 ? 'Dein Nervensystem braucht Erholung.' : 'Dein Nervensystem ist gut erholt.'}`;
-  }
-  if (/(readiness|bereit|form|fit)/.test(m)) {
-    return `Deine Readiness heute: ${readiness.score}/100 (${readiness.label}). ${readiness.score >= 70 ? 'Grünes Licht für hartes Training!' : readiness.score >= 50 ? 'Moderates Training ist ok.' : 'Heute lieber regenerieren.'}`;
-  }
-  if (/(trainingsplan|plan|woche|workout|training)/.test(m)) {
-    return `Basierend auf deiner Readiness von ${readiness.score}/100 empfehle ich heute ${readiness.score >= 70 ? 'Intensivtraining (Zone 4-5).' : readiness.score >= 50 ? 'moderates Training (Zone 2-3).' : 'Regeneration oder leichtes Z1-Training.'}`;
-  }
-  if (/(erholung|recovery|regeneration|pause)/.test(m)) {
-    return `Erholung ist genauso wichtig wie Training. Dein TSB liegt bei ${Math.round(readiness.components.tsb)}/100 — ${readiness.components.tsb < 40 ? 'du akkumulierst gerade Ermüdung, eine Pause wäre sinnvoll.' : 'du bist gut erholt.'}`;
-  }
-
-  return `Ich bin dein Pulse Coach. Du fragst: "${message}". Deine aktuelle Readiness ist ${readiness.score}/100. Was möchtest du konkret wissen — Training, Schlaf, HRV oder Erholung?`;
-}
 
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
@@ -132,16 +59,19 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .orderBy(pulsePlannedWorkouts.plannedDate)
       .limit(1);
 
-    const readiness = computeReadiness({
-      sleepHours:       metrics?.sleepHours ?? null,
-      hrvStatus:        metrics?.hrvStatus ?? null,
-      bodyBatteryMax:   metrics?.bodyBatteryMax ?? null,
-      stressAvg:        metrics?.stressAvg ?? null,
-      mentalMood:       mental?.mood ?? null,
-      mentalEnergy:     mental?.energy ?? null,
-      mentalMotivation: mental?.motivation ?? null,
-      mentalStress:     mental?.stress ?? null,
-      tsb:              0,
+    const fitnessLoad = await computeFitnessLoad(userId, today);
+
+    const mentalScore = mental
+      ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
+      : null;
+
+    const readiness = computeReadinessScore({
+      sleepHours:     metrics?.sleepHours ?? null,
+      hrvStatus:      metrics?.hrvStatus ?? null,
+      bodyBatteryMax: metrics?.bodyBatteryMax ?? null,
+      stressAvg:      metrics?.stressAvg ?? null,
+      mentalScore,
+      tsb:            fitnessLoad.tsb,
     });
 
     return {
@@ -156,7 +86,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         steps: metrics.steps, caloriesActive: metrics.caloriesActive,
         source: metrics.source, syncedAt: metrics.syncedAt.toISOString(),
       } : null,
-      fitnessLoad: { ctl: 0, atl: 0, tsb: 0, date: today },
+      fitnessLoad,
       recentActivities: recentActivities.map((a) => ({
         id: a.id, userId: a.userId, externalId: a.externalId,
         source: a.source, startTime: a.startTime.toISOString(),
@@ -191,19 +121,29 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .from(pulseMentalCheckins)
       .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today)));
 
-    const readiness = computeReadiness({
-      sleepHours:       metrics?.sleepHours ?? null,
-      hrvStatus:        metrics?.hrvStatus ?? null,
-      bodyBatteryMax:   metrics?.bodyBatteryMax ?? null,
-      stressAvg:        metrics?.stressAvg ?? null,
-      mentalMood:       mental?.mood ?? null,
-      mentalEnergy:     mental?.energy ?? null,
-      mentalMotivation: mental?.motivation ?? null,
-      mentalStress:     mental?.stress ?? null,
-      tsb:              0,
+    const fitnessLoad = await computeFitnessLoad(userId, today);
+
+    const mentalScore = mental
+      ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
+      : null;
+
+    const readiness = computeReadinessScore({
+      sleepHours:     metrics?.sleepHours ?? null,
+      hrvStatus:      metrics?.hrvStatus ?? null,
+      bodyBatteryMax: metrics?.bodyBatteryMax ?? null,
+      stressAvg:      metrics?.stressAvg ?? null,
+      mentalScore,
+      tsb:            fitnessLoad.tsb,
     });
 
-    const replyText = simpleCoachReply(parsed.data.message, readiness);
+    const replyText = await getCoachReply(parsed.data.message, {
+      readiness:      readiness.score,
+      sleepHours:     metrics?.sleepHours ?? null,
+      hrvStatus:      metrics?.hrvStatus ?? null,
+      bodyBatteryMax: metrics?.bodyBatteryMax ?? null,
+      tsb:            fitnessLoad.tsb,
+      stressAvg:      metrics?.stressAvg ?? null,
+    });
 
     const userMsg: PulseCoachMessage = {
       role: 'user',
@@ -262,6 +202,180 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }).returning();
 
     return reply.status(201).send(checkin);
+  });
+
+  // ─── Sleep sessions ───────────────────────────────────────────────────────────
+  app.get('/sleep', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const limit = Math.min(Number((req.query as { limit?: string }).limit ?? 7), 30);
+    const sessions = await db.select()
+      .from(pulseSleepSessions)
+      .where(eq(pulseSleepSessions.userId, userId))
+      .orderBy(desc(pulseSleepSessions.date))
+      .limit(limit);
+    return {
+      sessions: sessions.map((s) => ({
+        ...s,
+        startTime: s.startTime?.toISOString() ?? null,
+        endTime:   s.endTime?.toISOString()   ?? null,
+      })),
+    };
+  });
+
+  // ─── Activities ───────────────────────────────────────────────────────────────
+  app.get('/activities', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const limit = Math.min(Number((req.query as { limit?: string }).limit ?? 10), 50);
+    const activities = await db.select()
+      .from(pulseActivities)
+      .where(eq(pulseActivities.userId, userId))
+      .orderBy(desc(pulseActivities.startTime))
+      .limit(limit);
+    return {
+      activities: activities.map((a) => ({
+        ...a,
+        startTime: a.startTime.toISOString(),
+      })),
+    };
+  });
+
+  // ─── Training plan ────────────────────────────────────────────────────────────
+  app.get('/plan', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const workouts = await db.select()
+      .from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, today)))
+      .orderBy(pulsePlannedWorkouts.plannedDate)
+      .limit(14);
+    return { workouts };
+  });
+
+  app.post('/plan/generate', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + mondayOffset);
+    const weekStartStr = weekStart.toISOString().split('T')[0]!;
+
+    const [profile] = await db.select()
+      .from(pulseUserProfile)
+      .where(eq(pulseUserProfile.userId, userId));
+
+    const generated = generateWeekWorkouts({
+      weekStart: weekStartStr,
+      phase: (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper',
+      weeklyHoursTarget: profile?.weeklyHoursTarget ?? 8,
+      availableDays: [1, 3, 5, 6],
+    });
+
+    await db.delete(pulsePlannedWorkouts).where(
+      and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        gte(pulsePlannedWorkouts.plannedDate, weekStartStr),
+        eq(pulsePlannedWorkouts.status, 'planned'),
+      ),
+    );
+
+    const inserted = await db.insert(pulsePlannedWorkouts).values(
+      generated.map((w) => ({
+        userId,
+        plannedDate:  w.plannedDate,
+        activityType: w.activityType,
+        zone:         w.zone,
+        durationMin:  w.durationMin,
+        targetTss:    w.targetTss,
+        description:  w.description,
+      })),
+    ).returning();
+
+    return reply.status(201).send({ workouts: inserted });
+  });
+
+  // ─── Goals ────────────────────────────────────────────────────────────────────
+  app.get('/goals', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const goals = await db.select()
+      .from(pulseGoals)
+      .where(eq(pulseGoals.userId, userId))
+      .orderBy(desc(pulseGoals.createdAt));
+    return { goals };
+  });
+
+  app.post('/goals', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      title:       z.string().min(1).max(255),
+      description: z.string().max(1000).optional(),
+      targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const [goal] = await db.insert(pulseGoals).values({
+      userId,
+      title:       parsed.data.title,
+      description: parsed.data.description ?? null,
+      targetDate:  parsed.data.targetDate  ?? null,
+    }).returning();
+
+    return reply.status(201).send(goal);
+  });
+
+  app.patch('/goals/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      status:   z.enum(['active', 'completed', 'paused', 'abandoned']).optional(),
+      progress: z.number().min(0).max(1).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [updated] = await db.update(pulseGoals)
+      .set({ ...parsed.data, updatedAt: new Date() })
+      .where(and(eq(pulseGoals.id, id), eq(pulseGoals.userId, userId)))
+      .returning();
+
+    if (!updated) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
+    return updated;
+  });
+
+  // ─── Weekly review ────────────────────────────────────────────────────────────
+  app.get('/review/latest', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const [review] = await db.select()
+      .from(pulseWeeklyReviews)
+      .where(eq(pulseWeeklyReviews.userId, userId))
+      .orderBy(desc(pulseWeeklyReviews.weekStart))
+      .limit(1);
+    return review ?? null;
+  });
+
+  app.post('/review/generate', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const lastMonday = new Date(now);
+    lastMonday.setDate(now.getDate() + mondayOffset - 7);
+    const weekStartStr = lastMonday.toISOString().split('T')[0]!;
+    return generateWeeklyReview(userId, weekStartStr);
+  });
+
+  // ─── Garmin manual sync ───────────────────────────────────────────────────────
+  app.post('/garmin/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    try {
+      await pulseQueues['pulse-garmin-sync'].add('sync-now', { userId, date: today }, { priority: 1 });
+      return { status: 'queued', date: today };
+    } catch {
+      return reply.status(503).send({ error: 'Queue nicht verfügbar' });
+    }
   });
 }
 

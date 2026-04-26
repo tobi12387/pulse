@@ -88,3 +88,101 @@ describe('POST /api/pulse/coach', () => {
     expect(body.reply.length).toBeGreaterThan(0);
   });
 });
+
+describe('GET /api/pulse/sleep', () => {
+  it('returns 200 with empty sessions', async () => {
+    const res = await app.inject({
+      method: 'GET', url: '/api/pulse/sleep',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveProperty('sessions');
+    expect(Array.isArray(res.json<{ sessions: unknown[] }>().sessions)).toBe(true);
+  });
+});
+
+describe('GET /api/pulse/activities', () => {
+  it('returns 200 with empty activities', async () => {
+    const res = await app.inject({
+      method: 'GET', url: '/api/pulse/activities',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveProperty('activities');
+  });
+});
+
+describe('GET /api/pulse/plan', () => {
+  it('returns 200 with empty workouts', async () => {
+    const res = await app.inject({
+      method: 'GET', url: '/api/pulse/plan',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveProperty('workouts');
+  });
+});
+
+describe('POST /api/pulse/plan/generate', () => {
+  it('generates workouts and returns 201', async () => {
+    const res = await app.inject({
+      method: 'POST', url: '/api/pulse/plan/generate',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toHaveProperty('workouts');
+  });
+});
+
+describe('GET /api/pulse/goals', () => {
+  it('returns 200 with empty goals', async () => {
+    const res = await app.inject({
+      method: 'GET', url: '/api/pulse/goals',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveProperty('goals');
+  });
+});
+
+describe('POST /api/pulse/goals', () => {
+  it('creates a goal and returns 201', async () => {
+    const res = await app.inject({
+      method: 'POST', url: '/api/pulse/goals',
+      payload: { title: 'Test-Ziel', description: 'Testbeschreibung' },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json<{ id: string; title: string }>();
+    expect(body.title).toBe('Test-Ziel');
+  });
+
+  it('returns 400 for missing title', async () => {
+    const res = await app.inject({
+      method: 'POST', url: '/api/pulse/goals',
+      payload: {},
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe('GET /api/pulse/review/latest', () => {
+  it('returns 200 (null when no review exists)', async () => {
+    const res = await app.inject({
+      method: 'GET', url: '/api/pulse/review/latest',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+describe('POST /api/pulse/garmin/sync', () => {
+  it('returns 200 or 503 depending on Redis availability', async () => {
+    const res = await app.inject({
+      method: 'POST', url: '/api/pulse/garmin/sync',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect([200, 503]).toContain(res.statusCode);
+  });
+});
