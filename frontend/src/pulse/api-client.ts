@@ -113,8 +113,10 @@ export const pulseApi = {
       request('/goals'),
     create: (data: { title: string; description?: string; targetDate?: string; category?: GoalCategory; metrics?: Record<string, unknown> }): Promise<PulseGoal> =>
       request('/goals', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Partial<{ status: string; progress: number }>): Promise<PulseGoal> =>
+    update: (id: string, data: Partial<{ status: string; progress: number; title: string; description: string | null; targetDate: string | null; category: string | null; metrics: Record<string, unknown> }>): Promise<PulseGoal> =>
       request(`/goals/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<void> =>
+      request(`/goals/${id}`, { method: 'DELETE' }),
   },
 
   review: {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
-  useCreateGoal, usePulseReview, useGenerateReview, useGeneratePlan,
+  useCreateGoal, useUpdateGoal, useDeleteGoal, usePulseReview, useGenerateReview, useGeneratePlan,
   useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
@@ -679,6 +679,159 @@ function GoalForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+function goalToFields(g: { category: string | null; metrics: Record<string, unknown>; targetDate: string | null; description: string | null }): GoalFields {
+  const cat = (g.category ?? 'race') as GoalCategory;
+  const m = g.metrics ?? {};
+  return {
+    category: cat,
+    targetDate: g.targetDate ?? '',
+    raceType:     cat === 'race'   ? String(m.raceType ?? 'ironman') : undefined,
+    notes:        cat === 'race'   ? (g.description ?? undefined)    : undefined,
+    targetKg:     cat === 'weight' ? String(m.targetKg ?? '')        : undefined,
+    targetFtp:    cat === 'ftp'    ? String(m.targetFtp ?? '')       : undefined,
+    targetVo2max: cat === 'vo2max' ? String(m.targetVo2max ?? '')    : undefined,
+    targetHours:  cat === 'volume' ? String(m.targetHours ?? '')     : undefined,
+  };
+}
+
+function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string | null; metrics: Record<string, unknown>; targetDate: string | null; description: string | null; status: string }; onDone: () => void }) {
+  const update = useUpdateGoal();
+  const init = goalToFields(goal);
+  const [category, setCategory] = useState<GoalCategory>(init.category);
+  const [fields, setFields] = useState<GoalFields>(init);
+  const [status, setStatus] = useState(goal.status);
+
+  function set(k: keyof GoalFields, v: string) { setFields(f => ({ ...f, [k]: v })); }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const payload = buildGoalPayload({ ...fields, category });
+    await update.mutateAsync({ id: goal.id, data: { ...payload, status } });
+    onDone();
+  }
+
+  return (
+    <div className="card" style={{ border: '1px solid var(--accent)33' }}>
+      <div className="label-mono" style={{ marginBottom: 12 }}>Ziel bearbeiten</div>
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <div style={{ ...labelStyle, marginBottom: 6 }}>Kategorie</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {GOAL_CATEGORIES.map(cat => (
+              <button key={cat.id} type="button" onClick={() => { setCategory(cat.id); setFields(f => ({ ...f, category: cat.id })); }} style={{
+                padding: '6px 12px', border: `1px solid ${category === cat.id ? cat.color : 'var(--border)'}`,
+                borderRadius: 4, background: category === cat.id ? cat.color + '18' : 'var(--surface)',
+                color: category === cat.id ? cat.color : 'var(--text-2)',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.08em', cursor: 'pointer',
+              }}>{cat.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {category === 'race' && (<>
+          <div><div style={{ ...labelStyle, marginBottom: 4 }}>Rennen</div>
+            <select value={fields.raceType ?? 'ironman'} onChange={e => set('raceType', e.target.value)} style={inputStyle}>
+              {RACE_TYPES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          </div>
+          <div><div style={{ ...labelStyle, marginBottom: 4 }}>Notiz (Zielzeit, Ort…)</div>
+            <input type="text" value={fields.notes ?? ''} onChange={e => set('notes', e.target.value)} style={inputStyle} />
+          </div>
+        </>)}
+        {category === 'weight' && <div><div style={{ ...labelStyle, marginBottom: 4 }}>Zielgewicht (kg)</div><input type="number" min={30} max={200} step={0.1} required value={fields.targetKg ?? ''} onChange={e => set('targetKg', e.target.value)} style={inputStyle} /></div>}
+        {category === 'ftp'    && <div><div style={{ ...labelStyle, marginBottom: 4 }}>Ziel-FTP (Watt)</div><input type="number" min={50} max={600} required value={fields.targetFtp ?? ''} onChange={e => set('targetFtp', e.target.value)} style={inputStyle} /></div>}
+        {category === 'vo2max' && <div><div style={{ ...labelStyle, marginBottom: 4 }}>Ziel-VO2max</div><input type="number" min={20} max={90} step={0.1} required value={fields.targetVo2max ?? ''} onChange={e => set('targetVo2max', e.target.value)} style={inputStyle} /></div>}
+        {category === 'volume' && <div><div style={{ ...labelStyle, marginBottom: 4 }}>Ziel-Wochenstunden</div><input type="number" min={1} max={40} step={0.5} required value={fields.targetHours ?? ''} onChange={e => set('targetHours', e.target.value)} style={inputStyle} /></div>}
+
+        <div><div style={{ ...labelStyle, marginBottom: 4 }}>Zieldatum</div>
+          <input type="date" value={fields.targetDate} onChange={e => set('targetDate', e.target.value)} style={inputStyle} />
+        </div>
+
+        <div>
+          <div style={{ ...labelStyle, marginBottom: 6 }}>Status</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {(['active','paused','completed','abandoned'] as const).map(s => (
+              <button key={s} type="button" onClick={() => setStatus(s)} style={{
+                padding: '5px 10px', border: `1px solid ${status === s ? (STATUS_COLOR[s] ?? 'var(--border)') : 'var(--border)'}`,
+                borderRadius: 4, background: status === s ? (STATUS_COLOR[s] ?? 'var(--surface)') + '22' : 'var(--surface)',
+                color: status === s ? (STATUS_COLOR[s] ?? 'var(--text)') : 'var(--text-3)',
+                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer',
+              }}>{s}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="submit" disabled={update.isPending} style={{
+            flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
+            borderRadius: 'var(--radius)', padding: '9px',
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--accent)', cursor: 'pointer',
+          }}>{update.isPending ? 'Speichern…' : 'Speichern'}</button>
+          <button type="button" onClick={onDone} style={{
+            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '9px 14px',
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--text-3)', cursor: 'pointer',
+          }}>Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function GoalCard({ g }: { g: { id: string; title: string; description: string | null; targetDate: string | null; status: string; progress: number; category: string | null; metrics: Record<string, unknown> } }) {
+  const deleteGoal = useDeleteGoal();
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const cat = g.category as GoalCategory | null;
+  const catColor = cat ? (CATEGORY_COLOR[cat] ?? 'var(--text-3)') : 'var(--text-3)';
+  const catLabel = GOAL_CATEGORIES.find(c => c.id === cat)?.label ?? null;
+
+  if (editing) return <GoalEditForm goal={g} onDone={() => setEditing(false)} />;
+
+  const iconBtn: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', fontSize: 12, lineHeight: 1 };
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+            {catLabel && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', color: catColor, background: catColor + '18', padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase' }}>{catLabel}</span>
+            )}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{g.title}</div>
+          {g.description && <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{g.description}</div>}
+          {g.targetDate && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+              Bis {new Date(g.targetDate + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </div>
+          )}
+          <div style={{ marginTop: 8, height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 2, width: `${(g.progress ?? 0) * 100}%`, background: STATUS_COLOR[g.status] ?? 'var(--text-3)' }} />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: STATUS_COLOR[g.status] ?? 'var(--text-3)', border: `1px solid ${STATUS_COLOR[g.status] ?? 'var(--border)'}`, borderRadius: 3, padding: '2px 6px' }}>{g.status}</span>
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <button style={{ ...iconBtn, color: 'var(--text-2)' }} title="Bearbeiten" onClick={() => setEditing(true)}>✏️</button>
+            {!confirmDelete
+              ? <button style={{ ...iconBtn, color: 'var(--text-3)' }} title="Löschen" onClick={() => setConfirmDelete(true)}>🗑</button>
+              : <>
+                  <button style={{ ...iconBtn, color: 'var(--rose)', fontWeight: 700 }} title="Ja, löschen" onClick={() => void deleteGoal.mutateAsync(g.id)} disabled={deleteGoal.isPending}>✓</button>
+                  <button style={{ ...iconBtn, color: 'var(--text-3)' }} title="Abbrechen" onClick={() => setConfirmDelete(false)}>✕</button>
+                </>
+            }
+          </div>
+          {confirmDelete && <span style={{ fontSize: 9, color: 'var(--rose)', fontFamily: 'var(--font-mono)' }}>Löschen?</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ZieleTab() {
   const { data, isLoading } = usePulseGoals();
   const [showForm, setShowForm] = useState(false);
@@ -701,57 +854,10 @@ function ZieleTab() {
 
       {isLoading && <Loading rows={2} />}
       {!isLoading && goals.length === 0 && (
-        <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0' }}>
-          Noch keine Ziele. Erstelle dein erstes!
-        </p>
+        <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0' }}>Noch keine Ziele. Erstelle dein erstes!</p>
       )}
 
-      {goals.map(g => {
-        const cat = g.category as GoalCategory | null;
-        const catColor = cat ? (CATEGORY_COLOR[cat] ?? 'var(--text-3)') : 'var(--text-3)';
-        const catLabel = GOAL_CATEGORIES.find(c => c.id === cat)?.label ?? null;
-        return (
-          <div key={g.id} className="card">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
-                  {catLabel && (
-                    <span style={{
-                      fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em',
-                      color: catColor, background: catColor + '18',
-                      padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase',
-                    }}>{catLabel}</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{g.title}</div>
-                {g.description && (
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{g.description}</div>
-                )}
-                {g.targetDate && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-                    Bis {new Date(g.targetDate + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </div>
-                )}
-                <div style={{ marginTop: 8, height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 2,
-                    width: `${(g.progress ?? 0) * 100}%`,
-                    background: STATUS_COLOR[g.status] ?? 'var(--text-3)',
-                  }} />
-                </div>
-              </div>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
-                color: STATUS_COLOR[g.status] ?? 'var(--text-3)',
-                border: `1px solid ${STATUS_COLOR[g.status] ?? 'var(--border)'}`,
-                borderRadius: 3, padding: '2px 6px', flexShrink: 0,
-              }}>
-                {g.status}
-              </span>
-            </div>
-          </div>
-        );
-      })}
+      {goals.map(g => <GoalCard key={g.id} g={g} />)}
     </div>
   );
 }

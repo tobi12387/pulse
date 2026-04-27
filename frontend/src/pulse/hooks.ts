@@ -130,6 +130,23 @@ export function useCreateGoal() {
   });
 }
 
+export function useUpdateGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof pulseApi.goals.update>[1] }) =>
+      pulseApi.goals.update(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.goals }),
+  });
+}
+
+export function useDeleteGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pulseApi.goals.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.goals }),
+  });
+}
+
 export function useGarminSync() {
   const qc = useQueryClient();
   return useMutation({

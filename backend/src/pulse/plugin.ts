@@ -950,8 +950,13 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
   app.patch('/goals/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
     const schema = z.object({
-      status:   z.enum(['active', 'completed', 'paused', 'abandoned']).optional(),
-      progress: z.number().min(0).max(1).optional(),
+      status:      z.enum(['active', 'completed', 'paused', 'abandoned']).optional(),
+      progress:    z.number().min(0).max(1).optional(),
+      title:       z.string().min(1).max(255).optional(),
+      description: z.string().max(1000).optional().nullable(),
+      targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+      category:    z.string().max(30).optional().nullable(),
+      metrics:     z.record(z.unknown()).optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
@@ -966,6 +971,18 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     if (!updated) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
     return updated;
+  });
+
+  app.delete('/goals/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [deleted] = await db.delete(pulseGoals)
+      .where(and(eq(pulseGoals.id, id), eq(pulseGoals.userId, userId)))
+      .returning({ id: pulseGoals.id });
+
+    if (!deleted) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
+    return reply.status(204).send();
   });
 
   // ─── Week availability ────────────────────────────────────────────────────────
