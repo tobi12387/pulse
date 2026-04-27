@@ -29,6 +29,46 @@ const coachMessageSchema = z.object({
   message: z.string().min(1).max(2000),
 });
 
+// ─── Streak helpers ───────────────────────────────────────────────────────────
+
+function calcStreak(dates: string[], today: string): number {
+  if (dates.length === 0) return 0;
+  const sorted = [...new Set(dates)].sort().reverse();
+  let streak = 0;
+  let expected = today;
+  for (const d of sorted) {
+    if (d === expected) {
+      streak++;
+      const prev = new Date(expected);
+      prev.setDate(prev.getDate() - 1);
+      expected = prev.toISOString().split('T')[0]!;
+    } else if (d < expected) {
+      break;
+    }
+  }
+  return streak;
+}
+
+async function computeStreaks(userId: string, today: string): Promise<{ checkinStreakDays: number; workoutStreakDays: number }> {
+  const since = new Date(Date.now() - 60 * 86_400_000).toISOString().split('T')[0]!;
+  const [checkins, workouts] = await Promise.all([
+    db.select({ date: pulseMentalCheckins.date })
+      .from(pulseMentalCheckins)
+      .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since))),
+    db.select({ date: pulsePlannedWorkouts.plannedDate })
+      .from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        eq(pulsePlannedWorkouts.status, 'completed'),
+        gte(pulsePlannedWorkouts.plannedDate, since),
+      )),
+  ]);
+  return {
+    checkinStreakDays: calcStreak(checkins.map(c => c.date), today),
+    workoutStreakDays: calcStreak(workouts.map(w => w.date), today),
+  };
+}
+
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 export default async function pulsePlugin(app: FastifyInstance) {
@@ -64,9 +104,10 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .orderBy(pulsePlannedWorkouts.plannedDate)
       .limit(1);
 
-    const [fitnessLoad, prognosis] = await Promise.all([
+    const [fitnessLoad, prognosis, streaks] = await Promise.all([
       computeFitnessLoad(userId, today),
       getPrognosis(userId),
+      computeStreaks(userId, today),
     ]);
 
     const mentalScore = mental
@@ -115,6 +156,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         description: nextWorkout.description, status: nextWorkout.status as PulseWorkoutStatus,
       } : null,
       prognosis,
+      streaks,
     };
   });
 

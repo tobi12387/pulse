@@ -158,6 +158,11 @@ export interface PulseFitnessLoad {
   date: string;
 }
 
+export interface PulseStreaks {
+  checkinStreakDays: number;
+  workoutStreakDays: number;
+}
+
 export interface PulseHomeScreenData {
   date: string;
   readiness: PulseReadiness;
@@ -166,4 +171,5 @@ export interface PulseHomeScreenData {
   recentActivities: PulseActivity[];
   nextWorkout: PulsePlannedWorkout | null;
   prognosis: PulsePrognosis;
+  streaks: PulseStreaks;
 }

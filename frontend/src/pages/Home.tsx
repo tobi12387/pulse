@@ -115,6 +115,38 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Streaks ── */}
+      {(data.streaks.checkinStreakDays > 0 || data.streaks.workoutStreakDays > 0) && (
+        <div style={{ display: 'flex', gap: 10 }}>
+          {data.streaks.checkinStreakDays > 0 && (
+            <div className="card" style={{ flex: 1, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>🔥</span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 500, color: 'var(--amber)', lineHeight: 1 }}>
+                  {data.streaks.checkinStreakDays}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 2 }}>
+                  Check-in
+                </div>
+              </div>
+            </div>
+          )}
+          {data.streaks.workoutStreakDays > 0 && (
+            <div className="card" style={{ flex: 1, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>💪</span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 500, color: 'var(--green)', lineHeight: 1 }}>
+                  {data.streaks.workoutStreakDays}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 2 }}>
+                  Training
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Prognosis alert ── */}
       {data.prognosis.alert && !dismissed && (
         <div
