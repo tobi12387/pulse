@@ -93,6 +93,10 @@ export const pulseApi = {
       request('/plan'),
     generate: (): Promise<{ workouts: PulsePlannedWorkout[] }> =>
       request('/plan/generate', { method: 'POST', body: '{}' }),
+    getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
+      request(`/plan/workout/${id}`),
+    generateDetail: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
+      request(`/plan/workout/${id}/detail`, { method: 'POST', body: '{}' }),
   },
 
   goals: {

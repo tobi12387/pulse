@@ -12,6 +12,7 @@ import {
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeightLog,
+  type WorkoutStep,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { redis } from '../lib/redis.js';
@@ -157,7 +158,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
         plannedDate: nextWorkout.plannedDate, activityType: nextWorkout.activityType as PulseActivityType,
         zone: nextWorkout.zone, durationMin: nextWorkout.durationMin,
         distanceKm: nextWorkout.distanceKm, targetTss: nextWorkout.targetTss,
-        description: nextWorkout.description, status: nextWorkout.status as PulseWorkoutStatus,
+        description: nextWorkout.description, steps: (nextWorkout.steps ?? null) as import('@coaching-os/shared/pulse').WorkoutStep[] | null,
+        status: nextWorkout.status as PulseWorkoutStatus,
       } : null,
       prognosis,
       streaks,
@@ -574,6 +576,102 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .orderBy(pulsePlannedWorkouts.plannedDate)
       .limit(14);
     return { workouts };
+  });
+
+  // ─── Single workout + detail generation ──────────────────────────────────────
+  app.get('/plan/workout/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const [workout] = await db.select().from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
+    if (!workout) return reply.status(404).send({ error: 'Not found' });
+    return { workout };
+  });
+
+  app.post('/plan/workout/:id/detail', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const [workout] = await db.select().from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
+    if (!workout) return reply.status(404).send({ error: 'Not found' });
+
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+    const ftp = profile?.ftpWatts ?? 250;
+    const maxHr = profile?.maxHrBpm ?? 185;
+
+    const ZONE_HR: Record<number, string> = {
+      1: `<${Math.round(maxHr * 0.68)} bpm`,
+      2: `${Math.round(maxHr * 0.68)}–${Math.round(maxHr * 0.78)} bpm`,
+      3: `${Math.round(maxHr * 0.78)}–${Math.round(maxHr * 0.88)} bpm`,
+      4: `${Math.round(maxHr * 0.88)}–${Math.round(maxHr * 0.95)} bpm`,
+      5: `>${Math.round(maxHr * 0.95)} bpm`,
+    };
+    const ZONE_POWER: Record<number, string> = {
+      1: `<${Math.round(ftp * 0.56)}W`,
+      2: `${Math.round(ftp * 0.56)}–${Math.round(ftp * 0.75)}W`,
+      3: `${Math.round(ftp * 0.75)}–${Math.round(ftp * 0.90)}W`,
+      4: `${Math.round(ftp * 0.90)}–${Math.round(ftp * 1.05)}W`,
+      5: `>${Math.round(ftp * 1.05)}W`,
+    };
+
+    const isRun = workout.activityType === 'run';
+    const isBike = workout.activityType === 'bike';
+    const intensityRef = isBike
+      ? `FTP=${ftp}W, Zonen: Z1<${Math.round(ftp*0.56)}W, Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W, Z5>${Math.round(ftp*1.05)}W`
+      : `Max-HF=${maxHr}bpm, Zonen: Z1<${Math.round(maxHr*0.68)}, Z2 ${Math.round(maxHr*0.68)}-${Math.round(maxHr*0.78)}, Z4 ${Math.round(maxHr*0.88)}-${Math.round(maxHr*0.95)}, Z5>${Math.round(maxHr*0.95)}`;
+
+    const prompt = `Erstelle eine detaillierte Trainingsanleitung für dieses Workout:
+
+Typ: ${workout.activityType} | Zone: ${workout.zone} | Dauer: ${workout.durationMin} min
+Kurzbeschreibung: ${workout.description ?? '–'}
+Athleten-Referenz: ${intensityRef}
+
+Antworte NUR mit einem JSON-Objekt:
+{
+  "steps": [
+    {"type":"warmup","durationMin":10,"zone":1,"description":"Beschreibung"},
+    {"type":"interval","reps":4,"durationMin":8,"zone":4,"restMin":2,"description":"Ziel: X"},
+    {"type":"cooldown","durationMin":10,"zone":1,"description":"Ausschwingen"}
+  ],
+  "coachingNote": "1-2 Sätze Coaching-Hinweis auf Deutsch"
+}
+
+Typen: warmup, interval, steady, cooldown. Zonen 1-5.
+Gesamtdauer der steps muss ~${workout.durationMin} Minuten ergeben (inkl. Pausen).
+Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
+
+    const raw = await llmComplete(
+      'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON.',
+      prompt,
+      SMART_MODEL,
+    );
+
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return reply.status(500).send({ error: 'LLM returned no valid JSON' });
+
+    const parsed = JSON.parse(jsonMatch[0]) as { steps: WorkoutStep[]; coachingNote?: string };
+    const steps: WorkoutStep[] = (parsed.steps ?? []).map(s => {
+      const step: WorkoutStep = {
+        type: (['warmup','interval','rest','cooldown','steady'].includes(s.type) ? s.type : 'steady') as WorkoutStep['type'],
+        durationMin: Math.max(1, s.durationMin ?? 10),
+        zone: Math.max(1, Math.min(5, s.zone ?? workout.zone)),
+      };
+      if (s.reps != null) step.reps = s.reps;
+      if (s.restMin != null) step.restMin = s.restMin;
+      if (s.description) step.description = s.description;
+      return step;
+    });
+
+    const coachingNote = parsed.coachingNote ?? null;
+    const updatedDescription = coachingNote
+      ? `${workout.description ?? ''}\n\n${coachingNote}`.trim()
+      : workout.description;
+
+    await db.update(pulsePlannedWorkouts)
+      .set({ steps, description: updatedDescription })
+      .where(eq(pulsePlannedWorkouts.id, id));
+
+    return { workout: { ...workout, steps, description: updatedDescription } };
   });
 
   app.post('/plan/generate', { onRequest: [app.authenticate] }, async (req, reply) => {

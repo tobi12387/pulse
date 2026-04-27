@@ -56,6 +56,15 @@ export interface PulseActivity {
   vo2maxEstimate: number | null;
 }
 
+export interface WorkoutStep {
+  type: 'warmup' | 'interval' | 'rest' | 'cooldown' | 'steady';
+  durationMin: number;
+  zone: number;
+  reps?: number;
+  restMin?: number;
+  description?: string;
+}
+
 export interface PulsePlannedWorkout {
   id: string;
   userId: string;
@@ -66,6 +75,7 @@ export interface PulsePlannedWorkout {
   distanceKm: number | null;
   targetTss: number | null;
   description: string | null;
+  steps: WorkoutStep[] | null;
   status: 'planned' | 'completed' | 'skipped';
 }
 

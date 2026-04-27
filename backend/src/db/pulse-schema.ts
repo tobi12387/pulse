@@ -6,6 +6,15 @@ import {
 // FK to users.id is enforced at DB level via migration SQL — not via Drizzle
 // references() because drizzle-kit cannot resolve cross-file .js imports.
 
+export interface WorkoutStep {
+  type: 'warmup' | 'interval' | 'rest' | 'cooldown' | 'steady';
+  durationMin: number;
+  zone: number;
+  reps?: number;
+  restMin?: number;
+  description?: string;
+}
+
 // ─── ENUMs (all prefixed pulse_) ─────────────────────────────────────────────
 export const pulseSleepQualityEnum = pgEnum('pulse_sleep_quality', [
   'poor', 'fair', 'good', 'excellent',
@@ -113,6 +122,7 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   distanceKm:           real('distance_km'),
   targetTss:            real('target_tss'),
   description:          text('description'),
+  steps:                jsonb('steps').$type<WorkoutStep[]>(),
   status:               varchar('status', { length: 20 }).notNull().default('planned'),
   completedActivityId:  uuid('completed_activity_id'),
   createdAt:            timestamp('created_at').notNull().defaultNow(),

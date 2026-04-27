@@ -7,6 +7,8 @@ import {
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
+import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
+import type { PulsePlannedWorkout } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'analyse';
 
@@ -76,21 +78,13 @@ function isoDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-interface PlannedWorkout {
-  id: string;
-  plannedDate: string;
-  activityType: string;
-  zone: number;
-  durationMin: number;
-  distanceKm: number | null;
-  status: string;
-  description: string | null;
-}
+type PlannedWorkout = PulsePlannedWorkout;
 
-function WeekStrip({ workouts, weekOffset, onChangeWeek }: {
+function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
   workouts: PlannedWorkout[];
   weekOffset: number;
   onChangeWeek: (delta: number) => void;
+  onSelectWorkout: (w: PlannedWorkout) => void;
 }) {
   const monday = getMonday(new Date());
   monday.setDate(monday.getDate() + weekOffset * 7);
@@ -134,13 +128,16 @@ function WeekStrip({ workouts, weekOffset, onChangeWeek }: {
           const zoneColor = zone > 0 ? (ZONE_COLOR[zone] ?? 'var(--text-3)') : 'transparent';
 
           return (
-            <div key={date} style={{
-              padding: '10px 10px 12px',
-              background: isToday ? 'var(--surface-2)' : 'var(--surface)',
-              border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
-              borderRadius: 5,
-              opacity: isPast && !isToday ? 0.65 : 1,
-            }}>
+            <div key={date}
+              onClick={() => workout && onSelectWorkout(workout)}
+              style={{
+                padding: '10px 10px 12px',
+                background: isToday ? 'var(--surface-2)' : 'var(--surface)',
+                border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 5,
+                opacity: isPast && !isToday ? 0.65 : 1,
+                cursor: workout ? 'pointer' : 'default',
+              }}>
               {/* Day name + date number */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
@@ -189,6 +186,7 @@ function TrainingTab() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
   const [hoursPerWeek, setHoursPerWeek] = useState('8');
+  const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
 
   const workouts   = plan.data?.workouts ?? [];
   const activities = acts.data?.activities ?? [];
@@ -207,6 +205,7 @@ function TrainingTab() {
         workouts={workouts}
         weekOffset={weekOffset}
         onChangeWeek={d => setWeekOffset(o => o + d)}
+        onSelectWorkout={setSelectedWorkout}
       />
 
       {/* Plan-Generator */}
@@ -267,12 +266,18 @@ function TrainingTab() {
       {workouts.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {workouts.map((w, i) => (
-            <div key={w.id} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 14px',
-              borderTop: i > 0 ? '1px solid var(--border)' : undefined,
-              opacity: w.status === 'skipped' ? 0.45 : 1,
-            }}>
+            <div key={w.id}
+              onClick={() => setSelectedWorkout(w)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px',
+                borderTop: i > 0 ? '1px solid var(--border)' : undefined,
+                opacity: w.status === 'skipped' ? 0.45 : 1,
+                cursor: 'pointer',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
@@ -293,9 +298,12 @@ function TrainingTab() {
                   <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
                 )}
               </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', flexShrink: 0, marginLeft: 8 }}>
-                {w.durationMin}m{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)}km` : ''}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+                  {w.durationMin}m{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)}km` : ''}
+                </span>
+                <span style={{ color: 'var(--text-3)', fontSize: 12 }}>›</span>
+              </div>
             </div>
           ))}
         </div>
@@ -350,6 +358,14 @@ function TrainingTab() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedWorkout && (
+        <WorkoutDetailModal
+          workout={selectedWorkout}
+          onClose={() => setSelectedWorkout(null)}
+          onUpdate={updated => setSelectedWorkout(updated)}
+        />
       )}
     </div>
   );
