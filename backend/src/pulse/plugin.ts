@@ -14,6 +14,8 @@ import {
   pulseWeightLog,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
+import { redis } from '../lib/redis.js';
+import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -760,6 +762,74 @@ export default async function pulsePlugin(app: FastifyInstance) {
     } catch {
       return reply.status(503).send({ error: 'Queue nicht verfügbar' });
     }
+  });
+
+  // ─── Morning Briefing ─────────────────────────────────────────────────────────
+  app.get('/briefing', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const cacheKey = `pulse:briefing:${userId}:${today}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) return { briefing: cached, date: today, cached: true };
+
+    const [[metrics], [checkin], workouts] = await Promise.all([
+      db.select({
+        sleepHours:     pulseDailyMetrics.sleepHours,
+        hrvRmssd:       pulseDailyMetrics.hrvRmssd,
+        hrvStatus:      pulseDailyMetrics.hrvStatus,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg:      pulseDailyMetrics.stressAvg,
+        restingHr:      pulseDailyMetrics.restingHr,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
+
+      db.select({
+        mood: pulseMentalCheckins.mood, energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress, motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today))),
+
+      db.select({
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        description: pulsePlannedWorkouts.description,
+        status: pulsePlannedWorkouts.status,
+      }).from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.userId, userId), eq(pulsePlannedWorkouts.plannedDate, today))),
+    ]);
+
+    const parts: string[] = [];
+    if (metrics?.sleepHours)    parts.push(`Schlaf: ${metrics.sleepHours.toFixed(1)}h`);
+    if (metrics?.hrvRmssd)      parts.push(`HRV: ${metrics.hrvRmssd.toFixed(0)} ms (${metrics.hrvStatus ?? '–'})`);
+    if (metrics?.bodyBatteryMax) parts.push(`Körperbatterie: ${metrics.bodyBatteryMax}%`);
+    if (metrics?.restingHr)     parts.push(`Ruhepuls: ${metrics.restingHr} bpm`);
+    if (checkin)                parts.push(`Check-in: Stimmung ${checkin.mood}/10, Energie ${checkin.energy}/10, Stress ${checkin.stress}/10`);
+    if (workouts.length > 0) {
+      const w = workouts[0]!;
+      const statusStr = w.status === 'completed' ? ' (bereits erledigt)' : '';
+      parts.push(`Geplantes Training heute: ${w.activityType} Zone ${w.zone}, ${w.durationMin} min${statusStr}`);
+      if (w.description) parts.push(`Training-Details: ${w.description}`);
+    }
+
+    const context = parts.length > 0 ? parts.join('\n') : 'Noch keine Daten für heute verfügbar.';
+
+    const briefing = await llmComplete(
+      `Du bist Pulse, persönlicher Ausdauercoach für Tobi (polarisiertes Training, Triathlon/Radsport).
+Schreibe ein Morning Briefing: 3-4 Sätze, kein Markdown, auf Deutsch.
+Beziehe dich auf die konkreten Daten. Empfehle die passende Trainingsintensität für heute.
+Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent.`,
+      `Heute, ${today}:\n${context}`,
+      SMART_MODEL,
+    );
+
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    const ttl = Math.round((midnight.getTime() - Date.now()) / 1000);
+    await redis.set(cacheKey, briefing, 'EX', ttl);
+
+    return { briefing, date: today, cached: false };
   });
 }
 

@@ -116,6 +116,11 @@ export const pulseApi = {
       request('/garmin/sync-profile', { method: 'POST', body: '{}' }),
   },
 
+  briefing: {
+    get: (): Promise<{ briefing: string; date: string; cached: boolean }> =>
+      request('/briefing'),
+  },
+
   profile: {
     get: (): Promise<{
       userId: string; ftpWatts: number | null; maxHrBpm: number | null;

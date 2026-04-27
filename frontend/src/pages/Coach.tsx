@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
-import { usePulseHome } from '@/pulse/hooks';
+import { usePulseHome, usePulseBriefing } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 
 type MicState = 'idle' | 'recording' | 'processing';
@@ -192,6 +192,7 @@ export default function Coach() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: home } = usePulseHome();
+  const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const m = home?.todayMetrics;
 
   const { data: historyData, isLoading } = useQuery({
@@ -269,9 +270,31 @@ export default function Coach() {
           <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>Lade…</p>
         )}
         {!isLoading && historyData?.messages.length === 0 && !voiceCard && (
-          <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '32px 0' }}>
-            Stell dem Coach eine Frage.
-          </p>
+          briefingLoading ? (
+            <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '32px 0' }}>
+              Briefing wird geladen…
+            </p>
+          ) : briefingData?.briefing ? (
+            <div style={{
+              alignSelf: 'flex-start', maxWidth: '88%',
+              background: 'var(--surface)', border: '1px solid rgba(94,230,207,0.2)',
+              borderRadius: 'var(--radius)', padding: '10px 14px',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)',
+                letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6,
+              }}>
+                MORNING BRIEFING
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.65, margin: 0 }}>
+                {briefingData.briefing}
+              </p>
+            </div>
+          ) : (
+            <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '32px 0' }}>
+              Stell dem Coach eine Frage.
+            </p>
+          )
         )}
 
         {historyData?.messages.map(msg => (

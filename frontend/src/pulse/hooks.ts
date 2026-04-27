@@ -13,6 +13,7 @@ export const pulseKeys = {
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
+  briefing:     ['pulse', 'briefing'] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -157,5 +158,14 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: pulseApi.profile.update,
     onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.profile }),
+  });
+}
+
+export function usePulseBriefing() {
+  return useQuery({
+    queryKey: pulseKeys.briefing,
+    queryFn: pulseApi.briefing.get,
+    staleTime: 30 * 60_000,
+    retry: false,
   });
 }
