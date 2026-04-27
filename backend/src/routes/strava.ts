@@ -77,6 +77,62 @@ export default async function stravaRoutes(app: FastifyInstance) {
     return { url: `${STRAVA_AUTH_URL}?${params}` };
   });
 
+  // POST /api/strava/exchange — frontend calls this after receiving code from Strava
+  app.post('/exchange', async (req: any, reply) => {
+    const { code, state } = req.body as { code?: string; state?: string };
+    if (!code || !state) return reply.status(400).send({ error: 'code und state erforderlich' });
+
+    let userId: string;
+    try {
+      const payload = app.jwt.verify<{ sub: string }>(state);
+      userId = payload.sub;
+    } catch {
+      return reply.status(401).send({ error: 'Ungültiger state' });
+    }
+
+    if (!env.STRAVA_CLIENT_ID || !env.STRAVA_CLIENT_SECRET) {
+      return reply.status(503).send({ error: 'Strava nicht konfiguriert' });
+    }
+
+    const tokenRes = await fetch(STRAVA_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: env.STRAVA_CLIENT_ID,
+        client_secret: env.STRAVA_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+      }),
+    });
+    if (!tokenRes.ok) {
+      const body = await tokenRes.text();
+      app.log.error(`[strava] token exchange failed: ${tokenRes.status} ${body}`);
+      return reply.status(502).send({ error: 'Token-Exchange fehlgeschlagen' });
+    }
+
+    const tokenData = await tokenRes.json() as any;
+    await db.insert(pulseStravaTokens).values({
+      userId,
+      accessToken:  tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt:    new Date(tokenData.expires_at * 1000),
+      athleteId:    tokenData.athlete?.id ?? null,
+      updatedAt:    new Date(),
+    }).onConflictDoUpdate({
+      target: pulseStravaTokens.userId,
+      set: {
+        accessToken:  tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt:    new Date(tokenData.expires_at * 1000),
+        athleteId:    tokenData.athlete?.id ?? null,
+        updatedAt:    new Date(),
+      },
+    });
+
+    app.log.info(`[strava] connected user ${userId}, athlete ${tokenData.athlete?.id}`);
+    return { connected: true, athleteId: tokenData.athlete?.id ?? null };
+  });
+
   // GET /api/strava/callback — Strava redirects here after user approves
   app.get('/callback', async (req: any, reply) => {
     const { code, state, error } = req.query as Record<string, string>;

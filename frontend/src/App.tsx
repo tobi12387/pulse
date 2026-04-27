@@ -6,6 +6,7 @@ import Data from '@/pages/Data';
 import Plan from '@/pages/Plan';
 import Settings from '@/pages/Settings';
 import ActivityDetail from '@/pages/ActivityDetail';
+import StravaCallback from '@/pages/StravaCallback';
 import Layout from '@/components/Layout';
 
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="activity/:id" element={<ActivityDetail />} />
           </Route>
+          <Route path="strava/callback" element={<StravaCallback />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
