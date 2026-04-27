@@ -88,7 +88,7 @@ export const pulseApi = {
     list: (): Promise<{ workouts: PulsePlannedWorkout[] }> =>
       request('/plan'),
     generate: (): Promise<{ workouts: PulsePlannedWorkout[] }> =>
-      request('/plan/generate', { method: 'POST' }),
+      request('/plan/generate', { method: 'POST', body: '{}' }),
   },
 
   goals: {
@@ -104,16 +104,16 @@ export const pulseApi = {
     latest: (): Promise<PulseWeeklyReview | null> =>
       request('/review/latest'),
     generate: (): Promise<PulseWeeklyReview> =>
-      request('/review/generate', { method: 'POST' }),
+      request('/review/generate', { method: 'POST', body: '{}' }),
   },
 
   garmin: {
     sync: (): Promise<{ status: string }> =>
-      request('/garmin/sync', { method: 'POST' }),
+      request('/garmin/sync', { method: 'POST', body: '{}' }),
     backfillWeight: (days = 90): Promise<{ synced: number; errors: string[] }> =>
       request('/garmin/backfill-weight', { method: 'POST', body: JSON.stringify({ days }) }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
-      request('/garmin/sync-profile', { method: 'POST' }),
+      request('/garmin/sync-profile', { method: 'POST', body: '{}' }),
   },
 
   profile: {
