@@ -131,7 +131,7 @@ export const pulseApi = {
       synced: { ftp: number | null; weight: number | null; maxHrFromZones: number | null };
       hrZones: Array<{ min: number; max: number }>;
       powerZones: Array<{ min: number; max: number }>;
-    }> => requestStrava('/sync-profile', { method: 'POST' }),
+    }> => requestStrava('/sync-profile', { method: 'POST', body: '{}' }),
     disconnect: (): Promise<{ disconnected: boolean }> =>
       requestStrava('/disconnect', { method: 'DELETE' }),
   },
