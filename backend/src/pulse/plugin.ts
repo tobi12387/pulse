@@ -26,7 +26,7 @@ import {
   classifyAndExtractCheckin, type CheckinClassification, type CoachFullContext,
 } from './services/coach-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
-import { generateWeekWorkouts, generateLLMWeekPlan } from './services/plan-engine.js';
+import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { pulseQueues } from './queues/queues.js';
@@ -833,35 +833,45 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const weeklyHoursTarget = weekAvail?.weeklyHours ?? profile?.weeklyHoursTarget ?? 8;
     const availableDays = (weekAvail?.availableDays as number[] | null) ?? [0, 2, 4, 5];
 
-    const fitnessLoad = await computeFitnessLoad(userId, weekStartStr);
-    const recentActs = await db.select({
-      activityType: pulseActivities.activityType,
-      durationSec:  pulseActivities.durationSec,
-      tss:          pulseActivities.tss,
-    }).from(pulseActivities)
-      .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 14 * 86_400_000))))
-      .orderBy(desc(pulseActivities.startTime))
-      .limit(6);
+    const [fitnessLoad, recentActs, goals] = await Promise.all([
+      computeFitnessLoad(userId, weekStartStr),
+      db.select({
+        startTime:    pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec:  pulseActivities.durationSec,
+        tss:          pulseActivities.tss,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 42 * 86_400_000))))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(80),
+      db.select({ title: pulseGoals.title, targetDate: pulseGoals.targetDate, category: pulseGoals.category })
+        .from(pulseGoals)
+        .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
+        .limit(5),
+    ]);
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
     try {
-      generated = await generateLLMWeekPlan({
-        weekStart: weekStartStr,
+      generated = await generateScientificWeekPlan({
+        weekStart:          weekStartStr,
         phase,
         weeklyHoursTarget,
         availableDays,
-        ctl: fitnessLoad.ctl,
-        atl: fitnessLoad.atl,
-        tsb: fitnessLoad.tsb,
-        ftpWatts: profile?.ftpWatts ?? 250,
-        recentActivities: recentActs.map(a => ({
+        ctl:                fitnessLoad.ctl,
+        atl:                fitnessLoad.atl,
+        tsb:                fitnessLoad.tsb,
+        ftpWatts:           profile?.ftpWatts ?? 250,
+        maxHrBpm:           profile?.maxHrBpm ?? 185,
+        recentActivities:   recentActs.map(a => ({
+          date:         a.startTime.toISOString().split('T')[0]!,
           activityType: a.activityType,
           durationMin:  Math.round((a.durationSec ?? 0) / 60),
           tss:          a.tss ?? 0,
         })),
+        goals,
       });
     } catch (err) {
-      app.log.warn(`[plan] LLM plan failed, using templates: ${err}`);
+      app.log.warn(`[plan] Scientific plan failed, using templates: ${err}`);
       generated = generateWeekWorkouts({ weekStart: weekStartStr, phase, weeklyHoursTarget, availableDays });
     }
 
@@ -1033,28 +1043,38 @@ export default async function pulsePlugin(app: FastifyInstance) {
     // Auto-regenerate plan for this week
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
     const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
-    const fitnessLoad = await computeFitnessLoad(userId, weekStart);
-    const recentActs = await db.select({
-      activityType: pulseActivities.activityType,
-      durationSec:  pulseActivities.durationSec,
-      tss:          pulseActivities.tss,
-    }).from(pulseActivities)
-      .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 14 * 86_400_000))))
-      .orderBy(desc(pulseActivities.startTime)).limit(6);
+    const [fitnessLoad, recentActs2, goals2] = await Promise.all([
+      computeFitnessLoad(userId, weekStart),
+      db.select({
+        startTime:    pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec:  pulseActivities.durationSec,
+        tss:          pulseActivities.tss,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 42 * 86_400_000))))
+        .orderBy(desc(pulseActivities.startTime)).limit(80),
+      db.select({ title: pulseGoals.title, targetDate: pulseGoals.targetDate, category: pulseGoals.category })
+        .from(pulseGoals)
+        .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
+        .limit(5),
+    ]);
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
     try {
-      generated = await generateLLMWeekPlan({
+      generated = await generateScientificWeekPlan({
         weekStart, phase,
         weeklyHoursTarget: parsed.data.weeklyHours,
         availableDays:     parsed.data.availableDays,
         ctl: fitnessLoad.ctl, atl: fitnessLoad.atl, tsb: fitnessLoad.tsb,
-        ftpWatts: profile?.ftpWatts ?? 250,
-        recentActivities: recentActs.map(a => ({
+        ftpWatts:  profile?.ftpWatts ?? 250,
+        maxHrBpm:  profile?.maxHrBpm ?? 185,
+        recentActivities: recentActs2.map(a => ({
+          date:         a.startTime.toISOString().split('T')[0]!,
           activityType: a.activityType,
           durationMin:  Math.round((a.durationSec ?? 0) / 60),
           tss:          a.tss ?? 0,
         })),
+        goals: goals2,
       });
     } catch {
       generated = generateWeekWorkouts({ weekStart, phase, weeklyHoursTarget: parsed.data.weeklyHours, availableDays: parsed.data.availableDays });
