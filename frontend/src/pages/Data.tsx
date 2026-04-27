@@ -303,30 +303,70 @@ function GewichtTab() {
 
       {/* KPI cards */}
       {latest && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div className="card">
-            <span className="label-mono">Aktuell</span>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500, color: 'var(--text)', marginTop: 4 }}>
-              {latest.weightKg.toFixed(1)}
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{latest.date}</div>
-          </div>
-          <div className="card">
-            <span className="label-mono">7-Tage-Trend</span>
-            {trend7d !== null ? (
-              <div style={{
-                fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500, marginTop: 4,
-                color: trend7d < -0.1 ? 'var(--green)' : trend7d > 0.1 ? 'var(--rose)' : 'var(--text)',
-              }}>
-                {trend7d > 0 ? '+' : ''}{trend7d.toFixed(1)}
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="card">
+              <span className="label-mono">Aktuell</span>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500, color: 'var(--text)', marginTop: 4 }}>
+                {latest.weightKg.toFixed(1)}
               </div>
-            ) : (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, color: 'var(--text-3)', marginTop: 4 }}>–</div>
-            )}
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                {latest.date}
+                {latest.source === 'garmin' && (
+                  <span style={{ marginLeft: 6, color: 'var(--accent)', fontSize: 9 }}>GARMIN</span>
+                )}
+              </div>
+            </div>
+            <div className="card">
+              <span className="label-mono">7-Tage-Trend</span>
+              {trend7d !== null ? (
+                <div style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500, marginTop: 4,
+                  color: trend7d < -0.1 ? 'var(--green)' : trend7d > 0.1 ? 'var(--rose)' : 'var(--text)',
+                }}>
+                  {trend7d > 0 ? '+' : ''}{trend7d.toFixed(1)}
+                </div>
+              ) : (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, color: 'var(--text-3)', marginTop: 4 }}>–</div>
+              )}
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
+            </div>
           </div>
-        </div>
+
+          {/* Body composition — shown if Garmin provides it */}
+          {(latest.bodyFatPct != null || latest.muscleMassKg != null || latest.bmi != null) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {latest.bodyFatPct != null && (
+                <div className="card" style={{ padding: '10px 12px' }}>
+                  <span className="label-mono">Körperfett</span>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: 'var(--amber)', marginTop: 4 }}>
+                    {latest.bodyFatPct.toFixed(1)}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>%</div>
+                </div>
+              )}
+              {latest.muscleMassKg != null && (
+                <div className="card" style={{ padding: '10px 12px' }}>
+                  <span className="label-mono">Muskeln</span>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: 'var(--green)', marginTop: 4 }}>
+                    {latest.muscleMassKg.toFixed(1)}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
+                </div>
+              )}
+              {latest.bmi != null && (
+                <div className="card" style={{ padding: '10px 12px' }}>
+                  <span className="label-mono">BMI</span>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: 'var(--blue)', marginTop: 4 }}>
+                    {latest.bmi.toFixed(1)}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>&nbsp;</div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* 90d sparkline */}
@@ -343,17 +383,36 @@ function GewichtTab() {
       {entries.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="label-mono" style={{ padding: '10px 14px 6px' }}>Einträge</div>
-          {entries.slice(0, 20).map((e, i) => (
+          {entries.slice(0, 20).map((e) => (
             <div
               key={e.id}
               style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '7px 14px',
-                borderTop: i === 0 ? '1px solid var(--border)' : '1px solid var(--border)',
+                borderTop: '1px solid var(--border)',
               }}
             >
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>{e.date}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>{e.weightKg.toFixed(1)} kg</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>
+                {e.date}
+                {e.source === 'garmin' && (
+                  <span style={{ marginLeft: 6, fontSize: 9, color: 'var(--accent)' }}>G</span>
+                )}
+              </span>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
+                {e.bodyFatPct != null && (
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--amber)' }}>
+                    {e.bodyFatPct.toFixed(1)}%
+                  </span>
+                )}
+                {e.muscleMassKg != null && (
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)' }}>
+                    {e.muscleMassKg.toFixed(1)}kg M
+                  </span>
+                )}
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>
+                  {e.weightKg.toFixed(1)} kg
+                </span>
+              </div>
             </div>
           ))}
         </div>

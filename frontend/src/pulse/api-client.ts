@@ -1,7 +1,7 @@
 import type {
   PulseHomeScreenData, PulseSleepSession, PulseActivity,
   PulsePlannedWorkout, PulseMentalCheckin, PulseGoal,
-  PulseWeeklyReview,
+  PulseWeeklyReview, PulseWeightEntry,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -118,13 +118,9 @@ export const pulseApi = {
   },
 
   weight: {
-    list: (days = 90): Promise<{ entries: Array<{
-      id: string; date: string; weightKg: number; notes: string | null;
-    }> }> =>
+    list: (days = 90): Promise<{ entries: PulseWeightEntry[] }> =>
       request(`/weight?days=${days}`),
-    log: (data: { weightKg: number; date?: string; notes?: string }): Promise<{
-      id: string; date: string; weightKg: number;
-    }> =>
+    log: (data: { weightKg: number; date?: string; notes?: string }): Promise<PulseWeightEntry> =>
       request('/weight', { method: 'POST', body: JSON.stringify(data) }),
   },
 };

@@ -231,12 +231,16 @@ export const pulseAppleHealthUploads = pgTable('pulse_apple_health_uploads', {
 
 // ─── Weight log ───────────────────────────────────────────────────────────────
 export const pulseWeightLog = pgTable('pulse_weight_log', {
-  id:        uuid('id').primaryKey().defaultRandom(),
-  userId:    uuid('user_id').notNull(),
-  date:      date('date').notNull(),
-  weightKg:  real('weight_kg').notNull(),
-  notes:     text('notes'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
+  id:           uuid('id').primaryKey().defaultRandom(),
+  userId:       uuid('user_id').notNull(),
+  date:         date('date').notNull(),
+  weightKg:     real('weight_kg').notNull(),
+  bodyFatPct:   real('body_fat_pct'),
+  muscleMassKg: real('muscle_mass_kg'),
+  bmi:          real('bmi'),
+  source:       varchar('source', { length: 20 }).default('manual'),
+  notes:        text('notes'),
+  createdAt:    timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   uniqueIndex('pulse_weight_log_user_date_idx').on(t.userId, t.date),
 ]);

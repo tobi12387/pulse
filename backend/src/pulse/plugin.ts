@@ -591,7 +591,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
     const entries = await db.select({
       id: pulseWeightLog.id, date: pulseWeightLog.date,
-      weightKg: pulseWeightLog.weightKg, notes: pulseWeightLog.notes,
+      weightKg: pulseWeightLog.weightKg,
+      bodyFatPct: pulseWeightLog.bodyFatPct,
+      muscleMassKg: pulseWeightLog.muscleMassKg,
+      bmi: pulseWeightLog.bmi,
+      source: pulseWeightLog.source,
+      notes: pulseWeightLog.notes,
     }).from(pulseWeightLog)
       .where(and(eq(pulseWeightLog.userId, userId), gte(pulseWeightLog.date, since)))
       .orderBy(desc(pulseWeightLog.date));

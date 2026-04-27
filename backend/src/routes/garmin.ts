@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
-import { pulseDailyMetrics, pulseSleepSessions, pulseActivities } from '../db/pulse-schema.js';
+import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog } from '../db/pulse-schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
 
@@ -200,6 +200,27 @@ export async function syncGarminDay(
   } catch (err) {
     app.log.warn(`[garmin-sync] activity fetch failed for ${dateStr}: ${err}`);
   }
+
+  // Sync weight for this date
+  try {
+    const weightData = await gc.getDailyWeightData(date) as any;
+    const entries: any[] = weightData?.dateWeightList ?? [];
+    // Use the first measurement of the day (most are from a scale, sourceType INDEX_SCALE)
+    const entry = entries[0];
+    if (entry?.weight) {
+      const weightKg     = entry.weight / 1000;
+      const bodyFatPct   = entry.bodyFat   ?? null;
+      const muscleMassKg = entry.muscleMass != null ? entry.muscleMass / 1000 : null;
+      const bmi          = entry.bmi       ?? null;
+      await db.insert(pulseWeightLog).values({
+        userId, date: dateStr, weightKg, bodyFatPct, muscleMassKg, bmi, source: 'garmin',
+      }).onConflictDoUpdate({
+        target: [pulseWeightLog.userId, pulseWeightLog.date],
+        set: { weightKg, bodyFatPct, muscleMassKg, bmi, source: 'garmin' },
+      });
+      app.log.info(`[garmin-sync] ${dateStr} weight: ${weightKg.toFixed(1)}kg`);
+    }
+  } catch { /* weight not tracked every day */ }
 
   app.log.info(`[garmin-sync] ${dateStr} ✓`);
 }

@@ -84,6 +84,17 @@ export interface PulseMentalCheckin {
   createdAt: string;
 }
 
+export interface PulseWeightEntry {
+  id: string;
+  date: string;
+  weightKg: number;
+  bodyFatPct: number | null;
+  muscleMassKg: number | null;
+  bmi: number | null;
+  source: string | null;
+  notes: string | null;
+}
+
 export interface PulsePrognosis {
   alert: boolean;
   message: string;

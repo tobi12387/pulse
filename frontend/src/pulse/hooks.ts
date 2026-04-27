@@ -111,6 +111,14 @@ export function useGenerateReview() {
   });
 }
 
+export function useGeneratePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.plan.generate,
+    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.plan }),
+  });
+}
+
 export function usePulseMetrics(days = 14) {
   return useQuery({
     queryKey: pulseKeys.metrics(days),
