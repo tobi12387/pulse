@@ -26,15 +26,14 @@ function TabBar({ tabs, active, onChange }: {
   onChange: (id: string) => void;
 }) {
   return (
-    <div style={{ display: 'flex', gap: 16, borderBottom: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', gap: 1, padding: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, alignSelf: 'flex-start' }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)} style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-          textTransform: 'uppercase', paddingBottom: 10,
-          color: active === t.id ? 'var(--text)' : 'var(--text-3)',
-          background: 'none', border: 'none',
-          borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-          cursor: 'pointer', transition: 'color 0.15s',
+          padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em',
+          background: active === t.id ? 'var(--surface-2)' : 'transparent',
+          color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
+          borderRadius: 3, textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+          transition: 'background 0.12s, color 0.12s',
         }}>
           {t.label}
         </button>
@@ -105,9 +104,9 @@ function WeekStrip({ workouts, weekOffset, onChangeWeek }: {
   const today = isoDate(new Date());
 
   return (
-    <div className="card" style={{ padding: '12px 14px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Week nav */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button onClick={() => onChangeWeek(-1)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', padding: '2px 6px',
@@ -123,66 +122,54 @@ function WeekStrip({ workouts, weekOffset, onChangeWeek }: {
         }}>→</button>
       </div>
 
-      {/* Day columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+      {/* Day columns — card per day */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
         {days.map(({ date, dayNum, dayIdx }) => {
           const workout = workouts.find(w => w.plannedDate === date);
           const isToday = date === today;
           const isPast  = date < today;
           const isDone  = workout?.status === 'completed';
           const isSkipped = workout?.status === 'skipped';
-          const zoneColor = workout ? (ZONE_COLOR[workout.zone] ?? 'var(--text-3)') : 'transparent';
+          const zone = workout?.zone ?? 0;
+          const zoneColor = zone > 0 ? (ZONE_COLOR[zone] ?? 'var(--text-3)') : 'transparent';
 
           return (
             <div key={date} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              padding: '10px 10px 12px',
+              background: isToday ? 'var(--surface-2)' : 'var(--surface)',
+              border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
+              borderRadius: 5,
+              opacity: isPast && !isToday ? 0.65 : 1,
             }}>
-              {/* Day label */}
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
-                color: isToday ? 'var(--accent)' : 'var(--text-3)',
-                textTransform: 'uppercase',
-              }}>
-                {DAY_SHORT[dayIdx]}
-              </span>
-
-              {/* Day number + indicator */}
-              <div style={{
-                width: 28, height: 28, borderRadius: 'var(--radius)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: isToday ? 'var(--surface-2)' : 'transparent',
-                border: isToday ? '1px solid var(--accent)' : '1px solid transparent',
-                position: 'relative',
-              }}>
-                <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: isToday ? 600 : 400,
-                  color: isToday ? 'var(--accent)' : isPast ? 'var(--text-3)' : 'var(--text-2)',
-                }}>
+              {/* Day name + date number */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                  {DAY_SHORT[dayIdx]}
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: isToday ? 'var(--accent)' : 'var(--text)' }}>
                   {dayNum}
                 </span>
               </div>
 
               {/* Zone bar */}
-              {workout ? (
-                <div style={{
-                  width: '100%', height: 4, borderRadius: 2,
-                  background: isDone ? zoneColor : isSkipped ? 'var(--border)' : zoneColor,
-                  opacity: isDone ? 1 : isSkipped ? 0.3 : isPast ? 0.5 : 1,
-                }} />
-              ) : (
-                <div style={{ width: '100%', height: 4 }} />
-              )}
+              <div style={{
+                marginTop: 8, height: 3, borderRadius: 1,
+                background: workout && !isSkipped ? zoneColor : 'transparent',
+                opacity: isSkipped ? 0.25 : 1,
+              }} />
 
-              {/* Activity type abbrev */}
-              {workout && (
-                <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.08em',
-                  color: isDone ? zoneColor : isSkipped ? 'var(--text-3)' : 'var(--text-3)',
-                  textTransform: 'uppercase',
-                  textDecoration: isSkipped ? 'line-through' : 'none',
-                }}>
-                  {workout.activityType.slice(0, 3)}
-                </span>
+              {/* Activity type */}
+              <div style={{ marginTop: 6, fontSize: 10, color: zone === 0 ? 'var(--text-3)' : 'var(--text)', lineHeight: 1.3,
+                textDecoration: isSkipped ? 'line-through' : 'none',
+              }}>
+                {workout ? workout.activityType : <span style={{ color: 'var(--text-3)' }}>–</span>}
+              </div>
+
+              {/* Zone + duration */}
+              {workout && zone > 0 && (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)', marginTop: 2 }}>
+                  {isDone ? <span style={{ color: 'var(--green)' }}>✓ </span> : ''}Z{zone} · {workout.durationMin}'
+                </div>
               )}
             </div>
           );
@@ -846,8 +833,13 @@ export default function Plan() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Plan</h1>
-      <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 3 }}>PLAN</div>
+          <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Training, Ziele & Review</h1>
+        </div>
+        <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
+      </div>
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}
       {tab === 'review'   && <ReviewTab />}

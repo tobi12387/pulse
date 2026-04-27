@@ -20,20 +20,15 @@ function TabBar({ tabs, active, onChange }: {
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="flex gap-4 border-b" style={{ borderColor: 'var(--border)' }}>
+    <div style={{ display: 'flex', gap: 1, padding: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, alignSelf: 'flex-start' }}>
       {tabs.map(t => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-            textTransform: 'uppercase', paddingBottom: 10,
-            color: active === t.id ? 'var(--text)' : 'var(--text-3)',
-            background: 'none', border: 'none',
-            borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-            cursor: 'pointer', transition: 'color 0.15s',
-          }}
-        >
+        <button key={t.id} onClick={() => onChange(t.id)} style={{
+          padding: '6px 12px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em',
+          background: active === t.id ? 'var(--surface-2)' : 'transparent',
+          color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
+          borderRadius: 3, textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+          transition: 'background 0.12s, color 0.12s',
+        }}>
           {t.label}
         </button>
       ))}
@@ -472,21 +467,24 @@ function GewichtTab() {
 
 // ─── Mental ───────────────────────────────────────────────────────────────────
 
-function ScoreSlider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-  const pct = ((value - 1) / 9) * 100;
+function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
+  label: string; value: number; onChange: (v: number) => void; color?: string;
+}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{label}</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color: 'var(--accent)' }}>{value}</span>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+        <span style={{ fontSize: 12, color: 'var(--text)' }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color }}>{value}/10</span>
       </div>
-      <div style={{ position: 'relative', height: 4, background: 'var(--surface-2)', borderRadius: 2 }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct}%`, background: 'var(--accent)', borderRadius: 2 }} />
-        <input
-          type="range" min={1} max={10} value={value}
-          onChange={e => onChange(Number(e.target.value))}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0 }}
-        />
+      <div style={{ display: 'flex', gap: 2 }}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <div key={i} onClick={() => onChange(i + 1)} style={{
+            flex: 1, height: 6, borderRadius: 1, cursor: 'pointer',
+            background: i < value ? color : 'var(--bg)',
+            border: '1px solid var(--border)',
+            transition: 'background 0.1s',
+          }} />
+        ))}
       </div>
     </div>
   );
@@ -539,10 +537,10 @@ function MentalTab() {
         <div className="card">
           <div className="label-mono" style={{ marginBottom: 16 }}>Täglicher Check-in</div>
           <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <ScoreSlider label="Stimmung"   value={form.mood}       onChange={(v) => setForm(f => ({ ...f, mood: v }))} />
-            <ScoreSlider label="Energie"    value={form.energy}     onChange={(v) => setForm(f => ({ ...f, energy: v }))} />
-            <ScoreSlider label="Stress"     value={form.stress}     onChange={(v) => setForm(f => ({ ...f, stress: v }))} />
-            <ScoreSlider label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} />
+            <SegmentedBar label="Stimmung"   value={form.mood}       onChange={(v) => setForm(f => ({ ...f, mood: v }))}       color="var(--accent)" />
+            <SegmentedBar label="Energie"    value={form.energy}     onChange={(v) => setForm(f => ({ ...f, energy: v }))}     color="var(--green)"  />
+            <SegmentedBar label="Stress"     value={form.stress}     onChange={(v) => setForm(f => ({ ...f, stress: v }))}     color="var(--amber)"  />
+            <SegmentedBar label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} color="var(--blue)"   />
             <textarea
               value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
@@ -570,41 +568,45 @@ function MentalTab() {
         </div>
       )}
 
-      {/* History charts */}
+      {/* History chart — multi-line SVG */}
       {checkins.length >= 3 && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span className="label-mono">Verlauf</span>
+            <span className="label-mono">Mental Trend</span>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                <span style={{ color: 'var(--accent)' }}>━</span>{' '}
+                <span style={{ color: 'var(--text-2)' }}>Mood</span>
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                <span style={{ color: 'var(--green)' }}>━</span>{' '}
+                <span style={{ color: 'var(--text-2)' }}>Energy</span>
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                <span style={{ color: 'var(--amber)' }}>━</span>{' '}
+                <span style={{ color: 'var(--text-2)' }}>Stress</span>
+              </span>
+            </div>
             <RangePicker value={days} onChange={setDays} options={RANGE_OPTS} />
           </div>
-          {histLoading ? (
-            <Skeleton height={64} />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { key: 'mood'       as const, label: 'Stimmung',   color: 'var(--accent)' },
-                { key: 'energy'     as const, label: 'Energie',    color: 'var(--green)'  },
-                { key: 'stress'     as const, label: 'Stress',     color: 'var(--rose)'   },
-                { key: 'motivation' as const, label: 'Motivation', color: 'var(--amber)'  },
-              ].map(({ key, label, color }) => {
-                const vals = checkins.map(c => c[key]);
-                const latest = vals[vals.length - 1] ?? null;
-                return (
-                  <div key={key}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        {label}
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color, fontWeight: 500 }}>
-                        {latest ?? '–'}
-                      </span>
-                    </div>
-                    <LineChart values={vals} labels={labels} height={52} color={color} fillOpacity={0.1} />
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {histLoading ? <Skeleton height={100} /> : (() => {
+            const N = checkins.length;
+            const W = 400, H = 100, P = 10;
+            const yMin = 0, yMax = 10;
+            const xs = (i: number) => P + (i / (N - 1)) * (W - P * 2);
+            const ys = (v: number) => H - P - ((v - yMin) / (yMax - yMin)) * (H - P * 2);
+            const path = (arr: number[]) => arr.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xs(i)} ${ys(v)}`).join(' ');
+            return (
+              <svg viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', width: '100%', height: 100 }}>
+                {[2, 4, 6, 8].map(t => (
+                  <line key={t} x1={P} x2={W - P} y1={ys(t)} y2={ys(t)} stroke="var(--border)" strokeWidth={0.5} />
+                ))}
+                <path d={path(checkins.map(c => c.mood))}       fill="none" stroke="var(--accent)" strokeWidth={1.6} />
+                <path d={path(checkins.map(c => c.energy))}     fill="none" stroke="var(--green)"  strokeWidth={1.6} />
+                <path d={path(checkins.map(c => c.stress))}     fill="none" stroke="var(--amber)"  strokeWidth={1.4} opacity={0.85} />
+              </svg>
+            );
+          })()}
         </div>
       )}
     </div>
@@ -697,7 +699,10 @@ export default function Data() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Data</h1>
+      <div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 3 }}>DATA</div>
+        <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Schlaf, Metriken & Mental</h1>
+      </div>
       <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
       {tab === 'schlaf'      && <SchlafTab />}
       {tab === 'metriken'    && <MetrikenTab />}
