@@ -1,65 +1,168 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
 
-@custom-variant dark (&:is(.dark *));
+/* ─── Performance Cockpit — Dark Theme ─────────────────────────────────── */
 
-@layer base {
-  :root {
-    --background: 220 13% 7%;
-    --foreground: 210 20% 98%;
-    --card: 220 13% 13%;
-    --card-foreground: 210 20% 98%;
-    --popover: 220 13% 13%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 25 95% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 13% 16%;
-    --secondary-foreground: 210 20% 70%;
-    --muted: 220 13% 16%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 22%;
-    --input: 220 13% 16%;
-    --ring: 25 95% 53%;
-    --radius: 0.5rem;
-  }
+:root {
+  /* Surface */
+  --bg:        #0A0B0D;
+  --surface:   #101216;
+  --surface-2: #1A1D26;
+  --border:    #1F232A;
 
-  * {
-    border-color: hsl(var(--border));
-  }
+  /* Text */
+  --text:      #E8ECF1;
+  --text-2:    #8B95A3;
+  --text-3:    #5C636E;
 
-  body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-family: system-ui, -apple-system, sans-serif;
-  }
+  /* Accent */
+  --accent:    #5EE6CF;
+
+  /* Semantic */
+  --green:     #4ADE80;
+  --amber:     #FBBF24;
+  --rose:      #F87171;
+  --blue:      #60A5FA;
+
+  /* Radius — technical, not friendly */
+  --radius: 6px;
+
+  /* Tailwind v4 compat mappings */
+  --background: var(--bg);
+  --foreground:  var(--text);
+  --card:        var(--surface);
+  --card-foreground: var(--text);
+  --popover:     var(--surface);
+  --popover-foreground: var(--text);
+  --primary:     var(--accent);
+  --primary-foreground: #0A0B0D;
+  --secondary:   var(--surface-2);
+  --secondary-foreground: var(--text-2);
+  --muted:       var(--surface-2);
+  --muted-foreground: var(--text-3);
+  --destructive: var(--rose);
+  --destructive-foreground: var(--text);
+  --input:       var(--surface-2);
+  --ring:        var(--accent);
 }
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  /* Surfaces */
+  --color-bg:        var(--bg);
+  --color-surface:   var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border:    var(--border);
+
+  /* Text */
+  --color-text:      var(--text);
+  --color-text-2:    var(--text-2);
+  --color-text-3:    var(--text-3);
+
+  /* Accent + Semantic */
+  --color-accent:    var(--accent);
+  --color-green:     var(--green);
+  --color-amber:     var(--amber);
+  --color-rose:      var(--rose);
+  --color-blue:      var(--blue);
+
+  /* Tailwind compat */
+  --color-background:            var(--bg);
+  --color-foreground:            var(--text);
+  --color-card:                  var(--surface);
+  --color-card-foreground:       var(--text);
+  --color-popover:               var(--surface);
+  --color-popover-foreground:    var(--text);
+  --color-primary:               var(--accent);
+  --color-primary-foreground:    #0A0B0D;
+  --color-secondary:             var(--surface-2);
+  --color-secondary-foreground:  var(--text-2);
+  --color-muted:                 var(--surface-2);
+  --color-muted-foreground:      var(--text-3);
+  --color-destructive:           var(--rose);
+  --color-destructive-foreground: var(--text);
+  --color-input:                 var(--surface-2);
+  --color-ring:                  var(--accent);
+
+  /* Fonts */
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  html, body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* All numbers are mono — enforce on numeric elements */
+  [data-mono], .mono {
+    font-family: var(--font-mono);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--surface-2); }
+}
+
+/* ─── Cockpit Typography Scale ──────────────────────────────────────────── */
+
+@layer utilities {
+  /* Display KPI: 28px mono 500 */
+  .kpi-display {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  /* Label / mono caption: 10px mono uppercase */
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  /* Table / data: 11px mono */
+  .table-mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* Card shell */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  /* Delta pills */
+  .delta-pos { color: var(--green); }
+  .delta-neg { color: var(--rose); }
+  .delta-neu { color: var(--text-3); }
 }
