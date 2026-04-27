@@ -81,12 +81,8 @@ export async function buildApp() {
   if (existsSync(DIST_DIR)) {
     await app.register(import('@fastify/static'), {
       root: DIST_DIR,
-      wildcard: false,
-      decorateReply: false,
-    });
-    // SPA catch-all: anything not matched by /api/* serves index.html
-    app.setNotFoundHandler((_req, reply) => {
-      void reply.sendFile('index.html', DIST_DIR);
+      // SPA fallback: serve index.html for unknown paths
+      index: 'index.html',
     });
   }
 
