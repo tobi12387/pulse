@@ -61,31 +61,20 @@ export default async function stravaRoutes(app: FastifyInstance) {
     };
   });
 
-  // GET /api/strava/connect — initiates OAuth, redirects browser to Strava
-  // Accepts JWT via ?token= query param (browser redirect, no Auth header possible)
-  app.get('/connect', async (req: any, reply) => {
+  // GET /api/strava/auth-url — returns the Strava OAuth URL (authenticated API call)
+  app.get('/auth-url', { onRequest: [app.authenticate] }, async (req, reply) => {
     if (!env.STRAVA_CLIENT_ID) return reply.status(503).send({ error: 'Strava nicht konfiguriert' });
 
-    const queryToken = (req.query as Record<string, string>).token ?? '';
-    let userId: string;
-    try {
-      const payload = app.jwt.verify<{ sub: string }>(queryToken);
-      userId = payload.sub;
-    } catch {
-      return reply.status(401).send({ error: 'Ungültiger Token' });
-    }
-
-    // Sign userId into state so unauthenticated callback can identify the user
-    const state = app.jwt.sign({ sub: userId }, { expiresIn: '10m' });
+    const state = app.jwt.sign({ sub: req.user.sub }, { expiresIn: '10m' });
     const params = new URLSearchParams({
-      client_id:     env.STRAVA_CLIENT_ID,
-      redirect_uri:  redirectUri(),
-      response_type: 'code',
+      client_id:       env.STRAVA_CLIENT_ID,
+      redirect_uri:    redirectUri(),
+      response_type:   'code',
       approval_prompt: 'auto',
-      scope:         'read,activity:read',
+      scope:           'read,activity:read',
       state,
     });
-    return reply.redirect(`${STRAVA_AUTH_URL}?${params}`);
+    return { url: `${STRAVA_AUTH_URL}?${params}` };
   });
 
   // GET /api/strava/callback — Strava redirects here after user approves

@@ -123,6 +123,8 @@ export const pulseApi = {
   strava: {
     status: (): Promise<{ configured: boolean; connected: boolean; athleteId: number | null }> =>
       requestStrava('/status'),
+    authUrl: (): Promise<{ url: string }> =>
+      requestStrava('/auth-url'),
     syncProfile: (): Promise<{
       synced: { ftp: number | null; weight: number | null; maxHrFromZones: number | null };
       hrZones: Array<{ min: number; max: number }>;

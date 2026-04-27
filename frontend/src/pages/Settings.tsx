@@ -98,10 +98,13 @@ export default function Settings() {
     }
   }
 
-  function handleStravaConnect() {
-    const token = localStorage.getItem('coaching-os-auth');
-    const jwt = token ? (JSON.parse(token) as { state?: { token?: string } }).state?.token : null;
-    window.location.href = `/api/strava/connect${jwt ? `?token=${jwt}` : ''}`;
+  async function handleStravaConnect() {
+    try {
+      const { url } = await pulseApi.strava.authUrl();
+      window.location.href = url;
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : 'Verbindung fehlgeschlagen.', ok: false });
+    }
   }
 
   async function handleStravaSyncProfile() {
@@ -341,7 +344,7 @@ export default function Settings() {
               </>
             ) : (
               <button
-                onClick={handleStravaConnect}
+                onClick={() => void handleStravaConnect()}
                 style={{
                   width: '100%',
                   background: 'var(--surface-2)', border: '1px solid #FC4C02',
