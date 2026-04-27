@@ -26,7 +26,6 @@ const SYNC_LABEL: Record<string, string> = {
 export default function Settings() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [backfilling, setBackfilling] = useState(false);
   const [syncingProfile, setSyncingProfile] = useState(false);
 
   const { data: garminStatus, refetch } = useQuery<GarminStatus>({
@@ -96,19 +95,6 @@ export default function Settings() {
       setMessage({ text: err instanceof Error ? err.message : 'Profil-Sync fehlgeschlagen.', ok: false });
     } finally {
       setSyncingProfile(false);
-    }
-  }
-
-  async function handleBackfill() {
-    setBackfilling(true);
-    setMessage(null);
-    try {
-      const res = await pulseApi.garmin.backfillWeight(90);
-      setMessage({ text: `Gewicht-Backfill: ${res.synced} Tage synced.${res.errors.length ? ` ${res.errors.length} Fehler.` : ''}`, ok: true });
-    } catch (err) {
-      setMessage({ text: err instanceof Error ? err.message : 'Backfill fehlgeschlagen.', ok: false });
-    } finally {
-      setBackfilling(false);
     }
   }
 
@@ -284,20 +270,6 @@ export default function Settings() {
             }}
           >
             {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
-          </button>
-          <button
-            onClick={handleBackfill}
-            disabled={backfilling}
-            style={{
-              width: '100%',
-              background: 'var(--surface-2)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)', padding: '10px',
-              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: backfilling ? 'var(--text-3)' : 'var(--text-2)',
-              cursor: backfilling ? 'default' : 'pointer',
-            }}
-          >
-            {backfilling ? '● Backfill läuft…' : 'Gewicht backfill (90 Tage)'}
           </button>
         </div>
       </div>

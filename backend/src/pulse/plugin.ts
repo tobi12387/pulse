@@ -857,26 +857,6 @@ export default async function pulsePlugin(app: FastifyInstance) {
     return { synced: { vo2max, maxHrBpm, lactateThresholdHr: ud.lactateThresholdHeartRate ?? null, ftpWatts } };
   });
 
-  // ─── Garmin weight backfill ───────────────────────────────────────────────────
-  app.post('/garmin/backfill-weight', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const userId = req.user.sub;
-    const { days = 90 } = (req.body as { days?: number }) ?? {};
-    const { syncGarminDay } = await import('../routes/garmin.js');
-    let synced = 0;
-    const errors: string[] = [];
-    for (let i = 0; i < Math.min(days, 180); i++) {
-      const date = new Date(Date.now() - i * 86_400_000);
-      try {
-        await syncGarminDay(userId, date, app);
-        synced++;
-      } catch (err) {
-        errors.push(`${date.toISOString().split('T')[0]}: ${String(err).slice(0, 80)}`);
-        if (errors.length >= 5) break;
-      }
-    }
-    return { synced, errors };
-  });
-
   // ─── Garmin manual sync ───────────────────────────────────────────────────────
   app.post('/garmin/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
