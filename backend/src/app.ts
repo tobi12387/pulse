@@ -45,6 +45,7 @@ export async function buildApp() {
   await app.register(import('./routes/briefing.js'), { prefix: '/api/briefing' });
   await app.register(import('./routes/chat.js'), { prefix: '/api/chat' });
   await app.register(import('./pulse/plugin.js'), { prefix: '/api/pulse' });
+  await app.register(import('./routes/strava.js'), { prefix: '/api/strava' });
 
   // Health check
   app.get('/api/ping', async () => ({ status: 'ok', version: '2.0.0' }));

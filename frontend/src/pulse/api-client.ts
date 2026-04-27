@@ -16,7 +16,7 @@ function getToken(): string | null {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function requestAt<T>(base: string, path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${base}${path}`, { ...options, headers });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Fehler' })) as { error?: string };
@@ -33,6 +33,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return requestAt(BASE, path, options);
+}
+
+function requestStrava<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return requestAt('/api/strava', path, options);
 }
 
 export const pulseApi = {
@@ -110,6 +118,18 @@ export const pulseApi = {
       request('/garmin/backfill-weight', { method: 'POST', body: JSON.stringify({ days }) }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null } }> =>
       request('/garmin/sync-profile', { method: 'POST' }),
+  },
+
+  strava: {
+    status: (): Promise<{ configured: boolean; connected: boolean; athleteId: number | null }> =>
+      requestStrava('/status'),
+    syncProfile: (): Promise<{
+      synced: { ftp: number | null; weight: number | null; maxHrFromZones: number | null };
+      hrZones: Array<{ min: number; max: number }>;
+      powerZones: Array<{ min: number; max: number }>;
+    }> => requestStrava('/sync-profile', { method: 'POST' }),
+    disconnect: (): Promise<{ disconnected: boolean }> =>
+      requestStrava('/disconnect', { method: 'DELETE' }),
   },
 
   profile: {

@@ -219,6 +219,16 @@ export const pulseGarminTokens = pgTable('pulse_garmin_tokens', {
   updatedAt:    timestamp('updated_at').notNull().defaultNow(),
 });
 
+// ─── Strava OAuth tokens ──────────────────────────────────────────────────────
+export const pulseStravaTokens = pgTable('pulse_strava_tokens', {
+  userId:       uuid('user_id').primaryKey().notNull(),
+  accessToken:  text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiresAt:    timestamp('expires_at').notNull(),
+  athleteId:    integer('athlete_id'),
+  updatedAt:    timestamp('updated_at').notNull().defaultNow(),
+});
+
 // ─── Apple Health uploads ─────────────────────────────────────────────────────
 export const pulseAppleHealthUploads = pgTable('pulse_apple_health_uploads', {
   id:          uuid('id').primaryKey().defaultRandom(),
