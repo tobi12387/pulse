@@ -27,6 +27,7 @@ export default function Settings() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
+  const [syncingProfile, setSyncingProfile] = useState(false);
 
   const { data: garminStatus, refetch } = useQuery<GarminStatus>({
     queryKey: ['garmin-status'],
@@ -77,6 +78,24 @@ export default function Settings() {
     }
   }
 
+  async function handleSyncProfile() {
+    setSyncingProfile(true);
+    setMessage(null);
+    try {
+      const res = await pulseApi.garmin.syncProfile();
+      const { vo2max, maxHrBpm, lactateThresholdHr } = res.synced;
+      const parts = [];
+      if (vo2max != null)            parts.push(`VO2max ${vo2max}`);
+      if (maxHrBpm != null)          parts.push(`MaxHR ${maxHrBpm} bpm`);
+      if (lactateThresholdHr != null) parts.push(`Schwellen-HR ${lactateThresholdHr} bpm`);
+      setMessage({ text: `Garmin Profil geladen: ${parts.join(', ') || 'keine neuen Werte'}.`, ok: true });
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : 'Profil-Sync fehlgeschlagen.', ok: false });
+    } finally {
+      setSyncingProfile(false);
+    }
+  }
+
   async function handleBackfill() {
     setBackfilling(true);
     setMessage(null);
@@ -115,21 +134,38 @@ export default function Settings() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span className="label-mono">Athletenprofil</span>
           {!profileForm && (
-            <button
-              onClick={openProfile}
-              style={{
-                background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
-                letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
-              }}
-            >
-              Bearbeiten
-            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={handleSyncProfile}
+                disabled={syncingProfile}
+                style={{
+                  background: 'none', border: '1px solid var(--accent)', borderRadius: 'var(--radius)',
+                  padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
+                  letterSpacing: '0.12em', textTransform: 'uppercase',
+                  color: syncingProfile ? 'var(--text-3)' : 'var(--accent)', cursor: syncingProfile ? 'default' : 'pointer',
+                }}
+              >
+                {syncingProfile ? '…' : 'Von Garmin'}
+              </button>
+              <button
+                onClick={openProfile}
+                style={{
+                  background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                  padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
+                  letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
+                }}
+              >
+                Bearbeiten
+              </button>
+            </div>
           )}
         </div>
 
         {profileForm ? (
           <form onSubmit={(e) => void handleProfileSave(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+              VO2max + Max-HR werden automatisch von Garmin geladen. FTP manuell eintragen.
+            </p>
             {([
               ['FTP (Watt)', 'ftpWatts', 'number'],
               ['Max. Puls (bpm)', 'maxHrBpm', 'number'],

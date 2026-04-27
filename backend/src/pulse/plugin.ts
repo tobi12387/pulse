@@ -681,6 +681,41 @@ export default async function pulsePlugin(app: FastifyInstance) {
     return profile;
   });
 
+  // ─── Garmin profile sync (VO2max, maxHR, threshold HR) ──────────────────────
+  app.post('/garmin/sync-profile', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const gc = await import('../lib/garmin-client.js').then(m => m.getGarminClient());
+
+    const settings = await gc.getUserSettings() as any;
+    const ud = settings?.userData ?? {};
+
+    const vo2max: number | null = ud.vo2MaxRunning != null && ud.vo2MaxCycling != null
+      ? Math.round((ud.vo2MaxRunning + ud.vo2MaxCycling) / 2)
+      : (ud.vo2MaxRunning ?? ud.vo2MaxCycling ?? null);
+
+    const garminMaxHrBpm: number | null = ud.lactateThresholdHeartRate
+      ? Math.round(ud.lactateThresholdHeartRate / 0.89)
+      : null;
+
+    // Also derive from recorded activities — most accurate source
+    const { max } = await import('drizzle-orm');
+    const [activityMaxRow] = await db.select({ maxHrRecorded: max(pulseActivities.maxHr) })
+      .from(pulseActivities)
+      .where(eq(pulseActivities.userId, userId));
+
+    const maxHrBpm: number | null = activityMaxRow?.maxHrRecorded ?? garminMaxHrBpm;
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (vo2max != null) updates.vo2max = vo2max;
+    if (maxHrBpm != null) updates.maxHrBpm = maxHrBpm;
+
+    await db.insert(pulseUserProfile)
+      .values({ userId, ...updates } as any)
+      .onConflictDoUpdate({ target: pulseUserProfile.userId, set: updates as any });
+
+    return { synced: { vo2max, maxHrBpm, lactateThresholdHr: ud.lactateThresholdHeartRate ?? null } };
+  });
+
   // ─── Garmin weight backfill ───────────────────────────────────────────────────
   app.post('/garmin/backfill-weight', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;

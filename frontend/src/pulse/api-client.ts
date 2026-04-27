@@ -108,6 +108,8 @@ export const pulseApi = {
       request('/garmin/sync', { method: 'POST' }),
     backfillWeight: (days = 90): Promise<{ synced: number; errors: string[] }> =>
       request('/garmin/backfill-weight', { method: 'POST', body: JSON.stringify({ days }) }),
+    syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null } }> =>
+      request('/garmin/sync-profile', { method: 'POST' }),
   },
 
   profile: {
