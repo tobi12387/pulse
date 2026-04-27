@@ -162,7 +162,7 @@ function SchlafTab() {
       </div>
 
       {/* Per-night rows */}
-      {sessions.map((s, i) => (
+      {sessions.map((s) => (
         <div key={s.date} className="card" style={{ padding: '10px 14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'baseline' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{s.date}</span>
@@ -189,13 +189,6 @@ function SchlafTab() {
 
 // ─── Metriken ─────────────────────────────────────────────────────────────────
 
-interface MetricDef {
-  label: string;
-  key: keyof ReturnType<typeof usePulseMetrics>['data'] extends { metrics: (infer M)[] } ? M : never;
-  color: string;
-  suffix?: string;
-  toValue: (r: { hrvRmssd: number | null; restingHr: number | null; bodyBatteryMax: number | null; stressAvg: number | null; steps: number | null }) => number | null;
-}
 
 function MetricCard({ label, values, labels, latest, suffix, color }: {
   label: string; values: (number | null)[]; labels: string[];
@@ -508,7 +501,6 @@ function MentalTab() {
   const readiness   = home.data?.readiness;
   const alreadyDone = today?.checkin != null;
   const checkins    = histData?.checkins ?? [];
-  const labels      = checkins.map(c => c.date);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

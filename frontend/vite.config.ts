@@ -27,6 +27,20 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    host: '0.0.0.0',
+    port: 5174,
+    https: {
+      key:  fs.readFileSync(path.resolve(__dirname, 'certs/192.168.178.46+2-key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.178.46+2.pem')),
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
   },

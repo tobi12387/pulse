@@ -1,6 +1,11 @@
 import Fastify from 'fastify';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { env } from './lib/env.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DIST_DIR = path.resolve(__dirname, '../../../frontend/dist');
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -70,6 +75,19 @@ export async function buildApp() {
     const shutdownPulse = startPulseWorkers();
     app.addHook('onClose', async () => { await shutdownPulse(); });
 
+  }
+
+  // Serve built frontend (if dist exists)
+  if (existsSync(DIST_DIR)) {
+    await app.register(import('@fastify/static'), {
+      root: DIST_DIR,
+      wildcard: false,
+      decorateReply: false,
+    });
+    // SPA catch-all: anything not matched by /api/* serves index.html
+    app.setNotFoundHandler((_req, reply) => {
+      void reply.sendFile('index.html', DIST_DIR);
+    });
   }
 
   return app;

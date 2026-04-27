@@ -84,31 +84,31 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
 
-    const [metrics] = await db.select()
-      .from(pulseDailyMetrics)
-      .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today)));
-
-    const [mental] = await db.select()
-      .from(pulseMentalCheckins)
-      .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today)));
-
-    const recentActivities = await db.select()
-      .from(pulseActivities)
-      .where(eq(pulseActivities.userId, userId))
-      .orderBy(desc(pulseActivities.startTime))
-      .limit(3);
-
-    const [nextWorkout] = await db.select()
-      .from(pulsePlannedWorkouts)
-      .where(and(
-        eq(pulsePlannedWorkouts.userId, userId),
-        eq(pulsePlannedWorkouts.status, 'planned'),
-        gte(pulsePlannedWorkouts.plannedDate, today),
-      ))
-      .orderBy(pulsePlannedWorkouts.plannedDate)
-      .limit(1);
-
-    const [fitnessLoad, prognosis, streaks] = await Promise.all([
+    const [
+      [metrics],
+      [mental],
+      recentActivities,
+      [nextWorkout],
+      fitnessLoad,
+      prognosis,
+      streaks,
+    ] = await Promise.all([
+      db.select().from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
+      db.select().from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today))),
+      db.select().from(pulseActivities)
+        .where(eq(pulseActivities.userId, userId))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(3),
+      db.select().from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.status, 'planned'),
+          gte(pulsePlannedWorkouts.plannedDate, today),
+        ))
+        .orderBy(pulsePlannedWorkouts.plannedDate)
+        .limit(1),
       computeFitnessLoad(userId, today),
       getPrognosis(userId),
       computeStreaks(userId, today),
