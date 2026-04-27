@@ -155,6 +155,14 @@ export function useGarminSync() {
   });
 }
 
+export function useGarminCalendarSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.garmin.calendarSync,
+    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.plan }),
+  });
+}
+
 export function useGenerateReview() {
   const qc = useQueryClient();
   return useMutation({

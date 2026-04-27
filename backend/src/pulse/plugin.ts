@@ -143,6 +143,12 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 export default async function pulsePlugin(app: FastifyInstance) {
+  // Allow DELETE/GET requests that send Content-Type: application/json but no body
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    if (!body || (body as string).length === 0) { done(null, undefined); return; }
+    try { done(null, JSON.parse(body as string)); } catch (e) { done(e as Error, undefined); }
+  });
+
   // Public health check
   app.get('/health', async () => ({ status: 'ok', namespace: 'pulse' }));
 
@@ -691,60 +697,48 @@ export default async function pulsePlugin(app: FastifyInstance) {
     return { workout: { ...workout, steps, description: updatedDescription } };
   });
 
-  // ─── Garmin Connect workout sync ──────────────────────────────────────────────
-  app.post('/plan/workout/:id/sync-garmin', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const userId = req.user.sub;
-    const { id } = req.params as { id: string };
+  // ─── Garmin workout helpers ────────────────────────────────────────────────────
 
-    const [workout] = await db.select().from(pulsePlannedWorkouts)
-      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
-    if (!workout) return reply.status(404).send({ error: 'Not found' });
+  const GARMIN_SPORT_TYPES: Record<string, { sportTypeId: number; sportTypeKey: string }> = {
+    run:      { sportTypeId: 1,  sportTypeKey: 'running' },
+    bike:     { sportTypeId: 2,  sportTypeKey: 'cycling' },
+    swim:     { sportTypeId: 5,  sportTypeKey: 'swimming' },
+    strength: { sportTypeId: 13, sportTypeKey: 'strength_training' },
+    hike:     { sportTypeId: 1,  sportTypeKey: 'running' },
+    other:    { sportTypeId: 1,  sportTypeKey: 'running' },
+  };
+  const GARMIN_STEP_TYPES: Record<string, { stepTypeId: number; stepTypeKey: string }> = {
+    warmup:   { stepTypeId: 1, stepTypeKey: 'warmup' },
+    cooldown: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+    interval: { stepTypeId: 3, stepTypeKey: 'interval' },
+    steady:   { stepTypeId: 3, stepTypeKey: 'interval' },
+    rest:     { stepTypeId: 4, stepTypeKey: 'recovery' },
+  };
+  const GARMIN_TIME_COND = { conditionTypeId: 2, conditionTypeKey: 'time', displayOrder: 0, displayable: true };
+  const GARMIN_NO_TARGET = { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target', displayOrder: 0 };
+  const GARMIN_NULL_FIELDS = {
+    childStepId: null, endConditionCompare: null, targetValueOne: null, targetValueTwo: null,
+    targetValueUnit: null, zoneNumber: null, secondaryTargetType: null,
+    secondaryTargetValueOne: null, secondaryTargetValueTwo: null,
+    secondaryTargetValueUnit: null, secondaryZoneNumber: null, endConditionZone: null,
+    preferredEndConditionUnit: null, strokeType: { strokeTypeId: 0, strokeTypeKey: null, displayOrder: 0 },
+    equipmentType: { equipmentTypeId: 0, equipmentTypeKey: null, displayOrder: 0 },
+    category: null, exerciseName: null, workoutProvider: null, providerExerciseSourceId: null,
+  };
+  const GARMIN_ACTIVITY_NAMES: Record<string, string> = {
+    run: 'Laufen', bike: 'Radfahren', swim: 'Schwimmen', strength: 'Kraft',
+  };
 
-    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-
-    // Auto-generate steps if not yet created
-    if (!workout.steps?.length) {
-      const { steps, updatedDescription } = await buildWorkoutSteps(workout, profile ?? undefined);
-      await db.update(pulsePlannedWorkouts)
-        .set({ steps, description: updatedDescription })
-        .where(eq(pulsePlannedWorkouts.id, id));
-      workout.steps = steps as typeof workout.steps;
-      if (updatedDescription) workout.description = updatedDescription;
-    }
-
-    const SPORT_TYPES: Record<string, { sportTypeId: number; sportTypeKey: string }> = {
-      run:      { sportTypeId: 1,  sportTypeKey: 'running' },
-      bike:     { sportTypeId: 2,  sportTypeKey: 'cycling' },
-      swim:     { sportTypeId: 5,  sportTypeKey: 'swimming' },
-      strength: { sportTypeId: 13, sportTypeKey: 'strength_training' },
-      hike:     { sportTypeId: 1,  sportTypeKey: 'running' },
-      other:    { sportTypeId: 1,  sportTypeKey: 'running' },
-    };
-    const STEP_TYPE_MAP: Record<string, { stepTypeId: number; stepTypeKey: string }> = {
-      warmup:   { stepTypeId: 1, stepTypeKey: 'warmup' },
-      cooldown: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-      interval: { stepTypeId: 3, stepTypeKey: 'interval' },
-      steady:   { stepTypeId: 3, stepTypeKey: 'interval' },
-      rest:     { stepTypeId: 4, stepTypeKey: 'recovery' },
-    };
-    const TIME_COND = { conditionTypeId: 2, conditionTypeKey: 'time', displayOrder: 0, displayable: true };
-    const NO_TARGET = { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target', displayOrder: 0 };
-    const NULL_FIELDS = {
-      childStepId: null, endConditionCompare: null, targetValueOne: null, targetValueTwo: null,
-      targetValueUnit: null, zoneNumber: null, secondaryTargetType: null,
-      secondaryTargetValueOne: null, secondaryTargetValueTwo: null,
-      secondaryTargetValueUnit: null, secondaryZoneNumber: null, endConditionZone: null,
-      preferredEndConditionUnit: null, strokeType: { strokeTypeId: 0, strokeTypeKey: null, displayOrder: 0 },
-      equipmentType: { equipmentTypeId: 0, equipmentTypeKey: null, displayOrder: 0 },
-      category: null, exerciseName: null, workoutProvider: null, providerExerciseSourceId: null,
-    };
-
-    const sportType = SPORT_TYPES[workout.activityType] ?? SPORT_TYPES.run;
+  function buildGarminWorkoutJson(workout: {
+    activityType: string; zone: number; durationMin: number;
+    description: string | null; steps: WorkoutStep[] | null;
+  }) {
+    const sportType = GARMIN_SPORT_TYPES[workout.activityType] ?? GARMIN_SPORT_TYPES.run!;
     let stepOrder = 0;
     const garminSteps: object[] = [];
 
-    for (const step of workout.steps!) {
-      const stepType = STEP_TYPE_MAP[step.type] ?? STEP_TYPE_MAP.interval;
+    for (const step of workout.steps ?? []) {
+      const stepType = GARMIN_STEP_TYPES[step.type] ?? GARMIN_STEP_TYPES.interval;
       const durationSecs = step.durationMin * 60;
 
       if (step.type === 'interval' && step.reps && step.reps > 1) {
@@ -752,19 +746,19 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const innerSteps: object[] = [
           {
             type: 'ExecutableStepDTO', stepOrder: 1,
-            stepType: STEP_TYPE_MAP.interval!,
+            stepType: GARMIN_STEP_TYPES.interval,
             description: step.description ?? `Zone ${step.zone}`,
-            endCondition: TIME_COND, endConditionValue: durationSecs,
-            targetType: NO_TARGET, ...NULL_FIELDS,
+            endCondition: GARMIN_TIME_COND, endConditionValue: durationSecs,
+            targetType: GARMIN_NO_TARGET, ...GARMIN_NULL_FIELDS,
           },
         ];
         if (step.restMin) {
           innerSteps.push({
             type: 'ExecutableStepDTO', stepOrder: 2,
-            stepType: STEP_TYPE_MAP.rest!,
+            stepType: GARMIN_STEP_TYPES.rest,
             description: null,
-            endCondition: TIME_COND, endConditionValue: restSecs,
-            targetType: NO_TARGET, ...NULL_FIELDS,
+            endCondition: GARMIN_TIME_COND, endConditionValue: restSecs,
+            targetType: GARMIN_NO_TARGET, ...GARMIN_NULL_FIELDS,
           });
         }
         stepOrder++;
@@ -782,38 +776,60 @@ export default async function pulsePlugin(app: FastifyInstance) {
           type: 'ExecutableStepDTO', stepOrder,
           stepType: { ...stepType, displayOrder: 0 },
           description: step.description ?? null,
-          endCondition: TIME_COND, endConditionValue: durationSecs,
-          targetType: NO_TARGET, ...NULL_FIELDS,
+          endCondition: GARMIN_TIME_COND, endConditionValue: durationSecs,
+          targetType: GARMIN_NO_TARGET, ...GARMIN_NULL_FIELDS,
         });
       }
     }
 
-    const ACTIVITY_NAMES: Record<string, string> = {
-      run: 'Laufen', bike: 'Radfahren', swim: 'Schwimmen', strength: 'Kraft',
-    };
-    const garminWorkout = {
-      workoutName: `${ACTIVITY_NAMES[workout.activityType] ?? workout.activityType} – Z${workout.zone} · ${workout.durationMin}min`,
+    return {
+      workoutName: `${GARMIN_ACTIVITY_NAMES[workout.activityType] ?? workout.activityType} – Z${workout.zone} · ${workout.durationMin}min`,
       description: workout.description ?? `Zone ${workout.zone} Training`,
       sportType,
       estimatedDurationInSecs: workout.durationMin * 60,
       estimatedDistanceInMeters: null,
       workoutSegments: [{ segmentOrder: 1, sportType, workoutSteps: garminSteps }],
     };
+  }
+
+  // ─── Garmin Connect workout sync ──────────────────────────────────────────────
+  app.post('/plan/workout/:id/sync-garmin', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [workout] = await db.select().from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
+    if (!workout) return reply.status(404).send({ error: 'Not found' });
+
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+
+    if (!workout.steps?.length) {
+      const { steps, updatedDescription } = await buildWorkoutSteps(workout, profile ?? undefined);
+      await db.update(pulsePlannedWorkouts)
+        .set({ steps, description: updatedDescription })
+        .where(eq(pulsePlannedWorkouts.id, id));
+      workout.steps = steps as typeof workout.steps;
+      if (updatedDescription) workout.description = updatedDescription;
+    }
 
     try {
       const { getGarminClient } = await import('../lib/garmin-client.js');
       const gc = await getGarminClient();
 
-      // Create workout in Garmin library
+      const garminWorkout = buildGarminWorkoutJson(workout);
       const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
       const garminWorkoutId = String(created.workoutId);
 
-      // Schedule workout to the planned date
       const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
-      await gc.client.post(scheduleUrl, { date: workout.plannedDate });
+      const scheduled = await gc.client.post(scheduleUrl, { date: workout.plannedDate }) as any;
+      const garminScheduledId = scheduled?.workoutScheduleId != null
+        ? String(scheduled.workoutScheduleId)
+        : scheduled?.scheduledWorkoutId != null
+          ? String(scheduled.scheduledWorkoutId)
+          : null;
 
       await db.update(pulsePlannedWorkouts)
-        .set({ garminWorkoutId })
+        .set({ garminWorkoutId, garminScheduledId })
         .where(eq(pulsePlannedWorkouts.id, id));
 
       return { garminWorkoutId, date: workout.plannedDate };
@@ -821,6 +837,134 @@ export default async function pulsePlugin(app: FastifyInstance) {
       app.log.error(`Garmin workout sync failed: ${err}`);
       return reply.status(502).send({ error: `Garmin-Sync fehlgeschlagen: ${String(err).slice(0, 120)}` });
     }
+  });
+
+  // ─── Garmin Calendar Sync ─────────────────────────────────────────────────────
+  app.post('/garmin/calendar/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+
+    const futurePlanned = await db.select().from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        eq(pulsePlannedWorkouts.status, 'planned'),
+        gte(pulsePlannedWorkouts.plannedDate, today),
+      ));
+
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+
+    let gc: any;
+    try {
+      const { getGarminClient } = await import('../lib/garmin-client.js');
+      gc = await getGarminClient();
+    } catch (err) {
+      return reply.status(502).send({ error: `Garmin-Login fehlgeschlagen: ${String(err).slice(0, 120)}` });
+    }
+
+    const uploaded: { pulseId: string; garminWorkoutId: string; garminScheduledId: string | null }[] = [];
+    const errors: string[] = [];
+
+    // Upload & schedule workouts that aren't yet in Garmin
+    for (const workout of futurePlanned) {
+      if (workout.garminWorkoutId) continue;
+      try {
+        let w = workout;
+        if (!w.steps?.length) {
+          const { steps, updatedDescription } = await buildWorkoutSteps(w, profile ?? undefined);
+          await db.update(pulsePlannedWorkouts)
+            .set({ steps, description: updatedDescription })
+            .where(eq(pulsePlannedWorkouts.id, w.id));
+          w = { ...w, steps: steps as typeof w.steps, description: updatedDescription };
+        }
+
+        const garminWorkout = buildGarminWorkoutJson(w);
+        const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
+        const garminWorkoutId = String(created.workoutId);
+
+        const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
+        const scheduled = await gc.client.post(scheduleUrl, { date: w.plannedDate }) as any;
+        const garminScheduledId = scheduled?.workoutScheduleId != null
+          ? String(scheduled.workoutScheduleId)
+          : scheduled?.scheduledWorkoutId != null
+            ? String(scheduled.scheduledWorkoutId)
+            : null;
+
+        await db.update(pulsePlannedWorkouts)
+          .set({ garminWorkoutId, garminScheduledId })
+          .where(eq(pulsePlannedWorkouts.id, w.id));
+
+        uploaded.push({ pulseId: w.id, garminWorkoutId, garminScheduledId });
+        app.log.info(`[calendar-sync] Uploaded workout ${w.id} → Garmin ${garminWorkoutId}`);
+      } catch (err) {
+        const msg = `Workout ${workout.id} (${workout.plannedDate}): ${String(err).slice(0, 80)}`;
+        errors.push(msg);
+        app.log.warn(`[calendar-sync] ${msg}`);
+      }
+    }
+
+    // Collect our set of garmin scheduled IDs (after uploads above)
+    const allPlanned = await db.select({
+      garminScheduledId: pulsePlannedWorkouts.garminScheduledId,
+      garminWorkoutId:   pulsePlannedWorkouts.garminWorkoutId,
+    }).from(pulsePlannedWorkouts).where(and(
+      eq(pulsePlannedWorkouts.userId, userId),
+      gte(pulsePlannedWorkouts.plannedDate, today),
+    ));
+
+    const ourScheduledIds = new Set(
+      allPlanned.map(w => w.garminScheduledId).filter((id): id is string => id != null),
+    );
+    const ourWorkoutIds = new Set(
+      allPlanned.map(w => w.garminWorkoutId).filter((id): id is string => id != null),
+    );
+
+    // Fetch Garmin calendar for current + next 2 months, unschedule anything foreign
+    const removed: string[] = [];
+    const now = new Date();
+    for (let offset = 0; offset < 3; offset++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1; // 1-indexed
+      try {
+        const scheduleListUrl = `https://connectapi.garmin.com/workout-service/schedule/year/${year}/month/${month - 1}`;
+        const items = await gc.client.get(scheduleListUrl) as any[];
+        if (!Array.isArray(items)) continue;
+
+        for (const item of items) {
+          const itemDate: string = item.date ?? item.scheduledDate ?? '';
+          if (itemDate < today) continue; // skip past items
+
+          const schedId = item.workoutScheduleId != null
+            ? String(item.workoutScheduleId)
+            : item.scheduledWorkoutId != null
+              ? String(item.scheduledWorkoutId)
+              : null;
+          const workoutId = item.workoutId != null ? String(item.workoutId) : null;
+
+          // Remove if neither our scheduled ID nor our workout template ID
+          const isOurs = (schedId && ourScheduledIds.has(schedId)) ||
+                         (workoutId && ourWorkoutIds.has(workoutId));
+          if (!isOurs && schedId) {
+            try {
+              const unschedUrl = `https://connectapi.garmin.com/workout-service/schedule/${schedId}`;
+              await gc.client.delete(unschedUrl);
+              removed.push(schedId);
+              app.log.info(`[calendar-sync] Removed foreign scheduled workout ${schedId} on ${itemDate}`);
+            } catch (err) {
+              app.log.warn(`[calendar-sync] Failed to remove ${schedId}: ${err}`);
+            }
+          }
+        }
+      } catch (err) {
+        app.log.warn(`[calendar-sync] Failed to fetch schedule for ${year}/${month}: ${err}`);
+      }
+    }
+
+    return {
+      uploaded: uploaded.length,
+      removed: removed.length,
+      errors: errors.length > 0 ? errors : undefined,
+    };
   });
 
   app.post('/plan/generate', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -928,6 +1072,79 @@ export default async function pulsePlugin(app: FastifyInstance) {
         }
       }),
     );
+
+    // Fire-and-forget: sync newly generated workouts to Garmin calendar
+    (async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]!;
+        const toSync = withSteps.filter(w => !w.garminWorkoutId);
+        const { getGarminClient } = await import('../lib/garmin-client.js');
+        const gc = await getGarminClient();
+        for (const w of toSync) {
+          try {
+            const garminWorkout = buildGarminWorkoutJson(w);
+            const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
+            const garminWorkoutId = String(created.workoutId);
+            const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
+            const scheduled = await gc.client.post(scheduleUrl, { date: w.plannedDate }) as any;
+            const garminScheduledId = scheduled?.workoutScheduleId != null
+              ? String(scheduled.workoutScheduleId)
+              : scheduled?.scheduledWorkoutId != null
+                ? String(scheduled.scheduledWorkoutId)
+                : null;
+            await db.update(pulsePlannedWorkouts)
+              .set({ garminWorkoutId, garminScheduledId })
+              .where(eq(pulsePlannedWorkouts.id, w.id));
+            app.log.info(`[plan-generate] Synced workout ${w.id} → Garmin ${garminWorkoutId}`);
+          } catch (err) {
+            app.log.warn(`[plan-generate] Garmin sync failed for ${w.id}: ${err}`);
+          }
+        }
+        // Clean up any foreign future workouts
+        const allFuturePlanned = await db.select({
+          garminScheduledId: pulsePlannedWorkouts.garminScheduledId,
+          garminWorkoutId:   pulsePlannedWorkouts.garminWorkoutId,
+        }).from(pulsePlannedWorkouts).where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, today),
+        ));
+        const ourScheduledIds = new Set(
+          allFuturePlanned.map(w => w.garminScheduledId).filter((id): id is string => id != null),
+        );
+        const ourWorkoutIds = new Set(
+          allFuturePlanned.map(w => w.garminWorkoutId).filter((id): id is string => id != null),
+        );
+        const now = new Date();
+        for (let offset = 0; offset < 3; offset++) {
+          const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+          const month = d.getMonth(); // 0-indexed for Garmin API
+          const year = d.getFullYear();
+          try {
+            const scheduleListUrl = `https://connectapi.garmin.com/workout-service/schedule/year/${year}/month/${month}`;
+            const items = await gc.client.get(scheduleListUrl) as any[];
+            if (!Array.isArray(items)) continue;
+            for (const item of items) {
+              const itemDate: string = item.date ?? item.scheduledDate ?? '';
+              if (itemDate < today) continue;
+              const schedId = item.workoutScheduleId != null
+                ? String(item.workoutScheduleId)
+                : item.scheduledWorkoutId != null ? String(item.scheduledWorkoutId) : null;
+              const workoutId = item.workoutId != null ? String(item.workoutId) : null;
+              const isOurs = (schedId && ourScheduledIds.has(schedId)) ||
+                             (workoutId && ourWorkoutIds.has(workoutId));
+              if (!isOurs && schedId) {
+                try {
+                  await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${schedId}`);
+                  app.log.info(`[plan-generate] Removed foreign Garmin workout ${schedId} on ${itemDate}`);
+                } catch { /* non-fatal */ }
+              }
+            }
+          } catch { /* non-fatal */ }
+        }
+      } catch (err) {
+        app.log.warn(`[plan-generate] Background Garmin calendar sync failed: ${err}`);
+      }
+    })();
 
     return reply.status(201).send({ workouts: withSteps });
   });

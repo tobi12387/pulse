@@ -19,7 +19,7 @@ function getToken(): string | null {
 async function requestAt<T>(base: string, path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options.body != null ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers as Record<string, string> ?? {}),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -133,6 +133,8 @@ export const pulseApi = {
       request('/garmin/sync', { method: 'POST', body: '{}' }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
       request('/garmin/sync-profile', { method: 'POST', body: '{}' }),
+    calendarSync: (): Promise<{ uploaded: number; removed: number; errors?: string[] }> =>
+      request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
   },
 
   briefing: {

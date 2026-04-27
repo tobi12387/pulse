@@ -124,6 +124,7 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   description:          text('description'),
   steps:                jsonb('steps').$type<WorkoutStep[]>(),
   garminWorkoutId:      varchar('garmin_workout_id', { length: 64 }),
+  garminScheduledId:    varchar('garmin_scheduled_id', { length: 64 }),
   status:               varchar('status', { length: 20 }).notNull().default('planned'),
   completedActivityId:  uuid('completed_activity_id'),
   createdAt:            timestamp('created_at').notNull().defaultNow(),

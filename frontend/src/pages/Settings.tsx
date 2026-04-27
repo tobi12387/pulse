@@ -27,6 +27,7 @@ export default function Settings() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncingProfile, setSyncingProfile] = useState(false);
+  const [syncingCalendar, setSyncingCalendar] = useState(false);
 
   const { data: garminStatus, refetch } = useQuery<GarminStatus>({
     queryKey: ['garmin-status'],
@@ -95,6 +96,23 @@ export default function Settings() {
       setMessage({ text: err instanceof Error ? err.message : 'Profil-Sync fehlgeschlagen.', ok: false });
     } finally {
       setSyncingProfile(false);
+    }
+  }
+
+  async function handleCalendarSync() {
+    setSyncingCalendar(true);
+    setMessage(null);
+    try {
+      const res = await pulseApi.garmin.calendarSync();
+      await qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      const parts = [];
+      if (res.uploaded > 0) parts.push(`${res.uploaded} hochgeladen`);
+      if (res.removed > 0) parts.push(`${res.removed} entfernt`);
+      setMessage({ text: `Garmin Kalender synchronisiert: ${parts.join(', ') || 'keine Änderungen'}.`, ok: true });
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : 'Kalender-Sync fehlgeschlagen.', ok: false });
+    } finally {
+      setSyncingCalendar(false);
     }
   }
 
@@ -270,6 +288,20 @@ export default function Settings() {
             }}
           >
             {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
+          </button>
+          <button
+            onClick={handleCalendarSync}
+            disabled={syncingCalendar}
+            style={{
+              width: '100%',
+              background: 'var(--surface-2)', border: '1px solid var(--text-3)',
+              borderRadius: 'var(--radius)', padding: '10px',
+              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: 'var(--text-2)',
+              cursor: syncingCalendar ? 'default' : 'pointer',
+            }}
+          >
+            {syncingCalendar ? '● Kalender sync…' : 'Kalender bereinigen'}
           </button>
         </div>
       </div>
