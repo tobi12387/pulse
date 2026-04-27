@@ -5,11 +5,12 @@ import { useCheckinToday } from '@/pulse/hooks';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
 
 const NAV_ITEMS = [
-  { to: '/',         label: 'Dashboard', key: '1', end: true  },
-  { to: '/coach',    label: 'Coach',     key: '2', end: false },
-  { to: '/data',     label: 'Data',      key: '3', end: false },
-  { to: '/plan',     label: 'Plan',      key: '4', end: false },
-  { to: '/settings', label: 'Settings',  key: '⚙', end: false },
+  { to: '/',          label: 'Dashboard', key: '1', end: true  },
+  { to: '/coach',     label: 'Coach',     key: '2', end: false },
+  { to: '/data',      label: 'Data',      key: '3', end: false },
+  { to: '/plan',      label: 'Plan',      key: '4', end: false },
+  { to: '/insights',  label: 'Insights',  key: '5', end: false },
+  { to: '/settings',  label: 'Settings',  key: '⚙', end: false },
 ];
 
 export default function Layout() {

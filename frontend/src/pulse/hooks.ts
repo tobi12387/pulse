@@ -14,6 +14,7 @@ export const pulseKeys = {
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
   briefing:     ['pulse', 'briefing'] as const,
+  insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -167,5 +168,23 @@ export function usePulseBriefing() {
     queryFn: pulseApi.briefing.get,
     staleTime: 30 * 60_000,
     retry: false,
+  });
+}
+
+export function useDeepInsight(domain: string, days = 30) {
+  return useQuery({
+    queryKey: pulseKeys.insight(domain, days),
+    queryFn: () => pulseApi.insights.get(domain, days),
+    staleTime: 60 * 60_000,
+    retry: false,
+    enabled: !!domain,
+  });
+}
+
+export function useRefreshInsight(domain: string, days = 30) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => pulseApi.insights.get(domain, days, true),
+    onSuccess: (data) => qc.setQueryData(pulseKeys.insight(domain, days), data),
   });
 }

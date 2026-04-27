@@ -121,6 +121,13 @@ export const pulseApi = {
       request('/briefing'),
   },
 
+  insights: {
+    get: (domain: string, days = 30, refresh = false): Promise<{
+      domain: string; analysis: string; stats: Record<string, number | string | null>;
+      date: string; cached: boolean;
+    }> => request(`/insights?domain=${domain}&days=${days}&refresh=${refresh}`),
+  },
+
   profile: {
     get: (): Promise<{
       userId: string; ftpWatts: number | null; maxHrBpm: number | null;

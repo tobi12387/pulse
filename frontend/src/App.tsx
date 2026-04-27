@@ -4,6 +4,7 @@ import Home from '@/pages/Home';
 import Coach from '@/pages/Coach';
 import Data from '@/pages/Data';
 import Plan from '@/pages/Plan';
+import Insights from '@/pages/Insights';
 import Settings from '@/pages/Settings';
 import ActivityDetail from '@/pages/ActivityDetail';
 import Layout from '@/components/Layout';
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="coach" element={<Coach />} />
             <Route path="data" element={<Data />} />
             <Route path="plan" element={<Plan />} />
+            <Route path="insights" element={<Insights />} />
             <Route path="settings" element={<Settings />} />
             <Route path="activity/:id" element={<ActivityDetail />} />
           </Route>

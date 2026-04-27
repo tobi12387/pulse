@@ -23,6 +23,7 @@ import { getCoachReply, classifyAndExtractCheckin, type CheckinClassification } 
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateLLMWeekPlan } from './services/plan-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
+import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { pulseQueues } from './queues/queues.js';
 
 const coachMessageSchema = z.object({
@@ -872,6 +873,20 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
     await redis.set(cacheKey, briefing, 'EX', ttl);
 
     return { briefing, date: today, cached: false };
+  });
+
+  // GET /api/pulse/insights?domain=sleep|hrv|load|weight|mental|overall&days=30&refresh=false
+  app.get('/insights', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const query = req.query as { domain?: string; days?: string; refresh?: string };
+    const domain = (query.domain ?? 'overall') as InsightDomain;
+    const days = Math.min(90, Math.max(7, parseInt(query.days ?? '30', 10)));
+    const forceRefresh = query.refresh === 'true';
+    const validDomains: InsightDomain[] = ['sleep', 'hrv', 'load', 'weight', 'mental', 'overall'];
+    if (!validDomains.includes(domain)) {
+      return { error: 'Invalid domain' };
+    }
+    return generateDeepInsight(userId, domain, days, forceRefresh);
   });
 }
 
