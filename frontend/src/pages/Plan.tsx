@@ -202,7 +202,7 @@ function AvailabilityEditor() {
   function getWeek(weekStart: string) {
     if (local[weekStart]) return local[weekStart]!;
     const w = weeks.find(w => w.weekStart === weekStart);
-    return { availableDays: w?.availableDays ?? [1, 3, 5, 6], weeklyHours: w?.weeklyHours ?? 8, notes: w?.notes ?? '' };
+    return { availableDays: w?.availableDays ?? [0, 2, 4, 5], weeklyHours: w?.weeklyHours ?? 8, notes: w?.notes ?? '' };
   }
 
   function toggleDay(weekStart: string, day: number) {

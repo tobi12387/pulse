@@ -826,7 +826,7 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
       .where(and(eq(pulseWeekAvailability.userId, userId), eq(pulseWeekAvailability.weekStart, weekStartStr)));
 
     const weeklyHoursTarget = weekAvail?.weeklyHours ?? profile?.weeklyHoursTarget ?? 8;
-    const availableDays = (weekAvail?.availableDays as number[] | null) ?? [1, 3, 5, 6];
+    const availableDays = (weekAvail?.availableDays as number[] | null) ?? [0, 2, 4, 5];
 
     const fitnessLoad = await computeFitnessLoad(userId, weekStartStr);
     const recentActs = await db.select({
@@ -963,7 +963,7 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
     const [profile] = await db.select({ weeklyHours: pulseUserProfile.weeklyHoursTarget })
       .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
 
-    const defaults = { availableDays: [1, 3, 5, 6], weeklyHours: profile?.weeklyHours ?? 8 };
+    const defaults = { availableDays: [0, 2, 4, 5], weeklyHours: profile?.weeklyHours ?? 8 };
 
     return {
       weeks: weeks.map(w => {

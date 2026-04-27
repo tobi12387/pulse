@@ -100,8 +100,10 @@ export interface LLMPlanInput {
 }
 
 export async function generateLLMWeekPlan(input: LLMPlanInput): Promise<WeekWorkout[]> {
-  const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  // availableDays convention: 0=Mo, 1=Di, 2=Mi, 3=Do, 4=Fr, 5=Sa, 6=So (matches dayOffset in LLM output)
+  const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
   const availableStr = input.availableDays.map(d => dayNames[d] ?? String(d)).join(', ');
+  const availableOffsets = [...input.availableDays].sort((a, b) => a - b).join(', ');
   const phaseLabel = input.phase === 'base' ? 'Grundlagenaufbau' : input.phase === 'build' ? 'Aufbau' : input.phase === 'peak' ? 'Wettkampfvorbereitung' : 'Tapering';
   const recentStr = input.recentActivities.slice(0, 3).map(a => `${a.activityType} ${a.durationMin}min TSS=${a.tss}`).join(', ') || 'keine';
 
@@ -110,10 +112,12 @@ export async function generateLLMWeekPlan(input: LLMPlanInput): Promise<WeekWork
 Athletenprofil:
 - Phase: ${phaseLabel}
 - Wöchentliche Stunden: ${input.weeklyHoursTarget}h
-- Verfügbare Tage: ${availableStr}
 - FTP: ${input.ftpWatts}W
 - Fitness CTL=${input.ctl.toFixed(0)}, Ermüdung ATL=${input.atl.toFixed(0)}, Form TSB=${input.tsb.toFixed(0)}
 - Letzte Trainings: ${recentStr}
+
+WICHTIG — Verfügbare Tage (dayOffset): ${availableOffsets} (= ${availableStr})
+Du darfst NUR diese dayOffset-Werte verwenden: [${availableOffsets}]. Alle anderen Tage sind GESPERRT.
 
 Polarisiertes Modell: ~80% extensiv (Z1-Z2), ~20% intensiv (Z4-Z5). Kein Z3.${input.tsb < -15 ? '\nWICHTIG: Hohe Ermüdung (TSB=' + input.tsb.toFixed(0) + ') — Intensität reduzieren, Erholung priorisieren.' : ''}
 
@@ -134,8 +138,9 @@ dayOffset = Tage ab Montag (0=Mo,1=Di,2=Mi,3=Do,4=Fr,5=Sa,6=So)`;
     dayOffset: number; activityType: string; zone: number; durationMin: number; description: string;
   }>;
 
+  const availableSet = new Set(input.availableDays);
   const startDate = new Date(input.weekStart);
-  return items.map(item => {
+  return items.filter(item => availableSet.has(item.dayOffset)).map(item => {
     const plannedDate = new Date(startDate);
     plannedDate.setDate(plannedDate.getDate() + (item.dayOffset ?? 0));
     const durationMin = Math.max(15, Math.min(300, item.durationMin ?? 60));
