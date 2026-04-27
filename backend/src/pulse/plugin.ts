@@ -158,7 +158,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
         plannedDate: nextWorkout.plannedDate, activityType: nextWorkout.activityType as PulseActivityType,
         zone: nextWorkout.zone, durationMin: nextWorkout.durationMin,
         distanceKm: nextWorkout.distanceKm, targetTss: nextWorkout.targetTss,
-        description: nextWorkout.description, steps: (nextWorkout.steps ?? null) as import('@coaching-os/shared/pulse').WorkoutStep[] | null,
+        description: nextWorkout.description,
+        steps: (nextWorkout.steps ?? null) as import('@coaching-os/shared/pulse').WorkoutStep[] | null,
+        garminWorkoutId: nextWorkout.garminWorkoutId ?? null,
         status: nextWorkout.status as PulseWorkoutStatus,
       } : null,
       prognosis,
@@ -672,6 +674,129 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
       .where(eq(pulsePlannedWorkouts.id, id));
 
     return { workout: { ...workout, steps, description: updatedDescription } };
+  });
+
+  // ─── Garmin Connect workout sync ──────────────────────────────────────────────
+  app.post('/plan/workout/:id/sync-garmin', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [workout] = await db.select().from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
+    if (!workout) return reply.status(404).send({ error: 'Not found' });
+    if (!workout.steps?.length) return reply.status(400).send({ error: 'Kein Trainingsplan — erst Anleitung generieren.' });
+
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+
+    const SPORT_TYPES: Record<string, { sportTypeId: number; sportTypeKey: string }> = {
+      run:      { sportTypeId: 1,  sportTypeKey: 'running' },
+      bike:     { sportTypeId: 2,  sportTypeKey: 'cycling' },
+      swim:     { sportTypeId: 5,  sportTypeKey: 'swimming' },
+      strength: { sportTypeId: 13, sportTypeKey: 'strength_training' },
+      hike:     { sportTypeId: 1,  sportTypeKey: 'running' },
+      other:    { sportTypeId: 1,  sportTypeKey: 'running' },
+    };
+    const STEP_TYPE_MAP: Record<string, { stepTypeId: number; stepTypeKey: string }> = {
+      warmup:   { stepTypeId: 1, stepTypeKey: 'warmup' },
+      cooldown: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+      interval: { stepTypeId: 3, stepTypeKey: 'interval' },
+      steady:   { stepTypeId: 3, stepTypeKey: 'interval' },
+      rest:     { stepTypeId: 4, stepTypeKey: 'recovery' },
+    };
+    const TIME_COND = { conditionTypeId: 2, conditionTypeKey: 'time', displayOrder: 0, displayable: true };
+    const NO_TARGET = { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target', displayOrder: 0 };
+    const NULL_FIELDS = {
+      childStepId: null, endConditionCompare: null, targetValueOne: null, targetValueTwo: null,
+      targetValueUnit: null, zoneNumber: null, secondaryTargetType: null,
+      secondaryTargetValueOne: null, secondaryTargetValueTwo: null,
+      secondaryTargetValueUnit: null, secondaryZoneNumber: null, endConditionZone: null,
+      preferredEndConditionUnit: null, strokeType: { strokeTypeId: 0, strokeTypeKey: null, displayOrder: 0 },
+      equipmentType: { equipmentTypeId: 0, equipmentTypeKey: null, displayOrder: 0 },
+      category: null, exerciseName: null, workoutProvider: null, providerExerciseSourceId: null,
+    };
+
+    const sportType = SPORT_TYPES[workout.activityType] ?? SPORT_TYPES.run;
+    let stepOrder = 0;
+    const garminSteps: object[] = [];
+
+    for (const step of workout.steps) {
+      const stepType = STEP_TYPE_MAP[step.type] ?? STEP_TYPE_MAP.interval;
+      const durationSecs = step.durationMin * 60;
+
+      if (step.type === 'interval' && step.reps && step.reps > 1) {
+        const restSecs = (step.restMin ?? 2) * 60;
+        const innerSteps: object[] = [
+          {
+            type: 'ExecutableStepDTO', stepOrder: 1,
+            stepType: STEP_TYPE_MAP.interval!,
+            description: step.description ?? `Zone ${step.zone}`,
+            endCondition: TIME_COND, endConditionValue: durationSecs,
+            targetType: NO_TARGET, ...NULL_FIELDS,
+          },
+        ];
+        if (step.restMin) {
+          innerSteps.push({
+            type: 'ExecutableStepDTO', stepOrder: 2,
+            stepType: STEP_TYPE_MAP.rest!,
+            description: null,
+            endCondition: TIME_COND, endConditionValue: restSecs,
+            targetType: NO_TARGET, ...NULL_FIELDS,
+          });
+        }
+        stepOrder++;
+        garminSteps.push({
+          type: 'RepeatGroupDTO', stepOrder,
+          stepType: { stepTypeId: 6, stepTypeKey: 'repeat', displayOrder: 0 },
+          childStepId: 1, numberOfIterations: step.reps,
+          endCondition: { conditionTypeId: 1, conditionTypeKey: 'lap.button', displayOrder: 0, displayable: false },
+          endConditionValue: null,
+          workoutSteps: innerSteps,
+        });
+      } else {
+        stepOrder++;
+        garminSteps.push({
+          type: 'ExecutableStepDTO', stepOrder,
+          stepType: { ...stepType, displayOrder: 0 },
+          description: step.description ?? null,
+          endCondition: TIME_COND, endConditionValue: durationSecs,
+          targetType: NO_TARGET, ...NULL_FIELDS,
+        });
+      }
+    }
+
+    const ACTIVITY_NAMES: Record<string, string> = {
+      run: 'Laufen', bike: 'Radfahren', swim: 'Schwimmen', strength: 'Kraft',
+    };
+    const garminWorkout = {
+      workoutName: `${ACTIVITY_NAMES[workout.activityType] ?? workout.activityType} – Z${workout.zone} · ${workout.durationMin}min`,
+      description: workout.description ?? `Zone ${workout.zone} Training`,
+      sportType,
+      estimatedDurationInSecs: workout.durationMin * 60,
+      estimatedDistanceInMeters: null,
+      workoutSegments: [{ segmentOrder: 1, sportType, workoutSteps: garminSteps }],
+    };
+
+    try {
+      const { getGarminClient } = await import('../lib/garmin-client.js');
+      const gc = await getGarminClient();
+
+      // Create workout in Garmin library
+      const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
+      const garminWorkoutId = String(created.workoutId);
+
+      // Schedule workout to the planned date
+      const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
+      await gc.client.post(scheduleUrl, { date: workout.plannedDate });
+
+      await db.update(pulsePlannedWorkouts)
+        .set({ garminWorkoutId })
+        .where(eq(pulsePlannedWorkouts.id, id));
+
+      return { garminWorkoutId, date: workout.plannedDate };
+    } catch (err) {
+      app.log.error(`Garmin workout sync failed: ${err}`);
+      return reply.status(502).send({ error: `Garmin-Sync fehlgeschlagen: ${String(err).slice(0, 120)}` });
+    }
   });
 
   app.post('/plan/generate', { onRequest: [app.authenticate] }, async (req, reply) => {

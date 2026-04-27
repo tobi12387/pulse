@@ -102,6 +102,16 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
     },
   });
 
+  const syncGarmin = useMutation({
+    mutationFn: () => pulseApi.plan.syncGarmin(workout.id),
+    onSuccess: ({ garminWorkoutId }) => {
+      const updated = { ...workout, garminWorkoutId };
+      setWorkout(updated);
+      onUpdate(updated);
+      qc.invalidateQueries({ queryKey: pulseKeys.plan });
+    },
+  });
+
   const zoneColor = ZONE_COLOR[workout.zone] ?? 'var(--text-2)';
   const totalMin = workout.steps
     ? workout.steps.reduce((acc, s) => {
@@ -143,6 +153,13 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em' }}>
                   {new Date(workout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
                 </span>
+                {workout.garminWorkoutId && (
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em',
+                    color: 'var(--green)', background: 'var(--green)18',
+                    padding: '2px 5px', borderRadius: 2,
+                  }}>✓ Garmin</span>
+                )}
               </div>
               <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>
                 {ACTIVITY_LABEL[workout.activityType] ?? workout.activityType}
@@ -185,20 +202,42 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {workout.steps.map((step, i) => <StepRow key={i} step={step} />)}
               </div>
-              <button
-                onClick={() => generateDetail.mutate()}
-                disabled={generateDetail.isPending}
-                style={{
-                  marginTop: 12, width: '100%', padding: '8px',
-                  background: 'none', border: '1px solid var(--border)',
-                  borderRadius: 4, cursor: generateDetail.isPending ? 'default' : 'pointer',
-                  fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.12em',
-                  color: generateDetail.isPending ? 'var(--text-3)' : 'var(--text-2)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {generateDetail.isPending ? '● Generiere…' : '↺ Anleitung neu generieren'}
-              </button>
+              <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+                <button
+                  onClick={() => generateDetail.mutate()}
+                  disabled={generateDetail.isPending || syncGarmin.isPending}
+                  style={{
+                    flex: 1, padding: '8px',
+                    background: 'none', border: '1px solid var(--border)',
+                    borderRadius: 4, cursor: generateDetail.isPending ? 'default' : 'pointer',
+                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.12em',
+                    color: generateDetail.isPending ? 'var(--text-3)' : 'var(--text-2)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {generateDetail.isPending ? '● Generiere…' : '↺ Neu generieren'}
+                </button>
+                <button
+                  onClick={() => syncGarmin.mutate()}
+                  disabled={syncGarmin.isPending || generateDetail.isPending}
+                  style={{
+                    flex: 1, padding: '8px',
+                    background: syncGarmin.isSuccess ? 'var(--green)' + '22' : 'none',
+                    border: `1px solid ${syncGarmin.isSuccess ? 'var(--green)' : 'var(--border)'}`,
+                    borderRadius: 4, cursor: syncGarmin.isPending ? 'default' : 'pointer',
+                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.12em',
+                    color: syncGarmin.isPending ? 'var(--text-3)' : syncGarmin.isSuccess ? 'var(--green)' : workout.garminWorkoutId ? 'var(--accent)' : 'var(--text-2)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {syncGarmin.isPending ? '● Lade hoch…' : syncGarmin.isSuccess ? '✓ Auf Garmin' : workout.garminWorkoutId ? '✓ Erneut laden' : '⇪ Auf Garmin'}
+                </button>
+              </div>
+              {syncGarmin.isError && (
+                <div style={{ marginTop: 6, fontSize: 10, color: 'var(--rose)', fontFamily: 'var(--font-mono)' }}>
+                  {syncGarmin.error instanceof Error ? syncGarmin.error.message : 'Sync fehlgeschlagen'}
+                </div>
+              )}
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>

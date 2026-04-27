@@ -97,6 +97,8 @@ export const pulseApi = {
       request(`/plan/workout/${id}`),
     generateDetail: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}/detail`, { method: 'POST', body: '{}' }),
+    syncGarmin: (id: string): Promise<{ garminWorkoutId: string; date: string }> =>
+      request(`/plan/workout/${id}/sync-garmin`, { method: 'POST', body: '{}' }),
   },
 
   goals: {

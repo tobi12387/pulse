@@ -76,6 +76,7 @@ export interface PulsePlannedWorkout {
   targetTss: number | null;
   description: string | null;
   steps: WorkoutStep[] | null;
+  garminWorkoutId: string | null;
   status: 'planned' | 'completed' | 'skipped';
 }
 
