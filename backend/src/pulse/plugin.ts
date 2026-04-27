@@ -923,8 +923,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
       allPlanned.map(w => w.garminWorkoutId).filter((id): id is string => id != null),
     );
 
-    // Remove calendar entries not belonging to our current plan
+    // Remove calendar entries + workout templates not belonging to our current plan
     const calendarItems = await fetchGarminCalendarWorkouts(gc, today);
+    const removedTemplates = new Set<string>();
     let removed = 0;
     for (const item of calendarItems) {
       if (!ourWorkoutIds.has(item.workoutId)) {
@@ -933,7 +934,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
           removed++;
           app.log.info(`[calendar-sync] Removed orphan schedule ${item.id} (workout ${item.workoutId}) on ${item.date}`);
         } catch (err) {
-          app.log.warn(`[calendar-sync] Failed to remove ${item.id}: ${err}`);
+          app.log.warn(`[calendar-sync] Failed to remove schedule ${item.id}: ${err}`);
+        }
+        // Also delete the workout template so it disappears from the device library
+        if (!removedTemplates.has(item.workoutId)) {
+          try {
+            await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${item.workoutId}`);
+            removedTemplates.add(item.workoutId);
+          } catch { /* template may already be gone */ }
         }
       }
     }
@@ -1107,12 +1115,19 @@ export default async function pulsePlugin(app: FastifyInstance) {
           .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, today)));
         const ourIds = new Set(allFuture.map(w => w.garminWorkoutId).filter((id): id is string => id != null));
         const calItems = await fetchGarminCalendarWorkouts(gc, today);
+        const deletedTemplates = new Set<string>();
         for (const item of calItems) {
           if (!ourIds.has(item.workoutId)) {
             try {
               await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${item.id}`);
               app.log.info(`[plan-generate] Removed orphan ${item.id} on ${item.date}`);
             } catch { /* non-fatal */ }
+            if (!deletedTemplates.has(item.workoutId)) {
+              try {
+                await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${item.workoutId}`);
+                deletedTemplates.add(item.workoutId);
+              } catch { /* template may already be gone */ }
+            }
           }
         }
       } catch (err) {
