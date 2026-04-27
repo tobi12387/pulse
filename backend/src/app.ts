@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DIST_DIR = path.resolve(__dirname, '../../../frontend/dist');
+const DIST_DIR = path.resolve(__dirname, '../../frontend/dist');
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -81,8 +81,11 @@ export async function buildApp() {
   if (existsSync(DIST_DIR)) {
     await app.register(import('@fastify/static'), {
       root: DIST_DIR,
-      // SPA fallback: serve index.html for unknown paths
-      index: 'index.html',
+      wildcard: false,
+    });
+    // SPA fallback: all non-API GET requests serve index.html
+    app.setNotFoundHandler((_req, reply) => {
+      reply.sendFile('index.html');
     });
   }
 

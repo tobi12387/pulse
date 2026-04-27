@@ -29,6 +29,7 @@ export default function Home() {
   const { data, isLoading, error } = usePulseHome();
   const sync = useGarminSync();
   const { data: metricsData } = usePulseMetrics(14);
+  const navigate = useNavigate();
   const [dismissed, setDismissed] = useState<boolean>(() =>
     localStorage.getItem('prognosis-dismissed') === new Date().toDateString(),
   );
@@ -64,7 +65,6 @@ export default function Home() {
     );
   }
 
-  const navigate = useNavigate();
   const m = data.todayMetrics;
   const fl = data.fitnessLoad;
   const msg = briefing?.briefing;
