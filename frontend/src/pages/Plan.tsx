@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, usePulseReview, useGenerateReview, useGeneratePlan,
-  useTrainingAnalytics,
+  useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
-import type { PulsePlannedWorkout } from '@coaching-os/shared/pulse';
+import type { PulsePlannedWorkout, GoalCategory } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'analyse';
 
@@ -176,6 +176,145 @@ function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
   );
 }
 
+// ─── Availability Editor ──────────────────────────────────────────────────────
+
+const DAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+function getMondays(): string[] {
+  const now = new Date();
+  const off = now.getDay() === 0 ? -6 : 1 - now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + off);
+  return [0, 1].map(w => {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + w * 7);
+    return isoDate(d);
+  });
+}
+
+function AvailabilityEditor() {
+  const { data, isLoading } = useWeekAvailability();
+  const save = useSaveAvailability();
+  const weeks = data?.weeks ?? [];
+  const [open, setOpen] = useState(false);
+  const [local, setLocal] = useState<Record<string, { availableDays: number[]; weeklyHours: number; notes: string }>>({});
+
+  function getWeek(weekStart: string) {
+    if (local[weekStart]) return local[weekStart]!;
+    const w = weeks.find(w => w.weekStart === weekStart);
+    return { availableDays: w?.availableDays ?? [1, 3, 5, 6], weeklyHours: w?.weeklyHours ?? 8, notes: w?.notes ?? '' };
+  }
+
+  function toggleDay(weekStart: string, day: number) {
+    const cur = getWeek(weekStart);
+    const days = cur.availableDays.includes(day)
+      ? cur.availableDays.filter(d => d !== day)
+      : [...cur.availableDays, day].sort();
+    setLocal(l => ({ ...l, [weekStart]: { ...cur, availableDays: days } }));
+  }
+
+  async function handleSave(weekStart: string) {
+    const cur = getWeek(weekStart);
+    await save.mutateAsync({ weekStart, data: { availableDays: cur.availableDays, weeklyHours: cur.weeklyHours, notes: cur.notes || undefined } });
+    setLocal(l => { const n = { ...l }; delete n[weekStart]; return n; });
+  }
+
+  const mondayStrs = getMondays();
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{
+        width: '100%', padding: '8px 12px', textAlign: 'left',
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5,
+        fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em',
+        color: 'var(--text-2)', cursor: 'pointer', textTransform: 'uppercase',
+      }}>
+        ⊕ Verfügbarkeit anpassen
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 5, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', color: 'var(--text-2)', textTransform: 'uppercase' }}>
+          Verfügbarkeit — nächste 2 Wochen
+        </span>
+        <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 16, lineHeight: 1 }}>×</button>
+      </div>
+      {isLoading ? <div style={{ padding: 12 }}><Skeleton height={80} /></div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {mondayStrs.map((weekStart, wi) => {
+            const cur = getWeek(weekStart);
+            const isDirty = !!local[weekStart];
+            const isSaving = save.isPending;
+            const label = wi === 0 ? 'Diese Woche' : 'Nächste Woche';
+            const d = new Date(weekStart + 'T12:00:00');
+            const dEnd = new Date(d); dEnd.setDate(d.getDate() + 6);
+            const range = `${d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} – ${dEnd.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}`;
+
+            return (
+              <div key={weekStart} style={{ padding: '12px 14px', borderTop: wi > 0 ? '1px solid var(--border)' : undefined, background: 'var(--bg)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{label}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginLeft: 8 }}>{range}</span>
+                  </div>
+                  {isDirty && (
+                    <button onClick={() => void handleSave(weekStart)} disabled={isSaving || cur.availableDays.length === 0} style={{
+                      fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase',
+                      background: 'var(--accent)', color: 'var(--bg)', border: 'none',
+                      borderRadius: 3, padding: '4px 10px', cursor: 'pointer',
+                    }}>
+                      {isSaving ? '…' : '⇪ Speichern & regenerieren'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Day toggles */}
+                <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+                  {DAY_LABELS.map((label, i) => {
+                    const active = cur.availableDays.includes(i);
+                    return (
+                      <button key={i} onClick={() => toggleDay(weekStart, i)} style={{
+                        flex: 1, padding: '6px 0', border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                        borderRadius: 3, background: active ? 'var(--accent)22' : 'var(--surface)',
+                        fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.06em',
+                        color: active ? 'var(--accent)' : 'var(--text-3)', cursor: 'pointer',
+                      }}>{label}</button>
+                    );
+                  })}
+                </div>
+
+                {/* Hours slider */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+                    {cur.weeklyHours.toFixed(1)} h/Wo
+                  </span>
+                  <input type="range" min={1} max={20} step={0.5} value={cur.weeklyHours}
+                    onChange={e => setLocal(l => ({ ...l, [weekStart]: { ...getWeek(weekStart), weeklyHours: Number(e.target.value) } }))}
+                    style={{ flex: 1, accentColor: 'var(--accent)' }}
+                  />
+                </div>
+
+                {/* Notes */}
+                <input type="text" placeholder="Notiz (z.B. Dienstreise, Urlaub…)" value={cur.notes}
+                  onChange={e => setLocal(l => ({ ...l, [weekStart]: { ...getWeek(weekStart), notes: e.target.value } }))}
+                  style={{
+                    marginTop: 8, width: '100%', boxSizing: 'border-box',
+                    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 3,
+                    padding: '6px 10px', fontSize: 11, color: 'var(--text)', outline: 'none',
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -207,6 +346,9 @@ function TrainingTab() {
         onChangeWeek={d => setWeekOffset(o => o + d)}
         onSelectWorkout={setSelectedWorkout}
       />
+
+      {/* Availability */}
+      <AvailabilityEditor />
 
       {/* Plan-Generator */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -380,23 +522,166 @@ const STATUS_COLOR: Record<string, string> = {
   abandoned: 'var(--rose)',
 };
 
-function ZieleTab() {
-  const { data, isLoading } = usePulseGoals();
-  const create   = useCreateGoal();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', targetDate: '' });
+const GOAL_CATEGORIES: { id: GoalCategory; label: string; icon: string; color: string }[] = [
+  { id: 'race',   label: 'Wettkampf', icon: '🏁', color: 'var(--rose)' },
+  { id: 'weight', label: 'Gewicht',   icon: '⚖️',  color: 'var(--blue)' },
+  { id: 'ftp',    label: 'FTP',       icon: '⚡',  color: 'var(--amber)' },
+  { id: 'vo2max', label: 'VO2max',    icon: '🫁',  color: 'var(--green)' },
+  { id: 'volume', label: 'Volumen',   icon: '📈',  color: 'var(--accent)' },
+];
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    await create.mutateAsync({
-      title: form.title,
-      description: form.description || undefined,
-      targetDate: form.targetDate || undefined,
-    });
-    setForm({ title: '', description: '', targetDate: '' });
-    setShowForm(false);
+const RACE_TYPES = [
+  { id: 'ironman',     label: 'Ironman (226km)' },
+  { id: 'half',        label: '70.3 Half Ironman' },
+  { id: 'olympic',     label: 'Olympische Distanz' },
+  { id: 'sprint',      label: 'Sprint Triathlon' },
+  { id: 'marathon',    label: 'Marathon' },
+  { id: 'half_marathon', label: 'Halbmarathon' },
+  { id: '10k',         label: '10 km Lauf' },
+  { id: '5k',          label: '5 km Lauf' },
+  { id: 'century',     label: 'Century Ride (160km)' },
+  { id: 'custom',      label: 'Sonstiges' },
+];
+
+const CATEGORY_COLOR: Record<GoalCategory, string> = {
+  race: 'var(--rose)', weight: 'var(--blue)', ftp: 'var(--amber)', vo2max: 'var(--green)', volume: 'var(--accent)',
+};
+
+type GoalFields = { category: GoalCategory; targetDate: string; raceType?: string; targetKg?: string; targetFtp?: string; targetVo2max?: string; targetHours?: string; notes?: string };
+
+function buildGoalPayload(fields: GoalFields): { title: string; description?: string; targetDate?: string; category: GoalCategory; metrics: Record<string, unknown> } {
+  const { category, targetDate } = fields;
+  const metrics: Record<string, unknown> = {};
+  let title = '';
+  let description: string | undefined;
+
+  if (category === 'race') {
+    const race = RACE_TYPES.find(r => r.id === fields.raceType) ?? RACE_TYPES[RACE_TYPES.length - 1]!;
+    title = race.label;
+    if (fields.notes) description = fields.notes;
+    metrics.raceType = fields.raceType;
+  } else if (category === 'weight') {
+    title = `Gewicht: ${fields.targetKg} kg`;
+    metrics.targetKg = Number(fields.targetKg);
+  } else if (category === 'ftp') {
+    title = `FTP: ${fields.targetFtp} W`;
+    metrics.targetFtp = Number(fields.targetFtp);
+  } else if (category === 'vo2max') {
+    title = `VO2max: ${fields.targetVo2max} ml/kg/min`;
+    metrics.targetVo2max = Number(fields.targetVo2max);
+  } else if (category === 'volume') {
+    title = `Volumen: ${fields.targetHours} h/Woche`;
+    metrics.targetHours = Number(fields.targetHours);
   }
 
+  return { title, description, targetDate: targetDate || undefined, category, metrics };
+}
+
+const inputStyle = {
+  background: 'var(--surface-2)', border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)', padding: '7px 10px',
+  fontSize: 12, color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box' as const,
+};
+const labelStyle = { fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' };
+
+function GoalForm({ onDone }: { onDone: () => void }) {
+  const create = useCreateGoal();
+  const [category, setCategory] = useState<GoalCategory>('race');
+  const [fields, setFields] = useState<GoalFields>({ category: 'race', targetDate: '', raceType: 'ironman' });
+
+  function set(k: keyof GoalFields, v: string) {
+    setFields(f => ({ ...f, [k]: v }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await create.mutateAsync(buildGoalPayload({ ...fields, category }));
+    onDone();
+  }
+
+  return (
+    <div className="card">
+      <div className="label-mono" style={{ marginBottom: 12 }}>Neues Ziel</div>
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Category picker */}
+        <div>
+          <div style={{ ...labelStyle, marginBottom: 6 }}>Kategorie</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {GOAL_CATEGORIES.map(cat => (
+              <button key={cat.id} type="button" onClick={() => { setCategory(cat.id); setFields(f => ({ ...f, category: cat.id })); }} style={{
+                padding: '6px 12px', border: `1px solid ${category === cat.id ? cat.color : 'var(--border)'}`,
+                borderRadius: 4, background: category === cat.id ? cat.color + '18' : 'var(--surface)',
+                color: category === cat.id ? cat.color : 'var(--text-2)',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.08em', cursor: 'pointer',
+              }}>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category-specific fields */}
+        {category === 'race' && (
+          <>
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 4 }}>Rennen</div>
+              <select value={fields.raceType ?? 'ironman'} onChange={e => set('raceType', e.target.value)} style={inputStyle}>
+                {RACE_TYPES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 4 }}>Notiz (Zielzeit, Ort…)</div>
+              <input type="text" value={fields.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="z.B. Sub-12h, Kona 2026" style={inputStyle} />
+            </div>
+          </>
+        )}
+        {category === 'weight' && (
+          <div>
+            <div style={{ ...labelStyle, marginBottom: 4 }}>Zielgewicht (kg)</div>
+            <input type="number" min={30} max={200} step={0.1} required value={fields.targetKg ?? ''} onChange={e => set('targetKg', e.target.value)} style={inputStyle} />
+          </div>
+        )}
+        {category === 'ftp' && (
+          <div>
+            <div style={{ ...labelStyle, marginBottom: 4 }}>Ziel-FTP (Watt)</div>
+            <input type="number" min={50} max={600} required value={fields.targetFtp ?? ''} onChange={e => set('targetFtp', e.target.value)} style={inputStyle} />
+          </div>
+        )}
+        {category === 'vo2max' && (
+          <div>
+            <div style={{ ...labelStyle, marginBottom: 4 }}>Ziel-VO2max (ml/kg/min)</div>
+            <input type="number" min={20} max={90} step={0.1} required value={fields.targetVo2max ?? ''} onChange={e => set('targetVo2max', e.target.value)} style={inputStyle} />
+          </div>
+        )}
+        {category === 'volume' && (
+          <div>
+            <div style={{ ...labelStyle, marginBottom: 4 }}>Ziel-Wochenstunden</div>
+            <input type="number" min={1} max={40} step={0.5} required value={fields.targetHours ?? ''} onChange={e => set('targetHours', e.target.value)} style={inputStyle} />
+          </div>
+        )}
+
+        {/* Date */}
+        <div>
+          <div style={{ ...labelStyle, marginBottom: 4 }}>Zieldatum</div>
+          <input type="date" value={fields.targetDate} onChange={e => set('targetDate', e.target.value)} style={inputStyle} />
+        </div>
+
+        <button type="submit" disabled={create.isPending} style={{
+          background: 'var(--surface-2)', border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius)', padding: '9px',
+          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: 'var(--accent)', cursor: 'pointer',
+        }}>
+          {create.isPending ? 'Speichern…' : 'Erstellen'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ZieleTab() {
+  const { data, isLoading } = usePulseGoals();
+  const [showForm, setShowForm] = useState(false);
   const goals = data?.goals ?? [];
 
   return (
@@ -412,53 +697,7 @@ function ZieleTab() {
         </button>
       </div>
 
-      {showForm && (
-        <div className="card">
-          <div className="label-mono" style={{ marginBottom: 12 }}>Neues Ziel</div>
-          <form onSubmit={(e) => void handleCreate(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { id: 'g-title', label: 'Titel *', key: 'title', required: true },
-              { id: 'g-desc',  label: 'Beschreibung', key: 'description', required: false },
-            ].map(field => (
-              <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label htmlFor={field.id} style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                  {field.label}
-                </label>
-                <input id={field.id} type="text" required={field.required}
-                  value={form[field.key as keyof typeof form]}
-                  onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
-                  style={{
-                    background: 'var(--surface-2)', border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius)', padding: '7px 12px',
-                    fontSize: 12, color: 'var(--text)', outline: 'none',
-                  }}
-                />
-              </div>
-            ))}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label htmlFor="g-date" style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                Zieldatum
-              </label>
-              <input id="g-date" type="date" value={form.targetDate}
-                onChange={e => setForm(f => ({ ...f, targetDate: e.target.value }))}
-                style={{
-                  background: 'var(--surface-2)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)', padding: '7px 12px',
-                  fontSize: 12, color: 'var(--text)', outline: 'none',
-                }}
-              />
-            </div>
-            <button type="submit" disabled={create.isPending} style={{
-              background: 'var(--surface-2)', border: '1px solid var(--accent)',
-              borderRadius: 'var(--radius)', padding: '9px', fontFamily: 'var(--font-mono)',
-              fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
-              color: 'var(--accent)', cursor: 'pointer',
-            }}>
-              {create.isPending ? 'Speichern…' : 'Erstellen'}
-            </button>
-          </form>
-        </div>
-      )}
+      {showForm && <GoalForm onDone={() => setShowForm(false)} />}
 
       {isLoading && <Loading rows={2} />}
       {!isLoading && goals.length === 0 && (
@@ -467,38 +706,52 @@ function ZieleTab() {
         </p>
       )}
 
-      {goals.map(g => (
-        <div key={g.id} className="card">
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{g.title}</div>
-              {g.description && (
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{g.description}</div>
-              )}
-              {g.targetDate && (
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-                  Bis {g.targetDate}
+      {goals.map(g => {
+        const cat = g.category as GoalCategory | null;
+        const catColor = cat ? (CATEGORY_COLOR[cat] ?? 'var(--text-3)') : 'var(--text-3)';
+        const catLabel = GOAL_CATEGORIES.find(c => c.id === cat)?.label ?? null;
+        return (
+          <div key={g.id} className="card">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+                  {catLabel && (
+                    <span style={{
+                      fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em',
+                      color: catColor, background: catColor + '18',
+                      padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase',
+                    }}>{catLabel}</span>
+                  )}
                 </div>
-              )}
-              <div style={{ marginTop: 8, height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 2,
-                  width: `${(g.progress ?? 0) * 100}%`,
-                  background: STATUS_COLOR[g.status] ?? 'var(--text-3)',
-                }} />
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{g.title}</div>
+                {g.description && (
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{g.description}</div>
+                )}
+                {g.targetDate && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                    Bis {new Date(g.targetDate + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
+                )}
+                <div style={{ marginTop: 8, height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 2,
+                    width: `${(g.progress ?? 0) * 100}%`,
+                    background: STATUS_COLOR[g.status] ?? 'var(--text-3)',
+                  }} />
+                </div>
               </div>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: STATUS_COLOR[g.status] ?? 'var(--text-3)',
+                border: `1px solid ${STATUS_COLOR[g.status] ?? 'var(--border)'}`,
+                borderRadius: 3, padding: '2px 6px', flexShrink: 0,
+              }}>
+                {g.status}
+              </span>
             </div>
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: STATUS_COLOR[g.status] ?? 'var(--text-3)',
-              border: `1px solid ${STATUS_COLOR[g.status] ?? 'var(--border)'}`,
-              borderRadius: 3, padding: '2px 6px', flexShrink: 0,
-            }}>
-              {g.status}
-            </span>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

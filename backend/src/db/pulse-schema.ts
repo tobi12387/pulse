@@ -187,9 +187,23 @@ export const pulseGoals = pgTable('pulse_goals', {
   status:      pulseGoalStatusEnum('status').notNull().default('active'),
   progress:    real('progress').default(0),
   metrics:     jsonb('metrics').default({}),
+  category:    varchar('category', { length: 30 }),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),
 });
+
+// ─── Week availability ────────────────────────────────────────────────────────
+export const pulseWeekAvailability = pgTable('pulse_week_availability', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  userId:        uuid('user_id').notNull(),
+  weekStart:     date('week_start').notNull(),
+  availableDays: jsonb('available_days').notNull().$type<number[]>().default([1, 3, 5, 6]),
+  weeklyHours:   real('weekly_hours').notNull().default(8),
+  notes:         text('notes'),
+  createdAt:     timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_week_availability_user_week_uq').on(t.userId, t.weekStart),
+]);
 
 // ─── Nutrition logs ───────────────────────────────────────────────────────────
 export const pulseNutritionLogs = pgTable('pulse_nutrition_logs', {

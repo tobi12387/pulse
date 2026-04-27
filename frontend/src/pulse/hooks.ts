@@ -7,6 +7,7 @@ export const pulseKeys = {
   sleep:        (limit: number) => ['pulse', 'sleep', limit] as const,
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
   plan:         ['pulse', 'plan'] as const,
+  availability: ['pulse', 'availability'] as const,
   goals:        ['pulse', 'goals'] as const,
   review:       ['pulse', 'review', 'latest'] as const,
   checkinToday:    ['pulse', 'checkin', 'today'] as const,
@@ -60,6 +61,26 @@ export function usePulseGoals() {
     queryKey: pulseKeys.goals,
     queryFn: pulseApi.goals.list,
     staleTime: 10 * 60_000,
+  });
+}
+
+export function useWeekAvailability() {
+  return useQuery({
+    queryKey: pulseKeys.availability,
+    queryFn: pulseApi.availability.list,
+    staleTime: 60_000,
+  });
+}
+
+export function useSaveAvailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ weekStart, data }: { weekStart: string; data: { availableDays: number[]; weeklyHours: number; notes?: string } }) =>
+      pulseApi.availability.save(weekStart, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: pulseKeys.availability });
+      qc.invalidateQueries({ queryKey: pulseKeys.plan });
+    },
   });
 }
 

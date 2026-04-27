@@ -106,6 +106,30 @@ export interface PulseWeightEntry {
   notes: string | null;
 }
 
+export type GoalCategory = 'race' | 'weight' | 'ftp' | 'vo2max' | 'volume';
+
+export interface PulseGoal {
+  id: string;
+  userId: string;
+  title: string;
+  description: string | null;
+  targetDate: string | null;
+  status: 'active' | 'completed' | 'paused' | 'abandoned';
+  progress: number;
+  metrics: Record<string, unknown>;
+  category: GoalCategory | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeekAvailability {
+  weekStart: string;
+  availableDays: number[];
+  weeklyHours: number;
+  notes: string | null;
+  isCustom: boolean;
+}
+
 export interface PulsePrognosis {
   alert: boolean;
   message: string;

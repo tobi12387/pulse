@@ -1,7 +1,7 @@
 import type {
   PulseHomeScreenData, PulseSleepSession, PulseActivity,
   PulsePlannedWorkout, PulseMentalCheckin, PulseGoal,
-  PulseWeeklyReview, PulseWeightEntry,
+  PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -101,10 +101,17 @@ export const pulseApi = {
       request(`/plan/workout/${id}/sync-garmin`, { method: 'POST', body: '{}' }),
   },
 
+  availability: {
+    list: (): Promise<{ weeks: WeekAvailability[] }> =>
+      request('/plan/availability'),
+    save: (weekStart: string, data: { availableDays: number[]; weeklyHours: number; notes?: string }): Promise<{ ok: boolean; workouts?: PulsePlannedWorkout[] }> =>
+      request(`/plan/availability/${weekStart}`, { method: 'PUT', body: JSON.stringify({ ...data, regenerate: true }) }),
+  },
+
   goals: {
     list: (): Promise<{ goals: PulseGoal[] }> =>
       request('/goals'),
-    create: (data: { title: string; description?: string; targetDate?: string }): Promise<PulseGoal> =>
+    create: (data: { title: string; description?: string; targetDate?: string; category?: GoalCategory; metrics?: Record<string, unknown> }): Promise<PulseGoal> =>
       request('/goals', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<{ status: string; progress: number }>): Promise<PulseGoal> =>
       request(`/goals/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),

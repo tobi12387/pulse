@@ -12,6 +12,7 @@ import {
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeightLog,
+  pulseWeekAvailability,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
@@ -801,20 +802,31 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
 
   app.post('/plan/generate', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() + mondayOffset);
-    const weekStartStr = weekStart.toISOString().split('T')[0]!;
+    const body = req.body as { weekStart?: string } | null;
+    let weekStartStr: string;
+    if (body?.weekStart && /^\d{4}-\d{2}-\d{2}$/.test(body.weekStart)) {
+      weekStartStr = body.weekStart;
+    } else {
+      const now = new Date();
+      const mondayOffset = now.getDay() === 0 ? -6 : 1 - now.getDay();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() + mondayOffset);
+      weekStartStr = weekStart.toISOString().split('T')[0]!;
+    }
 
     const [profile] = await db.select()
       .from(pulseUserProfile)
       .where(eq(pulseUserProfile.userId, userId));
 
     const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
-    const weeklyHoursTarget = profile?.weeklyHoursTarget ?? 8;
-    const availableDays = [1, 3, 5, 6];
+
+    // Use week-specific availability if set, fall back to profile defaults
+    const [weekAvail] = await db.select()
+      .from(pulseWeekAvailability)
+      .where(and(eq(pulseWeekAvailability.userId, userId), eq(pulseWeekAvailability.weekStart, weekStartStr)));
+
+    const weeklyHoursTarget = weekAvail?.weeklyHours ?? profile?.weeklyHoursTarget ?? 8;
+    const availableDays = (weekAvail?.availableDays as number[] | null) ?? [1, 3, 5, 6];
 
     const fitnessLoad = await computeFitnessLoad(userId, weekStartStr);
     const recentActs = await db.select({
@@ -886,6 +898,8 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
       title:       z.string().min(1).max(255),
       description: z.string().max(1000).optional(),
       targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      category:    z.string().max(30).optional(),
+      metrics:     z.record(z.unknown()).optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
@@ -896,6 +910,8 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
       title:       parsed.data.title,
       description: parsed.data.description ?? null,
       targetDate:  parsed.data.targetDate  ?? null,
+      category:    parsed.data.category    ?? null,
+      metrics:     parsed.data.metrics     ?? {},
     }).returning();
 
     return reply.status(201).send(goal);
@@ -919,6 +935,121 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
 
     if (!updated) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
     return updated;
+  });
+
+  // ─── Week availability ────────────────────────────────────────────────────────
+  app.get('/plan/availability', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const now = new Date();
+    const mondayOffset = now.getDay() === 0 ? -6 : 1 - now.getDay();
+    const thisMonday = new Date(now);
+    thisMonday.setDate(now.getDate() + mondayOffset);
+    const nextMonday = new Date(thisMonday);
+    nextMonday.setDate(thisMonday.getDate() + 7);
+
+    const weeks = [
+      thisMonday.toISOString().split('T')[0]!,
+      nextMonday.toISOString().split('T')[0]!,
+    ];
+
+    const rows = await db.select()
+      .from(pulseWeekAvailability)
+      .where(and(
+        eq(pulseWeekAvailability.userId, userId),
+        gte(pulseWeekAvailability.weekStart, weeks[0]!),
+      ))
+      .limit(4);
+
+    const [profile] = await db.select({ weeklyHours: pulseUserProfile.weeklyHoursTarget })
+      .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+
+    const defaults = { availableDays: [1, 3, 5, 6], weeklyHours: profile?.weeklyHours ?? 8 };
+
+    return {
+      weeks: weeks.map(w => {
+        const row = rows.find(r => r.weekStart === w);
+        return {
+          weekStart: w,
+          availableDays: (row?.availableDays as number[]) ?? defaults.availableDays,
+          weeklyHours: row?.weeklyHours ?? defaults.weeklyHours,
+          notes: row?.notes ?? null,
+          isCustom: !!row,
+        };
+      }),
+    };
+  });
+
+  app.put('/plan/availability/:weekStart', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { weekStart } = req.params as { weekStart: string };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return reply.status(400).send({ error: 'Ungültiges Datum' });
+
+    const schema = z.object({
+      availableDays: z.array(z.number().min(0).max(6)).min(1).max(7),
+      weeklyHours:   z.number().min(1).max(40),
+      notes:         z.string().max(200).optional(),
+      regenerate:    z.boolean().optional().default(true),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    await db.insert(pulseWeekAvailability).values({
+      userId, weekStart,
+      availableDays: parsed.data.availableDays,
+      weeklyHours:   parsed.data.weeklyHours,
+      notes:         parsed.data.notes ?? null,
+    }).onConflictDoUpdate({
+      target: [pulseWeekAvailability.userId, pulseWeekAvailability.weekStart],
+      set: {
+        availableDays: parsed.data.availableDays,
+        weeklyHours:   parsed.data.weeklyHours,
+        notes:         parsed.data.notes ?? null,
+      },
+    });
+
+    if (!parsed.data.regenerate) return { ok: true };
+
+    // Auto-regenerate plan for this week
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+    const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
+    const fitnessLoad = await computeFitnessLoad(userId, weekStart);
+    const recentActs = await db.select({
+      activityType: pulseActivities.activityType,
+      durationSec:  pulseActivities.durationSec,
+      tss:          pulseActivities.tss,
+    }).from(pulseActivities)
+      .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 14 * 86_400_000))))
+      .orderBy(desc(pulseActivities.startTime)).limit(6);
+
+    let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
+    try {
+      generated = await generateLLMWeekPlan({
+        weekStart, phase,
+        weeklyHoursTarget: parsed.data.weeklyHours,
+        availableDays:     parsed.data.availableDays,
+        ctl: fitnessLoad.ctl, atl: fitnessLoad.atl, tsb: fitnessLoad.tsb,
+        ftpWatts: profile?.ftpWatts ?? 250,
+        recentActivities: recentActs.map(a => ({
+          activityType: a.activityType,
+          durationMin:  Math.round((a.durationSec ?? 0) / 60),
+          tss:          a.tss ?? 0,
+        })),
+      });
+    } catch {
+      generated = generateWeekWorkouts({ weekStart, phase, weeklyHoursTarget: parsed.data.weeklyHours, availableDays: parsed.data.availableDays });
+    }
+
+    await db.delete(pulsePlannedWorkouts).where(and(
+      eq(pulsePlannedWorkouts.userId, userId),
+      gte(pulsePlannedWorkouts.plannedDate, weekStart),
+      eq(pulsePlannedWorkouts.status, 'planned'),
+    ));
+
+    const workouts = await db.insert(pulsePlannedWorkouts).values(
+      generated.map(w => ({ userId, plannedDate: w.plannedDate, activityType: w.activityType, zone: w.zone, durationMin: w.durationMin, targetTss: w.targetTss, description: w.description })),
+    ).returning();
+
+    return { ok: true, workouts };
   });
 
   // ─── Weekly review ────────────────────────────────────────────────────────────
