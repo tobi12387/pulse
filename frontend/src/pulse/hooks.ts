@@ -163,6 +163,15 @@ export function useGenerateReview() {
   });
 }
 
+export function useUpdateWorkout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof pulseApi.plan.updateWorkout>[1] }) =>
+      pulseApi.plan.updateWorkout(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.plan }),
+  });
+}
+
 export function useGeneratePlan() {
   const qc = useQueryClient();
   return useMutation({

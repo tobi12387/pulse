@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
-  useCreateGoal, useUpdateGoal, useDeleteGoal, usePulseReview, useGenerateReview, useGeneratePlan,
+  useCreateGoal, useUpdateGoal, useDeleteGoal, useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
@@ -315,6 +315,87 @@ function AvailabilityEditor() {
   );
 }
 
+// ─── Workout Row ──────────────────────────────────────────────────────────────
+
+const ACTIVITY_TYPES = ['run', 'bike', 'swim', 'strength', 'hike', 'other'] as const;
+const ACTIVITY_LABEL: Record<string, string> = {
+  run: 'Laufen', bike: 'Radfahren', swim: 'Schwimmen',
+  strength: 'Kraft', hike: 'Wandern', other: 'Sonstiges',
+};
+
+function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout; index: number; onOpen: () => void }) {
+  const update = useUpdateWorkout();
+  const [switching, setSwitching] = useState(false);
+
+  function handleTypeChange(type: string) {
+    void update.mutateAsync({ id: w.id, data: { activityType: type } });
+    setSwitching(false);
+  }
+
+  return (
+    <div style={{
+      borderTop: i > 0 ? '1px solid var(--border)' : undefined,
+      opacity: w.status === 'skipped' ? 0.45 : 1,
+    }}>
+      <div
+        onClick={() => !switching && onOpen()}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px', cursor: switching ? 'default' : 'pointer',
+        }}
+        onMouseEnter={e => { if (!switching) e.currentTarget.style.background = 'var(--surface-2)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{w.plannedDate}</span>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
+              color: ZONE_COLOR[w.zone] ?? 'var(--text-3)',
+              border: `1px solid ${ZONE_COLOR[w.zone] ?? 'var(--border)'}`,
+              borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
+            }}>Z{w.zone}</span>
+            {w.status === 'completed' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--green)' }}>✓</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>
+            <button
+              onClick={e => { e.stopPropagation(); setSwitching(v => !v); }}
+              style={{
+                fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '.08em',
+                padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 2,
+                background: 'transparent', color: 'var(--text-3)', cursor: 'pointer',
+              }}
+            >wechseln</button>
+          </div>
+          {w.description && !switching && (
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+            {w.durationMin}m{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)}km` : ''}
+          </span>
+          <span style={{ color: 'var(--text-3)', fontSize: 12 }}>›</span>
+        </div>
+      </div>
+
+      {switching && (
+        <div style={{ padding: '0 14px 10px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {ACTIVITY_TYPES.map(t => (
+            <button key={t} onClick={() => handleTypeChange(t)} disabled={update.isPending} style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase',
+              padding: '4px 10px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
+              borderRadius: 3, background: t === w.activityType ? 'var(--accent)18' : 'transparent',
+              color: t === w.activityType ? 'var(--accent)' : 'var(--text-2)', cursor: 'pointer',
+            }}>{ACTIVITY_LABEL[t]}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -324,7 +405,6 @@ function TrainingTab() {
   const navigate  = useNavigate();
   const [weekOffset, setWeekOffset] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
-  const [hoursPerWeek, setHoursPerWeek] = useState('8');
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
 
   const workouts   = plan.data?.workouts ?? [];
@@ -367,34 +447,18 @@ function TrainingTab() {
 
       {showConfig && (
         <div className="card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
-          <div className="label-mono" style={{ marginBottom: 12, color: 'var(--accent)' }}>Plan generieren</div>
-          <form onSubmit={(e) => void handleGenerate(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                Stunden / Woche
-              </label>
-              <input
-                type="number" min="2" max="30" step="0.5" value={hoursPerWeek}
-                onChange={e => setHoursPerWeek(e.target.value)}
-                style={{
-                  background: 'var(--surface-2)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)', padding: '7px 12px',
-                  fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)', outline: 'none',
-                }}
-              />
-            </div>
-            <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6 }}>
-              Generiert einen 7-Tage-Trainingsplan basierend auf aktuellem CTL/ATL/TSB und deinen Zielen.
-            </p>
-            <button type="submit" disabled={generate.isPending} style={{
-              background: 'var(--surface-2)', border: '1px solid var(--accent)',
-              borderRadius: 'var(--radius)', padding: '9px', fontFamily: 'var(--font-mono)',
-              fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
-              color: 'var(--accent)', cursor: 'pointer',
-            }}>
-              {generate.isPending ? '● Generiere…' : 'Plan erstellen'}
-            </button>
-          </form>
+          <div className="label-mono" style={{ marginBottom: 8, color: 'var(--accent)' }}>Plan generieren</div>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6, margin: '0 0 12px' }}>
+            Erstellt einen wissenschaftlich fundierten Wochenplan auf Basis von CTL/ATL/TSB, deiner eingetragenen Verfügbarkeit und aktiven Zielen.
+          </p>
+          <button onClick={() => void handleGenerate({ preventDefault: () => {} } as React.FormEvent)} disabled={generate.isPending} style={{
+            width: '100%', background: 'var(--surface-2)', border: '1px solid var(--accent)',
+            borderRadius: 'var(--radius)', padding: '9px', fontFamily: 'var(--font-mono)',
+            fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: 'var(--accent)', cursor: 'pointer',
+          }}>
+            {generate.isPending ? '● Generiere…' : 'Plan erstellen'}
+          </button>
         </div>
       )}
 
@@ -408,45 +472,7 @@ function TrainingTab() {
       {workouts.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {workouts.map((w, i) => (
-            <div key={w.id}
-              onClick={() => setSelectedWorkout(w)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px',
-                borderTop: i > 0 ? '1px solid var(--border)' : undefined,
-                opacity: w.status === 'skipped' ? 0.45 : 1,
-                cursor: 'pointer',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
-                    {w.plannedDate}
-                  </span>
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
-                    color: ZONE_COLOR[w.zone] ?? 'var(--text-3)',
-                    border: `1px solid ${ZONE_COLOR[w.zone] ?? 'var(--border)'}`,
-                    borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
-                  }}>Z{w.zone}</span>
-                  {w.status === 'completed' && (
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--green)' }}>✓</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text)' }}>{w.activityType}</div>
-                {w.description && (
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
-                )}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
-                  {w.durationMin}m{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)}km` : ''}
-                </span>
-                <span style={{ color: 'var(--text-3)', fontSize: 12 }}>›</span>
-              </div>
-            </div>
+            <WorkoutRow key={w.id} workout={w} index={i} onOpen={() => setSelectedWorkout(w)} />
           ))}
         </div>
       )}
@@ -779,6 +805,12 @@ function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string |
   );
 }
 
+const actionBtn: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase',
+  padding: '3px 8px', borderRadius: 3, cursor: 'pointer', border: '1px solid var(--border)',
+  background: 'transparent', color: 'var(--text-3)',
+};
+
 function GoalCard({ g }: { g: { id: string; title: string; description: string | null; targetDate: string | null; status: string; progress: number; category: string | null; metrics: Record<string, unknown> } }) {
   const deleteGoal = useDeleteGoal();
   const [editing, setEditing] = useState(false);
@@ -786,47 +818,49 @@ function GoalCard({ g }: { g: { id: string; title: string; description: string |
 
   const cat = g.category as GoalCategory | null;
   const catColor = cat ? (CATEGORY_COLOR[cat] ?? 'var(--text-3)') : 'var(--text-3)';
-  const catLabel = GOAL_CATEGORIES.find(c => c.id === cat)?.label ?? null;
+  const statusColor = STATUS_COLOR[g.status] ?? 'var(--text-3)';
 
   if (editing) return <GoalEditForm goal={g} onDone={() => setEditing(false)} />;
 
-  const iconBtn: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', padding: '2px 5px', fontSize: 12, lineHeight: 1 };
-
   return (
-    <div className="card">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+    <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
-            {catLabel && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', color: catColor, background: catColor + '18', padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase' }}>{catLabel}</span>
+            {cat && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', color: catColor, background: catColor + '18', padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase' }}>
+                {GOAL_CATEGORIES.find(c => c.id === cat)?.label}
+              </span>
             )}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: statusColor }}>● {g.status}</span>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{g.title}</div>
+          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, marginBottom: 2 }}>{g.title}</div>
           {g.description && <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{g.description}</div>}
-          {g.targetDate && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-              Bis {new Date(g.targetDate + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
-            </div>
-          )}
-          <div style={{ marginTop: 8, height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 2, width: `${(g.progress ?? 0) * 100}%`, background: STATUS_COLOR[g.status] ?? 'var(--text-3)' }} />
-          </div>
         </div>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 12 }}>
+          <button style={actionBtn} onClick={() => setEditing(true)}>Bearbeiten</button>
+          {!confirmDelete
+            ? <button style={{ ...actionBtn, color: 'var(--rose)', borderColor: 'var(--rose)33' }} onClick={() => setConfirmDelete(true)}>Löschen</button>
+            : <>
+                <button
+                  style={{ ...actionBtn, color: 'var(--rose)', borderColor: 'var(--rose)', background: 'var(--rose)11' }}
+                  onClick={() => { void deleteGoal.mutateAsync(g.id); }}
+                  disabled={deleteGoal.isPending}
+                >
+                  {deleteGoal.isPending ? '…' : 'Ja, löschen'}
+                </button>
+                <button style={actionBtn} onClick={() => setConfirmDelete(false)}>Nein</button>
+              </>
+          }
+        </div>
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: STATUS_COLOR[g.status] ?? 'var(--text-3)', border: `1px solid ${STATUS_COLOR[g.status] ?? 'var(--border)'}`, borderRadius: 3, padding: '2px 6px' }}>{g.status}</span>
-          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <button style={{ ...iconBtn, color: 'var(--text-2)' }} title="Bearbeiten" onClick={() => setEditing(true)}>✏️</button>
-            {!confirmDelete
-              ? <button style={{ ...iconBtn, color: 'var(--text-3)' }} title="Löschen" onClick={() => setConfirmDelete(true)}>🗑</button>
-              : <>
-                  <button style={{ ...iconBtn, color: 'var(--rose)', fontWeight: 700 }} title="Ja, löschen" onClick={() => void deleteGoal.mutateAsync(g.id)} disabled={deleteGoal.isPending}>✓</button>
-                  <button style={{ ...iconBtn, color: 'var(--text-3)' }} title="Abbrechen" onClick={() => setConfirmDelete(false)}>✕</button>
-                </>
-            }
-          </div>
-          {confirmDelete && <span style={{ fontSize: 9, color: 'var(--rose)', fontFamily: 'var(--font-mono)' }}>Löschen?</span>}
-        </div>
+      <div style={{ height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 2, width: `${(g.progress ?? 0) * 100}%`, background: catColor }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+        <span>{Math.round((g.progress ?? 0) * 100)}% abgeschlossen</span>
+        {g.targetDate && <span>bis {new Date(g.targetDate + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}</span>}
       </div>
     </div>
   );
@@ -838,26 +872,28 @@ function ZieleTab() {
   const goals = data?.goals ?? [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button onClick={() => setShowForm(v => !v)} style={{
-          background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-          padding: '6px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
-          letterSpacing: '0.14em', textTransform: 'uppercase',
-          color: showForm ? 'var(--rose)' : 'var(--accent)', cursor: 'pointer',
-        }}>
-          {showForm ? 'Abbrechen' : '+ Ziel'}
-        </button>
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {showForm && <GoalForm onDone={() => setShowForm(false)} />}
 
-      {isLoading && <Loading rows={2} />}
-      {!isLoading && goals.length === 0 && (
-        <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0' }}>Noch keine Ziele. Erstelle dein erstes!</p>
-      )}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: goals.length > 0 ? 4 : 0 }}>
+          <span className="label-mono">GOALS</span>
+          <button onClick={() => setShowForm(v => !v)} style={{
+            fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase',
+            padding: '3px 8px', border: `1px solid ${showForm ? 'var(--rose)' : 'var(--accent)'}`,
+            borderRadius: 3, background: 'transparent',
+            color: showForm ? 'var(--rose)' : 'var(--accent)', cursor: 'pointer',
+          }}>
+            {showForm ? '✕ Schließen' : '+ Neu'}
+          </button>
+        </div>
 
-      {goals.map(g => <GoalCard key={g.id} g={g} />)}
+        {isLoading && <Loading rows={2} />}
+        {!isLoading && goals.length === 0 && (
+          <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0', margin: 0 }}>Noch keine Ziele. Erstelle dein erstes!</p>
+        )}
+        {goals.map(g => <GoalCard key={g.id} g={g} />)}
+      </div>
     </div>
   );
 }

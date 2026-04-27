@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, usePulseHome, useCheckinToday,
-  usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory, useCorrelations,
+  usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
 } from '@/pulse/hooks';
-import { LineChart, ScatterPlot } from '@/components/SparkChart';
+import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 
-type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental' | 'korrelation';
+type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -605,85 +605,13 @@ function MentalTab() {
   );
 }
 
-// ─── Korrelation ──────────────────────────────────────────────────────────────
-
-const CORR_RANGE_OPTS = [
-  { value: 30, label: '30T' },
-  { value: 90, label: '90T' },
-];
-
-function rLabel(r: number): { text: string; color: string } {
-  const abs = Math.abs(r);
-  if (abs >= 0.6) return { text: abs >= 0.8 ? 'sehr stark' : 'stark',   color: r > 0 ? 'var(--green)' : 'var(--rose)'  };
-  if (abs >= 0.3) return { text: 'mittel',  color: 'var(--amber)' };
-  return            { text: 'schwach', color: 'var(--text-3)' };
-}
-
-function KorrelationTab() {
-  const [days, setDays] = useState(30);
-  const { data, isLoading } = useCorrelations(days);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, maxWidth: 240 }}>
-          Zusammenhang zwischen Metriken. Punkte: heller = aktueller.
-        </p>
-        <RangePicker value={days} onChange={setDays} options={CORR_RANGE_OPTS} />
-      </div>
-
-      {isLoading && <Loading rows={3} />}
-
-      {(data?.correlations ?? []).map(c => {
-        const rl = rLabel(c.r);
-        const sign = c.r > 0 ? '+' : '';
-        return (
-          <div key={c.id} className="card" style={{ padding: '12px 14px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                {c.labelX} → {c.labelY}
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: rl.color }}>
-                  r = {sign}{c.r.toFixed(2)}
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: rl.color, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                  {rl.text}
-                </span>
-              </div>
-            </div>
-
-            {/* Scatter plot */}
-            <ScatterPlot points={c.points} height={100} color={c.r >= 0 ? 'var(--accent)' : 'var(--rose)'} />
-
-            {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
-                X: {c.labelX}
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
-                n = {c.n} Tage
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
-                Y: {c.labelY}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'schlaf',     label: 'Schlaf'   },
-  { id: 'metriken',   label: 'Metriken' },
-  { id: 'gewicht',    label: 'Gewicht'  },
-  { id: 'mental',     label: 'Mental'   },
-  { id: 'korrelation', label: 'Korrel.' },
+  { id: 'schlaf',   label: 'Schlaf'   },
+  { id: 'metriken', label: 'Metriken' },
+  { id: 'gewicht',  label: 'Gewicht'  },
+  { id: 'mental',   label: 'Mental'   },
 ];
 
 export default function Data() {
@@ -700,7 +628,6 @@ export default function Data() {
       {tab === 'metriken'    && <MetrikenTab />}
       {tab === 'gewicht'     && <GewichtTab />}
       {tab === 'mental'      && <MentalTab />}
-      {tab === 'korrelation' && <KorrelationTab />}
     </div>
   );
 }

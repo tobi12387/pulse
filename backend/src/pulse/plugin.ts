@@ -656,6 +656,24 @@ export default async function pulsePlugin(app: FastifyInstance) {
     return { workout };
   });
 
+  app.patch('/plan/workout/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      activityType: z.enum(['run','bike','swim','strength','hike','other']).optional(),
+      zone:         z.number().int().min(1).max(5).optional(),
+      durationMin:  z.number().int().min(5).max(360).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const [updated] = await db.update(pulsePlannedWorkouts)
+      .set({ ...parsed.data, steps: null })
+      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)))
+      .returning();
+    if (!updated) return reply.status(404).send({ error: 'Not found' });
+    return { workout: updated };
+  });
+
   app.post('/plan/workout/:id/detail', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
     const { id } = req.params as { id: string };
