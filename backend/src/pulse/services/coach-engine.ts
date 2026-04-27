@@ -1,105 +1,141 @@
-import { llmComplete, FAST_MODEL, SMART_MODEL } from '../../lib/llm.js';
+import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
 
-export interface CoachContext {
-  readiness: number;
-  sleepHours: number | null;
-  hrvStatus: string | null;
-  bodyBatteryMax: number | null;
-  tsb: number;
-  stressAvg: number | null;
+// ─── Rich context ─────────────────────────────────────────────────────────────
+
+export interface CoachFullContext {
+  today: string;
+  readiness: { score: number; label: string };
+  todayMetrics: {
+    sleepHours: number | null; sleepScore: number | null;
+    hrvRmssd: number | null; hrvStatus: string | null; restingHr: number | null;
+    bodyBatteryMax: number | null; stressAvg: number | null; steps: number | null;
+  } | null;
+  todayCheckin: {
+    mood: number; energy: number; stress: number; motivation: number; notes: string | null;
+  } | null;
+  load: { ctl: number; atl: number; tsb: number };
+  profile: {
+    ftpWatts: number | null; maxHrBpm: number | null;
+    vo2max: number | null; trainingPhase: string | null;
+  } | null;
+  recentActivities: Array<{
+    date: string; activityType: string; durationSec: number | null;
+    tss: number | null; normalizedPowerW: number | null; avgHr: number | null;
+  }>;
+  upcomingWorkouts: Array<{
+    plannedDate: string; activityType: string; zone: number;
+    durationMin: number; description: string | null;
+  }>;
+  metrics14: Array<{
+    date: string; sleepHours: number | null; hrvRmssd: number | null;
+    bodyBatteryMax: number | null; stressAvg: number | null;
+  }>;
+  checkins14: Array<{
+    date: string; mood: number; energy: number; stress: number; motivation: number;
+  }>;
+  latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
 }
 
-const INTENTS: Array<{ name: string; pattern: RegExp }> = [
-  { name: 'greeting',    pattern: /^(hallo|hi|hey|guten morgen|servus|moin)/i },
-  { name: 'readiness',   pattern: /(readiness|bereit|wie.*fit|topfit|in form)/i },
-  { name: 'sleep',       pattern: /(schlaf|schlafen|müde|ausgeschlafen)/i },
-  { name: 'hrv',         pattern: /(hrv|herzrate|herzratenvariabil)/i },
-  { name: 'load',        pattern: /(ctl|atl|tsb|trainingsbelastung|trainingslast)/i },
-  { name: 'training',    pattern: /(trainingsplan|heute.*training|workout|was.*trainier)/i },
-  { name: 'nutrition',   pattern: /(ernährung|essen|protein|kohlenhydrat|kalorien)/i },
-  { name: 'race',        pattern: /(wettkampf|rennen|race|event)/i },
-  { name: 'injury',      pattern: /(verletzung|schmerz|weh|übertraining)/i },
-  { name: 'motivation',  pattern: /(motivat|demotiviert|lustlos|keine.*lust)/i },
-  { name: 'weather',     pattern: /(wetter|regen|draußen|outdoor)/i },
-  { name: 'goal',        pattern: /(ziel|goal|target|anpeilen)/i },
-  { name: 'recovery',    pattern: /(erholung|recovery|regeneration)/i },
-  { name: 'weight',      pattern: /(gewicht|weight.*kg|abnehm)/i },
-];
+export function buildRichSystemPrompt(ctx: CoachFullContext): string {
+  const m = ctx.todayMetrics;
+  const c = ctx.todayCheckin;
+  const p = ctx.profile;
 
-export function detectIntent(message: string): string | null {
-  for (const { name, pattern } of INTENTS) {
-    if (pattern.test(message)) return name;
-  }
-  return null;
-}
+  let s = `Du bist Pulse, persönlicher Ausdauer-Coach für Tobi (polarisiertes Training, Radsport/Triathlon).
+Antworte auf Deutsch, präzise (max 150 Wörter), kein Markdown, kein Fett, direkt und praktisch wie ein erfahrener Sportwissenschaftler.
 
-function ruleReply(intent: string, ctx: CoachContext): string | null {
-  const r = ctx.readiness;
-  const intensityAdvice = r >= 70
-    ? 'Grünes Licht für hartes Training (Zone 4-5).'
-    : r >= 50
-    ? 'Moderates Training (Zone 2-3) ist ideal.'
-    : 'Heute besser regenerieren — Zone 1 oder Pause.';
+== HEUTE (${ctx.today}) ==
+Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
 
-  switch (intent) {
-    case 'greeting':
-      return `Hallo! Deine Readiness heute: ${r}/100. ${intensityAdvice} Wie kann ich dir helfen?`;
-
-    case 'readiness':
-      return `Deine Readiness beträgt ${r}/100. Schlaf: ${ctx.sleepHours?.toFixed(1) ?? '–'}h, HRV: ${ctx.hrvStatus ?? '–'}, TSB: ${ctx.tsb}. ${intensityAdvice}`;
-
-    case 'sleep':
-      return ctx.sleepHours != null
-        ? `Du hast ${ctx.sleepHours.toFixed(1)} Stunden geschlafen. ${ctx.sleepHours < 7 ? 'Das ist etwas wenig — priorisiere heute Erholung.' : 'Gute Schlafbasis für das Training!'}`
-        : 'Keine Schlafdaten für heute verfügbar. Verbinde Garmin oder Apple Health.';
-
-    case 'hrv':
-      return ctx.hrvStatus != null
-        ? `Dein HRV-Status: "${ctx.hrvStatus}". ${ctx.hrvStatus === 'poor' || ctx.hrvStatus === 'below_normal' ? 'Dein Nervensystem braucht Erholung — kein intensives Training heute.' : 'Dein Nervensystem ist gut erholt.'}`
-        : 'Keine HRV-Daten verfügbar. Stelle sicher, dass du Garmin-Daten synchronisierst.';
-
-    case 'load':
-      return `Dein Training Stress Balance (TSB) liegt bei ${ctx.tsb}. ${ctx.tsb > 10 ? 'Du bist frisch und bereit für intensives Training.' : ctx.tsb < -15 ? 'Du akkumulierst Ermüdung — eine Regenerationswoche wäre sinnvoll.' : 'Ausgewogene Trainingsbelastung.'}`;
-
-    case 'training':
-      return `Basierend auf Readiness ${r}/100: ${intensityAdvice} ${r >= 65 ? 'Heute wäre ein guter Tag für Qualitätstraining.' : 'Halte die Intensität gering.'}`;
-
-    case 'recovery':
-      return `TSB ${ctx.tsb}: ${ctx.tsb < -10 ? 'Du akkumulierst Ermüdung. Plane aktive Erholung: Spazieren, Yoga, Stretching.' : ctx.tsb > 15 ? 'Du bist gut erholt und frisch — nutze diesen Zustand für intensives Training.' : 'Gute Balance zwischen Belastung und Erholung.'}`;
-
-    case 'nutrition':
-      return `Für Ausdauersport: 6-8g Kohlenhydrate/kg Körpergewicht an Trainingstagen, 1.6-2g Protein/kg täglich. ${r < 60 ? 'Bei geringer Readiness besonders auf ausreichende Kohlenhydratzufuhr achten.' : 'Bei guter Readiness kannst du die Kohlenhydrate moderat halten.'}`;
-
-    case 'motivation':
-      return `Motivationstief? Das ist normal. Deine Readiness (${r}/100) zeigt: ${r < 50 ? 'Dein Körper braucht Pause — Motivation kommt nach Erholung zurück.' : 'Du bist körperlich bereit, der Kopf braucht manchmal einen Schubs. Klein anfangen!'}`;
-
-    case 'weight':
-      return 'Gewichtsmanagement im Sport: Fokus auf Qualität der Nahrung, nicht Kalorienzählen. Trainiere nicht nüchtern bei hoher Intensität. Kleine Kaloriendefizite (200-300 kcal) in der Basisphase sind ok.';
-
-    default:
-      return null;
-  }
-}
-
-export async function getCoachReply(message: string, ctx: CoachContext): Promise<string> {
-  const intent = detectIntent(message);
-  if (intent) {
-    const rule = ruleReply(intent, ctx);
-    if (rule) return rule;
+  if (m) {
+    if (m.sleepHours != null)      s += `\nSchlaf: ${m.sleepHours.toFixed(1)}h${m.sleepScore != null ? ` Score ${m.sleepScore}` : ''}`;
+    if (m.hrvRmssd != null)        s += `\nHRV: ${m.hrvRmssd.toFixed(0)} ms${m.hrvStatus ? ` (${m.hrvStatus})` : ''} | Ruhepuls: ${m.restingHr ?? '–'} bpm`;
+    if (m.bodyBatteryMax != null)  s += `\nBody Battery: ${m.bodyBatteryMax}% | Stress: ${m.stressAvg?.toFixed(0) ?? '–'}`;
+    if (m.steps != null)           s += `\nSchritte: ${m.steps.toLocaleString('de')}`;
   }
 
-  // LLM fallback
-  const systemPrompt = `Du bist Pulse, ein persönlicher Ausdauercoach. Antworte auf Deutsch, kurz und präzise (max 120 Wörter). Kein Markdown.
-Kontext: Readiness ${ctx.readiness}/100, Schlaf ${ctx.sleepHours?.toFixed(1) ?? 'unbekannt'}h, HRV ${ctx.hrvStatus ?? 'unbekannt'}, TSB ${ctx.tsb}.`;
+  if (c) {
+    s += `\nCheck-in: Stimmung ${c.mood}/10 Energie ${c.energy}/10 Stress ${c.stress}/10 Motivation ${c.motivation}/10`;
+    if (c.notes) s += ` | "${c.notes.slice(0, 80)}"`;
+  } else {
+    s += '\nKein Check-in heute.';
+  }
 
-  return llmComplete(systemPrompt, message, FAST_MODEL);
+  s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;
+  if (p) {
+    const parts = [
+      p.ftpWatts    ? `FTP ${p.ftpWatts}W`       : '',
+      p.maxHrBpm    ? `MaxHR ${p.maxHrBpm}bpm`   : '',
+      p.vo2max      ? `VO2max ${p.vo2max}`         : '',
+      p.trainingPhase ? `Phase: ${p.trainingPhase}` : '',
+    ].filter(Boolean);
+    if (parts.length) s += `\n${parts.join(' | ')}`;
+  }
+
+  if (ctx.recentActivities.length > 0) {
+    s += '\n\n== LETZTE AKTIVITÄTEN ==';
+    ctx.recentActivities.slice(0, 8).forEach(a => {
+      const dur = a.durationSec ? `${Math.round(a.durationSec / 60)}min` : '';
+      const tss = a.tss        ? ` TSS=${a.tss.toFixed(0)}`      : '';
+      const np  = a.normalizedPowerW ? ` NP=${a.normalizedPowerW}W` : '';
+      const hr  = a.avgHr      ? ` HRØ=${a.avgHr}bpm`           : '';
+      s += `\n${a.date} ${a.activityType} ${dur}${tss}${np}${hr}`;
+    });
+  }
+
+  if (ctx.upcomingWorkouts.length > 0) {
+    s += '\n\n== NÄCHSTE TRAININGS ==';
+    ctx.upcomingWorkouts.slice(0, 3).forEach(w => {
+      const desc = w.description ? ` (${w.description.slice(0, 60)})` : '';
+      s += `\n${w.plannedDate}: ${w.activityType} Z${w.zone} ${w.durationMin}min${desc}`;
+    });
+  }
+
+  if (ctx.metrics14.length > 0) {
+    s += '\n\n== 14-TAGE METRIKEN (Datum | Schlaf | HRV | Bat. | Stress) ==';
+    ctx.metrics14.forEach(r => {
+      s += `\n${r.date} | ${r.sleepHours?.toFixed(1) ?? '–'}h | ${r.hrvRmssd?.toFixed(0) ?? '–'}ms | ${r.bodyBatteryMax ?? '–'}% | ${r.stressAvg?.toFixed(0) ?? '–'}`;
+    });
+  }
+
+  if (ctx.checkins14.length > 0) {
+    s += `\n\n== MENTAL TREND (${ctx.checkins14.length} Check-ins — St/En/Str/Mo) ==`;
+    ctx.checkins14.forEach(c => {
+      s += `\n${c.date}: ${c.mood}/${c.energy}/${c.stress}/${c.motivation}`;
+    });
+  }
+
+  if (ctx.latestWeight) {
+    const w = ctx.latestWeight;
+    const trend = w.trend30d != null
+      ? ` | 30d-Trend: ${w.trend30d > 0 ? '+' : ''}${w.trend30d.toFixed(1)}kg`
+      : '';
+    s += `\n\n== GEWICHT ==\n${w.weightKg.toFixed(1)}kg (${w.date})${trend}`;
+  }
+
+  return s;
 }
+
+export async function getCoachReplyRich(
+  message: string,
+  systemPrompt: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }>,
+): Promise<string> {
+  const messages: LLMMessage[] = [
+    { role: 'system', content: systemPrompt },
+    ...history.slice(-8).map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })),
+    { role: 'user', content: message },
+  ];
+  return llmChat(messages, SMART_MODEL);
+}
+
+// ─── Check-in classification (used by voice flow) ─────────────────────────────
 
 export interface CheckinExtraction {
-  mood:       number; // 1-10
-  energy:     number; // 1-10
-  stress:     number; // 1-10
-  motivation: number; // 1-10
+  mood:       number;
+  energy:     number;
+  stress:     number;
+  motivation: number;
   themes:     string[];
   followUpQuestions: string[];
 }
@@ -125,10 +161,10 @@ Antworte AUSSCHLIESSLICH mit folgendem JSON-Format (kein Markdown, kein Text dav
     "energy":     6,       // 1-10: physische und mentale Energie
     "stress":     4,       // 1-10: Stresslevel (10 = maximal gestresst)
     "motivation": 7,       // 1-10: Motivation und Antrieb
-    "themes":     ["Schlaf", "Rücken", "Arbeit"],  // erkannte Themen, auf Deutsch
-    "followUpQuestions": ["Seit wann hast du Rückenschmerzen?"]  // gezielte Nachfragen
+    "themes":     ["Schlaf", "Rücken", "Arbeit"],
+    "followUpQuestions": ["Seit wann hast du Rückenschmerzen?"]
   },
-  "coachReply": "Ich höre, dass du dich heute müde fühlst..."  // natürliche Coach-Antwort auf Deutsch
+  "coachReply": "..."
 }
 
 Bei isCheckin=false: extraction weglassen, coachReply ist normale Antwort auf die Frage.`;
@@ -148,7 +184,6 @@ export async function classifyAndExtractCheckin(text: string): Promise<CheckinCl
       coachReply: parsed.coachReply ?? '',
     };
   } catch {
-    // JSON-Parse-Fehler → als Frage behandeln, rohe Antwort nutzen
     return { isCheckin: false, extraction: undefined, coachReply: raw };
   }
 }

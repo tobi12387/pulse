@@ -19,7 +19,10 @@ import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
-import { getCoachReply, classifyAndExtractCheckin, type CheckinClassification } from './services/coach-engine.js';
+import {
+  buildRichSystemPrompt, getCoachReplyRich,
+  classifyAndExtractCheckin, type CheckinClassification, type CoachFullContext,
+} from './services/coach-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateLLMWeekPlan } from './services/plan-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
@@ -166,22 +169,61 @@ export default async function pulsePlugin(app: FastifyInstance) {
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Nachricht' });
 
     const userId = req.user.sub;
-    const today = new Date().toISOString().split('T')[0]!;
+    const today  = new Date().toISOString().split('T')[0]!;
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split('T')[0]!;
 
-    const [metrics] = await db.select()
-      .from(pulseDailyMetrics)
-      .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today)));
+    // Fetch all context in parallel
+    const [
+      metricsRows, mentalRows, fitnessLoad,
+      metrics14, checkins14, activities10,
+      upcomingWorkouts, profileRows, weightRows, sessionRows,
+    ] = await Promise.all([
+      db.select().from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))).limit(1),
+      db.select().from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today))).limit(1),
+      computeFitnessLoad(userId, today),
+      db.select({ date: pulseDailyMetrics.date, sleepHours: pulseDailyMetrics.sleepHours,
+        hrvRmssd: pulseDailyMetrics.hrvRmssd, bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg })
+        .from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since14)))
+        .orderBy(pulseDailyMetrics.date),
+      db.select({ date: pulseMentalCheckins.date, mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy, stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation })
+        .from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since14)))
+        .orderBy(pulseMentalCheckins.date),
+      db.select({ startTime: pulseActivities.startTime, activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec, tss: pulseActivities.tss,
+        normalizedPowerW: pulseActivities.normalizedPowerW, avgHr: pulseActivities.avgHr })
+        .from(pulseActivities)
+        .where(eq(pulseActivities.userId, userId))
+        .orderBy(desc(pulseActivities.startTime)).limit(10),
+      db.select({ plannedDate: pulsePlannedWorkouts.plannedDate, activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone, durationMin: pulsePlannedWorkouts.durationMin,
+        description: pulsePlannedWorkouts.description })
+        .from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.userId, userId), eq(pulsePlannedWorkouts.status, 'planned'), gte(pulsePlannedWorkouts.plannedDate, today)))
+        .orderBy(pulsePlannedWorkouts.plannedDate).limit(3),
+      db.select({ ftpWatts: pulseUserProfile.ftpWatts, maxHrBpm: pulseUserProfile.maxHrBpm,
+        vo2max: pulseUserProfile.vo2max, trainingPhase: pulseUserProfile.trainingPhase })
+        .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
+      db.select({ date: pulseWeightLog.date, weightKg: pulseWeightLog.weightKg })
+        .from(pulseWeightLog).where(eq(pulseWeightLog.userId, userId))
+        .orderBy(desc(pulseWeightLog.date)).limit(35),
+      db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })
+        .from(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId))
+        .orderBy(desc(pulseCoachSessions.lastMessageAt)).limit(1),
+    ]);
 
-    const [mental] = await db.select()
-      .from(pulseMentalCheckins)
-      .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today)));
-
-    const fitnessLoad = await computeFitnessLoad(userId, today);
+    const metrics = metricsRows[0] ?? null;
+    const mental  = mentalRows[0]  ?? null;
 
     const mentalScore = mental
       ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
       : null;
-
     const readiness = computeReadinessScore({
       sleepHours:     metrics?.sleepHours ?? null,
       hrvStatus:      metrics?.hrvStatus ?? null,
@@ -191,43 +233,63 @@ export default async function pulsePlugin(app: FastifyInstance) {
       tsb:            fitnessLoad.tsb,
     });
 
-    const replyText = await getCoachReply(parsed.data.message, {
-      readiness:      readiness.score,
-      sleepHours:     metrics?.sleepHours ?? null,
-      hrvStatus:      metrics?.hrvStatus ?? null,
-      bodyBatteryMax: metrics?.bodyBatteryMax ?? null,
-      tsb:            fitnessLoad.tsb,
-      stressAvg:      metrics?.stressAvg ?? null,
-    });
+    // Weight trend
+    const latestW  = weightRows[0] ?? null;
+    const cutoff30 = new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]!;
+    const w30ago   = weightRows.find(w => w.date <= cutoff30) ?? null;
+    const trend30d = latestW && w30ago
+      ? Math.round((latestW.weightKg - w30ago.weightKg) * 10) / 10
+      : null;
 
-    const userMsg: PulseCoachMessage = {
-      role: 'user',
-      content: parsed.data.message,
-      timestamp: new Date().toISOString(),
-    };
-    const assistantMsg: PulseCoachMessage = {
-      role: 'assistant',
-      content: replyText,
-      timestamp: new Date().toISOString(),
+    const coachCtx: CoachFullContext = {
+      today,
+      readiness: { score: readiness.score, label: readiness.label },
+      todayMetrics: metrics ? {
+        sleepHours:     metrics.sleepHours,
+        sleepScore:     null,
+        hrvRmssd:       metrics.hrvRmssd,
+        hrvStatus:      metrics.hrvStatus,
+        restingHr:      null,
+        bodyBatteryMax: metrics.bodyBatteryMax,
+        stressAvg:      metrics.stressAvg,
+        steps:          null,
+      } : null,
+      todayCheckin: mental ? {
+        mood: mental.mood, energy: mental.energy, stress: mental.stress,
+        motivation: mental.motivation, notes: mental.notes,
+      } : null,
+      load: { ctl: fitnessLoad.ctl, atl: fitnessLoad.atl, tsb: fitnessLoad.tsb },
+      profile: profileRows[0] ?? null,
+      recentActivities: activities10.map(a => ({
+        date: new Date(a.startTime).toISOString().split('T')[0]!,
+        activityType: a.activityType,
+        durationSec: a.durationSec,
+        tss: a.tss,
+        normalizedPowerW: a.normalizedPowerW,
+        avgHr: a.avgHr,
+      })),
+      upcomingWorkouts,
+      metrics14,
+      checkins14,
+      latestWeight: latestW ? { weightKg: latestW.weightKg, date: latestW.date, trend30d } : null,
     };
 
-    const [existingSession] = await db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })
-      .from(pulseCoachSessions)
-      .where(eq(pulseCoachSessions.userId, userId))
-      .orderBy(desc(pulseCoachSessions.lastMessageAt))
-      .limit(1);
+    const systemPrompt = buildRichSystemPrompt(coachCtx);
+    const existingSession = sessionRows[0] ?? null;
+    const history = (existingSession?.messages as PulseCoachMessage[] ?? []);
+
+    const replyText = await getCoachReplyRich(parsed.data.message, systemPrompt, history);
+
+    const userMsg: PulseCoachMessage = { role: 'user',      content: parsed.data.message, timestamp: new Date().toISOString() };
+    const botMsg:  PulseCoachMessage = { role: 'assistant', content: replyText,            timestamp: new Date().toISOString() };
 
     if (existingSession) {
-      const msgs = existingSession.messages as PulseCoachMessage[];
-      const updated = [...msgs.slice(-20), userMsg, assistantMsg];
+      const updated = [...history.slice(-20), userMsg, botMsg];
       await db.update(pulseCoachSessions)
         .set({ messages: updated, lastMessageAt: new Date() })
         .where(eq(pulseCoachSessions.id, existingSession.id));
     } else {
-      await db.insert(pulseCoachSessions).values({
-        userId,
-        messages: [userMsg, assistantMsg],
-      });
+      await db.insert(pulseCoachSessions).values({ userId, messages: [userMsg, botMsg] });
     }
 
     return { reply: replyText };

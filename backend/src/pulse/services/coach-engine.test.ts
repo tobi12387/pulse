@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../lib/llm.js', () => ({
-  llmComplete: vi.fn().mockResolvedValue('LLM-Antwort für unbekannten Intent.'),
-  FAST_MODEL: 'test-model',
-  SMART_MODEL: 'test-model',
+  llmComplete:  vi.fn().mockResolvedValue('{}'),
+  llmChat:      vi.fn().mockResolvedValue('Coach-Antwort'),
+  FAST_MODEL:   'test-model',
+  SMART_MODEL:  'test-model',
 }));
 
 vi.mock('../../lib/env.js', () => ({
@@ -13,50 +14,63 @@ vi.mock('../../lib/env.js', () => ({
   },
 }));
 
-describe('detectIntent', () => {
-  it('detects greeting', async () => {
-    const { detectIntent } = await import('./coach-engine.js');
-    expect(detectIntent('Hallo!')).toBe('greeting');
-    expect(detectIntent('Hey Coach')).toBe('greeting');
-    expect(detectIntent('Guten Morgen')).toBe('greeting');
+describe('buildRichSystemPrompt', () => {
+  it('includes readiness and today date', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-04-27',
+      readiness: { score: 75, label: 'good' },
+      todayMetrics: { sleepHours: 7.2, sleepScore: 82, hrvRmssd: 48, hrvStatus: 'normal', restingHr: 55, bodyBatteryMax: 72, stressAvg: 28, steps: 8500 },
+      todayCheckin: { mood: 7, energy: 8, stress: 3, motivation: 9, notes: null },
+      load: { ctl: 52, atl: 58, tsb: -6 },
+      profile: { ftpWatts: 171, maxHrBpm: 182, vo2max: 52, trainingPhase: 'base' },
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: { weightKg: 78.2, date: '2026-04-27', trend30d: -0.4 },
+    });
+    expect(prompt).toContain('2026-04-27');
+    expect(prompt).toContain('75/100');
+    expect(prompt).toContain('CTL 52');
+    expect(prompt).toContain('FTP 171W');
+    expect(prompt).toContain('78.2kg');
   });
 
-  it('detects sleep query', async () => {
-    const { detectIntent } = await import('./coach-engine.js');
-    expect(detectIntent('Wie war mein Schlaf?')).toBe('sleep');
-    expect(detectIntent('Ich bin müde heute')).toBe('sleep');
-  });
-
-  it('detects hrv query', async () => {
-    const { detectIntent } = await import('./coach-engine.js');
-    expect(detectIntent('Was bedeutet mein HRV?')).toBe('hrv');
-  });
-
-  it('returns null for unknown input', async () => {
-    const { detectIntent } = await import('./coach-engine.js');
-    expect(detectIntent('Was ist der Sinn des Lebens?')).toBeNull();
+  it('handles null metrics gracefully', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-04-27',
+      readiness: { score: 50, label: 'moderate' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 30, atl: 35, tsb: -5 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+    });
+    expect(typeof prompt).toBe('string');
+    expect(prompt).toContain('50/100');
   });
 });
 
-describe('getCoachReply', () => {
-  it('returns rule-based reply for greeting', async () => {
-    const { getCoachReply } = await import('./coach-engine.js');
-    const reply = await getCoachReply('Hallo!', {
-      readiness: 75, sleepHours: 7.5, hrvStatus: 'balanced',
-      bodyBatteryMax: 80, tsb: 5, stressAvg: 30,
-    });
-    expect(reply).toContain('75');
-    expect(typeof reply).toBe('string');
-  });
-
-  it('falls back to LLM for unrecognized message', async () => {
-    const { llmComplete } = await import('../../lib/llm.js');
-    const { getCoachReply } = await import('./coach-engine.js');
-    await getCoachReply('Was ist der Sinn des Lebens?', {
-      readiness: 70, sleepHours: 7, hrvStatus: 'normal',
-      bodyBatteryMax: 70, tsb: 0, stressAvg: 40,
-    });
-    expect(llmComplete).toHaveBeenCalled();
+describe('getCoachReplyRich', () => {
+  it('calls llmChat with system prompt and history', async () => {
+    const { llmChat }          = await import('../../lib/llm.js');
+    const { getCoachReplyRich } = await import('./coach-engine.js');
+    await getCoachReplyRich('Was sollte ich heute trainieren?', 'System-Prompt', [
+      { role: 'user', content: 'Hallo' },
+      { role: 'assistant', content: 'Hallo Tobi!' },
+    ]);
+    expect(llmChat).toHaveBeenCalled();
+    const calls = vi.mocked(llmChat).mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const messages = calls[0]![0] as Array<{ role: string; content: string }>;
+    expect(messages[0]!.role).toBe('system');
+    expect(messages[messages.length - 1]!.content).toBe('Was sollte ich heute trainieren?');
   });
 });
 
@@ -66,36 +80,26 @@ describe('classifyAndExtractCheckin', () => {
     vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
       isCheckin: true,
       extraction: {
-        mood: 4,
-        energy: 3,
-        stress: 5,
-        motivation: 4,
+        mood: 4, energy: 3, stress: 5, motivation: 4,
         themes: ['Schlaf', 'Rücken'],
         followUpQuestions: ['Seit wann hast du Rückenschmerzen?'],
       },
-      coachReply: 'Ich höre, dass du dich heute müde fühlst und Rückenschmerzen hast.',
+      coachReply: 'Ich höre, dass du dich heute müde fühlst.',
     }));
     const { classifyAndExtractCheckin } = await import('./coach-engine.js');
-    const result = await classifyAndExtractCheckin(
-      'Ich fühl mich heute ziemlich müde, hab schlecht geschlafen, Rücken schmerzt etwas. Stimmung geht so.'
-    );
+    const result = await classifyAndExtractCheckin('Ich fühl mich heute ziemlich müde, Rücken schmerzt.');
     expect(result.isCheckin).toBe(true);
-    expect(result.extraction).toBeDefined();
-    expect(result.extraction!.mood).toBeGreaterThanOrEqual(1);
-    expect(result.extraction!.mood).toBeLessThanOrEqual(10);
-    expect(result.extraction!.themes).toContain('Schlaf');
+    expect(result.extraction?.themes).toContain('Schlaf');
   });
 
   it('erkennt eine Frage als kein Check-in', async () => {
     const { llmComplete } = await import('../../lib/llm.js');
     vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
       isCheckin: false,
-      coachReply: 'Diese Woche solltest du etwa 40-50 km laufen, abhängig von deiner aktuellen Fitness.',
+      coachReply: 'Diese Woche solltest du etwa 40-50 km laufen.',
     }));
     const { classifyAndExtractCheckin } = await import('./coach-engine.js');
-    const result = await classifyAndExtractCheckin(
-      'Wie viele Kilometer sollte ich diese Woche laufen?'
-    );
+    const result = await classifyAndExtractCheckin('Wie viele km sollte ich diese Woche laufen?');
     expect(result.isCheckin).toBe(false);
     expect(result.extraction).toBeUndefined();
   });
