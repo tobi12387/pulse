@@ -3,6 +3,7 @@ import { usePulseHome, useGarminSync, usePulseMetrics } from '@/pulse/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { StatCard } from '@/components/StatCard';
+import { Skeleton, StatGridSkeleton } from '@/components/Skeleton';
 
 function fmt(v: number | null | undefined, decimals = 0): string {
   return v == null ? '–' : v.toFixed(decimals);
@@ -39,10 +40,18 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em' }}
-        className="py-12 text-center uppercase"
-      >
-        Loading…
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+            <Skeleton height={10} width="50%" />
+            <Skeleton height={22} width="40%" />
+          </div>
+          <Skeleton height={72} width={88} />
+        </div>
+        <StatGridSkeleton cols={3} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[0,1,2,3].map(i => <Skeleton key={i} height={80} />)}
+        </div>
       </div>
     );
   }

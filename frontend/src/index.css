@@ -110,6 +110,17 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   /* All numbers are mono — enforce on numeric elements */
@@ -122,6 +133,18 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--surface-2); }
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
 /* ─── Cockpit Typography Scale ──────────────────────────────────────────── */

@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
 import { useCheckinToday } from '@/pulse/hooks';
+import { useNavHotkeys } from '@/hooks/useHotkeys';
 
 const NAV_ITEMS = [
   { to: '/',         label: 'Dashboard', key: '1', end: true  },
@@ -16,6 +17,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const { data: checkinData } = useCheckinToday();
   const hasCheckin = !!checkinData?.checkin;
+  useNavHotkeys();
 
   async function handleLogout() {
     await api.auth.logout().catch(() => {});
@@ -102,63 +104,62 @@ export default function Layout() {
       </aside>
 
       {/* ── Mobile topbar ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 h-11 border-b"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 border-b"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 44 }}
       >
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: '0.18em',
-            color: 'var(--accent)',
-          }}
-        >
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', color: 'var(--accent)' }}>
           PULSE
         </span>
-        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-          {new Date().toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.1em' }}>
+          {new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
         </span>
       </div>
 
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-11 pb-14 md:pb-0">
-        <div className="max-w-3xl mx-auto px-4 py-5 md:py-6">
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto px-4 max-w-3xl pt-[60px] pb-[68px] md:pt-6 md:pb-6">
           <Outlet />
         </div>
       </main>
 
       {/* ── Mobile bottom nav ── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 flex border-t"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 52 }}
       >
         {NAV_ITEMS.map(({ to, label, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center py-2.5 gap-0.5 text-[10px] transition-colors ${
-                isActive ? 'text-[var(--accent)]' : 'text-[var(--text-3)]'
-              }`
-            }
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, position: 'relative' }}
           >
             {({ isActive }) => (
               <>
-                <span
-                  className="w-1 h-1 rounded-full"
-                  style={{ background: isActive ? 'var(--accent)' : 'transparent' }}
-                />
-                <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>
-                  {label.toUpperCase()}
-                </span>
                 {to === '/coach' && !hasCheckin && (
                   <span
-                    className="absolute top-1.5 w-1 h-1 rounded-full"
-                    style={{ background: 'var(--amber)' }}
+                    style={{
+                      position: 'absolute', top: 6, right: 'calc(50% - 14px)',
+                      width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)',
+                    }}
                   />
                 )}
+                <span
+                  style={{
+                    width: 16, height: 2, borderRadius: 1,
+                    background: isActive ? 'var(--accent)' : 'transparent',
+                    transition: 'background 0.15s',
+                  }}
+                />
+                <span style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 9,
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  color: isActive ? 'var(--accent)' : 'var(--text-3)',
+                  transition: 'color 0.15s',
+                }}>
+                  {label}
+                </span>
               </>
             )}
           </NavLink>

@@ -6,6 +6,7 @@ import {
 
 type Tab = 'training' | 'ziele' | 'review';
 
+
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
 }
@@ -50,11 +51,18 @@ function TabBar({ tabs, active, onChange }: {
   );
 }
 
-function Loading() {
+import { Skeleton } from '@/components/Skeleton';
+
+function Loading({ rows = 3 }: { rows?: number }) {
   return (
-    <div style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em' }}
-      className="py-10 text-center uppercase">
-      Loading…
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <Skeleton height={10} width="35%" />
+          <Skeleton height={16} width="70%" />
+          <Skeleton height={12} width="50%" />
+        </div>
+      ))}
     </div>
   );
 }

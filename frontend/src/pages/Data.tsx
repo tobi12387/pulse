@@ -4,6 +4,7 @@ import {
   usePulseMetrics, usePulseWeight, useLogWeight,
 } from '@/pulse/hooks';
 import { SparkLine, SparkBar } from '@/components/SparkChart';
+import { Skeleton } from '@/components/Skeleton';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
@@ -45,11 +46,16 @@ function TabBar({ tabs, active, onChange }: {
   );
 }
 
-function Loading() {
+function Loading({ rows = 4 }: { rows?: number }) {
   return (
-    <div style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em' }}
-      className="py-10 text-center uppercase">
-      Loading…
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Skeleton height={10} width="40%" />
+          <Skeleton height={20} width="60%" />
+          <Skeleton height={28} />
+        </div>
+      ))}
     </div>
   );
 }
