@@ -62,6 +62,10 @@ export const pulseApi = {
       request('/checkin/voice', { method: 'POST', body: JSON.stringify({ audio, mimeType }) }),
     today: (): Promise<{ checkin: { id: string; date: string } | null }> =>
       request('/checkin/today'),
+    history: (days = 30): Promise<{ checkins: Array<{
+      id: string; date: string; mood: number; energy: number; stress: number; motivation: number;
+    }> }> =>
+      request(`/checkin/history?days=${days}`),
   },
 
   sleep: {

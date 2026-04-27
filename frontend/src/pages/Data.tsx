@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, usePulseHome, useCheckinToday,
-  usePulseMetrics, usePulseWeight, useLogWeight,
+  usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
 } from '@/pulse/hooks';
-import { SparkLine, SparkBar } from '@/components/SparkChart';
+import { SparkLine, SparkBar, LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
@@ -26,20 +26,42 @@ function TabBar({ tabs, active, onChange }: {
           key={t.id}
           onClick={() => onChange(t.id)}
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            paddingBottom: 10,
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+            textTransform: 'uppercase', paddingBottom: 10,
             color: active === t.id ? 'var(--text)' : 'var(--text-3)',
-            background: 'none',
-            border: 'none',
+            background: 'none', border: 'none',
             borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-            cursor: 'pointer',
-            transition: 'color 0.15s',
+            cursor: 'pointer', transition: 'color 0.15s',
           }}
         >
           {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RangePicker({ value, onChange, options }: {
+  value: number;
+  onChange: (v: number) => void;
+  options: { value: number; label: string }[];
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {options.map(o => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 10px',
+            borderRadius: 4, letterSpacing: '0.1em',
+            background: value === o.value ? 'var(--surface-2)' : 'transparent',
+            color: value === o.value ? 'var(--text)' : 'var(--text-3)',
+            border: '1px solid ' + (value === o.value ? 'var(--border)' : 'transparent'),
+            cursor: 'pointer',
+          }}
+        >
+          {o.label}
         </button>
       ))}
     </div>
@@ -53,7 +75,7 @@ function Loading({ rows = 4 }: { rows?: number }) {
         <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Skeleton height={10} width="40%" />
           <Skeleton height={20} width="60%" />
-          <Skeleton height={28} />
+          <Skeleton height={64} />
         </div>
       ))}
     </div>
@@ -104,28 +126,40 @@ function SleepStageBar({ deepH, remH, lightH, awakeH, totalH }: {
   );
 }
 
+const RANGE_OPTS = [
+  { value: 7,  label: '7T'  },
+  { value: 30, label: '30T' },
+  { value: 90, label: '90T' },
+];
+
 function SchlafTab() {
-  const { data, isLoading, error } = usePulseSleep(28);
+  const [days, setDays] = useState(30);
+  const { data, isLoading, error } = usePulseSleep(days);
   if (isLoading) return <Loading />;
   if (error) return <Empty msg={error.message} />;
   const sessions = data?.sessions ?? [];
   if (sessions.length === 0) return <Empty msg="Keine Schlafdaten — Garmin sync." />;
 
-  const durations = [...sessions].reverse().map(s => s.durationH);
+  const chronological = [...sessions].reverse();
+  const durations = chronological.map(s => s.durationH);
+  const labels    = chronological.map(s => s.date);
   const avg = sessions.reduce((s, x) => s + (x.durationH ?? 0), 0) / sessions.length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Overview sparkbar */}
+      {/* Range selector + overview chart */}
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span className="label-mono">28 Tage — Dauer</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
-            Ø {avg.toFixed(1)}h
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div>
+            <span className="label-mono">Schlafdauer</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>
+              Ø {avg.toFixed(1)}h
+            </span>
+          </div>
+          <RangePicker value={days} onChange={setDays} options={RANGE_OPTS} />
         </div>
-        <SparkBar values={durations} height={36} color="var(--blue)" />
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+        <LineChart values={durations} labels={labels} height={80} color="var(--blue)" fillOpacity={0.12} />
+        <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
           {[['deep','Tief'],['rem','REM'],['light','Leicht']] .map(([k,l]) => (
             <SleepStagePill key={k} color={STAGE_COLORS[k as keyof typeof STAGE_COLORS]} label={l} value="" />
           ))}
@@ -134,11 +168,7 @@ function SchlafTab() {
 
       {/* Per-night rows */}
       {sessions.map((s, i) => (
-        <div
-          key={s.date}
-          className="card"
-          style={{ padding: '10px 14px', borderTop: i > 0 ? undefined : undefined }}
-        >
+        <div key={s.date} className="card" style={{ padding: '10px 14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'baseline' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{s.date}</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
@@ -164,37 +194,59 @@ function SchlafTab() {
 
 // ─── Metriken ─────────────────────────────────────────────────────────────────
 
-function MetricRow({ label, values, latest, suffix, color }: {
-  label: string; values: (number | null)[]; latest: number | null; suffix?: string; color: string;
+interface MetricDef {
+  label: string;
+  key: keyof ReturnType<typeof usePulseMetrics>['data'] extends { metrics: (infer M)[] } ? M : never;
+  color: string;
+  suffix?: string;
+  toValue: (r: { hrvRmssd: number | null; restingHr: number | null; bodyBatteryMax: number | null; stressAvg: number | null; steps: number | null }) => number | null;
+}
+
+function MetricCard({ label, values, labels, latest, suffix, color }: {
+  label: string; values: (number | null)[]; labels: string[];
+  latest: number | null; suffix?: string; color: string;
 }) {
   return (
     <div className="card" style={{ padding: '10px 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
         <span className="label-mono">{label}</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
-          {fmt(latest, 0, suffix)}
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>
+          {fmt(latest, 0, suffix ?? '')}
         </span>
       </div>
-      <SparkLine values={values} height={28} color={color} fillOpacity={0.1} />
+      <LineChart values={values} labels={labels} height={72} color={color} fillOpacity={0.1} />
     </div>
   );
 }
 
 function MetrikenTab() {
-  const { data, isLoading } = usePulseMetrics(28);
+  const [days, setDays] = useState(30);
+  const { data, isLoading } = usePulseMetrics(days);
   if (isLoading) return <Loading />;
   const rows = data?.metrics ?? [];
   if (rows.length === 0) return <Empty msg="Noch keine Daten — Garmin sync." />;
 
   const last = rows[rows.length - 1];
+  const labels = rows.map(r => r.date);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <MetricRow label="HRV (ms)"          values={rows.map(r => r.hrvRmssd)}           latest={last?.hrvRmssd ?? null}       color="var(--accent)" />
-      <MetricRow label="Ruhepuls (bpm)"    values={rows.map(r => r.restingHr)}           latest={last?.restingHr ?? null}      color="var(--rose)"   />
-      <MetricRow label="Body Battery (%)"  values={rows.map(r => r.bodyBatteryMax)}      latest={last?.bodyBatteryMax ?? null}  suffix="%" color="var(--green)" />
-      <MetricRow label="Stress"            values={rows.map(r => r.stressAvg)}           latest={last?.stressAvg ?? null}      color="var(--amber)"  />
-      <MetricRow label="Schritte (k)"      values={rows.map(r => r.steps != null ? r.steps / 1000 : null)}
-                                            latest={last?.steps != null ? last.steps / 1000 : null} suffix="k" color="var(--blue)" />
+      {/* Range selector */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <RangePicker value={days} onChange={setDays} options={RANGE_OPTS} />
+      </div>
+
+      <MetricCard label="HRV (ms)"         values={rows.map(r => r.hrvRmssd)}      labels={labels} latest={last?.hrvRmssd ?? null}      color="var(--accent)" />
+      <MetricCard label="Ruhepuls (bpm)"   values={rows.map(r => r.restingHr)}     labels={labels} latest={last?.restingHr ?? null}     color="var(--rose)" />
+      <MetricCard label="Body Battery"     values={rows.map(r => r.bodyBatteryMax)} labels={labels} latest={last?.bodyBatteryMax ?? null} suffix="%" color="var(--green)" />
+      <MetricCard label="Stress"           values={rows.map(r => r.stressAvg)}     labels={labels} latest={last?.stressAvg ?? null}     color="var(--amber)" />
+      <MetricCard label="Schritte"
+        values={rows.map(r => r.steps != null ? Math.round(r.steps / 100) / 10 : null)}
+        labels={labels}
+        latest={last?.steps != null ? Math.round(last.steps / 100) / 10 : null}
+        suffix="k"
+        color="var(--blue)"
+      />
 
       {/* Daily table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 4 }}>
@@ -213,7 +265,7 @@ function MetrikenTab() {
             </tr>
           </thead>
           <tbody>
-            {[...rows].reverse().slice(0, 14).map((r, i) => (
+            {[...rows].reverse().slice(0, Math.min(days, 14)).map((r, i) => (
               <tr key={r.date} style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
                 <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>{r.date}</td>
                 <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', textAlign: 'right' }}>{fmt(r.hrvRmssd, 0)}</td>
@@ -231,8 +283,15 @@ function MetrikenTab() {
 
 // ─── Gewicht ──────────────────────────────────────────────────────────────────
 
+const WEIGHT_RANGE_OPTS = [
+  { value: 30,  label: '30T' },
+  { value: 90,  label: '90T' },
+  { value: 180, label: '180T' },
+];
+
 function GewichtTab() {
-  const { data, isLoading } = usePulseWeight(90);
+  const [days, setDays] = useState(90);
+  const { data, isLoading } = usePulseWeight(days);
   const logWeight = useLogWeight();
   const [kg, setKg] = useState('');
   const [inputError, setInputError] = useState('');
@@ -247,13 +306,16 @@ function GewichtTab() {
   }
 
   const entries = data?.entries ?? [];
-  const weights = [...entries].reverse().map(e => e.weightKg);
+  const chronological = [...entries].reverse();
+  const weights = chronological.map(e => e.weightKg);
+  const weightLabels = chronological.map(e => e.date);
   const latest  = entries[0];
-  const prev7   = entries.find((_, i) => {
+  const prev7   = entries.find((e) => {
     if (!latest) return false;
-    const d = new Date(latest.date);
-    d.setDate(d.getDate() - 7);
-    return entries[i]?.date <= d.toISOString().split('T')[0]!;
+    const cutoff = new Date(latest.date);
+    cutoff.setDate(cutoff.getDate() - 7);
+    const y = cutoff.getFullYear(), m = String(cutoff.getMonth()+1).padStart(2,'0'), d = String(cutoff.getDate()).padStart(2,'0');
+    return e.date <= `${y}-${m}-${d}`;
   });
   const trend7d = latest && prev7 ? latest.weightKg - prev7.weightKg : null;
 
@@ -268,30 +330,19 @@ function GewichtTab() {
             onChange={e => { setKg(e.target.value); setInputError(''); }}
             placeholder="kg"
             style={{
-              flex: 1,
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: '7px 12px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              color: 'var(--text)',
-              outline: 'none',
+              flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)', padding: '7px 12px',
+              fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)', outline: 'none',
             }}
           />
           <button
             type="submit"
             disabled={logWeight.isPending || !kg}
             style={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: '7px 14px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: kg ? 'var(--accent)' : 'var(--text-3)',
+              background: 'var(--surface-2)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)', padding: '7px 14px',
+              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: kg ? 'var(--accent)' : 'var(--text-3)',
               cursor: kg ? 'pointer' : 'default',
             }}
           >
@@ -334,7 +385,6 @@ function GewichtTab() {
             </div>
           </div>
 
-          {/* Body composition — shown if Garmin provides it */}
           {(latest.bodyFatPct != null || latest.muscleMassKg != null || latest.bmi != null) && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {latest.bodyFatPct != null && (
@@ -369,11 +419,14 @@ function GewichtTab() {
         </>
       )}
 
-      {/* 90d sparkline */}
+      {/* Verlauf chart */}
       {weights.length >= 3 && (
         <div className="card">
-          <span className="label-mono" style={{ display: 'block', marginBottom: 8 }}>Verlauf 90 Tage</span>
-          <SparkLine values={weights} height={48} color="var(--accent)" fillOpacity={0.08} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span className="label-mono">Verlauf</span>
+            <RangePicker value={days} onChange={setDays} options={WEIGHT_RANGE_OPTS} />
+          </div>
+          <LineChart values={weights} labels={weightLabels} height={80} color="var(--accent)" fillOpacity={0.08} />
         </div>
       )}
 
@@ -384,14 +437,10 @@ function GewichtTab() {
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="label-mono" style={{ padding: '10px 14px 6px' }}>Einträge</div>
           {entries.slice(0, 20).map((e) => (
-            <div
-              key={e.id}
-              style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '7px 14px',
-                borderTop: '1px solid var(--border)',
-              }}
-            >
+            <div key={e.id} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '7px 14px', borderTop: '1px solid var(--border)',
+            }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>
                 {e.date}
                 {e.source === 'garmin' && (
@@ -436,10 +485,7 @@ function ScoreSlider({ label, value, onChange }: { label: string; value: number;
         <input
           type="range" min={1} max={10} value={value}
           onChange={e => onChange(Number(e.target.value))}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            opacity: 0, cursor: 'pointer', margin: 0,
-          }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0 }}
         />
       </div>
     </div>
@@ -447,10 +493,12 @@ function ScoreSlider({ label, value, onChange }: { label: string; value: number;
 }
 
 function MentalTab() {
-  const home            = usePulseHome();
-  const { data: today } = useCheckinToday();
-  const checkin         = usePulseCheckin();
-  const [form, setForm] = useState({ mood: 7, energy: 7, stress: 3, motivation: 7, notes: '' });
+  const [days, setDays] = useState(30);
+  const home               = usePulseHome();
+  const { data: today }    = useCheckinToday();
+  const checkin            = usePulseCheckin();
+  const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
+  const [form, setForm]    = useState({ mood: 7, energy: 7, stress: 3, motivation: 7, notes: '' });
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -461,6 +509,8 @@ function MentalTab() {
 
   const readiness   = home.data?.readiness;
   const alreadyDone = today?.checkin != null;
+  const checkins    = histData?.checkins ?? [];
+  const labels      = checkins.map(c => c.date);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -478,6 +528,7 @@ function MentalTab() {
         </div>
       )}
 
+      {/* Check-in form */}
       {alreadyDone || submitted ? (
         <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)', letterSpacing: '0.12em' }}>
@@ -516,6 +567,44 @@ function MentalTab() {
               {checkin.isPending ? 'Speichern…' : 'Check-in senden'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* History charts */}
+      {checkins.length >= 3 && (
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span className="label-mono">Verlauf</span>
+            <RangePicker value={days} onChange={setDays} options={RANGE_OPTS} />
+          </div>
+          {histLoading ? (
+            <Skeleton height={64} />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { key: 'mood'       as const, label: 'Stimmung',   color: 'var(--accent)' },
+                { key: 'energy'     as const, label: 'Energie',    color: 'var(--green)'  },
+                { key: 'stress'     as const, label: 'Stress',     color: 'var(--rose)'   },
+                { key: 'motivation' as const, label: 'Motivation', color: 'var(--amber)'  },
+              ].map(({ key, label, color }) => {
+                const vals = checkins.map(c => c[key]);
+                const latest = vals[vals.length - 1] ?? null;
+                return (
+                  <div key={key}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        {label}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color, fontWeight: 500 }}>
+                        {latest ?? '–'}
+                      </span>
+                    </div>
+                    <LineChart values={vals} labels={labels} height={52} color={color} fillOpacity={0.1} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

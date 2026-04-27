@@ -9,7 +9,8 @@ export const pulseKeys = {
   plan:         ['pulse', 'plan'] as const,
   goals:        ['pulse', 'goals'] as const,
   review:       ['pulse', 'review', 'latest'] as const,
-  checkinToday: ['pulse', 'checkin', 'today'] as const,
+  checkinToday:    ['pulse', 'checkin', 'today'] as const,
+  checkinHistory:  (days: number) => ['pulse', 'checkin', 'history', days] as const,
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
@@ -73,6 +74,14 @@ export function useCheckinToday() {
     queryKey: pulseKeys.checkinToday,
     queryFn: pulseApi.checkin.today,
     staleTime: 60_000,
+  });
+}
+
+export function useCheckinHistory(days = 30) {
+  return useQuery({
+    queryKey: pulseKeys.checkinHistory(days),
+    queryFn: () => pulseApi.checkin.history(days),
+    staleTime: 10 * 60_000,
   });
 }
 

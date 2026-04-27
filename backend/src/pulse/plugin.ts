@@ -376,10 +376,30 @@ export default async function pulsePlugin(app: FastifyInstance) {
     return { checkin: checkin ?? null };
   });
 
+  // GET /api/pulse/checkin/history?days=30
+  app.get('/checkin/history', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { days?: string };
+    const days = Math.min(180, Math.max(7, parseInt(q.days ?? '30', 10)));
+    const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
+    const checkins = await db.select({
+      id: pulseMentalCheckins.id,
+      date: pulseMentalCheckins.date,
+      mood: pulseMentalCheckins.mood,
+      energy: pulseMentalCheckins.energy,
+      stress: pulseMentalCheckins.stress,
+      motivation: pulseMentalCheckins.motivation,
+    })
+      .from(pulseMentalCheckins)
+      .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since)))
+      .orderBy(pulseMentalCheckins.date);
+    return { checkins };
+  });
+
   // ─── Sleep sessions ───────────────────────────────────────────────────────────
   app.get('/sleep', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
-    const limit = Math.min(Number((req.query as { limit?: string }).limit ?? 7), 30);
+    const limit = Math.min(Number((req.query as { limit?: string }).limit ?? 7), 90);
     const sessions = await db.select()
       .from(pulseSleepSessions)
       .where(eq(pulseSleepSessions.userId, userId))
