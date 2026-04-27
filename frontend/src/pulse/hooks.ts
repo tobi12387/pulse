@@ -3,13 +3,15 @@ import { pulseApi } from './api-client.js';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const pulseKeys = {
-  home:       ['pulse', 'home'] as const,
-  sleep:      (limit: number) => ['pulse', 'sleep', limit] as const,
-  activities: (limit: number) => ['pulse', 'activities', limit] as const,
-  plan:       ['pulse', 'plan'] as const,
-  goals:      ['pulse', 'goals'] as const,
-  review:     ['pulse', 'review', 'latest'] as const,
+  home:         ['pulse', 'home'] as const,
+  sleep:        (limit: number) => ['pulse', 'sleep', limit] as const,
+  activities:   (limit: number) => ['pulse', 'activities', limit] as const,
+  plan:         ['pulse', 'plan'] as const,
+  goals:        ['pulse', 'goals'] as const,
+  review:       ['pulse', 'review', 'latest'] as const,
   checkinToday: ['pulse', 'checkin', 'today'] as const,
+  metrics:      (days: number) => ['pulse', 'metrics', days] as const,
+  weight:       (days: number) => ['pulse', 'weight', days] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -106,5 +108,29 @@ export function useGenerateReview() {
   return useMutation({
     mutationFn: pulseApi.review.generate,
     onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.review }),
+  });
+}
+
+export function usePulseMetrics(days = 14) {
+  return useQuery({
+    queryKey: pulseKeys.metrics(days),
+    queryFn: () => pulseApi.metrics.list(days),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function usePulseWeight(days = 90) {
+  return useQuery({
+    queryKey: pulseKeys.weight(days),
+    queryFn: () => pulseApi.weight.list(days),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useLogWeight() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.weight.log,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pulse', 'weight'] }),
   });
 }

@@ -229,6 +229,18 @@ export const pulseAppleHealthUploads = pgTable('pulse_apple_health_uploads', {
   status:      varchar('status', { length: 20 }).notNull().default('processed'),
 });
 
+// ─── Weight log ───────────────────────────────────────────────────────────────
+export const pulseWeightLog = pgTable('pulse_weight_log', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  userId:    uuid('user_id').notNull(),
+  date:      date('date').notNull(),
+  weightKg:  real('weight_kg').notNull(),
+  notes:     text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_weight_log_user_date_idx').on(t.userId, t.date),
+]);
+
 // ─── Weekly reviews (LLM-generated) ──────────────────────────────────────────
 export const pulseWeeklyReviews = pgTable('pulse_weekly_reviews', {
   id:              uuid('id').primaryKey().defaultRandom(),

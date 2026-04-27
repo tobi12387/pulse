@@ -11,6 +11,7 @@ import {
   pulseGoals,
   pulseUserProfile,
   pulseWeeklyReviews,
+  pulseWeightLog,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
@@ -487,6 +488,60 @@ export default async function pulsePlugin(app: FastifyInstance) {
     lastMonday.setDate(now.getDate() + mondayOffset - 7);
     const weekStartStr = lastMonday.toISOString().split('T')[0]!;
     return generateWeeklyReview(userId, weekStartStr);
+  });
+
+  // ─── Daily metrics history ─────────────────────────────────────────────────────
+  app.get('/metrics', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const days = Math.min(Number((req.query as { days?: string }).days ?? 14), 90);
+    const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
+    const metrics = await db.select({
+      date:           pulseDailyMetrics.date,
+      hrvRmssd:       pulseDailyMetrics.hrvRmssd,
+      restingHr:      pulseDailyMetrics.restingHr,
+      sleepHours:     pulseDailyMetrics.sleepHours,
+      sleepScore:     pulseDailyMetrics.sleepScore,
+      bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+      stressAvg:      pulseDailyMetrics.stressAvg,
+      steps:          pulseDailyMetrics.steps,
+    }).from(pulseDailyMetrics)
+      .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since)))
+      .orderBy(pulseDailyMetrics.date);
+    return { metrics };
+  });
+
+  // ─── Weight log ────────────────────────────────────────────────────────────────
+  app.get('/weight', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const days = Math.min(Number((req.query as { days?: string }).days ?? 90), 365);
+    const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
+    const entries = await db.select({
+      id: pulseWeightLog.id, date: pulseWeightLog.date,
+      weightKg: pulseWeightLog.weightKg, notes: pulseWeightLog.notes,
+    }).from(pulseWeightLog)
+      .where(and(eq(pulseWeightLog.userId, userId), gte(pulseWeightLog.date, since)))
+      .orderBy(desc(pulseWeightLog.date));
+    return { entries };
+  });
+
+  app.post('/weight', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      weightKg: z.number().min(30).max(300),
+      date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      notes:    z.string().max(500).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const date = parsed.data.date ?? new Date().toISOString().split('T')[0]!;
+    const [entry] = await db.insert(pulseWeightLog).values({
+      userId, date, weightKg: parsed.data.weightKg, notes: parsed.data.notes ?? null,
+    }).onConflictDoUpdate({
+      target: [pulseWeightLog.userId, pulseWeightLog.date],
+      set: { weightKg: parsed.data.weightKg, notes: parsed.data.notes ?? null },
+    }).returning();
+    return reply.status(201).send(entry);
   });
 
   // ─── Garmin manual sync ───────────────────────────────────────────────────────

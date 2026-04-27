@@ -97,4 +97,24 @@ export const pulseApi = {
     sync: (): Promise<{ status: string }> =>
       request('/garmin/sync', { method: 'POST' }),
   },
+
+  metrics: {
+    list: (days = 14): Promise<{ metrics: Array<{
+      date: string; hrvRmssd: number | null; restingHr: number | null;
+      sleepHours: number | null; sleepScore: number | null;
+      bodyBatteryMax: number | null; stressAvg: number | null; steps: number | null;
+    }> }> =>
+      request(`/metrics?days=${days}`),
+  },
+
+  weight: {
+    list: (days = 90): Promise<{ entries: Array<{
+      id: string; date: string; weightKg: number; notes: string | null;
+    }> }> =>
+      request(`/weight?days=${days}`),
+    log: (data: { weightKg: number; date?: string; notes?: string }): Promise<{
+      id: string; date: string; weightKg: number;
+    }> =>
+      request('/weight', { method: 'POST', body: JSON.stringify(data) }),
+  },
 };
