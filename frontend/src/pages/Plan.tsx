@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, usePulseReview, useGenerateReview, useGeneratePlan,
+  useTrainingAnalytics,
 } from '@/pulse/hooks';
+import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 
-type Tab = 'training' | 'ziele' | 'review';
+type Tab = 'training' | 'ziele' | 'review' | 'analyse';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -595,12 +597,248 @@ function ReviewTab() {
   );
 }
 
+// ─── Analyse ──────────────────────────────────────────────────────────────────
+
+const ZONE_FILL: Record<number, string> = {
+  1: 'var(--blue)', 2: 'var(--accent)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
+};
+
+function tssColor(tss: number): string {
+  if (tss <= 0)   return 'var(--surface-2)';
+  if (tss < 50)   return 'var(--blue)';
+  if (tss < 100)  return 'var(--green)';
+  if (tss < 150)  return 'var(--amber)';
+  return 'var(--rose)';
+}
+function tssOpacity(tss: number): number {
+  if (tss <= 0)  return 1;
+  if (tss < 50)  return 0.3 + (tss / 50) * 0.5;
+  if (tss < 100) return 0.8 + ((tss - 50) / 50) * 0.2;
+  return 1;
+}
+
+function isoDateLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+const WEEK_RANGE_OPTS = [
+  { value: 8,  label: '8W'  },
+  { value: 12, label: '12W' },
+  { value: 24, label: '24W' },
+];
+
+function RangePicker({ value, onChange, options }: {
+  value: number; onChange: (v: number) => void;
+  options: { value: number; label: string }[];
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {options.map(o => (
+        <button key={o.value} onClick={() => onChange(o.value)} style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 10px', borderRadius: 4, letterSpacing: '0.1em',
+          background: value === o.value ? 'var(--surface-2)' : 'transparent',
+          color: value === o.value ? 'var(--text)' : 'var(--text-3)',
+          border: '1px solid ' + (value === o.value ? 'var(--border)' : 'transparent'),
+          cursor: 'pointer',
+        }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function AnalyseTab() {
+  const [weeks, setWeeks] = useState(12);
+  const { data, isLoading } = useTrainingAnalytics(weeks);
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {[80, 120, 80].map((h, i) => <Skeleton key={i} height={h} />)}
+      </div>
+    );
+  }
+
+  const heatmap  = data?.tssHeatmap       ?? [];
+  const zones    = data?.zoneDistribution ?? [];
+  const vo2maxRaw = data?.vo2maxTrend     ?? [];
+  const today    = isoDateLocal(new Date());
+
+  // Build heatmap grid: align to Monday of first week
+  const gridStart = new Date();
+  const dayOfWeek = gridStart.getDay();
+  gridStart.setDate(gridStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - (weeks - 1) * 7);
+  const heatMap = new Map(heatmap.map(d => [d.date, d.tss]));
+  const cells: Array<{ date: string; tss: number; future: boolean }> = [];
+  const cur = new Date(gridStart);
+  for (let i = 0; i < weeks * 7; i++) {
+    const ds = isoDateLocal(cur);
+    cells.push({ date: ds, tss: heatMap.get(ds) ?? 0, future: ds > today });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // Max TSS for tooltip display
+  const maxTss = Math.max(...heatmap.map(d => d.tss), 1);
+
+  // Zone stacked bars
+  const maxZoneH = Math.max(...zones.map(z => z.totalH), 0.1);
+
+  // VO2max trend
+  const vo2Labels = vo2maxRaw.map(d => d.date);
+  const vo2Values = vo2maxRaw.map(d => d.vo2max);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Week range selector */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <RangePicker value={weeks} onChange={setWeeks} options={WEEK_RANGE_OPTS} />
+      </div>
+
+      {/* ── TSS Heatmap ── */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+          <span className="label-mono">TSS Kalender</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+            max {maxTss} TSS
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: 4 }}>
+          {/* Day labels */}
+          <div style={{ display: 'grid', gridTemplateRows: 'repeat(7, 10px)', gap: 2, width: 16 }}>
+            {['Mo','','Mi','','Fr','','So'].map((l, i) => (
+              <span key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: 'var(--text-3)', lineHeight: '10px' }}>{l}</span>
+            ))}
+          </div>
+          {/* Grid */}
+          <div style={{
+            flex: 1, display: 'grid',
+            gridTemplateRows: 'repeat(7, 10px)',
+            gridAutoFlow: 'column',
+            gridAutoColumns: '1fr',
+            gap: 2,
+          }}>
+            {cells.map(cell => (
+              <div
+                key={cell.date}
+                title={`${cell.date}: TSS ${cell.tss}`}
+                style={{
+                  borderRadius: 2,
+                  background: cell.future ? 'transparent' : tssColor(cell.tss),
+                  opacity: cell.future ? 0 : tssOpacity(cell.tss),
+                  outline: cell.date === today ? '1px solid var(--accent)' : 'none',
+                  outlineOffset: 1,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 8, alignItems: 'center' }}>
+          {[['<50','var(--blue)'],['50-100','var(--green)'],['100-150','var(--amber)'],['150+','var(--rose)']].map(([label, color]) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block' }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>{label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Zone Distribution ── */}
+      {zones.length > 0 && (
+        <div className="card">
+          <div style={{ marginBottom: 10 }}>
+            <span className="label-mono">Intensitätsverteilung</span>
+          </div>
+
+          {/* Stacked bars */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
+            {zones.map(w => {
+              const totalPct = w.totalH / maxZoneH;
+              return (
+                <div key={w.weekStart} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column-reverse', height: `${totalPct * 100}%`, minHeight: w.totalH > 0 ? 2 : 0 }}>
+                    {([5,4,3,2,1] as const).map(z => {
+                      const h = w.zones[`z${z}` as 'z1'|'z2'|'z3'|'z4'|'z5'];
+                      if (!h) return null;
+                      const hPct = (h / w.totalH) * 100;
+                      return (
+                        <div key={z} style={{
+                          height: `${hPct}%`, minHeight: 2,
+                          background: ZONE_FILL[z],
+                          borderRadius: z === 5 ? '2px 2px 0 0' : 0,
+                        }} title={`Z${z}: ${h}h`} />
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Week labels */}
+          <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
+            {zones.map((w, i) => {
+              const show = i === 0 || i === zones.length - 1 || i % Math.ceil(zones.length / 4) === 0;
+              const parts = w.weekStart.split('-');
+              return (
+                <div key={w.weekStart} style={{ flex: 1, textAlign: 'center' }}>
+                  {show && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: 'var(--text-3)' }}>
+                      {parts[2]}.{parts[1]}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Zone legend */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            {([1,2,3,4,5] as const).map(z => (
+              <span key={z} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: ZONE_FILL[z], display: 'inline-block' }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
+                  Z{z}
+                </span>
+              </span>
+            ))}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', marginLeft: 'auto' }}>
+              max {maxZoneH.toFixed(1)}h/Woche
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── VO2max Trend ── */}
+      {vo2maxRaw.length >= 2 && (
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+            <span className="label-mono">VO2max Trend</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>
+              {vo2Values[vo2Values.length - 1]?.toFixed(1)}
+            </span>
+          </div>
+          <LineChart values={vo2Values} labels={vo2Labels} height={72} color="var(--green)" fillOpacity={0.1} />
+        </div>
+      )}
+
+      {heatmap.length === 0 && zones.length === 0 && (
+        <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0' }}>
+          Keine Aktivitätsdaten — Garmin sync.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TABS = [
   { id: 'training', label: 'Training' },
   { id: 'ziele',    label: 'Ziele'    },
   { id: 'review',   label: 'Review'   },
+  { id: 'analyse',  label: 'Analyse'  },
 ];
 
 export default function Plan() {
@@ -613,6 +851,7 @@ export default function Plan() {
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}
       {tab === 'review'   && <ReviewTab />}
+      {tab === 'analyse'  && <AnalyseTab />}
     </div>
   );
 }

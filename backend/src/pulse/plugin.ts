@@ -1041,6 +1041,106 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
 
     return { correlations };
   });
+
+  // GET /api/pulse/training-analytics?weeks=12
+  app.get('/training-analytics', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { weeks?: string };
+    const weeks = Math.min(24, Math.max(4, parseInt(q.weeks ?? '12', 10)));
+    const since = new Date(Date.now() - weeks * 7 * 86_400_000);
+    const today = new Date().toISOString().split('T')[0]!;
+
+    const [activities, profileRows] = await Promise.all([
+      db.select({
+        startTime:        pulseActivities.startTime,
+        activityType:     pulseActivities.activityType,
+        durationSec:      pulseActivities.durationSec,
+        tss:              pulseActivities.tss,
+        normalizedPowerW: pulseActivities.normalizedPowerW,
+        vo2maxEstimate:   pulseActivities.vo2maxEstimate,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since)))
+        .orderBy(pulseActivities.startTime),
+      db.select({ ftpWatts: pulseUserProfile.ftpWatts })
+        .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
+    ]);
+
+    const ftp = profileRows[0]?.ftpWatts ?? null;
+
+    // ── TSS Heatmap: one entry per day ────────────────────────────────────────
+    const tssByDate = new Map<string, number>();
+    for (const a of activities) {
+      const d = a.startTime.toISOString().split('T')[0]!;
+      tssByDate.set(d, (tssByDate.get(d) ?? 0) + (a.tss ?? 0));
+    }
+
+    const tssHeatmap: Array<{ date: string; tss: number }> = [];
+    const cur = new Date(since);
+    while (cur.toISOString().split('T')[0]! <= today) {
+      const ds = cur.toISOString().split('T')[0]!;
+      tssHeatmap.push({ date: ds, tss: Math.round(tssByDate.get(ds) ?? 0) });
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    // ── Zone distribution per ISO week ────────────────────────────────────────
+    function getZone(a: typeof activities[0]): number | null {
+      if (ftp && a.normalizedPowerW && a.activityType === 'bike') {
+        const IF = a.normalizedPowerW / ftp;
+        if (IF < 0.55) return 1;
+        if (IF < 0.75) return 2;
+        if (IF < 0.87) return 3;
+        if (IF < 0.95) return 4;
+        return 5;
+      }
+      if (a.tss && a.durationSec && a.durationSec > 0) {
+        const tssH = (a.tss / a.durationSec) * 3600;
+        if (tssH < 45)  return 1;
+        if (tssH < 65)  return 2;
+        if (tssH < 85)  return 3;
+        if (tssH < 100) return 4;
+        return 5;
+      }
+      return null;
+    }
+
+    function weekStart(d: Date): string {
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const mon = new Date(d);
+      mon.setDate(d.getDate() + diff);
+      return mon.toISOString().split('T')[0]!;
+    }
+
+    type ZoneMap = { z1: number; z2: number; z3: number; z4: number; z5: number };
+    const zByWeek = new Map<string, ZoneMap>();
+    for (const a of activities) {
+      const zone = getZone(a);
+      if (!zone || !a.durationSec) continue;
+      const ws = weekStart(a.startTime);
+      const entry = zByWeek.get(ws) ?? { z1: 0, z2: 0, z3: 0, z4: 0, z5: 0 };
+      entry[`z${zone}` as keyof ZoneMap] += a.durationSec / 3600;
+      zByWeek.set(ws, entry);
+    }
+
+    const zoneDistribution = [...zByWeek.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([ws, z]) => ({
+        weekStart: ws,
+        zones: {
+          z1: Math.round(z.z1 * 10) / 10, z2: Math.round(z.z2 * 10) / 10,
+          z3: Math.round(z.z3 * 10) / 10, z4: Math.round(z.z4 * 10) / 10,
+          z5: Math.round(z.z5 * 10) / 10,
+        },
+        totalH: Math.round((z.z1 + z.z2 + z.z3 + z.z4 + z.z5) * 10) / 10,
+      }));
+
+    // ── VO2max trend ──────────────────────────────────────────────────────────
+    const vo2maxTrend = activities
+      .filter(a => a.vo2maxEstimate != null)
+      .map(a => ({ date: a.startTime.toISOString().split('T')[0]!, vo2max: a.vo2maxEstimate! }));
+
+    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend };
+  });
 }
 
 // local type aliases to avoid 'as any'

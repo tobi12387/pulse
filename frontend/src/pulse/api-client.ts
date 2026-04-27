@@ -125,6 +125,19 @@ export const pulseApi = {
       request('/briefing'),
   },
 
+  trainingAnalytics: {
+    get: (weeks = 12): Promise<{
+      weeks: number;
+      tssHeatmap: Array<{ date: string; tss: number }>;
+      zoneDistribution: Array<{
+        weekStart: string; totalH: number;
+        zones: { z1: number; z2: number; z3: number; z4: number; z5: number };
+      }>;
+      vo2maxTrend: Array<{ date: string; vo2max: number }>;
+    }> =>
+      request(`/training-analytics?weeks=${weeks}`),
+  },
+
   correlations: {
     get: (days = 30): Promise<{ correlations: Array<{
       id: string; labelX: string; labelY: string; r: number; n: number;
