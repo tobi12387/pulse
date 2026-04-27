@@ -16,6 +16,7 @@ export const pulseKeys = {
   profile:      ['pulse', 'profile'] as const,
   briefing:     ['pulse', 'briefing'] as const,
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
+  correlations: (days: number) => ['pulse', 'correlations', days] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -177,6 +178,14 @@ export function usePulseBriefing() {
     queryFn: pulseApi.briefing.get,
     staleTime: 30 * 60_000,
     retry: false,
+  });
+}
+
+export function useCorrelations(days = 30) {
+  return useQuery({
+    queryKey: pulseKeys.correlations(days),
+    queryFn: () => pulseApi.correlations.get(days),
+    staleTime: 15 * 60_000,
   });
 }
 

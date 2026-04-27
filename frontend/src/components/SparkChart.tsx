@@ -185,3 +185,96 @@ export function SparkBar({ values, height = 40, color = 'currentColor', classNam
     </svg>
   );
 }
+
+// ─── ScatterPlot ──────────────────────────────────────────────────────────────
+
+interface ScatterPoint { x: number; y: number; }
+
+interface ScatterPlotProps {
+  points: ScatterPoint[];
+  height?: number;
+  color?: string;
+}
+
+export function ScatterPlot({ points, height = 100, color = 'var(--accent)' }: ScatterPlotProps) {
+  if (points.length < 3) {
+    return (
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          zu wenig Daten
+        </span>
+      </div>
+    );
+  }
+
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+
+  const PL = 4, PR = 4, PT = 4, PB = 14;
+  const W = 100;
+  const chartH = height - PB;
+  const H = chartH - PT;
+
+  function toSvg(x: number, y: number): [number, number] {
+    return [
+      PL + ((x - minX) / rangeX) * (W - PL - PR),
+      PT + H - ((y - minY) / rangeY) * H,
+    ];
+  }
+
+  // Linear regression
+  const n = points.length;
+  const mx = xs.reduce((s, x) => s + x, 0) / n;
+  const my = ys.reduce((s, y) => s + y, 0) / n;
+  const ssXX = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+  const b = ssXX === 0 ? 0 : xs.reduce((s, x, i) => s + (x - mx) * (ys[i]! - my), 0) / ssXX;
+  const a = my - b * mx;
+
+  const [tx1, ty1] = toSvg(minX, a + b * minX);
+  const [tx2, ty2] = toSvg(maxX, a + b * maxX);
+
+  function fmtVal(v: number) {
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Y-axis labels */}
+      <span style={{ position: 'absolute', top: PT, right: 1, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', lineHeight: 1 }}>
+        {fmtVal(maxY)}
+      </span>
+      <span style={{ position: 'absolute', bottom: PB + 2, right: 1, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', lineHeight: 1 }}>
+        {fmtVal(minY)}
+      </span>
+
+      {/* Chart SVG */}
+      <svg viewBox={`0 0 ${W} ${chartH}`} preserveAspectRatio="none" width="100%" height={chartH}>
+        {/* Trend line */}
+        <line
+          x1={tx1} y1={ty1} x2={tx2} y2={ty2}
+          stroke={color} strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 2"
+        />
+        {/* Data points — brighter = more recent */}
+        {points.map((p, i) => {
+          const [cx, cy] = toSvg(p.x, p.y);
+          const opacity = 0.3 + 0.7 * (i / Math.max(points.length - 1, 1));
+          return <circle key={i} cx={cx} cy={cy} r={2.5} fill={color} fillOpacity={opacity} />;
+        })}
+      </svg>
+
+      {/* X-axis labels */}
+      <div style={{ position: 'relative', height: PB }}>
+        <span style={{ position: 'absolute', left: PL, top: 3, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
+          {fmtVal(minX)}
+        </span>
+        <span style={{ position: 'absolute', right: PR, top: 3, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
+          {fmtVal(maxX)}
+        </span>
+      </div>
+    </div>
+  );
+}

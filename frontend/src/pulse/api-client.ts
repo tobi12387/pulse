@@ -125,6 +125,14 @@ export const pulseApi = {
       request('/briefing'),
   },
 
+  correlations: {
+    get: (days = 30): Promise<{ correlations: Array<{
+      id: string; labelX: string; labelY: string; r: number; n: number;
+      points: Array<{ date: string; x: number; y: number }>;
+    }> }> =>
+      request(`/correlations?days=${days}`),
+  },
+
   insights: {
     get: (domain: string, days = 30, refresh = false): Promise<{
       domain: string; analysis: string; stats: Record<string, number | string | null>;

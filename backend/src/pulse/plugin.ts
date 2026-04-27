@@ -970,6 +970,77 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
     }
     return generateDeepInsight(userId, domain, days, forceRefresh);
   });
+
+  // GET /api/pulse/correlations?days=30
+  app.get('/correlations', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { days?: string };
+    const days = Math.min(90, Math.max(14, parseInt(q.days ?? '30', 10)));
+    const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
+
+    const [metricsRows, checkinRows] = await Promise.all([
+      db.select({
+        date: pulseDailyMetrics.date,
+        sleepHours:     pulseDailyMetrics.sleepHours,
+        hrvRmssd:       pulseDailyMetrics.hrvRmssd,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg:      pulseDailyMetrics.stressAvg,
+        restingHr:      pulseDailyMetrics.restingHr,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since)))
+        .orderBy(pulseDailyMetrics.date),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood:       pulseMentalCheckins.mood,
+        energy:     pulseMentalCheckins.energy,
+        stress:     pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since)))
+        .orderBy(pulseMentalCheckins.date),
+    ]);
+
+    const mByDate = new Map(metricsRows.map(r => [r.date, r]));
+    const cByDate = new Map(checkinRows.map(r => [r.date, r]));
+    const allDates = [...new Set([...metricsRows.map(r => r.date), ...checkinRows.map(r => r.date)])].sort();
+
+    function pearson(pairs: [number, number][]): number {
+      const n = pairs.length;
+      if (n < 3) return 0;
+      const mx = pairs.reduce((s, p) => s + p[0], 0) / n;
+      const my = pairs.reduce((s, p) => s + p[1], 0) / n;
+      const num = pairs.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0);
+      const den = Math.sqrt(
+        pairs.reduce((s, p) => s + (p[0] - mx) ** 2, 0) *
+        pairs.reduce((s, p) => s + (p[1] - my) ** 2, 0),
+      );
+      return den === 0 ? 0 : Math.round((num / den) * 100) / 100;
+    }
+
+    type XYFn = (date: string) => number | null | undefined;
+    function buildPairs(xFn: XYFn, yFn: XYFn) {
+      return allDates.flatMap(d => {
+        const x = xFn(d), y = yFn(d);
+        return x != null && y != null ? [{ date: d, x, y }] : [];
+      });
+    }
+
+    const defs = [
+      { id: 'sleep_hrv',      labelX: 'Schlaf (h)', labelY: 'HRV (ms)',         xFn: (d: string) => mByDate.get(d)?.sleepHours,     yFn: (d: string) => mByDate.get(d)?.hrvRmssd },
+      { id: 'sleep_battery',  labelX: 'Schlaf (h)', labelY: 'Body Battery (%)', xFn: (d: string) => mByDate.get(d)?.sleepHours,     yFn: (d: string) => mByDate.get(d)?.bodyBatteryMax },
+      { id: 'stress_hrv',     labelX: 'Stress',     labelY: 'HRV (ms)',         xFn: (d: string) => mByDate.get(d)?.stressAvg,      yFn: (d: string) => mByDate.get(d)?.hrvRmssd },
+      { id: 'mood_energy',    labelX: 'Stimmung',   labelY: 'Energie',          xFn: (d: string) => cByDate.get(d)?.mood,           yFn: (d: string) => cByDate.get(d)?.energy },
+      { id: 'hrv_motivation', labelX: 'HRV (ms)',   labelY: 'Motivation',       xFn: (d: string) => mByDate.get(d)?.hrvRmssd,       yFn: (d: string) => cByDate.get(d)?.motivation },
+      { id: 'sleep_stress',   labelX: 'Schlaf (h)', labelY: 'Stress',           xFn: (d: string) => mByDate.get(d)?.sleepHours,     yFn: (d: string) => mByDate.get(d)?.stressAvg },
+    ];
+
+    const correlations = defs.map(({ id, labelX, labelY, xFn, yFn }) => {
+      const points = buildPairs(xFn, yFn);
+      return { id, labelX, labelY, r: pearson(points.map(p => [p.x, p.y])), n: points.length, points };
+    });
+
+    return { correlations };
+  });
 }
 
 // local type aliases to avoid 'as any'
