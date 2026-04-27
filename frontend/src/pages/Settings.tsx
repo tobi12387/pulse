@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 interface GarminStatus {
   connected: boolean;
@@ -12,8 +9,20 @@ interface GarminStatus {
   errorMessage: string | null;
 }
 
+const SYNC_COLOR: Record<string, string> = {
+  ok:    'var(--green)',
+  stale: 'var(--amber)',
+  never: 'var(--text-3)',
+};
+
+const SYNC_LABEL: Record<string, string> = {
+  ok:    'AKTUELL',
+  stale: 'VERALTET',
+  never: 'KEIN SYNC',
+};
+
 export default function Settings() {
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   const { data: garminStatus, refetch } = useQuery<GarminStatus>({
@@ -28,69 +37,90 @@ export default function Settings() {
     try {
       await api.garmin.sync();
       await refetch();
-      setMessage({ text: 'Sync erfolgreich! Garmin-Daten aktualisiert.', type: 'success' });
+      setMessage({ text: 'Sync erfolgreich.', ok: true });
     } catch (err) {
-      setMessage({ text: err instanceof Error ? err.message : 'Sync fehlgeschlagen.', type: 'error' });
+      setMessage({ text: err instanceof Error ? err.message : 'Sync fehlgeschlagen.', ok: false });
     } finally {
       setSyncing(false);
     }
   }
 
-  function StatusBadge() {
-    switch (garminStatus?.syncStatus) {
-      case 'ok':
-        return <Badge className="bg-green-700 text-white border-0">Aktuell</Badge>;
-      case 'stale':
-        return <Badge className="bg-yellow-600 text-white border-0">Veraltet</Badge>;
-      default:
-        return <Badge variant="outline" className="text-muted-foreground">Noch kein Sync</Badge>;
-    }
-  }
+  const status = garminStatus?.syncStatus ?? 'never';
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-foreground">Einstellungen</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Settings</h1>
 
       {message && (
-        <div className={`p-3 rounded-lg border text-sm ${
-          message.type === 'success'
-            ? 'border-green-700 text-green-400 bg-green-900/20'
-            : 'border-destructive text-destructive bg-destructive/10'
-        }`}>
-          {message.text}
+        <div
+          className="card"
+          style={{
+            borderColor: message.ok ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)',
+            padding: '10px 14px',
+          }}
+        >
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontSize: 11,
+            color: message.ok ? 'var(--green)' : 'var(--rose)',
+          }}>
+            {message.text}
+          </span>
         </div>
       )}
 
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base text-foreground">Garmin Connect</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Verbindung</span>
-            <Badge className="bg-green-700 text-white border-0">Verbunden</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Datenstatus</span>
-            <StatusBadge />
-          </div>
+      {/* Garmin card */}
+      <div className="card">
+        <div className="label-mono" style={{ marginBottom: 14 }}>Garmin Connect</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Row label="Verbindung">
+            <Pill color="var(--green)">VERBUNDEN</Pill>
+          </Row>
+          <Row label="Datenstatus">
+            <Pill color={SYNC_COLOR[status]}>{SYNC_LABEL[status]}</Pill>
+          </Row>
           {garminStatus?.lastSync && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Letzter Sync</span>
-              <span className="text-sm text-foreground">
+            <Row label="Letzter Sync">
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
                 {new Date(garminStatus.lastSync).toLocaleString('de-DE')}
               </span>
-            </div>
+            </Row>
           )}
-          <Button
-            onClick={handleSync}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-2"
-            disabled={syncing}
-          >
-            {syncing ? 'Synchronisiere...' : 'Jetzt syncen'}
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          style={{
+            marginTop: 14, width: '100%',
+            background: 'var(--surface-2)', border: '1px solid var(--accent)',
+            borderRadius: 'var(--radius)', padding: '10px',
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'var(--accent)',
+            cursor: syncing ? 'default' : 'pointer',
+          }}
+        >
+          {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
+        </button>
+      </div>
     </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function Pill({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <span style={{
+      fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
+      border: `1px solid ${color}`, borderRadius: 3, padding: '2px 6px', color,
+    }}>
+      {children}
+    </span>
   );
 }

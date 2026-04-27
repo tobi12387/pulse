@@ -3,86 +3,155 @@ import {
   usePulseSleep, usePulseCheckin, usePulseHome, useCheckinToday,
   usePulseMetrics, usePulseWeight, useLogWeight,
 } from '@/pulse/hooks';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { SparkLine, SparkBar } from '@/components/SparkChart';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
-  if (v == null) return '–';
-  return `${v.toFixed(decimals)}${suffix}`;
+  return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
+}
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+function TabBar({ tabs, active, onChange }: {
+  tabs: { id: string; label: string }[];
+  active: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div className="flex gap-4 border-b" style={{ borderColor: 'var(--border)' }}>
+      {tabs.map(t => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            paddingBottom: 10,
+            color: active === t.id ? 'var(--text)' : 'var(--text-3)',
+            background: 'none',
+            border: 'none',
+            borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
+            cursor: 'pointer',
+            transition: 'color 0.15s',
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Loading() {
+  return (
+    <div style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em' }}
+      className="py-10 text-center uppercase">
+      Loading…
+    </div>
+  );
+}
+
+function Empty({ msg }: { msg: string }) {
+  return (
+    <p style={{ color: 'var(--text-3)', fontSize: 12 }} className="py-6 text-center">{msg}</p>
+  );
 }
 
 // ─── Schlaf ───────────────────────────────────────────────────────────────────
 
-function SleepBar({ deepSleepH, remSleepH, lightSleepH, awakeH, durationH }: {
-  deepSleepH: number | null; remSleepH: number | null;
-  lightSleepH: number | null; awakeH: number | null; durationH: number | null;
-}) {
-  if (!durationH || durationH <= 0) return <div className="h-3 bg-muted rounded-full" />;
-  const pct = (h: number | null) => Math.round(((h ?? 0) / durationH) * 100);
+const STAGE_COLORS = {
+  deep:  '#6366f1',
+  rem:   '#a78bfa',
+  light: '#60a5fa',
+  awake: 'rgba(139,149,163,0.3)',
+};
+
+function SleepStagePill({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <div className="flex h-3 rounded-full overflow-hidden gap-px">
-      <div style={{ width: `${pct(deepSleepH)}%` }} className="bg-indigo-600" />
-      <div style={{ width: `${pct(remSleepH)}%` }} className="bg-violet-500" />
-      <div style={{ width: `${pct(lightSleepH)}%` }} className="bg-blue-400" />
-      <div style={{ width: `${pct(awakeH)}%` }} className="bg-muted-foreground/30" />
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+        {label} {value}
+      </span>
+    </span>
+  );
+}
+
+function SleepStageBar({ deepH, remH, lightH, awakeH, totalH }: {
+  deepH: number | null; remH: number | null; lightH: number | null;
+  awakeH: number | null; totalH: number | null;
+}) {
+  if (!totalH || totalH <= 0) {
+    return <div style={{ height: 4, background: 'var(--surface-2)', borderRadius: 2 }} />;
+  }
+  const pct = (h: number | null) => Math.max(0, Math.round(((h ?? 0) / totalH) * 100));
+  return (
+    <div style={{ display: 'flex', height: 4, borderRadius: 2, overflow: 'hidden', gap: 1 }}>
+      <div style={{ width: `${pct(deepH)}%`,  background: STAGE_COLORS.deep  }} />
+      <div style={{ width: `${pct(remH)}%`,   background: STAGE_COLORS.rem   }} />
+      <div style={{ width: `${pct(lightH)}%`, background: STAGE_COLORS.light }} />
+      <div style={{ width: `${pct(awakeH)}%`, background: STAGE_COLORS.awake }} />
     </div>
   );
 }
 
 function SchlafTab() {
   const { data, isLoading, error } = usePulseSleep(28);
-  if (isLoading) return <div className="text-muted-foreground text-sm py-8 text-center">Lade Schlafdaten…</div>;
-  if (error) return <div className="text-destructive text-sm py-4">{error.message}</div>;
-
+  if (isLoading) return <Loading />;
+  if (error) return <Empty msg={error.message} />;
   const sessions = data?.sessions ?? [];
-  if (sessions.length === 0) {
-    return <p className="text-muted-foreground text-sm py-4 text-center">Keine Schlafdaten — Garmin synchronisieren.</p>;
-  }
+  if (sessions.length === 0) return <Empty msg="Keine Schlafdaten — Garmin sync." />;
 
   const durations = [...sessions].reverse().map(s => s.durationH);
-  const avgDuration = sessions.reduce((s, x) => s + (x.durationH ?? 0), 0) / sessions.length;
+  const avg = sessions.reduce((s, x) => s + (x.durationH ?? 0), 0) / sessions.length;
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-3 text-xs text-muted-foreground px-1">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-600 inline-block" /> Tief</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-500 inline-block" /> REM</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> Leicht</span>
-        <span className="ml-auto text-muted-foreground">Ø {avgDuration.toFixed(1)}h</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Overview sparkbar */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span className="label-mono">28 Tage — Dauer</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+            Ø {avg.toFixed(1)}h
+          </span>
+        </div>
+        <SparkBar values={durations} height={36} color="var(--blue)" />
+        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+          {[['deep','Tief'],['rem','REM'],['light','Leicht']] .map(([k,l]) => (
+            <SleepStagePill key={k} color={STAGE_COLORS[k as keyof typeof STAGE_COLORS]} label={l} value="" />
+          ))}
+        </div>
       </div>
 
-      <Card className="border-border">
-        <CardContent className="px-4 py-3">
-          <div className="text-xs text-muted-foreground mb-2">Dauer 28 Tage (h)</div>
-          <SparkBar values={durations} height={36} color="var(--primary)" />
-        </CardContent>
-      </Card>
-
-      <div className="space-y-2">
-        {sessions.map((s) => (
-          <Card key={s.date} className="border-border">
-            <CardContent className="px-4 py-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">{s.date}</span>
-                <span className="text-sm font-semibold text-foreground">{fmt(s.durationH, 1, 'h')}</span>
-              </div>
-              <SleepBar
-                deepSleepH={s.deepSleepH} remSleepH={s.remSleepH}
-                lightSleepH={s.lightSleepH} awakeH={s.awakeH} durationH={s.durationH}
-              />
-              <div className="flex gap-3 text-xs text-muted-foreground">
-                <span>Tief {fmt(s.deepSleepH, 1, 'h')}</span>
-                <span>REM {fmt(s.remSleepH, 1, 'h')}</span>
-                {s.sleepScore != null && <span className="ml-auto">Score {s.sleepScore}</span>}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Per-night rows */}
+      {sessions.map((s, i) => (
+        <div
+          key={s.date}
+          className="card"
+          style={{ padding: '10px 14px', borderTop: i > 0 ? undefined : undefined }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'baseline' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{s.date}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+              {fmt(s.durationH, 1, 'h')}
+            </span>
+          </div>
+          <SleepStageBar deepH={s.deepSleepH} remH={s.remSleepH} lightH={s.lightSleepH} awakeH={s.awakeH} totalH={s.durationH} />
+          <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+            <SleepStagePill color={STAGE_COLORS.deep}  label="Tief"  value={fmt(s.deepSleepH,  1, 'h')} />
+            <SleepStagePill color={STAGE_COLORS.rem}   label="REM"   value={fmt(s.remSleepH,   1, 'h')} />
+            <SleepStagePill color={STAGE_COLORS.light} label="Leicht" value={fmt(s.lightSleepH, 1, 'h')} />
+            {s.sleepScore != null && (
+              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                Score {s.sleepScore}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -93,54 +162,62 @@ function MetricRow({ label, values, latest, suffix, color }: {
   label: string; values: (number | null)[]; latest: number | null; suffix?: string; color: string;
 }) {
   return (
-    <Card className="border-border">
-      <CardContent className="px-4 py-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs text-muted-foreground">{label}</span>
-          <span className="text-sm font-semibold text-foreground">{fmt(latest, 0, suffix)}</span>
-        </div>
-        <SparkLine values={values} height={28} color={color} />
-      </CardContent>
-    </Card>
+    <div className="card" style={{ padding: '10px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+        <span className="label-mono">{label}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
+          {fmt(latest, 0, suffix)}
+        </span>
+      </div>
+      <SparkLine values={values} height={28} color={color} fillOpacity={0.1} />
+    </div>
   );
 }
 
 function MetrikenTab() {
   const { data, isLoading } = usePulseMetrics(28);
-
-  if (isLoading) return <div className="text-muted-foreground text-sm py-8 text-center">Lade Metriken…</div>;
-
+  if (isLoading) return <Loading />;
   const rows = data?.metrics ?? [];
-  if (rows.length === 0) {
-    return <p className="text-muted-foreground text-sm py-4 text-center">Noch keine Daten — Garmin synchronisieren.</p>;
-  }
-
-  const hrv      = rows.map(r => r.hrvRmssd);
-  const hr       = rows.map(r => r.restingHr);
-  const battery  = rows.map(r => r.bodyBatteryMax);
-  const stress   = rows.map(r => r.stressAvg);
-  const steps    = rows.map(r => r.steps != null ? r.steps / 1000 : null);
+  if (rows.length === 0) return <Empty msg="Noch keine Daten — Garmin sync." />;
 
   const last = rows[rows.length - 1];
-
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground px-1">28 Tage · neueste rechts</p>
-      <MetricRow label="HRV (ms)"          values={hrv}     latest={last?.hrvRmssd ?? null}       color="#818cf8" />
-      <MetricRow label="Ruhepuls (bpm)"    values={hr}      latest={last?.restingHr ?? null}      color="#fb7185" />
-      <MetricRow label="Körperbatterie (%)" values={battery} latest={last?.bodyBatteryMax ?? null} suffix="%" color="#34d399" />
-      <MetricRow label="Stress"            values={stress}  latest={last?.stressAvg ?? null}      color="#fb923c" />
-      <MetricRow label="Schritte (k)"      values={steps}   latest={last?.steps != null ? last.steps / 1000 : null} suffix="k" color="var(--primary)" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <MetricRow label="HRV (ms)"          values={rows.map(r => r.hrvRmssd)}           latest={last?.hrvRmssd ?? null}       color="var(--accent)" />
+      <MetricRow label="Ruhepuls (bpm)"    values={rows.map(r => r.restingHr)}           latest={last?.restingHr ?? null}      color="var(--rose)"   />
+      <MetricRow label="Body Battery (%)"  values={rows.map(r => r.bodyBatteryMax)}      latest={last?.bodyBatteryMax ?? null}  suffix="%" color="var(--green)" />
+      <MetricRow label="Stress"            values={rows.map(r => r.stressAvg)}           latest={last?.stressAvg ?? null}      color="var(--amber)"  />
+      <MetricRow label="Schritte (k)"      values={rows.map(r => r.steps != null ? r.steps / 1000 : null)}
+                                            latest={last?.steps != null ? last.steps / 1000 : null} suffix="k" color="var(--blue)" />
 
-      <div className="pt-2 space-y-1">
-        {[...rows].reverse().slice(0, 14).map(r => (
-          <div key={r.date} className="flex justify-between items-center px-1 text-xs text-muted-foreground">
-            <span>{r.date}</span>
-            <span className="tabular-nums">
-              HRV {fmt(r.hrvRmssd, 0)} · {fmt(r.restingHr, 0, ' bpm')} · {fmt(r.bodyBatteryMax, 0, '%')}
-            </span>
-          </div>
-        ))}
+      {/* Daily table */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 4 }}>
+        <div className="label-mono" style={{ padding: '10px 14px 6px' }}>Tageswerte</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'var(--surface-2)' }}>
+              {['Datum','HRV','Puls','Bat.','Stress'].map(h => (
+                <th key={h} style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase',
+                  color: 'var(--text-3)', fontWeight: 400, padding: '5px 14px',
+                  textAlign: h === 'Datum' ? 'left' : 'right',
+                  borderTop: '1px solid var(--border)',
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[...rows].reverse().slice(0, 14).map((r, i) => (
+              <tr key={r.date} style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>{r.date}</td>
+                <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', textAlign: 'right' }}>{fmt(r.hrvRmssd, 0)}</td>
+                <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', textAlign: 'right' }}>{fmt(r.restingHr, 0)}</td>
+                <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', textAlign: 'right' }}>{fmt(r.bodyBatteryMax, 0, '%')}</td>
+                <td style={{ padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', textAlign: 'right' }}>{fmt(r.stressAvg, 0)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -157,7 +234,7 @@ function GewichtTab() {
   async function handleLog(e: React.FormEvent) {
     e.preventDefault();
     const w = parseFloat(kg);
-    if (isNaN(w) || w < 30 || w > 300) { setInputError('Bitte einen gültigen Wert eingeben (30–300 kg)'); return; }
+    if (isNaN(w) || w < 30 || w > 300) { setInputError('Gültiger Wert: 30–300 kg'); return; }
     await logWeight.mutateAsync({ weightKg: w });
     setKg('');
     setInputError('');
@@ -175,99 +252,139 @@ function GewichtTab() {
   const trend7d = latest && prev7 ? latest.weightKg - prev7.weightKg : null;
 
   return (
-    <div className="space-y-3">
-      <Card className="border-border">
-        <CardContent className="px-4 py-4">
-          <form onSubmit={(e) => void handleLog(e)} className="flex gap-2">
-            <input
-              type="number"
-              step="0.1"
-              min="30"
-              max="300"
-              value={kg}
-              onChange={e => { setKg(e.target.value); setInputError(''); }}
-              placeholder="kg eingeben"
-              className="flex-1 bg-background border border-input rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <Button type="submit" disabled={logWeight.isPending || !kg}>
-              {logWeight.isPending ? '…' : 'Eintragen'}
-            </Button>
-          </form>
-          {inputError && <p className="text-xs text-destructive mt-1">{inputError}</p>}
-        </CardContent>
-      </Card>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Input form */}
+      <div className="card">
+        <form onSubmit={(e) => void handleLog(e)} style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="number" step="0.1" min="30" max="300"
+            value={kg}
+            onChange={e => { setKg(e.target.value); setInputError(''); }}
+            placeholder="kg"
+            style={{
+              flex: 1,
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: '7px 12px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              color: 'var(--text)',
+              outline: 'none',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={logWeight.isPending || !kg}
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: '7px 14px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: kg ? 'var(--accent)' : 'var(--text-3)',
+              cursor: kg ? 'pointer' : 'default',
+            }}
+          >
+            {logWeight.isPending ? '…' : 'Log'}
+          </button>
+        </form>
+        {inputError && <p style={{ fontSize: 11, color: 'var(--rose)', marginTop: 6 }}>{inputError}</p>}
+      </div>
 
+      {/* KPI cards */}
       {latest && (
-        <div className="grid grid-cols-2 gap-2">
-          <Card className="border-border">
-            <CardContent className="px-4 py-3">
-              <div className="text-xs text-muted-foreground">Aktuell</div>
-              <div className="text-2xl font-bold">{latest.weightKg.toFixed(1)} kg</div>
-              <div className="text-xs text-muted-foreground">{latest.date}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-border">
-            <CardContent className="px-4 py-3">
-              <div className="text-xs text-muted-foreground">7-Tage-Trend</div>
-              {trend7d !== null
-                ? <div className={`text-2xl font-bold ${trend7d < -0.1 ? 'text-green-400' : trend7d > 0.1 ? 'text-red-400' : 'text-foreground'}`}>
-                    {trend7d > 0 ? '+' : ''}{trend7d.toFixed(1)} kg
-                  </div>
-                : <div className="text-2xl font-bold text-muted-foreground">–</div>
-              }
-            </CardContent>
-          </Card>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="card">
+            <span className="label-mono">Aktuell</span>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500, color: 'var(--text)', marginTop: 4 }}>
+              {latest.weightKg.toFixed(1)}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{latest.date}</div>
+          </div>
+          <div className="card">
+            <span className="label-mono">7-Tage-Trend</span>
+            {trend7d !== null ? (
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500, marginTop: 4,
+                color: trend7d < -0.1 ? 'var(--green)' : trend7d > 0.1 ? 'var(--rose)' : 'var(--text)',
+              }}>
+                {trend7d > 0 ? '+' : ''}{trend7d.toFixed(1)}
+              </div>
+            ) : (
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, color: 'var(--text-3)', marginTop: 4 }}>–</div>
+            )}
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em' }}>KG</div>
+          </div>
         </div>
       )}
 
+      {/* 90d sparkline */}
       {weights.length >= 3 && (
-        <Card className="border-border">
-          <CardContent className="px-4 py-3">
-            <div className="text-xs text-muted-foreground mb-2">Verlauf 90 Tage</div>
-            <SparkLine values={weights} height={52} color="var(--primary)" fillOpacity={0.1} />
-          </CardContent>
-        </Card>
+        <div className="card">
+          <span className="label-mono" style={{ display: 'block', marginBottom: 8 }}>Verlauf 90 Tage</span>
+          <SparkLine values={weights} height={48} color="var(--accent)" fillOpacity={0.08} />
+        </div>
       )}
 
-      {isLoading && <p className="text-muted-foreground text-sm">Lade…</p>}
+      {isLoading && <Loading />}
 
-      <div className="space-y-1">
-        {entries.slice(0, 20).map(e => (
-          <div key={e.id} className="flex justify-between items-center px-1 text-sm">
-            <span className="text-muted-foreground">{e.date}</span>
-            <span className="font-medium tabular-nums">{e.weightKg.toFixed(1)} kg</span>
-          </div>
-        ))}
-      </div>
+      {/* Log table */}
+      {entries.length > 0 && (
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="label-mono" style={{ padding: '10px 14px 6px' }}>Einträge</div>
+          {entries.slice(0, 20).map((e, i) => (
+            <div
+              key={e.id}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '7px 14px',
+                borderTop: i === 0 ? '1px solid var(--border)' : '1px solid var(--border)',
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>{e.date}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>{e.weightKg.toFixed(1)} kg</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Mental / Check-in ────────────────────────────────────────────────────────
+// ─── Mental ───────────────────────────────────────────────────────────────────
 
-function Slider({ id, label, value, onChange }: {
-  id: string; label: string; value: number; onChange: (v: number) => void;
-}) {
+function ScoreSlider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  const pct = ((value - 1) / 9) * 100;
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between items-center">
-        <Label htmlFor={id} className="text-sm text-foreground">{label}</Label>
-        <span className="text-sm font-semibold text-primary">{value}/10</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color: 'var(--accent)' }}>{value}</span>
       </div>
-      <input
-        id={id}
-        type="range" min={1} max={10} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-primary"
-      />
+      <div style={{ position: 'relative', height: 4, background: 'var(--surface-2)', borderRadius: 2 }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct}%`, background: 'var(--accent)', borderRadius: 2 }} />
+        <input
+          type="range" min={1} max={10} value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            opacity: 0, cursor: 'pointer', margin: 0,
+          }}
+        />
+      </div>
     </div>
   );
 }
 
 function MentalTab() {
-  const home           = usePulseHome();
+  const home            = usePulseHome();
   const { data: today } = useCheckinToday();
-  const checkin        = usePulseCheckin();
+  const checkin         = usePulseCheckin();
   const [form, setForm] = useState({ mood: 7, energy: 7, stress: 3, motivation: 7, notes: '' });
   const [submitted, setSubmitted] = useState(false);
 
@@ -277,63 +394,64 @@ function MentalTab() {
     setSubmitted(true);
   }
 
-  const readiness    = home.data?.readiness;
-  const alreadyDone  = today?.checkin != null;
+  const readiness   = home.data?.readiness;
+  const alreadyDone = today?.checkin != null;
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {readiness && (
-        <Card className="border-border">
-          <CardContent className="px-4 py-3 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Readiness heute</span>
-            <div className="text-right">
-              <div className="text-xl font-bold text-foreground">{readiness.score}/100</div>
-              <div className="text-xs text-muted-foreground capitalize">{readiness.label}</div>
+        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Readiness heute</span>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: 'var(--text)' }}>
+              {readiness.score}
             </div>
-          </CardContent>
-        </Card>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              {readiness.label}
+            </div>
+          </div>
+        </div>
       )}
 
-      {alreadyDone ? (
-        <Card className="border-green-700/50 bg-green-950/20">
-          <CardContent className="px-4 py-4 text-sm text-green-400">
-            Check-in heute bereits abgeschlossen. ✓
-          </CardContent>
-        </Card>
-      ) : submitted ? (
-        <Card className="border-green-700/50 bg-green-950/20">
-          <CardContent className="px-4 py-4 text-sm text-green-400">
-            Check-in gespeichert!
-          </CardContent>
-        </Card>
+      {alreadyDone || submitted ? (
+        <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)', letterSpacing: '0.12em' }}>
+            CHECK-IN HEUTE ERLEDIGT ✓
+          </span>
+        </div>
       ) : (
-        <Card className="border-border">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-foreground">Täglicher Check-in</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-              <Slider id="mood"       label="Stimmung"   value={form.mood}       onChange={(v) => setForm(f => ({ ...f, mood: v }))} />
-              <Slider id="energy"     label="Energie"    value={form.energy}     onChange={(v) => setForm(f => ({ ...f, energy: v }))} />
-              <Slider id="stress"     label="Stress"     value={form.stress}     onChange={(v) => setForm(f => ({ ...f, stress: v }))} />
-              <Slider id="motivation" label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} />
-              <div className="space-y-1">
-                <Label htmlFor="notes" className="text-sm text-foreground">Notizen (optional)</Label>
-                <textarea
-                  id="notes"
-                  value={form.notes}
-                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  rows={2}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Wie geht es dir heute?"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={checkin.isPending}>
-                {checkin.isPending ? 'Speichern…' : 'Check-in senden'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="card">
+          <div className="label-mono" style={{ marginBottom: 16 }}>Täglicher Check-in</div>
+          <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <ScoreSlider label="Stimmung"   value={form.mood}       onChange={(v) => setForm(f => ({ ...f, mood: v }))} />
+            <ScoreSlider label="Energie"    value={form.energy}     onChange={(v) => setForm(f => ({ ...f, energy: v }))} />
+            <ScoreSlider label="Stress"     value={form.stress}     onChange={(v) => setForm(f => ({ ...f, stress: v }))} />
+            <ScoreSlider label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} />
+            <textarea
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              rows={2}
+              placeholder="Notizen (optional)"
+              style={{
+                background: 'var(--surface-2)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', padding: '8px 12px',
+                fontSize: 12, color: 'var(--text)', resize: 'none', outline: 'none',
+              }}
+            />
+            <button
+              type="submit"
+              disabled={checkin.isPending}
+              style={{
+                background: 'var(--surface-2)', border: '1px solid var(--accent)',
+                borderRadius: 'var(--radius)', padding: '9px 16px',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: 'var(--accent)', cursor: 'pointer',
+              }}
+            >
+              {checkin.isPending ? 'Speichern…' : 'Check-in senden'}
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
@@ -341,36 +459,20 @@ function MentalTab() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'schlaf',   label: 'Schlaf' },
+const TABS = [
+  { id: 'schlaf',   label: 'Schlaf'   },
   { id: 'metriken', label: 'Metriken' },
-  { id: 'gewicht',  label: 'Gewicht' },
-  { id: 'mental',   label: 'Mental' },
+  { id: 'gewicht',  label: 'Gewicht'  },
+  { id: 'mental',   label: 'Mental'   },
 ];
 
 export default function Data() {
   const [tab, setTab] = useState<Tab>('schlaf');
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold text-foreground">Daten</h1>
-
-      <div className="flex gap-1 overflow-x-auto pb-0.5">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap ${
-              tab === t.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Data</h1>
+      <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
       {tab === 'schlaf'   && <SchlafTab />}
       {tab === 'metriken' && <MetrikenTab />}
       {tab === 'gewicht'  && <GewichtTab />}

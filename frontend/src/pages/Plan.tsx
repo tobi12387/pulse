@@ -1,99 +1,184 @@
 import { useState } from 'react';
-import { usePulseActivities, usePulsePlan, usePulseGoals, useCreateGoal, usePulseReview, useGenerateReview } from '@/pulse/hooks';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  usePulseActivities, usePulsePlan, usePulseGoals,
+  useCreateGoal, usePulseReview, useGenerateReview,
+} from '@/pulse/hooks';
 
 type Tab = 'training' | 'ziele' | 'review';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
-  if (v == null) return '–';
-  return `${v.toFixed(decimals)}${suffix}`;
+  return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
 }
 
-const ZONE_COLORS: Record<number, string> = {
-  1: 'bg-gray-400 text-white border-0',
-  2: 'bg-blue-500 text-white border-0',
-  3: 'bg-green-600 text-white border-0',
-  4: 'bg-orange-500 text-white border-0',
-  5: 'bg-red-600 text-white border-0',
+const ZONE_COLOR: Record<number, string> = {
+  1: 'var(--blue)',
+  2: 'var(--blue)',
+  3: 'var(--green)',
+  4: 'var(--amber)',
+  5: 'var(--rose)',
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  active:    'bg-green-700 text-white border-0',
-  completed: 'bg-blue-700 text-white border-0',
-  paused:    'bg-yellow-600 text-white border-0',
-  abandoned: 'bg-red-800 text-white border-0',
-};
+function TabBar({ tabs, active, onChange }: {
+  tabs: { id: string; label: string }[];
+  active: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 16, borderBottom: '1px solid var(--border)' }}>
+      {tabs.map(t => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            paddingBottom: 10,
+            color: active === t.id ? 'var(--text)' : 'var(--text-3)',
+            background: 'none',
+            border: 'none',
+            borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
+            cursor: 'pointer',
+            transition: 'color 0.15s',
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Loading() {
+  return (
+    <div style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em' }}
+      className="py-10 text-center uppercase">
+      Loading…
+    </div>
+  );
+}
+
+// ─── Training ─────────────────────────────────────────────────────────────────
 
 function TrainingTab() {
   const acts = usePulseActivities(14);
   const plan = usePulsePlan();
 
+  const workouts   = plan.data?.workouts ?? [];
+  const activities = acts.data?.activities ?? [];
+
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Plan */}
       <section>
-        <h2 className="text-sm font-semibold text-foreground mb-2">Trainingsplan</h2>
-        {plan.isLoading && <p className="text-muted-foreground text-sm">Lade…</p>}
-        {!plan.isLoading && (plan.data?.workouts ?? []).length === 0 && (
-          <p className="text-muted-foreground text-sm">Kein Plan vorhanden.</p>
+        <div className="label-mono" style={{ marginBottom: 10 }}>Trainingsplan</div>
+        {plan.isLoading && <Loading />}
+        {!plan.isLoading && workouts.length === 0 && (
+          <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0' }}>Kein Plan vorhanden.</p>
         )}
-        <div className="space-y-2">
-          {(plan.data?.workouts ?? []).map((w) => (
-            <Card key={w.id} className="border-border">
-              <CardContent className="px-4 py-3 flex items-center justify-between">
+        {workouts.length > 0 && (
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {workouts.map((w, i) => (
+              <div
+                key={w.id}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderTop: i > 0 ? '1px solid var(--border)' : undefined,
+                }}
+              >
                 <div>
-                  <div className="text-sm font-medium text-foreground">{w.plannedDate}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {w.activityType} · {w.durationMin} min{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)} km` : ''}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{w.plannedDate}</span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
+                        color: ZONE_COLOR[w.zone] ?? 'var(--text-3)',
+                        border: `1px solid ${ZONE_COLOR[w.zone] ?? 'var(--border)'}`,
+                        borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
+                      }}
+                    >
+                      Z{w.zone}
+                    </span>
                   </div>
-                  {w.description && <div className="text-xs text-muted-foreground">{w.description}</div>}
+                  <div style={{ fontSize: 12, color: 'var(--text)' }}>{w.activityType}</div>
+                  {w.description && (
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
+                  )}
                 </div>
-                <Badge className={ZONE_COLORS[w.zone] ?? 'bg-muted'}>Z{w.zone}</Badge>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', flexShrink: 0, marginLeft: 8 }}>
+                  {w.durationMin}m{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)}km` : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
+      {/* Activities */}
       <section>
-        <h2 className="text-sm font-semibold text-foreground mb-2">Aktivitäten (14 Tage)</h2>
-        {acts.isLoading && <p className="text-muted-foreground text-sm">Lade…</p>}
-        <div className="space-y-2">
-          {(acts.data?.activities ?? []).map((a) => (
-            <Card key={a.id} className="border-border">
-              <CardContent className="px-4 py-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-foreground">{a.name ?? a.activityType}</div>
-                    <div className="text-xs text-muted-foreground">
+        <div className="label-mono" style={{ marginBottom: 10 }}>Aktivitäten — 14 Tage</div>
+        {acts.isLoading && <Loading />}
+        {!acts.isLoading && activities.length === 0 && (
+          <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Noch keine Aktivitäten.</p>
+        )}
+        {activities.length > 0 && (
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--surface-2)' }}>
+                  {['Aktivität','Datum','Dauer','km','TSS'].map(h => (
+                    <th key={h} style={{
+                      fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase',
+                      color: 'var(--text-3)', fontWeight: 400, padding: '6px 12px',
+                      textAlign: h === 'Aktivität' ? 'left' : 'right',
+                      borderBottom: '1px solid var(--border)',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {activities.map((a, i) => (
+                  <tr key={a.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                    <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text)' }}>
+                      {a.name ?? a.activityType}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', textAlign: 'right' }}>
                       {new Date(a.startTime).toLocaleDateString('de')}
-                      {a.durationSec ? ` · ${Math.round(a.durationSec / 60)} min` : ''}
-                      {a.distanceM ? ` · ${(a.distanceM / 1000).toFixed(1)} km` : ''}
-                    </div>
-                    {(a.avgHr || a.avgPowerW) && (
-                      <div className="text-xs text-muted-foreground">
-                        {a.avgHr ? `Ø ${a.avgHr} bpm` : ''}
-                        {a.avgPowerW ? ` · Ø ${a.avgPowerW}W` : ''}
-                      </div>
-                    )}
-                  </div>
-                  {a.tss && <Badge variant="outline">{fmt(a.tss, 0)} TSS</Badge>}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    </td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', textAlign: 'right' }}>
+                      {a.durationSec ? `${Math.round(a.durationSec / 60)}m` : '–'}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', textAlign: 'right' }}>
+                      {a.distanceM ? (a.distanceM / 1000).toFixed(1) : '–'}
+                    </td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', textAlign: 'right' }}>
+                      {a.tss ? fmt(a.tss, 0) : '–'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
+// ─── Ziele ────────────────────────────────────────────────────────────────────
+
+const STATUS_COLOR: Record<string, string> = {
+  active:    'var(--green)',
+  completed: 'var(--blue)',
+  paused:    'var(--amber)',
+  abandoned: 'var(--rose)',
+};
+
 function ZieleTab() {
   const { data, isLoading } = usePulseGoals();
-  const create = useCreateGoal();
+  const create   = useCreateGoal();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', targetDate: '' });
 
@@ -108,131 +193,187 @@ function ZieleTab() {
     setShowForm(false);
   }
 
+  const goals = data?.goals ?? [];
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setShowForm(v => !v)}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setShowForm(v => !v)}
+          style={{
+            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            padding: '6px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
+            letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: showForm ? 'var(--rose)' : 'var(--accent)', cursor: 'pointer',
+          }}
+        >
           {showForm ? 'Abbrechen' : '+ Ziel'}
-        </Button>
+        </button>
       </div>
 
       {showForm && (
-        <Card className="border-border">
-          <CardContent className="px-4 py-4">
-            <form onSubmit={(e) => void handleCreate(e)} className="space-y-3">
-              <div>
-                <Label htmlFor="goal-title" className="text-sm">Titel</Label>
-                <Input id="goal-title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
+        <div className="card">
+          <div className="label-mono" style={{ marginBottom: 12 }}>Neues Ziel</div>
+          <form onSubmit={(e) => void handleCreate(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { id: 'g-title', label: 'Titel *', key: 'title', type: 'text', required: true },
+              { id: 'g-desc',  label: 'Beschreibung', key: 'description', type: 'text', required: false },
+            ].map(field => (
+              <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label htmlFor={field.id} style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+                  {field.label}
+                </label>
+                <input
+                  id={field.id}
+                  type={field.type}
+                  required={field.required}
+                  value={form[field.key as keyof typeof form]}
+                  onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
+                  style={{
+                    background: 'var(--surface-2)', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)', padding: '7px 12px',
+                    fontSize: 12, color: 'var(--text)', outline: 'none',
+                  }}
+                />
               </div>
-              <div>
-                <Label htmlFor="goal-desc" className="text-sm">Beschreibung</Label>
-                <Input id="goal-desc" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-              </div>
-              <div>
-                <Label htmlFor="goal-date" className="text-sm">Zieldatum</Label>
-                <Input id="goal-date" type="date" value={form.targetDate} onChange={e => setForm(f => ({ ...f, targetDate: e.target.value }))} />
-              </div>
-              <Button type="submit" className="w-full" disabled={create.isPending}>
-                {create.isPending ? 'Speichern…' : 'Erstellen'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label htmlFor="g-date" style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+                Zieldatum
+              </label>
+              <input
+                id="g-date" type="date" value={form.targetDate}
+                onChange={e => setForm(f => ({ ...f, targetDate: e.target.value }))}
+                style={{
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', padding: '7px 12px',
+                  fontSize: 12, color: 'var(--text)', outline: 'none',
+                }}
+              />
+            </div>
+            <button
+              type="submit" disabled={create.isPending}
+              style={{
+                background: 'var(--surface-2)', border: '1px solid var(--accent)',
+                borderRadius: 'var(--radius)', padding: '9px', fontFamily: 'var(--font-mono)',
+                fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
+                color: 'var(--accent)', cursor: 'pointer',
+              }}
+            >
+              {create.isPending ? 'Speichern…' : 'Erstellen'}
+            </button>
+          </form>
+        </div>
       )}
 
-      {isLoading && <p className="text-muted-foreground text-sm">Lade…</p>}
+      {isLoading && <Loading />}
 
-      <div className="space-y-2">
-        {(data?.goals ?? []).map((g) => (
-          <Card key={g.id} className="border-border">
-            <CardContent className="px-4 py-3 flex items-start justify-between">
-              <div className="flex-1 min-w-0 mr-2">
-                <div className="text-sm font-medium text-foreground">{g.title}</div>
-                {g.description && <div className="text-xs text-muted-foreground">{g.description}</div>}
-                {g.targetDate && <div className="text-xs text-muted-foreground">Bis {g.targetDate}</div>}
-                <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: `${(g.progress ?? 0) * 100}%` }} />
+      {!isLoading && goals.length === 0 && (
+        <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 0' }}>
+          Noch keine Ziele. Erstelle dein erstes!
+        </p>
+      )}
+
+      {goals.map(g => (
+        <div key={g.id} className="card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{g.title}</div>
+              {g.description && (
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{g.description}</div>
+              )}
+              {g.targetDate && (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                  Bis {g.targetDate}
                 </div>
+              )}
+              {/* Progress bar */}
+              <div style={{ marginTop: 8, height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 2,
+                  width: `${(g.progress ?? 0) * 100}%`,
+                  background: STATUS_COLOR[g.status] ?? 'var(--text-3)',
+                }} />
               </div>
-              <Badge className={STATUS_COLORS[g.status] ?? 'bg-muted'}>{g.status}</Badge>
-            </CardContent>
-          </Card>
-        ))}
-        {!isLoading && (data?.goals ?? []).length === 0 && (
-          <p className="text-muted-foreground text-sm">Noch keine Ziele. Erstelle dein erstes!</p>
-        )}
-      </div>
+            </div>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: STATUS_COLOR[g.status] ?? 'var(--text-3)',
+                border: `1px solid ${STATUS_COLOR[g.status] ?? 'var(--border)'}`,
+                borderRadius: 3, padding: '2px 6px', flexShrink: 0,
+              }}
+            >
+              {g.status}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
+
+// ─── Review ───────────────────────────────────────────────────────────────────
 
 function ReviewTab() {
   const { data, isLoading } = usePulseReview();
   const generate = useGenerateReview();
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button size="sm" variant="outline" onClick={() => generate.mutate()} disabled={generate.isPending}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => generate.mutate()}
+          disabled={generate.isPending}
+          style={{
+            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            padding: '6px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
+            letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
+          }}
+        >
           {generate.isPending ? 'Erstelle…' : 'Neu erstellen'}
-        </Button>
+        </button>
       </div>
 
-      {isLoading && <p className="text-muted-foreground text-sm py-4 text-center">Lade…</p>}
+      {isLoading && <Loading />}
 
       {!isLoading && !data && (
-        <Card className="border-border">
-          <CardContent className="px-4 py-6 text-center text-muted-foreground text-sm">
-            Kein Wochenreview vorhanden. Klicke "Neu erstellen" für eine KI-Analyse der letzten Woche.
-          </CardContent>
-        </Card>
+        <div className="card" style={{ textAlign: 'center', padding: '32px 16px' }}>
+          <p style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            Kein Wochenreview vorhanden. "Neu erstellen" für KI-Analyse der letzten Woche.
+          </p>
+        </div>
       )}
 
       {data && (
-        <Card className="border-border">
-          <CardHeader className="pb-1 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-foreground">
-              {data.weekStart} – {data.weekEnd}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{data.narrative}</p>
-          </CardContent>
-        </Card>
+        <div className="card">
+          <div className="label-mono" style={{ marginBottom: 8 }}>
+            {data.weekStart} — {data.weekEnd}
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+            {data.narrative}
+          </p>
+        </div>
       )}
     </div>
   );
 }
 
-const TABS: { id: Tab; label: string }[] = [
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+const TABS = [
   { id: 'training', label: 'Training' },
-  { id: 'ziele',    label: 'Ziele' },
-  { id: 'review',   label: 'Review' },
+  { id: 'ziele',    label: 'Ziele'    },
+  { id: 'review',   label: 'Review'   },
 ];
 
 export default function Plan() {
   const [tab, setTab] = useState<Tab>('training');
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold text-foreground">Plan</h1>
-
-      <div className="flex gap-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
-              tab === t.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Plan</h1>
+      <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}
       {tab === 'review'   && <ReviewTab />}
