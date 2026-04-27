@@ -75,6 +75,71 @@ async function computeStreaks(userId: string, today: string): Promise<{ checkinS
   };
 }
 
+// ─── Workout step generation ──────────────────────────────────────────────────
+
+async function buildWorkoutSteps(
+  workout: { id: string; activityType: string; zone: number; durationMin: number; description: string | null },
+  profile: { ftpWatts: number | null; maxHrBpm: number | null } | undefined,
+): Promise<{ steps: WorkoutStep[]; updatedDescription: string | null }> {
+  const ftp = profile?.ftpWatts ?? 250;
+  const maxHr = profile?.maxHrBpm ?? 185;
+
+  const isRun = workout.activityType === 'run';
+  const isBike = workout.activityType === 'bike';
+  const intensityRef = isBike
+    ? `FTP=${ftp}W, Zonen: Z1<${Math.round(ftp*0.56)}W, Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W, Z5>${Math.round(ftp*1.05)}W`
+    : `Max-HF=${maxHr}bpm, Zonen: Z1<${Math.round(maxHr*0.68)}, Z2 ${Math.round(maxHr*0.68)}-${Math.round(maxHr*0.78)}, Z4 ${Math.round(maxHr*0.88)}-${Math.round(maxHr*0.95)}, Z5>${Math.round(maxHr*0.95)}`;
+
+  const prompt = `Erstelle eine detaillierte Trainingsanleitung für dieses Workout:
+
+Typ: ${workout.activityType} | Zone: ${workout.zone} | Dauer: ${workout.durationMin} min
+Kurzbeschreibung: ${workout.description ?? '–'}
+Athleten-Referenz: ${intensityRef}
+
+Antworte NUR mit einem JSON-Objekt:
+{
+  "steps": [
+    {"type":"warmup","durationMin":10,"zone":1,"description":"Beschreibung"},
+    {"type":"interval","reps":4,"durationMin":8,"zone":4,"restMin":2,"description":"Ziel: X"},
+    {"type":"cooldown","durationMin":10,"zone":1,"description":"Ausschwingen"}
+  ],
+  "coachingNote": "1-2 Sätze Coaching-Hinweis auf Deutsch"
+}
+
+Typen: warmup, interval, steady, cooldown. Zonen 1-5.
+Gesamtdauer der steps muss ~${workout.durationMin} Minuten ergeben (inkl. Pausen).
+Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
+
+  const raw = await llmComplete(
+    'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON.',
+    prompt,
+    SMART_MODEL,
+  );
+
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('LLM returned no valid JSON for workout steps');
+
+  const parsed = JSON.parse(jsonMatch[0]) as { steps: WorkoutStep[]; coachingNote?: string };
+  const steps: WorkoutStep[] = (parsed.steps ?? []).map(s => {
+    const step: WorkoutStep = {
+      type: (['warmup','interval','rest','cooldown','steady'].includes(s.type) ? s.type : 'steady') as WorkoutStep['type'],
+      durationMin: Math.max(1, s.durationMin ?? 10),
+      zone: Math.max(1, Math.min(5, s.zone ?? workout.zone)),
+    };
+    if (s.reps != null) step.reps = s.reps;
+    if (s.restMin != null) step.restMin = s.restMin;
+    if (s.description) step.description = s.description;
+    return step;
+  });
+
+  const coachingNote = parsed.coachingNote ?? null;
+  const updatedDescription = coachingNote
+    ? `${workout.description ?? ''}\n\n${coachingNote}`.trim()
+    : workout.description;
+
+  return { steps, updatedDescription };
+}
+
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 export default async function pulsePlugin(app: FastifyInstance) {
@@ -599,76 +664,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     if (!workout) return reply.status(404).send({ error: 'Not found' });
 
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-    const ftp = profile?.ftpWatts ?? 250;
-    const maxHr = profile?.maxHrBpm ?? 185;
-
-    const ZONE_HR: Record<number, string> = {
-      1: `<${Math.round(maxHr * 0.68)} bpm`,
-      2: `${Math.round(maxHr * 0.68)}–${Math.round(maxHr * 0.78)} bpm`,
-      3: `${Math.round(maxHr * 0.78)}–${Math.round(maxHr * 0.88)} bpm`,
-      4: `${Math.round(maxHr * 0.88)}–${Math.round(maxHr * 0.95)} bpm`,
-      5: `>${Math.round(maxHr * 0.95)} bpm`,
-    };
-    const ZONE_POWER: Record<number, string> = {
-      1: `<${Math.round(ftp * 0.56)}W`,
-      2: `${Math.round(ftp * 0.56)}–${Math.round(ftp * 0.75)}W`,
-      3: `${Math.round(ftp * 0.75)}–${Math.round(ftp * 0.90)}W`,
-      4: `${Math.round(ftp * 0.90)}–${Math.round(ftp * 1.05)}W`,
-      5: `>${Math.round(ftp * 1.05)}W`,
-    };
-
-    const isRun = workout.activityType === 'run';
-    const isBike = workout.activityType === 'bike';
-    const intensityRef = isBike
-      ? `FTP=${ftp}W, Zonen: Z1<${Math.round(ftp*0.56)}W, Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W, Z5>${Math.round(ftp*1.05)}W`
-      : `Max-HF=${maxHr}bpm, Zonen: Z1<${Math.round(maxHr*0.68)}, Z2 ${Math.round(maxHr*0.68)}-${Math.round(maxHr*0.78)}, Z4 ${Math.round(maxHr*0.88)}-${Math.round(maxHr*0.95)}, Z5>${Math.round(maxHr*0.95)}`;
-
-    const prompt = `Erstelle eine detaillierte Trainingsanleitung für dieses Workout:
-
-Typ: ${workout.activityType} | Zone: ${workout.zone} | Dauer: ${workout.durationMin} min
-Kurzbeschreibung: ${workout.description ?? '–'}
-Athleten-Referenz: ${intensityRef}
-
-Antworte NUR mit einem JSON-Objekt:
-{
-  "steps": [
-    {"type":"warmup","durationMin":10,"zone":1,"description":"Beschreibung"},
-    {"type":"interval","reps":4,"durationMin":8,"zone":4,"restMin":2,"description":"Ziel: X"},
-    {"type":"cooldown","durationMin":10,"zone":1,"description":"Ausschwingen"}
-  ],
-  "coachingNote": "1-2 Sätze Coaching-Hinweis auf Deutsch"
-}
-
-Typen: warmup, interval, steady, cooldown. Zonen 1-5.
-Gesamtdauer der steps muss ~${workout.durationMin} Minuten ergeben (inkl. Pausen).
-Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
-
-    const raw = await llmComplete(
-      'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON.',
-      prompt,
-      SMART_MODEL,
-    );
-
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return reply.status(500).send({ error: 'LLM returned no valid JSON' });
-
-    const parsed = JSON.parse(jsonMatch[0]) as { steps: WorkoutStep[]; coachingNote?: string };
-    const steps: WorkoutStep[] = (parsed.steps ?? []).map(s => {
-      const step: WorkoutStep = {
-        type: (['warmup','interval','rest','cooldown','steady'].includes(s.type) ? s.type : 'steady') as WorkoutStep['type'],
-        durationMin: Math.max(1, s.durationMin ?? 10),
-        zone: Math.max(1, Math.min(5, s.zone ?? workout.zone)),
-      };
-      if (s.reps != null) step.reps = s.reps;
-      if (s.restMin != null) step.restMin = s.restMin;
-      if (s.description) step.description = s.description;
-      return step;
-    });
-
-    const coachingNote = parsed.coachingNote ?? null;
-    const updatedDescription = coachingNote
-      ? `${workout.description ?? ''}\n\n${coachingNote}`.trim()
-      : workout.description;
+    const { steps, updatedDescription } = await buildWorkoutSteps(workout, profile ?? undefined);
 
     await db.update(pulsePlannedWorkouts)
       .set({ steps, description: updatedDescription })
@@ -685,9 +681,18 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
     const [workout] = await db.select().from(pulsePlannedWorkouts)
       .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
     if (!workout) return reply.status(404).send({ error: 'Not found' });
-    if (!workout.steps?.length) return reply.status(400).send({ error: 'Kein Trainingsplan — erst Anleitung generieren.' });
 
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+
+    // Auto-generate steps if not yet created
+    if (!workout.steps?.length) {
+      const { steps, updatedDescription } = await buildWorkoutSteps(workout, profile ?? undefined);
+      await db.update(pulsePlannedWorkouts)
+        .set({ steps, description: updatedDescription })
+        .where(eq(pulsePlannedWorkouts.id, id));
+      workout.steps = steps as typeof workout.steps;
+      if (updatedDescription) workout.description = updatedDescription;
+    }
 
     const SPORT_TYPES: Record<string, { sportTypeId: number; sportTypeKey: string }> = {
       run:      { sportTypeId: 1,  sportTypeKey: 'running' },
@@ -720,7 +725,7 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
     let stepOrder = 0;
     const garminSteps: object[] = [];
 
-    for (const step of workout.steps) {
+    for (const step of workout.steps!) {
       const stepType = STEP_TYPE_MAP[step.type] ?? STEP_TYPE_MAP.interval;
       const durationSecs = step.durationMin * 60;
 
@@ -880,7 +885,23 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
       })),
     ).returning();
 
-    return reply.status(201).send({ workouts: inserted });
+    // Generate structured steps for all workouts in parallel (best-effort)
+    const withSteps = await Promise.all(
+      inserted.map(async (w) => {
+        try {
+          const { steps, updatedDescription } = await buildWorkoutSteps(w, profile ?? undefined);
+          await db.update(pulsePlannedWorkouts)
+            .set({ steps, description: updatedDescription })
+            .where(eq(pulsePlannedWorkouts.id, w.id));
+          return { ...w, steps, description: updatedDescription };
+        } catch (err) {
+          app.log.warn(`[plan] Step generation failed for workout ${w.id}: ${err}`);
+          return w;
+        }
+      }),
+    );
+
+    return reply.status(201).send({ workouts: withSteps });
   });
 
   // ─── Goals ────────────────────────────────────────────────────────────────────
@@ -1045,9 +1066,23 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
       eq(pulsePlannedWorkouts.status, 'planned'),
     ));
 
-    const workouts = await db.insert(pulsePlannedWorkouts).values(
+    const inserted2 = await db.insert(pulsePlannedWorkouts).values(
       generated.map(w => ({ userId, plannedDate: w.plannedDate, activityType: w.activityType, zone: w.zone, durationMin: w.durationMin, targetTss: w.targetTss, description: w.description })),
     ).returning();
+
+    const workouts = await Promise.all(
+      inserted2.map(async (w) => {
+        try {
+          const { steps, updatedDescription } = await buildWorkoutSteps(w, profile ?? undefined);
+          await db.update(pulsePlannedWorkouts)
+            .set({ steps, description: updatedDescription })
+            .where(eq(pulsePlannedWorkouts.id, w.id));
+          return { ...w, steps, description: updatedDescription };
+        } catch {
+          return w;
+        }
+      }),
+    );
 
     return { ok: true, workouts };
   });
