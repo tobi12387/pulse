@@ -68,6 +68,16 @@ export const pulseApi = {
   activities: {
     list: (limit = 10): Promise<{ activities: PulseActivity[] }> =>
       request(`/activities?limit=${limit}`),
+    detail: (id: string): Promise<{
+      activity: PulseActivity & { externalId: string | null };
+      laps: Array<{
+        index: number; distanceM: number | null; durationSec: number | null;
+        avgHr: number | null; maxHr: number | null; avgPowerW: number | null;
+        avgSpeedMs: number | null; elevationGainM: number | null;
+      }>;
+      hrZones: Array<{ zone: number; secsInZone: number; zoneLowBoundary: number }>;
+    }> =>
+      request(`/activities/${id}`),
   },
 
   plan: {

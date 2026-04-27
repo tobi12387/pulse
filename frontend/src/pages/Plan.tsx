@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, usePulseReview, useGenerateReview,
@@ -72,6 +73,7 @@ function Loading({ rows = 3 }: { rows?: number }) {
 function TrainingTab() {
   const acts = usePulseActivities(14);
   const plan = usePulsePlan();
+  const navigate = useNavigate();
 
   const workouts   = plan.data?.workouts ?? [];
   const activities = acts.data?.activities ?? [];
@@ -148,7 +150,13 @@ function TrainingTab() {
               </thead>
               <tbody>
                 {activities.map((a, i) => (
-                  <tr key={a.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                  <tr
+                    key={a.id}
+                    onClick={() => navigate(`/activity/${a.id}`)}
+                    style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined, cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
                     <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text)' }}>
                       {a.name ?? a.activityType}
                     </td>

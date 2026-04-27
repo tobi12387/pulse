@@ -101,6 +101,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
         avgHr: a.avgHr, maxHr: a.maxHr, avgPowerW: a.avgPowerW,
         normalizedPowerW: a.normalizedPowerW, tss: a.tss,
         calories: a.calories, elevationGainM: a.elevationGainM,
+        trainingEffectAerobic: a.trainingEffectAerobic,
+        trainingEffectAnaerobic: a.trainingEffectAnaerobic,
+        vo2maxEstimate: a.vo2maxEstimate,
       })),
       nextWorkout: nextWorkout ? {
         id: nextWorkout.id, userId: nextWorkout.userId,
@@ -360,6 +363,77 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ...a,
         startTime: a.startTime.toISOString(),
       })),
+    };
+  });
+
+  // ─── Activity detail (laps + HR zones from Garmin) ───────────────────────────
+  app.get('/activities/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const userId = req.user.sub;
+
+    const [activity] = await db.select()
+      .from(pulseActivities)
+      .where(and(eq(pulseActivities.id, id), eq(pulseActivities.userId, userId)));
+
+    if (!activity) return reply.status(404).send({ error: 'Not found' });
+
+    // If rawData already cached, return it
+    if (activity.rawData && (activity.rawData as any).laps) {
+      return { activity: { ...activity, startTime: activity.startTime.toISOString() }, ...(activity.rawData as any) };
+    }
+
+    // Fetch laps + HR zones from Garmin if externalId available
+    let laps: any[] = [];
+    let hrZones: { zone: number; secsInZone: number; zoneLowBoundary: number }[] = [];
+
+    if (activity.externalId) {
+      try {
+        const { getGarminClient } = await import('../lib/garmin-client.js');
+        const gc = await getGarminClient();
+        const extId = activity.externalId;
+
+        const [splitsRes, zonesRes] = await Promise.allSettled([
+          (gc as any).get(`https://connectapi.garmin.com/activity-service/activity/${extId}/splits`),
+          (gc as any).get(`https://connectapi.garmin.com/activity-service/activity/${extId}/hrTimeInZones`),
+        ]);
+
+        if (splitsRes.status === 'fulfilled') {
+          const raw = (splitsRes.value as any).lapDTOs ?? [];
+          laps = raw.map((l: any, i: number) => ({
+            index:    i + 1,
+            distanceM: l.distance ?? null,
+            durationSec: l.duration ?? null,
+            avgHr:    l.averageHR ?? null,
+            maxHr:    l.maxHR ?? null,
+            avgPowerW: l.averagePower ?? null,
+            avgSpeedMs: l.averageSpeed ?? null,
+            elevationGainM: l.elevationGain ?? null,
+          }));
+        }
+
+        if (zonesRes.status === 'fulfilled') {
+          const raw = zonesRes.value as any[];
+          hrZones = (Array.isArray(raw) ? raw : Object.values(raw)).map((z: any) => ({
+            zone: z.zoneNumber,
+            secsInZone: z.secsInZone,
+            zoneLowBoundary: z.zoneLowBoundary,
+          }));
+        }
+
+        // Cache in rawData
+        await db.update(pulseActivities)
+          .set({ rawData: { laps, hrZones } })
+          .where(eq(pulseActivities.id, id));
+
+      } catch (err) {
+        app.log.warn(`[activity-detail] Garmin fetch failed for ${id}: ${err}`);
+      }
+    }
+
+    return {
+      activity: { ...activity, startTime: activity.startTime.toISOString() },
+      laps,
+      hrZones,
     };
   });
 

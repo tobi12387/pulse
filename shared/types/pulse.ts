@@ -51,6 +51,9 @@ export interface PulseActivity {
   tss: number | null;
   calories: number | null;
   elevationGainM: number | null;
+  trainingEffectAerobic: number | null;
+  trainingEffectAnaerobic: number | null;
+  vo2maxEstimate: number | null;
 }
 
 export interface PulsePlannedWorkout {

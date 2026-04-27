@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePulseHome, useGarminSync, usePulseMetrics } from '@/pulse/hooks';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import { StatCard } from '@/components/StatCard';
 import { Skeleton, StatGridSkeleton } from '@/components/Skeleton';
@@ -63,6 +64,7 @@ export default function Home() {
     );
   }
 
+  const navigate = useNavigate();
   const m = data.todayMetrics;
   const fl = data.fitnessLoad;
   const msg = briefing?.briefing;
@@ -274,7 +276,10 @@ export default function Home() {
               {data.recentActivities.slice(0, 5).map((a, i) => (
                 <tr
                   key={a.id}
-                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
+                  onClick={() => navigate(`/activity/${a.id}`)}
+                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined, cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <td style={{ padding: '8px 16px', fontSize: 12, color: 'var(--text)' }}>
                     {a.name ?? a.activityType}
