@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { usePulseProfile, useUpdateProfile } from '@/pulse/hooks';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePulseProfile, useUpdateProfile, pulseKeys } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
 
@@ -35,6 +35,7 @@ export default function Settings() {
     refetchInterval: 30_000,
   });
 
+  const qc = useQueryClient();
   const { data: profile } = usePulseProfile();
   const updateProfile = useUpdateProfile();
 
@@ -84,6 +85,7 @@ export default function Settings() {
     try {
       const res = await pulseApi.garmin.syncProfile();
       const { vo2max, maxHrBpm, lactateThresholdHr, ftpWatts } = res.synced;
+      await qc.invalidateQueries({ queryKey: pulseKeys.profile });
       const parts = [];
       if (ftpWatts != null)           parts.push(`FTP ${ftpWatts} W`);
       if (vo2max != null)             parts.push(`VO2max ${vo2max}`);
