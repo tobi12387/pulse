@@ -1,9 +1,37 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
-import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog } from '../db/pulse-schema.js';
-import { eq, desc } from 'drizzle-orm';
+import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts } from '../db/pulse-schema.js';
+import { eq, desc, and } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
+
+async function matchActivityToWorkout(
+  userId: string,
+  activityId: string,
+  date: string,
+  activityType: string,
+): Promise<void> {
+  // 'other' activities are too ambiguous — skip
+  if (activityType === 'other') return;
+
+  const matchType = activityType === 'hike' ? 'run' : activityType;
+
+  const [planned] = await db.select({ id: pulsePlannedWorkouts.id })
+    .from(pulsePlannedWorkouts)
+    .where(and(
+      eq(pulsePlannedWorkouts.userId, userId),
+      eq(pulsePlannedWorkouts.plannedDate, date),
+      eq(pulsePlannedWorkouts.status, 'planned'),
+      eq(pulsePlannedWorkouts.activityType, matchType as 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other'),
+    ))
+    .limit(1);
+
+  if (!planned) return;
+
+  await db.update(pulsePlannedWorkouts)
+    .set({ status: 'completed', completedActivityId: activityId })
+    .where(eq(pulsePlannedWorkouts.id, planned.id));
+}
 
 export default async function garminRoutes(app: FastifyInstance) {
   // GET /api/garmin/status
@@ -182,7 +210,7 @@ export async function syncGarminDay(
         vo2maxEstimate: a.vO2MaxValue ?? null,
       };
 
-      await db.insert(pulseActivities).values(vals)
+      const [inserted] = await db.insert(pulseActivities).values(vals)
         .onConflictDoUpdate({
           target: [pulseActivities.externalId, pulseActivities.source],
           set: {
@@ -192,7 +220,11 @@ export async function syncGarminDay(
             elevationGainM: vals.elevationGainM, trainingEffectAerobic: vals.trainingEffectAerobic,
             trainingEffectAnaerobic: vals.trainingEffectAnaerobic, vo2maxEstimate: vals.vo2maxEstimate,
           },
-        });
+        }).returning({ id: pulseActivities.id });
+
+      if (inserted) {
+        await matchActivityToWorkout(userId, inserted.id, dateStr, activityType);
+      }
     }
     if (dayActivities.length > 0) {
       app.log.info(`[garmin-sync] ${dateStr} activities: ${dayActivities.length}`);
