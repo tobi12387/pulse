@@ -39,10 +39,6 @@ function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return requestAt(BASE, path, options);
 }
 
-function requestStrava<T>(path: string, options: RequestInit = {}): Promise<T> {
-  return requestAt('/api/strava', path, options);
-}
-
 export const pulseApi = {
   home: {
     get: (): Promise<PulseHomeScreenData> =>
@@ -116,24 +112,8 @@ export const pulseApi = {
       request('/garmin/sync', { method: 'POST' }),
     backfillWeight: (days = 90): Promise<{ synced: number; errors: string[] }> =>
       request('/garmin/backfill-weight', { method: 'POST', body: JSON.stringify({ days }) }),
-    syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null } }> =>
+    syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
       request('/garmin/sync-profile', { method: 'POST' }),
-  },
-
-  strava: {
-    status: (): Promise<{ configured: boolean; connected: boolean; athleteId: number | null }> =>
-      requestStrava('/status'),
-    authUrl: (): Promise<{ url: string }> =>
-      requestStrava('/auth-url'),
-    exchange: (code: string, state: string): Promise<{ connected: boolean; athleteId: number | null }> =>
-      requestStrava('/exchange', { method: 'POST', body: JSON.stringify({ code, state }) }),
-    syncProfile: (): Promise<{
-      synced: { ftp: number | null; weight: number | null; maxHrFromZones: number | null };
-      hrZones: Array<{ min: number; max: number }>;
-      powerZones: Array<{ min: number; max: number }>;
-    }> => requestStrava('/sync-profile', { method: 'POST', body: '{}' }),
-    disconnect: (): Promise<{ disconnected: boolean }> =>
-      requestStrava('/disconnect', { method: 'DELETE' }),
   },
 
   profile: {

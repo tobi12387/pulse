@@ -38,26 +38,6 @@ export default function Settings() {
   const { data: profile } = usePulseProfile();
   const updateProfile = useUpdateProfile();
 
-  const { data: stravaStatus, refetch: refetchStrava } = useQuery({
-    queryKey: ['strava-status'],
-    queryFn: pulseApi.strava.status,
-    staleTime: 60_000,
-  });
-  const [syncingStrava, setSyncingStrava] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const stravaParam = params.get('strava');
-    if (stravaParam === 'connected') {
-      setMessage({ text: 'Strava verbunden.', ok: true });
-      void refetchStrava();
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (stravaParam === 'error') {
-      setMessage({ text: `Strava Fehler: ${params.get('msg') ?? 'unbekannt'}`, ok: false });
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [refetchStrava]);
-
   const [profileForm, setProfileForm] = useState<{
     ftpWatts: string; maxHrBpm: string; weeklyHoursTarget: string; trainingPhase: string;
   } | null>(null);
@@ -98,42 +78,16 @@ export default function Settings() {
     }
   }
 
-  async function handleStravaConnect() {
-    try {
-      const { url } = await pulseApi.strava.authUrl();
-      window.location.href = url;
-    } catch (err) {
-      setMessage({ text: err instanceof Error ? err.message : 'Verbindung fehlgeschlagen.', ok: false });
-    }
-  }
-
-  async function handleStravaSyncProfile() {
-    setSyncingStrava(true);
-    setMessage(null);
-    try {
-      const res = await pulseApi.strava.syncProfile();
-      const { ftp, maxHrFromZones } = res.synced;
-      const parts: string[] = [];
-      if (ftp != null)          parts.push(`FTP ${ftp} W`);
-      if (maxHrFromZones != null) parts.push(`Max-HR ~${maxHrFromZones} bpm`);
-      setMessage({ text: `Strava geladen: ${parts.join(', ') || 'keine neuen Werte'}.`, ok: true });
-      void refetchStrava();
-    } catch (err) {
-      setMessage({ text: err instanceof Error ? err.message : 'Sync fehlgeschlagen.', ok: false });
-    } finally {
-      setSyncingStrava(false);
-    }
-  }
-
   async function handleSyncProfile() {
     setSyncingProfile(true);
     setMessage(null);
     try {
       const res = await pulseApi.garmin.syncProfile();
-      const { vo2max, maxHrBpm, lactateThresholdHr } = res.synced;
+      const { vo2max, maxHrBpm, lactateThresholdHr, ftpWatts } = res.synced;
       const parts = [];
-      if (vo2max != null)            parts.push(`VO2max ${vo2max}`);
-      if (maxHrBpm != null)          parts.push(`MaxHR ${maxHrBpm} bpm`);
+      if (ftpWatts != null)           parts.push(`FTP ${ftpWatts} W`);
+      if (vo2max != null)             parts.push(`VO2max ${vo2max}`);
+      if (maxHrBpm != null)           parts.push(`MaxHR ${maxHrBpm} bpm`);
       if (lactateThresholdHr != null) parts.push(`Schwellen-HR ${lactateThresholdHr} bpm`);
       setMessage({ text: `Garmin Profil geladen: ${parts.join(', ') || 'keine neuen Werte'}.`, ok: true });
     } catch (err) {
@@ -211,7 +165,7 @@ export default function Settings() {
         {profileForm ? (
           <form onSubmit={(e) => void handleProfileSave(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
-              VO2max + Max-HR werden automatisch von Garmin geladen. FTP manuell eintragen.
+              FTP, Max-HR + VO2max werden automatisch von Garmin geladen.
             </p>
             {([
               ['FTP (Watt)', 'ftpWatts', 'number'],
@@ -295,70 +249,6 @@ export default function Settings() {
           </div>
         )}
       </div>
-
-      {/* Strava card — only shown when configured (STRAVA_CLIENT_ID set) */}
-      {stravaStatus?.configured !== false && (
-        <div className="card">
-          <div className="label-mono" style={{ marginBottom: 14 }}>Strava</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Row label="Status">
-              <Pill color={stravaStatus?.connected ? 'var(--green)' : 'var(--text-3)'}>
-                {stravaStatus?.connected ? 'VERBUNDEN' : 'NICHT VERBUNDEN'}
-              </Pill>
-            </Row>
-            {stravaStatus?.connected && stravaStatus.athleteId && (
-              <Row label="Athlet-ID">
-                <Val>{stravaStatus.athleteId}</Val>
-              </Row>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-            {stravaStatus?.connected ? (
-              <>
-                <button
-                  onClick={handleStravaSyncProfile}
-                  disabled={syncingStrava}
-                  style={{
-                    width: '100%',
-                    background: 'var(--surface-2)', border: '1px solid #FC4C02',
-                    borderRadius: 'var(--radius)', padding: '10px',
-                    fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-                    textTransform: 'uppercase', color: syncingStrava ? 'var(--text-3)' : '#FC4C02',
-                    cursor: syncingStrava ? 'default' : 'pointer',
-                  }}
-                >
-                  {syncingStrava ? '● Lade…' : 'FTP + Zonen laden'}
-                </button>
-                <button
-                  onClick={() => void pulseApi.strava.disconnect().then(() => { void refetchStrava(); setMessage({ text: 'Strava getrennt.', ok: true }); })}
-                  style={{
-                    width: '100%',
-                    background: 'none', border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius)', padding: '8px',
-                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
-                    textTransform: 'uppercase', color: 'var(--text-3)', cursor: 'pointer',
-                  }}
-                >
-                  Trennen
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => void handleStravaConnect()}
-                style={{
-                  width: '100%',
-                  background: 'var(--surface-2)', border: '1px solid #FC4C02',
-                  borderRadius: 'var(--radius)', padding: '10px',
-                  fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-                  textTransform: 'uppercase', color: '#FC4C02', cursor: 'pointer',
-                }}
-              >
-                Mit Strava verbinden
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Garmin card */}
       <div className="card">

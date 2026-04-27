@@ -697,7 +697,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       ? Math.round(ud.lactateThresholdHeartRate / 0.89)
       : null;
 
-    // Also derive from recorded activities — most accurate source
+    // Derive maxHR from recorded activities — most accurate source
     const { max } = await import('drizzle-orm');
     const [activityMaxRow] = await db.select({ maxHrRecorded: max(pulseActivities.maxHr) })
       .from(pulseActivities)
@@ -705,15 +705,29 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     const maxHrBpm: number | null = activityMaxRow?.maxHrRecorded ?? garminMaxHrBpm;
 
+    // FTP from best 20-min power across all activities (standard: best20min × 0.95)
+    let ftpWatts: number | null = null;
+    try {
+      const allActivities = await gc.getActivities(0, 200) as any[];
+      const best20min = allActivities
+        .map((a: any) => a.max20MinPower as number | undefined)
+        .filter((p): p is number => p != null && p > 0)
+        .reduce((best, p) => Math.max(best, p), 0);
+      if (best20min > 0) ftpWatts = Math.round(best20min * 0.95);
+    } catch {
+      // non-fatal — continue without FTP
+    }
+
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (vo2max != null) updates.vo2max = vo2max;
+    if (vo2max != null)   updates.vo2max = vo2max;
     if (maxHrBpm != null) updates.maxHrBpm = maxHrBpm;
+    if (ftpWatts != null) updates.ftpWatts = ftpWatts;
 
     await db.insert(pulseUserProfile)
       .values({ userId, ...updates } as any)
       .onConflictDoUpdate({ target: pulseUserProfile.userId, set: updates as any });
 
-    return { synced: { vo2max, maxHrBpm, lactateThresholdHr: ud.lactateThresholdHeartRate ?? null } };
+    return { synced: { vo2max, maxHrBpm, lactateThresholdHr: ud.lactateThresholdHeartRate ?? null, ftpWatts } };
   });
 
   // ─── Garmin weight backfill ───────────────────────────────────────────────────
