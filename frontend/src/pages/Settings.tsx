@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { usePulseProfile, useUpdateProfile } from '@/pulse/hooks';
+import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
 
 interface GarminStatus {
@@ -24,12 +26,42 @@ const SYNC_LABEL: Record<string, string> = {
 export default function Settings() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
   const { data: garminStatus, refetch } = useQuery<GarminStatus>({
     queryKey: ['garmin-status'],
     queryFn: () => api.garmin.status() as Promise<GarminStatus>,
     refetchInterval: 30_000,
   });
+
+  const { data: profile } = usePulseProfile();
+  const updateProfile = useUpdateProfile();
+
+  const [profileForm, setProfileForm] = useState<{
+    ftpWatts: string; maxHrBpm: string; weeklyHoursTarget: string; trainingPhase: string;
+  } | null>(null);
+
+  function openProfile() {
+    setProfileForm({
+      ftpWatts:          String(profile?.ftpWatts ?? ''),
+      maxHrBpm:          String(profile?.maxHrBpm ?? ''),
+      weeklyHoursTarget: String(profile?.weeklyHoursTarget ?? ''),
+      trainingPhase:     profile?.trainingPhase ?? 'base',
+    });
+  }
+
+  async function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!profileForm) return;
+    const data: Record<string, number | string> = {};
+    if (profileForm.ftpWatts)          data.ftpWatts          = Number(profileForm.ftpWatts);
+    if (profileForm.maxHrBpm)          data.maxHrBpm          = Number(profileForm.maxHrBpm);
+    if (profileForm.weeklyHoursTarget) data.weeklyHoursTarget = Number(profileForm.weeklyHoursTarget);
+    if (profileForm.trainingPhase)     data.trainingPhase     = profileForm.trainingPhase;
+    await updateProfile.mutateAsync(data);
+    setProfileForm(null);
+    setMessage({ text: 'Profil gespeichert.', ok: true });
+  }
 
   async function handleSync() {
     setSyncing(true);
@@ -45,6 +77,19 @@ export default function Settings() {
     }
   }
 
+  async function handleBackfill() {
+    setBackfilling(true);
+    setMessage(null);
+    try {
+      const res = await pulseApi.garmin.backfillWeight(90);
+      setMessage({ text: `Gewicht-Backfill: ${res.synced} Tage synced.${res.errors.length ? ` ${res.errors.length} Fehler.` : ''}`, ok: true });
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : 'Backfill fehlgeschlagen.', ok: false });
+    } finally {
+      setBackfilling(false);
+    }
+  }
+
   const status = garminStatus?.syncStatus ?? 'never';
 
   return (
@@ -52,13 +97,10 @@ export default function Settings() {
       <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Settings</h1>
 
       {message && (
-        <div
-          className="card"
-          style={{
-            borderColor: message.ok ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)',
-            padding: '10px 14px',
-          }}
-        >
+        <div className="card" style={{
+          borderColor: message.ok ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)',
+          padding: '10px 14px',
+        }}>
           <span style={{
             fontFamily: 'var(--font-mono)', fontSize: 11,
             color: message.ok ? 'var(--green)' : 'var(--rose)',
@@ -67,6 +109,109 @@ export default function Settings() {
           </span>
         </div>
       )}
+
+      {/* Athletenprofil */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span className="label-mono">Athletenprofil</span>
+          {!profileForm && (
+            <button
+              onClick={openProfile}
+              style={{
+                background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
+                letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
+              }}
+            >
+              Bearbeiten
+            </button>
+          )}
+        </div>
+
+        {profileForm ? (
+          <form onSubmit={(e) => void handleProfileSave(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {([
+              ['FTP (Watt)', 'ftpWatts', 'number'],
+              ['Max. Puls (bpm)', 'maxHrBpm', 'number'],
+              ['Wochenstunden', 'weeklyHoursTarget', 'number'],
+            ] as [string, keyof typeof profileForm, string][]).map(([label, key, type]) => (
+              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-2)', flexShrink: 0 }}>{label}</span>
+                <input
+                  type={type}
+                  value={profileForm[key]}
+                  onChange={e => setProfileForm(f => f ? { ...f, [key]: e.target.value } : f)}
+                  style={{
+                    width: 80, background: 'var(--surface-2)', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)', padding: '5px 8px',
+                    fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)',
+                    outline: 'none', textAlign: 'right',
+                  }}
+                />
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Trainingsphase</span>
+              <select
+                value={profileForm.trainingPhase}
+                onChange={e => setProfileForm(f => f ? { ...f, trainingPhase: e.target.value } : f)}
+                style={{
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', padding: '5px 8px',
+                  fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)',
+                  outline: 'none',
+                }}
+              >
+                <option value="base">Base</option>
+                <option value="build">Build</option>
+                <option value="peak">Peak</option>
+                <option value="taper">Taper</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <button
+                type="submit"
+                disabled={updateProfile.isPending}
+                style={{
+                  flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
+                  borderRadius: 'var(--radius)', padding: '8px',
+                  fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+                  textTransform: 'uppercase', color: 'var(--accent)', cursor: 'pointer',
+                }}
+              >
+                {updateProfile.isPending ? 'Speichern…' : 'Speichern'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileForm(null)}
+                style={{
+                  background: 'none', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', padding: '8px 14px',
+                  fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+                  textTransform: 'uppercase', color: 'var(--text-3)', cursor: 'pointer',
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Row label="FTP">
+              <Val>{profile?.ftpWatts ? `${profile.ftpWatts} W` : '–'}</Val>
+            </Row>
+            <Row label="Max. Puls">
+              <Val>{profile?.maxHrBpm ? `${profile.maxHrBpm} bpm` : '–'}</Val>
+            </Row>
+            <Row label="Wochenstunden">
+              <Val>{profile?.weeklyHoursTarget ? `${profile.weeklyHoursTarget} h` : '–'}</Val>
+            </Row>
+            <Row label="Phase">
+              <Pill color="var(--accent)">{(profile?.trainingPhase ?? 'base').toUpperCase()}</Pill>
+            </Row>
+          </div>
+        )}
+      </div>
 
       {/* Garmin card */}
       <div className="card">
@@ -86,20 +231,36 @@ export default function Settings() {
             </Row>
           )}
         </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          style={{
-            marginTop: 14, width: '100%',
-            background: 'var(--surface-2)', border: '1px solid var(--accent)',
-            borderRadius: 'var(--radius)', padding: '10px',
-            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: 'var(--accent)',
-            cursor: syncing ? 'default' : 'pointer',
-          }}
-        >
-          {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            style={{
+              width: '100%',
+              background: 'var(--surface-2)', border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius)', padding: '10px',
+              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: 'var(--accent)',
+              cursor: syncing ? 'default' : 'pointer',
+            }}
+          >
+            {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
+          </button>
+          <button
+            onClick={handleBackfill}
+            disabled={backfilling}
+            style={{
+              width: '100%',
+              background: 'var(--surface-2)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)', padding: '10px',
+              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: backfilling ? 'var(--text-3)' : 'var(--text-2)',
+              cursor: backfilling ? 'default' : 'pointer',
+            }}
+          >
+            {backfilling ? '● Backfill läuft…' : 'Gewicht backfill (90 Tage)'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -111,6 +272,12 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
       <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{label}</span>
       {children}
     </div>
+  );
+}
+
+function Val({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>{children}</span>
   );
 }
 

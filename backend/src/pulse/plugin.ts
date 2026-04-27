@@ -19,7 +19,7 @@ import { computeFitnessLoad, computeReadinessScore } from './services/load-engin
 import { getPrognosis } from './services/prognosis-engine.js';
 import { getCoachReply, classifyAndExtractCheckin, type CheckinClassification } from './services/coach-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
-import { generateWeekWorkouts } from './services/plan-engine.js';
+import { generateWeekWorkouts, generateLLMWeekPlan } from './services/plan-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { pulseQueues } from './queues/queues.js';
 
@@ -462,12 +462,41 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .from(pulseUserProfile)
       .where(eq(pulseUserProfile.userId, userId));
 
-    const generated = generateWeekWorkouts({
-      weekStart: weekStartStr,
-      phase: (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper',
-      weeklyHoursTarget: profile?.weeklyHoursTarget ?? 8,
-      availableDays: [1, 3, 5, 6],
-    });
+    const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
+    const weeklyHoursTarget = profile?.weeklyHoursTarget ?? 8;
+    const availableDays = [1, 3, 5, 6];
+
+    const fitnessLoad = await computeFitnessLoad(userId, weekStartStr);
+    const recentActs = await db.select({
+      activityType: pulseActivities.activityType,
+      durationSec:  pulseActivities.durationSec,
+      tss:          pulseActivities.tss,
+    }).from(pulseActivities)
+      .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 14 * 86_400_000))))
+      .orderBy(desc(pulseActivities.startTime))
+      .limit(6);
+
+    let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
+    try {
+      generated = await generateLLMWeekPlan({
+        weekStart: weekStartStr,
+        phase,
+        weeklyHoursTarget,
+        availableDays,
+        ctl: fitnessLoad.ctl,
+        atl: fitnessLoad.atl,
+        tsb: fitnessLoad.tsb,
+        ftpWatts: profile?.ftpWatts ?? 250,
+        recentActivities: recentActs.map(a => ({
+          activityType: a.activityType,
+          durationMin:  Math.round((a.durationSec ?? 0) / 60),
+          tss:          a.tss ?? 0,
+        })),
+      });
+    } catch (err) {
+      app.log.warn(`[plan] LLM plan failed, using templates: ${err}`);
+      generated = generateWeekWorkouts({ weekStart: weekStartStr, phase, weeklyHoursTarget, availableDays });
+    }
 
     await db.delete(pulsePlannedWorkouts).where(
       and(
@@ -621,6 +650,55 @@ export default async function pulsePlugin(app: FastifyInstance) {
       set: { weightKg: parsed.data.weightKg, notes: parsed.data.notes ?? null },
     }).returning();
     return reply.status(201).send(entry);
+  });
+
+  // ─── User profile (FTP, maxHR, weeklyHours, phase) ───────────────────────────
+  app.get('/profile', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+    return profile ?? { userId, ftpWatts: null, maxHrBpm: null, restingHrBpm: null, weightKg: null, vo2max: null, trainingPhase: 'base', weeklyHoursTarget: null };
+  });
+
+  app.patch('/profile', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      ftpWatts:          z.number().int().min(50).max(600).optional(),
+      maxHrBpm:          z.number().int().min(100).max(250).optional(),
+      restingHrBpm:      z.number().int().min(30).max(100).optional(),
+      weeklyHoursTarget: z.number().min(1).max(40).optional(),
+      trainingPhase:     z.enum(['base','build','peak','taper']).optional(),
+      vo2max:            z.number().min(20).max(100).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const [profile] = await db.insert(pulseUserProfile)
+      .values({ userId, ...parsed.data, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: pulseUserProfile.userId,
+        set: { ...parsed.data, updatedAt: new Date() },
+      }).returning();
+    return profile;
+  });
+
+  // ─── Garmin weight backfill ───────────────────────────────────────────────────
+  app.post('/garmin/backfill-weight', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { days = 90 } = (req.body as { days?: number }) ?? {};
+    const { syncGarminDay } = await import('../routes/garmin.js');
+    let synced = 0;
+    const errors: string[] = [];
+    for (let i = 0; i < Math.min(days, 180); i++) {
+      const date = new Date(Date.now() - i * 86_400_000);
+      try {
+        await syncGarminDay(userId, date, app);
+        synced++;
+      } catch (err) {
+        errors.push(`${date.toISOString().split('T')[0]}: ${String(err).slice(0, 80)}`);
+        if (errors.length >= 5) break;
+      }
+    }
+    return { synced, errors };
   });
 
   // ─── Garmin manual sync ───────────────────────────────────────────────────────

@@ -1,3 +1,5 @@
+import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
+
 // Phase distribution: base=z2-heavy, build=z3+threshold, peak=race-specific, taper=reduced
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
@@ -83,6 +85,70 @@ export function generateWeekWorkouts(params: {
   }
 
   return result;
+}
+
+export interface LLMPlanInput {
+  weekStart: string;
+  phase: Phase;
+  weeklyHoursTarget: number;
+  availableDays: number[];
+  ctl: number;
+  atl: number;
+  tsb: number;
+  ftpWatts: number;
+  recentActivities: Array<{ activityType: string; durationMin: number; tss: number }>;
+}
+
+export async function generateLLMWeekPlan(input: LLMPlanInput): Promise<WeekWorkout[]> {
+  const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const availableStr = input.availableDays.map(d => dayNames[d] ?? String(d)).join(', ');
+  const phaseLabel = input.phase === 'base' ? 'Grundlagenaufbau' : input.phase === 'build' ? 'Aufbau' : input.phase === 'peak' ? 'Wettkampfvorbereitung' : 'Tapering';
+  const recentStr = input.recentActivities.slice(0, 3).map(a => `${a.activityType} ${a.durationMin}min TSS=${a.tss}`).join(', ') || 'keine';
+
+  const prompt = `Erstelle einen polarisierten Trainingsplan für diese Woche (ab ${input.weekStart}).
+
+Athletenprofil:
+- Phase: ${phaseLabel}
+- Wöchentliche Stunden: ${input.weeklyHoursTarget}h
+- Verfügbare Tage: ${availableStr}
+- FTP: ${input.ftpWatts}W
+- Fitness CTL=${input.ctl.toFixed(0)}, Ermüdung ATL=${input.atl.toFixed(0)}, Form TSB=${input.tsb.toFixed(0)}
+- Letzte Trainings: ${recentStr}
+
+Polarisiertes Modell: ~80% extensiv (Z1-Z2), ~20% intensiv (Z4-Z5). Kein Z3.${input.tsb < -15 ? '\nWICHTIG: Hohe Ermüdung (TSB=' + input.tsb.toFixed(0) + ') — Intensität reduzieren, Erholung priorisieren.' : ''}
+
+Antworte NUR mit einem JSON-Array, kein Text davor/danach:
+[{"dayOffset":0,"activityType":"run|bike|swim|strength","zone":1-5,"durationMin":60,"description":"kurze Beschreibung auf Deutsch"}]
+dayOffset = Tage ab Montag (0=Mo,1=Di,2=Mi,3=Do,4=Fr,5=Sa,6=So)`;
+
+  const raw = await llmComplete(
+    'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON-Array.',
+    prompt,
+    SMART_MODEL,
+  );
+
+  const jsonMatch = raw.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error('LLM returned no valid JSON');
+
+  const items = JSON.parse(jsonMatch[0]) as Array<{
+    dayOffset: number; activityType: string; zone: number; durationMin: number; description: string;
+  }>;
+
+  const startDate = new Date(input.weekStart);
+  return items.map(item => {
+    const plannedDate = new Date(startDate);
+    plannedDate.setDate(plannedDate.getDate() + (item.dayOffset ?? 0));
+    const durationMin = Math.max(15, Math.min(300, item.durationMin ?? 60));
+    const zone = Math.max(1, Math.min(5, item.zone ?? 2));
+    return {
+      plannedDate: plannedDate.toISOString().split('T')[0]!,
+      activityType: (['run','bike','swim','strength','hike','other'].includes(item.activityType) ? item.activityType : 'run') as ActivityType,
+      zone,
+      durationMin,
+      targetTss: Math.round(zone * 15 * (durationMin / 60)),
+      description: item.description ?? '',
+    };
+  });
 }
 
 export function adaptIntensityForReadiness(

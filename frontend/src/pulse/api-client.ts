@@ -106,6 +106,20 @@ export const pulseApi = {
   garmin: {
     sync: (): Promise<{ status: string }> =>
       request('/garmin/sync', { method: 'POST' }),
+    backfillWeight: (days = 90): Promise<{ synced: number; errors: string[] }> =>
+      request('/garmin/backfill-weight', { method: 'POST', body: JSON.stringify({ days }) }),
+  },
+
+  profile: {
+    get: (): Promise<{
+      userId: string; ftpWatts: number | null; maxHrBpm: number | null;
+      restingHrBpm: number | null; weeklyHoursTarget: number | null;
+      trainingPhase: string | null; vo2max: number | null;
+    }> => request('/profile'),
+    update: (data: {
+      ftpWatts?: number; maxHrBpm?: number; restingHrBpm?: number;
+      weeklyHoursTarget?: number; trainingPhase?: string; vo2max?: number;
+    }): Promise<unknown> => request('/profile', { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   metrics: {

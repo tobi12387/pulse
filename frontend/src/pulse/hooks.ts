@@ -12,6 +12,7 @@ export const pulseKeys = {
   checkinToday: ['pulse', 'checkin', 'today'] as const,
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
   weight:       (days: number) => ['pulse', 'weight', days] as const,
+  profile:      ['pulse', 'profile'] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -140,5 +141,21 @@ export function useLogWeight() {
   return useMutation({
     mutationFn: pulseApi.weight.log,
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['pulse', 'weight'] }),
+  });
+}
+
+export function usePulseProfile() {
+  return useQuery({
+    queryKey: pulseKeys.profile,
+    queryFn: pulseApi.profile.get,
+    staleTime: 10 * 60_000,
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.profile.update,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.profile }),
   });
 }
