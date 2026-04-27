@@ -71,7 +71,7 @@ export default async function stravaRoutes(app: FastifyInstance) {
       redirect_uri:    redirectUri(),
       response_type:   'code',
       approval_prompt: 'auto',
-      scope:           'read,activity:read',
+      scope:           'read,profile:read_all,activity:read',
       state,
     });
     return { url: `${STRAVA_AUTH_URL}?${params}` };
