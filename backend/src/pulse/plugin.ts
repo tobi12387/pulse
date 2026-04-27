@@ -840,6 +840,30 @@ export default async function pulsePlugin(app: FastifyInstance) {
   });
 
   // ─── Garmin Calendar Sync ─────────────────────────────────────────────────────
+  // Fetches Garmin calendar via calendar-service (month=0-indexed) and returns
+  // future workout schedule entries. Each item: { id (scheduleId), workoutId, date }.
+  async function fetchGarminCalendarWorkouts(gc: any, today: string): Promise<Array<{ id: string; workoutId: string; date: string }>> {
+    const result: Array<{ id: string; workoutId: string; date: string }> = [];
+    const now = new Date();
+    for (let offset = 0; offset < 3; offset++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth(); // 0-indexed — calendar-service uses this format
+      try {
+        const cal = await gc.client.get(`https://connectapi.garmin.com/calendar-service/year/${year}/month/${month}`) as any;
+        const items: any[] = cal?.calendarItems ?? [];
+        for (const item of items) {
+          if (item.itemType !== 'workout') continue;
+          if (!item.workoutId) continue;
+          const date: string = item.date ?? '';
+          if (date < today) continue;
+          result.push({ id: String(item.id), workoutId: String(item.workoutId), date });
+        }
+      } catch { /* non-fatal */ }
+    }
+    return result;
+  }
+
   app.post('/garmin/calendar/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
@@ -851,9 +875,6 @@ export default async function pulsePlugin(app: FastifyInstance) {
         gte(pulsePlannedWorkouts.plannedDate, today),
       ));
 
-    const toUpload = futurePlanned.filter(w => !w.garminWorkoutId);
-    if (toUpload.length === 0) return { uploaded: 0, removed: 0 };
-
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
 
     let gc: any;
@@ -864,10 +885,10 @@ export default async function pulsePlugin(app: FastifyInstance) {
       return reply.status(502).send({ error: `Garmin-Login fehlgeschlagen: ${String(err).slice(0, 120)}` });
     }
 
+    // Upload workouts not yet in Garmin
     let uploaded = 0;
     const errors: string[] = [];
-
-    for (const workout of toUpload) {
+    for (const workout of futurePlanned.filter(w => !w.garminWorkoutId)) {
       try {
         let w = workout;
         if (!w.steps?.length) {
@@ -877,37 +898,47 @@ export default async function pulsePlugin(app: FastifyInstance) {
             .where(eq(pulsePlannedWorkouts.id, w.id));
           w = { ...w, steps: steps as typeof w.steps, description: updatedDescription };
         }
-
         const garminWorkout = buildGarminWorkoutJson(w);
         const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
         const garminWorkoutId = String(created.workoutId);
-
         const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
         const scheduled = await gc.client.post(scheduleUrl, { date: w.plannedDate }) as any;
         const garminScheduledId = scheduled?.workoutScheduleId != null
           ? String(scheduled.workoutScheduleId)
-          : scheduled?.scheduledWorkoutId != null
-            ? String(scheduled.scheduledWorkoutId)
-            : null;
-
+          : scheduled?.id != null ? String(scheduled.id) : null;
         await db.update(pulsePlannedWorkouts)
           .set({ garminWorkoutId, garminScheduledId })
           .where(eq(pulsePlannedWorkouts.id, w.id));
-
         uploaded++;
-        app.log.info(`[calendar-sync] Synced workout ${w.id} → Garmin ${garminWorkoutId}`);
       } catch (err) {
-        const msg = `${workout.plannedDate}: ${String(err).slice(0, 80)}`;
-        errors.push(msg);
-        app.log.warn(`[calendar-sync] ${msg}`);
+        errors.push(`${workout.plannedDate}: ${String(err).slice(0, 80)}`);
       }
     }
 
-    return {
-      uploaded,
-      removed: 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
+    // Collect our current workout IDs (after uploads)
+    const allPlanned = await db.select({ garminWorkoutId: pulsePlannedWorkouts.garminWorkoutId })
+      .from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, today)));
+    const ourWorkoutIds = new Set(
+      allPlanned.map(w => w.garminWorkoutId).filter((id): id is string => id != null),
+    );
+
+    // Remove calendar entries not belonging to our current plan
+    const calendarItems = await fetchGarminCalendarWorkouts(gc, today);
+    let removed = 0;
+    for (const item of calendarItems) {
+      if (!ourWorkoutIds.has(item.workoutId)) {
+        try {
+          await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${item.id}`);
+          removed++;
+          app.log.info(`[calendar-sync] Removed orphan schedule ${item.id} (workout ${item.workoutId}) on ${item.date}`);
+        } catch (err) {
+          app.log.warn(`[calendar-sync] Failed to remove ${item.id}: ${err}`);
+        }
+      }
+    }
+
+    return { uploaded, removed, errors: errors.length > 0 ? errors : undefined };
   });
 
   app.post('/plan/generate', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -1046,11 +1077,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
     // Fire-and-forget: sync newly generated workouts to Garmin calendar
     (async () => {
       try {
-        const toSync = withSteps.filter(w => !w.garminWorkoutId);
-        if (toSync.length === 0) return;
         const { getGarminClient } = await import('../lib/garmin-client.js');
         const gc = await getGarminClient();
-        for (const w of toSync) {
+        const today = weekStartStr;
+
+        // Upload new workouts to Garmin
+        for (const w of withSteps.filter(ww => !ww.garminWorkoutId)) {
           try {
             const garminWorkout = buildGarminWorkoutJson(w);
             const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
@@ -1059,15 +1091,28 @@ export default async function pulsePlugin(app: FastifyInstance) {
             const scheduled = await gc.client.post(scheduleUrl, { date: w.plannedDate }) as any;
             const garminScheduledId = scheduled?.workoutScheduleId != null
               ? String(scheduled.workoutScheduleId)
-              : scheduled?.scheduledWorkoutId != null
-                ? String(scheduled.scheduledWorkoutId)
-                : null;
+              : scheduled?.id != null ? String(scheduled.id) : null;
             await db.update(pulsePlannedWorkouts)
               .set({ garminWorkoutId, garminScheduledId })
               .where(eq(pulsePlannedWorkouts.id, w.id));
             app.log.info(`[plan-generate] Synced workout ${w.id} → Garmin ${garminWorkoutId}`);
           } catch (err) {
             app.log.warn(`[plan-generate] Garmin sync failed for ${w.id}: ${err}`);
+          }
+        }
+
+        // Remove orphaned calendar entries not in current plan
+        const allFuture = await db.select({ garminWorkoutId: pulsePlannedWorkouts.garminWorkoutId })
+          .from(pulsePlannedWorkouts)
+          .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, today)));
+        const ourIds = new Set(allFuture.map(w => w.garminWorkoutId).filter((id): id is string => id != null));
+        const calItems = await fetchGarminCalendarWorkouts(gc, today);
+        for (const item of calItems) {
+          if (!ourIds.has(item.workoutId)) {
+            try {
+              await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${item.id}`);
+              app.log.info(`[plan-generate] Removed orphan ${item.id} on ${item.date}`);
+            } catch { /* non-fatal */ }
           }
         }
       } catch (err) {
