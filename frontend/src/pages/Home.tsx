@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { AdjustTodayCard } from '@/components/AdjustTodayCard';
+import { RaceCard } from '@/components/RaceCard';
 
 function fmt(v: number | null | undefined, dec = 0): string {
   return v == null ? '–' : v.toFixed(dec);
@@ -222,6 +223,9 @@ export default function Home() {
 
       {/* ── Adjust-Today Proposal (if readiness/health requires) ── */}
       <AdjustTodayCard />
+
+      {/* ── Race Card (next/current race) ── */}
+      <RaceCard />
 
       {/* ── Hero: Readiness ── */}
       <div style={{

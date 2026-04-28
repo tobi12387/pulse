@@ -2,6 +2,7 @@ import type {
   PulseHomeScreenData, PulseSleepSession, PulseActivity,
   PulsePlannedWorkout, PulseMentalCheckin, PulseGoal,
   PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
+  RaceDiscipline, RacePriority,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -113,12 +114,30 @@ export const pulseApi = {
   goals: {
     list: (): Promise<{ goals: PulseGoal[] }> =>
       request('/goals'),
-    create: (data: { title: string; description?: string; targetDate?: string; category?: GoalCategory; metrics?: Record<string, unknown> }): Promise<PulseGoal> =>
+    create: (data: {
+      title: string; description?: string; targetDate?: string;
+      category?: GoalCategory; metrics?: Record<string, unknown>;
+      raceDiscipline?: RaceDiscipline; raceDistanceKm?: number;
+      raceTargetTimeSec?: number; racePriority?: RacePriority;
+      raceLocation?: string; raceNotes?: string;
+    }): Promise<PulseGoal> =>
       request('/goals', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Partial<{ status: string; progress: number; title: string; description: string | null; targetDate: string | null; category: string | null; metrics: Record<string, unknown> }>): Promise<PulseGoal> =>
+    update: (id: string, data: Partial<{
+      status: string; progress: number; title: string;
+      description: string | null; targetDate: string | null;
+      category: string | null; metrics: Record<string, unknown>;
+      raceDiscipline: RaceDiscipline | null; raceDistanceKm: number | null;
+      raceTargetTimeSec: number | null; racePriority: RacePriority | null;
+      raceLocation: string | null; raceNotes: string | null;
+    }>): Promise<PulseGoal> =>
       request(`/goals/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string): Promise<void> =>
       request(`/goals/${id}`, { method: 'DELETE' }),
+  },
+
+  races: {
+    list: (): Promise<{ races: RaceContext[] }> =>
+      request('/races'),
   },
 
   review: {
@@ -248,4 +267,23 @@ export interface AdjustProposal {
   reason: 'low_readiness' | 'illness' | 'injury' | 'fatigue' | 'travel';
   rationale: string;
   readinessScore: number;
+}
+
+// ─── Phase 7: Race types ─────────────────────────────────────────────────────
+export type RacePhase = 'base' | 'build' | 'peak' | 'taper' | 'race_week' | 'race_day' | 'past';
+
+export interface RaceContext {
+  goalId: string;
+  title: string;
+  date: string;
+  daysUntil: number;
+  phase: RacePhase;
+  discipline: string | null;
+  distanceKm: number | null;
+  targetTimeSec: number | null;
+  priority: 'A' | 'B' | 'C';
+  predictedTimeSec: number | null;
+  predictionConfidence: 'low' | 'medium' | 'high' | null;
+  location: string | null;
+  notes: string | null;
 }

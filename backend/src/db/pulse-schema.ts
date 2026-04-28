@@ -202,17 +202,24 @@ export const pulseCoachSessions = pgTable('pulse_coach_sessions', {
 
 // ─── Goals ────────────────────────────────────────────────────────────────────
 export const pulseGoals = pgTable('pulse_goals', {
-  id:          uuid('id').primaryKey().defaultRandom(),
-  userId:      uuid('user_id').notNull(),
-  title:       varchar('title', { length: 255 }).notNull(),
-  description: text('description'),
-  targetDate:  date('target_date'),
-  status:      pulseGoalStatusEnum('status').notNull().default('active'),
-  progress:    real('progress').default(0),
-  metrics:     jsonb('metrics').default({}),
-  category:    varchar('category', { length: 30 }),
-  createdAt:   timestamp('created_at').notNull().defaultNow(),
-  updatedAt:   timestamp('updated_at').notNull().defaultNow(),
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  userId:             uuid('user_id').notNull(),
+  title:              varchar('title', { length: 255 }).notNull(),
+  description:        text('description'),
+  targetDate:         date('target_date'),
+  status:             pulseGoalStatusEnum('status').notNull().default('active'),
+  progress:           real('progress').default(0),
+  metrics:            jsonb('metrics').default({}),
+  category:           varchar('category', { length: 30 }),
+  // Race-specific (only meaningful when category='race')
+  raceDiscipline:     varchar('race_discipline', { length: 30 }),
+  raceDistanceKm:     real('race_distance_km'),
+  raceTargetTimeSec:  integer('race_target_time_sec'),
+  racePriority:       varchar('race_priority', { length: 1 }),  // A | B | C
+  raceLocation:       varchar('race_location', { length: 255 }),
+  raceNotes:          text('race_notes'),
+  createdAt:          timestamp('created_at').notNull().defaultNow(),
+  updatedAt:          timestamp('updated_at').notNull().defaultNow(),
 });
 
 // ─── Week availability ────────────────────────────────────────────────────────

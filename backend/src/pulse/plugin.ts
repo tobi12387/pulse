@@ -29,6 +29,7 @@ import {
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
+import { getActiveRaces } from './services/race-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { pulseQueues } from './queues/queues.js';
@@ -1026,6 +1027,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
           or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
         )),
     ]);
+    const activeRaces = await getActiveRaces(userId, weekStartStr);
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
     try {
@@ -1063,6 +1065,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
           startDate: s.startDate,
           endDate:   s.endDate,
           notes:     s.notes,
+        })),
+        races: activeRaces.map(r => ({
+          title:      r.title,
+          date:       r.date,
+          daysUntil:  r.daysUntil,
+          priority:   r.priority,
+          discipline: r.discipline,
+          distanceKm: r.distanceKm,
         })),
       });
     } catch (err) {
@@ -1206,6 +1216,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
       targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       category:    z.string().max(30).optional(),
       metrics:     z.record(z.unknown()).optional(),
+      raceDiscipline:    z.enum(['run','bike','swim','triathlon_sprint','triathlon_olympic','triathlon_70_3','triathlon_140_6','duathlon','other']).optional(),
+      raceDistanceKm:    z.number().min(0.1).max(500).optional(),
+      raceTargetTimeSec: z.number().int().min(60).max(86400).optional(),
+      racePriority:      z.enum(['A','B','C']).optional(),
+      raceLocation:      z.string().max(255).optional(),
+      raceNotes:         z.string().max(1000).optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
@@ -1213,11 +1229,17 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const userId = req.user.sub;
     const [goal] = await db.insert(pulseGoals).values({
       userId,
-      title:       parsed.data.title,
-      description: parsed.data.description ?? null,
-      targetDate:  parsed.data.targetDate  ?? null,
-      category:    parsed.data.category    ?? null,
-      metrics:     parsed.data.metrics     ?? {},
+      title:             parsed.data.title,
+      description:       parsed.data.description ?? null,
+      targetDate:        parsed.data.targetDate  ?? null,
+      category:          parsed.data.category    ?? null,
+      metrics:           parsed.data.metrics     ?? {},
+      raceDiscipline:    parsed.data.raceDiscipline    ?? null,
+      raceDistanceKm:    parsed.data.raceDistanceKm    ?? null,
+      raceTargetTimeSec: parsed.data.raceTargetTimeSec ?? null,
+      racePriority:      parsed.data.racePriority      ?? (parsed.data.category === 'race' ? 'A' : null),
+      raceLocation:      parsed.data.raceLocation      ?? null,
+      raceNotes:         parsed.data.raceNotes         ?? null,
     }).returning();
 
     return reply.status(201).send(goal);
@@ -1232,6 +1254,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
       targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
       category:    z.string().max(30).optional().nullable(),
       metrics:     z.record(z.unknown()).optional(),
+      raceDiscipline:    z.enum(['run','bike','swim','triathlon_sprint','triathlon_olympic','triathlon_70_3','triathlon_140_6','duathlon','other']).optional().nullable(),
+      raceDistanceKm:    z.number().min(0.1).max(500).optional().nullable(),
+      raceTargetTimeSec: z.number().int().min(60).max(86400).optional().nullable(),
+      racePriority:      z.enum(['A','B','C']).optional().nullable(),
+      raceLocation:      z.string().max(255).optional().nullable(),
+      raceNotes:         z.string().max(1000).optional().nullable(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
@@ -1258,6 +1286,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     if (!deleted) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
     return reply.status(204).send();
+  });
+
+  // ─── Race list with prognosis (Phase 7) ───────────────────────────────────────
+  app.get('/races', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const races = await getActiveRaces(userId, today);
+    return { races };
   });
 
   // ─── Health states (Phase 6) ──────────────────────────────────────────────────
@@ -1752,6 +1788,47 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     const cached = await redis.get(cacheKey);
     if (cached) return { briefing: cached, date: today, cached: true };
+
+    // ─── Race-Day check (Phase 7): if today is race day for an A/B race, switch mode ───
+    const races = await getActiveRaces(userId, today);
+    const todayRace = races.find(r => r.daysUntil === 0 && r.priority !== 'C');
+    if (todayRace) {
+      const fitnessLoad = await computeFitnessLoad(userId, today);
+      const fmtTime = (sec: number | null): string => {
+        if (sec == null) return '–';
+        const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+        return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+      };
+      const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+      const lthr = (profile as { lactateThresholdHr?: number | null } | undefined)?.lactateThresholdHr
+        ?? (profile?.maxHrBpm ? Math.round(profile.maxHrBpm * 0.92) : null);
+      const hrCap = lthr ? Math.round(lthr * (todayRace.distanceKm && todayRace.distanceKm > 30 ? 0.92 : 0.96)) : null;
+      const briefingPrompt = `Du bist Coach für Tobi am RACE-DAY. Schreibe ein präzises Race-Briefing.
+RACE: ${todayRace.title}${todayRace.distanceKm ? ` ${todayRace.distanceKm}km` : ''}, ${todayRace.discipline ?? 'unspezifiziert'}, Priority ${todayRace.priority}
+Standort: ${todayRace.location ?? '–'}
+${todayRace.notes ? `Notizen: ${todayRace.notes}` : ''}
+
+FORM: CTL ${fitnessLoad.ctl.toFixed(0)} | TSB ${fitnessLoad.tsb.toFixed(0)} (${fitnessLoad.tsb >= 0 ? 'frisch' : 'leicht müde'})
+PROGNOSE: ${todayRace.predictedTimeSec ? fmtTime(todayRace.predictedTimeSec) : 'keine'} (${todayRace.predictionConfidence ?? '–'} confidence)
+ZIEL:     ${todayRace.targetTimeSec ? fmtTime(todayRace.targetTimeSec) : 'keine'}
+HR-Cap:   ${hrCap ? `${hrCap} bpm` : 'siehe Profil'}
+
+Format (5 Abschnitte, je 1-2 Zeilen, deutsche Sprache, kein Markdown, kein Fett):
+🏁 Pacing: konkrete HR-Range pro Disziplin/Phase
+⚡ Strategie: erste 30%/Mitte/letzte 20% Anweisung
+🍯 Fueling: g Carbs/h, ml/h, Salz wenn Hitze
+✅ Logistik: 5 Items (Helm/Nummer/Gels/Salz/Auto-Schlüssel oder ähnlich)
+💬 Mindset: 1 Satz Mantra für harte Momente
+
+Direkt, knapp, kein Smalltalk.`;
+      const briefing = await llmComplete(
+        'Du bist erfahrener Race-Coach. Antworte mit dem geforderten Format.',
+        briefingPrompt,
+        SMART_MODEL,
+      );
+      await redis.set(cacheKey, briefing, 'EX', 24 * 3600);
+      return { briefing, date: today, cached: false, raceDay: true };
+    }
 
     const [[metrics], [checkin], workouts] = await Promise.all([
       db.select({

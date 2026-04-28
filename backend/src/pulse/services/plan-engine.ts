@@ -203,6 +203,65 @@ function buildPolarizedWorkouts(params: {
   return workouts;
 }
 
+// ─── Race-week taper enforcement ──────────────────────────────────────────────
+// Even if the LLM doesn't fully respect the race prompt, this caps volume in race week.
+
+interface RaceLite {
+  date: string;
+  daysUntil: number;
+  priority: 'A'|'B'|'C';
+  distanceKm: number | null;
+}
+
+export function applyRaceTaper(
+  workouts: WeekWorkout[],
+  races: RaceLite[],
+  weekStart: string,
+): WeekWorkout[] {
+  if (races.length === 0) return workouts;
+
+  return workouts.map((w): WeekWorkout => {
+    // Find any race within 14d AFTER this workout date (forward-looking)
+    const wDate = new Date(w.plannedDate + 'T00:00:00Z');
+    const upcomingRace = races
+      .filter(r => r.priority !== 'C')
+      .map(r => ({ r, days: Math.round((new Date(r.date + 'T00:00:00Z').getTime() - wDate.getTime()) / 86_400_000) }))
+      .filter(({ days }) => days >= 0)
+      .sort((a, b) => a.days - b.days)[0];
+
+    if (!upcomingRace) return w;
+    const { r, days } = upcomingRace;
+
+    // Race day itself: kein eigenes Training (race ist das Training)
+    if (days === 0) return { ...w, durationMin: 0 };
+
+    // Day before race: short opener with Z3 pickups (15-25min)
+    if (days === 1) {
+      return tssRecompute({
+        ...w,
+        zone: 2,
+        durationMin: Math.min(20, w.durationMin),
+        adjustedReason: 'race_taper',
+      });
+    }
+
+    // Race week (≤6 days): cut volume in half, keep one moderate intensity day
+    if (days <= 6) {
+      const newDur = Math.round(w.durationMin * 0.5);
+      const newZone = w.zone >= 4 ? 3 : w.zone;   // sharpen, not exhaust
+      return tssRecompute({ ...w, zone: newZone, durationMin: newDur, adjustedReason: 'race_taper' });
+    }
+
+    // 7-14 days out (only A): mild taper
+    if (r.priority === 'A' && days <= 14) {
+      const newDur = Math.round(w.durationMin * 0.75);
+      return tssRecompute({ ...w, durationMin: newDur, adjustedReason: 'race_taper' });
+    }
+
+    return w;
+  }).filter(w => w.durationMin > 0);
+}
+
 // ─── Health-state constraint enforcement ──────────────────────────────────────
 
 function dateInRange(date: string, start: string, end: string | null): boolean {
@@ -330,6 +389,14 @@ async function enrichDescriptions(
     recentFeedback?: Array<{ date: string; activityType: string; plannedZone: number; plannedDurationMin: number; feedback: string; complianceScore: number }> | undefined;
     healthStates?: ActiveHealthState[] | undefined;
     lthrBpm?: number | undefined;
+    races?: Array<{
+      title: string;
+      date: string;
+      daysUntil: number;
+      priority: 'A'|'B'|'C';
+      discipline: string | null;
+      distanceKm: number | null;
+    }> | undefined;
   },
 ): Promise<WeekWorkout[]> {
   const phaseLabel = { base: 'Grundlagenaufbau', build: 'Aufbau', peak: 'Wettkampfvorbereitung', taper: 'Tapering' }[ctx.phase];
@@ -382,6 +449,14 @@ async function enrichDescriptions(
       }).join('\n')
     : null;
 
+  const racesStr = (ctx.races ?? []).length > 0
+    ? (ctx.races ?? []).slice(0, 3).map(r => {
+        const dist = r.distanceKm ? ` ${r.distanceKm}km` : '';
+        const wks = r.daysUntil >= 0 ? `in ${r.daysUntil}d` : `vor ${-r.daysUntil}d`;
+        return `- ${r.date} (${wks}) — ${r.title}${dist}, ${r.discipline ?? '?'}, Priority ${r.priority}`;
+      }).join('\n')
+    : null;
+
   const prompt = `Du bist Sportwissenschaftler und Ausdauercoach. Schreibe präzise Trainingsbeschreibungen.
 
 ATHLETEN-STATUS:
@@ -392,7 +467,7 @@ ATHLETEN-STATUS:
 
 TRAININGSHISTORIE (letzte 6 Wochen):
   ${historyStr || 'keine Daten'}
-${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}${healthStr ? `\nGESUNDHEITSSTATUS (HARTE Constraints — diese Daten sind verbindlich):\n${healthStr}\nRegeln: bei illness/severe = Ruhetag; illness/moderate = max Z1 30min; illness/mild = max Z2 60min; injury/* = passende Sportart vermeiden; fatigue = nur Z1–Z2.\n` : ''}
+${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}${healthStr ? `\nGESUNDHEITSSTATUS (HARTE Constraints — diese Daten sind verbindlich):\n${healthStr}\nRegeln: bei illness/severe = Ruhetag; illness/moderate = max Z1 30min; illness/mild = max Z2 60min; injury/* = passende Sportart vermeiden; fatigue = nur Z1–Z2.\n` : ''}${racesStr ? `\nRACES (Plan periodisiert dorthin):\n${racesStr}\nPriorities: A = Saisonhöhepunkt mit 2w Taper; B = wichtig mit 1w Taper; C = Mitnahme ohne Taper. In Race-Week (≤6d): Volumen halbieren, Intensität erhalten, Race-Pace-Workout 3-5d vor Race, Tag -1 = kurzer Aktivierungslauf 15-25min mit kurzen Z3-Pickups.\n` : ''}
 DIESE WOCHE: ${workouts.length} Einheiten | Ziel-TSS ${totalTss} | ${easyPct}% extensiv (polarisiertes Modell 80/20)
 ${workoutList}
 
@@ -457,6 +532,14 @@ export interface ScientificPlanInput {
     complianceScore: number;
   }>;
   healthStates?: ActiveHealthState[];
+  races?: Array<{
+    title: string;
+    date: string;
+    daysUntil: number;
+    priority: 'A'|'B'|'C';
+    discipline: string | null;
+    distanceKm: number | null;
+  }>;
 }
 
 export async function generateScientificWeekPlan(input: ScientificPlanInput): Promise<WeekWorkout[]> {
@@ -481,7 +564,10 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
   });
 
   // HARD constraints: filter/cap workouts based on active health states
-  const workouts = enforceHealthConstraints(rawWorkouts, input.healthStates ?? []);
+  let workouts = enforceHealthConstraints(rawWorkouts, input.healthStates ?? []);
+
+  // Race-week tapering (programmatic safety net even if LLM ignores prompt)
+  workouts = applyRaceTaper(workouts, input.races ?? [], input.weekStart);
 
   if (workouts.length === 0) return [];
 
@@ -502,6 +588,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
       recentFeedback: input.recentFeedback,
       healthStates: input.healthStates,
       lthrBpm: input.lthrBpm,
+      races: input.races,
     });
   } catch (err) {
     // Return workouts with empty descriptions rather than fail entirely

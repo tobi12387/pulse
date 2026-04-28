@@ -8,7 +8,7 @@ import {
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
-import type { PulsePlannedWorkout, GoalCategory } from '@coaching-os/shared/pulse';
+import type { PulsePlannedWorkout, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'analyse';
 
@@ -584,25 +584,47 @@ const GOAL_CATEGORIES: { id: GoalCategory; label: string; icon: string; color: s
 ];
 
 const RACE_TYPES = [
-  { id: 'ironman',     label: 'Ironman (226km)' },
-  { id: 'half',        label: '70.3 Half Ironman' },
-  { id: 'olympic',     label: 'Olympische Distanz' },
-  { id: 'sprint',      label: 'Sprint Triathlon' },
-  { id: 'marathon',    label: 'Marathon' },
-  { id: 'half_marathon', label: 'Halbmarathon' },
-  { id: '10k',         label: '10 km Lauf' },
-  { id: '5k',          label: '5 km Lauf' },
-  { id: 'century',     label: 'Century Ride (160km)' },
-  { id: 'custom',      label: 'Sonstiges' },
-];
+  { id: 'ironman',     label: 'Ironman (226km)',           discipline: 'triathlon_140_6',   distanceKm: 226 },
+  { id: 'half',        label: '70.3 Half Ironman',          discipline: 'triathlon_70_3',    distanceKm: 113 },
+  { id: 'olympic',     label: 'Olympische Distanz',         discipline: 'triathlon_olympic', distanceKm: 51.5 },
+  { id: 'sprint',      label: 'Sprint Triathlon',           discipline: 'triathlon_sprint',  distanceKm: 25.75 },
+  { id: 'marathon',    label: 'Marathon',                   discipline: 'run',               distanceKm: 42.2 },
+  { id: 'half_marathon', label: 'Halbmarathon',             discipline: 'run',               distanceKm: 21.1 },
+  { id: '10k',         label: '10 km Lauf',                 discipline: 'run',               distanceKm: 10 },
+  { id: '5k',          label: '5 km Lauf',                  discipline: 'run',               distanceKm: 5 },
+  { id: 'century',     label: 'Century Ride (160km)',       discipline: 'bike',              distanceKm: 160 },
+  { id: 'custom',      label: 'Sonstiges',                  discipline: 'other',             distanceKm: null as number | null },
+] as const;
+
+function parseHmsToSec(hms: string): number | undefined {
+  const t = hms.trim();
+  if (!t) return undefined;
+  const parts = t.split(':').map(p => Number(p));
+  if (parts.some(p => isNaN(p))) return undefined;
+  if (parts.length === 3) return parts[0]! * 3600 + parts[1]! * 60 + parts[2]!;
+  if (parts.length === 2) return parts[0]! * 60 + parts[1]!;
+  if (parts.length === 1) return parts[0]!;
+  return undefined;
+}
 
 const CATEGORY_COLOR: Record<GoalCategory, string> = {
   race: 'var(--rose)', weight: 'var(--blue)', ftp: 'var(--amber)', vo2max: 'var(--green)', volume: 'var(--accent)',
 };
 
-type GoalFields = { category: GoalCategory; targetDate: string; raceType?: string; targetKg?: string; targetFtp?: string; targetVo2max?: string; targetHours?: string; notes?: string };
+type GoalFields = {
+  category: GoalCategory; targetDate: string;
+  raceType?: string; targetKg?: string; targetFtp?: string; targetVo2max?: string; targetHours?: string; notes?: string;
+  racePriority?: 'A'|'B'|'C';
+  raceTargetTime?: string;     // H:MM:SS or MM:SS
+  raceLocation?: string;
+};
 
-function buildGoalPayload(fields: GoalFields): { title: string; description?: string; targetDate?: string; category: GoalCategory; metrics: Record<string, unknown> } {
+function buildGoalPayload(fields: GoalFields): {
+  title: string; description?: string; targetDate?: string;
+  category: GoalCategory; metrics: Record<string, unknown>;
+  raceDiscipline?: RaceDiscipline; raceDistanceKm?: number; raceTargetTimeSec?: number;
+  racePriority?: 'A'|'B'|'C'; raceLocation?: string; raceNotes?: string;
+} {
   const { category, targetDate } = fields;
   const metrics: Record<string, unknown> = {};
   let title = '';
@@ -613,6 +635,16 @@ function buildGoalPayload(fields: GoalFields): { title: string; description?: st
     title = race.label;
     if (fields.notes) description = fields.notes;
     metrics.raceType = fields.raceType;
+    const targetSec = fields.raceTargetTime ? parseHmsToSec(fields.raceTargetTime) : undefined;
+    return {
+      title, description, targetDate: targetDate || undefined, category, metrics,
+      raceDiscipline: race.discipline as RaceDiscipline,
+      ...(race.distanceKm != null ? { raceDistanceKm: race.distanceKm } : {}),
+      ...(targetSec != null     ? { raceTargetTimeSec: targetSec } : {}),
+      racePriority: fields.racePriority ?? 'A',
+      ...(fields.raceLocation ? { raceLocation: fields.raceLocation } : {}),
+      ...(fields.notes        ? { raceNotes: fields.notes } : {}),
+    };
   } else if (category === 'weight') {
     title = `Gewicht: ${fields.targetKg} kg`;
     metrics.targetKg = Number(fields.targetKg);
@@ -683,8 +715,36 @@ function GoalForm({ onDone }: { onDone: () => void }) {
               </select>
             </div>
             <div>
-              <div style={{ ...labelStyle, marginBottom: 4 }}>Notiz (Zielzeit, Ort…)</div>
-              <input type="text" value={fields.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="z.B. Sub-12h, Kona 2026" style={inputStyle} />
+              <div style={{ ...labelStyle, marginBottom: 6 }}>Priorität</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['A','B','C'] as const).map(p => {
+                  const desc = p === 'A' ? 'Saisonhöhepunkt · 2w Taper' : p === 'B' ? 'wichtig · 1w Taper' : 'Mitnahme · kein Taper';
+                  const active = (fields.racePriority ?? 'A') === p;
+                  return (
+                    <button key={p} type="button" onClick={() => setFields(f => ({ ...f, racePriority: p }))} title={desc} style={{
+                      flex: 1, padding: '6px', border: `1px solid ${active ? 'var(--rose)' : 'var(--border)'}`,
+                      borderRadius: 4, background: active ? 'rgba(239,68,68,0.12)' : 'var(--surface)',
+                      color: active ? 'var(--rose)' : 'var(--text-2)',
+                      fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em', cursor: 'pointer',
+                    }}>{p}</button>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 9, color: 'var(--text-3)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
+                A: 2w Taper · B: 1w Taper · C: kein Taper
+              </div>
+            </div>
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 4 }}>Zielzeit (h:mm:ss, optional)</div>
+              <input type="text" value={fields.raceTargetTime ?? ''} onChange={e => set('raceTargetTime', e.target.value)} placeholder="5:15:00 oder 45:00" style={inputStyle} />
+            </div>
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 4 }}>Ort (optional)</div>
+              <input type="text" value={fields.raceLocation ?? ''} onChange={e => set('raceLocation', e.target.value)} placeholder="z.B. Frankfurt am Main" style={inputStyle} />
+            </div>
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 4 }}>Notiz</div>
+              <input type="text" value={fields.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="Logistik, Pacing-Plan…" style={inputStyle} />
             </div>
           </>
         )}

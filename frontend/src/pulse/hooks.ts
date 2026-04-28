@@ -21,6 +21,7 @@ export const pulseKeys = {
   trainingAnalytics: (weeks: number) => ['pulse', 'training-analytics', weeks] as const,
   healthState:      ['pulse', 'health-state'] as const,
   todayProposal:    ['pulse', 'today-proposal'] as const,
+  races:            ['pulse', 'races'] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -336,5 +337,13 @@ export function useAcceptTodayAdjustment() {
       qc.invalidateQueries({ queryKey: pulseKeys.plan });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
     },
+  });
+}
+
+export function useRaces() {
+  return useQuery({
+    queryKey: pulseKeys.races,
+    queryFn: pulseApi.races.list,
+    staleTime: 10 * 60_000,
   });
 }

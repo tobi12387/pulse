@@ -111,6 +111,13 @@ export interface PulseWeightEntry {
 
 export type GoalCategory = 'race' | 'weight' | 'ftp' | 'vo2max' | 'volume';
 
+export type RaceDiscipline =
+  | 'run' | 'bike' | 'swim'
+  | 'triathlon_sprint' | 'triathlon_olympic' | 'triathlon_70_3' | 'triathlon_140_6'
+  | 'duathlon' | 'other';
+
+export type RacePriority = 'A' | 'B' | 'C';
+
 export interface PulseGoal {
   id: string;
   userId: string;
@@ -121,6 +128,13 @@ export interface PulseGoal {
   progress: number;
   metrics: Record<string, unknown>;
   category: GoalCategory | null;
+  // Race-specific (set when category='race')
+  raceDiscipline: RaceDiscipline | null;
+  raceDistanceKm: number | null;
+  raceTargetTimeSec: number | null;
+  racePriority: RacePriority | null;
+  raceLocation: string | null;
+  raceNotes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -152,17 +166,6 @@ export interface PulseCoachSession {
   startedAt: string;
   lastMessageAt: string;
   messages: PulseCoachMessage[];
-}
-
-export interface PulseGoal {
-  id: string;
-  userId: string;
-  title: string;
-  description: string | null;
-  targetDate: string | null;
-  status: 'active' | 'completed' | 'paused' | 'abandoned';
-  progress: number;
-  createdAt: string;
 }
 
 export interface PulseWeeklyReview {

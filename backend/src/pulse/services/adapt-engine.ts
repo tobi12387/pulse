@@ -183,36 +183,19 @@ export async function proposeTodayAdjustment(userId: string, date: string): Prom
   };
 }
 
-// ─── Auto-Phase-Progression (Phase 6 Task 5) ─────────────────────────────────
+// ─── Auto-Phase-Progression (Phase 6/7) ──────────────────────────────────────
 
 export type TrainingPhase = 'base' | 'build' | 'peak' | 'taper';
 
-export function derivePhase(nextRaceDate: string | null, today: string): TrainingPhase {
-  if (!nextRaceDate) return 'base';
-  const tDate = new Date(today + 'T00:00:00Z');
-  const rDate = new Date(nextRaceDate + 'T00:00:00Z');
-  const days = Math.round((rDate.getTime() - tDate.getTime()) / 86_400_000);
-  if (days < 0)   return 'base';            // Race vorbei
-  if (days <= 14) return 'taper';
-  if (days <= 28) return 'peak';
-  if (days <= 84) return 'build';
-  return 'base';
-}
-
 export async function deriveCurrentPhase(userId: string, today: string): Promise<TrainingPhase> {
-  // Find the next future "race" goal (active, has targetDate)
-  // Lazy import to avoid circular deps; only one query.
-  const { pulseGoals } = await import('../../db/pulse-schema.js');
-  const races = await db.select().from(pulseGoals)
-    .where(and(
-      eq(pulseGoals.userId, userId),
-      eq(pulseGoals.status, 'active'),
-      eq(pulseGoals.category, 'race'),
-      gte(pulseGoals.targetDate, today),
-    ))
-    .orderBy(pulseGoals.targetDate)
-    .limit(1);
+  const { getActiveRaces, mapToTrainingPhase } = await import('./race-engine.js');
+  const races = await getActiveRaces(userId, today);
 
-  if (races.length === 0 || !races[0]?.targetDate) return 'base';
-  return derivePhase(races[0].targetDate, today);
+  // Use the closest upcoming A-race; if none, the closest B-race; if none, base.
+  const upcoming = races.filter(r => r.daysUntil >= 0);
+  const aRace = upcoming.find(r => r.priority === 'A');
+  const bRace = upcoming.find(r => r.priority === 'B');
+  const target = aRace ?? bRace;
+  if (!target) return 'base';
+  return mapToTrainingPhase(target.phase);
 }
