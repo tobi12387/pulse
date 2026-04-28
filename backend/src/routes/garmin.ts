@@ -1,22 +1,80 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
-import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts } from '../db/pulse-schema.js';
+import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts, pulseUserProfile } from '../db/pulse-schema.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
+import { llmComplete, SMART_MODEL } from '../lib/llm.js';
+
+async function generateWorkoutFeedback(
+  planned: { activityType: string; zone: number; durationMin: number; description: string | null },
+  actual: { durationSec: number | null; avgHr: number | null; maxHr: number | null; avgPowerW: number | null; normalizedPowerW: number | null; tss: number | null },
+  profile: { maxHrBpm: number | null; ftpWatts: number | null } | undefined,
+): Promise<{ feedback: string; complianceScore: number }> {
+  const maxHr = profile?.maxHrBpm ?? 185;
+  const ftp = profile?.ftpWatts ?? 250;
+
+  const zoneHrRanges: Record<number, string> = {
+    1: `<${Math.round(maxHr * 0.68)} bpm`,
+    2: `${Math.round(maxHr * 0.68)}–${Math.round(maxHr * 0.78)} bpm`,
+    3: `${Math.round(maxHr * 0.78)}–${Math.round(maxHr * 0.88)} bpm`,
+    4: `${Math.round(maxHr * 0.88)}–${Math.round(maxHr * 0.95)} bpm`,
+    5: `>${Math.round(maxHr * 0.95)} bpm`,
+  };
+  const zonePowerRanges: Record<number, string> = {
+    1: `<${Math.round(ftp * 0.56)} W`,
+    2: `${Math.round(ftp * 0.56)}–${Math.round(ftp * 0.75)} W`,
+    3: `${Math.round(ftp * 0.75)}–${Math.round(ftp * 0.90)} W`,
+    4: `${Math.round(ftp * 0.90)}–${Math.round(ftp * 1.05)} W`,
+    5: `>${Math.round(ftp * 1.05)} W`,
+  };
+
+  const actualDurMin = actual.durationSec != null ? Math.round(actual.durationSec / 60) : null;
+  const isBike = planned.activityType === 'bike';
+  const zoneRef = isBike ? zonePowerRanges[planned.zone] : zoneHrRanges[planned.zone];
+  const actualIntensity = isBike
+    ? (actual.normalizedPowerW != null ? `NP ${actual.normalizedPowerW} W, Avg ${actual.avgPowerW ?? '?'} W` : `Avg HR ${actual.avgHr ?? '?'} bpm`)
+    : `Avg HR ${actual.avgHr ?? '?'} bpm, Max HR ${actual.maxHr ?? '?'} bpm`;
+
+  const prompt = `Du bist ein Ausdauer-Coach. Analysiere dieses Workout kurz und prägnant auf Deutsch.
+
+GEPLANT:
+- Typ: ${planned.activityType} | Zone ${planned.zone} (${zoneRef ?? '?'}) | ${planned.durationMin} min
+- Beschreibung: ${planned.description ?? '–'}
+
+ABSOLVIERT:
+- Dauer: ${actualDurMin ?? '?'} min
+- Intensität: ${actualIntensity}
+- TSS: ${actual.tss ?? '?'}
+
+Antworte NUR mit einem JSON-Objekt, kein Markdown, kein Text davor/danach:
+{
+  "feedback": "2-3 Sätze Feedback: Was lief gut, was war anders als geplant, eine konkrete Empfehlung für das nächste Training",
+  "complianceScore": 0.0-1.0
+}
+
+complianceScore: 1.0 = perfekt nach Plan, 0.8 = leichte Abweichungen, 0.6 = deutliche Abweichungen, 0.4 = stark abgewichen`;
+
+  const raw = await llmComplete('Du bist Ausdauer-Coach. Antworte nur mit validem JSON.', prompt, SMART_MODEL);
+  const parsed = JSON.parse(raw.trim().replace(/^```json\n?|```$/g, ''));
+  return {
+    feedback: parsed.feedback ?? '',
+    complianceScore: Math.max(0, Math.min(1, parsed.complianceScore ?? 0.7)),
+  };
+}
 
 async function matchActivityToWorkout(
   userId: string,
   activityId: string,
   date: string,
   activityType: string,
+  app?: FastifyInstance,
 ): Promise<void> {
-  // 'other' activities are too ambiguous — skip
   if (activityType === 'other') return;
 
   const matchType = activityType === 'hike' ? 'run' : activityType;
 
-  const [planned] = await db.select({ id: pulsePlannedWorkouts.id })
+  const [planned] = await db.select()
     .from(pulsePlannedWorkouts)
     .where(and(
       eq(pulsePlannedWorkouts.userId, userId),
@@ -31,6 +89,32 @@ async function matchActivityToWorkout(
   await db.update(pulsePlannedWorkouts)
     .set({ status: 'completed', completedActivityId: activityId })
     .where(eq(pulsePlannedWorkouts.id, planned.id));
+
+  // Async feedback generation — fire and forget
+  (async () => {
+    try {
+      const [activity] = await db.select({
+        durationSec: pulseActivities.durationSec,
+        avgHr: pulseActivities.avgHr,
+        maxHr: pulseActivities.maxHr,
+        avgPowerW: pulseActivities.avgPowerW,
+        normalizedPowerW: pulseActivities.normalizedPowerW,
+        tss: pulseActivities.tss,
+      }).from(pulseActivities).where(eq(pulseActivities.id, activityId));
+
+      const [profile] = await db.select({ maxHrBpm: pulseUserProfile.maxHrBpm, ftpWatts: pulseUserProfile.ftpWatts })
+        .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+
+      if (!activity) return;
+      const { feedback, complianceScore } = await generateWorkoutFeedback(planned, activity, profile ?? undefined);
+      await db.update(pulsePlannedWorkouts)
+        .set({ workoutFeedback: feedback, complianceScore })
+        .where(eq(pulsePlannedWorkouts.id, planned.id));
+      app?.log.info(`[workout-feedback] ${planned.plannedDate} score=${complianceScore.toFixed(2)}`);
+    } catch (err) {
+      app?.log.warn(`[workout-feedback] generation failed: ${err}`);
+    }
+  })();
 }
 
 export default async function garminRoutes(app: FastifyInstance) {
@@ -223,7 +307,7 @@ export async function syncGarminDay(
         }).returning({ id: pulseActivities.id });
 
       if (inserted) {
-        await matchActivityToWorkout(userId, inserted.id, dateStr, activityType);
+        await matchActivityToWorkout(userId, inserted.id, dateStr, activityType, app);
       }
     }
     if (dayActivities.length > 0) {

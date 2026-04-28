@@ -234,6 +234,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
         steps: (nextWorkout.steps ?? null) as import('@coaching-os/shared/pulse').WorkoutStep[] | null,
         garminWorkoutId: nextWorkout.garminWorkoutId ?? null,
         status: nextWorkout.status as PulseWorkoutStatus,
+        workoutFeedback: nextWorkout.workoutFeedback ?? null,
+        complianceScore: nextWorkout.complianceScore ?? null,
+        completedActivityId: nextWorkout.completedActivityId ?? null,
       } : null,
       prognosis,
       streaks,
@@ -977,7 +980,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const weeklyHoursTarget = weekAvail?.weeklyHours ?? profile?.weeklyHoursTarget ?? 8;
     const availableDays = (weekAvail?.availableDays as number[] | null) ?? [0, 2, 4, 5];
 
-    const [fitnessLoad, recentActs, goals] = await Promise.all([
+    const since42d = new Date(Date.now() - 42 * 86_400_000);
+    const [fitnessLoad, recentActs, goals, recentFeedback] = await Promise.all([
       computeFitnessLoad(userId, weekStartStr),
       db.select({
         startTime:    pulseActivities.startTime,
@@ -985,13 +989,28 @@ export default async function pulsePlugin(app: FastifyInstance) {
         durationSec:  pulseActivities.durationSec,
         tss:          pulseActivities.tss,
       }).from(pulseActivities)
-        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 42 * 86_400_000))))
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime))
         .limit(80),
       db.select({ title: pulseGoals.title, targetDate: pulseGoals.targetDate, category: pulseGoals.category })
         .from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
         .limit(5),
+      db.select({
+        plannedDate:     pulsePlannedWorkouts.plannedDate,
+        activityType:    pulsePlannedWorkouts.activityType,
+        zone:            pulsePlannedWorkouts.zone,
+        durationMin:     pulsePlannedWorkouts.durationMin,
+        workoutFeedback: pulsePlannedWorkouts.workoutFeedback,
+        complianceScore: pulsePlannedWorkouts.complianceScore,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.status, 'completed'),
+          gte(pulsePlannedWorkouts.plannedDate, since42d.toISOString().split('T')[0]!),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(10),
     ]);
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -1013,6 +1032,16 @@ export default async function pulsePlugin(app: FastifyInstance) {
           tss:          a.tss ?? 0,
         })),
         goals,
+        recentFeedback: recentFeedback
+          .filter(w => w.workoutFeedback != null)
+          .map(w => ({
+            date:               w.plannedDate,
+            activityType:       w.activityType,
+            plannedZone:        w.zone,
+            plannedDurationMin: w.durationMin,
+            feedback:           w.workoutFeedback!,
+            complianceScore:    w.complianceScore ?? 0.7,
+          })),
       });
     } catch (err) {
       app.log.warn(`[plan] Scientific plan failed, using templates: ${err}`);

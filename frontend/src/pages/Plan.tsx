@@ -392,6 +392,33 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
           ))}
         </div>
       )}
+
+      {w.status === 'completed' && w.workoutFeedback && (
+        <div style={{
+          margin: '0 10px 10px', padding: '10px 12px',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', borderLeft: '2px solid var(--green)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--green)', letterSpacing: '.1em' }}>COACH-FEEDBACK</span>
+            {w.complianceScore != null && (
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9,
+                color: w.complianceScore >= 0.8 ? 'var(--green)' : w.complianceScore >= 0.6 ? 'var(--amber)' : 'var(--rose)',
+              }}>
+                {Math.round(w.complianceScore * 100)}% Compliance
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>{w.workoutFeedback}</p>
+        </div>
+      )}
+
+      {w.status === 'completed' && !w.workoutFeedback && (
+        <div style={{ margin: '0 10px 10px', padding: '6px 12px', background: 'var(--surface)', borderRadius: 'var(--radius)' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>Feedback wird generiert…</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -815,6 +842,7 @@ function GoalCard({ g }: { g: { id: string; title: string; description: string |
   const deleteGoal = useDeleteGoal();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const cat = g.category as GoalCategory | null;
   const catColor = cat ? (CATEGORY_COLOR[cat] ?? 'var(--text-3)') : 'var(--text-3)';
@@ -844,7 +872,12 @@ function GoalCard({ g }: { g: { id: string; title: string; description: string |
             : <>
                 <button
                   style={{ ...actionBtn, color: 'var(--rose)', borderColor: 'var(--rose)', background: 'var(--rose)11' }}
-                  onClick={() => { void deleteGoal.mutateAsync(g.id); }}
+                  onClick={() => {
+                    setDeleteError(null);
+                    deleteGoal.mutate(g.id, {
+                      onError: (err) => setDeleteError(err instanceof Error ? err.message : 'Fehler'),
+                    });
+                  }}
                   disabled={deleteGoal.isPending}
                 >
                   {deleteGoal.isPending ? '…' : 'Ja, löschen'}
@@ -854,6 +887,7 @@ function GoalCard({ g }: { g: { id: string; title: string; description: string |
           }
         </div>
       </div>
+      {deleteError && <div style={{ fontSize: 10, color: 'var(--rose)', marginTop: 2 }}>{deleteError}</div>}
 
       <div style={{ height: 3, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}>
         <div style={{ height: '100%', borderRadius: 2, width: `${(g.progress ?? 0) * 100}%`, background: catColor }} />

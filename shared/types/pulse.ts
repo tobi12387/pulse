@@ -78,6 +78,9 @@ export interface PulsePlannedWorkout {
   steps: WorkoutStep[] | null;
   garminWorkoutId: string | null;
   status: 'planned' | 'completed' | 'skipped';
+  workoutFeedback: string | null;
+  complianceScore: number | null;
+  completedActivityId: string | null;
 }
 
 export interface PulseMentalCheckin {

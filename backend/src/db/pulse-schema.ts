@@ -127,6 +127,8 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   garminScheduledId:    varchar('garmin_scheduled_id', { length: 64 }),
   status:               varchar('status', { length: 20 }).notNull().default('planned'),
   completedActivityId:  uuid('completed_activity_id'),
+  workoutFeedback:      text('workout_feedback'),
+  complianceScore:      real('compliance_score'),
   createdAt:            timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('pulse_planned_workouts_user_date_idx').on(t.userId, t.plannedDate),

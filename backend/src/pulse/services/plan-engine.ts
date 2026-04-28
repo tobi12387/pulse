@@ -246,6 +246,7 @@ async function enrichDescriptions(
     maxHrBpm: number;
     weekSummaries: WeekSummary[];
     goals: Array<{ title: string; targetDate: string | null; category: string | null }>;
+    recentFeedback?: Array<{ date: string; activityType: string; plannedZone: number; plannedDurationMin: number; feedback: string; complianceScore: number }> | undefined;
   },
 ): Promise<WeekWorkout[]> {
   const phaseLabel = { base: 'Grundlagenaufbau', build: 'Aufbau', peak: 'Wettkampfvorbereitung', taper: 'Tapering' }[ctx.phase];
@@ -278,6 +279,13 @@ async function enrichDescriptions(
   const hardCount = workouts.filter(w => w.zone >= 4).length;
   const easyPct = Math.round(((workouts.length - hardCount) / workouts.length) * 100);
 
+  const feedbackStr = (ctx.recentFeedback ?? []).length > 0
+    ? (ctx.recentFeedback ?? []).slice(-5).map(f =>
+        `- ${f.date} ${f.activityType} Z${f.plannedZone} ${f.plannedDurationMin}min ` +
+        `[Compliance ${Math.round(f.complianceScore * 100)}%]: ${f.feedback}`
+      ).join('\n')
+    : null;
+
   const prompt = `Du bist Sportwissenschaftler und Ausdauercoach. Schreibe präzise Trainingsbeschreibungen.
 
 ATHLETEN-STATUS:
@@ -288,7 +296,7 @@ ATHLETEN-STATUS:
 
 TRAININGSHISTORIE (letzte 6 Wochen):
   ${historyStr || 'keine Daten'}
-
+${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}
 DIESE WOCHE: ${workouts.length} Einheiten | Ziel-TSS ${totalTss} | ${easyPct}% extensiv (polarisiertes Modell 80/20)
 ${workoutList}
 
@@ -298,6 +306,7 @@ Erstelle für jedes Workout eine 1-2-sätzige Beschreibung auf Deutsch:
 - Z2/Z1-Workouts: Fokus auf Aerob-Effizienz, Fettstoffwechsel, Regeneration
 - Z4/Z5-Workouts: Konkrete Zielintensität, Intervalstruktur-Empfehlung, Trainingseffekt
 - Berücksichtige den Wochenverlauf (Ermüdung akkumuliert)
+- Berücksichtige das Workout-Feedback: Passe Umfang/Intensität an wenn nötig
 ${ctx.tsb < -15 ? '- ACHTUNG: Hohe Ermüdung — betone Erholungscharakter, keine Zusatzreize\n' : ''}
 Antworte NUR mit JSON-Array (gleiche Reihenfolge wie oben):
 [{"index":0,"description":"..."}]`;
@@ -341,6 +350,14 @@ export interface ScientificPlanInput {
     targetDate: string | null;
     category: string | null;
   }>;
+  recentFeedback?: Array<{
+    date: string;
+    activityType: string;
+    plannedZone: number;
+    plannedDurationMin: number;
+    feedback: string;
+    complianceScore: number;
+  }>;
 }
 
 export async function generateScientificWeekPlan(input: ScientificPlanInput): Promise<WeekWorkout[]> {
@@ -380,6 +397,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
       maxHrBpm: input.maxHrBpm,
       weekSummaries,
       goals: input.goals,
+      recentFeedback: input.recentFeedback,
     });
   } catch (err) {
     // Return workouts with empty descriptions rather than fail entirely
