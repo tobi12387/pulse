@@ -13,9 +13,10 @@ import {
   pulseWeeklyReviews,
   pulseWeightLog,
   pulseWeekAvailability,
+  pulseHealthState,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
-import { eq, desc, and, gte } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, isNull, or, sql } from 'drizzle-orm';
 import { redis } from '../lib/redis.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
@@ -27,6 +28,7 @@ import {
 } from './services/coach-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
+import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { pulseQueues } from './queues/queues.js';
@@ -970,7 +972,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .from(pulseUserProfile)
       .where(eq(pulseUserProfile.userId, userId));
 
-    const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
+    // Auto-derive phase from next race (Phase 8 wird das ergänzen). Fallback: profile.trainingPhase.
+    // 'base' default in profile bedeutet "Auto"; nur explizite Werte überschreiben den Race-derived.
+    const explicitPhase = profile?.trainingPhase as 'base' | 'build' | 'peak' | 'taper' | null | undefined;
+    const derivedPhase  = await deriveCurrentPhase(userId, weekStartStr);
+    const phase: 'base' | 'build' | 'peak' | 'taper' =
+      (explicitPhase && explicitPhase !== 'base') ? explicitPhase : derivedPhase;
 
     // Use week-specific availability if set, fall back to profile defaults
     const [weekAvail] = await db.select()
@@ -981,7 +988,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const availableDays = (weekAvail?.availableDays as number[] | null) ?? [0, 2, 4, 5];
 
     const since42d = new Date(Date.now() - 42 * 86_400_000);
-    const [fitnessLoad, recentActs, goals, recentFeedback] = await Promise.all([
+    const today = new Date().toISOString().split('T')[0]!;
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates] = await Promise.all([
       computeFitnessLoad(userId, weekStartStr),
       db.select({
         startTime:    pulseActivities.startTime,
@@ -1011,6 +1019,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ))
         .orderBy(desc(pulsePlannedWorkouts.plannedDate))
         .limit(10),
+      db.select().from(pulseHealthState)
+        .where(and(
+          eq(pulseHealthState.userId, userId),
+          isNull(pulseHealthState.resolvedAt),
+          or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
+        )),
     ]);
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -1042,6 +1056,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
             feedback:           w.workoutFeedback!,
             complianceScore:    w.complianceScore ?? 0.7,
           })),
+        healthStates: activeHealthStates.map(s => ({
+          type:      s.type as 'illness' | 'injury' | 'fatigue' | 'travel',
+          severity:  s.severity as 'mild' | 'moderate' | 'severe',
+          bodyPart:  s.bodyPart,
+          startDate: s.startDate,
+          endDate:   s.endDate,
+          notes:     s.notes,
+        })),
       });
     } catch (err) {
       app.log.warn(`[plan] Scientific plan failed, using templates: ${err}`);
@@ -1236,6 +1258,157 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     if (!deleted) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
     return reply.status(204).send();
+  });
+
+  // ─── Health states (Phase 6) ──────────────────────────────────────────────────
+  // Active = resolved_at IS NULL AND start_date <= today AND (end_date IS NULL OR end_date >= today)
+  app.get('/health-state', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+
+    const [active, recent] = await Promise.all([
+      db.select().from(pulseHealthState)
+        .where(and(
+          eq(pulseHealthState.userId, userId),
+          isNull(pulseHealthState.resolvedAt),
+          lte(pulseHealthState.startDate, today),
+          or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
+        ))
+        .orderBy(desc(pulseHealthState.startDate)),
+      db.select().from(pulseHealthState)
+        .where(and(
+          eq(pulseHealthState.userId, userId),
+          gte(pulseHealthState.startDate, sql`(CURRENT_DATE - INTERVAL '30 days')::date`),
+        ))
+        .orderBy(desc(pulseHealthState.startDate))
+        .limit(20),
+    ]);
+
+    return { active, recent };
+  });
+
+  app.post('/health-state', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      type:         z.enum(['illness', 'injury', 'fatigue', 'travel']),
+      severity:     z.enum(['mild', 'moderate', 'severe']),
+      bodyPart:     z.string().max(50).optional(),
+      notes:        z.string().max(500).optional(),
+      durationDays: z.number().int().min(1).max(60),
+      startDate:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const startDate = parsed.data.startDate ?? new Date().toISOString().split('T')[0]!;
+    const end = new Date(startDate + 'T00:00:00Z');
+    end.setUTCDate(end.getUTCDate() + parsed.data.durationDays - 1);
+    const endDate = end.toISOString().split('T')[0]!;
+
+    const [created] = await db.insert(pulseHealthState).values({
+      userId,
+      type:      parsed.data.type,
+      severity:  parsed.data.severity,
+      bodyPart:  parsed.data.bodyPart ?? null,
+      notes:     parsed.data.notes    ?? null,
+      startDate,
+      endDate,
+    }).returning();
+
+    return reply.status(201).send(created);
+  });
+
+  app.patch('/health-state/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      severity:     z.enum(['mild', 'moderate', 'severe']).optional(),
+      notes:        z.string().max(500).optional().nullable(),
+      endDate:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [updated] = await db.update(pulseHealthState)
+      .set(parsed.data)
+      .where(and(eq(pulseHealthState.id, id), eq(pulseHealthState.userId, userId)))
+      .returning();
+
+    if (!updated) return reply.status(404).send({ error: 'Status nicht gefunden' });
+    return updated;
+  });
+
+  app.post('/health-state/:id/resolve', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [resolved] = await db.update(pulseHealthState)
+      .set({ resolvedAt: new Date() })
+      .where(and(
+        eq(pulseHealthState.id, id),
+        eq(pulseHealthState.userId, userId),
+        isNull(pulseHealthState.resolvedAt),
+      ))
+      .returning();
+
+    if (!resolved) return reply.status(404).send({ error: 'Status nicht aktiv' });
+    return resolved;
+  });
+
+  app.delete('/health-state/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+
+    const [deleted] = await db.delete(pulseHealthState)
+      .where(and(eq(pulseHealthState.id, id), eq(pulseHealthState.userId, userId)))
+      .returning({ id: pulseHealthState.id });
+
+    if (!deleted) return reply.status(404).send({ error: 'Status nicht gefunden' });
+    return reply.status(204).send();
+  });
+
+  // ─── Today-Adjust (Phase 6 Task 4) ────────────────────────────────────────────
+  app.get('/plan/today/proposal', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const proposal = await proposeTodayAdjustment(userId, today);
+    return { proposal };
+  });
+
+  app.post('/plan/today/accept', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({ workoutId: z.string().uuid() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const proposal = await proposeTodayAdjustment(userId, today);
+    if (!proposal || proposal.workoutId !== parsed.data.workoutId) {
+      return reply.status(409).send({ error: 'Vorschlag nicht mehr aktuell' });
+    }
+
+    // Atomic: capture original_zone/original_duration_min from current row, then overwrite.
+    const result = await db.execute(sql`
+      UPDATE pulse_planned_workouts
+      SET
+        original_zone         = COALESCE(original_zone, zone),
+        original_duration_min = COALESCE(original_duration_min, duration_min),
+        zone                  = ${proposal.proposed.zone},
+        duration_min          = ${proposal.proposed.durationMin},
+        activity_type         = ${proposal.proposed.activityType}::pulse_activity_type,
+        description           = ${proposal.proposed.description},
+        adjusted_reason       = ${proposal.reason},
+        adjusted_at           = NOW(),
+        steps                 = NULL
+      WHERE id = ${parsed.data.workoutId} AND user_id = ${userId}
+      RETURNING id, planned_date, activity_type, zone, duration_min, description,
+                adjusted_reason, original_zone, original_duration_min;
+    `);
+    const rows = (result as unknown as { rows: Array<Record<string, unknown>> }).rows;
+    if (!rows[0]) return reply.status(404).send({ error: 'Workout nicht gefunden' });
+
+    return { ok: true, workout: rows[0], proposal };
   });
 
   // ─── Week availability ────────────────────────────────────────────────────────

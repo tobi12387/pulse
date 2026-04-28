@@ -197,4 +197,55 @@ export const pulseApi = {
     log: (data: { weightKg: number; date?: string; notes?: string }): Promise<PulseWeightEntry> =>
       request('/weight', { method: 'POST', body: JSON.stringify(data) }),
   },
+
+  healthState: {
+    list: (): Promise<{ active: HealthState[]; recent: HealthState[] }> =>
+      request('/health-state'),
+    create: (data: {
+      type: 'illness'|'injury'|'fatigue'|'travel';
+      severity: 'mild'|'moderate'|'severe';
+      bodyPart?: string;
+      notes?: string;
+      durationDays: number;
+      startDate?: string;
+    }): Promise<HealthState> =>
+      request('/health-state', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: { severity?: 'mild'|'moderate'|'severe'; notes?: string|null; endDate?: string|null }): Promise<HealthState> =>
+      request(`/health-state/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    resolve: (id: string): Promise<HealthState> =>
+      request(`/health-state/${id}/resolve`, { method: 'POST', body: '{}' }),
+    delete: (id: string): Promise<void> =>
+      request(`/health-state/${id}`, { method: 'DELETE' }),
+  },
+
+  todayAdjust: {
+    proposal: (): Promise<{ proposal: AdjustProposal | null }> =>
+      request('/plan/today/proposal'),
+    accept: (workoutId: string): Promise<{ ok: boolean; workout: unknown; proposal: AdjustProposal }> =>
+      request('/plan/today/accept', { method: 'POST', body: JSON.stringify({ workoutId }) }),
+  },
 };
+
+// ─── Phase 6 types ───────────────────────────────────────────────────────────
+export interface HealthState {
+  id: string;
+  userId: string;
+  type: 'illness' | 'injury' | 'fatigue' | 'travel';
+  severity: 'mild' | 'moderate' | 'severe';
+  bodyPart: string | null;
+  notes: string | null;
+  startDate: string;
+  endDate: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+}
+
+export interface AdjustProposal {
+  workoutId: string;
+  date: string;
+  original: { activityType: string; zone: number; durationMin: number };
+  proposed: { activityType: string; zone: number; durationMin: number; description: string };
+  reason: 'low_readiness' | 'illness' | 'injury' | 'fatigue' | 'travel';
+  rationale: string;
+  readinessScore: number;
+}

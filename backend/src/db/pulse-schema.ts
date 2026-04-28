@@ -129,9 +129,29 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   completedActivityId:  uuid('completed_activity_id'),
   workoutFeedback:      text('workout_feedback'),
   complianceScore:      real('compliance_score'),
+  originalZone:         integer('original_zone'),
+  originalDurationMin:  integer('original_duration_min'),
+  adjustedReason:       varchar('adjusted_reason', { length: 30 }),
+  adjustedAt:           timestamp('adjusted_at'),
   createdAt:            timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('pulse_planned_workouts_user_date_idx').on(t.userId, t.plannedDate),
+]);
+
+// ─── Health states (illness, injury, fatigue, travel) ────────────────────────
+export const pulseHealthState = pgTable('pulse_health_state', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  userId:      uuid('user_id').notNull(),
+  type:        varchar('type', { length: 20 }).notNull(),         // illness | injury | fatigue | travel
+  severity:    varchar('severity', { length: 20 }).notNull(),     // mild | moderate | severe
+  bodyPart:    varchar('body_part', { length: 50 }),
+  notes:       text('notes'),
+  startDate:   date('start_date').notNull(),
+  endDate:     date('end_date'),
+  resolvedAt:  timestamp('resolved_at'),
+  createdAt:   timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('pulse_health_state_user_active_idx').on(t.userId, t.endDate),
 ]);
 
 // ─── Mental check-ins ─────────────────────────────────────────────────────────

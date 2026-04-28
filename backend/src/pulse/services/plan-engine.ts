@@ -3,6 +3,15 @@ import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
 
+export interface ActiveHealthState {
+  type: 'illness' | 'injury' | 'fatigue' | 'travel';
+  severity: 'mild' | 'moderate' | 'severe';
+  bodyPart: string | null;
+  startDate: string;     // YYYY-MM-DD
+  endDate: string | null;
+  notes: string | null;
+}
+
 interface WeekWorkout {
   plannedDate: string;
   activityType: ActivityType;
@@ -10,6 +19,7 @@ interface WeekWorkout {
   durationMin: number;
   targetTss: number;
   description: string;
+  adjustedReason?: string;     // non-null when modified by enforceHealthConstraints
 }
 
 // ─── TSS / intensity helpers ──────────────────────────────────────────────────
@@ -193,6 +203,77 @@ function buildPolarizedWorkouts(params: {
   return workouts;
 }
 
+// ─── Health-state constraint enforcement ──────────────────────────────────────
+
+function dateInRange(date: string, start: string, end: string | null): boolean {
+  if (date < start) return false;
+  if (end != null && date > end) return false;
+  return true;
+}
+
+function tssRecompute(w: WeekWorkout): WeekWorkout {
+  return { ...w, targetTss: tssFromWorkout(w.durationMin, w.zone) };
+}
+
+// Hard programmatic safety net AFTER LLM/heuristic generation.
+// Applied even if the LLM ignores the prompt instructions.
+export function enforceHealthConstraints(
+  workouts: WeekWorkout[],
+  states: ActiveHealthState[],
+): WeekWorkout[] {
+  if (states.length === 0) return workouts;
+
+  return workouts.map((w): WeekWorkout => {
+    const blocking = states.filter(s => dateInRange(w.plannedDate, s.startDate, s.endDate));
+    if (blocking.length === 0) return w;
+
+    let next: WeekWorkout = { ...w };
+
+    for (const s of blocking) {
+      // Illness: severe → full rest; moderate → max Z1, 30min; mild → max Z2, cap 60min
+      if (s.type === 'illness') {
+        if (s.severity === 'severe') {
+          next = { ...next, zone: 1, durationMin: 0, adjustedReason: 'illness' };
+        } else if (s.severity === 'moderate') {
+          next = { ...next, zone: 1, durationMin: Math.min(next.durationMin, 30), adjustedReason: 'illness' };
+        } else {
+          next = { ...next, zone: Math.min(next.zone, 2), durationMin: Math.min(next.durationMin, 60), adjustedReason: 'illness' };
+        }
+      }
+      // Injury: route around affected sport
+      if (s.type === 'injury' && s.bodyPart) {
+        const part = s.bodyPart.toLowerCase();
+        const blocksRun  = /knee|foot|ankle|achilles|shin|calf|hamstring|hip/.test(part);
+        const blocksBike = /knee_severe|hip_severe|wrist|hand|shoulder/.test(part);
+        const blocksSwim = /shoulder|wrist|elbow/.test(part);
+
+        if (blocksRun  && next.activityType === 'run')  next = { ...next, activityType: 'bike', adjustedReason: 'injury' };
+        if (blocksBike && next.activityType === 'bike') next = { ...next, activityType: 'swim', adjustedReason: 'injury' };
+        if (blocksSwim && next.activityType === 'swim') next = { ...next, activityType: 'bike', adjustedReason: 'injury' };
+
+        // Severe injuries cap intensity regardless
+        if (s.severity === 'severe') {
+          next = { ...next, zone: Math.min(next.zone, 2), durationMin: Math.min(next.durationMin, 45) };
+        }
+      }
+      // Fatigue: cap intensity, allow Z2 only
+      if (s.type === 'fatigue') {
+        const cap = s.severity === 'severe' ? { zone: 1, dur: 30 } :
+                    s.severity === 'moderate' ? { zone: 2, dur: 60 } :
+                    { zone: 2, dur: next.durationMin };
+        next = { ...next, zone: Math.min(next.zone, cap.zone), durationMin: Math.min(next.durationMin, cap.dur), adjustedReason: 'fatigue' };
+      }
+      // Travel: keep intensity moderate, prefer running (no bike), shorter
+      if (s.type === 'travel') {
+        if (next.activityType === 'bike') next = { ...next, activityType: 'run' };
+        next = { ...next, zone: Math.min(next.zone, 2), durationMin: Math.min(next.durationMin, 45), adjustedReason: 'travel' };
+      }
+    }
+
+    return tssRecompute(next);
+  }).filter(w => w.durationMin > 0);   // drop full-rest days
+}
+
 // ─── History aggregation ──────────────────────────────────────────────────────
 
 interface WeekSummary {
@@ -247,6 +328,8 @@ async function enrichDescriptions(
     weekSummaries: WeekSummary[];
     goals: Array<{ title: string; targetDate: string | null; category: string | null }>;
     recentFeedback?: Array<{ date: string; activityType: string; plannedZone: number; plannedDurationMin: number; feedback: string; complianceScore: number }> | undefined;
+    healthStates?: ActiveHealthState[] | undefined;
+    lthrBpm?: number | undefined;
   },
 ): Promise<WeekWorkout[]> {
   const phaseLabel = { base: 'Grundlagenaufbau', build: 'Aufbau', peak: 'Wettkampfvorbereitung', taper: 'Tapering' }[ctx.phase];
@@ -263,12 +346,17 @@ async function enrichDescriptions(
     ? ctx.goals.map(g => `${g.title}${g.targetDate ? ` bis ${g.targetDate}` : ''}`).join(', ')
     : 'keine';
 
+  // HR-First zone reference (Friel's 7-zone model on LTHR if available, else MaxHR-fraction fallback)
+  const lthr = ctx.lthrBpm ?? Math.round(ctx.maxHrBpm * 0.92);  // ~92% MaxHR ≈ LTHR estimate
+  const hrZone = (loPct: number, hiPct: number) =>
+    `${Math.round(lthr * loPct / 100)}–${Math.round(lthr * hiPct / 100)}bpm`;
   const zoneRef = [
-    `Rad Z2: ${Math.round(ctx.ftpWatts * 0.56)}–${Math.round(ctx.ftpWatts * 0.75)}W`,
-    `Rad Z4: ${Math.round(ctx.ftpWatts * 0.90)}–${Math.round(ctx.ftpWatts * 1.05)}W`,
-    `Rad Z5: >${Math.round(ctx.ftpWatts * 1.05)}W`,
-    `Lauf Z2: ${Math.round(ctx.maxHrBpm * 0.68)}–${Math.round(ctx.maxHrBpm * 0.78)}bpm`,
-    `Lauf Z4: ${Math.round(ctx.maxHrBpm * 0.88)}–${Math.round(ctx.maxHrBpm * 0.95)}bpm`,
+    `Z1 <${hrZone(0, 81).split('–')[1]}`,
+    `Z2 ${hrZone(82, 88)}`,
+    `Z3 ${hrZone(89, 93)}`,
+    `Z4 ${hrZone(94, 99)}`,
+    `Z5 >${Math.round(lthr)}bpm`,
+    `(LTHR: ${lthr}bpm, FTP: ${ctx.ftpWatts}W als Sekundärinfo)`,
   ].join(' | ');
 
   const workoutList = workouts
@@ -286,6 +374,14 @@ async function enrichDescriptions(
       ).join('\n')
     : null;
 
+  const healthStr = (ctx.healthStates ?? []).length > 0
+    ? (ctx.healthStates ?? []).map(s => {
+        const range = `${s.startDate}${s.endDate ? `–${s.endDate}` : '+'}`;
+        const part = s.bodyPart ? ` (${s.bodyPart})` : '';
+        return `- ${range}: ${s.type}/${s.severity}${part}${s.notes ? ` — ${s.notes}` : ''}`;
+      }).join('\n')
+    : null;
+
   const prompt = `Du bist Sportwissenschaftler und Ausdauercoach. Schreibe präzise Trainingsbeschreibungen.
 
 ATHLETEN-STATUS:
@@ -296,17 +392,18 @@ ATHLETEN-STATUS:
 
 TRAININGSHISTORIE (letzte 6 Wochen):
   ${historyStr || 'keine Daten'}
-${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}
+${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}${healthStr ? `\nGESUNDHEITSSTATUS (HARTE Constraints — diese Daten sind verbindlich):\n${healthStr}\nRegeln: bei illness/severe = Ruhetag; illness/moderate = max Z1 30min; illness/mild = max Z2 60min; injury/* = passende Sportart vermeiden; fatigue = nur Z1–Z2.\n` : ''}
 DIESE WOCHE: ${workouts.length} Einheiten | Ziel-TSS ${totalTss} | ${easyPct}% extensiv (polarisiertes Modell 80/20)
 ${workoutList}
 
-Intensitätsbereiche: ${zoneRef}
+Intensitätsbereiche (HR-First Steuerung): ${zoneRef}
 
 Erstelle für jedes Workout eine 1-2-sätzige Beschreibung auf Deutsch:
-- Z2/Z1-Workouts: Fokus auf Aerob-Effizienz, Fettstoffwechsel, Regeneration
-- Z4/Z5-Workouts: Konkrete Zielintensität, Intervalstruktur-Empfehlung, Trainingseffekt
+- Z2/Z1-Workouts: Fokus auf Aerob-Effizienz, Fettstoffwechsel, Regeneration — HR-Range nennen
+- Z4/Z5-Workouts: Konkrete HR-Zielintervalle, Intervalstruktur-Empfehlung, Trainingseffekt
 - Berücksichtige den Wochenverlauf (Ermüdung akkumuliert)
 - Berücksichtige das Workout-Feedback: Passe Umfang/Intensität an wenn nötig
+- Steuerung primär über Puls; Watt nur als Sekundär-Info erwähnen wo sinnvoll
 ${ctx.tsb < -15 ? '- ACHTUNG: Hohe Ermüdung — betone Erholungscharakter, keine Zusatzreize\n' : ''}
 Antworte NUR mit JSON-Array (gleiche Reihenfolge wie oben):
 [{"index":0,"description":"..."}]`;
@@ -339,6 +436,7 @@ export interface ScientificPlanInput {
   tsb: number;
   ftpWatts: number;
   maxHrBpm: number;
+  lthrBpm?: number | undefined;
   recentActivities: Array<{
     date: string;
     activityType: string;
@@ -358,6 +456,7 @@ export interface ScientificPlanInput {
     feedback: string;
     complianceScore: number;
   }>;
+  healthStates?: ActiveHealthState[];
 }
 
 export async function generateScientificWeekPlan(input: ScientificPlanInput): Promise<WeekWorkout[]> {
@@ -372,7 +471,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     phase,
   });
 
-  const workouts = buildPolarizedWorkouts({
+  const rawWorkouts = buildPolarizedWorkouts({
     weekStart: input.weekStart,
     availableDays: input.availableDays,
     phase,
@@ -380,6 +479,9 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     weeklyHoursTarget: input.weeklyHoursTarget,
     tsb: input.tsb,
   });
+
+  // HARD constraints: filter/cap workouts based on active health states
+  const workouts = enforceHealthConstraints(rawWorkouts, input.healthStates ?? []);
 
   if (workouts.length === 0) return [];
 
@@ -398,6 +500,8 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
       weekSummaries,
       goals: input.goals,
       recentFeedback: input.recentFeedback,
+      healthStates: input.healthStates,
+      lthrBpm: input.lthrBpm,
     });
   } catch (err) {
     // Return workouts with empty descriptions rather than fail entirely

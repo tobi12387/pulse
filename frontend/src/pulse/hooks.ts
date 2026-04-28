@@ -19,6 +19,8 @@ export const pulseKeys = {
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
   correlations:      (days: number)  => ['pulse', 'correlations', days] as const,
   trainingAnalytics: (weeks: number) => ['pulse', 'training-analytics', weeks] as const,
+  healthState:      ['pulse', 'health-state'] as const,
+  todayProposal:    ['pulse', 'today-proposal'] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -268,5 +270,71 @@ export function useRefreshInsight(domain: string, days = 30) {
   return useMutation({
     mutationFn: () => pulseApi.insights.get(domain, days, true),
     onSuccess: (data) => qc.setQueryData(pulseKeys.insight(domain, days), data),
+  });
+}
+
+// ─── Phase 6: Health States & Today-Adjust ───────────────────────────────────
+
+export function useHealthStates() {
+  return useQuery({
+    queryKey: pulseKeys.healthState,
+    queryFn: pulseApi.healthState.list,
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateHealthState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.healthState.create,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: pulseKeys.healthState });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+    },
+  });
+}
+
+export function useResolveHealthState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pulseApi.healthState.resolve(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: pulseKeys.healthState });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+    },
+  });
+}
+
+export function useDeleteHealthState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pulseApi.healthState.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: pulseKeys.healthState });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+    },
+  });
+}
+
+export function useTodayProposal() {
+  return useQuery({
+    queryKey: pulseKeys.todayProposal,
+    queryFn: pulseApi.todayAdjust.proposal,
+    staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
+  });
+}
+
+export function useAcceptTodayAdjustment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (workoutId: string) => pulseApi.todayAdjust.accept(workoutId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+    },
   });
 }
