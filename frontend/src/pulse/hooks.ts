@@ -5,6 +5,8 @@ import type { NutritionLogInput } from './api-client.js';
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const pulseKeys = {
   home:         ['pulse', 'home'] as const,
+  readiness:   ['pulse', 'readiness'] as const,
+  load:        ['pulse', 'load'] as const,
   sleep:        (limit: number) => ['pulse', 'sleep', limit] as const,
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
   plan:         ['pulse', 'plan'] as const,
@@ -36,6 +38,22 @@ export function usePulseHome() {
     queryFn: pulseApi.home.get,
     staleTime: 60_000,
     refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useReadiness() {
+  return useQuery({
+    queryKey: pulseKeys.readiness,
+    queryFn: pulseApi.readiness,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useFitnessLoad() {
+  return useQuery({
+    queryKey: pulseKeys.load,
+    queryFn: pulseApi.fitnessLoad,
+    staleTime: 10 * 60_000,
   });
 }
 
@@ -127,6 +145,8 @@ export function usePulseCheckin() {
     mutationFn: pulseApi.checkin.submit,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.readiness });
+      qc.invalidateQueries({ queryKey: pulseKeys.load });
       qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
     },

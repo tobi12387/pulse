@@ -3,7 +3,7 @@ import type {
   PulsePlannedWorkout, PulseMentalCheckin, PulseGoal,
   PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
   RaceDiscipline, RacePriority,
-  PulseDataStatus,
+  PulseDataStatus, PulseFitnessLoad, PulseReadiness,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -46,6 +46,12 @@ export const pulseApi = {
     get: (): Promise<PulseHomeScreenData> =>
       request('/home'),
   },
+
+  readiness: (): Promise<PulseReadiness & { date: string; cached: boolean }> =>
+    request('/readiness'),
+
+  fitnessLoad: (): Promise<PulseFitnessLoad & { cached: boolean }> =>
+    request('/load'),
 
   nutrition: {
     list: (workoutId?: string, activityId?: string, days = 14): Promise<{ logs: NutritionLog[] }> =>
