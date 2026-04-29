@@ -1,5 +1,12 @@
 # Pulse Redesign — Variante B (Performance Cockpit)
 
+> **⚠ HISTORISCH (Stand 2026-04-29).** Dieses Handoff bezog sich auf eine
+> Next.js+Supabase-Iteration von Pulse. Der aktuelle Stack ist React 19 + Vite +
+> Fastify + Postgres — siehe [../CLAUDE.md](../CLAUDE.md). Die **Design-Tokens
+> sind bereits in der aktuellen Codebase implementiert** (CSS-Variablen in
+> `frontend/src/`). Dokumentation hier nur noch als visuelle Referenz, nicht
+> als Implementierungs-Anweisung.
+
 Dieser Ordner enthält **alles, was Claude Code braucht**, um das Variante-B-Design gegen die Pulse-Codebase umzusetzen.
 
 ## Inhalt

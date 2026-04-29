@@ -2,7 +2,7 @@
 
 > **Für agentic workers:** REQUIRED SUB-SKILL: `superpowers:subagent-driven-development`.
 >
-> **Querschnitt:** [HR-First](2026-04-28-cross-cutting-hr-first.md) — RPE ist die einzige Größe, die HR-First nicht aus Garmin ableiten kann.
+> **Querschnitt:** [HR-First](completed/2026-04-28-cross-cutting-hr-first.md) — RPE ist die einzige Größe, die HR-First nicht aus Garmin ableiten kann.
 
 **Ziel:** Subjektives Workout-Feedback in 30 Sekunden direkt nach jeder Einheit. Heute: Compliance-Score ist eine LLM-Schätzung aus Garmin-Daten — niemand fragt Tobi, *wie es sich angefühlt hat*. Das ist der eine Datenpunkt, den Garmin grundsätzlich nicht liefern kann, und für polarisiertes Training entscheidend (war Z2 wirklich Z2?).
 

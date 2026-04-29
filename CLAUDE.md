@@ -60,6 +60,14 @@ Single user, single instance, single Postgres DB — do not over-engineer.
 
 ---
 
+## Plan-Docs & Codex
+
+- **Aktive Pläne:** `docs/superpowers/plans/` — Reihenfolge in `docs/superpowers/plans/2026-04-28-roadmap.md`.
+- **Implementierte Pläne (read-only Historie):** `docs/superpowers/plans/completed/` — niemals erneut implementieren.
+- **Codex-System-Prompt:** `docs/codex-system-prompt.md` ist die Codex-spezifische Variante von CLAUDE.md + AGENTS.md, mit aktueller Roadmap-Reihenfolge und „nicht mehr diskutierten" Entscheidungen (Telegram raus, Habits raus, etc.).
+
+---
+
 ## Absolute Rules (Non-Negotiable)
 
 1. **Never `git add .`** — always stage files explicitly by name
