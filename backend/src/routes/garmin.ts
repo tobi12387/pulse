@@ -1,15 +1,53 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
-import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts, pulseUserProfile } from '../db/pulse-schema.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts, pulseUserProfile, pulseNutritionLogs } from '../db/pulse-schema.js';
+import { eq, desc, and, or } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
+
+interface NutritionContext {
+  carbsG: number;             // sum during/post
+  gelsCount: number;
+  drinksMl: number;
+  sodiumMg: number;
+  hadAnyLog: boolean;
+}
+
+function buildNutritionContext(logs: Array<{
+  context: string | null; carbsG: number | null; gelsCount: number | null;
+  drinksMl: number | null; sodiumMg: number | null;
+}>): NutritionContext {
+  const relevant = logs.filter(l => l.context === 'during' || l.context === 'post' || l.context == null);
+  const sum = (k: keyof typeof relevant[0]) =>
+    relevant.reduce((s, l) => s + (typeof l[k] === 'number' ? (l[k] as number) : 0), 0);
+  return {
+    carbsG:    sum('carbsG'),
+    gelsCount: sum('gelsCount'),
+    drinksMl:  sum('drinksMl'),
+    sodiumMg:  sum('sodiumMg'),
+    hadAnyLog: logs.length > 0,
+  };
+}
+
+function recommendedCarbsPerHour(activityType: string, durationMin: number): number {
+  if (activityType === 'bike') {
+    if (durationMin < 60)  return 30;
+    if (durationMin < 120) return 60;
+    return 80;
+  }
+  if (activityType === 'run') {
+    if (durationMin < 75)  return 20;
+    return 50;
+  }
+  return 30;
+}
 
 async function generateWorkoutFeedback(
   planned: { activityType: string; zone: number; durationMin: number; description: string | null },
   actual: { durationSec: number | null; avgHr: number | null; maxHr: number | null; avgPowerW: number | null; normalizedPowerW: number | null; tss: number | null },
   profile: { maxHrBpm: number | null; ftpWatts: number | null } | undefined,
+  nutrition?: NutritionContext,
 ): Promise<{ feedback: string; complianceScore: number }> {
   const maxHr = profile?.maxHrBpm ?? 185;
   const ftp = profile?.ftpWatts ?? 250;
@@ -36,6 +74,20 @@ async function generateWorkoutFeedback(
     ? (actual.normalizedPowerW != null ? `NP ${actual.normalizedPowerW} W, Avg ${actual.avgPowerW ?? '?'} W` : `Avg HR ${actual.avgHr ?? '?'} bpm`)
     : `Avg HR ${actual.avgHr ?? '?'} bpm, Max HR ${actual.maxHr ?? '?'} bpm`;
 
+  // Phase 9: Nutrition-Block — distinguishes weak performance due to fueling vs form
+  let nutritionBlock = '';
+  if (nutrition) {
+    const dur = actualDurMin ?? planned.durationMin;
+    const recCarbs = recommendedCarbsPerHour(planned.activityType, dur);
+    const expectedCarbs = Math.round((dur / 60) * recCarbs);
+    if (nutrition.hadAnyLog) {
+      const carbsPerH = dur > 0 ? Math.round(nutrition.carbsG / (dur / 60)) : 0;
+      nutritionBlock = `\nFUELING:\n- Carbs: ${nutrition.carbsG}g (${carbsPerH}g/h, Empfehlung ${recCarbs}g/h)\n- Gels: ${nutrition.gelsCount} | Trinken: ${nutrition.drinksMl}ml | Sodium: ${nutrition.sodiumMg}mg\n- Erwartung für ${dur}min: ~${expectedCarbs}g Carbs`;
+    } else if (dur >= 60) {
+      nutritionBlock = `\nFUELING:\n- Kein Fueling-Log erfasst (Empfehlung für ${dur}min: ~${expectedCarbs}g Carbs, ${Math.round(dur * 8)}ml)`;
+    }
+  }
+
   const prompt = `Du bist ein Ausdauer-Coach. Analysiere dieses Workout kurz und prägnant auf Deutsch.
 
 GEPLANT:
@@ -45,15 +97,15 @@ GEPLANT:
 ABSOLVIERT:
 - Dauer: ${actualDurMin ?? '?'} min
 - Intensität: ${actualIntensity}
-- TSS: ${actual.tss ?? '?'}
+- TSS: ${actual.tss ?? '?'}${nutritionBlock}
 
 Antworte NUR mit einem JSON-Objekt, kein Markdown, kein Text davor/danach:
 {
-  "feedback": "2-3 Sätze Feedback: Was lief gut, was war anders als geplant, eine konkrete Empfehlung für das nächste Training",
+  "feedback": "2-3 Sätze Feedback: Was lief gut, was war anders als geplant, eine konkrete Empfehlung für das nächste Training. Wenn Fueling unter Empfehlung lag, nenne das als möglichen Grund für schwache Performance — nicht als Plan-Abweichung.",
   "complianceScore": 0.0-1.0
 }
 
-complianceScore: 1.0 = perfekt nach Plan, 0.8 = leichte Abweichungen, 0.6 = deutliche Abweichungen, 0.4 = stark abgewichen`;
+complianceScore beurteilt NUR Pace/HR/Dauer-Treue zum Plan, nicht das Fueling: 1.0 = perfekt, 0.8 = leichte Abweichungen, 0.6 = deutliche Abweichungen, 0.4 = stark abgewichen.`;
 
   const raw = await llmComplete('Du bist Ausdauer-Coach. Antworte nur mit validem JSON.', prompt, SMART_MODEL);
   const parsed = JSON.parse(raw.trim().replace(/^```json\n?|```$/g, ''));
@@ -106,7 +158,33 @@ async function matchActivityToWorkout(
         .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
 
       if (!activity) return;
-      const { feedback, complianceScore } = await generateWorkoutFeedback(planned, activity, profile ?? undefined);
+
+      // Phase 9: gather nutrition logs for this workout (workoutId match) + same-day fallback
+      const nutritionLogs = await db.select({
+        context: pulseNutritionLogs.context,
+        carbsG:  pulseNutritionLogs.carbsG,
+        gelsCount: pulseNutritionLogs.gelsCount,
+        drinksMl:  pulseNutritionLogs.drinksMl,
+        sodiumMg:  pulseNutritionLogs.sodiumMg,
+      }).from(pulseNutritionLogs)
+        .where(and(
+          eq(pulseNutritionLogs.userId, userId),
+          or(
+            eq(pulseNutritionLogs.workoutId,  planned.id),
+            eq(pulseNutritionLogs.activityId, activityId),
+          ),
+        ));
+      const nutrition = nutritionLogs.length > 0
+        ? buildNutritionContext(nutritionLogs.map(l => ({
+            context:    l.context,
+            carbsG:     l.carbsG,
+            gelsCount:  l.gelsCount,
+            drinksMl:   l.drinksMl,
+            sodiumMg:   l.sodiumMg,
+          })))
+        : { carbsG: 0, gelsCount: 0, drinksMl: 0, sodiumMg: 0, hadAnyLog: false };
+
+      const { feedback, complianceScore } = await generateWorkoutFeedback(planned, activity, profile ?? undefined, nutrition);
       await db.update(pulsePlannedWorkouts)
         .set({ workoutFeedback: feedback, complianceScore })
         .where(eq(pulsePlannedWorkouts.id, planned.id));

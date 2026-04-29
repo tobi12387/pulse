@@ -34,6 +34,16 @@ export interface CoachFullContext {
     date: string; mood: number; energy: number; stress: number; motivation: number;
   }>;
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
+  recovery?: {
+    sleepDebt7dH: number;
+    sleepDebtStatus: 'ok' | 'mild' | 'severe';
+    hrvDeviationPct: number;
+    hrvStatus: 'recovering' | 'stable' | 'declining';
+    rhrDriftBpm: number;
+    rhrStatus: 'normal' | 'elevated';
+    recoveryScore: number;
+    recommendation: string;
+  } | null;
 }
 
 export function buildRichSystemPrompt(ctx: CoachFullContext): string {
@@ -59,6 +69,11 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
     if (c.notes) s += ` | "${c.notes.slice(0, 80)}"`;
   } else {
     s += '\nKein Check-in heute.';
+  }
+
+  if (ctx.recovery) {
+    const r = ctx.recovery;
+    s += `\n\n== RECOVERY (7d vs 30d-Baseline) ==\nScore ${r.recoveryScore}/100 | Schlafdefizit ${r.sleepDebt7dH.toFixed(1)}h (${r.sleepDebtStatus}) | HRV ${r.hrvDeviationPct.toFixed(1)}% (${r.hrvStatus}) | Ruhepuls +${r.rhrDriftBpm.toFixed(1)}bpm (${r.rhrStatus})\nEmpfehlung: ${r.recommendation}`;
   }
 
   s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;

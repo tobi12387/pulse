@@ -5,6 +5,7 @@ import {
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
+import { BodyCompChart } from '@/components/BodyCompChart';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
@@ -406,6 +407,9 @@ function GewichtTab() {
           )}
         </>
       )}
+
+      {/* Body Composition Chart (90d, tabbed) */}
+      <BodyCompChart />
 
       {/* Verlauf chart */}
       {weights.length >= 3 && (

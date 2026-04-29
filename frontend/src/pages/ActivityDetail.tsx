@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
 import type { ActivityAnalytics } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
+import { useNutritionLogs, useDeleteNutritionLog } from '@/pulse/hooks';
+import { NutritionLogModal } from '@/components/NutritionLogModal';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -368,6 +371,109 @@ function WeatherCard({ weather }: { weather: NonNullable<ActivityAnalytics['weat
   );
 }
 
+// ─── Fueling Section ─────────────────────────────────────────────────────────
+
+function FuelingSection({
+  activityId, workoutId, durationMin, activityType,
+}: {
+  activityId: string; workoutId: string | null;
+  durationMin: number; activityType: string;
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const { data } = useNutritionLogs(null, activityId);
+  const deleteMut = useDeleteNutritionLog();
+  const logs = data?.logs ?? [];
+
+  const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
+    ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
+    : 'other';
+
+  return (
+    <>
+      <div className="card" style={{ padding: '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase' }}>
+            Fueling
+          </span>
+          <button
+            onClick={() => setModalOpen(true)}
+            style={{
+              background: 'none', border: '1px solid var(--border)',
+              borderRadius: 4, padding: '4px 10px',
+              fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)',
+              letterSpacing: '.12em', cursor: 'pointer',
+            }}
+          >
+            + Fueling-Log
+          </button>
+        </div>
+
+        {logs.length === 0 ? (
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', textAlign: 'center', padding: '8px 0' }}>
+            Noch kein Fueling geloggt.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {logs.map(log => (
+              <div key={log.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '6px 0', borderTop: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {log.gelsCount != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+                      {log.gelsCount} Gel{log.gelsCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {log.drinksMl != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--blue)' }}>
+                      {log.drinksMl} ml
+                    </span>
+                  )}
+                  {log.carbsG != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--amber)' }}>
+                      {log.carbsG}g CH
+                    </span>
+                  )}
+                  {log.sodiumMg != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>
+                      {log.sodiumMg}mg Na
+                    </span>
+                  )}
+                  {log.notes && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', fontStyle: 'italic' }}>
+                      {log.notes}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => deleteMut.mutate(log.id)}
+                  disabled={deleteMut.isPending}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)',
+                    padding: '0 4px', flexShrink: 0,
+                  }}
+                >×</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {modalOpen && (
+        <NutritionLogModal
+          activityId={activityId}
+          workoutId={workoutId}
+          durationMin={durationMin}
+          activityType={safeType}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ActivityDetail() {
@@ -479,6 +585,14 @@ export default function ActivityDetail() {
 
       {/* Laps Table */}
       <LapsTable laps={laps} activityType={a.activityType} />
+
+      {/* Fueling Section */}
+      <FuelingSection
+        activityId={a.id}
+        workoutId={null}
+        durationMin={a.durationSec ? Math.round(a.durationSec / 60) : 60}
+        activityType={a.activityType}
+      />
 
       {/* Analytics Cards */}
       {analytics?.decoupling != null && (

@@ -279,9 +279,18 @@ export const pulseNutritionLogs = pgTable('pulse_nutrition_logs', {
   carbsG:       real('carbs_g'),
   fatG:         real('fat_g'),
   qualityScore: integer('quality_score'),
+  // Phase 9: workout fueling
+  workoutId:    uuid('workout_id'),
+  activityId:   uuid('activity_id'),
+  context:      varchar('context', { length: 20 }),    // pre | during | post | daily
+  gelsCount:    integer('gels_count'),
+  drinksMl:     integer('drinks_ml'),
+  sodiumMg:     integer('sodium_mg'),
+  notes:        text('notes'),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('pulse_nutrition_logs_user_date_idx').on(t.userId, t.date),
+  index('pulse_nutrition_logs_workout_idx').on(t.workoutId),
 ]);
 
 // ─── Insights cache ───────────────────────────────────────────────────────────

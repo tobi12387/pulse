@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pulseApi } from './api-client.js';
+import type { NutritionLogInput } from './api-client.js';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const pulseKeys = {
@@ -22,6 +23,8 @@ export const pulseKeys = {
   healthState:      ['pulse', 'health-state'] as const,
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
+  nutrition: (workoutId: string | null, activityId: string | null) =>
+    ['pulse', 'nutrition', workoutId, activityId] as const,
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -345,5 +348,43 @@ export function useRaces() {
     queryKey: pulseKeys.races,
     queryFn: pulseApi.races.list,
     staleTime: 10 * 60_000,
+  });
+}
+
+// ─── Phase 9: Nutrition hooks ────────────────────────────────────────────────
+
+export function useNutritionLogs(workoutId: string | null, activityId: string | null) {
+  return useQuery({
+    queryKey: pulseKeys.nutrition(workoutId, activityId),
+    queryFn: () => pulseApi.nutrition.list(
+      workoutId ?? undefined,
+      activityId ?? undefined,
+    ),
+    staleTime: 2 * 60_000,
+    enabled: !!(workoutId || activityId),
+  });
+}
+
+export function useCreateNutritionLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: NutritionLogInput) => pulseApi.nutrition.create(data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
+      if (variables.workoutId) {
+        qc.invalidateQueries({ queryKey: pulseKeys.home });
+        qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      }
+    },
+  });
+}
+
+export function useDeleteNutritionLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pulseApi.nutrition.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
+    },
   });
 }

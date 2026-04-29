@@ -204,6 +204,14 @@ export interface PulseStreaks {
   workoutStreakDays: number;
 }
 
+export interface PulseRecoveryMetrics {
+  sleepDebt7d:    { hours: number; targetH: number; status: 'ok' | 'mild' | 'severe' };
+  hrvDeviation7d: { pct: number; recentMs: number | null; baselineMs: number | null; status: 'recovering' | 'stable' | 'declining' };
+  rhrDrift7d:     { bpmAboveBaseline: number; recent: number | null; baseline: number | null; status: 'normal' | 'elevated' };
+  recoveryScore:  number;
+  recommendation: string;
+}
+
 export interface PulseHomeScreenData {
   date: string;
   readiness: PulseReadiness;
@@ -213,4 +221,5 @@ export interface PulseHomeScreenData {
   nextWorkout: PulsePlannedWorkout | null;
   prognosis: PulsePrognosis;
   streaks: PulseStreaks;
+  recovery: PulseRecoveryMetrics | null;
 }

@@ -46,6 +46,15 @@ export const pulseApi = {
       request('/home'),
   },
 
+  nutrition: {
+    list: (workoutId?: string, activityId?: string, days = 14): Promise<{ logs: NutritionLog[] }> =>
+      request(`/nutrition?${workoutId ? `workoutId=${workoutId}&` : ''}${activityId ? `activityId=${activityId}&` : ''}days=${days}`),
+    create: (data: NutritionLogInput): Promise<NutritionLog> =>
+      request('/nutrition', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<void> =>
+      request(`/nutrition/${id}`, { method: 'DELETE' }),
+  },
+
   coach: {
     send: (message: string): Promise<{ reply: string }> =>
       request('/coach', { method: 'POST', body: JSON.stringify({ message }) }),
@@ -245,6 +254,24 @@ export const pulseApi = {
       request('/plan/today/accept', { method: 'POST', body: JSON.stringify({ workoutId }) }),
   },
 };
+
+// ─── Phase 9: Nutrition types ────────────────────────────────────────────────
+export interface NutritionLog {
+  id: string; userId: string; date: string;
+  workoutId: string | null; activityId: string | null;
+  context: 'pre' | 'during' | 'post' | 'daily' | null;
+  mealType: string | null; description: string | null;
+  calories: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null;
+  gelsCount: number | null; drinksMl: number | null; sodiumMg: number | null;
+  notes: string | null; createdAt: string;
+}
+export interface NutritionLogInput {
+  date?: string; workoutId?: string; activityId?: string;
+  context?: 'pre' | 'during' | 'post' | 'daily';
+  carbsG?: number; gelsCount?: number; drinksMl?: number; sodiumMg?: number;
+  calories?: number; proteinG?: number; fatG?: number;
+  description?: string; notes?: string;
+}
 
 // ─── Phase 6 types ───────────────────────────────────────────────────────────
 export interface HealthState {

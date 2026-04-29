@@ -5,6 +5,7 @@ import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { AdjustTodayCard } from '@/components/AdjustTodayCard';
 import { RaceCard } from '@/components/RaceCard';
+import { RecoveryStrip } from '@/components/RecoveryStrip';
 
 function fmt(v: number | null | undefined, dec = 0): string {
   return v == null ? '–' : v.toFixed(dec);
@@ -226,6 +227,9 @@ export default function Home() {
 
       {/* ── Race Card (next/current race) ── */}
       <RaceCard />
+
+      {/* ── Recovery Strip (sleep debt / HRV / RHR) ── */}
+      <RecoveryStrip />
 
       {/* ── Hero: Readiness ── */}
       <div style={{

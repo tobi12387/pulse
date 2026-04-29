@@ -14,6 +14,7 @@ import {
   pulseWeightLog,
   pulseWeekAvailability,
   pulseHealthState,
+  pulseNutritionLogs,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte, lte, isNull, or, sql } from 'drizzle-orm';
@@ -160,6 +161,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
 
+    const since30d = new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]!;
     const [
       [metrics],
       [mental],
@@ -168,6 +170,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       fitnessLoad,
       prognosis,
       streaks,
+      dailyHistory,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -188,7 +191,19 @@ export default async function pulsePlugin(app: FastifyInstance) {
       computeFitnessLoad(userId, today),
       getPrognosis(userId),
       computeStreaks(userId, today),
+      db.select({
+        sleepHours: pulseDailyMetrics.sleepHours,
+        hrvRmssd:   pulseDailyMetrics.hrvRmssd,
+        restingHr:  pulseDailyMetrics.restingHr,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since30d)))
+        .orderBy(desc(pulseDailyMetrics.date)),
     ]);
+
+    const { computeRecovery } = await import('../lib/recovery-metrics.js');
+    const recovery = dailyHistory.length >= 1
+      ? computeRecovery({ daily: dailyHistory })
+      : null;
 
     const mentalScore = mental
       ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
@@ -243,6 +258,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       } : null,
       prognosis,
       streaks,
+      recovery,
     };
   });
 
@@ -355,6 +371,36 @@ export default async function pulsePlugin(app: FastifyInstance) {
       checkins14,
       latestWeight: latestW ? { weightKg: latestW.weightKg, date: latestW.date, trend30d } : null,
     };
+
+    // Phase 9: enrich coach context with recovery metrics
+    try {
+      const { computeRecovery } = await import('../lib/recovery-metrics.js');
+      const dailyHistoryForCoach = await db.select({
+        sleepHours: pulseDailyMetrics.sleepHours,
+        hrvRmssd:   pulseDailyMetrics.hrvRmssd,
+        restingHr:  pulseDailyMetrics.restingHr,
+      }).from(pulseDailyMetrics)
+        .where(and(
+          eq(pulseDailyMetrics.userId, userId),
+          gte(pulseDailyMetrics.date, new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]!),
+        ))
+        .orderBy(desc(pulseDailyMetrics.date));
+      if (dailyHistoryForCoach.length >= 3) {
+        const r = computeRecovery({ daily: dailyHistoryForCoach });
+        coachCtx.recovery = {
+          sleepDebt7dH:    r.sleepDebt7d.hours,
+          sleepDebtStatus: r.sleepDebt7d.status,
+          hrvDeviationPct: r.hrvDeviation7d.pct,
+          hrvStatus:       r.hrvDeviation7d.status,
+          rhrDriftBpm:     r.rhrDrift7d.bpmAboveBaseline,
+          rhrStatus:       r.rhrDrift7d.status,
+          recoveryScore:   r.recoveryScore,
+          recommendation:  r.recommendation,
+        };
+      }
+    } catch (err) {
+      app.log.warn(`[coach] recovery context build failed: ${err}`);
+    }
 
     const systemPrompt = buildRichSystemPrompt(coachCtx);
     const existingSession = sessionRows[0] ?? null;
@@ -1479,6 +1525,87 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .returning({ id: pulseHealthState.id });
 
     if (!deleted) return reply.status(404).send({ error: 'Status nicht gefunden' });
+    return reply.status(204).send();
+  });
+
+  // ─── Nutrition logs (Phase 9) ────────────────────────────────────────────────
+  app.get('/nutrition', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { from?: string; to?: string; workoutId?: string; activityId?: string; days?: string };
+    const conds = [eq(pulseNutritionLogs.userId, userId)];
+
+    if (q.workoutId) conds.push(eq(pulseNutritionLogs.workoutId, q.workoutId));
+    if (q.activityId) conds.push(eq(pulseNutritionLogs.activityId, q.activityId));
+    if (q.from && /^\d{4}-\d{2}-\d{2}$/.test(q.from)) conds.push(gte(pulseNutritionLogs.date, q.from));
+    if (q.to   && /^\d{4}-\d{2}-\d{2}$/.test(q.to))   conds.push(lte(pulseNutritionLogs.date, q.to));
+    if (!q.from && !q.workoutId && !q.activityId) {
+      const days = Math.min(Math.max(parseInt(q.days ?? '14', 10), 1), 365);
+      const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
+      conds.push(gte(pulseNutritionLogs.date, since));
+    }
+
+    const logs = await db.select().from(pulseNutritionLogs)
+      .where(and(...conds))
+      .orderBy(desc(pulseNutritionLogs.date), desc(pulseNutritionLogs.createdAt));
+    return { logs };
+  });
+
+  app.post('/nutrition', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      context:     z.enum(['pre','during','post','daily']).optional(),
+      workoutId:   z.string().uuid().optional(),
+      activityId:  z.string().uuid().optional(),
+      mealType:    z.string().max(30).optional(),
+      description: z.string().max(500).optional(),
+      calories:    z.number().int().min(0).max(20000).optional(),
+      proteinG:    z.number().min(0).max(2000).optional(),
+      carbsG:      z.number().min(0).max(2000).optional(),
+      fatG:        z.number().min(0).max(1000).optional(),
+      gelsCount:   z.number().int().min(0).max(50).optional(),
+      drinksMl:    z.number().int().min(0).max(20000).optional(),
+      sodiumMg:    z.number().int().min(0).max(50000).optional(),
+      notes:       z.string().max(1000).optional(),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const date = parsed.data.date ?? new Date().toISOString().split('T')[0]!;
+
+    // Auto-derive carbs from gels if explicit carbs not provided (1 gel ≈ 25g)
+    let carbsG = parsed.data.carbsG;
+    if (carbsG == null && parsed.data.gelsCount != null && parsed.data.gelsCount > 0) {
+      carbsG = parsed.data.gelsCount * 25;
+    }
+
+    const [log] = await db.insert(pulseNutritionLogs).values({
+      userId, date,
+      context:     parsed.data.context     ?? null,
+      workoutId:   parsed.data.workoutId   ?? null,
+      activityId:  parsed.data.activityId  ?? null,
+      mealType:    parsed.data.mealType    ?? null,
+      description: parsed.data.description ?? null,
+      calories:    parsed.data.calories    ?? null,
+      proteinG:    parsed.data.proteinG    ?? null,
+      carbsG:      carbsG                  ?? null,
+      fatG:        parsed.data.fatG        ?? null,
+      gelsCount:   parsed.data.gelsCount   ?? null,
+      drinksMl:    parsed.data.drinksMl    ?? null,
+      sodiumMg:    parsed.data.sodiumMg    ?? null,
+      notes:       parsed.data.notes       ?? null,
+    }).returning();
+
+    return reply.status(201).send(log);
+  });
+
+  app.delete('/nutrition/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const [deleted] = await db.delete(pulseNutritionLogs)
+      .where(and(eq(pulseNutritionLogs.id, id), eq(pulseNutritionLogs.userId, userId)))
+      .returning({ id: pulseNutritionLogs.id });
+    if (!deleted) return reply.status(404).send({ error: 'Nicht gefunden' });
     return reply.status(204).send();
   });
 
