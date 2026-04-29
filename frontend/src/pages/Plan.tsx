@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import type { PulsePlannedWorkout, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
 
-type Tab = 'training' | 'ziele' | 'review' | 'analyse';
+type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -1089,7 +1089,7 @@ function ReviewTab() {
   );
 }
 
-// ─── Analyse ──────────────────────────────────────────────────────────────────
+// ─── Statistik ────────────────────────────────────────────────────────────────
 
 const ZONE_FILL: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--accent)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
@@ -1138,7 +1138,7 @@ function RangePicker({ value, onChange, options }: {
   );
 }
 
-function AnalyseTab() {
+function StatistikTab() {
   const [weeks, setWeeks] = useState(12);
   const { data, isLoading } = useTrainingAnalytics(weeks);
 
@@ -1173,6 +1173,11 @@ function AnalyseTab() {
 
   // Zone stacked bars
   const maxZoneH = Math.max(...zones.map(z => z.totalH), 0.1);
+  const totalHours = zones.reduce((sum, w) => sum + w.totalH, 0);
+  const lowHours = zones.reduce((sum, w) => sum + w.zones.z1 + w.zones.z2, 0);
+  const highHours = Math.max(totalHours - lowHours, 0);
+  const avgWeeklyHours = zones.length > 0 ? totalHours / zones.length : 0;
+  const lowPct = totalHours > 0 ? Math.round((lowHours / totalHours) * 100) : 0;
 
   // VO2max trend
   const vo2Labels = vo2maxRaw.map(d => d.date);
@@ -1183,6 +1188,34 @@ function AnalyseTab() {
       {/* Week range selector */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <RangePicker value={weeks} onChange={setWeeks} options={WEEK_RANGE_OPTS} />
+      </div>
+
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+          <span className="label-mono">Trainingsstatistik</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+            {weeks} Wochen
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+          {[
+            { label: 'Ø / Woche', value: `${avgWeeklyHours.toFixed(1)}h`, detail: `${totalHours.toFixed(1)}h gesamt` },
+            { label: 'Low Intensity', value: `${lowPct}%`, detail: `Z1/Z2 ${lowHours.toFixed(1)}h` },
+            { label: 'High Intensity', value: `${highHours.toFixed(1)}h`, detail: 'Z3-Z5 gesamt' },
+          ].map(item => (
+            <div key={item.label} style={{ padding: '10px', background: 'var(--surface)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase' }}>
+                {item.label}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--text)', marginTop: 4 }}>
+                {item.value}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', marginTop: 2 }}>
+                {item.detail}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── TSS Heatmap ── */}
@@ -1330,7 +1363,7 @@ const TABS = [
   { id: 'training', label: 'Training' },
   { id: 'ziele',    label: 'Ziele'    },
   { id: 'review',   label: 'Review'   },
-  { id: 'analyse',  label: 'Analyse'  },
+  { id: 'statistik', label: 'Statistik' },
 ];
 
 export default function Plan() {
@@ -1341,14 +1374,14 @@ export default function Plan() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 3 }}>PLAN</div>
-          <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Training, Ziele & Review</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Training, Ziele & Statistik</h1>
         </div>
         <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
       </div>
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}
       {tab === 'review'   && <ReviewTab />}
-      {tab === 'analyse'  && <AnalyseTab />}
+      {tab === 'statistik' && <StatistikTab />}
     </div>
   );
 }

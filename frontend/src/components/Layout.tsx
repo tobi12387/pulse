@@ -5,12 +5,12 @@ import { useCheckinToday } from '@/pulse/hooks';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Dashboard', key: '1', end: true  },
-  { to: '/coach',     label: 'Coach',     key: '2', end: false },
-  { to: '/data',      label: 'Data',      key: '3', end: false },
-  { to: '/plan',      label: 'Plan',      key: '4', end: false },
-  { to: '/insights',  label: 'Insights',  key: '5', end: false },
-  { to: '/settings',  label: 'Settings',  key: '⚙', end: false },
+  { to: '/',          label: 'Dashboard', mobileLabel: 'Home',    key: '1', end: true  },
+  { to: '/coach',     label: 'Coach',     mobileLabel: 'Coach',   key: '2', end: false },
+  { to: '/data',      label: 'Data',      mobileLabel: 'Data',    key: '3', end: false },
+  { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',    key: '4', end: false },
+  { to: '/insights',  label: 'Insights',  mobileLabel: 'Insight', key: '5', end: false },
+  { to: '/settings',  label: 'Settings',  mobileLabel: 'Set',     key: '6', end: false },
 ];
 
 export default function Layout() {
@@ -129,7 +129,7 @@ export default function Layout() {
         className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 52 }}
       >
-        {NAV_ITEMS.map(({ to, label, end }) => (
+        {NAV_ITEMS.map(({ to, label, mobileLabel, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -159,7 +159,7 @@ export default function Layout() {
                   color: isActive ? 'var(--accent)' : 'var(--text-3)',
                   transition: 'color 0.15s',
                 }}>
-                  {label}
+                  {mobileLabel ?? label}
                 </span>
               </>
             )}

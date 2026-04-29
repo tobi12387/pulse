@@ -12,13 +12,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/endpoint-page-consolidation`: Bundle C slice 1, cache/endpoints. PR #13.
+- `codex/plan-insights-consolidation`: Bundle C slice 2, Plan/Statistik + Insights navigation.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Bundle C slice 2: Plan/Analyse/Insights navigation consolidation and removal of remaining UI duplication.
-- Keep the already-open cache/endpoint PR separate from navigation consolidation.
+- Finish Bundle C slice 2, then move to RPE & Post-Workout Feedback.
 
 ## Out Of Scope Unless Reversed
 
