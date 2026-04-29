@@ -161,7 +161,7 @@ export const pulseApi = {
   garmin: {
     status: (): Promise<PulseDataStatus> =>
       request('/sync/status'),
-    sync: (): Promise<{ status: string; dates?: string[] }> =>
+    sync: (): Promise<{ status: string; days?: number; dates?: string[]; activities?: number }> =>
       request('/garmin/sync', { method: 'POST', body: '{}' }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
       request('/garmin/sync-profile', { method: 'POST', body: '{}' }),

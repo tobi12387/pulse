@@ -41,6 +41,10 @@ const coachMessageSchema = z.object({
   message: z.string().min(1).max(2000),
 });
 
+const garminSyncSchema = z.object({
+  days: z.number().int().min(1).max(30).optional().default(7),
+});
+
 // ─── Streak helpers ───────────────────────────────────────────────────────────
 
 function calcStreak(dates: string[], today: string): number {
@@ -2046,16 +2050,24 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
   // ─── Garmin manual sync ───────────────────────────────────────────────────────
   app.post('/garmin/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = garminSyncSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
     const userId = req.user.sub;
     const today = new Date();
-    const yesterday = new Date(Date.now() - 86_400_000);
+    const dates = Array.from({ length: parsed.data.days }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (parsed.data.days - 1 - i));
+      return d;
+    });
     try {
-      for (const date of [yesterday, today]) {
-        await syncGarminDay(userId, date, app);
-      }
+      const results = [];
+      for (const date of dates) results.push(await syncGarminDay(userId, date, app));
       return {
         status: 'synced',
-        dates: [yesterday, today].map(d => d.toISOString().split('T')[0]!),
+        days: parsed.data.days,
+        dates: results.map(r => r.date),
+        activities: results.reduce((sum, r) => sum + r.activities, 0),
       };
     } catch (err) {
       app.log.error(`Pulse Garmin sync failed: ${err}`);

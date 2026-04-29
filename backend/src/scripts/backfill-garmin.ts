@@ -7,9 +7,15 @@ import { pulseDailyMetrics } from '../db/pulse-schema.js';
 import { syncGarminDay } from '../routes/garmin.js';
 import { inArray } from 'drizzle-orm';
 
-const USER_ID = '00000000-0000-0000-0000-000000000001';
-const START   = new Date('2025-01-01');
-const END     = new Date(); // today
+const USER_ID = process.env['PULSE_USER_ID'] ?? '00000000-0000-0000-0000-000000000001';
+const DAYS    = Number(process.env['BACKFILL_DAYS'] ?? 0);
+const END     = process.env['BACKFILL_END'] ? new Date(process.env['BACKFILL_END']) : new Date();
+const START   = process.env['BACKFILL_START']
+  ? new Date(process.env['BACKFILL_START'])
+  : DAYS > 0
+  ? new Date(Date.now() - (DAYS - 1) * 86_400_000)
+  : new Date('2025-01-01');
+const FORCE   = process.env['BACKFILL_FORCE'] === 'true';
 const DELAY_MS = 1500; // pause between days to avoid Garmin rate limits
 
 const fakeApp = {
@@ -43,7 +49,7 @@ async function main() {
   console.log(`Total days in range: ${allDays.length}`);
 
   const synced = await getAlreadySynced(allDays);
-  const todo   = allDays.filter(d => !synced.has(d));
+  const todo   = FORCE ? allDays : allDays.filter(d => !synced.has(d));
   console.log(`Already synced: ${synced.size}, remaining: ${todo.length}`);
 
   let done = 0;

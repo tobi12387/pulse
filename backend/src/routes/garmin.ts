@@ -240,7 +240,7 @@ export async function syncGarminDay(
   userId: string,
   date: Date,
   app: FastifyInstance,
-): Promise<void> {
+): Promise<{ date: string; dailyMetrics: boolean; activities: number; weight: boolean }> {
   const gc      = await getGarminClient();
   const dateStr = date.toISOString().split('T')[0]!;
 
@@ -335,6 +335,7 @@ export async function syncGarminDay(
   }
 
   // Sync activities for this date
+  let activitiesWritten = 0;
   try {
     const activities = await (gc as any).getActivities(0, 20) as any[];
     const dayActivities = (activities ?? []).filter((a: any) => {
@@ -398,6 +399,7 @@ export async function syncGarminDay(
         }).returning({ id: pulseActivities.id });
 
       if (inserted) {
+        activitiesWritten++;
         await matchActivityToWorkout(userId, inserted.id, dateStr, activityType, app);
 
         // Backfill weather async — outdoor activities only, ignore failures
@@ -427,6 +429,7 @@ export async function syncGarminDay(
   }
 
   // Sync weight for this date
+  let weightWritten = false;
   try {
     const weightData = await gc.getDailyWeightData(date) as any;
     const entries: any[] = weightData?.dateWeightList ?? [];
@@ -443,9 +446,11 @@ export async function syncGarminDay(
         target: [pulseWeightLog.userId, pulseWeightLog.date],
         set: { weightKg, bodyFatPct, muscleMassKg, bmi, source: 'garmin' },
       });
+      weightWritten = true;
       app.log.info(`[garmin-sync] ${dateStr} weight: ${weightKg.toFixed(1)}kg`);
     }
   } catch { /* weight not tracked every day */ }
 
   app.log.info(`[garmin-sync] ${dateStr} ✓`);
+  return { date: dateStr, dailyMetrics: true, activities: activitiesWritten, weight: weightWritten };
 }

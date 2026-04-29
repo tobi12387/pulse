@@ -4,9 +4,23 @@ const { Pool } = pkg;
 import { env } from './env.js';
 import * as schema from '../db/schema.js';
 
-const connectionString = env.NODE_ENV === 'test'
-  ? (env.DATABASE_URL_TEST ?? env.DATABASE_URL)
-  : env.DATABASE_URL;
+function getConnectionString(): string {
+  if (env.NODE_ENV !== 'test') return env.DATABASE_URL;
+
+  if (!env.DATABASE_URL_TEST) {
+    throw new Error('DATABASE_URL_TEST is required when NODE_ENV=test');
+  }
+
+  const prodDb = new URL(env.DATABASE_URL).pathname;
+  const testDb = new URL(env.DATABASE_URL_TEST).pathname;
+  if (prodDb === testDb) {
+    throw new Error('DATABASE_URL_TEST must not point at the production database');
+  }
+
+  return env.DATABASE_URL_TEST;
+}
+
+const connectionString = getConnectionString();
 
 const pool = new Pool({ connectionString });
 
