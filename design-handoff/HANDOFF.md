@@ -1,6 +1,20 @@
 # Pulse Redesign — Handoff für Claude Code
 
-> **Kontext:** Pulse ist eine personal coaching app (Web/Mobile, Next.js + Supabase + LLM-Backend). Dieses Dokument fasst das aktuelle Designsystem, die explorierten Dark-Mode-Varianten und konkrete Implementierungs-Tasks zusammen, damit ein Engineering-Agent (Claude Code) das Redesign gegen die existierende Codebase umsetzen kann.
+> **⚠ HISTORISCHES DOKUMENT (Stand 2026-04-29).**
+> Dieses Handoff war für eine *frühere* Pulse-Iteration auf **Next.js + Supabase**
+> geschrieben. Der aktuelle Pulse-Stack ist **React 19 + Vite + Fastify + Postgres**
+> (siehe [../CLAUDE.md](../CLAUDE.md)).
+>
+> Die **visuellen Tokens, Layout-Prinzipien und Farb-/Typo-Werte** in diesem
+> Dokument sind weiterhin verbindlich — sie wurden 1:1 ins aktuelle Pulse-Frontend
+> übernommen (CSS-Variablen `--accent`, `--surface` etc. in `frontend/src/`).
+>
+> **NICHT befolgen:** Jegliche Implementierungs-Anweisungen, die `app/(app)/`,
+> `Next.js`, `Supabase`, `tailwind.config.ts` o.ä. erwähnen — das ist die alte Welt.
+> AI-Tools (Claude Code, Codex): Mocks im Browser anschauen, Tokens lesen, dann
+> in der Vite-/React-19-Codebase umsetzen.
+
+> **Kontext (historisch):** Pulse ist eine personal coaching app (Web/Mobile, Next.js + Supabase + LLM-Backend). Dieses Dokument fasst das aktuelle Designsystem, die explorierten Dark-Mode-Varianten und konkrete Implementierungs-Tasks zusammen, damit ein Engineering-Agent (Claude Code) das Redesign gegen die existierende Codebase umsetzen kann.
 
 ---
 

@@ -3,6 +3,8 @@
 This file is read by **OpenAI Codex** (and any AGENTS.md-aware AI tool).
 It mirrors the rules in [CLAUDE.md](CLAUDE.md), which is the single source of truth — read CLAUDE.md fully before doing anything substantial.
 
+> **Codex-specific full system prompt:** [docs/codex-system-prompt.md](docs/codex-system-prompt.md) — copy that into Codex's session/system-prompt slot. It contains the up-to-date roadmap order and the list of decisions that are no longer up for discussion (Telegram dropped, Habits dropped, Briefing-Schema migration, etc.).
+
 ---
 
 ## Hard rules (must)
@@ -72,3 +74,11 @@ Commit-message format: `type: short description` where type ∈ `feat | fix | re
 | Auth | argon2id |
 
 For everything else (repo layout, navigation tabs, full rules), see [CLAUDE.md](CLAUDE.md).
+
+---
+
+## Plan-Doc-Status
+
+`docs/superpowers/plans/` enthält **aktive** Pläne — implementiere die in der durch `2026-04-28-roadmap.md` definierten Reihenfolge.
+
+`docs/superpowers/plans/completed/` enthält **bereits implementierte** Pläne als historische Referenz. **Nicht erneut implementieren** — siehe `completed/README.md`.
