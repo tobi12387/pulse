@@ -1,19 +1,20 @@
-# Phase 11: Mental Themes Timeline & Data Export
+# Phase 11: Mental Themes Timeline
 
 > **Für agentic workers:** REQUIRED SUB-SKILL: `superpowers:subagent-driven-development`.
 >
 > **Voraussetzung:** [Bündel A — Context Unification](2026-04-29-bundle-a-context-unification.md), [Bündel C — Endpoint & Page Consolidation](2026-04-29-bundle-c-endpoint-page-consolidation.md). Mindestens 30 Tage Voice-Check-in-Daten für sinnvolle Theme-Aggregation.
 >
 > **Hinweis Re-Evaluation 2026-04-29:** Bündel C definiert klare Page-Aufgaben (Home / Data / Plan / Insights / Coach). Original-Plan war unentschieden, wo Theme-Timeline und Mental-Load-Overlay landen sollen. Diese Revision **legt fest**: Theme-Timeline = Data/Mental-Tab (strukturierte Daten), Mental-Load-Overlay = Insights (Narrativ + Multi-Series-Chart). Außerdem nutzt Insights-Engine Mental-Domain den `PulseContext` aus Bündel A — was die Phase deutlich kürzer macht, weil der ganze Context-Aufbau wegfällt.
+>
+> **Scope update 2026-04-29:** Datenexport ist gestrichen. Diese Phase fokussiert nur Mental-Theme-Timeline, Mental-Load-Overlay und die Theme-aware Insights-Engine.
 
-**Ziel:** Den letzten weißen Fleck schließen — die mentale Seite langfristig sichtbar machen — und einen sauberen Datenexport für Backup/externe Auswertung bereitstellen.
+**Ziel:** Den letzten weißen Fleck schließen — die mentale Seite langfristig sichtbar machen, ohne neue Export- oder Backup-Oberfläche.
 
 1. **Theme-Timeline** — Voice-Check-in extrahiert bereits `themes`, aber sie verschwinden im Datengrab. Neue Section im Data/Mental-Tab.
 2. **Mental-Load-Overlay** — Mood/Stress-Trend mit CTL/TSB-Linie; **gehört nach Insights**, nicht auf Data (Bündel-C-Abgrenzung).
 3. **Insights-Engine Mental-Domain wird Theme-aware** — nutzt PulseContext aus Bündel A.
-4. **CSV-Export** — alle Pulse-Daten exportierbar (Backup, externe Analyse, Doctor's-Visit).
 
-**Architektur:** Theme-Aggregation als reine Postgres-Query (kein neues Persistenz-Layer). Mental-Load-Overlay als Multi-Series-`SparkLine`-Erweiterung. Export als Streaming-CSV-Endpoint pro Datentyp + ZIP-Bündler. Kein State, keine Hintergrund-Jobs.
+**Architektur:** Theme-Aggregation als reine Postgres-Query (kein neues Persistenz-Layer). Mental-Load-Overlay als Multi-Series-`SparkLine`-Erweiterung. Kein State, keine Hintergrund-Jobs.
 
 **Repo root:** `/root/pulse`
 
@@ -38,7 +39,6 @@
 | `pulse_mental_checkins.themes` (string[]) | Nirgends visualisiert | ThemeTimeline Data/Mental-Tab |
 | `pulse_mental_checkins.mood/energy/stress/motivation` | 4-Tage-Sparkline auf Home | + Multi-Series-Overlay in Insights |
 | `pulse_fitness_load` (CTL/ATL/TSB) | Home + Plan/Analyse (Bündel C) | + überlagert mit Mental-Daten in Insights |
-| Daily Metrics, Sleep, Activities, Weight, Goals, Reviews | Backup nur via pg_dump | CSV-Export pro Datentyp + ZIP-Gesamt-Bundle |
 
 ---
 
@@ -46,15 +46,13 @@
 
 | Aktion | Pfad |
 |--------|------|
-| Modify | `backend/src/pulse/plugin.ts` (Theme-Endpoint, Mental-Load-Endpoint, Export-Endpoints) |
-| Create | `backend/src/lib/export.ts` |
+| Modify | `backend/src/pulse/plugin.ts` (Theme-Endpoint, Mental-Load-Endpoint) |
 | Modify | `backend/src/pulse/services/insight-engine.ts` (Mental-Domain Theme-aware) |
 | Modify | `backend/src/pulse/lib/pulse-context.ts` (optional: `mentalThemesRecent`) |
 | Modify | `frontend/src/pulse/api-client.ts` |
 | Modify | `frontend/src/pulse/hooks.ts` |
 | Modify | `frontend/src/pages/Data.tsx` (Mental-Tab erweitert) |
 | Modify | `frontend/src/pages/Insights.tsx` (Mental-Load-Overlay-Card) |
-| Modify | `frontend/src/pages/Settings.tsx` (Export-Card) |
 | Create | `frontend/src/components/ThemeTimeline.tsx` |
 | Create | `frontend/src/components/MentalLoadOverlay.tsx` |
 | Modify | `frontend/src/components/SparkChart.tsx` (Multi-Series-Erweiterung) |
@@ -215,76 +213,9 @@ Jede Serie wird in ihre eigene Y-Skala normalisiert. SVG-Stack identisch zur bes
 
 ---
 
-## Task 6: CSV-Export-Lib
-
-`backend/src/lib/export.ts`:
-
-```typescript
-import type { FastifyReply } from 'fastify';
-
-export async function streamCsv<T>(
-  reply: FastifyReply,
-  rows: AsyncIterable<T>,
-  columns: Array<{ key: keyof T & string; label: string }>,
-  filename: string,
-): Promise<void>;
-
-export async function streamZip(
-  reply: FastifyReply,
-  files: Array<{ filename: string; content: AsyncIterable<string> }>,
-  zipFilename: string,
-): Promise<void>;
-```
-
-Format: ISO-Datum, semicolon-separator (Excel-DE-freundlich) als Default. UTF-8 mit BOM.
-
----
-
-## Task 7: Export-Endpoints
-
-```
-GET /pulse/export/daily-metrics.csv?from=YYYY-MM-DD&to=YYYY-MM-DD
-GET /pulse/export/activities.csv
-GET /pulse/export/checkins.csv
-GET /pulse/export/workouts.csv
-GET /pulse/export/weight.csv
-GET /pulse/export/strength.csv          // Phase 10 — falls implementiert
-GET /pulse/export/all.zip               // ZIP mit allen CSVs + README.txt
-```
-
-Streaming via `pg-query-stream` oder cursor-basierter Drizzle-Iteration. Memory-Footprint konstant. Auth: `app.authenticate`.
-
----
-
-## Task 8: Settings — Export-UI
-
-```
-┌────────────────────────────────────────┐
-│ DATENEXPORT                             │
-│                                         │
-│ Zeitraum: [letzte 12 Monate ▼]          │
-│                                         │
-│ ☑ Tagesmetriken                         │
-│ ☑ Aktivitäten                           │
-│ ☑ Mental Check-ins                      │
-│ ☑ Geplante Workouts                     │
-│ ☑ Gewicht                               │
-│ ☑ Strength-Sessions  (falls Phase 10)   │
-│                                         │
-│ [ Als ZIP herunterladen ]                │
-└────────────────────────────────────────┘
-```
-
-ZIP enthält ausgewählte CSVs + `README.txt` mit Schema-Beschreibung.
-
-**Datenschutz-Hinweis** im Export-UI: „Export enthält alle persönlichen Gesundheitsdaten — sicher aufbewahren." Kein technisches Encryption-Setup nötig (Single-User, lokale Maschine).
-
----
-
-## Task 9: Tests
+## Task 6: Tests
 
 - `pulse-mental.test.ts`: Theme-Aggregation Counts korrekt, Resurfacing/Resolved-Heuristik, count=1 ausgefiltert.
-- `export.test.ts`: CSV-Streaming idempotent, ZIP enthält erwartete Files, Memory-Usage konstant bei 10.000+ Zeilen.
 - `insight-engine.test.ts`: Mental-Domain-Prompt enthält Top-Themes und CTL/TSB-Werte.
 - `MultiSparkLine.test.tsx`: 3 Serien rendern korrekt mit getrennten Y-Skalen.
 
@@ -299,7 +230,4 @@ ZIP enthält ausgewählte CSVs + `README.txt` mit Schema-Beschreibung.
 - [ ] Insights-Engine Mental-Domain nutzt `PulseContext` aus Bündel A
 - [ ] LLM-Prompt enthält Top-Themes und CTL/TSB-Korrelation
 - [ ] Klare Abgrenzung zu Risk-Engine `mental_negative_streak` dokumentiert (descriptive vs prescriptive)
-- [ ] CSV-Export aller Datentypen funktioniert (manueller Download-Test)
-- [ ] ZIP-Download enthält README + alle CSVs
-- [ ] Streaming bei 10.000+ Zeilen — kein OOM
 - [ ] Multi-Series-SparkLine wird auch von anderen Cards wiederverwendet (z.B. zukünftige Plan/Analyse-Volumen-Trends)

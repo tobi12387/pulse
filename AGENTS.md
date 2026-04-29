@@ -21,6 +21,19 @@ It mirrors the rules in [CLAUDE.md](CLAUDE.md), which is the single source of tr
 
 ---
 
+## Token-efficient AI context
+
+Before broad code exploration, read the compact AI working set:
+
+1. [`docs/ai/session-brief.md`](docs/ai/session-brief.md)
+2. [`docs/ai/current-focus.md`](docs/ai/current-focus.md)
+3. [`docs/ai/non-negotiables.md`](docs/ai/non-negotiables.md)
+4. [`docs/ai/context-map.md`](docs/ai/context-map.md)
+
+Use `docs/decisions.md` as the full decision history, not as the first place to re-read every past decision.
+
+---
+
 ## Pre-session ritual (run every time before starting work)
 
 ```bash

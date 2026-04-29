@@ -64,6 +64,7 @@ Single user, single instance, single Postgres DB — do not over-engineer.
 
 - **Aktive Pläne:** `docs/superpowers/plans/` — Reihenfolge in `docs/superpowers/plans/2026-04-28-roadmap.md`.
 - **Implementierte Pläne (read-only Historie):** `docs/superpowers/plans/completed/` — niemals erneut implementieren.
+- **Token-effizienter AI-Kontext:** Vor breiter Codeanalyse zuerst `docs/ai/session-brief.md`, `docs/ai/current-focus.md`, `docs/ai/non-negotiables.md` und `docs/ai/context-map.md` lesen. Danach nur das konkrete Plan-Doc und relevante Codeausschnitte laden.
 - **Codex-System-Prompt:** `docs/codex-system-prompt.md` ist seit 2026-04-29 nur noch ein dünner Pointer-Prompt (~10 Zeilen) zum Kopieren in Codex' System-Prompt-Slot. Codex liest `AGENTS.md` beim Session-Start automatisch — alle Hard Rules, Entscheidungen, Pläne leben in diesem Repo, nicht im Prompt.
 - **Decision Log:** `docs/decisions.md` — jede nicht-triviale Entscheidung (Architektur, Scope, Priorität) wird hier persistiert, **bevor** die Session endet. Lesen vor non-trivialer Arbeit, schreiben nach jeder Architektur-Wahl.
 
