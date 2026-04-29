@@ -8,6 +8,8 @@ vi.mock('../../lib/queue.js', () => ({
 vi.mock('../../lib/env.js', () => ({
   env: {
     REDIS_URL: 'redis://localhost:6380',
+    DATABASE_URL: 'postgresql://postgres:postgres@localhost:5433/coaching_os_v2',
+    DATABASE_URL_TEST: 'postgresql://postgres:postgres@localhost:5433/coaching_os_v2_test',
     NODE_ENV: 'test',
     FAST_MODEL: 'test-model',
     SMART_MODEL: 'test-model',

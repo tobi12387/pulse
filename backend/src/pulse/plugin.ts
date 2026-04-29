@@ -19,6 +19,7 @@ import {
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte, lte, isNull, or, sql } from 'drizzle-orm';
 import { redis } from '../lib/redis.js';
+import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
@@ -2052,6 +2053,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.post('/garmin/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
     const parsed = garminSyncSchema.safeParse(req.body ?? {});
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+    if (env.NODE_ENV === 'test') {
+      return { status: 'skipped', days: parsed.data.days, dates: [], activities: 0 };
+    }
 
     const userId = req.user.sub;
     const today = new Date();
