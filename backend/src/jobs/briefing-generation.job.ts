@@ -3,8 +3,8 @@ import type { Job, Queue, Worker } from 'bullmq';
 import { createQueue, createWorker } from '../lib/queue.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { db } from '../lib/db.js';
-import { dailyBriefings, checkIns, garminDailyHealth } from '../db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { dailyBriefings } from '../db/schema.js';
+import { buildPulseContextFor, type PulseContext } from '../pulse/lib/pulse-context.js';
 
 export const BRIEFING_QUEUE_NAME = 'briefing';
 
@@ -14,31 +14,49 @@ export interface BriefingJobData {
   date: string; // YYYY-MM-DD
 }
 
-type GarminRow = typeof garminDailyHealth.$inferSelect;
-type CheckInRow = typeof checkIns.$inferSelect;
-
 function buildBriefingSystemPrompt(): string {
   return `Du bist ein persönlicher Coach für Tobi, einen Ausdauersportler (polarized training).
 Deine Aufgabe: ein tägliches Coaching-Briefing auf Deutsch, 3-5 Sätze, konkret und umsetzbar.
 Fokus: Erholung, Trainingsbereitschaft, konkrete Empfehlung für heute.`;
 }
 
-function buildBriefingUserContent(
-  garmin: GarminRow | null,
-  checkin: CheckInRow | null,
+export function buildBriefingUserContentRich(
+  ctx: PulseContext,
   triggerType: 'check-in' | 'garmin-alarm',
 ): string {
-  const garminPart = garmin
-    ? `Garmin-Daten: Schlaf ${garmin.sleepDurationH ?? '–'}h (Score: ${garmin.sleepScore ?? '–'}), HRV-Status: ${garmin.hrvStatus ?? '–'}, Ruhepuls: ${garmin.restingHr ?? '–'} bpm, Body Battery: ${garmin.bodyBatteryMax ?? '–'}, Schritte: ${garmin.steps ?? '–'}`
-    : 'Keine Garmin-Daten für heute verfügbar.';
+  const m = ctx.todayMetrics;
+  const c = ctx.todayCheckin;
+  const nextWorkout = ctx.upcomingWorkouts[0] ?? null;
 
-  const checkinPart = checkin
-    ? `Tobis Check-in: Energielevel ${checkin.energyLevel}/10, Stresslevel ${checkin.stressLevel}/10${checkin.notes ? `, Notiz: ${checkin.notes}` : ''}.`
+  const metricsPart = m
+    ? `Pulse-Daten (${ctx.date}): Schlaf ${m.sleepHours ?? '–'}h (Score: ${m.sleepScore ?? '–'}), HRV ${m.hrvRmssd ?? '–'}ms (${m.hrvStatus ?? '–'}), Ruhepuls ${m.restingHr ?? '–'} bpm, Body Battery ${m.bodyBatteryMax ?? '–'}, Stress ${m.stressAvg ?? '–'}, Schritte ${m.steps ?? '–'}.`
+    : `Keine Pulse-Metriken für ${ctx.date} verfügbar.`;
+
+  const checkinPart = c
+    ? `Tobis Check-in: Stimmung ${c.mood}/10, Energie ${c.energy}/10, Stress ${c.stress}/10, Motivation ${c.motivation}/10${c.notes ? `, Notiz: ${c.notes}` : ''}.`
     : triggerType === 'garmin-alarm'
-    ? 'Kein Check-in heute (Alarm durch Garmin-Daten ausgelöst).'
+    ? 'Kein Check-in heute (Alarm durch Pulse-Metriken ausgelöst).'
     : 'Kein Check-in vorhanden.';
 
-  return `${garminPart}\n${checkinPart}\n\nErstelle das Briefing.`;
+  const loadPart = `Trainingslast: CTL ${ctx.fitnessLoad.ctl.toFixed(0)}, ATL ${ctx.fitnessLoad.atl.toFixed(0)}, TSB ${ctx.fitnessLoad.tsb.toFixed(0)}. Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label}).`;
+
+  const recoveryPart = ctx.recovery
+    ? `Recovery: Score ${ctx.recovery.recoveryScore}/100, Schlafdefizit 7d ${ctx.recovery.sleepDebt7d.hours.toFixed(1)}h (${ctx.recovery.sleepDebt7d.status}), HRV ${ctx.recovery.hrvDeviation7d.pct.toFixed(1)}% (${ctx.recovery.hrvDeviation7d.status}), Empfehlung: ${ctx.recovery.recommendation}.`
+    : 'Recovery: zu wenige Verlaufsdaten für eine belastbare 7d/30d-Einschätzung.';
+
+  const healthPart = ctx.activeHealthStates.length > 0
+    ? `Aktive Health-States: ${ctx.activeHealthStates.map(h => `${h.type}/${h.severity}${h.bodyPart ? ` ${h.bodyPart}` : ''}${h.notes ? ` (${h.notes})` : ''}`).join('; ')}.`
+    : 'Keine aktiven Health-States.';
+
+  const workoutPart = nextWorkout
+    ? `Nächstes Training: ${nextWorkout.plannedDate} ${nextWorkout.activityType} Z${nextWorkout.zone}, ${nextWorkout.durationMin}min${nextWorkout.description ? ` (${nextWorkout.description})` : ''}.`
+    : 'Kein geplantes nächstes Training.';
+
+  const racePart = ctx.nextRace
+    ? `Nächstes Rennen/Ziel: ${ctx.nextRace.title} am ${ctx.nextRace.date} (${ctx.nextRace.daysUntil} Tage).`
+    : 'Kein aktives Rennen hinterlegt.';
+
+  return `${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${healthPart}\n${workoutPart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn ein aktiver Health-State existiert, muss er konkret in der Empfehlung berücksichtigt werden.`;
 }
 
 export async function processBriefingJob(
@@ -47,26 +65,17 @@ export async function processBriefingJob(
 ): Promise<void> {
   const { userId, triggerType, date } = job.data;
 
-  const [garmin] = await db.select()
-    .from(garminDailyHealth)
-    .where(and(eq(garminDailyHealth.userId, userId), eq(garminDailyHealth.date, date)));
-
-  const [checkin] = triggerType === 'check-in'
-    ? await db.select().from(checkIns).where(
-        and(eq(checkIns.userId, userId), eq(checkIns.date, date))
-      )
-    : [undefined];
-
+  const ctx = await buildPulseContextFor(userId, date);
   const systemPrompt = buildBriefingSystemPrompt();
-  const userContent  = buildBriefingUserContent(garmin ?? null, checkin ?? null, triggerType);
+  const userContent  = buildBriefingUserContentRich(ctx, triggerType);
   const briefingText = await llmComplete(systemPrompt, userContent, SMART_MODEL);
 
   await db.insert(dailyBriefings).values({
     userId,
     date,
     triggerType,
-    garminSnapshot:  garmin  ? { ...garmin }  : null,
-    checkinSnapshot: checkin ? { ...checkin } : null,
+    garminSnapshot:  ctx.todayMetrics ? { ...ctx.todayMetrics } : null,
+    checkinSnapshot: ctx.todayCheckin ? { ...ctx.todayCheckin } : null,
     briefingText,
   });
 

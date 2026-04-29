@@ -200,10 +200,10 @@ async function matchActivityToWorkout(
 export default async function garminRoutes(app: FastifyInstance) {
   // GET /api/garmin/status
   app.get('/status', { onRequest: [app.authenticate] }, async (req) => {
-    const [latest] = await db.select({ syncedAt: garminDailyHealth.syncedAt })
-      .from(garminDailyHealth)
-      .where(eq(garminDailyHealth.userId, req.user.sub))
-      .orderBy(desc(garminDailyHealth.syncedAt))
+    const [latest] = await db.select({ syncedAt: pulseDailyMetrics.syncedAt })
+      .from(pulseDailyMetrics)
+      .where(eq(pulseDailyMetrics.userId, req.user.sub))
+      .orderBy(desc(pulseDailyMetrics.syncedAt))
       .limit(1);
 
     const lastSync = latest?.syncedAt?.toISOString() ?? null;
@@ -301,6 +301,7 @@ export async function syncGarminDay(
     syncedAt: new Date(),
   };
 
+  // LEGACY: garmin_daily_health write — entfernen sobald letzter Konsument auf pulse_daily_metrics migriert.
   await db.insert(garminDailyHealth).values({ userId, date: dateStr, ...upsertSet })
     .onConflictDoUpdate({ target: [garminDailyHealth.userId, garminDailyHealth.date], set: upsertSet });
 

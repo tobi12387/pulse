@@ -18,6 +18,14 @@ export interface CoachFullContext {
     ftpWatts: number | null; maxHrBpm: number | null;
     vo2max: number | null; trainingPhase: string | null;
   } | null;
+  activeHealthStates?: Array<{
+    type: string;
+    severity: string;
+    bodyPart: string | null;
+    notes: string | null;
+    startDate: string;
+    endDate: string | null;
+  }>;
   recentActivities: Array<{
     date: string; activityType: string; durationSec: number | null;
     tss: number | null; normalizedPowerW: number | null; avgHr: number | null;
@@ -74,6 +82,16 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
   if (ctx.recovery) {
     const r = ctx.recovery;
     s += `\n\n== RECOVERY (7d vs 30d-Baseline) ==\nScore ${r.recoveryScore}/100 | Schlafdefizit ${r.sleepDebt7dH.toFixed(1)}h (${r.sleepDebtStatus}) | HRV ${r.hrvDeviationPct.toFixed(1)}% (${r.hrvStatus}) | Ruhepuls +${r.rhrDriftBpm.toFixed(1)}bpm (${r.rhrStatus})\nEmpfehlung: ${r.recommendation}`;
+  }
+
+  if (ctx.activeHealthStates && ctx.activeHealthStates.length > 0) {
+    s += '\n\n== AKTIVE HEALTH-STATES ==';
+    ctx.activeHealthStates.forEach(h => {
+      const part = h.bodyPart ? ` ${h.bodyPart}` : '';
+      const note = h.notes ? ` — ${h.notes.slice(0, 80)}` : '';
+      const end = h.endDate ? ` bis ${h.endDate}` : '';
+      s += `\n${h.type}/${h.severity}${part} seit ${h.startDate}${end}${note}`;
+    });
   }
 
   s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;

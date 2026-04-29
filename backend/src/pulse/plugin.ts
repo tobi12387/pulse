@@ -26,8 +26,9 @@ import { computeFitnessLoad, computeReadinessScore } from './services/load-engin
 import { getPrognosis } from './services/prognosis-engine.js';
 import {
   buildRichSystemPrompt, getCoachReplyRich,
-  classifyAndExtractCheckin, type CheckinClassification, type CoachFullContext,
+  classifyAndExtractCheckin, type CheckinClassification,
 } from './services/coach-engine.js';
+import { buildPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
@@ -344,142 +345,18 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     const userId = req.user.sub;
     const today  = new Date().toISOString().split('T')[0]!;
-    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().split('T')[0]!;
 
-    // Fetch all context in parallel
-    const [
-      metricsRows, mentalRows, fitnessLoad,
-      metrics14, checkins14, activities10,
-      upcomingWorkouts, profileRows, weightRows, sessionRows,
-    ] = await Promise.all([
-      db.select().from(pulseDailyMetrics)
-        .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))).limit(1),
-      db.select().from(pulseMentalCheckins)
-        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today))).limit(1),
-      computeFitnessLoad(userId, today),
-      db.select({ date: pulseDailyMetrics.date, sleepHours: pulseDailyMetrics.sleepHours,
-        hrvRmssd: pulseDailyMetrics.hrvRmssd, bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
-        stressAvg: pulseDailyMetrics.stressAvg })
-        .from(pulseDailyMetrics)
-        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since14)))
-        .orderBy(pulseDailyMetrics.date),
-      db.select({ date: pulseMentalCheckins.date, mood: pulseMentalCheckins.mood,
-        energy: pulseMentalCheckins.energy, stress: pulseMentalCheckins.stress,
-        motivation: pulseMentalCheckins.motivation })
-        .from(pulseMentalCheckins)
-        .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since14)))
-        .orderBy(pulseMentalCheckins.date),
-      db.select({ startTime: pulseActivities.startTime, activityType: pulseActivities.activityType,
-        durationSec: pulseActivities.durationSec, tss: pulseActivities.tss,
-        normalizedPowerW: pulseActivities.normalizedPowerW, avgHr: pulseActivities.avgHr })
-        .from(pulseActivities)
-        .where(eq(pulseActivities.userId, userId))
-        .orderBy(desc(pulseActivities.startTime)).limit(10),
-      db.select({ plannedDate: pulsePlannedWorkouts.plannedDate, activityType: pulsePlannedWorkouts.activityType,
-        zone: pulsePlannedWorkouts.zone, durationMin: pulsePlannedWorkouts.durationMin,
-        description: pulsePlannedWorkouts.description })
-        .from(pulsePlannedWorkouts)
-        .where(and(eq(pulsePlannedWorkouts.userId, userId), eq(pulsePlannedWorkouts.status, 'planned'), gte(pulsePlannedWorkouts.plannedDate, today)))
-        .orderBy(pulsePlannedWorkouts.plannedDate).limit(3),
-      db.select({ ftpWatts: pulseUserProfile.ftpWatts, maxHrBpm: pulseUserProfile.maxHrBpm,
-        vo2max: pulseUserProfile.vo2max, trainingPhase: pulseUserProfile.trainingPhase })
-        .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
-      db.select({ date: pulseWeightLog.date, weightKg: pulseWeightLog.weightKg })
-        .from(pulseWeightLog).where(eq(pulseWeightLog.userId, userId))
-        .orderBy(desc(pulseWeightLog.date)).limit(35),
+    const [[existingSession], pulseContext] = await Promise.all([
       db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })
-        .from(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId))
-        .orderBy(desc(pulseCoachSessions.lastMessageAt)).limit(1),
+        .from(pulseCoachSessions)
+        .where(eq(pulseCoachSessions.userId, userId))
+        .orderBy(desc(pulseCoachSessions.lastMessageAt))
+        .limit(1),
+      buildPulseContextFor(userId, today),
     ]);
 
-    const metrics = metricsRows[0] ?? null;
-    const mental  = mentalRows[0]  ?? null;
-
-    const mentalScore = mental
-      ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
-      : null;
-    const readiness = computeReadinessScore({
-      sleepHours:     metrics?.sleepHours ?? null,
-      hrvStatus:      metrics?.hrvStatus ?? null,
-      bodyBatteryMax: metrics?.bodyBatteryMax ?? null,
-      stressAvg:      metrics?.stressAvg ?? null,
-      mentalScore,
-      tsb:            fitnessLoad.tsb,
-    });
-
-    // Weight trend
-    const latestW  = weightRows[0] ?? null;
-    const cutoff30 = new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]!;
-    const w30ago   = weightRows.find(w => w.date <= cutoff30) ?? null;
-    const trend30d = latestW && w30ago
-      ? Math.round((latestW.weightKg - w30ago.weightKg) * 10) / 10
-      : null;
-
-    const coachCtx: CoachFullContext = {
-      today,
-      readiness: { score: readiness.score, label: readiness.label },
-      todayMetrics: metrics ? {
-        sleepHours:     metrics.sleepHours,
-        sleepScore:     null,
-        hrvRmssd:       metrics.hrvRmssd,
-        hrvStatus:      metrics.hrvStatus,
-        restingHr:      null,
-        bodyBatteryMax: metrics.bodyBatteryMax,
-        stressAvg:      metrics.stressAvg,
-        steps:          null,
-      } : null,
-      todayCheckin: mental ? {
-        mood: mental.mood, energy: mental.energy, stress: mental.stress,
-        motivation: mental.motivation, notes: mental.notes,
-      } : null,
-      load: { ctl: fitnessLoad.ctl, atl: fitnessLoad.atl, tsb: fitnessLoad.tsb },
-      profile: profileRows[0] ?? null,
-      recentActivities: activities10.map(a => ({
-        date: new Date(a.startTime).toISOString().split('T')[0]!,
-        activityType: a.activityType,
-        durationSec: a.durationSec,
-        tss: a.tss,
-        normalizedPowerW: a.normalizedPowerW,
-        avgHr: a.avgHr,
-      })),
-      upcomingWorkouts,
-      metrics14,
-      checkins14,
-      latestWeight: latestW ? { weightKg: latestW.weightKg, date: latestW.date, trend30d } : null,
-    };
-
-    // Phase 9: enrich coach context with recovery metrics
-    try {
-      const { computeRecovery } = await import('../lib/recovery-metrics.js');
-      const dailyHistoryForCoach = await db.select({
-        sleepHours: pulseDailyMetrics.sleepHours,
-        hrvRmssd:   pulseDailyMetrics.hrvRmssd,
-        restingHr:  pulseDailyMetrics.restingHr,
-      }).from(pulseDailyMetrics)
-        .where(and(
-          eq(pulseDailyMetrics.userId, userId),
-          gte(pulseDailyMetrics.date, new Date(Date.now() - 60 * 86_400_000).toISOString().split('T')[0]!),
-        ))
-        .orderBy(desc(pulseDailyMetrics.date));
-      if (dailyHistoryForCoach.length >= 3) {
-        const r = computeRecovery({ daily: dailyHistoryForCoach });
-        coachCtx.recovery = {
-          sleepDebt7dH:    r.sleepDebt7d.hours,
-          sleepDebtStatus: r.sleepDebt7d.status,
-          hrvDeviationPct: r.hrvDeviation7d.pct,
-          hrvStatus:       r.hrvDeviation7d.status,
-          rhrDriftBpm:     r.rhrDrift7d.bpmAboveBaseline,
-          rhrStatus:       r.rhrDrift7d.status,
-          recoveryScore:   r.recoveryScore,
-          recommendation:  r.recommendation,
-        };
-      }
-    } catch (err) {
-      app.log.warn(`[coach] recovery context build failed: ${err}`);
-    }
-
+    const coachCtx = mapPulseContextToCoachContext(pulseContext);
     const systemPrompt = buildRichSystemPrompt(coachCtx);
-    const existingSession = sessionRows[0] ?? null;
     const history = (existingSession?.messages as PulseCoachMessage[] ?? []);
 
     const replyText = await getCoachReplyRich(parsed.data.message, systemPrompt, history);

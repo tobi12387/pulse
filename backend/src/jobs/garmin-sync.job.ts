@@ -5,11 +5,11 @@ import { createQueue, createWorker } from '../lib/queue.js';
 import type { Queue, Worker } from 'bullmq';
 import { syncGarminDay } from '../routes/garmin.js';
 import { db } from '../lib/db.js';
-import { users, garminDailyHealth } from '../db/schema.js';
+import { users } from '../db/schema.js';
 import { eq, and, max } from 'drizzle-orm';
 import { BRIEFING_QUEUE_NAME } from './briefing-generation.job.js';
 import type { BriefingJobData } from './briefing-generation.job.js';
-import { pulseUserProfile, pulseActivities } from '../db/pulse-schema.js';
+import { pulseUserProfile, pulseActivities, pulseDailyMetrics } from '../db/pulse-schema.js';
 
 export const CIRCUIT_FAILURES_KEY = 'garmin:circuit:failures';
 export const CIRCUIT_OPEN_KEY     = 'garmin:circuit:open';
@@ -45,12 +45,12 @@ export async function runWithCircuitBreaker(
 
 export function detectAlarms(health: {
   hrvStatus: string | null;
-  sleepDurationH: number | null;
+  sleepHours: number | null;
   bodyBatteryMax: number | null;
 }): boolean {
   return (
     health.hrvStatus === 'poor' ||
-    (health.sleepDurationH !== null && health.sleepDurationH < 6.0) ||
+    (health.sleepHours !== null && health.sleepHours < 6.0) ||
     (health.bodyBatteryMax !== null && health.bodyBatteryMax < 20)
   );
 }
@@ -98,11 +98,11 @@ async function syncGarminProfile(userId: string, app: FastifyInstance): Promise<
 async function checkGarminAlarms(userId: string, app: FastifyInstance): Promise<void> {
   const today = new Date().toISOString().split('T')[0]!;
   const [health] = await db.select({
-    hrvStatus:      garminDailyHealth.hrvStatus,
-    sleepDurationH: garminDailyHealth.sleepDurationH,
-    bodyBatteryMax: garminDailyHealth.bodyBatteryMax,
-  }).from(garminDailyHealth).where(
-    and(eq(garminDailyHealth.userId, userId), eq(garminDailyHealth.date, today))
+    hrvStatus:      pulseDailyMetrics.hrvStatus,
+    sleepHours:     pulseDailyMetrics.sleepHours,
+    bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+  }).from(pulseDailyMetrics).where(
+    and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))
   );
 
   if (!health || !detectAlarms(health)) return;
