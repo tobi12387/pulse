@@ -29,7 +29,7 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0',
-    port: 5174,
+    port: 5175,
     https: {
       key:  fs.readFileSync(path.resolve(__dirname, 'certs/192.168.178.46+2-key.pem')),
       cert: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.178.46+2.pem')),

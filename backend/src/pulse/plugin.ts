@@ -161,7 +161,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
 
-    const since30d = new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]!;
+    const since60d = new Date(Date.now() - 60 * 86_400_000).toISOString().split('T')[0]!;
     const [
       [metrics],
       [mental],
@@ -196,7 +196,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         hrvRmssd:   pulseDailyMetrics.hrvRmssd,
         restingHr:  pulseDailyMetrics.restingHr,
       }).from(pulseDailyMetrics)
-        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since30d)))
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since60d)))
         .orderBy(desc(pulseDailyMetrics.date)),
     ]);
 
@@ -382,7 +382,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }).from(pulseDailyMetrics)
         .where(and(
           eq(pulseDailyMetrics.userId, userId),
-          gte(pulseDailyMetrics.date, new Date(Date.now() - 30 * 86_400_000).toISOString().split('T')[0]!),
+          gte(pulseDailyMetrics.date, new Date(Date.now() - 60 * 86_400_000).toISOString().split('T')[0]!),
         ))
         .orderBy(desc(pulseDailyMetrics.date));
       if (dailyHistoryForCoach.length >= 3) {

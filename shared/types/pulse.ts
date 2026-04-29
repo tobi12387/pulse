@@ -205,7 +205,7 @@ export interface PulseStreaks {
 }
 
 export interface PulseRecoveryMetrics {
-  sleepDebt7d:    { hours: number; targetH: number; status: 'ok' | 'mild' | 'severe' };
+  sleepDebt7d:    { hours: number; targetH: number; baselineSource: 'adaptive' | 'fixed_default'; status: 'ok' | 'mild' | 'severe' };
   hrvDeviation7d: { pct: number; recentMs: number | null; baselineMs: number | null; status: 'recovering' | 'stable' | 'declining' };
   rhrDrift7d:     { bpmAboveBaseline: number; recent: number | null; baseline: number | null; status: 'normal' | 'elevated' };
   recoveryScore:  number;

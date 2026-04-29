@@ -6,9 +6,10 @@
 // - Sleep target defaults to 8.0 h, override per user via profile.
 
 export interface SleepDebt {
-  hours: number;                      // sum(target - actual) over last 7 days, negative = surplus
-  targetH: number;
-  status: 'ok' | 'mild' | 'severe';   // <2h ok, 2-5h mild, >5h severe
+  hours: number;                      // sum(baseline - actual) over last 7 days, negative = surplus
+  targetH: number;                    // baseline used (adaptive median of days 8-60, or default if too little data)
+  baselineSource: 'adaptive' | 'fixed_default';
+  status: 'ok' | 'mild' | 'severe';   // <2h ok, 2-5h mild, >5h severe (vs personal baseline)
 }
 
 export interface HrvDeviation {
@@ -54,7 +55,35 @@ function minN(values: (number | null | undefined)[]): number | null {
 
 // ─── Sleep debt ──────────────────────────────────────────────────────────────
 
-function computeSleepDebt(samples: Sample[], targetH: number): SleepDebt {
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const m = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[m - 1]! + sorted[m]!) / 2
+    : sorted[m]!;
+}
+
+// Personal sleep baseline = median of days 8..60 (excluding last week to avoid
+// recent dip leaking into target). Floored at 6.5h to refuse normalizing chronic
+// deprivation, capped at 9.0h to avoid unrealistic ceilings.
+function computeAdaptiveBaseline(samples: Sample[], fallbackH: number): { h: number; source: SleepDebt['baselineSource'] } {
+  const baselineSamples = samples
+    .slice(7, 60)
+    .map(s => s.sleepHours)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 2 && v < 14);
+  if (baselineSamples.length < 14) {
+    return { h: fallbackH, source: 'fixed_default' };
+  }
+  const m = median(baselineSamples);
+  const clamped = Math.min(9.0, Math.max(6.5, m));
+  return { h: Math.round(clamped * 10) / 10, source: 'adaptive' };
+}
+
+function computeSleepDebt(samples: Sample[], fallbackTargetH: number): SleepDebt {
+  const baseline = computeAdaptiveBaseline(samples, fallbackTargetH);
+  const targetH = baseline.h;
+
   const last7 = samples.slice(0, 7);
   let debt = 0;
   let counted = 0;
@@ -64,16 +93,14 @@ function computeSleepDebt(samples: Sample[], targetH: number): SleepDebt {
       counted++;
     }
   }
-  // If we have <3 valid days, we can't trust the number — return mild and 0
   if (counted < 3) {
-    return { hours: 0, targetH, status: 'ok' };
+    return { hours: 0, targetH, baselineSource: baseline.source, status: 'ok' };
   }
-  // Scale proportionally if some days are missing
   if (counted < 7) debt = (debt / counted) * 7;
 
-  const abs = Math.abs(debt);
-  const status: SleepDebt['status'] = abs < 2 ? 'ok' : abs < 5 ? 'mild' : 'severe';
-  return { hours: Math.round(debt * 10) / 10, targetH, status };
+  // Only positive debt (= shortfall) is bad. Surplus (negative) stays 'ok'.
+  const status: SleepDebt['status'] = debt < 2 ? 'ok' : debt < 5 ? 'mild' : 'severe';
+  return { hours: Math.round(debt * 10) / 10, targetH, baselineSource: baseline.source, status };
 }
 
 // ─── HRV deviation ───────────────────────────────────────────────────────────
@@ -129,8 +156,8 @@ function computeRhrDrift(samples: Sample[]): RhrDrift {
 // ─── Composite recovery score ────────────────────────────────────────────────
 
 function computeRecoveryScore(d: SleepDebt, h: HrvDeviation, r: RhrDrift): number {
-  // sleep factor: 100 at debt=0, linear -10/hour debt, floor 0
-  const sleepFactor = Math.max(0, 100 - Math.abs(d.hours) * 10);
+  // sleep factor: 100 at debt=0, linear -10/hour shortfall, surplus capped at 100
+  const sleepFactor = Math.max(0, 100 - Math.max(0, d.hours) * 10);
   // hrv factor: 100 at +10%, linear -3 per pct point below 0
   const hrvFactor =
     h.recentMs == null || h.baselineMs == null ? 60 :
@@ -169,11 +196,11 @@ function buildRecommendation(d: SleepDebt, h: HrvDeviation, r: RhrDrift, score: 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export function computeRecovery(args: {
-  daily: Sample[];           // newest first; >= 1 row required, ideally 7-30
-  sleepTargetH?: number;
+  daily: Sample[];           // newest first; >= 1 row required, ideally 7-60 for adaptive baseline
+  sleepTargetH?: number;     // user override; defaults to 8.0h fallback when adaptive baseline unavailable
 }): RecoveryMetrics {
   const targetH = args.sleepTargetH ?? 8.0;
-  const samples = args.daily.slice(0, 30);
+  const samples = args.daily.slice(0, 60);
 
   const sleepDebt7d   = computeSleepDebt(samples, targetH);
   const hrvDeviation7d = computeHrvDeviation(samples);

@@ -7,7 +7,7 @@
 2. Trend-Charts für HRV, Schlaf, Readiness und Load (visuell statt Karten-Listen)
 3. Gewichts-Tracking mit Trendlinie und Zielgewicht
 
-**Architektur:** Kein neues Framework. Charts als leichtgewichtige SVG-Inline-Komponenten (kein Recharts/Chart.js — zu groß für den Use Case). Gewicht als neue Tabelle `pulse_weight_log`. Trainingsplan-Generierung via LLM (Claude SMART_MODEL), Backend-Endpunkt `POST /api/pulse/plan/generate` bereits vorhanden — Qualität verbessern.
+**Architektur:** Kein neues Framework. Charts als leichtgewichtige SVG-Inline-Komponenten (kein Recharts/Chart.js — zu groß für den Use Case). Gewicht als Sub-Tab in der Data-Page (neben Schlaf, Metriken, Mental)elle `pulse_weight_log`. Trainingsplan-Generierung via LLM (Claude SMART_MODEL), Backend-Endpunkt `POST /api/pulse/plan/generate` bereits vorhanden — Qualität verbessern.
 
 **Repo root:** `/root/pulse`
 
@@ -548,7 +548,7 @@ git -C /root/pulse commit -m "feat: LLM-Trainingsplan + Generate-Button + Check-
 
 **Design:** Einfach halten. Tägliche Gewichtseingabe (kg, 1 Dezimalstelle), Trend über 30 Tage, Zielgewicht. Kein Body-Fat, keine Körperzusammensetzung — das gehört in Phase 5.
 
-**Wo in der UI:** Neues Tab "Gewicht" in der Data-Page (neben Schlaf + Mental).
+**Wo in der UI:** Gewicht als Sub-Tab in der Data-Page (neben Schlaf, Metriken, Mental)).
 
 **Files:**
 - Modify: `backend/src/db/pulse-schema.ts`
