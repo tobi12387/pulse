@@ -452,6 +452,36 @@ export default function Home() {
         </div>
       )}
 
+      <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', marginBottom: 5 }}>
+              KI-ANALYSE
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+              Trends und Zusammenhänge aus Schlaf, HRV, Belastung, Gewicht und Mentaldaten.
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/insights')}
+            style={{
+              flexShrink: 0,
+              padding: '9px 11px',
+              background: 'var(--surface-2)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '.12em',
+              cursor: 'pointer',
+            }}
+          >
+            INSIGHTS
+          </button>
+        </div>
+      </div>
+
       {/* ── Recent Activities ── */}
       {data.recentActivities.length > 0 && (
         <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>

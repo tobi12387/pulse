@@ -36,14 +36,15 @@ Single user, single instance, single Postgres DB — do not over-engineer.
 
 ---
 
-## Navigation (5 flat tabs)
+## Navigation (6 flat tabs)
 
 | Route | Page | Icon |
 |-------|------|------|
 | `/` | Home (Readiness, metrics, briefing, activities) | ⚡ |
 | `/coach` | Coach (Chat + Garmin context) | 💬 |
 | `/data` | Daten (Schlaf tab, Mental/Check-in tab) | 📊 |
-| `/plan` | Plan (Training, Ziele, Review tabs) | 📅 |
+| `/plan` | Plan (Training, Ziele, Review, Statistik tabs) | 📅 |
+| `/insights` | Insights (KI-Analyse, Trends, Narrativ) | ✨ |
 | `/settings` | Settings (Garmin sync, account) | ⚙️ |
 
 ---
