@@ -1,0 +1,87 @@
+# Pulse — Decision Log
+
+> **Pflicht-Datei für AI-Tools (Claude Code + Codex):** Jede nicht-triviale
+> Entscheidung — Architektur, Scope, Priorität, technische Wahl —
+> bekommt einen Eintrag hier, **bevor** die Session endet. Wenn eine
+> Entscheidung nur im Chat besprochen wird, ist sie nicht passiert.
+>
+> Format pro Eintrag:
+> - **Decision:** was entschieden wurde (1 Zeile)
+> - **Why:** der Grund (1–3 Sätze)
+> - **Alternatives:** verworfene Optionen, kurz
+> - **Decided by:** Tobi / Claude Code / Codex (+ PR/Chat-Link, falls vorhanden)
+> - **Status:** `active` | `superseded by [link]` | `reversed [date]`
+>
+> **Newest first.** Append-only — bestehende Einträge nie editieren,
+> stattdessen neuen Eintrag mit Status `superseded` oder `reversed`
+> anlegen.
+
+---
+
+## 2026-04-29 — Decision-Log eingeführt + CI-Sync-Check
+
+- **Decision:** Diese Datei (`docs/decisions.md`) wird zur Pflicht für jede AI-Session. Zusätzlich CI-Workflow `.github/workflows/docs-sync.yml`, der prüft, ob Hard-Rule-Marker in CLAUDE.md, AGENTS.md, codex-system-prompt.md vorhanden sind.
+- **Why:** Setup mit drei Tools (Claude Code, Codex, Tobi manuell) und drei Doc-Dateien hat zwei Drift-Risiken: (a) Chat-Entscheidungen werden nicht persistiert; (b) die drei Doc-Dateien laufen auseinander, wenn nur eine geändert wird.
+- **Alternatives:** „Nur ehrliche Disziplin" (zu fragil); ein einziges Master-Doc mit Includes (zu invasiv für die unterschiedliche Tonalität pro Audience).
+- **Decided by:** Tobi + Claude Code, [PR pending].
+- **Status:** active.
+
+---
+
+## 2026-04-29 — `completed/`-Archiv für erledigte Pläne
+
+- **Decision:** 11 Plan-Dateien (Phasen 3a–9, Mental-Check-in, HR-First) und 1 Spec nach `docs/superpowers/plans/completed/` bzw. `specs/completed/` verschoben. `completed/README.md` mit „⚠ do not implement"-Banner.
+- **Why:** AI-Tools sollen nicht versehentlich abgeschlossene Pläne re-implementieren. Top-Level `plans/` enthält nur noch aktive Pläne.
+- **Alternatives:** Pläne in-place mit Banner markieren (visuell schwächer); Pläne löschen (verliert Historie).
+- **Decided by:** Tobi + Claude Code, [PR #7](https://github.com/tobi12387/pulse/pull/7).
+- **Status:** active.
+
+---
+
+## 2026-04-29 — Codex-System-Prompt als eigene Datei
+
+- **Decision:** `docs/codex-system-prompt.md` enthält den vollen kopierbaren Prompt für OpenAI Codex. AGENTS.md und CLAUDE.md verlinken darauf.
+- **Why:** Codex liest AGENTS.md je nach Setup nicht garantiert vollständig. Eine dezidierte Prompt-Datei macht es explizit, was reinkopiert werden muss, und enthält die roadmap-spezifischen „nicht mehr verhandelbaren" Entscheidungen, die Claude Code im eigenen System-Prompt schon hat.
+- **Alternatives:** Nur AGENTS.md (Codex könnte sie übersehen); System-Prompt direkt in Codex-Konfiguration ohne Repo-Spiegel (Drift-Risiko).
+- **Decided by:** Tobi + Claude Code, [PR #7](https://github.com/tobi12387/pulse/pull/7).
+- **Status:** active.
+
+---
+
+## 2026-04-29 — Phase 10 re-evaluiert; Habit-Tracker gestrichen
+
+- **Decision:** Phase 10 (vorher „Auxiliary Tracking") heißt jetzt „Strength & Equipment Tracking". Habit-Tracker komplett verworfen.
+- **Why:** Drei der ursprünglich vorgeschlagenen 5 Habits sind schon auto-erfasst (Schritte aus `pulse_daily_metrics`); die übrigen werden im Voice-Check-in als Themes besser dokumentiert. Manuelles Toggling würde den Eingabekanal duplizieren. Risk Watch deckt zusätzlich datengetriebene Trends ab.
+- **Alternatives:** Habit-Tracker als Backlog-Item (verworfen — soll keine Last sein); reduzierten Habit-Tracker mit nur 2 Habits (Aufwand-Nutzen passt nicht).
+- **Decided by:** Tobi + Claude Code, [PR #6](https://github.com/tobi12387/pulse/pull/6).
+- **Status:** active.
+
+---
+
+## 2026-04-29 — Konsistenz-Bündel A/B/C vor Phase 10/11
+
+- **Decision:** Drei Refactor-Bündel (A: Context Unification, B: Threshold Canonicalization, C: Endpoint & Page Consolidation) werden **vor** den Feature-Phasen RPE/Risk/Push und vor Phase 10/11 implementiert. Reihenfolge: A → B → C → RPE → Risk Watch → Web Push → Phase 10 → Phase 11.
+- **Why:** Code-Review nach Phase 9 fand strukturelle Inkonsistenzen: Briefing-Job liest aus Legacy-Schema, Coach-Context wird inline doppelt aufgebaut, TSB-Schwellen widersprechen sich, Server-Readiness-Label ≠ Frontend-Label. Diese Lücken multiplizieren sich, wenn Features ohne Refactor-Basis dazukommen.
+- **Alternatives:** Features zuerst, Refactor später (verworfen — Drift wächst); großer Single-Refactor (verworfen — zu groß für sauberen PR).
+- **Decided by:** Tobi + Claude Code, [PR #5](https://github.com/tobi12387/pulse/pull/5).
+- **Status:** active.
+
+---
+
+## 2026-04-29 — Telegram-Integration verworfen; Web Push als Ersatz
+
+- **Decision:** Phase 12 (Telegram-Notifications) ersatzlos gestrichen. Web Push (PWA) als Plan, der den aktiven Push-Kanal in der bestehenden App schließt.
+- **Why:** Tobi will keine Telegram-Integration. Web Push erfüllt denselben Zweck (Briefing-Push, Check-in-Reminder, Risk-Critical-Push) ohne Drittanbieter, ohne neuen Channel.
+- **Alternatives:** Email-Digest (passt schlecht zu Mobile-First); Pure Pull-Modus belassen (verfehlt das eigentliche Pain-Point „App muss aktiv geöffnet werden").
+- **Decided by:** Tobi, [PR #3](https://github.com/tobi12387/pulse/pull/3) (drop) + [PR #4](https://github.com/tobi12387/pulse/pull/4) (Web-Push-Plan).
+- **Status:** active.
+
+---
+
+## 2026-04-29 — Parallel-Workflow für Claude Code + Codex
+
+- **Decision:** GitHub `main` ist Single Source of Truth. Mac und Server sind Konsumenten, niemals Editoren. Branch-Namespaces: `claude/<topic>` (Claude Code), `codex/<topic>` (Codex), `tobi/<topic>` (manuell). Server-Deploy nur via `scripts/deploy.sh`, das dirty Trees und Non-Main-Branches verweigert.
+- **Why:** Zwei AI-Tools parallel im selben Repo ohne Konfliktregelung führt zu untracked Files, doppelten Migrationen, und Server-State-Drift. Eine harte Single-Source-of-Truth + Read-Only-Server-Mirror beendet alle drei Drift-Klassen.
+- **Alternatives:** Nur ein Tool benutzen (verworfen — beide haben Stärken); manuelles Konflikt-Management (verworfen — fragil).
+- **Decided by:** Tobi + Claude Code, [PR #1](https://github.com/tobi12387/pulse/pull/1).
+- **Status:** active.

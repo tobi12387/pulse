@@ -1,0 +1,87 @@
+name: docs-sync
+
+# Stellt sicher, dass die zentralen Hard-Rule-Marker in CLAUDE.md, AGENTS.md
+# und docs/codex-system-prompt.md alle gemeinsam vorhanden sind. Wer eine Regel
+# in einer Datei entfernt, ohne sie in den anderen zu entfernen oder zu
+# aktualisieren, wird hier rot.
+#
+# Bewusst pragmatisch: kein Pixel-genauer Vergleich, sondern Marker-basiert.
+# Erweitern: PATTERNS-Liste unten ergänzen.
+
+on:
+  pull_request:
+    paths:
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'docs/codex-system-prompt.md'
+      - 'docs/decisions.md'
+      - '.github/workflows/docs-sync.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'docs/codex-system-prompt.md'
+      - 'docs/decisions.md'
+  workflow_dispatch:
+
+jobs:
+  check-rule-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify canonical rules appear in all three docs
+        run: |
+          set -u
+          FILES=(CLAUDE.md AGENTS.md docs/codex-system-prompt.md)
+
+          # Jeder Eintrag ist eine grep -E -i Pattern. Mindestens eines der
+          # alternativen Phrasings muss in jeder der drei Dateien vorkommen.
+          PATTERNS=(
+            "single source of truth|source of truth"
+            "git add \\."
+            "additive|additiv"
+            "scripts/deploy\\.sh"
+            "pulse_daily_metrics"
+            "decisions\\.md"
+            "claude/<topic>|claude/[a-z]"
+            "codex/<topic>|codex/[a-z]"
+            "no.*telegram|kein.*telegram|keine.*telegram"
+            "no.*habit|kein.*habit"
+          )
+
+          fail=0
+          for pat in "${PATTERNS[@]}"; do
+            for f in "${FILES[@]}"; do
+              if ! grep -E -i -q -- "$pat" "$f"; then
+                echo "::error file=$f::missing canonical rule pattern: '$pat'"
+                fail=1
+              fi
+            done
+          done
+
+          if [ $fail -ne 0 ]; then
+            echo ""
+            echo "Hard-Rule-Drift erkannt — eine oder mehrere kanonische Regeln"
+            echo "fehlen in mindestens einer der drei Hauptdokumente."
+            echo "Dateien synchronisieren oder PATTERNS-Liste in dieser Workflow-Datei"
+            echo "anpassen, falls die Regel bewusst entfernt wurde."
+            exit 1
+          fi
+
+          echo "Alle kanonischen Regeln in allen drei Dokumenten gefunden."
+
+      - name: Verify decisions.md is append-only-friendly
+        run: |
+          # Sanity: decisions.md soll mindestens den Header und ≥1 Eintrag haben.
+          if ! grep -E -q "^# Pulse — Decision Log" docs/decisions.md; then
+            echo "::error file=docs/decisions.md::Header fehlt"
+            exit 1
+          fi
+          entries=$(grep -E -c "^## [0-9]{4}-[0-9]{2}-[0-9]{2}" docs/decisions.md || true)
+          if [ "$entries" -lt 1 ]; then
+            echo "::error file=docs/decisions.md::keine Decision-Einträge gefunden"
+            exit 1
+          fi
+          echo "decisions.md OK ($entries Einträge)."
