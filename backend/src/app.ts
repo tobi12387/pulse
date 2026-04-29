@@ -4,6 +4,7 @@ import { env } from './lib/env.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
+import { ensureSingleUser, SINGLE_USER_ID } from './lib/single-user.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = path.resolve(__dirname, '../../frontend/dist');
 
@@ -44,8 +45,12 @@ export async function buildApp() {
       }
       return;
     }
-    req.user = { sub: '00000000-0000-0000-0000-000000000001' };
+    req.user = { sub: SINGLE_USER_ID };
   });
+
+  if (env.NODE_ENV !== 'test') {
+    await ensureSingleUser();
+  }
 
   // CORS
   await app.register(import('@fastify/cors'), { origin: true });
@@ -80,7 +85,7 @@ export async function buildApp() {
     });
 
     const { startPulseWorkers } = await import('./pulse/queues/workers.js');
-    const shutdownPulse = startPulseWorkers();
+    const shutdownPulse = startPulseWorkers(app);
     app.addHook('onClose', async () => { await shutdownPulse(); });
 
   }

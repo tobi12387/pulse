@@ -212,6 +212,20 @@ export interface PulseRecoveryMetrics {
   recommendation: string;
 }
 
+export interface PulseDataStatus {
+  userReady: boolean;
+  profileReady: boolean;
+  garmin: {
+    status: 'ready' | 'empty' | 'stale' | 'partial';
+    lastMetricDate: string | null;
+    lastMetricSyncAt: string | null;
+    lastActivityAt: string | null;
+    metricsDays14: number;
+    activitiesDays14: number;
+    issues: string[];
+  };
+}
+
 export interface PulseHomeScreenData {
   date: string;
   readiness: PulseReadiness;
@@ -222,4 +236,5 @@ export interface PulseHomeScreenData {
   prognosis: PulsePrognosis;
   streaks: PulseStreaks;
   recovery: PulseRecoveryMetrics | null;
+  dataStatus: PulseDataStatus;
 }

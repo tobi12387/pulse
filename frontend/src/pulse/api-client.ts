@@ -3,6 +3,7 @@ import type {
   PulsePlannedWorkout, PulseMentalCheckin, PulseGoal,
   PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
   RaceDiscipline, RacePriority,
+  PulseDataStatus,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -158,7 +159,9 @@ export const pulseApi = {
   },
 
   garmin: {
-    sync: (): Promise<{ status: string }> =>
+    status: (): Promise<PulseDataStatus> =>
+      request('/sync/status'),
+    sync: (): Promise<{ status: string; dates?: string[] }> =>
       request('/garmin/sync', { method: 'POST', body: '{}' }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
       request('/garmin/sync-profile', { method: 'POST', body: '{}' }),

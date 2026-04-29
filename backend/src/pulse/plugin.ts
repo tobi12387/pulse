@@ -33,7 +33,9 @@ import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-eng
 import { getActiveRaces } from './services/race-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
-import { pulseQueues } from './queues/queues.js';
+import { syncGarminDay } from '../routes/garmin.js';
+import { users } from '../db/schema.js';
+import type { PulseDataStatus } from '@coaching-os/shared/pulse';
 
 const coachMessageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -76,6 +78,67 @@ async function computeStreaks(userId: string, today: string): Promise<{ checkinS
   return {
     checkinStreakDays: calcStreak(checkins.map(c => c.date), today),
     workoutStreakDays: calcStreak(workouts.map(w => w.date), today),
+  };
+}
+
+async function getPulseDataStatus(userId: string, today: string): Promise<PulseDataStatus> {
+  const since14d = new Date(Date.now() - 14 * 86_400_000).toISOString().split('T')[0]!;
+
+  const [
+    [user],
+    [profile],
+    [latestMetric],
+    [latestActivity],
+    [metricCount],
+    [activityCount],
+  ] = await Promise.all([
+    db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1),
+    db.select({ userId: pulseUserProfile.userId }).from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
+    db.select({
+      date: pulseDailyMetrics.date,
+      syncedAt: pulseDailyMetrics.syncedAt,
+    }).from(pulseDailyMetrics)
+      .where(eq(pulseDailyMetrics.userId, userId))
+      .orderBy(desc(pulseDailyMetrics.date))
+      .limit(1),
+    db.select({ startTime: pulseActivities.startTime }).from(pulseActivities)
+      .where(eq(pulseActivities.userId, userId))
+      .orderBy(desc(pulseActivities.startTime))
+      .limit(1),
+    db.select({ count: sql<number>`count(*)::int` }).from(pulseDailyMetrics)
+      .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since14d))),
+    db.select({ count: sql<number>`count(*)::int` }).from(pulseActivities)
+      .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(`${since14d}T00:00:00.000Z`)))),
+  ]);
+
+  const issues: string[] = [];
+  if (!user) issues.push('single_user_missing');
+  if (!profile) issues.push('profile_missing');
+  if (!latestMetric) issues.push('no_daily_metrics');
+  if (!latestActivity) issues.push('no_activities');
+
+  let status: PulseDataStatus['garmin']['status'] = 'ready';
+  if (!latestMetric && !latestActivity) {
+    status = 'empty';
+  } else if (latestMetric?.date !== today) {
+    status = 'stale';
+    issues.push('today_metrics_missing');
+  } else if (!latestActivity) {
+    status = 'partial';
+  }
+
+  return {
+    userReady: !!user,
+    profileReady: !!profile,
+    garmin: {
+      status,
+      lastMetricDate: latestMetric?.date ?? null,
+      lastMetricSyncAt: latestMetric?.syncedAt?.toISOString() ?? null,
+      lastActivityAt: latestActivity?.startTime?.toISOString() ?? null,
+      metricsDays14: Number(metricCount?.count ?? 0),
+      activitiesDays14: Number(activityCount?.count ?? 0),
+      issues,
+    },
   };
 }
 
@@ -171,6 +234,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       prognosis,
       streaks,
       dailyHistory,
+      dataStatus,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -198,6 +262,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }).from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since60d)))
         .orderBy(desc(pulseDailyMetrics.date)),
+      getPulseDataStatus(userId, today),
     ]);
 
     const { computeRecovery } = await import('../lib/recovery-metrics.js');
@@ -259,7 +324,13 @@ export default async function pulsePlugin(app: FastifyInstance) {
       prognosis,
       streaks,
       recovery,
+      dataStatus,
     };
+  });
+
+  app.get('/sync/status', { onRequest: [app.authenticate] }, async (req) => {
+    const today = new Date().toISOString().split('T')[0]!;
+    return getPulseDataStatus(req.user.sub, today);
   });
 
   app.post('/coach', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -1976,12 +2047,19 @@ export default async function pulsePlugin(app: FastifyInstance) {
   // ─── Garmin manual sync ───────────────────────────────────────────────────────
   app.post('/garmin/sync', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
-    const today = new Date().toISOString().split('T')[0]!;
+    const today = new Date();
+    const yesterday = new Date(Date.now() - 86_400_000);
     try {
-      await pulseQueues['pulse-garmin-sync'].add('sync-now', { userId, date: today }, { priority: 1 });
-      return { status: 'queued', date: today };
-    } catch {
-      return reply.status(503).send({ error: 'Queue nicht verfügbar' });
+      for (const date of [yesterday, today]) {
+        await syncGarminDay(userId, date, app);
+      }
+      return {
+        status: 'synced',
+        dates: [yesterday, today].map(d => d.toISOString().split('T')[0]!),
+      };
+    } catch (err) {
+      app.log.error(`Pulse Garmin sync failed: ${err}`);
+      return reply.status(502).send({ error: 'Garmin sync fehlgeschlagen. Zugangsdaten prüfen.' });
     }
   });
 

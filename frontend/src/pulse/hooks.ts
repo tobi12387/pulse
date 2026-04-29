@@ -23,6 +23,7 @@ export const pulseKeys = {
   healthState:      ['pulse', 'health-state'] as const,
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
+  syncStatus:       ['pulse', 'sync-status'] as const,
   nutrition: (workoutId: string | null, activityId: string | null) =>
     ['pulse', 'nutrition', workoutId, activityId] as const,
 };
@@ -124,7 +125,11 @@ export function usePulseCheckin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.checkin.submit,
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.home }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
+      qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
+    },
   });
 }
 
@@ -158,6 +163,15 @@ export function useGarminSync() {
   return useMutation({
     mutationFn: pulseApi.garmin.sync,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['pulse'] }),
+  });
+}
+
+export function useGarminStatus() {
+  return useQuery({
+    queryKey: pulseKeys.syncStatus,
+    queryFn: pulseApi.garmin.status,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 }
 

@@ -1,13 +1,19 @@
 import type { Job, Worker } from 'bullmq';
+import type { FastifyInstance } from 'fastify';
 import { createWorker } from '../../lib/queue.js';
 import { pulseQueues } from './queues.js';
 import type { PulseJobData } from './queues.js';
 import { syncGarminForDate } from '../adapters/garmin-client.js';
 import { generateWeeklyReview } from '../services/review-engine.js';
+import { syncGarminDay } from '../../routes/garmin.js';
 
-async function handleGarminSync(job: Job<PulseJobData>): Promise<void> {
+async function handleGarminSync(job: Job<PulseJobData>, app?: FastifyInstance): Promise<void> {
   const { userId, date } = job.data;
   const targetDate = date ?? new Date().toISOString().split('T')[0]!;
+  if (app) {
+    await syncGarminDay(userId, new Date(`${targetDate}T12:00:00`), app);
+    return;
+  }
   await syncGarminForDate(userId, targetDate);
 }
 
@@ -39,9 +45,9 @@ async function handleInsightPrecompute(job: Job<PulseJobData>): Promise<void> {
   // Phase 3c: call insight engine here
 }
 
-export function startPulseWorkers(): () => Promise<void> {
+export function startPulseWorkers(app?: FastifyInstance): () => Promise<void> {
   const workers: Worker[] = [
-    createWorker('pulse-garmin-sync',        handleGarminSync),
+    createWorker('pulse-garmin-sync',        (job) => handleGarminSync(job, app)),
     createWorker('pulse-calendar-sync',      handleCalendarSync),
     createWorker('pulse-morning-brief',      handleMorningBrief),
     createWorker('pulse-weekly-review',      handleWeeklyReview),

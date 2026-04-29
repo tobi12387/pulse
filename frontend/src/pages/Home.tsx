@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePulseHome, usePulseMetrics, usePulseBriefing } from '@/pulse/hooks';
+import { usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -163,6 +163,7 @@ export default function Home() {
   const { data, isLoading, error } = usePulseHome();
   const { data: metricsData } = usePulseMetrics(14);
   const { data: briefingData } = usePulseBriefing();
+  const garminSync = useGarminSync();
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -188,6 +189,8 @@ export default function Home() {
   const m  = data.todayMetrics;
   const fl = data.fitnessLoad;
   const nw = data.nextWorkout;
+  const dataStatus = data.dataStatus;
+  const showDataStatus = dataStatus.garmin.status !== 'ready' || !dataStatus.userReady || !dataStatus.profileReady;
 
   const metrics  = metricsData?.metrics ?? [];
   const hrvSpark = metrics.map(d => d.hrvRmssd ?? null);
@@ -221,6 +224,53 @@ export default function Home() {
 
       {/* ── Health State Banner (active illness/injury/fatigue) ── */}
       <HealthStateBanner />
+
+      {showDataStatus && (
+        <div style={{
+          padding: '12px 14px',
+          background: 'rgba(245, 158, 11, 0.08)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          borderRadius: 6,
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)', letterSpacing: '.14em', marginBottom: 4 }}>
+              DATENSTATUS · {dataStatus.garmin.status.toUpperCase()}
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
+              {dataStatus.garmin.status === 'empty'
+                ? 'Noch keine Garmin-Daten in Pulse. Readiness und Plan arbeiten aktuell mit Basiswerten.'
+                : dataStatus.garmin.status === 'stale'
+                ? `Letzte Tagesdaten: ${dataStatus.garmin.lastMetricDate ?? 'unbekannt'}. Heute fehlen noch frische Signale.`
+                : 'Pulse hat nur einen Teil der erwarteten Daten. Einige Empfehlungen bleiben vorsichtig.'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 5 }}>
+              14 Tage: {dataStatus.garmin.metricsDays14} Metrik-Tage · {dataStatus.garmin.activitiesDays14} Aktivitäten
+            </div>
+          </div>
+          <button
+            onClick={() => garminSync.mutate()}
+            disabled={garminSync.isPending}
+            style={{
+              flexShrink: 0,
+              padding: '9px 11px',
+              background: garminSync.isPending ? 'var(--surface-2)' : 'var(--amber)',
+              color: garminSync.isPending ? 'var(--text-3)' : 'var(--bg)',
+              border: 'none',
+              borderRadius: 5,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '.12em',
+              cursor: garminSync.isPending ? 'default' : 'pointer',
+            }}
+          >
+            {garminSync.isPending ? 'SYNC...' : 'SYNC'}
+          </button>
+        </div>
+      )}
 
       {/* ── Adjust-Today Proposal (if readiness/health requires) ── */}
       <AdjustTodayCard />

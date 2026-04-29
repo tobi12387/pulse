@@ -69,9 +69,11 @@ async function generateWorkoutFeedback(
 
   const actualDurMin = actual.durationSec != null ? Math.round(actual.durationSec / 60) : null;
   const isBike = planned.activityType === 'bike';
-  const zoneRef = isBike ? zonePowerRanges[planned.zone] : zoneHrRanges[planned.zone];
+  const zoneRef = isBike
+    ? `${zoneHrRanges[planned.zone]} (Power sekundär: ${zonePowerRanges[planned.zone] ?? '?'})`
+    : zoneHrRanges[planned.zone];
   const actualIntensity = isBike
-    ? (actual.normalizedPowerW != null ? `NP ${actual.normalizedPowerW} W, Avg ${actual.avgPowerW ?? '?'} W` : `Avg HR ${actual.avgHr ?? '?'} bpm`)
+    ? `Avg HR ${actual.avgHr ?? '?'} bpm, Max HR ${actual.maxHr ?? '?'} bpm${actual.normalizedPowerW != null ? `, NP ${actual.normalizedPowerW} W` : ''}${actual.avgPowerW != null ? `, Avg ${actual.avgPowerW} W` : ''}`
     : `Avg HR ${actual.avgHr ?? '?'} bpm, Max HR ${actual.maxHr ?? '?'} bpm`;
 
   // Phase 9: Nutrition-Block — distinguishes weak performance due to fueling vs form
