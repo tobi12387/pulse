@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-29 — RPE zuerst als Activity-Feedback-Schnitt
+
+- **Decision:** RPE & Post-Workout-Feedback wird in mindestens zwei PRs geschnitten. Slice 1 liefert additive Activity-Spalten, PATCH-Endpoint, Shared-Kontrakt und ActivityDetail-Feedback-Sheet; Coach-/Briefing-Kontext und Plan-RPE-Trends folgen separat.
+- **Why:** Der erste Slice macht die Datenerfassung sofort nutzbar und reduziert Risiko, bevor RPE in Coaching- und Analyse-Prompts einfliesst. Migration, API und UI sind bereits ein zusammenhaengender Review-Block.
+- **Alternatives:** Kompletten RPE-Plan in einem PR (zu breit: DB, UI, Coach, Briefing und Statistik gleichzeitig); nur Backend ohne UI (kein Alltagsnutzen).
+- **Decided by:** Codex, PR pending.
+- **Status:** active.
+
+---
+
 ## 2026-04-29 — Deploy baut und startet Frontend Preview mit
 
 - **Decision:** `scripts/deploy.sh` baut jetzt auch `frontend` und startet den PM2-Prozess `pulse-frontend` neu, falls er existiert. Backend und Frontend werden damit bei jedem Server-Deploy gemeinsam aktualisiert.

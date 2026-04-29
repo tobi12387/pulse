@@ -4,6 +4,7 @@ import type {
   PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
+  ActivityFeedbackInput,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -104,6 +105,8 @@ export const pulseApi = {
       analytics: ActivityAnalytics | null;
     }> =>
       request(`/activities/${id}`),
+    updateFeedback: (id: string, data: ActivityFeedbackInput): Promise<{ activity: PulseActivity & { externalId: string | null } }> =>
+      request(`/activities/${id}/feedback`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   plan: {

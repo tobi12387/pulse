@@ -2,6 +2,31 @@ import type { ColorToken } from './pulse-thresholds.js';
 
 // TypeScript interfaces for Pulse data — no Drizzle dependency.
 
+export const RPE_SORENESS_AREAS = [
+  'neck',
+  'shoulders',
+  'upper_back',
+  'lower_back',
+  'hip',
+  'glutes',
+  'quad',
+  'hamstring',
+  'calf',
+  'knee_left',
+  'knee_right',
+  'achilles',
+  'foot',
+  'general_fatigue',
+] as const;
+
+export type RpeSorenessArea = typeof RPE_SORENESS_AREAS[number];
+
+export interface ActivityFeedbackInput {
+  rpe: number;
+  rpeNote?: string | null;
+  sorenessAreas?: RpeSorenessArea[] | null;
+}
+
 export interface PulseDailyMetrics {
   id: string;
   userId: string;
@@ -56,6 +81,10 @@ export interface PulseActivity {
   trainingEffectAerobic: number | null;
   trainingEffectAnaerobic: number | null;
   vo2maxEstimate: number | null;
+  rpe: number | null;
+  rpeNote: string | null;
+  sorenessAreas: RpeSorenessArea[] | null;
+  feedbackLoggedAt: string | null;
 }
 
 export interface WorkoutStep {

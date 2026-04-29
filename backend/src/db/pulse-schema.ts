@@ -112,6 +112,10 @@ export const pulseActivities = pgTable('pulse_activities', {
   startLon:                 real('start_lon'),
   isIndoor:                 boolean('is_indoor').default(false),
   weather:                  jsonb('weather'),
+  rpe:                      integer('rpe'),
+  rpeNote:                  text('rpe_note'),
+  sorenessAreas:            text('soreness_areas').array(),
+  feedbackLoggedAt:         timestamp('feedback_logged_at', { withTimezone: true }),
   rawData:                  jsonb('raw_data'),
 }, (t) => [
   index('pulse_activities_user_start_idx').on(t.userId, t.startTime),

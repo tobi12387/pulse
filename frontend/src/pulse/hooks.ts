@@ -9,6 +9,7 @@ export const pulseKeys = {
   load:        ['pulse', 'load'] as const,
   sleep:        (limit: number) => ['pulse', 'sleep', limit] as const,
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
+  activityDetail: (id: string) => ['pulse', 'activity-detail', id] as const,
   plan:         ['pulse', 'plan'] as const,
   availability: ['pulse', 'availability'] as const,
   goals:        ['pulse', 'goals'] as const,
@@ -70,6 +71,23 @@ export function usePulseActivities(limit = 10) {
     queryKey: pulseKeys.activities(limit),
     queryFn: () => pulseApi.activities.list(limit),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useActivityFeedback(activityId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof pulseApi.activities.updateFeedback>[1]) =>
+      pulseApi.activities.updateFeedback(activityId, data),
+    onSuccess: (data) => {
+      qc.setQueryData<{ activity: typeof data.activity }>(
+        pulseKeys.activityDetail(activityId),
+        (current) => current ? { ...current, activity: data.activity } : current,
+      );
+      qc.invalidateQueries({ queryKey: ['pulse', 'activities'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+    },
   });
 }
 
