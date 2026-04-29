@@ -6,9 +6,15 @@ import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { AdjustTodayCard } from '@/components/AdjustTodayCard';
 import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
+import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
+import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
 function fmt(v: number | null | undefined, dec = 0): string {
   return v == null ? '–' : v.toFixed(dec);
+}
+
+function fmtSigned(v: number, dec = 1): string {
+  return `${v < 0 ? '' : '+'}${fmt(v, dec)}`;
 }
 
 function greeting(): string {
@@ -38,8 +44,9 @@ const ZONE_COLOR: Record<number, string> = {
 interface TooltipDef {
   title: string;
   what: string;
-  good: string;
-  bad: string;
+  good?: string;
+  bad?: string;
+  ranges?: Bucket[];
 }
 
 const TOOLTIPS: Record<string, TooltipDef> = {
@@ -74,10 +81,10 @@ const TOOLTIPS: Record<string, TooltipDef> = {
     bad:  'Deutlich über CTL (ATL >> CTL) = hohe akute Ermüdung.',
   },
   TSB: {
-    title: 'Training Stress Balance',
-    what: 'Form = CTL − ATL. Gibt an ob du frisch oder müde in ein Training gehst.',
-    good: '−10 bis +5 = optimal für Wettkampf/Intensität. +5 bis +25 = sehr frisch.',
-    bad:  'Unter −20 = übermüdet, hohes Verletzungsrisiko. Über +25 = zu wenig Training.',
+    ...bucketTooltip('TSB'),
+  },
+  READINESS: {
+    ...bucketTooltip('READINESS'),
   },
 };
 
@@ -117,12 +124,32 @@ function Tooltip({ id, children }: { id: string; children: React.ReactNode }) {
             <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.55, marginBottom: 8 }}>
               {tip.what}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--green)', lineHeight: 1.5, marginBottom: 4 }}>
-              ✓ {tip.good}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--rose)', lineHeight: 1.5 }}>
-              ✗ {tip.bad}
-            </div>
+            {tip.ranges ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {tip.ranges.map(bucket => (
+                  <div key={`${bucket.label}-${bucket.min}`} style={{ display: 'grid', gridTemplateColumns: '52px 74px 1fr', gap: 6, alignItems: 'baseline' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+                      {formatBucketMin(bucket.min)}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: colorOf(bucket.color) }}>
+                      {bucket.label}
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-2)', lineHeight: 1.35 }}>
+                      {bucket.description}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 10, color: 'var(--green)', lineHeight: 1.5, marginBottom: 4 }}>
+                  {tip.good}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--rose)', lineHeight: 1.5 }}>
+                  {tip.bad}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
@@ -195,19 +222,10 @@ export default function Home() {
   const metrics  = metricsData?.metrics ?? [];
   const hrvSpark = metrics.map(d => d.hrvRmssd ?? null);
 
-  const readinessColor =
-    data.readiness.score >= 80 ? 'var(--green)' :
-    data.readiness.score >= 60 ? 'var(--accent)' :
-    data.readiness.score >= 40 ? 'var(--amber)' : 'var(--rose)';
-
-  const readinessLabel =
-    data.readiness.score >= 80 ? 'OPTIMAL' :
-    data.readiness.score >= 60 ? 'GUT' :
-    data.readiness.score >= 40 ? 'MÄSSIG' : 'ERHOLEN';
-
-  const tsbColor =
-    fl.tsb > 25    ? 'var(--amber)' :
-    fl.tsb >= -10  ? 'var(--green)' : 'var(--rose)';
+  const readinessColor = colorOf(data.readiness.color);
+  const readinessLabel = data.readiness.shortLabel;
+  const tsbBucket = bucketize(fl.tsb, TSB_BUCKETS);
+  const tsbColor = colorOf(tsbBucket.color);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
@@ -290,7 +308,7 @@ export default function Home() {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.16em' }}>
-            READINESS · TODAY
+            <Tooltip id="READINESS">READINESS</Tooltip> · TODAY
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: readinessColor }}>
             ● {readinessLabel}
@@ -388,14 +406,14 @@ export default function Home() {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>FORM · FITNESS</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-2)' }}>
-            {fl.tsb > 10 ? 'frisch' : fl.tsb >= -10 ? 'optimal' : fl.tsb >= -20 ? 'aufbauend' : 'müde'}
+            {tsbBucket.label}
           </span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {[
             { id: 'CTL', v: fmt(fl.ctl, 1), sub: 'Fitness',   color: 'var(--accent)' },
             { id: 'ATL', v: fmt(fl.atl, 1), sub: 'Ermüdung',  color: 'var(--amber)'  },
-            { id: 'TSB', v: (fl.tsb >= 0 ? '+' : '') + fmt(fl.tsb, 1), sub: 'Form', color: tsbColor },
+            { id: 'TSB', v: fmtSigned(fl.tsb), sub: 'Form', color: tsbColor },
           ].map(s => (
             <div key={s.id}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>

@@ -79,7 +79,9 @@ describe('computeReadinessScore', () => {
       bodyBatteryMax: 90, stressAvg: 20,
       mentalScore: 85, tsb: 10,
     });
-    expect(r.label).toBe('excellent');
+    expect(r.label).toBe('optimal');
+    expect(r.shortLabel).toBe('OPTIMAL');
+    expect(r.color).toBe('green');
   });
 
   it('labels low for poor values', () => {
@@ -88,6 +90,8 @@ describe('computeReadinessScore', () => {
       bodyBatteryMax: 20, stressAvg: 75,
       mentalScore: 30, tsb: -25,
     });
-    expect(r.label).toBe('low');
+    expect(r.label).toBe('erholen');
+    expect(r.shortLabel).toBe('ERHOLEN');
+    expect(r.color).toBe('rose');
   });
 });

@@ -1,3 +1,5 @@
+import type { ColorToken } from './pulse-thresholds.js';
+
 // TypeScript interfaces for Pulse data — no Drizzle dependency.
 
 export interface PulseDailyMetrics {
@@ -189,7 +191,9 @@ export interface PulseReadiness {
     mental: number;
     stress: number;
   };
-  label: 'low' | 'moderate' | 'good' | 'excellent';
+  label: 'erholen' | 'mäßig' | 'gut' | 'optimal';
+  shortLabel: string;
+  color: ColorToken;
 }
 
 export interface PulseFitnessLoad {
