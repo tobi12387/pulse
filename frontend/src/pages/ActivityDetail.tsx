@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
 import type { ActivityAnalytics } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
-import { useNutritionLogs, useDeleteNutritionLog } from '@/pulse/hooks';
+import { useActivityFeedback, useNutritionLogs, useDeleteNutritionLog, pulseKeys } from '@/pulse/hooks';
 import { NutritionLogModal } from '@/components/NutritionLogModal';
+import { RPE_SORENESS_AREAS, type RpeSorenessArea } from '@coaching-os/shared/pulse';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -56,6 +57,30 @@ const ZONE_COLORS = [
   'var(--rose)',    // Z5
 ];
 
+const SORENESS_LABELS: Record<RpeSorenessArea, string> = {
+  neck: 'Nacken',
+  shoulders: 'Schultern',
+  upper_back: 'Oberer Rücken',
+  lower_back: 'Lower Back',
+  hip: 'Hüfte',
+  glutes: 'Gesäß',
+  quad: 'Quad',
+  hamstring: 'Hamstring',
+  calf: 'Wade',
+  knee_left: 'Knie L',
+  knee_right: 'Knie R',
+  achilles: 'Achilles',
+  foot: 'Fuß',
+  general_fatigue: 'Allg. Müdigkeit',
+};
+
+function rpeColor(rpe: number): string {
+  if (rpe <= 3) return 'var(--blue)';
+  if (rpe <= 6) return 'var(--green)';
+  if (rpe <= 8) return 'var(--amber)';
+  return 'var(--rose)';
+}
+
 function HrZonesBar({ zones }: {
   zones: { zone: number; secsInZone: number; zoneLowBoundary: number }[];
 }) {
@@ -92,6 +117,276 @@ function HrZonesBar({ zones }: {
             </span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function RpeFeedbackSheet({
+  activity,
+  open,
+  onClose,
+}: {
+  activity: {
+    id: string;
+    rpe: number | null;
+    rpeNote: string | null;
+    sorenessAreas: RpeSorenessArea[] | null;
+  };
+  open: boolean;
+  onClose: () => void;
+}) {
+  const save = useActivityFeedback(activity.id);
+  const [rpe, setRpe] = useState(activity.rpe ?? 5);
+  const [note, setNote] = useState(activity.rpeNote ?? '');
+  const [areas, setAreas] = useState<RpeSorenessArea[]>(activity.sorenessAreas ?? []);
+
+  useEffect(() => {
+    if (!open) return;
+    setRpe(activity.rpe ?? 5);
+    setNote(activity.rpeNote ?? '');
+    setAreas(activity.sorenessAreas ?? []);
+  }, [activity.rpe, activity.rpeNote, activity.sorenessAreas, open]);
+
+  if (!open) return null;
+
+  function toggleArea(area: RpeSorenessArea) {
+    setAreas((cur) => cur.includes(area) ? cur.filter(a => a !== area) : [...cur, area]);
+  }
+
+  async function handleSave() {
+    await save.mutateAsync({
+      rpe,
+      rpeNote: note.trim() ? note.trim() : null,
+      sorenessAreas: areas.length > 0 ? areas : null,
+    });
+    onClose();
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 40,
+        display: 'flex',
+        alignItems: 'flex-end',
+        background: 'rgba(0,0,0,0.42)',
+      }}
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: 760,
+          margin: '0 auto',
+          maxHeight: '88vh',
+          overflowY: 'auto',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderBottom: 'none',
+          borderRadius: '10px 10px 0 0',
+          padding: 16,
+          boxShadow: '0 -20px 60px rgba(0,0,0,0.35)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Post-Workout
+            </div>
+            <h2 style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
+              Wie hat sich's angefühlt?
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4, marginBottom: 7 }}>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map(v => {
+                const active = rpe === v;
+                return (
+                  <button
+                    key={v}
+                    onClick={() => setRpe(v)}
+                    style={{
+                      aspectRatio: '1 / 1',
+                      minWidth: 0,
+                      border: `1px solid ${active ? rpeColor(v) : 'var(--border)'}`,
+                      background: active ? rpeColor(v) : 'var(--surface-2)',
+                      color: active ? 'var(--bg)' : 'var(--text-2)',
+                      borderRadius: 5,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                    aria-label={`RPE ${v}`}
+                  >
+                    {v}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+              <span>locker</span>
+              <span>alles geben</span>
+            </div>
+          </div>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span className="label-mono">Notiz optional</span>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value.slice(0, 500))}
+              placeholder="z.B. Beine zäh, Hitze, Rücken ok..."
+              rows={3}
+              style={{
+                width: '100%',
+                resize: 'vertical',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 5,
+                padding: 10,
+                color: 'var(--text)',
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            />
+          </label>
+
+          <div>
+            <div className="label-mono" style={{ marginBottom: 8 }}>Wo zwickt's? optional</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {RPE_SORENESS_AREAS.map(area => {
+                const active = areas.includes(area);
+                return (
+                  <button
+                    key={area}
+                    onClick={() => toggleArea(area)}
+                    style={{
+                      padding: '6px 9px',
+                      borderRadius: 5,
+                      border: `1px solid ${active ? 'var(--amber)' : 'var(--border)'}`,
+                      background: active ? 'rgba(245, 158, 11, 0.14)' : 'transparent',
+                      color: active ? 'var(--amber)' : 'var(--text-2)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {SORENESS_LABELS[area]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {save.error && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--rose)' }}>
+              {save.error.message}
+            </div>
+          )}
+
+          <button
+            onClick={() => void handleSave()}
+            disabled={save.isPending}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: save.isPending ? 'var(--surface-2)' : 'var(--accent)',
+              color: save.isPending ? 'var(--text-3)' : 'var(--bg)',
+              border: 'none',
+              borderRadius: 5,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              letterSpacing: '.16em',
+              fontWeight: 600,
+              cursor: save.isPending ? 'default' : 'pointer',
+            }}
+          >
+            {save.isPending ? 'SPEICHERT...' : 'SPEICHERN'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RpeFeedbackCard({
+  activity,
+  onOpen,
+}: {
+  activity: {
+    startTime: string;
+    rpe: number | null;
+    rpeNote: string | null;
+    sorenessAreas: RpeSorenessArea[] | null;
+  };
+  onOpen: () => void;
+}) {
+  const hasRpe = activity.rpe != null;
+  const isRecent = Date.now() - new Date(activity.startTime).getTime() < 24 * 60 * 60 * 1000;
+  const color = hasRpe ? rpeColor(activity.rpe!) : 'var(--accent)';
+
+  return (
+    <div className="card" style={{ padding: '12px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 5 }}>
+            RPE Feedback
+          </div>
+          {hasRpe ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: activity.rpeNote ? 5 : 0 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, color }}>{activity.rpe}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>/ 10</span>
+              </div>
+              {activity.rpeNote && (
+                <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{activity.rpeNote}</div>
+              )}
+              {activity.sorenessAreas?.length ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+                  {activity.sorenessAreas.map(area => (
+                    <span key={area} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)' }}>
+                      {SORENESS_LABELS[area]}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+              {isRecent ? 'Kurzer Check nach der Einheit: subjektive Belastung eintragen.' : 'Noch kein subjektives Feedback für diese Einheit.'}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={onOpen}
+          style={{
+            flexShrink: 0,
+            padding: '8px 10px',
+            background: hasRpe ? 'transparent' : 'var(--accent)',
+            color: hasRpe ? 'var(--accent)' : 'var(--bg)',
+            border: `1px solid ${hasRpe ? 'var(--border)' : 'var(--accent)'}`,
+            borderRadius: 5,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '.12em',
+            cursor: 'pointer',
+          }}
+        >
+          {hasRpe ? 'BEARBEITEN' : 'EINTRAGEN'}
+        </button>
       </div>
     </div>
   );
@@ -481,11 +776,20 @@ export default function ActivityDetail() {
   const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['activity-detail', id],
+    queryKey: pulseKeys.activityDetail(id!),
     queryFn: () => pulseApi.activities.detail(id!),
     enabled: !!id,
     staleTime: 5 * 60_000,
   });
+  const [rpeOpen, setRpeOpen] = useState(false);
+  const loadedActivity = data?.activity ?? null;
+  const shouldAutoOpenRpe = loadedActivity != null
+    && loadedActivity.rpe == null
+    && Date.now() - new Date(loadedActivity.startTime).getTime() < 24 * 60 * 60 * 1000;
+
+  useEffect(() => {
+    if (shouldAutoOpenRpe) setRpeOpen(true);
+  }, [shouldAutoOpenRpe, loadedActivity?.id]);
 
   if (isLoading) {
     return (
@@ -533,6 +837,8 @@ export default function ActivityDetail() {
           {a.name ?? a.activityType}
         </h1>
       </div>
+
+      <RpeFeedbackCard activity={a} onOpen={() => setRpeOpen(true)} />
 
       {/* KPI Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -605,6 +911,7 @@ export default function ActivityDetail() {
         <WeatherCard weather={analytics.weather} />
       )}
 
+      <RpeFeedbackSheet activity={a} open={rpeOpen} onClose={() => setRpeOpen(false)} />
     </div>
   );
 }

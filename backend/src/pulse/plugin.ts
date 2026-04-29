@@ -21,7 +21,8 @@ import { eq, desc, and, gte, lte, isNull, or, sql } from 'drizzle-orm';
 import { redis } from '../lib/redis.js';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
-import type { PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulseReadiness } from '@coaching-os/shared/pulse';
+import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
+import type { PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulseReadiness, RpeSorenessArea } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
 import {
@@ -47,6 +48,12 @@ const coachMessageSchema = z.object({
 
 const garminSyncSchema = z.object({
   days: z.number().int().min(1).max(30).optional().default(7),
+});
+
+const activityFeedbackSchema = z.object({
+  rpe: z.number().int().min(1).max(10),
+  rpeNote: z.string().trim().max(500).nullable().optional(),
+  sorenessAreas: z.array(z.enum(RPE_SORENESS_AREAS)).max(8).nullable().optional(),
 });
 
 interface CachedPulseContext extends Omit<PulseContext, 'recentActivities'> {
@@ -366,6 +373,10 @@ export default async function pulsePlugin(app: FastifyInstance) {
         trainingEffectAerobic: a.trainingEffectAerobic,
         trainingEffectAnaerobic: a.trainingEffectAnaerobic,
         vo2maxEstimate: a.vo2maxEstimate,
+        rpe: a.rpe,
+        rpeNote: a.rpeNote,
+        sorenessAreas: a.sorenessAreas as RpeSorenessArea[] | null,
+        feedbackLoggedAt: a.feedbackLoggedAt?.toISOString() ?? null,
       })),
       nextWorkout: nextWorkout ? {
         id: nextWorkout.id, userId: nextWorkout.userId,
@@ -771,10 +782,46 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }
 
     return {
-      activity: { ...activity, startTime: activity.startTime.toISOString() },
+      activity: {
+        ...activity,
+        startTime: activity.startTime.toISOString(),
+        feedbackLoggedAt: activity.feedbackLoggedAt?.toISOString() ?? null,
+      },
       laps,
       hrZones,
       analytics,
+    };
+  });
+
+  app.patch('/activities/:id/feedback', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = activityFeedbackSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültiges RPE-Feedback' });
+
+    const { id } = req.params as { id: string };
+    const userId = req.user.sub;
+    const { rpe, rpeNote, sorenessAreas } = parsed.data;
+    const note = rpeNote?.trim() ? rpeNote.trim() : null;
+
+    const [updated] = await db.update(pulseActivities)
+      .set({
+        rpe,
+        rpeNote: note,
+        sorenessAreas: sorenessAreas && sorenessAreas.length > 0 ? sorenessAreas : null,
+        feedbackLoggedAt: new Date(),
+      })
+      .where(and(eq(pulseActivities.id, id), eq(pulseActivities.userId, userId)))
+      .returning();
+
+    if (!updated) return reply.status(404).send({ error: 'Not found' });
+
+    await invalidateUser(userId);
+
+    return {
+      activity: {
+        ...updated,
+        startTime: updated.startTime.toISOString(),
+        feedbackLoggedAt: updated.feedbackLoggedAt?.toISOString() ?? null,
+      },
     };
   });
 
