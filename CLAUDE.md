@@ -65,6 +65,13 @@ Single user, single instance, single Postgres DB — do not over-engineer.
 - **Aktive Pläne:** `docs/superpowers/plans/` — Reihenfolge in `docs/superpowers/plans/2026-04-28-roadmap.md`.
 - **Implementierte Pläne (read-only Historie):** `docs/superpowers/plans/completed/` — niemals erneut implementieren.
 - **Codex-System-Prompt:** `docs/codex-system-prompt.md` ist die Codex-spezifische Variante von CLAUDE.md + AGENTS.md, mit aktueller Roadmap-Reihenfolge und „nicht mehr diskutierten" Entscheidungen (Telegram raus, Habits raus, etc.).
+- **Decision Log:** `docs/decisions.md` — jede nicht-triviale Entscheidung (Architektur, Scope, Priorität) wird hier persistiert, **bevor** die Session endet. Lesen vor non-trivialer Arbeit, schreiben nach jeder Architektur-Wahl.
+
+### Nicht mehr verhandelbare Entscheidungen (Auszug aus `decisions.md`)
+
+- **No Telegram-Integration.** Phase 12 ersatzlos gestrichen; Web Push (PWA) ist der geplante Ersatz.
+- **No Habit-Tracker.** Phase 10 enthält nur noch Strength + Equipment. Habits sind durch Voice-Check-in + Risk Watch abgedeckt.
+- **Briefing-Job liest aus `pulse_daily_metrics` und `pulse_mental_checkins`** (Pulse-Schema), niemals aus dem Legacy-`garmin_daily_health` / `check_ins`. Migration erfolgt über Bündel A.
 
 ---
 
@@ -78,6 +85,7 @@ Single user, single instance, single Postgres DB — do not over-engineer.
 6. **After every backend change:** `cd /root/pulse/backend && npm run build && pm2 restart pulse --update-env`
 7. **GitHub `main` is the single source of truth.** Mac and server are consumers — never edit code directly on the server.
 8. **Every coding session goes through a feature branch + PR.** No direct commits to `main` from any tool.
+9. **Persist non-trivial decisions in `docs/decisions.md`** — wenn etwas entschieden wurde, das nicht trivial aus dem Code lesbar ist, einen Eintrag anlegen, bevor die Session endet.
 
 ---
 

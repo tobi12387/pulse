@@ -17,6 +17,7 @@ It mirrors the rules in [CLAUDE.md](CLAUDE.md), which is the single source of tr
 6. **All LLM calls go through `backend/src/lib/llm.ts`.** No direct provider SDK calls elsewhere.
 7. **No secrets in code.** Never commit `.env`. The server `.env` lives at `/root/pulse/.env`.
 8. **Push immediately after commit.**
+9. **Persist non-trivial decisions in [`docs/decisions.md`](docs/decisions.md)** — every architecture, scope or priority call must be appended (newest first) before the session ends. Read this file before non-trivial work to know what is no longer up for debate.
 
 ---
 
@@ -82,3 +83,11 @@ For everything else (repo layout, navigation tabs, full rules), see [CLAUDE.md](
 `docs/superpowers/plans/` enthält **aktive** Pläne — implementiere die in der durch `2026-04-28-roadmap.md` definierten Reihenfolge.
 
 `docs/superpowers/plans/completed/` enthält **bereits implementierte** Pläne als historische Referenz. **Nicht erneut implementieren** — siehe `completed/README.md`.
+
+---
+
+## Non-negotiable decisions (excerpt from [`docs/decisions.md`](docs/decisions.md))
+
+- **No Telegram integration.** Phase 12 was dropped 2026-04-29; Web Push (PWA) is the planned replacement.
+- **No Habit-Tracker.** Phase 10 covers Strength + Equipment only. Habits are covered by voice check-in + Risk Watch.
+- **Briefing job reads from `pulse_daily_metrics` and `pulse_mental_checkins`** (Pulse schema), never from the legacy `garmin_daily_health` / `check_ins` tables. Migration is part of Bündel A.

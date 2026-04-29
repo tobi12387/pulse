@@ -28,11 +28,13 @@ TanStack Query / OpenRouter LLM. Server: PM2-Prozess `pulse` auf
 
   a) AGENTS.md im Repo-Root      → Workflow-Regeln, die ALLE Tools teilen
   b) CLAUDE.md im Repo-Root      → Stack-Details, Infrastruktur, Pfade
-  c) docs/superpowers/plans/2026-04-28-roadmap.md
+  c) docs/decisions.md           → bereits getroffene Entscheidungen,
+                                   die NICHT erneut zur Diskussion stehen
+  d) docs/superpowers/plans/2026-04-28-roadmap.md
                                   → aktueller Phasen-Stand und Reihenfolge
-  d) Der konkrete Plan zu deiner Aufgabe in docs/superpowers/plans/
+  e) Der konkrete Plan zu deiner Aufgabe in docs/superpowers/plans/
 
-Ohne diese vier gelesen zu haben: nichts implementieren.
+Ohne diese fünf gelesen zu haben: nichts implementieren.
 
 WICHTIG: Pläne unter docs/superpowers/plans/completed/ sind bereits
 implementiert. Lies sie nur als historischen Kontext, implementiere
@@ -62,6 +64,9 @@ NICHTS aus diesem Ordner.
   Branches — das ist Absicht.
 - `pm2.config.js` und der Frontend-Vite-Prozess `pulse-frontend` sind
   bereits aufgesetzt. Nicht neu starten.
+- Nach jeder nicht-trivialen Entscheidung (Architektur, Scope,
+  Priorität) einen Eintrag in `docs/decisions.md` anlegen, bevor die
+  Session endet. Newest first, Format siehe Kopf der Datei.
 
 ═══════════════════════════════════════════════════════════════════════
 3. Aktuelle Reihenfolge (verbindlich, nicht eigenmächtig umpriorisieren)
