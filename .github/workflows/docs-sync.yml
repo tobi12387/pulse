@@ -1,19 +1,21 @@
 name: docs-sync
 
-# Stellt sicher, dass die zentralen Hard-Rule-Marker in CLAUDE.md, AGENTS.md
-# und docs/codex-system-prompt.md alle gemeinsam vorhanden sind. Wer eine Regel
-# in einer Datei entfernt, ohne sie in den anderen zu entfernen oder zu
-# aktualisieren, wird hier rot.
+# Stellt sicher, dass die zentralen Hard-Rule-Marker in CLAUDE.md und AGENTS.md
+# gemeinsam vorhanden sind. Wer eine Regel in einer Datei entfernt, ohne sie in
+# der anderen zu entfernen oder zu aktualisieren, wird hier rot.
 #
 # Bewusst pragmatisch: kein Pixel-genauer Vergleich, sondern Marker-basiert.
 # Erweitern: PATTERNS-Liste unten ergänzen.
+#
+# Hinweis: docs/codex-system-prompt.md ist seit 2026-04-29 nur noch ein
+# dünner Pointer-Prompt + Doku, keine Hard-Rules-Quelle. Wird hier nicht
+# mehr geprüft.
 
 on:
   pull_request:
     paths:
       - 'CLAUDE.md'
       - 'AGENTS.md'
-      - 'docs/codex-system-prompt.md'
       - 'docs/decisions.md'
       - '.github/workflows/docs-sync.yml'
   push:
@@ -21,7 +23,6 @@ on:
     paths:
       - 'CLAUDE.md'
       - 'AGENTS.md'
-      - 'docs/codex-system-prompt.md'
       - 'docs/decisions.md'
   workflow_dispatch:
 
@@ -31,13 +32,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify canonical rules appear in all three docs
+      - name: Verify canonical rules appear in CLAUDE.md and AGENTS.md
         run: |
           set -u
-          FILES=(CLAUDE.md AGENTS.md docs/codex-system-prompt.md)
+          FILES=(CLAUDE.md AGENTS.md)
 
           # Jeder Eintrag ist eine grep -E -i Pattern. Mindestens eines der
-          # alternativen Phrasings muss in jeder der drei Dateien vorkommen.
+          # alternativen Phrasings muss in jeder der beiden Dateien vorkommen.
           PATTERNS=(
             "single source of truth|source of truth"
             "git add \\."
@@ -64,13 +65,13 @@ jobs:
           if [ $fail -ne 0 ]; then
             echo ""
             echo "Hard-Rule-Drift erkannt — eine oder mehrere kanonische Regeln"
-            echo "fehlen in mindestens einer der drei Hauptdokumente."
+            echo "fehlen in mindestens einer der zwei Hauptdokumente."
             echo "Dateien synchronisieren oder PATTERNS-Liste in dieser Workflow-Datei"
             echo "anpassen, falls die Regel bewusst entfernt wurde."
             exit 1
           fi
 
-          echo "Alle kanonischen Regeln in allen drei Dokumenten gefunden."
+          echo "Alle kanonischen Regeln in beiden Hauptdokumenten gefunden."
 
       - name: Verify decisions.md is append-only-friendly
         run: |
