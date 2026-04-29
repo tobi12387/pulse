@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync } from '@/pulse/hooks';
+import { useFitnessLoad, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -188,12 +188,14 @@ function ZoneBar({ zone }: { zone: number }) {
 
 export default function Home() {
   const { data, isLoading, error } = usePulseHome();
+  const readinessQuery = useReadiness();
+  const loadQuery = useFitnessLoad();
   const { data: metricsData } = usePulseMetrics(14);
   const { data: briefingData } = usePulseBriefing();
   const garminSync = useGarminSync();
   const navigate = useNavigate();
 
-  if (isLoading) {
+  if (isLoading || readinessQuery.isLoading || loadQuery.isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '14px 0' }}>
         <div style={{ height: 20, width: '40%', background: 'var(--surface-2)', borderRadius: 3 }} />
@@ -205,16 +207,17 @@ export default function Home() {
     );
   }
 
-  if (error || !data) {
+  if (error || readinessQuery.error || loadQuery.error || !data || !readinessQuery.data || !loadQuery.data) {
     return (
       <div style={{ color: 'var(--rose)', fontFamily: 'var(--font-mono)', fontSize: 11, textAlign: 'center', padding: '32px 0' }}>
-        {error?.message ?? 'Keine Daten'}
+        {error?.message ?? readinessQuery.error?.message ?? loadQuery.error?.message ?? 'Keine Daten'}
       </div>
     );
   }
 
   const m  = data.todayMetrics;
-  const fl = data.fitnessLoad;
+  const readiness = readinessQuery.data;
+  const fl = loadQuery.data;
   const nw = data.nextWorkout;
   const dataStatus = data.dataStatus;
   const showDataStatus = dataStatus.garmin.status !== 'ready' || !dataStatus.userReady || !dataStatus.profileReady;
@@ -222,8 +225,8 @@ export default function Home() {
   const metrics  = metricsData?.metrics ?? [];
   const hrvSpark = metrics.map(d => d.hrvRmssd ?? null);
 
-  const readinessColor = colorOf(data.readiness.color);
-  const readinessLabel = data.readiness.shortLabel;
+  const readinessColor = colorOf(readiness.color);
+  const readinessLabel = readiness.shortLabel;
   const tsbBucket = bucketize(fl.tsb, TSB_BUCKETS);
   const tsbColor = colorOf(tsbBucket.color);
 
@@ -317,7 +320,7 @@ export default function Home() {
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 500, color: readinessColor, letterSpacing: '-.02em', lineHeight: 1 }}>
-            {data.readiness.score}
+            {readiness.score}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)' }}>/ 100</span>
           {data.prognosis.alert && (

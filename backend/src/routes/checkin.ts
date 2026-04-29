@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { createQueue } from '../lib/queue.js';
 import { BRIEFING_QUEUE_NAME } from '../jobs/briefing-generation.job.js';
 import type { BriefingJobData } from '../jobs/briefing-generation.job.js';
+import { invalidateUser } from '../pulse/lib/pulse-cache.js';
 
 const briefingQueue = createQueue(BRIEFING_QUEUE_NAME);
 
@@ -36,6 +37,7 @@ export default async function checkinRoutes(app: FastifyInstance) {
       notes: parsed.data.notes ?? null,
     }).returning();
     if (!checkin) return reply.status(500).send({ error: 'Check-in konnte nicht gespeichert werden' });
+    await invalidateUser(userId);
 
     const jobData: BriefingJobData = { userId, triggerType: 'check-in', date: today };
     void briefingQueue.add('generate-briefing', jobData, {

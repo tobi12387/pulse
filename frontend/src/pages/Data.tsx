@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import {
-  usePulseSleep, usePulseCheckin, usePulseHome, useCheckinToday,
+  usePulseSleep, usePulseCheckin, useCheckinToday,
   usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
-import { colorOf } from '@/lib/thresholds';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
@@ -490,7 +489,6 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
 
 function MentalTab() {
   const [days, setDays] = useState(30);
-  const home               = usePulseHome();
   const { data: today }    = useCheckinToday();
   const checkin            = usePulseCheckin();
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
@@ -503,26 +501,11 @@ function MentalTab() {
     setSubmitted(true);
   }
 
-  const readiness   = home.data?.readiness;
   const alreadyDone = today?.checkin != null;
   const checkins    = histData?.checkins ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {readiness && (
-        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Readiness heute</span>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: colorOf(readiness.color) }}>
-              {readiness.score}
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: colorOf(readiness.color), letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              {readiness.shortLabel}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Check-in form */}
       {alreadyDone || submitted ? (
         <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>

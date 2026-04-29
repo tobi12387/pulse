@@ -21,7 +21,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql } from 'drizzle-orm';
 import { redis } from '../lib/redis.js';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
-import type { PulseHomeScreenData, PulseCoachMessage } from '@coaching-os/shared/pulse';
+import type { PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulseReadiness } from '@coaching-os/shared/pulse';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
 import {
@@ -29,6 +29,8 @@ import {
   classifyAndExtractCheckin, type CheckinClassification,
 } from './services/coach-engine.js';
 import { buildPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
+import type { PulseContext } from './lib/pulse-context.js';
+import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
@@ -46,6 +48,35 @@ const coachMessageSchema = z.object({
 const garminSyncSchema = z.object({
   days: z.number().int().min(1).max(30).optional().default(7),
 });
+
+interface CachedPulseContext extends Omit<PulseContext, 'recentActivities'> {
+  recentActivities: Array<Omit<PulseContext['recentActivities'][number], 'startTime'> & { startTime: string }>;
+}
+
+async function getFitnessLoadCached(userId: string, date: string): Promise<PulseFitnessLoad> {
+  const cached = await getCached<PulseFitnessLoad>('fitness-load', userId, date);
+  if (cached) return cached;
+
+  const load = await computeFitnessLoad(userId, date);
+  await setCached('fitness-load', userId, date, load);
+  return load;
+}
+
+function revivePulseContext(ctx: CachedPulseContext): PulseContext {
+  return {
+    ...ctx,
+    recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
+  };
+}
+
+async function buildPulseContextCached(userId: string, date: string): Promise<PulseContext> {
+  const cached = await getCached<CachedPulseContext>('context', userId, date);
+  if (cached) return revivePulseContext(cached);
+
+  const ctx = await buildPulseContextFor(userId, date);
+  await setCached('context', userId, date, ctx);
+  return ctx;
+}
 
 // ─── Streak helpers ───────────────────────────────────────────────────────────
 
@@ -226,6 +257,28 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/health', async () => ({ status: 'ok', namespace: 'pulse' }));
 
   // All routes below require JWT
+  app.get('/readiness', { onRequest: [app.authenticate] }, async (req): Promise<PulseReadiness & { date: string; cached: boolean }> => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const cached = await getCached<PulseReadiness>('readiness', userId, today);
+    if (cached) return { ...cached, date: today, cached: true };
+
+    const ctx = await buildPulseContextCached(userId, today);
+    await setCached('readiness', userId, today, ctx.readiness);
+    return { ...ctx.readiness, date: today, cached: false };
+  });
+
+  app.get('/load', { onRequest: [app.authenticate] }, async (req): Promise<PulseFitnessLoad & { cached: boolean }> => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const cached = await getCached<PulseFitnessLoad>('fitness-load', userId, today);
+    if (cached) return { ...cached, cached: true };
+
+    const load = await computeFitnessLoad(userId, today);
+    await setCached('fitness-load', userId, today, load);
+    return { ...load, cached: false };
+  });
+
   app.get('/home', { onRequest: [app.authenticate] }, async (req): Promise<PulseHomeScreenData> => {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
@@ -258,7 +311,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ))
         .orderBy(pulsePlannedWorkouts.plannedDate)
         .limit(1),
-      computeFitnessLoad(userId, today),
+      getFitnessLoadCached(userId, today),
       getPrognosis(userId),
       computeStreaks(userId, today),
       db.select({
@@ -352,7 +405,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         .where(eq(pulseCoachSessions.userId, userId))
         .orderBy(desc(pulseCoachSessions.lastMessageAt))
         .limit(1),
-      buildPulseContextFor(userId, today),
+      buildPulseContextCached(userId, today),
     ]);
 
     const coachCtx = mapPulseContextToCoachContext(pulseContext);
@@ -399,6 +452,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       userId, date: today, ...parsed.data, notes: parsed.data.notes ?? null,
     }).returning();
 
+    await invalidateUser(userId);
     return reply.status(201).send(checkin);
   });
 
@@ -470,6 +524,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         }).returning({ id: pulseMentalCheckins.id });
         checkinId = inserted?.id ?? null;
       }
+      await invalidateUser(userId);
     }
 
     // 4. Coach-Antwort in Session speichern
@@ -1428,6 +1483,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       endDate,
     }).returning();
 
+    await invalidateUser(userId);
     return reply.status(201).send(created);
   });
 
@@ -1449,6 +1505,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .returning();
 
     if (!updated) return reply.status(404).send({ error: 'Status nicht gefunden' });
+    await invalidateUser(userId);
     return updated;
   });
 
@@ -1466,6 +1523,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .returning();
 
     if (!resolved) return reply.status(404).send({ error: 'Status nicht aktiv' });
+    await invalidateUser(userId);
     return resolved;
   });
 
@@ -1478,6 +1536,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .returning({ id: pulseHealthState.id });
 
     if (!deleted) return reply.status(404).send({ error: 'Status nicht gefunden' });
+    await invalidateUser(userId);
     return reply.status(204).send();
   });
 
@@ -1944,6 +2003,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     try {
       const results = [];
       for (const date of dates) results.push(await syncGarminDay(userId, date, app));
+      await invalidateUser(userId);
       return {
         status: 'synced',
         days: parsed.data.days,
