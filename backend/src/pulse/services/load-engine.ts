@@ -2,6 +2,7 @@ import { db } from '../../lib/db.js';
 import { pulseActivities, pulseUserProfile } from '../../db/pulse-schema.js';
 import { eq, gte, and } from 'drizzle-orm';
 import type { PulseReadiness, PulseFitnessLoad } from '@coaching-os/shared/pulse';
+import { HRV_STATUS_MAP, READINESS_BUCKETS, bucketize } from '@coaching-os/shared/pulse-thresholds';
 
 // ─── TSS Computation ──────────────────────────────────────────────────────────
 
@@ -135,13 +136,7 @@ export function computeReadinessScore(input: ReadinessInput): PulseReadiness {
     ? Math.min(input.sleepHours / 8, 1) * 100
     : 60;
 
-  const hrv = ({
-    above_normal: 100,
-    balanced: 80,
-    normal: 80,
-    below_normal: 50,
-    poor: 25,
-  }[input.hrvStatus ?? ''] ?? 60);
+  const hrv = HRV_STATUS_MAP[input.hrvStatus ?? '']?.score ?? 60;
 
   const tsb = Math.max(0, Math.min(100, (input.tsb + 30) / 60 * 100));
 
@@ -162,14 +157,13 @@ export function computeReadinessScore(input: ReadinessInput): PulseReadiness {
     stress  * 0.05,
   );
 
-  const label: PulseReadiness['label'] =
-    score >= 80 ? 'excellent' :
-    score >= 65 ? 'good' :
-    score >= 45 ? 'moderate' : 'low';
+  const bucket = bucketize(score, READINESS_BUCKETS);
 
   return {
     score,
     components: { sleep, hrv, tsb, battery, mental, stress },
-    label,
+    label: bucket.label as PulseReadiness['label'],
+    shortLabel: bucket.shortLabel ?? bucket.label.toUpperCase(),
+    color: bucket.color,
   };
 }

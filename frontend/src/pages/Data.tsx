@@ -6,6 +6,7 @@ import {
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
+import { colorOf } from '@/lib/thresholds';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
@@ -512,11 +513,11 @@ function MentalTab() {
         <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Readiness heute</span>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: 'var(--text)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: colorOf(readiness.color) }}>
               {readiness.score}
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              {readiness.label}
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: colorOf(readiness.color), letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              {readiness.shortLabel}
             </div>
           </div>
         </div>
