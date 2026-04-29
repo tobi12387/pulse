@@ -17,9 +17,13 @@ Pflichtlektüre in dieser Reihenfolge — bevor du irgendetwas implementierst:
 
   1. AGENTS.md im Repo-Root
   2. CLAUDE.md im Repo-Root
-  3. docs/decisions.md
-  4. docs/superpowers/plans/2026-04-28-roadmap.md
-  5. das konkrete Plan-Doc zu deiner Aufgabe in docs/superpowers/plans/
+  3. docs/ai/session-brief.md
+  4. docs/ai/current-focus.md
+  5. docs/ai/non-negotiables.md
+  6. docs/ai/context-map.md
+  7. docs/superpowers/plans/2026-04-28-roadmap.md
+  8. das konkrete Plan-Doc zu deiner Aufgabe in docs/superpowers/plans/
+  9. docs/decisions.md nur fuer aktuelle oder strittige Architekturhistorie
 
 Pläne unter docs/superpowers/plans/completed/ sind bereits implementiert —
 NICHTS aus diesem Ordner erneut bauen.
@@ -41,7 +45,7 @@ laut docs/superpowers/plans/2026-04-29-bundle-a-context-unification.md">.
 
 | | Langer gepasteter Prompt | Pointer-Prompt |
 |---|---|---|
-| Tokens / Session | ~2000 | ~80 |
+| Tokens / Session | ~2000 | ~120 |
 | Auto-aktuell | nur wenn du re-pastest | ja, Codex liest aktuelle Files |
 | Wartung | manuell synchron halten | keine |
 | Schutz gegen Doc-Drift | keiner | CI-Check `.github/workflows/docs-sync.yml` |
@@ -53,6 +57,7 @@ ein Wegweiser.
 
 ## Wartung
 
+- **Aktueller Arbeitsfokus:** in `docs/ai/current-focus.md`.
 - **Roadmap-Änderungen:** in `docs/superpowers/plans/2026-04-28-roadmap.md` → Codex sieht es beim nächsten Session-Start.
 - **Hard-Rule-Änderungen:** in `AGENTS.md` und `CLAUDE.md`. Der CI-Check prüft, dass beide konsistent bleiben.
 - **Entscheidungen:** in `docs/decisions.md` (newest first). Pflicht für jede AI-Session.
