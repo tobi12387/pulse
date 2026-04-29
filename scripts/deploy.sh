@@ -30,10 +30,15 @@ fi
 echo "==> fast-forward pull"
 git pull --ff-only origin "$BRANCH"
 
-echo "==> backend build"
-cd "$REPO_DIR/backend"
+echo "==> install workspace dependencies"
+cd "$REPO_DIR"
 npm install --no-audit --no-fund
-npm run build
+
+echo "==> shared build"
+npm run build -w shared
+
+echo "==> backend build"
+npm run build -w backend
 
 echo "==> pm2 restart $PM2_PROC"
 pm2 restart "$PM2_PROC" --update-env
