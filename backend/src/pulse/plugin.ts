@@ -586,16 +586,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     if (!activity) return reply.status(404).send({ error: 'Not found' });
 
-    // If rawData already cached, return it
-    if (activity.rawData && (activity.rawData as any).laps) {
-      return { activity: { ...activity, startTime: activity.startTime.toISOString() }, ...(activity.rawData as any) };
-    }
-
-    // Fetch laps + HR zones from Garmin if externalId available
+    // Use cached rawData if present, else fetch from Garmin
     let laps: any[] = [];
     let hrZones: { zone: number; secsInZone: number; zoneLowBoundary: number }[] = [];
 
-    if (activity.externalId) {
+    if (activity.rawData && (activity.rawData as any).laps) {
+      const rd = activity.rawData as { laps?: any[]; hrZones?: any[] };
+      laps    = rd.laps    ?? [];
+      hrZones = rd.hrZones ?? [];
+    } else if (activity.externalId) {
       try {
         const { getGarminClient } = await import('../lib/garmin-client.js');
         const gc = await getGarminClient();
@@ -639,10 +638,89 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }
     }
 
+    // Phase 8: derive analytics from laps (no full 1Hz streams persisted)
+    let analytics: {
+      ef: { ef: number; unit: 'sec/km/bpm' | 'W/bpm' } | null;
+      decoupling: {
+        firstHalfRatio: number; secondHalfRatio: number;
+        decouplingPct: number; rating: 'excellent'|'good'|'fair'|'poor';
+      } | null;
+      hrDriftBpm: number | null;
+      weather: typeof activity.weather | null;
+      comparable: { countLast30d: number; avgEf: number | null; avgDecouplingPct: number | null } | null;
+    } | null = null;
+
+    try {
+      const { computeFromLaps } = await import('../lib/activity-analytics.js');
+      const result = computeFromLaps({
+        activityType: activity.activityType,
+        laps: laps.map(l => ({
+          index:        l.index,
+          durationSec:  l.durationSec,
+          avgHr:        l.avgHr,
+          avgPowerW:    l.avgPowerW,
+          avgSpeedMs:   l.avgSpeedMs,
+        })),
+      });
+
+      // Compare to last 30d activities of same type (loose ±25% duration)
+      let comparable: { countLast30d: number; avgEf: number | null; avgDecouplingPct: number | null } | null = null;
+      if (result.ef || result.decoupling) {
+        const since30d = new Date(activity.startTime.getTime() - 30 * 86_400_000);
+        const dur = activity.durationSec ?? 0;
+        const peers = await db.select({
+          rawData:     pulseActivities.rawData,
+          activityType: pulseActivities.activityType,
+          durationSec: pulseActivities.durationSec,
+        }).from(pulseActivities)
+          .where(and(
+            eq(pulseActivities.userId, userId),
+            eq(pulseActivities.activityType, activity.activityType),
+            gte(pulseActivities.startTime, since30d),
+          ))
+          .limit(40);
+
+        // Use only ones with cached laps in rawData and similar duration
+        const efs: number[] = [];
+        const decs: number[] = [];
+        for (const p of peers) {
+          if (p.rawData == null) continue;
+          const peerLaps = (p.rawData as { laps?: Array<{ durationSec: number|null; avgHr: number|null; avgPowerW: number|null; avgSpeedMs: number|null; index: number }> }).laps;
+          if (!peerLaps?.length) continue;
+          if (dur > 0 && p.durationSec != null) {
+            const ratio = p.durationSec / dur;
+            if (ratio < 0.75 || ratio > 1.25) continue;
+          }
+          const r = computeFromLaps({
+            activityType: p.activityType,
+            laps: peerLaps,
+          });
+          if (r.ef) efs.push(r.ef.ef);
+          if (r.decoupling) decs.push(r.decoupling.decouplingPct);
+        }
+        comparable = {
+          countLast30d:        peers.length,
+          avgEf:               efs.length  > 0 ? efs.reduce((s, v) => s + v, 0) / efs.length   : null,
+          avgDecouplingPct:    decs.length > 0 ? decs.reduce((s, v) => s + v, 0) / decs.length : null,
+        };
+      }
+
+      analytics = {
+        ef:           result.ef,
+        decoupling:   result.decoupling,
+        hrDriftBpm:   result.hrDriftBpm,
+        weather:      activity.weather ?? null,
+        comparable,
+      };
+    } catch (err) {
+      app.log.warn(`[activity-analytics] failed for ${id}: ${err}`);
+    }
+
     return {
       activity: { ...activity, startTime: activity.startTime.toISOString() },
       laps,
       hrZones,
+      analytics,
     };
   });
 
@@ -1830,7 +1908,7 @@ Direkt, knapp, kein Smalltalk.`;
       return { briefing, date: today, cached: false, raceDay: true };
     }
 
-    const [[metrics], [checkin], workouts] = await Promise.all([
+    const [[metrics], [checkin], workouts, [profile]] = await Promise.all([
       db.select({
         sleepHours:     pulseDailyMetrics.sleepHours,
         hrvRmssd:       pulseDailyMetrics.hrvRmssd,
@@ -1855,6 +1933,9 @@ Direkt, knapp, kein Smalltalk.`;
         status: pulsePlannedWorkouts.status,
       }).from(pulsePlannedWorkouts)
         .where(and(eq(pulsePlannedWorkouts.userId, userId), eq(pulsePlannedWorkouts.plannedDate, today))),
+
+      db.select({ homeLat: pulseUserProfile.homeLat, homeLon: pulseUserProfile.homeLon })
+        .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)),
     ]);
 
     const parts: string[] = [];
@@ -1863,11 +1944,30 @@ Direkt, knapp, kein Smalltalk.`;
     if (metrics?.bodyBatteryMax) parts.push(`Körperbatterie: ${metrics.bodyBatteryMax}%`);
     if (metrics?.restingHr)     parts.push(`Ruhepuls: ${metrics.restingHr} bpm`);
     if (checkin)                parts.push(`Check-in: Stimmung ${checkin.mood}/10, Energie ${checkin.energy}/10, Stress ${checkin.stress}/10`);
-    if (workouts.length > 0) {
-      const w = workouts[0]!;
-      const statusStr = w.status === 'completed' ? ' (bereits erledigt)' : '';
-      parts.push(`Geplantes Training heute: ${w.activityType} Zone ${w.zone}, ${w.durationMin} min${statusStr}`);
-      if (w.description) parts.push(`Training-Details: ${w.description}`);
+    const plannedToday = workouts[0];
+    if (plannedToday) {
+      const statusStr = plannedToday.status === 'completed' ? ' (bereits erledigt)' : '';
+      parts.push(`Geplantes Training heute: ${plannedToday.activityType} Zone ${plannedToday.zone}, ${plannedToday.durationMin} min${statusStr}`);
+      if (plannedToday.description) parts.push(`Training-Details: ${plannedToday.description}`);
+    }
+
+    // Phase 8: Wetter-Kontext für Outdoor-Workouts (kein bike-only — auch Lauf/Hike)
+    const isOutdoorSport = plannedToday && plannedToday.status !== 'completed' &&
+      (plannedToday.activityType === 'bike' || plannedToday.activityType === 'run' || plannedToday.activityType === 'hike');
+    if (isOutdoorSport && profile?.homeLat != null && profile?.homeLon != null) {
+      try {
+        const { getCurrentWeather } = await import('../lib/weather.js');
+        const w = await getCurrentWeather({ latitude: profile.homeLat, longitude: profile.homeLon });
+        if (w) {
+          const weatherLine = `Wetter heute: ${w.tempC.toFixed(0)}°C (gefühlt ${w.feelsC.toFixed(0)}°C), ${w.conditions}, Wind ${w.windKmh.toFixed(0)} km/h, Niederschlag ${w.precipMm.toFixed(1)} mm`;
+          parts.push(weatherLine);
+          if (w.feelsC > 28) parts.push('Hinweis: Hitze erhöht HR-Drift bei gleicher Pace; HR-Cap ggf. +5 bpm akzeptieren oder Pace reduzieren.');
+          if (w.feelsC < 0)  parts.push('Hinweis: Frost — verlängerte Aufwärmphase 15+ min, Atemwegsschutz erwägen.');
+          if (w.windKmh > 25) parts.push('Hinweis: starker Wind — Outdoor-Z2 evtl. nach HR statt nach Pace steuern, Powerausgabe asymmetrisch.');
+        }
+      } catch (err) {
+        app.log.warn(`[briefing] weather fetch failed: ${err}`);
+      }
     }
 
     const context = parts.length > 0 ? parts.join('\n') : 'Noch keine Daten für heute verfügbar.';

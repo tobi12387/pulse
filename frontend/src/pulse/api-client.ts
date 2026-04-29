@@ -85,6 +85,7 @@ export const pulseApi = {
         avgSpeedMs: number | null; elevationGainM: number | null;
       }>;
       hrZones: Array<{ zone: number; secsInZone: number; zoneLowBoundary: number }>;
+      analytics: ActivityAnalytics | null;
     }> =>
       request(`/activities/${id}`),
   },
@@ -267,6 +268,32 @@ export interface AdjustProposal {
   reason: 'low_readiness' | 'illness' | 'injury' | 'fatigue' | 'travel';
   rationale: string;
   readinessScore: number;
+}
+
+// ─── Activity Analytics ──────────────────────────────────────────────────────
+export interface ActivityAnalytics {
+  ef: { ef: number; unit: 'sec/km/bpm' | 'W/bpm' } | null;
+  decoupling: {
+    firstHalfRatio: number;
+    secondHalfRatio: number;
+    decouplingPct: number;
+    rating: 'excellent' | 'good' | 'fair' | 'poor';
+  } | null;
+  hrDriftBpm: number | null;
+  weather: {
+    tempC: number;
+    feelsC: number;
+    humidityPct: number;
+    windKmh: number;
+    windDir: number;
+    conditions: string;
+    precipMm: number;
+  } | null;
+  comparable: {
+    countLast30d: number;
+    avgEf: number | null;
+    avgDecouplingPct: number | null;
+  } | null;
 }
 
 // ─── Phase 7: Race types ─────────────────────────────────────────────────────

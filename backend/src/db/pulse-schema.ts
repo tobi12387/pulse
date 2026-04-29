@@ -34,11 +34,14 @@ export const pulseUserProfile = pgTable('pulse_user_profile', {
   userId:            uuid('user_id').primaryKey().notNull(),
   ftpWatts:          integer('ftp_watts'),
   maxHrBpm:          integer('max_hr_bpm'),
+  lthrBpm:           integer('lthr_bpm'),
   restingHrBpm:      integer('resting_hr_bpm'),
   weightKg:          real('weight_kg'),
   vo2max:            real('vo2max'),
   trainingPhase:     varchar('training_phase', { length: 20 }).default('base'),
   weeklyHoursTarget: real('weekly_hours_target'),
+  homeLat:           real('home_lat'),
+  homeLon:           real('home_lon'),
   updatedAt:         timestamp('updated_at').notNull().defaultNow(),
 });
 
@@ -105,11 +108,40 @@ export const pulseActivities = pgTable('pulse_activities', {
   trainingEffectAerobic:    real('training_effect_aerobic'),
   trainingEffectAnaerobic:  real('training_effect_anaerobic'),
   vo2maxEstimate:           real('vo2max_estimate'),
+  startLat:                 real('start_lat'),
+  startLon:                 real('start_lon'),
+  isIndoor:                 boolean('is_indoor').default(false),
+  weather:                  jsonb('weather'),
   rawData:                  jsonb('raw_data'),
 }, (t) => [
   index('pulse_activities_user_start_idx').on(t.userId, t.startTime),
   uniqueIndex('pulse_activities_external_source_idx').on(t.externalId, t.source),
 ]);
+
+// ─── Activity streams (1Hz time-series) ──────────────────────────────────────
+export const pulseActivityStreams = pgTable('pulse_activity_streams', {
+  activityId:     uuid('activity_id').primaryKey().notNull(),
+  durationSec:    integer('duration_sec').notNull(),
+  sampleRateHz:   real('sample_rate_hz').notNull().default(1),
+  hrStream:       integer('hr_stream').array(),
+  paceStream:     real('pace_stream').array(),
+  speedStream:    real('speed_stream').array(),
+  powerStream:    integer('power_stream').array(),
+  altitudeStream: integer('altitude_stream').array(),
+  createdAt:      timestamp('created_at').notNull().defaultNow(),
+});
+
+// ─── Activity analytics cache (EF, decoupling, drift) ────────────────────────
+export const pulseActivityAnalytics = pgTable('pulse_activity_analytics', {
+  activityId:        uuid('activity_id').primaryKey().notNull(),
+  ef:                real('ef'),
+  efUnit:            varchar('ef_unit', { length: 20 }),
+  decouplingPct:     real('decoupling_pct'),
+  firstHalfRatio:    real('first_half_ratio'),
+  secondHalfRatio:   real('second_half_ratio'),
+  hrDriftBpm:        real('hr_drift_bpm'),
+  computedAt:        timestamp('computed_at').notNull().defaultNow(),
+});
 
 // ─── Planned workouts (training plan) ────────────────────────────────────────
 export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
+import type { ActivityAnalytics } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
@@ -228,6 +229,145 @@ function LapsTable({ laps, activityType }: {
   );
 }
 
+// ─── Analytics: Aerobic Decoupling ───────────────────────────────────────────
+
+function DecouplingCard({ decoupling }: { decoupling: NonNullable<ActivityAnalytics['decoupling']> }) {
+  const ratingColor =
+    decoupling.rating === 'excellent' ? 'var(--green)' :
+    decoupling.rating === 'good'      ? 'var(--accent)' :
+    decoupling.rating === 'fair'      ? 'var(--amber)' :
+    'var(--rose)';
+
+  return (
+    <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
+        AEROBIC DECOUPLING
+      </span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 600, color: ratingColor }}>
+          {decoupling.decouplingPct.toFixed(1)}%
+        </span>
+      </div>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', color: ratingColor }}>
+        {decoupling.rating}
+      </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          Erste Hälfte: {decoupling.firstHalfRatio.toFixed(3)}
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          Zweite Hälfte: {decoupling.secondHalfRatio.toFixed(3)}
+        </span>
+      </div>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+        &lt;3% excellent · &lt;5% good · &lt;7% fair · ≥7% poor
+      </span>
+    </div>
+  );
+}
+
+// ─── Analytics: Efficiency Factor ────────────────────────────────────────────
+
+function EfCard({ ef, comparable }: {
+  ef: NonNullable<ActivityAnalytics['ef']>;
+  comparable: ActivityAnalytics['comparable'];
+}) {
+  let deltaEl: React.ReactNode = null;
+  if (comparable && comparable.avgEf != null && comparable.countLast30d >= 2) {
+    const deltaPct = ((ef.ef - comparable.avgEf) / comparable.avgEf) * 100;
+    const absPct = Math.abs(deltaPct);
+    const deltaColor =
+      absPct <= 2   ? 'var(--amber)' :
+      deltaPct > 0  ? 'var(--green)' :
+      'var(--rose)';
+    const sign = deltaPct >= 0 ? '+' : '';
+    deltaEl = (
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: deltaColor }}>
+        Δ vs 30d-Schnitt {sign}{deltaPct.toFixed(1)}%
+      </span>
+    );
+  }
+
+  return (
+    <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
+        EFFICIENCY FACTOR
+      </span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 600, color: 'var(--text)' }}>
+          {ef.ef.toFixed(2)}
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>
+          {ef.unit}
+        </span>
+      </div>
+      {deltaEl}
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+        Höhere Werte = besser. Pace/HR-Verhältnis bei Lauf, NP/HR bei Rad.
+      </span>
+    </div>
+  );
+}
+
+// ─── Analytics: Weather ───────────────────────────────────────────────────────
+
+const WEATHER_EMOJI: Record<string, string> = {
+  clear: '☀️',
+  clouds: '⛅',
+  rain: '🌧️',
+  snow: '❄️',
+  thunderstorm: '⛈️',
+  fog: '🌫️',
+  other: '🌡️',
+};
+
+function WeatherCard({ weather }: { weather: NonNullable<ActivityAnalytics['weather']> }) {
+  const emoji = WEATHER_EMOJI[weather.conditions] ?? WEATHER_EMOJI['other'];
+
+  return (
+    <div className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-3)' }}>
+        WETTER
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 24 }}>{emoji}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', textTransform: 'capitalize' }}>
+          {weather.conditions}
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 600, color: 'var(--text)' }}>
+          {weather.tempC.toFixed(0)}°C
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          gefühlt {weather.feelsC.toFixed(0)}°C
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          Wind: {weather.windKmh.toFixed(0)} km/h
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          Luftfeuchte: {weather.humidityPct.toFixed(0)}%
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          Niederschlag: {weather.precipMm.toFixed(1)} mm
+        </span>
+      </div>
+      {weather.feelsC > 28 && (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)' }}>
+          Hitze: HR-Drift erwartbar erhöht
+        </span>
+      )}
+      {weather.feelsC < 0 && (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--blue)' }}>
+          Frost: lockerer Auftakt zur Vermeidung von Atemwegsstress
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ActivityDetail() {
@@ -262,7 +402,7 @@ export default function ActivityDetail() {
     );
   }
 
-  const { activity: a, laps, hrZones } = data;
+  const { activity: a, laps, hrZones, analytics } = data;
 
   const date = new Date(a.startTime);
   const dateStr = date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
@@ -339,6 +479,17 @@ export default function ActivityDetail() {
 
       {/* Laps Table */}
       <LapsTable laps={laps} activityType={a.activityType} />
+
+      {/* Analytics Cards */}
+      {analytics?.decoupling != null && (
+        <DecouplingCard decoupling={analytics.decoupling} />
+      )}
+      {analytics?.ef != null && (
+        <EfCard ef={analytics.ef} comparable={analytics.comparable ?? null} />
+      )}
+      {analytics?.weather != null && (
+        <WeatherCard weather={analytics.weather} />
+      )}
 
     </div>
   );

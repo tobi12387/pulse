@@ -273,6 +273,13 @@ export async function syncGarminDay(
 
       const externalId = String(a.activityId);
       const startTime = new Date(a.startTimeGMT ? `${a.startTimeGMT}Z` : a.startTimeLocal);
+      const startLat: number | null = typeof a.startLatitude === 'number' ? a.startLatitude : null;
+      const startLon: number | null = typeof a.startLongitude === 'number' ? a.startLongitude : null;
+      // Heuristic: explicit indoor flag, else no GPS coords AND no distance => indoor
+      const isIndoor: boolean =
+        a.eventType?.typeKey === 'indoor' ||
+        a.elevationCorrected === false && a.startLatitude == null ||
+        (startLat == null && startLon == null && (a.distance == null || a.distance === 0));
       const vals = {
         userId,
         externalId,
@@ -292,6 +299,9 @@ export async function syncGarminDay(
         trainingEffectAerobic: a.aerobicTrainingEffect ?? null,
         trainingEffectAnaerobic: a.anaerobicTrainingEffect ?? null,
         vo2maxEstimate: a.vO2MaxValue ?? null,
+        startLat,
+        startLon,
+        isIndoor,
       };
 
       const [inserted] = await db.insert(pulseActivities).values(vals)
@@ -303,11 +313,30 @@ export async function syncGarminDay(
             normalizedPowerW: vals.normalizedPowerW, tss: vals.tss, calories: vals.calories,
             elevationGainM: vals.elevationGainM, trainingEffectAerobic: vals.trainingEffectAerobic,
             trainingEffectAnaerobic: vals.trainingEffectAnaerobic, vo2maxEstimate: vals.vo2maxEstimate,
+            startLat, startLon, isIndoor,
           },
         }).returning({ id: pulseActivities.id });
 
       if (inserted) {
         await matchActivityToWorkout(userId, inserted.id, dateStr, activityType, app);
+
+        // Backfill weather async — outdoor activities only, ignore failures
+        if (!isIndoor && startLat != null && startLon != null) {
+          void (async () => {
+            try {
+              const { getHistoricalWeather } = await import('../lib/weather.js');
+              const ts = Math.floor(startTime.getTime() / 1000);
+              const w = await getHistoricalWeather({ latitude: startLat, longitude: startLon, timestamp: ts });
+              if (w) {
+                await db.update(pulseActivities)
+                  .set({ weather: w })
+                  .where(eq(pulseActivities.id, inserted.id));
+              }
+            } catch (err) {
+              app?.log.warn(`[weather-backfill] activity=${inserted.id}: ${err}`);
+            }
+          })();
+        }
       }
     }
     if (dayActivities.length > 0) {
