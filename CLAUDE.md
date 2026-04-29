@@ -68,6 +68,8 @@ Single user, single instance, single Postgres DB — do not over-engineer.
 4. **No secrets in code** — never commit `.env` files
 5. **Push to GitHub after every meaningful session**
 6. **After every backend change:** `cd /root/pulse/backend && npm run build && pm2 restart pulse --update-env`
+7. **GitHub `main` is the single source of truth.** Mac and server are consumers — never edit code directly on the server.
+8. **Every coding session goes through a feature branch + PR.** No direct commits to `main` from any tool.
 
 ---
 
@@ -91,3 +93,60 @@ cd /root/pulse/frontend && npm run dev
 - Commit format: `type: short description` (feat / fix / refactor / chore / docs)
 - One commit per logical unit of work
 - Push immediately after commit: `cd /root/pulse && git push`
+
+---
+
+## Parallel Workflow (Claude Code + OpenAI Codex)
+
+This repo is touched by **two AI coding tools in parallel** (Claude Code + Codex) plus a deploy target on the server. To avoid drift and merge pain, every session — human or AI — follows the same rules.
+
+### Branch namespaces
+
+| Tool / actor | Branch prefix | Example |
+|---|---|---|
+| Claude Code | `claude/<topic>` | `claude/focused-pascal` |
+| OpenAI Codex | `codex/<topic>` | `codex/garmin-retry` |
+| Manual / Tobi | `tobi/<topic>` or direct PR | `tobi/ui-cleanup` |
+
+- Never let two tools work on `main` simultaneously.
+- Each session opens a PR. Merges happen via GitHub, not via local fast-forward.
+
+### Pre-session ritual (run at the start of every session)
+
+```bash
+git fetch --all --prune
+git status                 # MUST be clean before starting
+git switch <my-branch>     # or: git switch -c <prefix>/<topic> origin/main
+git pull --ff-only
+```
+
+If `git status` is not clean, stop and resolve before doing anything else — that dirty file is exactly the kind of drift that breaks parallel work (see `0012_*` incident, 2026-04).
+
+### Post-session ritual
+
+```bash
+git status                 # confirm nothing untracked is being left behind
+git add <explicit files>   # never `git add .`
+git commit -m "type: ..."
+git push
+gh pr create               # if not already open
+```
+
+### Conflict-prone files (rebase carefully)
+
+- `backend/src/db/migrations/*.sql` — number collisions are common; renumber on merge if needed.
+- `backend/src/db/schema.ts`, `backend/src/db/pulse-schema.ts` — central, expect merges.
+- `package.json` / `package-lock.json` (root, `backend/`, `frontend/`) — rebase on parallel dependency adds.
+- `CLAUDE.md` — coordinate edits, prefer additive sections.
+
+### Server is a read-only mirror
+
+- Server (`root@192.168.178.46:/root/pulse`) only ever runs `git pull` from `origin/main`.
+- **Never** `git commit` on the server. **Never** create branches on the server.
+- Deploy with [scripts/deploy.sh](scripts/deploy.sh) — it refuses to run on a dirty tree or non-`main` branch.
+
+### Deploy
+
+```bash
+ssh root@192.168.178.46 "cd /root/pulse && bash scripts/deploy.sh"
+```
