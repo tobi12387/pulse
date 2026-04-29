@@ -3,7 +3,7 @@
 This file is read by **OpenAI Codex** (and any AGENTS.md-aware AI tool).
 It mirrors the rules in [CLAUDE.md](CLAUDE.md), which is the single source of truth — read CLAUDE.md fully before doing anything substantial.
 
-> **Codex-specific full system prompt:** [docs/codex-system-prompt.md](docs/codex-system-prompt.md) — copy that into Codex's session/system-prompt slot. It contains the up-to-date roadmap order and the list of decisions that are no longer up for discussion (Telegram dropped, Habits dropped, Briefing-Schema migration, etc.).
+> **Codex-System-Prompt-Slot:** ein dünner Pointer-Prompt reicht — Codex liest diese AGENTS.md beim Session-Start automatisch. Vorlage zum Kopieren in [docs/codex-system-prompt.md](docs/codex-system-prompt.md). Hard Rules, Roadmap, Entscheidungen leben in diesem Repo (AGENTS.md, CLAUDE.md, docs/decisions.md, docs/superpowers/plans/) — nicht im Prompt-Slot.
 
 ---
 
