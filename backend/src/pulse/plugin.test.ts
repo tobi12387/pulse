@@ -1,10 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
+
+vi.mock('../lib/llm.js', () => ({
+  SMART_MODEL: 'test-model',
+  FAST_MODEL: 'test-model',
+  llmChat: vi.fn().mockResolvedValue('Heute locker bleiben: 45 Minuten Zone 2 reichen.'),
+  llmComplete: vi.fn().mockResolvedValue('[{"index":0,"description":"Test-Workout"}]'),
+}));
 
 let app: FastifyInstance;
 let token: string;

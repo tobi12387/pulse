@@ -9,3 +9,18 @@ coverage/
 .idea/
 build/
 .cache/
+
+# Local agent/tool state
+.claude/
+.superpowers/
+
+# Server-local logs and scratch files
+*.log
+/npm
+/tsx
+/coaching-os-v2@*
+/garmin-test.mjs
+
+# Local certificate material
+frontend/certs/*-key.pem
+frontend/certs/*.p12

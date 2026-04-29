@@ -31,11 +31,19 @@ export async function buildApp() {
     sign: { expiresIn: '30d' },
   });
 
-  // Auth decorator — passthrough for single-user local instance
+  // Local production runs as a single-user appliance; tests keep real JWT behavior.
   app.decorate('authenticate', async function(
     req: FastifyRequest,
-    _reply: FastifyReply
+    reply: FastifyReply
   ) {
+    if (env.NODE_ENV === 'test') {
+      try {
+        await req.jwtVerify();
+      } catch {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+      return;
+    }
     req.user = { sub: '00000000-0000-0000-0000-000000000001' };
   });
 
@@ -78,13 +86,16 @@ export async function buildApp() {
   }
 
   // Serve built frontend (if dist exists)
-  if (existsSync(DIST_DIR)) {
+  if (env.NODE_ENV !== 'test' && existsSync(DIST_DIR)) {
     await app.register(import('@fastify/static'), {
       root: DIST_DIR,
       wildcard: false,
     });
     // SPA fallback: all non-API GET requests serve index.html
-    app.setNotFoundHandler((_req, reply) => {
+    app.setNotFoundHandler((req, reply) => {
+      if (req.raw.url?.startsWith('/api/')) {
+        return reply.status(404).send({ error: 'Not found' });
+      }
       reply.sendFile('index.html');
     });
   }
