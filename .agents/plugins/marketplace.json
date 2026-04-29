@@ -1,0 +1,20 @@
+{
+  "name": "pulse-local-marketplace",
+  "interface": {
+    "displayName": "Pulse Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "pulse-ops",
+      "source": {
+        "source": "local",
+        "path": "./plugins/pulse-ops"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

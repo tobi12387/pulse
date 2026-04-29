@@ -1,0 +1,38 @@
+{
+  "name": "pulse-ops",
+  "version": "0.1.0",
+  "description": "Operational workflows for the Pulse project: SSH status, deploys, logs, Nginx, PM2, tests, and healthchecks.",
+  "author": {
+    "name": "Tobi Meurer",
+    "email": "tobi.meurer@gmail.com",
+    "url": "https://github.com/tobi12387"
+  },
+  "homepage": "https://github.com/tobi12387/pulse",
+  "repository": "https://github.com/tobi12387/pulse",
+  "license": "UNLICENSED",
+  "keywords": [
+    "pulse",
+    "ops",
+    "deployment",
+    "ssh"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pulse Ops",
+    "shortDescription": "Operate and deploy the Pulse server safely.",
+    "longDescription": "Project-specific operational workflows for the Pulse training app, including SSH status checks, GitHub sync, builds, tests, PM2 reloads, Nginx validation, logs, and HTTPS healthchecks.",
+    "developerName": "Tobi Meurer",
+    "category": "Developer Tools",
+    "capabilities": [
+      "SSH",
+      "Deployment",
+      "Monitoring"
+    ],
+    "websiteURL": "https://github.com/tobi12387/pulse",
+    "defaultPrompt": [
+      "Check Pulse production status.",
+      "Deploy the latest Pulse main branch to the server.",
+      "Show recent Pulse logs and diagnose failures."
+    ]
+  }
+}
