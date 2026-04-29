@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-29 — Deploy baut und startet Frontend Preview mit
+
+- **Decision:** `scripts/deploy.sh` baut jetzt auch `frontend` und startet den PM2-Prozess `pulse-frontend` neu, falls er existiert. Backend und Frontend werden damit bei jedem Server-Deploy gemeinsam aktualisiert.
+- **Why:** Nach PR #15 war der Server-Code auf `main`, aber `https://192.168.178.46:5175` zeigte weiter den alten Vite-Preview-Build, weil der Deploy nur Shared/Backend baute und nur `pulse` neu startete.
+- **Alternatives:** Frontend nach jedem Deploy manuell bauen und neu starten (fragil); Vite-Preview durch Dev-Server ersetzen (nicht noetig fuer diesen Fix).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-29 — Bundle C trennt Plan-Statistik von Insights
 
 - **Decision:** Der Plan-Untertab heisst `Statistik` und bleibt rein trainingsmetrisch (TSS-Kalender, Intensitaetsverteilung, VO2max, Wochenumfang). `Insights` bleibt als eigener Top-Level-Bereich fuer KI-Narrativ sichtbar und bekommt zusaetzlich eine Home-Quick-Action; die Mobile-Nav nutzt kurze Labels, damit sechs Tabs nicht umbrechen.
