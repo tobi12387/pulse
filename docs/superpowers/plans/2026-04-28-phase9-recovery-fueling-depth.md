@@ -182,7 +182,6 @@ Auto-Vorschlag aus Workout-Dauer:
 
 Verknüpft mit Workout-Row in Plan/ActivityDetail. Zugang:
 - ActivityDetail-Page → "Fueling-Log" Button
-- Push-Reminder via Telegram (Phase 12) nach Workout-Abschluss
 
 ---
 
@@ -247,4 +246,3 @@ Optional, niedrige Priorität — nur wenn FTP gesetzt.
 - [ ] Body-Comp-Chart zeigt 3 Linien synchronisiert
 - [ ] W/kg auf Insights/Home sichtbar wenn FTP vorhanden
 - [ ] Coach erwähnt schlechtes Recovery proaktiv im nächsten Briefing
-- [ ] Telegram-Push (falls Phase 12 live): Nutrition-Reminder 5min nach Activity-End
