@@ -80,26 +80,26 @@ describe('runWithCircuitBreaker', () => {
 
 describe('detectAlarms', () => {
   it('returns true when HRV is poor', () => {
-    expect(detectAlarms({ hrvStatus: 'poor', sleepDurationH: 8, bodyBatteryMax: 60 })).toBe(true);
+    expect(detectAlarms({ hrvStatus: 'poor', sleepHours: 8, bodyBatteryMax: 60 })).toBe(true);
   });
 
   it('returns true when sleep < 6h', () => {
-    expect(detectAlarms({ hrvStatus: 'balanced', sleepDurationH: 5.9, bodyBatteryMax: 60 })).toBe(true);
+    expect(detectAlarms({ hrvStatus: 'balanced', sleepHours: 5.9, bodyBatteryMax: 60 })).toBe(true);
   });
 
   it('returns true when body battery < 20', () => {
-    expect(detectAlarms({ hrvStatus: 'balanced', sleepDurationH: 7, bodyBatteryMax: 19 })).toBe(true);
+    expect(detectAlarms({ hrvStatus: 'balanced', sleepHours: 7, bodyBatteryMax: 19 })).toBe(true);
   });
 
   it('returns false when all values are good', () => {
-    expect(detectAlarms({ hrvStatus: 'balanced', sleepDurationH: 7, bodyBatteryMax: 60 })).toBe(false);
+    expect(detectAlarms({ hrvStatus: 'balanced', sleepHours: 7, bodyBatteryMax: 60 })).toBe(false);
   });
 
   it('returns false when all values are null', () => {
-    expect(detectAlarms({ hrvStatus: null, sleepDurationH: null, bodyBatteryMax: null })).toBe(false);
+    expect(detectAlarms({ hrvStatus: null, sleepHours: null, bodyBatteryMax: null })).toBe(false);
   });
 
   it('returns false when HRV is unbalanced (not poor)', () => {
-    expect(detectAlarms({ hrvStatus: 'unbalanced', sleepDurationH: 7, bodyBatteryMax: 60 })).toBe(false);
+    expect(detectAlarms({ hrvStatus: 'unbalanced', sleepHours: 7, bodyBatteryMax: 60 })).toBe(false);
   });
 });

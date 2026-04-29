@@ -1,10 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../lib/db.js';
-import { chatMessages, garminDailyHealth, dailyBriefings } from '../db/schema.js';
+import { chatMessages, dailyBriefings } from '../db/schema.js';
 import { eq, desc, asc } from 'drizzle-orm';
 import { llmChat, FAST_MODEL } from '../lib/llm.js';
 import type { LLMMessage } from '../lib/llm.js';
+import { buildPulseContextFor } from '../pulse/lib/pulse-context.js';
 
 const messageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -13,27 +14,36 @@ const messageSchema = z.object({
 const MAX_HISTORY = 12; // 6 turns × 2 messages
 
 async function buildChatSystemPrompt(userId: string): Promise<string> {
-  const [garmin] = await db.select()
-    .from(garminDailyHealth)
-    .where(eq(garminDailyHealth.userId, userId))
-    .orderBy(desc(garminDailyHealth.date))
-    .limit(1);
+  const today = new Date().toISOString().split('T')[0]!;
 
-  const [briefing] = await db.select({ briefingText: dailyBriefings.briefingText })
-    .from(dailyBriefings)
-    .where(eq(dailyBriefings.userId, userId))
-    .orderBy(desc(dailyBriefings.createdAt))
-    .limit(1);
+  const [ctx, [briefing]] = await Promise.all([
+    buildPulseContextFor(userId, today),
+    db.select({ briefingText: dailyBriefings.briefingText })
+      .from(dailyBriefings)
+      .where(eq(dailyBriefings.userId, userId))
+      .orderBy(desc(dailyBriefings.createdAt))
+      .limit(1),
+  ]);
 
-  const garminPart = garmin
-    ? `Garmin heute (${garmin.date}): Schlaf ${garmin.sleepDurationH ?? '–'}h, HRV ${garmin.hrvStatus ?? '–'}, Body Battery ${garmin.bodyBatteryMax ?? '–'}, Schritte ${garmin.steps ?? '–'}`
-    : 'Keine aktuellen Garmin-Daten.';
+  const m = ctx.todayMetrics;
+  const pulsePart = m
+    ? `Pulse heute (${m.date}): Schlaf ${m.sleepHours ?? '–'}h, HRV ${m.hrvStatus ?? '–'}, Body Battery ${m.bodyBatteryMax ?? '–'}, Schritte ${m.steps ?? '–'}, Readiness ${ctx.readiness.score}/100 (${ctx.readiness.label}), CTL ${ctx.fitnessLoad.ctl.toFixed(0)}, ATL ${ctx.fitnessLoad.atl.toFixed(0)}, TSB ${ctx.fitnessLoad.tsb.toFixed(0)}`
+    : `Keine Pulse-Metriken für heute (${today}). Readiness ${ctx.readiness.score}/100 (${ctx.readiness.label}), CTL ${ctx.fitnessLoad.ctl.toFixed(0)}, ATL ${ctx.fitnessLoad.atl.toFixed(0)}, TSB ${ctx.fitnessLoad.tsb.toFixed(0)}.`;
+
+  const healthPart = ctx.activeHealthStates.length > 0
+    ? `Aktive Health-States: ${ctx.activeHealthStates.map(h => `${h.type}/${h.severity}${h.bodyPart ? ` ${h.bodyPart}` : ''}`).join('; ')}`
+    : 'Keine aktiven Health-States.';
+
+  const workout = ctx.upcomingWorkouts[0];
+  const workoutPart = workout
+    ? `Nächstes Training: ${workout.plannedDate} ${workout.activityType} Z${workout.zone}, ${workout.durationMin}min.`
+    : 'Kein nächstes Training geplant.';
 
   const briefingPart = briefing?.briefingText
     ? `Letztes Briefing: ${briefing.briefingText}`
     : 'Noch kein Briefing heute.';
 
-  return `Du bist ein persönlicher Coach für Tobi, einen Ausdauersportler (polarized training). Antworte auf Deutsch, präzise und auf den Punkt.\n\nKontext:\n${garminPart}\n${briefingPart}`;
+  return `Du bist ein persönlicher Coach für Tobi, einen Ausdauersportler (polarized training). Antworte auf Deutsch, präzise und auf den Punkt.\n\nKontext:\n${pulsePart}\n${healthPart}\n${workoutPart}\n${briefingPart}`;
 }
 
 export default async function chatRoutes(app: FastifyInstance) {

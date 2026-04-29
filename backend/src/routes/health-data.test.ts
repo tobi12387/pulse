@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
-import { users, garminDailyHealth } from '../db/schema.js';
+import { users } from '../db/schema.js';
+import { pulseDailyMetrics } from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import type { HealthSummaryResponse } from '@coaching-os/shared/health';
@@ -12,7 +13,7 @@ let userId: string;
 
 beforeAll(async () => {
   app = await buildApp();
-  await db.delete(garminDailyHealth);
+  await db.delete(pulseDailyMetrics);
   await db.delete(users);
 
   const [user] = await db.insert(users).values({
@@ -31,7 +32,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await db.delete(garminDailyHealth);
+  await db.delete(pulseDailyMetrics);
   await db.delete(users);
   await app.close();
 });
@@ -57,11 +58,11 @@ describe('GET /api/health/summary', () => {
   });
 
   it('returns today and trend7d when data exists', async () => {
-    await db.insert(garminDailyHealth).values([
+    await db.insert(pulseDailyMetrics).values([
       {
         userId,
         date: '2026-04-13',
-        sleepDurationH: 7.5,
+        sleepHours: 7.5,
         sleepScore: 82,
         hrvStatus: 'balanced',
         restingHr: 52,
@@ -73,7 +74,7 @@ describe('GET /api/health/summary', () => {
       {
         userId,
         date: '2026-04-14',
-        sleepDurationH: 6.2,
+        sleepHours: 6.2,
         sleepScore: 71,
         hrvStatus: 'unbalanced',
         restingHr: 58,
@@ -85,7 +86,7 @@ describe('GET /api/health/summary', () => {
       {
         userId,
         date: '2026-04-15',
-        sleepDurationH: 6.4,
+        sleepHours: 6.4,
         sleepScore: 74,
         hrvStatus: 'balanced',
         restingHr: 59,

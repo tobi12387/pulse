@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
-import { users, garminDailyHealth, checkIns, dailyBriefings } from '../db/schema.js';
+import { dailyBriefings, users } from '../db/schema.js';
+import {
+  pulseDailyMetrics,
+  pulseHealthState,
+  pulseMentalCheckins,
+  pulsePlannedWorkouts,
+} from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { Job } from 'bullmq';
 import { eq } from 'drizzle-orm';
 import { processBriefingJob } from './briefing-generation.job.js';
 import type { BriefingJobData } from './briefing-generation.job.js';
+import { llmComplete } from '../lib/llm.js';
 
 vi.mock('../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('Deine Erholung sieht gut aus. Heute Zone 2.'),
@@ -21,8 +28,10 @@ let userId: string;
 
 beforeAll(async () => {
   await db.delete(dailyBriefings);
-  await db.delete(checkIns);
-  await db.delete(garminDailyHealth);
+  await db.delete(pulseHealthState);
+  await db.delete(pulsePlannedWorkouts);
+  await db.delete(pulseMentalCheckins);
+  await db.delete(pulseDailyMetrics);
   await db.delete(users);
   const [u] = await db.insert(users).values({
     email: 'briefing@coaching.os',
@@ -34,33 +43,43 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.delete(dailyBriefings);
-  await db.delete(checkIns);
-  await db.delete(garminDailyHealth);
+  await db.delete(pulseHealthState);
+  await db.delete(pulsePlannedWorkouts);
+  await db.delete(pulseMentalCheckins);
+  await db.delete(pulseDailyMetrics);
   await db.delete(users);
 });
 
 beforeEach(async () => {
   await db.delete(dailyBriefings);
-  await db.delete(checkIns);
-  await db.delete(garminDailyHealth);
+  await db.delete(pulseHealthState);
+  await db.delete(pulsePlannedWorkouts);
+  await db.delete(pulseMentalCheckins);
+  await db.delete(pulseDailyMetrics);
+  vi.mocked(llmComplete).mockClear();
 });
 
 describe('processBriefingJob', () => {
   it('generates and saves a briefing for check-in trigger', async () => {
     const date = '2026-04-23';
 
-    await db.insert(garminDailyHealth).values({
+    await db.insert(pulseDailyMetrics).values({
       userId,
       date,
-      sleepDurationH: 7.2,
+      sleepHours: 7.2,
       sleepScore: 78,
       hrvStatus: 'balanced',
+      hrvRmssd: 58,
       restingHr: 52,
       bodyBatteryMax: 74,
       steps: 8400,
     });
-    await db.insert(checkIns).values({
-      userId, date, energyLevel: 7, stressLevel: 3, notes: null,
+    await db.insert(pulseMentalCheckins).values({
+      userId, date, mood: 7, energy: 7, stress: 3, motivation: 8, notes: null,
+    });
+    await db.insert(pulsePlannedWorkouts).values({
+      userId, plannedDate: date, activityType: 'bike', zone: 2, durationMin: 60,
+      description: 'Locker rollen',
     });
 
     const job = { data: { userId, triggerType: 'check-in', date } } as Job<BriefingJobData>;
@@ -73,14 +92,27 @@ describe('processBriefingJob', () => {
     expect(saved!.triggerType).toBe('check-in');
     expect(saved!.briefingText).toBe('Deine Erholung sieht gut aus. Heute Zone 2.');
     expect(saved!.date).toBe(date);
+    expect(saved!.garminSnapshot).toMatchObject({ sleepHours: 7.2, hrvStatus: 'balanced' });
+    expect(saved!.checkinSnapshot).toMatchObject({ energy: 7, stress: 3 });
+
+    const userContent = vi.mocked(llmComplete).mock.calls[0]?.[1] ?? '';
+    expect(userContent).toContain('CTL');
+    expect(userContent).toContain('ATL');
+    expect(userContent).toContain('TSB');
+    expect(userContent).toContain('Readiness');
+    expect(userContent).toContain('Nächstes Training');
   });
 
   it('generates a briefing for garmin-alarm trigger (no check-in)', async () => {
     const date = '2026-04-23';
 
-    await db.insert(garminDailyHealth).values({
-      userId, date, sleepDurationH: 5.0, hrvStatus: 'poor',
+    await db.insert(pulseDailyMetrics).values({
+      userId, date, sleepHours: 5.0, hrvStatus: 'poor',
       bodyBatteryMax: 18, steps: null,
+    });
+    await db.insert(pulseHealthState).values({
+      userId, type: 'fatigue', severity: 'moderate', startDate: date,
+      notes: 'Schwere Beine',
     });
 
     const job = { data: { userId, triggerType: 'garmin-alarm', date } } as Job<BriefingJobData>;
@@ -91,6 +123,10 @@ describe('processBriefingJob', () => {
     );
     expect(saved!.triggerType).toBe('garmin-alarm');
     expect(saved!.checkinSnapshot).toBeNull();
+
+    const userContent = vi.mocked(llmComplete).mock.calls[0]?.[1] ?? '';
+    expect(userContent).toContain('Aktive Health-States');
+    expect(userContent).toContain('fatigue/moderate');
   });
 
   it('generates briefing even with no garmin data', async () => {
