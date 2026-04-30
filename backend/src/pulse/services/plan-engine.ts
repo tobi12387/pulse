@@ -30,6 +30,13 @@ interface GoalLite {
   category: GoalCategory;
 }
 
+interface RiskSignalLite {
+  ruleId: string;
+  severity: 'info' | 'warn' | 'critical';
+  title: string;
+  recommendation: string;
+}
+
 // ─── TSS / intensity helpers ──────────────────────────────────────────────────
 
 // Intensity Factor per zone (fraction of FTP-equivalent effort)
@@ -193,6 +200,7 @@ export function decidePlanDays(params: {
   phase: Phase;
   mesocycleWeek: 1 | 2 | 3 | 4;
   goals: GoalLite[];
+  riskSignals?: RiskSignalLite[];
 }): PlanDayDecision {
   const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
   const goal = primaryGoal(params.goals);
@@ -231,6 +239,16 @@ export function decidePlanDays(params: {
     reasons.push('Taper: Frische hat Vorrang vor Volumen.');
   }
 
+  const criticalRisk = (params.riskSignals ?? []).find(r => r.severity === 'critical');
+  const warnRisks = (params.riskSignals ?? []).filter(r => r.severity === 'warn');
+  if (criticalRisk) {
+    target = Math.min(target, 2);
+    reasons.push(`Kritisches Risk-Signal (${criticalRisk.ruleId}): Trainingsdichte stark reduziert.`);
+  } else if (warnRisks.length > 0) {
+    target -= 1;
+    reasons.push(`Risk-Watch Warnsignal: ein zusätzlicher verfügbarer Tag bleibt frei.`);
+  }
+
   const minSessions = available.length <= 1 ? available.length : 2;
   target = Math.min(available.length, Math.max(minSessions, target));
 
@@ -262,14 +280,16 @@ function buildPolarizedWorkouts(params: {
   weeklyHoursTarget: number;
   tsb: number;
   primaryGoal: GoalCategory;
+  riskSignals?: RiskSignalLite[];
 }): WeekWorkout[] {
-  const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal } = params;
+  const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, riskSignals = [] } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
   const n = sorted.length;
   if (n === 0) return [];
 
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
-  const hardCount = tsb < -20 || (primaryGoal === 'weight' && tsb < 5)
+  const hasBlockingRisk = riskSignals.some(r => r.severity === 'critical' || r.ruleId === 'rhr_drift_7d' || r.ruleId === 'hrv_trend_decline' || r.ruleId === 'sleep_debt_5d');
+  const hardCount = tsb < -20 || hasBlockingRisk || (primaryGoal === 'weight' && tsb < 5)
     ? 0
     : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
   const hardDays = selectHardDays(sorted, hardCount);
@@ -649,6 +669,7 @@ export interface ScientificPlanInput {
     targetDate: string | null;
     category: GoalCategory;
   }>;
+  riskSignals?: RiskSignalLite[];
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -687,6 +708,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     phase,
     mesocycleWeek,
     goals: input.goals,
+    riskSignals: input.riskSignals ?? [],
   });
 
   const rawWorkouts = buildPolarizedWorkouts({
@@ -697,6 +719,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     weeklyHoursTarget: input.weeklyHoursTarget,
     tsb: input.tsb,
     primaryGoal: dayDecision.primaryGoal,
+    riskSignals: input.riskSignals ?? [],
   });
 
   // HARD constraints: filter/cap workouts based on active health states

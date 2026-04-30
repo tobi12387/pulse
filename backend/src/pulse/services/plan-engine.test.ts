@@ -69,6 +69,26 @@ describe('decidePlanDays', () => {
     expect(decision.selectedDays.length).toBeLessThan(5);
     expect(decision.reasons.join(' ')).toContain('TSB negativ');
   });
+
+  it('reduces frequency when critical risk signals are active', () => {
+    const decision = decidePlanDays({
+      availableDays: [0, 1, 2, 3, 4],
+      weeklyHoursTarget: 8,
+      tsb: 5,
+      phase: 'base',
+      mesocycleWeek: 1,
+      goals: [],
+      riskSignals: [{
+        ruleId: 'rhr_drift_7d',
+        severity: 'critical',
+        title: 'Ruhepuls erhöht',
+        recommendation: 'Pause',
+      }],
+    });
+
+    expect(decision.selectedDays).toHaveLength(2);
+    expect(decision.reasons.join(' ')).toContain('Kritisches Risk-Signal');
+  });
 });
 
 describe('generateScientificWeekPlan', () => {
@@ -90,5 +110,30 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts).toHaveLength(3);
     expect(workouts.every(w => w.zone <= 2)).toBe(true);
     expect(workouts.some(w => w.activityType === 'strength')).toBe(false);
+  });
+
+  it('removes hard sessions while recovery risk signals are active', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 4],
+      ctl: 30,
+      atl: 28,
+      tsb: 5,
+      ftpWatts: 171,
+      maxHrBpm: 175,
+      recentActivities: [],
+      goals: [],
+      riskSignals: [{
+        ruleId: 'sleep_debt_5d',
+        severity: 'warn',
+        title: 'Schlafschuld',
+        recommendation: 'Umfang reduzieren',
+      }],
+    });
+
+    expect(workouts.length).toBeLessThan(5);
+    expect(workouts.every(w => w.zone <= 2)).toBe(true);
   });
 });

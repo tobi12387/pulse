@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Risk Watch begrenzt die Wochenplanung
+
+- **Decision:** Aktive Risk-Watch-Signale fließen in die Plan-Day-Decision ein. Warnsignale reduzieren die Trainingsfrequenz, kritische Signale deckeln die Woche auf zwei Einheiten; recovery-nahe Signale wie RHR/HRV/Sleep-Debt entfernen harte Reize.
+- **Why:** Risiko-Signale dürfen nicht nur als Banner oder Briefing-Text sichtbar sein. Wenn Pulse ein Risiko erkennt, muss der Trainingsplan selbst defensiver werden.
+- **Alternatives:** Risk Watch nur in Home/Coach zeigen (zu reaktiv); pauschal alle Trainings bei Warnung löschen (zu grob und im Alltag frustrierend).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Plan-Entscheidungen werden in der UI sichtbar
 
 - **Decision:** Die Plan-Generierung gibt die Day-Decision an die UI zurück: gewählte Trainingstage, bewusst freie verfügbare Tage und kurze Begründungen. Die Anzeige erscheint direkt nach “Plan erstellen”.
