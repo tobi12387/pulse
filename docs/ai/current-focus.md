@@ -11,12 +11,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/rpe-post-workout-feedback`: RPE & Post-Workout-Feedback slice 1.
+- `codex/fix-garmin-activity-backfill`: Garmin activity import/backfill fix after RPE schema expansion.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Finish RPE slice 1, then add RPE to Coach/Briefing context and Plan statistics.
+- Deploy the Garmin activity import fix, rerun the 2026 activity backfill, then add RPE to Coach/Briefing context and Plan statistics.
 
 ## Out Of Scope Unless Reversed
 
