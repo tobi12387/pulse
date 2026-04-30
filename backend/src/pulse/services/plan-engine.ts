@@ -22,6 +22,14 @@ interface WeekWorkout {
   adjustedReason?: string;     // non-null when modified by enforceHealthConstraints
 }
 
+type GoalCategory = 'race' | 'weight' | 'ftp' | 'vo2max' | 'volume' | string | null;
+
+interface GoalLite {
+  title: string;
+  targetDate: string | null;
+  category: GoalCategory;
+}
+
 // ─── TSS / intensity helpers ──────────────────────────────────────────────────
 
 // Intensity Factor per zone (fraction of FTP-equivalent effort)
@@ -131,6 +139,119 @@ function selectHardDays(sortedDays: number[], hardCount: number): Set<number> {
   return result;
 }
 
+// ─── Candidate-day planning ─────────────────────────────────────────────────
+
+export interface PlanDayDecision {
+  selectedDays: number[];
+  skippedAvailableDays: number[];
+  targetSessionCount: number;
+  primaryGoal: GoalCategory;
+  reasons: string[];
+}
+
+function primaryGoal(goals: GoalLite[]): GoalCategory {
+  return goals.find(g => g.category === 'race')?.category
+    ?? goals[0]?.category
+    ?? null;
+}
+
+function scoreDayCombination(days: number[], phase: Phase, goal: GoalCategory): number {
+  let score = 0;
+  const sorted = [...days].sort((a, b) => a - b);
+
+  for (let i = 1; i < sorted.length; i++) {
+    const gap = sorted[i]! - sorted[i - 1]!;
+    score += gap >= 2 ? 6 : -8;
+  }
+
+  if (sorted.includes(5) || sorted.includes(6)) score += 4;
+  if (phase === 'taper' && sorted.includes(6)) score -= 4;
+  if (goal === 'weight') {
+    if (sorted.includes(0)) score += 2;
+    if (sorted.includes(6)) score += 2;
+  }
+  if (goal === 'race' && (sorted.includes(2) || sorted.includes(3))) score += 2;
+
+  return score;
+}
+
+function combinations<T>(items: T[], size: number): T[][] {
+  if (size <= 0) return [[]];
+  if (items.length < size) return [];
+  if (items.length === size) return [items];
+  const [head, ...tail] = items;
+  return [
+    ...combinations(tail, size - 1).map(rest => [head!, ...rest]),
+    ...combinations(tail, size),
+  ];
+}
+
+export function decidePlanDays(params: {
+  availableDays: number[];
+  weeklyHoursTarget: number;
+  tsb: number;
+  phase: Phase;
+  mesocycleWeek: 1 | 2 | 3 | 4;
+  goals: GoalLite[];
+}): PlanDayDecision {
+  const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
+  const goal = primaryGoal(params.goals);
+  const reasons: string[] = [];
+
+  let target = params.weeklyHoursTarget <= 3.5 ? 2
+    : params.weeklyHoursTarget <= 5.5 ? 3
+    : params.weeklyHoursTarget <= 8 ? 4
+    : params.weeklyHoursTarget <= 11 ? 5
+    : 6;
+
+  if (goal === 'weight') {
+    target = Math.min(target, params.weeklyHoursTarget <= 6 ? 3 : 4);
+    reasons.push('Gewichtsziel: Konsistenz und Erholung vor maximaler Einheitendichte.');
+  } else if (goal === 'ftp' || goal === 'vo2max') {
+    target = Math.min(target, 4);
+    reasons.push(`${goal.toUpperCase()}-Ziel: wenige, gezielte Reize statt viele Fülltage.`);
+  } else if (goal === 'race') {
+    target = Math.min(target + 1, 5);
+    reasons.push('Race-Ziel: spezifischere Wochenstruktur mit Platz für Schlüsselreize.');
+  }
+
+  if (params.mesocycleWeek === 4) {
+    target -= 1;
+    reasons.push('Regenerationswoche: ein freier Tag mehr als Belastungswochen.');
+  }
+  if (params.tsb < -25) {
+    target -= 2;
+    reasons.push('TSB stark negativ: Trainingsfrequenz deutlich reduziert.');
+  } else if (params.tsb < -12) {
+    target -= 1;
+    reasons.push('TSB negativ: ein verfügbarer Tag bleibt bewusst frei.');
+  }
+  if (params.phase === 'taper') {
+    target = Math.min(target, 3);
+    reasons.push('Taper: Frische hat Vorrang vor Volumen.');
+  }
+
+  const minSessions = available.length <= 1 ? available.length : 2;
+  target = Math.min(available.length, Math.max(minSessions, target));
+
+  const selectedDays = combinations(available, target)
+    .sort((a, b) => scoreDayCombination(b, params.phase, goal) - scoreDayCombination(a, params.phase, goal))[0]
+    ?? available;
+
+  const skippedAvailableDays = available.filter(d => !selectedDays.includes(d));
+  if (skippedAvailableDays.length > 0) {
+    reasons.push(`${skippedAvailableDays.length} verfügbare Tag(e) bleiben als Reserve/Ruhetag frei.`);
+  }
+
+  return {
+    selectedDays,
+    skippedAvailableDays,
+    targetSessionCount: selectedDays.length,
+    primaryGoal: goal,
+    reasons,
+  };
+}
+
 // ─── Polarized week builder ───────────────────────────────────────────────────
 
 function buildPolarizedWorkouts(params: {
@@ -140,14 +261,17 @@ function buildPolarizedWorkouts(params: {
   weeklyTss: number;
   weeklyHoursTarget: number;
   tsb: number;
+  primaryGoal: GoalCategory;
 }): WeekWorkout[] {
-  const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb } = params;
+  const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
   const n = sorted.length;
   if (n === 0) return [];
 
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
-  const hardCount = tsb < -20 ? 0 : Math.min(2, Math.max(1, Math.round(n * 0.22)));
+  const hardCount = tsb < -20 || (primaryGoal === 'weight' && tsb < 5)
+    ? 0
+    : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
   const hardDays = selectHardDays(sorted, hardCount);
 
   const rotation = SPORT_ROTATION[phase];
@@ -159,13 +283,15 @@ function buildPolarizedWorkouts(params: {
     const dayOffset = sorted[i]!;
     const remaining = n - i;
     const isHard = hardDays.has(dayOffset);
+    const activityType = rotation[i % rotation.length]!;
 
     // Zone: Z4 in base/build, Z5 for peak quality sessions, Z2 for easy days
-    const zone = isHard
+    const zone = activityType === 'strength'
+      ? 1
+      : isHard
       ? (phase === 'peak' ? 5 : 4)
       : 2;
 
-    const activityType = rotation[i % rotation.length]!;
     const ef = IF_BY_ZONE[zone] ?? 0.70;
 
     // Derive duration from TSS budget share
@@ -179,7 +305,7 @@ function buildPolarizedWorkouts(params: {
     const durationMin = Math.max(
       20,
       Math.min(
-        180,
+        activityType === 'strength' ? 50 : 180,
         Math.min(maxMinPerDay, isHard ? derivedMin : Math.max(derivedMin, Math.round(baseDur * 0.8))),
       ),
     );
@@ -521,7 +647,7 @@ export interface ScientificPlanInput {
   goals: Array<{
     title: string;
     targetDate: string | null;
-    category: string | null;
+    category: GoalCategory;
   }>;
   recentFeedback?: Array<{
     date: string;
@@ -554,13 +680,23 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     phase,
   });
 
+  const dayDecision = decidePlanDays({
+    availableDays: input.availableDays,
+    weeklyHoursTarget: input.weeklyHoursTarget,
+    tsb: input.tsb,
+    phase,
+    mesocycleWeek,
+    goals: input.goals,
+  });
+
   const rawWorkouts = buildPolarizedWorkouts({
     weekStart: input.weekStart,
-    availableDays: input.availableDays,
+    availableDays: dayDecision.selectedDays,
     phase,
     weeklyTss,
     weeklyHoursTarget: input.weeklyHoursTarget,
     tsb: input.tsb,
+    primaryGoal: dayDecision.primaryGoal,
   });
 
   // HARD constraints: filter/cap workouts based on active health states
