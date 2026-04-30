@@ -11,12 +11,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/fix-garmin-activity-backfill`: Garmin activity import/backfill fix after RPE schema expansion.
+- `codex/fix-drizzle-migration-journal`: Sync Drizzle migration journal with existing SQL migrations and add CI guard.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Deploy the Garmin activity import fix, rerun the 2026 activity backfill, then add RPE to Coach/Briefing context and Plan statistics.
+- Deploy the Drizzle migration journal fix, mark already-applied server migrations in Drizzle's migration table, then add RPE to Coach/Briefing context and Plan statistics.
 
 ## Out Of Scope Unless Reversed
 

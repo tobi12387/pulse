@@ -22,6 +22,83 @@
       "when": 1777135589436,
       "tag": "0002_dark_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777135589437,
+      "tag": "0003_workout_steps",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777135589438,
+      "tag": "0004_workout_garmin_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777135589439,
+      "tag": "0005_week_availability",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777135589440,
+      "tag": "0006_health_states",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777135589441,
+      "tag": "0007_race_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777135589442,
+      "tag": "0008_activity_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777135589443,
+      "tag": "0009_nutrition_workout_fueling",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777135589444,
+      "tag": "0010_test_schema_drift_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777135589445,
+      "tag": "0011_test_plan_goal_drift_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777135589446,
+      "tag": "0012_test_profile_coach_drift_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1777135589447,
+      "tag": "0013_activity_rpe_feedback",
+      "breakpoints": true
     }
   ]
 }
