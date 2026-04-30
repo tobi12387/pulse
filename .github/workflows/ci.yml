@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: coaching_os_v2_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d coaching_os_v2_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/coaching_os_v2
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5433/coaching_os_v2_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-jwt-secret-with-at-least-32-chars
+      OPENROUTER_API_KEY: test-openrouter-key
+      GARMIN_EMAIL: test@example.com
+      GARMIN_PASSWORD: test-password
+      GARMIN_SIDECAR_URL: http://localhost:8001
+      APP_URL: http://localhost:3000
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check migrations
+        run: npm run check:migrations
+
+      - name: Apply test database migrations
+        run: npm run db:migrate -w backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/coaching_os_v2_test
+
+      - name: Build
+        run: npm run build
+
+      - name: Backend tests
+        run: npm test

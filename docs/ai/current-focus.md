@@ -4,18 +4,18 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. Improve Plan Intelligence so generated workouts reflect data, goals, and sensible rest days.
-2. Then continue Risk Watch/Web Push once planning feels trustworthy.
-3. Then revisit Phase 10 / 11 with the latest user priorities.
+1. Finish Phase 0 Stability Hardening: schema baseline, deploy migrations, migration/build/test CI.
+2. Then unify Coach typed chat, voice check-in, briefing, and cache invalidation around PulseContext.
+3. Then improve Plan Intelligence depth: goal-specific workout mix, HR-first targets, RPE as safety input.
 
 ## Current PRs / Branches
 
-- `codex/plan-intelligence-risk-gates`: Make active Risk Watch signals constrain weekly plan density and hard sessions.
+- `codex/schema-deploy-ci-hardening`: Phase 0 Stability Hardening.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Merge and deploy Risk-Watch plan gates, then add richer goal-specific workout mix rules.
+- Merge and deploy Phase 0, then start `codex/pulse-context-routing` for Coach/Briefing/cache consolidation.
 
 ## Out Of Scope Unless Reversed
 

@@ -33,7 +33,7 @@ git pull --ff-only origin "$BRANCH"
 
 echo "==> install workspace dependencies"
 cd "$REPO_DIR"
-npm install --no-audit --no-fund
+npm ci --no-audit --no-fund
 
 echo "==> shared build"
 npm run build -w shared
@@ -43,6 +43,9 @@ npm run build -w backend
 
 echo "==> frontend build"
 npm run build -w frontend
+
+echo "==> database migrations"
+npm run db:migrate -w backend
 
 echo "==> pm2 restart $PM2_PROC"
 pm2 restart "$PM2_PROC" --update-env

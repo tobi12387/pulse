@@ -4,49 +4,25 @@ on:
   pull_request:
     paths:
       - 'backend/src/db/migrations/**'
+      - 'backend/src/db/schema.ts'
+      - 'backend/src/db/pulse-schema.ts'
+      - 'scripts/check-migrations.mjs'
       - '.github/workflows/migrations.yml'
   push:
     branches: [main]
     paths:
       - 'backend/src/db/migrations/**'
+      - 'backend/src/db/schema.ts'
+      - 'backend/src/db/pulse-schema.ts'
+      - 'scripts/check-migrations.mjs'
       - '.github/workflows/migrations.yml'
   workflow_dispatch:
 
 jobs:
-  check-drizzle-journal:
+  check-migrations:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify every SQL migration is in Drizzle journal
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-
-          const migrationsDir = 'backend/src/db/migrations';
-          const journalPath = path.join(migrationsDir, 'meta/_journal.json');
-
-          const sqlTags = fs.readdirSync(migrationsDir)
-            .filter((file) => file.endsWith('.sql'))
-            .map((file) => file.replace(/\.sql$/, ''))
-            .sort();
-
-          const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
-          const journalTags = journal.entries.map((entry) => entry.tag).sort();
-
-          const missing = sqlTags.filter((tag) => !journalTags.includes(tag));
-          const stale = journalTags.filter((tag) => !sqlTags.includes(tag));
-
-          if (missing.length > 0 || stale.length > 0) {
-            for (const tag of missing) {
-              console.error(`::error file=${journalPath}::missing journal entry for ${tag}.sql`);
-            }
-            for (const tag of stale) {
-              console.error(`::error file=${journalPath}::journal entry has no SQL file: ${tag}`);
-            }
-            process.exit(1);
-          }
-
-          console.log(`Drizzle journal OK (${sqlTags.length} migrations).`);
-          NODE
+      - name: Verify migration safety and schema coverage
+        run: node scripts/check-migrations.mjs
