@@ -74,6 +74,7 @@ async function getFitnessLoadCached(userId: string, date: string): Promise<Pulse
 function revivePulseContext(ctx: CachedPulseContext): PulseContext {
   return {
     ...ctx,
+    activeRiskSignals: ctx.activeRiskSignals ?? [],
     recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
   };
 }

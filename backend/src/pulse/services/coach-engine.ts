@@ -1,4 +1,5 @@
 import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
+import type { PulseRiskSignal } from '@coaching-os/shared/pulse';
 
 // ─── Rich context ─────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ export interface CoachFullContext {
     date: string; mood: number; energy: number; stress: number; motivation: number;
   }>;
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
+  activeRiskSignals?: PulseRiskSignal[];
   recovery?: {
     sleepDebt7dH: number;
     sleepDebtStatus: 'ok' | 'mild' | 'severe';
@@ -62,6 +64,7 @@ export function buildRichSystemPrompt(ctx: CoachFullContext): string {
 
   let s = `Du bist Pulse, persönlicher Ausdauer-Coach für Tobi (polarisiertes Training, Radsport/Triathlon).
 Antworte auf Deutsch, präzise (max 150 Wörter), kein Markdown, kein Fett, direkt und praktisch wie ein erfahrener Sportwissenschaftler.
+Wenn ein aktives Risk-Signal critical ist, musst du es klar adressieren und darfst es nicht beschönigen.
 
 == HEUTE (${ctx.today}) ==
 Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
@@ -92,6 +95,15 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       const note = h.notes ? ` — ${h.notes.slice(0, 80)}` : '';
       const end = h.endDate ? ` bis ${h.endDate}` : '';
       s += `\n${h.type}/${h.severity}${part} seit ${h.startDate}${end}${note}`;
+    });
+  }
+
+  if (ctx.activeRiskSignals && ctx.activeRiskSignals.length > 0) {
+    s += '\n\n== RISIKO-SIGNALE (Risk-Engine) ==';
+    ctx.activeRiskSignals.forEach(r => {
+      s += `\n[${r.severity.toUpperCase()}] ${r.title} (${r.ruleId})`;
+      s += `\nBeschreibung: ${r.description}`;
+      s += `\nEmpfehlung: ${r.recommendation}`;
     });
   }
 

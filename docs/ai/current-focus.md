@@ -10,12 +10,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/risk-watch-home-banner`: Add the first Home UI for active Risk Watch signals.
+- `codex/risk-watch-coach-context`: Add active Risk Watch signals to PulseContext, Coach, and Briefing.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Merge and deploy the Home RiskWatchBanner, then add Coach/Briefing risk context.
+- Merge and deploy Risk Watch Coach/Briefing context, then implement Web Push foundations or continue with Phase 10 only after confirming priority.
 
 ## Out Of Scope Unless Reversed
 

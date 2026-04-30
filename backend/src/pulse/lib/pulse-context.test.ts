@@ -7,6 +7,7 @@ import {
   pulseHealthState,
   pulseMentalCheckins,
   pulsePlannedWorkouts,
+  pulseRiskSignals,
   pulseUserProfile,
 } from '../../db/pulse-schema.js';
 import { hashPassword } from '../../lib/auth.js';
@@ -16,6 +17,7 @@ let userId: string;
 
 beforeAll(async () => {
   await db.delete(pulseHealthState);
+  await db.delete(pulseRiskSignals);
   await db.delete(pulsePlannedWorkouts);
   await db.delete(pulseActivities);
   await db.delete(pulseMentalCheckins);
@@ -33,6 +35,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.delete(pulseHealthState);
+  await db.delete(pulseRiskSignals);
   await db.delete(pulsePlannedWorkouts);
   await db.delete(pulseActivities);
   await db.delete(pulseMentalCheckins);
@@ -43,6 +46,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.delete(pulseHealthState);
+  await db.delete(pulseRiskSignals);
   await db.delete(pulsePlannedWorkouts);
   await db.delete(pulseActivities);
   await db.delete(pulseMentalCheckins);
@@ -107,11 +111,26 @@ describe('buildPulseContextFor', () => {
       normalizedPowerW: 190,
       avgHr: 132,
     });
+    await db.insert(pulseRiskSignals).values({
+      userId,
+      ruleId: 'rhr_drift_7d',
+      severity: 'warn',
+      status: 'active',
+      title: 'Ruhepuls seit 7 Tagen +4.5 bpm',
+      description: 'RHR liegt über Baseline.',
+      recommendation: 'Heute Z2 reduzieren.',
+      metricSnapshot: { deltaBpm: 4.5 },
+    });
 
     const ctx = await buildPulseContextFor(userId, date);
     expect(ctx.todayMetrics?.sleepHours).toBeCloseTo(7.4);
     expect(ctx.todayCheckin?.energy).toBe(7);
     expect(ctx.activeHealthStates).toHaveLength(1);
+    expect(ctx.activeRiskSignals[0]).toMatchObject({
+      ruleId: 'rhr_drift_7d',
+      severity: 'warn',
+      recommendation: 'Heute Z2 reduzieren.',
+    });
     expect(ctx.upcomingWorkouts[0]?.activityType).toBe('bike');
     expect(ctx.fitnessLoad).toHaveProperty('ctl');
     expect(ctx.readiness.score).toBeGreaterThan(0);
@@ -127,5 +146,6 @@ describe('buildPulseContextFor', () => {
       severity: 'mild',
       bodyPart: 'knee',
     });
+    expect(coachCtx.activeRiskSignals?.[0]?.ruleId).toBe('rhr_drift_7d');
   });
 });
