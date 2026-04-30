@@ -94,6 +94,9 @@ export interface WorkoutStep {
   reps?: number;
   restMin?: number;
   description?: string;
+  targetHrMinBpm?: number;
+  targetHrMaxBpm?: number;
+  targetLabel?: string;
 }
 
 export interface PulsePlannedWorkout {

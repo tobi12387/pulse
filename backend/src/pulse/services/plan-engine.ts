@@ -1,4 +1,5 @@
 import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
+import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -116,14 +117,7 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
 }
 
 function hrTargetForZone(zone: number, maxHrBpm: number, lthrBpm?: number): string {
-  const lthr = lthrBpm ?? Math.round(maxHrBpm * 0.92);
-  const range = (loPct: number, hiPct: number) =>
-    `${Math.round(lthr * loPct / 100)}-${Math.round(lthr * hiPct / 100)} bpm`;
-  if (zone <= 1) return `<${Math.round(lthr * 0.81)} bpm`;
-  if (zone === 2) return range(82, 88);
-  if (zone === 3) return range(89, 93);
-  if (zone === 4) return range(94, 99);
-  return `>${Math.round(lthr)} bpm`;
+  return hrTargetRangeForZone(zone, maxHrBpm, lthrBpm).label;
 }
 
 // ─── Mesocycle position ───────────────────────────────────────────────────────

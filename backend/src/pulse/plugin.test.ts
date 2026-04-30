@@ -2,13 +2,20 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
-import { pulseCoachSessions, pulseMentalCheckins } from '../db/pulse-schema.js';
+import { pulseCoachSessions, pulseMentalCheckins, pulsePlannedWorkouts, pulseUserProfile } from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { llmChat, llmComplete } from '../lib/llm.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { invalidateUser } from './lib/pulse-cache.js';
+
+const garminMocks = vi.hoisted(() => ({
+  addWorkout: vi.fn(),
+  post: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+}));
 
 vi.mock('../lib/llm.js', () => ({
   SMART_MODEL: 'test-model',
@@ -19,6 +26,17 @@ vi.mock('../lib/llm.js', () => ({
 
 vi.mock('../lib/whisper.js', () => ({
   transcribeAudio: vi.fn().mockResolvedValue('Ich bin heute muede und gestresst.'),
+}));
+
+vi.mock('../lib/garmin-client.js', () => ({
+  getGarminClient: vi.fn().mockResolvedValue({
+    addWorkout: garminMocks.addWorkout,
+    client: {
+      post: garminMocks.post,
+      get: garminMocks.get,
+      delete: garminMocks.delete,
+    },
+  }),
 }));
 
 let app: FastifyInstance;
@@ -42,19 +60,29 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));
-  await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
+  if (userId) {
+    await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+    await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));
+    await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
+  }
   await db.delete(users).where(eq(users.email, 'pulse-test@coaching.os'));
   await app.close();
 });
 
 beforeEach(async () => {
+  await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+  await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
   await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));
   await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
   await invalidateUser(userId);
   vi.mocked(llmChat).mockReset().mockResolvedValue('Heute locker bleiben: 45 Minuten Zone 2 reichen.');
   vi.mocked(llmComplete).mockReset().mockResolvedValue('[{"index":0,"description":"Test-Workout"}]');
   vi.mocked(transcribeAudio).mockReset().mockResolvedValue('Ich bin heute muede und gestresst.');
+  garminMocks.addWorkout.mockReset().mockResolvedValue({ workoutId: 12345 });
+  garminMocks.post.mockReset().mockResolvedValue({ workoutScheduleId: 67890 });
+  garminMocks.get.mockReset().mockResolvedValue({ calendarItems: [] });
+  garminMocks.delete.mockReset().mockResolvedValue(undefined);
 });
 
 describe('GET /api/pulse/health', () => {
@@ -281,6 +309,85 @@ describe('POST /api/pulse/plan/generate', () => {
     });
     expect(res.statusCode).toBe(201);
     expect(res.json()).toHaveProperty('workouts');
+  });
+});
+
+describe('POST /api/pulse/plan/workout/:id/detail', () => {
+  it('adds deterministic HR targets to generated endurance steps', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      updatedAt: new Date(),
+    });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-04',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 60,
+      targetTss: 50,
+      description: 'Z2 Grundlage',
+    }).returning();
+    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
+      steps: [
+        { type: 'warmup', durationMin: 10, zone: 1, description: 'Einrollen' },
+        { type: 'steady', durationMin: 40, zone: 2, description: 'Locker aerober Block' },
+        { type: 'cooldown', durationMin: 10, zone: 1, description: 'Ausschwingen' },
+      ],
+      coachingNote: 'Sauber nach Puls fahren.',
+    }));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/detail`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const steps = res.json<{ workout: { steps: Array<{ targetHrMinBpm?: number; targetHrMaxBpm?: number; targetLabel?: string; description?: string }> } }>().workout.steps;
+    expect(steps[0]).toMatchObject({ targetHrMaxBpm: 138, targetLabel: '<138 bpm' });
+    expect(steps[1]).toMatchObject({ targetHrMinBpm: 139, targetHrMaxBpm: 150, targetLabel: '139-150 bpm' });
+    expect(steps[1]!.description).toContain('HR 139-150 bpm');
+  });
+});
+
+describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
+  it('uploads run and bike steps with Garmin heart-rate zone targets', async () => {
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-04',
+      activityType: 'run',
+      zone: 2,
+      durationMin: 50,
+      targetTss: 45,
+      description: 'HR-first Lauf',
+      steps: [
+        { type: 'warmup', durationMin: 10, zone: 1, description: 'Einlaufen', targetHrMaxBpm: 138, targetLabel: '<138 bpm' },
+        { type: 'steady', durationMin: 30, zone: 2, description: 'Aerob', targetHrMinBpm: 139, targetHrMaxBpm: 150, targetLabel: '139-150 bpm' },
+        { type: 'cooldown', durationMin: 10, zone: 1, description: 'Auslaufen', targetHrMaxBpm: 138, targetLabel: '<138 bpm' },
+      ],
+    }).returning();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/sync-garmin`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
+    const payload = garminMocks.addWorkout.mock.calls[0]![0] as {
+      workoutSegments: Array<{ workoutSteps: Array<{ targetType: { workoutTargetTypeKey: string }; zoneNumber: number | null }> }>;
+    };
+    const steps = payload.workoutSegments[0]!.workoutSteps;
+    expect(steps.map(s => s.targetType.workoutTargetTypeKey)).toEqual([
+      'heart.rate.zone',
+      'heart.rate.zone',
+      'heart.rate.zone',
+    ]);
+    expect(steps.map(s => s.zoneNumber)).toEqual([1, 2, 1]);
   });
 });
 

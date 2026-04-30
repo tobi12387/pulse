@@ -23,6 +23,7 @@ import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
 import type { PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulseReadiness, RpeSorenessArea } from '@coaching-os/shared/pulse';
+import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
 import {
@@ -204,18 +205,51 @@ async function getPulseDataStatus(userId: string, today: string): Promise<PulseD
 
 // ─── Workout step generation ──────────────────────────────────────────────────
 
+function supportsHrStepTargets(activityType: string): boolean {
+  return activityType === 'run' || activityType === 'bike' || activityType === 'hike';
+}
+
+function addHrTargetToStep(step: WorkoutStep, profile: { maxHrBpm: number | null; lthrBpm: number | null } | undefined): WorkoutStep {
+  const maxHr = profile?.maxHrBpm ?? 185;
+  const target = hrTargetRangeForZone(step.zone, maxHr, profile?.lthrBpm ?? null);
+  const description = step.description?.includes('bpm')
+    ? step.description
+    : `${step.description ? `${step.description} ` : ''}HR ${target.label}.`.trim();
+  const next: WorkoutStep = {
+    ...step,
+    description,
+    targetLabel: target.label,
+  };
+  if (target.minBpm != null) next.targetHrMinBpm = target.minBpm;
+  if (target.maxBpm != null) next.targetHrMaxBpm = target.maxBpm;
+  return next;
+}
+
+function hrZoneReference(maxHrBpm: number, lthrBpm: number | null | undefined): string {
+  return [1, 2, 3, 4, 5]
+    .map(zone => {
+      const target = hrTargetRangeForZone(zone, maxHrBpm, lthrBpm ?? null);
+      return `Z${zone} ${target.label}`;
+    })
+    .join(', ');
+}
+
 async function buildWorkoutSteps(
   workout: { id: string; activityType: string; zone: number; durationMin: number; description: string | null },
-  profile: { ftpWatts: number | null; maxHrBpm: number | null } | undefined,
+  profile: { ftpWatts: number | null; maxHrBpm: number | null; lthrBpm: number | null } | undefined,
 ): Promise<{ steps: WorkoutStep[]; updatedDescription: string | null }> {
   const ftp = profile?.ftpWatts ?? 250;
   const maxHr = profile?.maxHrBpm ?? 185;
 
   const isRun = workout.activityType === 'run';
   const isBike = workout.activityType === 'bike';
-  const intensityRef = isBike
-    ? `FTP=${ftp}W, Zonen: Z1<${Math.round(ftp*0.56)}W, Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W, Z5>${Math.round(ftp*1.05)}W`
-    : `Max-HF=${maxHr}bpm, Zonen: Z1<${Math.round(maxHr*0.68)}, Z2 ${Math.round(maxHr*0.68)}-${Math.round(maxHr*0.78)}, Z4 ${Math.round(maxHr*0.88)}-${Math.round(maxHr*0.95)}, Z5>${Math.round(maxHr*0.95)}`;
+  const intensityRef = supportsHrStepTargets(workout.activityType)
+    ? `HR-first: ${hrZoneReference(maxHr, profile?.lthrBpm)}. FTP=${ftp}W nur als Sekundaerkontrolle.`
+    : isBike
+    ? `FTP=${ftp}W als Sekundaerinfo; wenn Pulsdaten fehlen: Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W.`
+    : isRun
+    ? `Max-HF=${maxHr}bpm, HR-first: ${hrZoneReference(maxHr, profile?.lthrBpm)}.`
+    : `Technik/Bewegungsqualitaet; keine harte Zielzone erzwingen.`;
 
   const prompt = `Erstelle eine detaillierte Trainingsanleitung für dieses Workout:
 
@@ -235,7 +269,8 @@ Antworte NUR mit einem JSON-Objekt:
 
 Typen: warmup, interval, steady, cooldown. Zonen 1-5.
 Gesamtdauer der steps muss ~${workout.durationMin} Minuten ergeben (inkl. Pausen).
-Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
+Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.
+Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur als Sekundaerkontrolle.`;
 
   const raw = await llmComplete(
     'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON.',
@@ -256,7 +291,7 @@ Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.`;
     if (s.reps != null) step.reps = s.reps;
     if (s.restMin != null) step.restMin = s.restMin;
     if (s.description) step.description = s.description;
-    return step;
+    return supportsHrStepTargets(workout.activityType) ? addHrTargetToStep(step, profile) : step;
   });
 
   const coachingNote = parsed.coachingNote ?? null;
@@ -986,6 +1021,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
   };
   const GARMIN_TIME_COND = { conditionTypeId: 2, conditionTypeKey: 'time', displayOrder: 0, displayable: true };
   const GARMIN_NO_TARGET = { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target', displayOrder: 0 };
+  const GARMIN_HR_ZONE_TARGET = { workoutTargetTypeId: 4, workoutTargetTypeKey: 'heart.rate.zone', displayOrder: 0 };
   const GARMIN_NULL_FIELDS = {
     childStepId: null, endConditionCompare: null, targetValueOne: null, targetValueTwo: null,
     targetValueUnit: null, zoneNumber: null, secondaryTargetType: null,
@@ -998,6 +1034,17 @@ export default async function pulsePlugin(app: FastifyInstance) {
   const GARMIN_ACTIVITY_NAMES: Record<string, string> = {
     run: 'Laufen', bike: 'Radfahren', swim: 'Schwimmen', strength: 'Kraft',
   };
+
+  function garminTargetFields(activityType: string, step: WorkoutStep) {
+    if (!supportsHrStepTargets(activityType)) {
+      return { ...GARMIN_NULL_FIELDS, targetType: GARMIN_NO_TARGET };
+    }
+    return {
+      ...GARMIN_NULL_FIELDS,
+      targetType: GARMIN_HR_ZONE_TARGET,
+      zoneNumber: Math.max(1, Math.min(5, step.zone)),
+    };
+  }
 
   function buildGarminWorkoutJson(workout: {
     activityType: string; zone: number; durationMin: number;
@@ -1019,16 +1066,17 @@ export default async function pulsePlugin(app: FastifyInstance) {
             stepType: GARMIN_STEP_TYPES.interval,
             description: step.description ?? `Zone ${step.zone}`,
             endCondition: GARMIN_TIME_COND, endConditionValue: durationSecs,
-            targetType: GARMIN_NO_TARGET, ...GARMIN_NULL_FIELDS,
+            ...garminTargetFields(workout.activityType, step),
           },
         ];
         if (step.restMin) {
+          const restStep: WorkoutStep = { type: 'rest', durationMin: step.restMin, zone: 1 };
           innerSteps.push({
             type: 'ExecutableStepDTO', stepOrder: 2,
             stepType: GARMIN_STEP_TYPES.rest,
-            description: null,
+            description: 'Erholung',
             endCondition: GARMIN_TIME_COND, endConditionValue: restSecs,
-            targetType: GARMIN_NO_TARGET, ...GARMIN_NULL_FIELDS,
+            ...garminTargetFields(workout.activityType, restStep),
           });
         }
         stepOrder++;
@@ -1047,7 +1095,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
           stepType: { ...stepType, displayOrder: 0 },
           description: step.description ?? null,
           endCondition: GARMIN_TIME_COND, endConditionValue: durationSecs,
-          targetType: GARMIN_NO_TARGET, ...GARMIN_NULL_FIELDS,
+          ...garminTargetFields(workout.activityType, step),
         });
       }
     }

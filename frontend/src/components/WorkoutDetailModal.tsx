@@ -30,10 +30,19 @@ function fmtDuration(min: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
+function fmtHrTarget(step: WorkoutStep): string | null {
+  if (step.targetLabel) return step.targetLabel;
+  if (step.targetHrMinBpm != null && step.targetHrMaxBpm != null) return `${step.targetHrMinBpm}-${step.targetHrMaxBpm} bpm`;
+  if (step.targetHrMaxBpm != null) return `<${step.targetHrMaxBpm} bpm`;
+  if (step.targetHrMinBpm != null) return `>${step.targetHrMinBpm} bpm`;
+  return null;
+}
+
 function StepRow({ step }: { step: WorkoutStep }) {
   const zoneColor = ZONE_COLOR[step.zone] ?? 'var(--text-2)';
   const isInterval = step.type === 'interval';
   const isPause = step.type === 'rest';
+  const hrTarget = fmtHrTarget(step);
 
   return (
     <div style={{
@@ -72,6 +81,16 @@ function StepRow({ step }: { step: WorkoutStep }) {
               padding: '1px 5px', borderRadius: 2,
             }}>
               {ZONE_LABEL[step.zone] ?? `Z${step.zone}`}
+            </span>
+          )}
+          {hrTarget && (
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.06em',
+              color: 'var(--rose)', background: 'var(--rose)18',
+              padding: '1px 5px', borderRadius: 2,
+              whiteSpace: 'nowrap',
+            }}>
+              HR {hrTarget}
             </span>
           )}
           {step.description && (
