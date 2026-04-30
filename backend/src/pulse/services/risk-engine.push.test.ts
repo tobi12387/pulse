@@ -101,7 +101,7 @@ describe('evaluateAndPersistRiskSignals push trigger', () => {
   });
 
   it('does not send a risk push for newly inserted warning signals', async () => {
-    await seedRhrSeries(userId, 52.5);
+    await seedRhrSeries(userId, 52);
 
     await evaluateAndPersistRiskSignals(userId, '2026-04-06');
 
