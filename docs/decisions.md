@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Garmin-Workouts bekommen HR-Zielzonen statt No-Target-Steps
+
+- **Decision:** Strukturierte Run/Bike/Hike-Workout-Steps erhalten deterministisch berechnete HR-Zielbereiche im `WorkoutStep`-JSON und werden beim Garmin-Upload als `heart.rate.zone`-Targets exportiert. Schwimmen und Kraft bleiben vorerst ohne erzwungene HR-Targets.
+- **Why:** Nach der HR-first Plan-Engine waren Pulsziele zwar im Text sichtbar, aber Garmin bekam weiter `no.target`-Steps. Die Zielsteuerung muss bis zum Gerät reichen, ohne das LLM zur Quelle der Intensitätslogik zu machen.
+- **Alternatives:** Nur bpm in Beschreibungstext schreiben (auf der Uhr nicht als Target nutzbar); Custom-HR-Range ohne verifizierte Garmin-Payload erzwingen (höheres Upload-Risiko); Power/Pace-Targets weiter priorisieren (widerspricht Tobis HR-first Steuerung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Plan-Engine entscheidet Zielmix und Safety deterministisch
 
 - **Decision:** Wochenpläne bekommen eine deterministische Plan-Intelligence-Schicht: aktive Ziele bestimmen Sportmix und harte Reize, RPE aus jüngsten Einheiten kann Trainingsdichte und Intensität reduzieren, und jede Einheit erhält vor LLM-Enrichment eine HR-first Beschreibung mit Pulsbereich.

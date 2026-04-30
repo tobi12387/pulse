@@ -3,6 +3,8 @@ import {
   READINESS_BUCKETS,
   TSB_BUCKETS,
   bucketize,
+  estimateLthrBpm,
+  hrTargetRangeForZone,
 } from '@coaching-os/shared/pulse-thresholds';
 
 describe('pulse thresholds', () => {
@@ -20,5 +22,19 @@ describe('pulse thresholds', () => {
 
   it('provides compact readiness labels for tight UI', () => {
     expect(bucketize(80, READINESS_BUCKETS).shortLabel).toBe('OPTIMAL');
+  });
+
+  it('derives HR targets from LTHR when available', () => {
+    expect(hrTargetRangeForZone(2, 185, 170)).toMatchObject({
+      minBpm: 139,
+      maxBpm: 150,
+      label: '139-150 bpm',
+      basis: 'lthr',
+    });
+  });
+
+  it('falls back to max-HR-derived LTHR estimate', () => {
+    expect(estimateLthrBpm(185, null)).toEqual({ value: 170, basis: 'max_hr_estimate' });
+    expect(hrTargetRangeForZone(1, 185, null)).toMatchObject({ maxBpm: 138, label: '<138 bpm' });
   });
 });

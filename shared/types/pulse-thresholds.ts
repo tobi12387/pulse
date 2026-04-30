@@ -113,3 +113,45 @@ export function bucketize(value: number, buckets: Bucket[]): Bucket {
   }
   return buckets[buckets.length - 1]!;
 }
+
+export interface HrTargetRange {
+  zone: number;
+  minBpm: number | null;
+  maxBpm: number | null;
+  label: string;
+  basis: 'lthr' | 'max_hr_estimate';
+}
+
+export function estimateLthrBpm(maxHrBpm: number, lthrBpm?: number | null): { value: number; basis: HrTargetRange['basis'] } {
+  if (lthrBpm != null && lthrBpm > 0) return { value: lthrBpm, basis: 'lthr' };
+  return { value: Math.round(maxHrBpm * 0.92), basis: 'max_hr_estimate' };
+}
+
+export function hrTargetRangeForZone(zone: number, maxHrBpm: number, lthrBpm?: number | null): HrTargetRange {
+  const normalizedZone = Math.max(1, Math.min(5, Math.round(zone)));
+  const lthr = estimateLthrBpm(maxHrBpm, lthrBpm);
+  const pct = (value: number) => Math.round(lthr.value * value / 100);
+
+  if (normalizedZone === 1) {
+    const maxBpm = pct(81);
+    return { zone: normalizedZone, minBpm: null, maxBpm, label: `<${maxBpm} bpm`, basis: lthr.basis };
+  }
+  if (normalizedZone === 2) {
+    const minBpm = pct(82);
+    const maxBpm = pct(88);
+    return { zone: normalizedZone, minBpm, maxBpm, label: `${minBpm}-${maxBpm} bpm`, basis: lthr.basis };
+  }
+  if (normalizedZone === 3) {
+    const minBpm = pct(89);
+    const maxBpm = pct(93);
+    return { zone: normalizedZone, minBpm, maxBpm, label: `${minBpm}-${maxBpm} bpm`, basis: lthr.basis };
+  }
+  if (normalizedZone === 4) {
+    const minBpm = pct(94);
+    const maxBpm = pct(99);
+    return { zone: normalizedZone, minBpm, maxBpm, label: `${minBpm}-${maxBpm} bpm`, basis: lthr.basis };
+  }
+
+  const minBpm = lthr.value;
+  return { zone: normalizedZone, minBpm, maxBpm: null, label: `>${minBpm} bpm`, basis: lthr.basis };
+}

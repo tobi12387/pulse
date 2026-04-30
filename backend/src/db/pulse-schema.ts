@@ -13,6 +13,9 @@ export interface WorkoutStep {
   reps?: number;
   restMin?: number;
   description?: string;
+  targetHrMinBpm?: number;
+  targetHrMaxBpm?: number;
+  targetLabel?: string;
 }
 
 // ─── ENUMs (all prefixed pulse_) ─────────────────────────────────────────────
