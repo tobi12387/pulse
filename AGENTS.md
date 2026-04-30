@@ -1,9 +1,9 @@
 # AGENTS.md — Pulse
 
 This file is read by **OpenAI Codex** (and any AGENTS.md-aware AI tool).
-It mirrors the rules in [CLAUDE.md](CLAUDE.md), which is the single source of truth — read CLAUDE.md fully before doing anything substantial.
+It is the active single source of truth for AI-agent workflow rules in this repo.
 
-> **Codex-System-Prompt-Slot:** ein dünner Pointer-Prompt reicht — Codex liest diese AGENTS.md beim Session-Start automatisch. Vorlage zum Kopieren in [docs/codex-system-prompt.md](docs/codex-system-prompt.md). Hard Rules, Roadmap, Entscheidungen leben in diesem Repo (AGENTS.md, CLAUDE.md, docs/decisions.md, docs/superpowers/plans/) — nicht im Prompt-Slot.
+> **Codex-System-Prompt-Slot:** ein dünner Pointer-Prompt reicht — Codex liest diese AGENTS.md beim Session-Start automatisch. Vorlage zum Kopieren in [docs/codex-system-prompt.md](docs/codex-system-prompt.md). Hard Rules, Roadmap, Entscheidungen leben in diesem Repo (AGENTS.md, docs/decisions.md, docs/superpowers/plans/) — nicht im Prompt-Slot.
 
 ---
 
@@ -11,7 +11,7 @@ It mirrors the rules in [CLAUDE.md](CLAUDE.md), which is the single source of tr
 
 1. **Single source of truth = GitHub `main`.** The Mac repo and the server (`/root/pulse` on `192.168.178.46`) are consumers. Never edit code directly on the server.
 2. **Every session = feature branch + PR.** No direct commits to `main` from any tool.
-3. **Branch namespace for Codex: `codex/<topic>`.** Claude Code uses `claude/<topic>`. Manual work uses `tobi/<topic>`. Never let two tools work on `main` simultaneously.
+3. **Branch namespace for Codex: `codex/<topic>`.** Manual work uses `tobi/<topic>`. Do not work directly on `main`.
 4. **Never `git add .`** — stage files explicitly by name.
 5. **DB migrations are additive-only.** No `DROP`, no `NOT NULL` without `DEFAULT`. Filename pattern: `NNNN_description.sql` in `backend/src/db/migrations/`.
 6. **All LLM calls go through `backend/src/lib/llm.ts`.** No direct provider SDK calls elsewhere.
@@ -32,6 +32,18 @@ Before broad code exploration, read the compact AI working set:
 
 Use `docs/decisions.md` as the full decision history, not as the first place to re-read every past decision.
 
+## Project-level Codex skills
+
+Pulse-specific Codex skills live in `.codex/skills/` and are part of this repo's working context:
+
+- `pulse-session-ritual` — session start/end workflow and branch hygiene.
+- `pulse-migration-guard` — additive-only Drizzle/Postgres migration checks.
+- `pulse-pr-review` — Pulse-specific review risks and non-negotiables.
+- `pulse-frontend-qa` — React/Vite route and responsive QA workflow.
+- `pulse-deploy-readiness` — pre-merge, push and server deploy readiness.
+
+Use these skills when their descriptions match the task before falling back to generic workflows.
+
 ---
 
 ## Pre-session ritual (run every time before starting work)
@@ -42,7 +54,7 @@ git status                            # MUST be clean — if not, stop and resol
 git switch -c codex/<topic> origin/main
 ```
 
-If `git status` shows untracked files or modifications you did not make: investigate before starting. The other tool (Claude Code, or a previous Codex run) may have left work behind. Do **not** `git stash` or `rm` blindly.
+If `git status` shows untracked files or modifications you did not make: investigate before starting. A previous Codex run or manual work may have left work behind. Do **not** `git stash` or `rm` blindly.
 
 ## Post-session ritual
 
@@ -63,7 +75,7 @@ Commit-message format: `type: short description` where type ∈ `feat | fix | re
 - `backend/src/db/migrations/*.sql` — number collisions are common. If your branch's `0013_*.sql` conflicts on rebase because main already has a `0013_*.sql`, **renumber yours** to the next free number.
 - `backend/src/db/schema.ts`, `backend/src/db/pulse-schema.ts`
 - `package.json` / `package-lock.json` (root, `backend/`, `frontend/`)
-- `CLAUDE.md`, `AGENTS.md` — additive-only sections preferred.
+- `AGENTS.md` — additive-only sections preferred unless a prior workflow decision is explicitly reversed.
 
 ---
 
@@ -87,7 +99,32 @@ Commit-message format: `type: short description` where type ∈ `feat | fix | re
 | LLM | OpenRouter → `anthropic/claude-sonnet-4-5` (default) |
 | Auth | argon2id |
 
-For everything else (repo layout, navigation tabs, full rules), see [CLAUDE.md](CLAUDE.md).
+---
+
+## Repository layout
+
+| Directory | Purpose |
+|---|---|
+| `backend/src/routes/` | Fastify API route handlers |
+| `backend/src/db/` | Drizzle schema + migrations (`schema.ts`, `pulse-schema.ts`) |
+| `backend/src/lib/` | Shared utilities: env, llm, auth, garmin-client |
+| `backend/src/jobs/` | Background jobs |
+| `frontend/src/pages/` | React pages: Home, Coach, Data, Plan, Insights, Settings |
+| `frontend/src/pulse/` | Pulse-specific hooks and API wrappers |
+| `frontend/src/components/` | Shared UI components |
+
+---
+
+## Navigation
+
+| Route | Page |
+|---|---|
+| `/` | Home (Readiness, metrics, briefing, activities) |
+| `/coach` | Coach (Chat + Garmin context) |
+| `/data` | Daten (Schlaf tab, Mental/Check-in tab) |
+| `/plan` | Plan (Training, Ziele, Review, Statistik tabs) |
+| `/insights` | Insights (KI-Analyse, Trends, Narrativ) |
+| `/settings` | Settings (Garmin sync, account) |
 
 ---
 

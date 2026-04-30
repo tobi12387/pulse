@@ -1,6 +1,6 @@
 # Pulse — Decision Log
 
-> **Pflicht-Datei für AI-Tools (Claude Code + Codex):** Jede nicht-triviale
+> **Pflicht-Datei für AI-Tools (Codex):** Jede nicht-triviale
 > Entscheidung — Architektur, Scope, Priorität, technische Wahl —
 > bekommt einen Eintrag hier, **bevor** die Session endet. Wenn eine
 > Entscheidung nur im Chat besprochen wird, ist sie nicht passiert.
@@ -9,12 +9,30 @@
 > - **Decision:** was entschieden wurde (1 Zeile)
 > - **Why:** der Grund (1–3 Sätze)
 > - **Alternatives:** verworfene Optionen, kurz
-> - **Decided by:** Tobi / Claude Code / Codex (+ PR/Chat-Link, falls vorhanden)
+> - **Decided by:** Tobi / Codex (+ PR/Chat-Link, falls vorhanden)
 > - **Status:** `active` | `superseded by [link]` | `reversed [date]`
 >
 > **Newest first.** Append-only — bestehende Einträge nie editieren,
 > stattdessen neuen Eintrag mit Status `superseded` oder `reversed`
 > anlegen.
+
+---
+
+## 2026-04-30 — Claude-Code-Integration wird entfernt
+
+- **Decision:** Pulse nutzt vorerst nur noch Codex als AI-Coding-Agent. Die aktive Claude-Code-Integration wird entfernt: `CLAUDE.md` entfällt, `.claude/` wird nicht mehr als Projektzustand geführt, Branch-Regeln erwähnen nur noch `codex/<topic>` und manuelle `tobi/<topic>`-Branches.
+- **Why:** Tobi möchte aktuell mit Codex weitermachen und keine parallele Claude-Code-Konfiguration im Projekt pflegen. Eine aktive AI-Regeldatei reduziert Drift und macht `AGENTS.md` zur klaren Wahrheit für Codex.
+- **Alternatives:** Claude-Code-Doku als parallele zweite Quelle behalten (unnötige Drift); `CLAUDE.md` leer als Platzhalter behalten (weiterhin missverständlich); historische Plan- und Decision-Referenzen umschreiben (würde Verlauf verfälschen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+## 2026-04-30 — Pulse nutzt projektlokale Codex-Skills für wiederkehrende Arbeitsrituale
+
+- **Decision:** Pulse verankert fünf project-level Codex-Skills unter `.codex/skills/`: Session-Ritual, Migration-Guard, PR-Review, Frontend-QA und Deploy-Readiness.
+- **Why:** Die kritischen Arbeitsregeln des Projekts sollen nicht nur in langen Prompt- oder Doku-Abschnitten stehen, sondern als kleine, taskbezogen triggerbare Workflows im Repo verfügbar sein. Das reduziert Wiederholung und hilft besonders bei Branch-Hygiene, additiven Migrationen, Review-Risiken und Deploy-Checks.
+- **Alternatives:** Nur globale Codex-Skills nutzen (zu wenig Pulse-spezifisch); alle Regeln weiter ausschließlich in `AGENTS.md` pflegen (weniger taskbezogen); große monolithische Pulse-Skill-Datei (zu viel Kontext pro Trigger).
+- **Decided by:** Codex.
+- **Status:** active.
 
 ---
 
@@ -27,7 +45,6 @@
 - **Status:** active.
 
 ---
-
 ## 2026-04-30 — Plan-Entscheidungen werden in der UI sichtbar
 
 - **Decision:** Die Plan-Generierung gibt die Day-Decision an die UI zurück: gewählte Trainingstage, bewusst freie verfügbare Tage und kurze Begründungen. Die Anzeige erscheint direkt nach “Plan erstellen”.

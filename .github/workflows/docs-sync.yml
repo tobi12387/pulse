@@ -1,8 +1,6 @@
 name: docs-sync
 
-# Stellt sicher, dass die zentralen Hard-Rule-Marker in CLAUDE.md und AGENTS.md
-# gemeinsam vorhanden sind. Wer eine Regel in einer Datei entfernt, ohne sie in
-# der anderen zu entfernen oder zu aktualisieren, wird hier rot.
+# Stellt sicher, dass die zentralen Hard-Rule-Marker in AGENTS.md vorhanden sind.
 #
 # Bewusst pragmatisch: kein Pixel-genauer Vergleich, sondern Marker-basiert.
 # Erweitern: PATTERNS-Liste unten ergänzen.
@@ -14,14 +12,12 @@ name: docs-sync
 on:
   pull_request:
     paths:
-      - 'CLAUDE.md'
       - 'AGENTS.md'
       - 'docs/decisions.md'
       - '.github/workflows/docs-sync.yml'
   push:
     branches: [main]
     paths:
-      - 'CLAUDE.md'
       - 'AGENTS.md'
       - 'docs/decisions.md'
   workflow_dispatch:
@@ -32,10 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify canonical rules appear in CLAUDE.md and AGENTS.md
+      - name: Verify canonical rules appear in AGENTS.md
         run: |
           set -u
-          FILES=(CLAUDE.md AGENTS.md)
+          FILES=(AGENTS.md)
 
           # Jeder Eintrag ist eine grep -E -i Pattern. Mindestens eines der
           # alternativen Phrasings muss in jeder der beiden Dateien vorkommen.
@@ -46,7 +42,6 @@ jobs:
             "scripts/deploy\\.sh"
             "pulse_daily_metrics"
             "decisions\\.md"
-            "claude/<topic>|claude/[a-z]"
             "codex/<topic>|codex/[a-z]"
             "no.*telegram|kein.*telegram|keine.*telegram"
             "no.*habit|kein.*habit"
@@ -64,10 +59,9 @@ jobs:
 
           if [ $fail -ne 0 ]; then
             echo ""
-            echo "Hard-Rule-Drift erkannt — eine oder mehrere kanonische Regeln"
-            echo "fehlen in mindestens einer der zwei Hauptdokumente."
-            echo "Dateien synchronisieren oder PATTERNS-Liste in dieser Workflow-Datei"
-            echo "anpassen, falls die Regel bewusst entfernt wurde."
+            echo "Hard-Rule-Drift erkannt — eine oder mehrere kanonische Regeln fehlen."
+            echo "AGENTS.md oder PATTERNS-Liste in dieser Workflow-Datei anpassen,"
+            echo "falls die Regel bewusst entfernt wurde."
             exit 1
           fi
 

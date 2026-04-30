@@ -6,7 +6,7 @@ Use this map to load the smallest useful context for a task.
 
 | Need | Read |
 |---|---|
-| Hard rules | `AGENTS.md`, `CLAUDE.md`, `docs/ai/non-negotiables.md` |
+| Hard rules | `AGENTS.md`, `docs/ai/non-negotiables.md` |
 | Current work | `docs/ai/current-focus.md` |
 | Roadmap | `docs/superpowers/plans/2026-04-28-roadmap.md` |
 | Decisions | `docs/decisions.md` newest entries first |
@@ -46,4 +46,3 @@ Use this map to load the smallest useful context for a task.
 - Find legacy table reads: `rg "garmin_daily_health|check_ins" backend/src`
 - Find LLM calls: `rg "chatCompletion|OpenRouter|llm" backend/src`
 - Find plan references: `rg "Phase|Bundle|Buendel|Risk|RPE|Push" docs/superpowers/plans`
-
