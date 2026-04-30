@@ -13,6 +13,7 @@ import { computeRecovery } from '../../lib/recovery-metrics.js';
 import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
 import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
+import { listEquipment, listStrengthSessions } from '../services/strength-equipment.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
 import type { PulseFitnessLoad, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
 import { getCached, setCached } from './pulse-cache.js';
@@ -74,6 +75,22 @@ export interface PulseContext {
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   nextRace: RaceContext | null;
   activeRiskSignals: PulseRiskSignal[];
+  recentStrengthSessions: Array<{
+    date: string;
+    sessionId: string;
+    durationMin: number | null;
+    topLifts: Array<{
+      exercise: string;
+      bestSet: { reps: number; weightKg: number | null; rpe: number | null; e1rmKg: number | null };
+    }>;
+  }>;
+  equipmentDueForReplacement: Array<{
+    name: string;
+    category: string;
+    kmCurrent: number;
+    kmRetirement: number;
+    pctConsumed: number;
+  }>;
 }
 
 function daysBefore(date: string, days: number): string {
@@ -114,6 +131,8 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     dailyHistory,
     races,
     riskSignalRows,
+    strengthData,
+    equipmentData,
   ] = await Promise.all([
     db.select().from(pulseDailyMetrics)
       .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, date)))
@@ -192,6 +211,8 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       .orderBy(desc(pulseDailyMetrics.date)),
     getActiveRaces(userId, date),
     getActiveRiskSignals(userId),
+    listStrengthSessions(userId, { days: 90 }),
+    listEquipment(userId),
   ]);
 
   const activityIds = recentActivities.map(a => a.id);
@@ -224,6 +245,40 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     tsb: fitnessLoad.tsb,
   });
 
+  const recentStrengthSessions = strengthData.sessions.slice(0, 5).map(session => {
+    const bestByExercise = new Map<string, typeof session.sets[number]>();
+    for (const set of session.sets) {
+      const current = bestByExercise.get(set.exercise);
+      if (!current || (set.e1rmKg ?? 0) > (current.e1rmKg ?? 0)) {
+        bestByExercise.set(set.exercise, set);
+      }
+    }
+    return {
+      date: session.date,
+      sessionId: session.id,
+      durationMin: session.durationMin,
+      topLifts: [...bestByExercise.values()].slice(0, 5).map(set => ({
+        exercise: set.exercise,
+        bestSet: {
+          reps: set.reps,
+          weightKg: set.weightKg,
+          rpe: set.rpe,
+          e1rmKg: set.e1rmKg,
+        },
+      })),
+    };
+  });
+
+  const equipmentDueForReplacement = equipmentData.equipment
+    .filter(item => item.retirementKm != null && item.pctConsumed != null && item.pctConsumed >= 90)
+    .map(item => ({
+      name: item.name,
+      category: item.category,
+      kmCurrent: item.totalKm,
+      kmRetirement: item.retirementKm!,
+      pctConsumed: item.pctConsumed!,
+    }));
+
   return {
     userId,
     date,
@@ -253,6 +308,8 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       resolvedAt: r.resolvedAt?.toISOString() ?? null,
       snoozedUntil: r.snoozedUntil?.toISOString() ?? null,
     })),
+    recentStrengthSessions,
+    equipmentDueForReplacement,
   };
 }
 
@@ -264,6 +321,8 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
   return {
     ...ctx,
     activeRiskSignals: ctx.activeRiskSignals ?? [],
+    recentStrengthSessions: ctx.recentStrengthSessions ?? [],
+    equipmentDueForReplacement: ctx.equipmentDueForReplacement ?? [],
     recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
   };
 }
@@ -329,6 +388,8 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
     checkins14: ctx.checkins14d,
     latestWeight: ctx.latestWeight,
     activeRiskSignals: ctx.activeRiskSignals,
+    recentStrengthSessions: ctx.recentStrengthSessions,
+    equipmentDueForReplacement: ctx.equipmentDueForReplacement,
     recovery: ctx.recovery ? {
       sleepDebt7dH: ctx.recovery.sleepDebt7d.hours,
       sleepDebtStatus: ctx.recovery.sleepDebt7d.status,

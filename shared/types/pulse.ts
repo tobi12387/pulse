@@ -314,6 +314,70 @@ export interface PulsePushSettings {
   subscriptions: PulsePushSubscription[];
 }
 
+export type EquipmentCategory =
+  | 'chain'
+  | 'tire'
+  | 'brake_pad'
+  | 'cassette'
+  | 'running_shoe'
+  | 'bike'
+  | 'wetsuit'
+  | 'other';
+
+export type PulseActivityType = PulseActivity['activityType'];
+
+export interface PulseStrengthSet {
+  id: string;
+  sessionId: string;
+  exercise: string;
+  setNumber: number;
+  reps: number;
+  weightKg: number | null;
+  rpe: number | null;
+  e1rmKg: number | null;
+}
+
+export interface PulseStrengthSession {
+  id: string;
+  userId: string;
+  plannedWorkoutId: string | null;
+  date: string;
+  durationMin: number | null;
+  notes: string | null;
+  createdAt: string | null;
+  sets: PulseStrengthSet[];
+}
+
+export interface PulseStrengthTrendPoint {
+  date: string;
+  exercise: string;
+  e1rmKg: number;
+}
+
+export interface PulseEquipment {
+  id: string;
+  userId: string;
+  name: string;
+  category: EquipmentCategory;
+  parentEquipmentId: string | null;
+  activityTypes: PulseActivityType[];
+  installedDate: string;
+  initialKm: number | null;
+  retirementKm: number | null;
+  retirementDate: string | null;
+  retiredAt: string | null;
+  notes: string | null;
+  createdAt: string | null;
+  totalKm: number;
+  pctConsumed: number | null;
+  warning: boolean;
+}
+
+export interface PulseEquipmentDefault {
+  activityType: PulseActivityType;
+  equipmentId: string;
+}
+
 export interface PulseHomeScreenData {
   date: string;
   readiness: PulseReadiness;
