@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Drizzle-Journal muss jede SQL-Migration referenzieren
+
+- **Decision:** `backend/src/db/migrations/meta/_journal.json` wird wieder mit allen vorhandenen SQL-Migrationen synchronisiert und ein GitHub-Workflow blockt künftig Migrationen, die keinen Journal-Eintrag haben.
+- **Why:** Auf dem Server meldete `drizzle-kit migrate` Erfolg, obwohl Migrationen ab `0003` nicht im Journal standen und deshalb nicht zuverlässig angewendet wurden. Das führte dazu, dass der RPE-Code deployed war, die Spalten in `pulse_activities` aber fehlten.
+- **Alternatives:** Migrationen weiter manuell mit `psql -f` anwenden (fragil und nicht GitHub-main-getrieben); alle alten Migrationen in eine neue Sammelmigration kopieren (riskant wegen bereits existierender Spalten und schlechter Historie).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Garmin-Activity-Import nutzt gemeinsame Upsert-Strecke
 
 - **Decision:** Tages-Sync und Activity-Backfill schreiben Garmin-Aktivitäten über einen gemeinsamen Helper (`backend/src/lib/garmin-activities.ts`). Der Backfill ist range-basiert (`BACKFILL_ACTIVITIES_START`/`END`, Default ab 2026-01-01) und der Upsert aktualisiert Garmin-Messwerte aus `excluded`, ohne RPE-Feedbackfelder zu überschreiben.
