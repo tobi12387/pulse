@@ -3,6 +3,7 @@ import { useFitnessLoad, usePulseHome, usePulseMetrics, usePulseBriefing, useGar
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
+import { RiskWatchBanner } from '@/components/RiskWatchBanner';
 import { AdjustTodayCard } from '@/components/AdjustTodayCard';
 import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
@@ -245,6 +246,7 @@ export default function Home() {
 
       {/* ── Health State Banner (active illness/injury/fatigue) ── */}
       <HealthStateBanner />
+      <RiskWatchBanner />
 
       {showDataStatus && (
         <div style={{

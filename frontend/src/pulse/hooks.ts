@@ -20,6 +20,7 @@ export const pulseKeys = {
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
   briefing:     ['pulse', 'briefing'] as const,
+  risk:         ['pulse', 'risk'] as const,
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
   correlations:      (days: number)  => ['pulse', 'correlations', days] as const,
   trainingAnalytics: (weeks: number) => ['pulse', 'training-analytics', weeks] as const,
@@ -71,6 +72,31 @@ export function usePulseActivities(limit = 10) {
     queryKey: pulseKeys.activities(limit),
     queryFn: () => pulseApi.activities.list(limit),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useRiskSignals() {
+  return useQuery({
+    queryKey: pulseKeys.risk,
+    queryFn: pulseApi.risk.list,
+    staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
+  });
+}
+
+export function useSnoozeRiskSignal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, hours = 24 }: { id: string; hours?: number }) => pulseApi.risk.snooze(id, hours),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.risk }),
+  });
+}
+
+export function useResolveRiskSignal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pulseApi.risk.resolve(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.risk }),
   });
 }
 

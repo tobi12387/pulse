@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Risk Watch erscheint zuerst als Home-Banner
+
+- **Decision:** Die erste Risk-Watch-UI wird als kompakter Home-Banner umgesetzt, der nur aktive `warn`/`critical`-Signale zeigt und Snooze direkt anbietet. Info-Signale bleiben aus der Startseite heraus, bis ein sinnvoller Inbox-/Historienkontext existiert.
+- **Why:** Die Home-Seite ist der tägliche Einstieg und soll nur handlungsrelevante Risiken zeigen, ohne als zweite Analyseansicht zu wirken. Der Backend-Lifecycle ist bereits vorhanden; der UI-Slice bleibt dadurch klein und sofort nutzbar.
+- **Alternatives:** Eigene Risk-Watch-Seite im ersten UI-Slice (zu viel Navigation für wenig Zusatznutzen); alle Info-Signale im Home-Banner anzeigen (zu viel Rauschen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Risk Watch startet als Backend-Regelschicht
 
 - **Decision:** Risk Watch wird zuerst als Backend-Slice umgesetzt: additive Tabelle `pulse_risk_signals`, reine Rule-Engine mit fünf Regeln, Persistenz-Lifecycle, API und Garmin-Post-Sync-Hook. UI sowie Coach-/Briefing-Anzeige folgen separat.
