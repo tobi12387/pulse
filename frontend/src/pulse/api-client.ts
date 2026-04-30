@@ -4,7 +4,7 @@ import type {
   PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
-  ActivityFeedbackInput, PulseRiskSignal,
+  ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -121,7 +121,7 @@ export const pulseApi = {
   plan: {
     list: (): Promise<{ workouts: PulsePlannedWorkout[] }> =>
       request('/plan'),
-    generate: (): Promise<{ workouts: PulsePlannedWorkout[] }> =>
+    generate: (): Promise<{ workouts: PulsePlannedWorkout[]; planDecision?: PulsePlanDecision }> =>
       request('/plan/generate', { method: 'POST', body: '{}' }),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),

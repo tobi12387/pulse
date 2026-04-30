@@ -10,12 +10,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/plan-intelligence-candidate-days`: Treat availability as candidate days and choose sensible training frequency.
+- `codex/plan-intelligence-diagnostics`: Show Plan-Day decisions after generation in the Plan UI.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Merge and deploy candidate-day planning, then add richer goal/recovery diagnostics to the plan API/UI.
+- Merge and deploy Plan-Day diagnostics, then add richer goal/recovery inputs to the planner.
 
 ## Out Of Scope Unless Reversed
 

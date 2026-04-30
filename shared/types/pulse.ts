@@ -114,6 +114,14 @@ export interface PulsePlannedWorkout {
   completedActivityId: string | null;
 }
 
+export interface PulsePlanDecision {
+  selectedDays: number[];
+  skippedAvailableDays: number[];
+  targetSessionCount: number;
+  primaryGoal: string | null;
+  reasons: string[];
+}
+
 export interface PulseMentalCheckin {
   id: string;
   userId: string;

@@ -35,7 +35,7 @@ import type { PulseContext } from './lib/pulse-context.js';
 import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
-import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
+import { decidePlanDays, generateWeekWorkouts, generateScientificWeekPlan, getMesocycleWeek } from './services/plan-engine.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { getActiveRaces } from './services/race-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
@@ -1258,6 +1258,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr);
+    const mesocycleWeek = getMesocycleWeek(weekStartStr);
+    const planDecision = decidePlanDays({
+      availableDays,
+      weeklyHoursTarget,
+      tsb: fitnessLoad.tsb,
+      phase,
+      mesocycleWeek,
+      goals,
+    });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
     try {
@@ -1426,7 +1435,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }
     })();
 
-    return reply.status(201).send({ workouts: withSteps });
+    return reply.status(201).send({ workouts: withSteps, planDecision });
   });
 
   // ─── Goals ────────────────────────────────────────────────────────────────────
