@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Frontend-QA räumt React-Compiler-Lint vor Web Push auf
+
+- **Decision:** Vor Web Push wird eine kleine Frontend-QA-Runde abgeschlossen, die React-19/Compiler-Lint-Funde in Plan/Coach-nahen Flows und Activity-/Fueling-Komponenten behebt.
+- **Why:** Web Push fügt neue Frontend-Zustände, Service-Worker-Interaktion und Settings-UI hinzu. Ein bereits roter Frontend-Lint würde echte Regressionssignale verdecken und die nächste Feature-Phase unnötig fragil machen.
+- **Alternatives:** Lint weiter ignorieren und nur Builds verwenden (verpasst React-Compiler-Probleme); Web Push direkt beginnen (mehr neue Oberfläche auf unsauberer Basis).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Garmin-Workouts bekommen HR-Zielzonen statt No-Target-Steps
 
 - **Decision:** Strukturierte Run/Bike/Hike-Workout-Steps erhalten deterministisch berechnete HR-Zielbereiche im `WorkoutStep`-JSON und werden beim Garmin-Upload als `heart.rate.zone`-Targets exportiert. Schwimmen und Kraft bleiben vorerst ohne erzwungene HR-Targets.

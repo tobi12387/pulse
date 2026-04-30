@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useCreateNutritionLog } from '@/pulse/hooks';
 
 interface Props {
@@ -72,20 +72,20 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
   const [drinks, setDrinks] = useState(0);
   const [carbs, setCarbs] = useState(0);
   const [notes, setNotes] = useState('');
-  const hasTouchedCarbs = useRef(false);
+  const [hasTouchedCarbs, setHasTouchedCarbs] = useState(false);
 
   const suggestion = suggestedCarbs(activityType, durationMin);
 
   // Auto-fill carbs from gels if user hasn't touched carbs
   function handleGelsChange(v: number) {
     setGels(v);
-    if (!hasTouchedCarbs.current) {
+    if (!hasTouchedCarbs) {
       setCarbs(v * 25);
     }
   }
 
   function handleCarbsChange(v: number) {
-    hasTouchedCarbs.current = true;
+    setHasTouchedCarbs(true);
     setCarbs(v);
   }
 
@@ -171,7 +171,7 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
                 Carbs (g)
               </span>
-              {!hasTouchedCarbs.current && (
+              {!hasTouchedCarbs && (
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', fontStyle: 'italic' }}>
                   Empfehlung ~{suggestion}g
                 </span>
@@ -192,7 +192,7 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
                 type="number"
                 min={0}
                 step={5}
-                value={carbs === 0 && !hasTouchedCarbs.current ? '' : carbs}
+                value={carbs === 0 && !hasTouchedCarbs ? '' : carbs}
                 placeholder={`~${suggestion}`}
                 onChange={e => handleCarbsChange(Math.max(0, Number(e.target.value) || 0))}
                 style={{

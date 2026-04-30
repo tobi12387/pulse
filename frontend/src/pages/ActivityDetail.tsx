@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
@@ -124,7 +124,6 @@ function HrZonesBar({ zones }: {
 
 function RpeFeedbackSheet({
   activity,
-  open,
   onClose,
 }: {
   activity: {
@@ -133,22 +132,12 @@ function RpeFeedbackSheet({
     rpeNote: string | null;
     sorenessAreas: RpeSorenessArea[] | null;
   };
-  open: boolean;
   onClose: () => void;
 }) {
   const save = useActivityFeedback(activity.id);
   const [rpe, setRpe] = useState(activity.rpe ?? 5);
   const [note, setNote] = useState(activity.rpeNote ?? '');
   const [areas, setAreas] = useState<RpeSorenessArea[]>(activity.sorenessAreas ?? []);
-
-  useEffect(() => {
-    if (!open) return;
-    setRpe(activity.rpe ?? 5);
-    setNote(activity.rpeNote ?? '');
-    setAreas(activity.sorenessAreas ?? []);
-  }, [activity.rpe, activity.rpeNote, activity.sorenessAreas, open]);
-
-  if (!open) return null;
 
   function toggleArea(area: RpeSorenessArea) {
     setAreas((cur) => cur.includes(area) ? cur.filter(a => a !== area) : [...cur, area]);
@@ -324,6 +313,7 @@ function RpeFeedbackSheet({
 
 function RpeFeedbackCard({
   activity,
+  nowMs,
   onOpen,
 }: {
   activity: {
@@ -332,10 +322,11 @@ function RpeFeedbackCard({
     rpeNote: string | null;
     sorenessAreas: RpeSorenessArea[] | null;
   };
+  nowMs: number;
   onOpen: () => void;
 }) {
   const hasRpe = activity.rpe != null;
-  const isRecent = Date.now() - new Date(activity.startTime).getTime() < 24 * 60 * 60 * 1000;
+  const isRecent = nowMs - new Date(activity.startTime).getTime() < 24 * 60 * 60 * 1000;
   const color = hasRpe ? rpeColor(activity.rpe!) : 'var(--accent)';
 
   return (
@@ -782,14 +773,21 @@ export default function ActivityDetail() {
     staleTime: 5 * 60_000,
   });
   const [rpeOpen, setRpeOpen] = useState(false);
+  const [dismissedAutoRpeActivityId, setDismissedAutoRpeActivityId] = useState<string | null>(null);
+  const [nowMs] = useState(() => Date.now());
   const loadedActivity = data?.activity ?? null;
   const shouldAutoOpenRpe = loadedActivity != null
     && loadedActivity.rpe == null
-    && Date.now() - new Date(loadedActivity.startTime).getTime() < 24 * 60 * 60 * 1000;
+    && dismissedAutoRpeActivityId !== loadedActivity.id
+    && nowMs - new Date(loadedActivity.startTime).getTime() < 24 * 60 * 60 * 1000;
+  const isRpeSheetOpen = rpeOpen || shouldAutoOpenRpe;
 
-  useEffect(() => {
-    if (shouldAutoOpenRpe) setRpeOpen(true);
-  }, [shouldAutoOpenRpe, loadedActivity?.id]);
+  function closeRpeSheet() {
+    if (loadedActivity && shouldAutoOpenRpe) {
+      setDismissedAutoRpeActivityId(loadedActivity.id);
+    }
+    setRpeOpen(false);
+  }
 
   if (isLoading) {
     return (
@@ -838,7 +836,7 @@ export default function ActivityDetail() {
         </h1>
       </div>
 
-      <RpeFeedbackCard activity={a} onOpen={() => setRpeOpen(true)} />
+      <RpeFeedbackCard activity={a} nowMs={nowMs} onOpen={() => setRpeOpen(true)} />
 
       {/* KPI Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -911,7 +909,9 @@ export default function ActivityDetail() {
         <WeatherCard weather={analytics.weather} />
       )}
 
-      <RpeFeedbackSheet activity={a} open={rpeOpen} onClose={() => setRpeOpen(false)} />
+      {isRpeSheetOpen && (
+        <RpeFeedbackSheet activity={a} onClose={closeRpeSheet} />
+      )}
     </div>
   );
 }
