@@ -147,6 +147,26 @@ export const pulseActivityAnalytics = pgTable('pulse_activity_analytics', {
   computedAt:        timestamp('computed_at').notNull().defaultNow(),
 });
 
+// ─── Risk Watch signals ─────────────────────────────────────────────────────
+export const pulseRiskSignals = pgTable('pulse_risk_signals', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  userId:          uuid('user_id').notNull(),
+  ruleId:          varchar('rule_id', { length: 64 }).notNull(),
+  severity:        varchar('severity', { length: 16 }).notNull(),
+  status:          varchar('status', { length: 16 }).notNull().default('active'),
+  title:           varchar('title', { length: 255 }).notNull(),
+  description:     text('description').notNull(),
+  recommendation:  text('recommendation').notNull(),
+  metricSnapshot:  jsonb('metric_snapshot').notNull(),
+  triggeredAt:     timestamp('triggered_at', { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt:      timestamp('resolved_at', { withTimezone: true }),
+  snoozedUntil:    timestamp('snoozed_until', { withTimezone: true }),
+  createdAt:       timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (t) => [
+  index('idx_risk_active').on(t.userId, t.status, t.severity),
+]);
+
 // ─── Planned workouts (training plan) ────────────────────────────────────────
 export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   id:                   uuid('id').primaryKey().defaultRandom(),

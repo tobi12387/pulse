@@ -210,6 +210,23 @@ export interface PulseWeeklyReview {
   createdAt: string;
 }
 
+export type RiskSignalSeverity = 'info' | 'warn' | 'critical';
+export type RiskSignalStatus = 'active' | 'resolved' | 'snoozed';
+
+export interface PulseRiskSignal {
+  id: string;
+  ruleId: string;
+  severity: RiskSignalSeverity;
+  status: RiskSignalStatus;
+  title: string;
+  description: string;
+  recommendation: string;
+  metric: Record<string, unknown>;
+  triggeredAt: string;
+  resolvedAt: string | null;
+  snoozedUntil: string | null;
+}
+
 export interface PulseReadiness {
   score: number;
   components: {
