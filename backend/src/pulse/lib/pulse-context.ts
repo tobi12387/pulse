@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lte, or } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
 import {
   pulseActivities,
@@ -23,12 +23,16 @@ export type PulseActivityRow = typeof pulseActivities.$inferSelect;
 export type PulsePlannedWorkoutRow = typeof pulsePlannedWorkouts.$inferSelect;
 
 export interface PulseActivitySummary {
+  id: string;
   startTime: Date;
   activityType: string;
   durationSec: number | null;
   tss: number | null;
   normalizedPowerW: number | null;
   avgHr: number | null;
+  rpe: number | null;
+  rpeNote: string | null;
+  plannedZone: number | null;
 }
 
 export interface PulsePlannedWorkoutSummary {
@@ -126,12 +130,15 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       ))
       .orderBy(desc(pulseHealthState.startDate)),
     db.select({
+      id: pulseActivities.id,
       startTime: pulseActivities.startTime,
       activityType: pulseActivities.activityType,
       durationSec: pulseActivities.durationSec,
       tss: pulseActivities.tss,
       normalizedPowerW: pulseActivities.normalizedPowerW,
       avgHr: pulseActivities.avgHr,
+      rpe: pulseActivities.rpe,
+      rpeNote: pulseActivities.rpeNote,
     }).from(pulseActivities)
       .where(eq(pulseActivities.userId, userId))
       .orderBy(desc(pulseActivities.startTime))
@@ -182,6 +189,23 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     getActiveRaces(userId, date),
   ]);
 
+  const activityIds = recentActivities.map(a => a.id);
+  const completedPlans = activityIds.length > 0
+    ? await db.select({
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        zone: pulsePlannedWorkouts.zone,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          inArray(pulsePlannedWorkouts.completedActivityId, activityIds),
+        ))
+    : [];
+  const plannedZoneByActivityId = new Map(completedPlans.map(p => [p.completedActivityId, p.zone]));
+  const recentActivitySummaries = recentActivities.map(a => ({
+    ...a,
+    plannedZone: plannedZoneByActivityId.get(a.id) ?? null,
+  }));
+
   const mentalScore = todayCheckin
     ? ((todayCheckin.mood + todayCheckin.energy + todayCheckin.motivation) / 3) * 10
     : null;
@@ -205,7 +229,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     recovery: dailyHistory.length >= 3 ? computeRecovery({ daily: dailyHistory }) : null,
     profile: profile ?? null,
     activeHealthStates,
-    recentActivities,
+    recentActivities: recentActivitySummaries,
     upcomingWorkouts,
     metrics14d,
     checkins14d,
@@ -257,6 +281,9 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
       tss: a.tss,
       normalizedPowerW: a.normalizedPowerW,
       avgHr: a.avgHr,
+      rpe: a.rpe,
+      rpeNote: a.rpeNote,
+      plannedZone: a.plannedZone,
     })),
     upcomingWorkouts: ctx.upcomingWorkouts,
     metrics14: ctx.metrics14d,

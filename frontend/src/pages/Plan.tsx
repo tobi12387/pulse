@@ -1138,6 +1138,13 @@ function RangePicker({ value, onChange, options }: {
   );
 }
 
+function rpeDriftLabel(drift: number | null): string {
+  if (drift == null) return 'noch keine Vergleichsbasis';
+  if (drift > 1) return `+${drift.toFixed(1)} vs. Vormonat · Ermüdung`;
+  if (drift < -1) return `${drift.toFixed(1)} vs. Vormonat · Anpassung`;
+  return `${drift > 0 ? '+' : ''}${drift.toFixed(1)} vs. Vormonat · stabil`;
+}
+
 function StatistikTab() {
   const [weeks, setWeeks] = useState(12);
   const { data, isLoading } = useTrainingAnalytics(weeks);
@@ -1153,6 +1160,7 @@ function StatistikTab() {
   const heatmap  = data?.tssHeatmap       ?? [];
   const zones    = data?.zoneDistribution ?? [];
   const vo2maxRaw = data?.vo2maxTrend     ?? [];
+  const rpeByZone = data?.rpeByZone;
   const today    = isoDateLocal(new Date());
 
   // Build heatmap grid: align to Monday of first week
@@ -1331,6 +1339,46 @@ function StatistikTab() {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', marginLeft: 'auto' }}>
               max {maxZoneH.toFixed(1)}h/Woche
             </span>
+          </div>
+        </div>
+      )}
+
+      {rpeByZone && rpeByZone.totalRated >= 10 && (
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+            <span className="label-mono">RPE vs. Zone</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+              letzte 30 Tage · {rpeByZone.totalRated} Einheiten
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {rpeByZone.zones.map(row => {
+              const pct = row.avgRpe == null ? 0 : Math.max(0.04, row.avgRpe / 10);
+              return (
+                <div key={row.zone} style={{ display: 'grid', gridTemplateColumns: '34px 72px 1fr 96px', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: ZONE_FILL[row.zone] }}>Z{row.zone}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}>
+                    {row.avgRpe == null ? 'RPE –' : `RPE Ø ${row.avgRpe.toFixed(1)}`}
+                  </span>
+                  <div style={{ height: 8, borderRadius: 2, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct * 100}%`, background: ZONE_FILL[row.zone] }} />
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textAlign: 'right' }}>
+                    {row.count} {row.count === 1 ? 'Einheit' : 'Einheiten'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--text-2)' }}>
+            {(() => {
+              const strongest = rpeByZone.zones
+                .filter(z => z.drift != null)
+                .sort((a, b) => Math.abs(b.drift ?? 0) - Math.abs(a.drift ?? 0))[0];
+              return strongest
+                ? `Drift: Z${strongest.zone} ${rpeDriftLabel(strongest.drift)}.`
+                : 'Drift: noch keine belastbare Vergleichsbasis.';
+            })()}
           </div>
         </div>
       )}

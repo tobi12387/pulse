@@ -52,11 +52,23 @@ export function buildBriefingUserContentRich(
     ? `Nächstes Training: ${nextWorkout.plannedDate} ${nextWorkout.activityType} Z${nextWorkout.zone}, ${nextWorkout.durationMin}min${nextWorkout.description ? ` (${nextWorkout.description})` : ''}.`
     : 'Kein geplantes nächstes Training.';
 
+  const lastRatedActivity = ctx.recentActivities.find(a => a.rpe != null) ?? null;
+  let rpePart = lastRatedActivity
+    ? `Letzte subjektiv bewertete Einheit: ${lastRatedActivity.startTime.toISOString().split('T')[0]} ${lastRatedActivity.activityType}${lastRatedActivity.plannedZone ? ` Z${lastRatedActivity.plannedZone}` : ''}, RPE ${lastRatedActivity.rpe}/10${lastRatedActivity.rpeNote ? ` (${lastRatedActivity.rpeNote})` : ''}.`
+    : 'Keine RPE-Bewertung aus den letzten Aktivitäten.';
+  if (lastRatedActivity?.rpe != null && lastRatedActivity.plannedZone != null) {
+    if (lastRatedActivity.plannedZone <= 2 && lastRatedActivity.rpe >= 8) {
+      rpePart += ' Hinweis: Diese lockere Einheit fühlte sich überraschend hart an; mögliches Signal für aerobe Müdigkeit.';
+    } else if (lastRatedActivity.plannedZone >= 4 && lastRatedActivity.rpe <= 4) {
+      rpePart += ' Hinweis: Diese harte Einheit fühlte sich sehr leicht an; Intensität oder Dauer war eventuell nicht ausgereizt.';
+    }
+  }
+
   const racePart = ctx.nextRace
     ? `Nächstes Rennen/Ziel: ${ctx.nextRace.title} am ${ctx.nextRace.date} (${ctx.nextRace.daysUntil} Tage).`
     : 'Kein aktives Rennen hinterlegt.';
 
-  return `${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${healthPart}\n${workoutPart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn ein aktiver Health-State existiert, muss er konkret in der Empfehlung berücksichtigt werden.`;
+  return `${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn ein aktiver Health-State existiert oder RPE auf aerobe Müdigkeit hindeutet, muss das konkret in der Empfehlung berücksichtigt werden.`;
 }
 
 export async function processBriefingJob(

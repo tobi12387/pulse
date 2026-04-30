@@ -11,12 +11,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/fix-drizzle-migration-journal`: Sync Drizzle migration journal with existing SQL migrations and add CI guard.
+- `codex/rpe-coach-plan-context`: Add RPE to PulseContext, Coach/Briefing prompts, and Plan statistics.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Deploy the Drizzle migration journal fix, mark already-applied server migrations in Drizzle's migration table, then add RPE to Coach/Briefing context and Plan statistics.
+- Merge and deploy RPE coach/plan context, then proceed to Risk Watch.
 
 ## Out Of Scope Unless Reversed
 

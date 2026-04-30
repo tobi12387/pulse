@@ -17,7 +17,7 @@ import {
   pulseNutritionLogs,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
-import { eq, desc, and, gte, lte, isNull, or, sql } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { redis } from '../lib/redis.js';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
@@ -2289,12 +2289,14 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
 
     const [activities, profileRows] = await Promise.all([
       db.select({
+        id:               pulseActivities.id,
         startTime:        pulseActivities.startTime,
         activityType:     pulseActivities.activityType,
         durationSec:      pulseActivities.durationSec,
         tss:              pulseActivities.tss,
         normalizedPowerW: pulseActivities.normalizedPowerW,
         vo2maxEstimate:   pulseActivities.vo2maxEstimate,
+        rpe:              pulseActivities.rpe,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since)))
         .orderBy(pulseActivities.startTime),
@@ -2303,6 +2305,18 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
     ]);
 
     const ftp = profileRows[0]?.ftpWatts ?? null;
+    const ratedActivityIds = activities.filter(a => a.rpe != null).map(a => a.id);
+    const completedPlans = ratedActivityIds.length > 0
+      ? await db.select({
+          completedActivityId: pulsePlannedWorkouts.completedActivityId,
+          zone: pulsePlannedWorkouts.zone,
+        }).from(pulsePlannedWorkouts)
+          .where(and(
+            eq(pulsePlannedWorkouts.userId, userId),
+            inArray(pulsePlannedWorkouts.completedActivityId, ratedActivityIds),
+          ))
+      : [];
+    const plannedZoneByActivityId = new Map(completedPlans.map(p => [p.completedActivityId, p.zone]));
 
     // ── TSS Heatmap: one entry per day ────────────────────────────────────────
     const tssByDate = new Map<string, number>();
@@ -2321,6 +2335,8 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
 
     // ── Zone distribution per ISO week ────────────────────────────────────────
     function getZone(a: typeof activities[0]): number | null {
+      const plannedZone = plannedZoneByActivityId.get(a.id);
+      if (plannedZone != null) return plannedZone;
       if (ftp && a.normalizedPowerW && a.activityType === 'bike') {
         const IF = a.normalizedPowerW / ftp;
         if (IF < 0.55) return 1;
@@ -2376,7 +2392,37 @@ Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent
       .filter(a => a.vo2maxEstimate != null)
       .map(a => ({ date: a.startTime.toISOString().split('T')[0]!, vo2max: a.vo2maxEstimate! }));
 
-    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend };
+    const recentRpe = new Map<number, { sum: number; count: number }>();
+    const previousRpe = new Map<number, { sum: number; count: number }>();
+    const now = new Date();
+    const recentCutoff = new Date(now.getTime() - 30 * 86_400_000);
+    const previousCutoff = new Date(now.getTime() - 60 * 86_400_000);
+    for (const a of activities) {
+      if (a.rpe == null) continue;
+      const zone = getZone(a);
+      if (!zone) continue;
+      const bucket = a.startTime >= recentCutoff
+        ? recentRpe
+        : a.startTime >= previousCutoff
+        ? previousRpe
+        : null;
+      if (!bucket) continue;
+      const entry = bucket.get(zone) ?? { sum: 0, count: 0 };
+      entry.sum += a.rpe;
+      entry.count += 1;
+      bucket.set(zone, entry);
+    }
+    const rpeByZone = [1, 2, 3, 4, 5].map(zone => {
+      const recent = recentRpe.get(zone);
+      const previous = previousRpe.get(zone);
+      const avgRpe = recent && recent.count > 0 ? Math.round((recent.sum / recent.count) * 10) / 10 : null;
+      const previousAvgRpe = previous && previous.count > 0 ? Math.round((previous.sum / previous.count) * 10) / 10 : null;
+      const drift = avgRpe != null && previousAvgRpe != null ? Math.round((avgRpe - previousAvgRpe) * 10) / 10 : null;
+      return { zone, avgRpe, count: recent?.count ?? 0, previousAvgRpe, drift };
+    });
+    const totalRated = [...recentRpe.values()].reduce((sum, z) => sum + z.count, 0);
+
+    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone } };
   });
 }
 
