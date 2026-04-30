@@ -8,7 +8,6 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - Mac and server are consumers. Never edit code directly on the server.
 - Every session uses a feature branch and PR.
 - Codex branches use `codex/<topic>`.
-- Claude Code branches use `claude/<topic>`.
 - Never commit directly to `main`.
 - Never use `git add .`; stage explicit files only.
 - Push immediately after every meaningful commit.
@@ -33,4 +32,3 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - Consistency bundles before new feature breadth.
 - Order: Bundle A, Bundle B, Bundle C, RPE, Risk Watch, Web Push, then Phase 10 / 11.
 - Bundle C may be split into smaller PRs when it reduces review risk.
-

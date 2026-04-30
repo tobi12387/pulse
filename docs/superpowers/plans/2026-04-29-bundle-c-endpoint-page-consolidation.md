@@ -27,7 +27,7 @@
 | `Home.tsx` und `Data.tsx` zeigen Readiness-Score | Beide via `usePulseHome`, also via /pulse/home — Data wartet unnötig auf Home-Daten |
 | `Data.tsx` Tabs: Schlaf, Metriken, Gewicht, Mental | Zeigt teils Inhalte die auf Home schon stehen (Schlafstunden, Body-Battery) |
 | `Plan.tsx` hat einen `analyse`-Tab | Inhaltlich überlappt mit `Insights.tsx` (auch dort: Domain `load`) |
-| `Insights.tsx` ist eigene Top-Level-Page (Route `/insights`) | Aber im Sidebar-Nav (5 flat tabs in CLAUDE.md) nicht aufgeführt — Drift |
+| `Insights.tsx` ist eigene Top-Level-Page (Route `/insights`) | Aber im dokumentierten Hauptnav-Konzept nicht sauber eingeordnet — Drift |
 
 ---
 
@@ -45,7 +45,7 @@
 | Modify | `frontend/src/pages/Data.tsx` (Readiness raus, Trend-Fokus) |
 | Modify | `frontend/src/pages/Plan.tsx` (analyse-Tab Entscheidung) |
 | Modify | `frontend/src/pages/Insights.tsx` (ggf. erweitert) |
-| Modify | `CLAUDE.md` Navigation-Tabelle (Insights-Status klären) |
+| Modify | `AGENTS.md` Navigation-Tabelle (Insights-Status klären) |
 
 ---
 
@@ -185,7 +185,7 @@ grep -A 30 "'analyse'" frontend/src/pages/Plan.tsx
 
 Drei Optionen:
 
-**Option I — Plan/Analyse löschen, Inhalte in Insights moved:** sauber, aber Insights wächst. Insights muss dann in der Hauptnavigation (CLAUDE.md erwähnt 5 Tabs, Insights ist heute über `/insights` direkt erreichbar aber nicht im Tab-Bar — Drift).
+**Option I — Plan/Analyse löschen, Inhalte in Insights moved:** sauber, aber Insights wächst. Insights muss dann in der Hauptnavigation dokumentiert sein.
 
 **Option II — Plan/Analyse umbauen zu reinem Volumen/Polarisierung:**
 - Wochenvolumen pro Sportart
@@ -201,7 +201,7 @@ Empfehlung: **Option II**. Plan/Analyse wird zur reinen Trainings-Statistik-Seit
 
 ## Task 8: Insights als sichtbarer Top-Level-Tab oder Schnellzugriff
 
-`CLAUDE.md` listet 5 Tabs (Home, Coach, Daten, Plan, Settings). Insights-Page existiert im Code (`/insights`), aber nicht in der Bottom-Nav.
+`AGENTS.md` dokumentiert die Hauptnavigation. Insights-Page existiert im Code (`/insights`) und muss dort als Tab oder Home-Schnellzugriff konsistent abgebildet bleiben.
 
 Zwei saubere Wege:
 - Insights als 6. Tab — verändert Bottom-Nav-Layout.
@@ -235,5 +235,5 @@ Frontend: keine neuen Tests, da Hooks dünn sind.
 - [ ] Tab-Switch Home ↔ Coach ↔ Data ist spürbar schneller (Cache-Hit auf 2./3. Page)
 - [ ] Data-Page: kein Readiness-Header mehr, neuer Recovery-Tab (oder dokumentiert warum nicht)
 - [ ] Plan/Analyse-Tab: entweder gelöscht (Inhalte in Insights) oder zu Volumen/Polarisierung-Block umgebaut — entscheidung dokumentiert
-- [ ] Insights-Zugang von Home aus möglich (Quick-Action) **oder** als 6. Tab dokumentiert in CLAUDE.md
-- [ ] CLAUDE.md Navigation-Tabelle aktualisiert
+- [ ] Insights-Zugang von Home aus möglich (Quick-Action) **oder** als 6. Tab dokumentiert in `AGENTS.md`
+- [ ] `AGENTS.md` Navigation-Tabelle aktualisiert
