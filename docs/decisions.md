@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Plan-Engine entscheidet Zielmix und Safety deterministisch
+
+- **Decision:** Wochenpläne bekommen eine deterministische Plan-Intelligence-Schicht: aktive Ziele bestimmen Sportmix und harte Reize, RPE aus jüngsten Einheiten kann Trainingsdichte und Intensität reduzieren, und jede Einheit erhält vor LLM-Enrichment eine HR-first Beschreibung mit Pulsbereich.
+- **Why:** Tobi sah repetitive Workouts und erwartete, dass Ziele, Garmin-Profil und subjektive Belastung tatsächlich die Planung verändern. Struktur und Safety dürfen nicht von LLM-Text abhängen; das LLM darf nur noch Beschreibungen verfeinern.
+- **Alternatives:** Nur den Prompt anpassen (weiter nicht testbar); LLM die komplette Woche frei planen lassen (weniger deterministisch); RPE nur im Coach/Briefing anzeigen (Plan bleibt blind für gefühlte Überlastung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Coach, Voice und Live-Briefing teilen denselben PulseContext
 
 - **Decision:** Coach-UI und neue Pulse-Coach-History laufen über `pulse_coach_sessions`; Legacy `/api/chat/*` bleibt kompatibel, nutzt aber denselben reichen PulseContext-Prompt. Voice-Check-ins erzeugen ihre finale Coach-Antwort erst nach Persistenz des Check-ins, und Live-Briefings verwenden denselben Briefing-Prompt wie der Background-Job.

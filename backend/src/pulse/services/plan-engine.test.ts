@@ -136,4 +136,104 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts.length).toBeLessThan(5);
     expect(workouts.every(w => w.zone <= 2)).toBe(true);
   });
+
+  it('biases FTP goals toward bike quality instead of generic rotation', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      recentActivities: [],
+      goals: [{
+        title: 'FTP: 280 W',
+        targetDate: '2026-08-01',
+        category: 'ftp',
+        metrics: { targetFtp: 280 },
+      }],
+    });
+
+    const bikes = workouts.filter(w => w.activityType === 'bike');
+    const runs = workouts.filter(w => w.activityType === 'run');
+    expect(bikes.length).toBeGreaterThan(runs.length);
+    expect(workouts.filter(w => w.zone >= 4).every(w => w.activityType === 'bike')).toBe(true);
+  });
+
+  it('uses triathlon race goals to include swim, bike, and run specificity', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 9,
+      availableDays: [0, 1, 2, 3, 4, 5],
+      ctl: 42,
+      atl: 38,
+      tsb: 6,
+      ftpWatts: 240,
+      maxHrBpm: 182,
+      recentActivities: [],
+      goals: [{
+        title: 'Ironman 70.3',
+        targetDate: '2026-09-06',
+        category: 'race',
+        raceDiscipline: 'triathlon_70_3',
+        raceDistanceKm: 113,
+        racePriority: 'A',
+      }],
+    });
+
+    expect([...new Set(workouts.map(w => w.activityType))]).toEqual(expect.arrayContaining(['swim', 'bike', 'run']));
+  });
+
+  it('treats high RPE on easy work as a safety signal for the next plan', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [{
+        date: '2026-05-01',
+        activityType: 'bike',
+        durationMin: 60,
+        tss: 40,
+        rpe: 8,
+        plannedZone: 2,
+      }],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+    });
+
+    expect(workouts.length).toBeLessThan(4);
+    expect(workouts.every(w => w.zone <= 2)).toBe(true);
+    expect(workouts.map(w => w.description).join(' ')).toContain('Subjektive Ermüdung');
+  });
+
+  it('keeps HR-first descriptions when LLM enrichment returns no items', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'base',
+      weeklyHoursTarget: 5,
+      availableDays: [0, 2, 5],
+      ctl: 20,
+      atl: 18,
+      tsb: 3,
+      ftpWatts: 200,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      recentActivities: [],
+      goals: [],
+    });
+
+    expect(workouts.length).toBeGreaterThan(0);
+    expect(workouts.every(w => w.description.includes('bpm'))).toBe(true);
+    expect(workouts.every(w => w.description.includes('primär über Puls'))).toBe(true);
+  });
 });
