@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { pulseApi } from './api-client.js';
 import type { NutritionLogInput } from './api-client.js';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const pulseKeys = {
+  all:          ['pulse'] as const,
   home:         ['pulse', 'home'] as const,
   readiness:   ['pulse', 'readiness'] as const,
   load:        ['pulse', 'load'] as const,
@@ -14,6 +15,7 @@ export const pulseKeys = {
   availability: ['pulse', 'availability'] as const,
   goals:        ['pulse', 'goals'] as const,
   review:       ['pulse', 'review', 'latest'] as const,
+  coachHistory: ['pulse', 'coach', 'history'] as const,
   checkinToday:    ['pulse', 'checkin', 'today'] as const,
   checkinHistory:  (days: number) => ['pulse', 'checkin', 'history', days] as const,
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
@@ -31,6 +33,19 @@ export const pulseKeys = {
   nutrition: (workoutId: string | null, activityId: string | null) =>
     ['pulse', 'nutrition', workoutId, activityId] as const,
 };
+
+export function invalidatePulseContextQueries(qc: QueryClient): void {
+  void qc.invalidateQueries({ queryKey: pulseKeys.home });
+  void qc.invalidateQueries({ queryKey: pulseKeys.readiness });
+  void qc.invalidateQueries({ queryKey: pulseKeys.load });
+  void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+}
+
+function invalidatePulsePlanContextQueries(qc: QueryClient): void {
+  void qc.invalidateQueries({ queryKey: pulseKeys.plan });
+  void qc.invalidateQueries({ queryKey: pulseKeys.home });
+  void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+}
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -88,7 +103,10 @@ export function useSnoozeRiskSignal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, hours = 24 }: { id: string; hours?: number }) => pulseApi.risk.snooze(id, hours),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.risk }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.risk });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 
@@ -96,7 +114,10 @@ export function useResolveRiskSignal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => pulseApi.risk.resolve(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.risk }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.risk });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 
@@ -148,7 +169,7 @@ export function useSaveAvailability() {
       pulseApi.availability.save(weekStart, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.availability });
-      qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      invalidatePulsePlanContextQueries(qc);
     },
   });
 }
@@ -178,8 +199,26 @@ export function useCheckinHistory(days = 30) {
 }
 
 export function useCoachSend() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (message: string) => pulseApi.coach.send(message),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.coachHistory }),
+  });
+}
+
+export function useCoachHistory() {
+  return useQuery({
+    queryKey: pulseKeys.coachHistory,
+    queryFn: pulseApi.coach.history,
+    staleTime: 30_000,
+  });
+}
+
+export function useClearCoachHistory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.coach.deleteHistory,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.coachHistory }),
   });
 }
 
@@ -188,9 +227,7 @@ export function usePulseCheckin() {
   return useMutation({
     mutationFn: pulseApi.checkin.submit,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: pulseKeys.home });
-      qc.invalidateQueries({ queryKey: pulseKeys.readiness });
-      qc.invalidateQueries({ queryKey: pulseKeys.load });
+      invalidatePulseContextQueries(qc);
       qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
     },
@@ -201,7 +238,12 @@ export function useCreateGoal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.goals.create,
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.goals }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.goals });
+      void qc.invalidateQueries({ queryKey: pulseKeys.races });
+      void qc.invalidateQueries({ queryKey: pulseKeys.home });
+      void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+    },
   });
 }
 
@@ -210,7 +252,12 @@ export function useUpdateGoal() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof pulseApi.goals.update>[1] }) =>
       pulseApi.goals.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.goals }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.goals });
+      void qc.invalidateQueries({ queryKey: pulseKeys.races });
+      void qc.invalidateQueries({ queryKey: pulseKeys.home });
+      void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+    },
   });
 }
 
@@ -218,7 +265,12 @@ export function useDeleteGoal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => pulseApi.goals.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.goals }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.goals });
+      void qc.invalidateQueries({ queryKey: pulseKeys.races });
+      void qc.invalidateQueries({ queryKey: pulseKeys.home });
+      void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+    },
   });
 }
 
@@ -243,7 +295,7 @@ export function useGarminCalendarSync() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.garmin.calendarSync,
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.plan }),
+    onSuccess: () => invalidatePulsePlanContextQueries(qc),
   });
 }
 
@@ -260,7 +312,7 @@ export function useUpdateWorkout() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof pulseApi.plan.updateWorkout>[1] }) =>
       pulseApi.plan.updateWorkout(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.plan }),
+    onSuccess: () => invalidatePulsePlanContextQueries(qc),
   });
 }
 
@@ -268,7 +320,7 @@ export function useGeneratePlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.plan.generate,
-    onSuccess: () => qc.invalidateQueries({ queryKey: pulseKeys.plan }),
+    onSuccess: () => invalidatePulsePlanContextQueries(qc),
   });
 }
 
@@ -292,7 +344,11 @@ export function useLogWeight() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.weight.log,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pulse', 'weight'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pulse', 'weight'] });
+      void qc.invalidateQueries({ queryKey: pulseKeys.home });
+      void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+    },
   });
 }
 
@@ -308,7 +364,10 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.profile.update,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.profile }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.profile });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 
@@ -373,6 +432,7 @@ export function useCreateHealthState() {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
   });
 }
@@ -385,6 +445,7 @@ export function useResolveHealthState() {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
   });
 }
@@ -396,6 +457,8 @@ export function useDeleteHealthState() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
   });
 }
@@ -415,8 +478,7 @@ export function useAcceptTodayAdjustment() {
     mutationFn: (workoutId: string) => pulseApi.todayAdjust.accept(workoutId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
-      qc.invalidateQueries({ queryKey: pulseKeys.plan });
-      qc.invalidateQueries({ queryKey: pulseKeys.home });
+      invalidatePulsePlanContextQueries(qc);
     },
   });
 }

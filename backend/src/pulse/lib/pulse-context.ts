@@ -15,6 +15,7 @@ import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
 import type { PulseFitnessLoad, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
+import { getCached, setCached } from './pulse-cache.js';
 
 export type PulseDailyMetricsRow = typeof pulseDailyMetrics.$inferSelect;
 export type PulseMentalCheckinRow = typeof pulseMentalCheckins.$inferSelect;
@@ -253,6 +254,27 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       snoozedUntil: r.snoozedUntil?.toISOString() ?? null,
     })),
   };
+}
+
+interface CachedPulseContext extends Omit<PulseContext, 'recentActivities'> {
+  recentActivities: Array<Omit<PulseContext['recentActivities'][number], 'startTime'> & { startTime: string }>;
+}
+
+function revivePulseContext(ctx: CachedPulseContext): PulseContext {
+  return {
+    ...ctx,
+    activeRiskSignals: ctx.activeRiskSignals ?? [],
+    recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
+  };
+}
+
+export async function buildCachedPulseContextFor(userId: string, date: string): Promise<PulseContext> {
+  const cached = await getCached<CachedPulseContext>('context', userId, date);
+  if (cached) return revivePulseContext(cached);
+
+  const ctx = await buildPulseContextFor(userId, date);
+  await setCached('context', userId, date, ctx);
+  return ctx;
 }
 
 export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullContext {

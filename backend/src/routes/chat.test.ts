@@ -2,12 +2,16 @@ import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vites
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users, chatMessages } from '../db/schema.js';
+import { pulseHealthState } from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
+import { llmChat } from '../lib/llm.js';
+import { invalidateUser } from '../pulse/lib/pulse-cache.js';
 
 vi.mock('../lib/llm.js', () => ({
   FAST_MODEL: 'test-model',
+  SMART_MODEL: 'test-model',
   llmChat: vi.fn().mockResolvedValue('Zone 2 heute, 45 Minuten.'),
 }));
 
@@ -18,6 +22,7 @@ let userId: string;
 beforeAll(async () => {
   app = await buildApp();
   await db.delete(chatMessages);
+  await db.delete(pulseHealthState);
   await db.delete(users);
   const [u] = await db.insert(users).values({
     email: 'chat@coaching.os',
@@ -34,12 +39,16 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.delete(chatMessages);
+  await db.delete(pulseHealthState);
   await db.delete(users);
   await app.close();
 });
 
 beforeEach(async () => {
   await db.delete(chatMessages);
+  await db.delete(pulseHealthState);
+  await invalidateUser(userId);
+  vi.mocked(llmChat).mockClear();
 });
 
 describe('POST /api/chat/message', () => {
@@ -58,6 +67,15 @@ describe('POST /api/chat/message', () => {
   });
 
   it('returns coach response and saves both messages to DB', async () => {
+    const today = new Date().toISOString().split('T')[0]!;
+    await db.insert(pulseHealthState).values({
+      userId,
+      type: 'fatigue',
+      severity: 'moderate',
+      startDate: today,
+      notes: 'Schwere Beine',
+    });
+
     const res = await app.inject({
       method: 'POST', url: '/api/chat/message',
       headers: { authorization: `Bearer ${token}` },
@@ -70,6 +88,12 @@ describe('POST /api/chat/message', () => {
     expect(rows.length).toBe(2);
     expect(rows[0]!.role).toBe('user');
     expect(rows[1]!.role).toBe('assistant');
+
+    const systemPrompt = vi.mocked(llmChat).mock.calls[0]?.[0]?.[0]?.content ?? '';
+    expect(systemPrompt).toContain('Readiness:');
+    expect(systemPrompt).toContain('== TRAININGSBELASTUNG ==');
+    expect(systemPrompt).toContain('== AKTIVE HEALTH-STATES ==');
+    expect(systemPrompt).toContain('fatigue/moderate');
   });
 });
 

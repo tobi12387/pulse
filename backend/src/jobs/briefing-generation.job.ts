@@ -14,7 +14,7 @@ export interface BriefingJobData {
   date: string; // YYYY-MM-DD
 }
 
-function buildBriefingSystemPrompt(): string {
+export function buildBriefingSystemPrompt(): string {
   return `Du bist ein persönlicher Coach für Tobi, einen Ausdauersportler (polarized training).
 Deine Aufgabe: ein tägliches Coaching-Briefing auf Deutsch, 3-5 Sätze, konkret und umsetzbar.
 Fokus: Erholung, Trainingsbereitschaft, konkrete Empfehlung für heute.
