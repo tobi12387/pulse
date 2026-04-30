@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Phase 10 startet als Backend-Fundament vor UI
+
+- **Decision:** Phase 10 wird in reviewbare Slices geschnitten. Der erste Slice liefert additive Strength-/Equipment-Tabellen, Backend-APIs, idempotente Equipment-Mileage-Zuordnung und PulseContext-/Coach-/Briefing-Anbindung; UI-Komponenten folgen separat.
+- **Why:** Strength Logger, Equipment-Liste, Activity-Override und Plan-Analyse berühren viele Frontend-Flächen. Ein Backend-Fundament mit Tests reduziert Review-Risiko und macht die spätere UI zu einer Anbindung an stabile Verträge statt zu einem Full-Stack-Klumpen.
+- **Alternatives:** Phase 10 in einem PR vollständig bauen (zu breit); nur UI-Mockups ohne persistente API bauen (nicht nutzbar); Equipment-Totals als mutable Spalte speichern (anfällig bei Overrides).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Web Push Triggers hängen an bestehenden Jobs und pushen Criticals nur neu
 
 - **Decision:** Web-Push-Trigger werden als zweiter Slice an die bestehenden Auslöser gehängt: Briefing pusht nur beim ersten erfolgreichen Insert pro Nutzer und Tag, der Check-in-Reminder läuft als eigener BullMQ-Repeat-Job um 19:30 Europe/Berlin, und Risk-Watch pusht nur neu eingefügte `critical`-Signale.

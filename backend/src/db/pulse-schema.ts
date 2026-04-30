@@ -1,9 +1,9 @@
 import {
   pgTable, pgEnum, uuid, text, varchar, integer, real,
-  timestamp, date, jsonb, boolean, index, uniqueIndex, time,
+  timestamp, date, jsonb, boolean, index, uniqueIndex, time, primaryKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import type { PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { EquipmentCategory, PulseActivityType, PulsePushTopics } from '@coaching-os/shared/pulse';
 
 // FK to users.id is enforced at DB level via migration SQL — not via Drizzle
 // references() because drizzle-kit cannot resolve cross-file .js imports.
@@ -348,6 +348,68 @@ export const pulseNutritionLogs = pgTable('pulse_nutrition_logs', {
 }, (t) => [
   index('pulse_nutrition_logs_user_date_idx').on(t.userId, t.date),
   index('pulse_nutrition_logs_workout_idx').on(t.workoutId),
+]);
+
+// ─── Strength sessions ──────────────────────────────────────────────────────
+export const pulseStrengthSession = pgTable('pulse_strength_session', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  userId:           uuid('user_id').notNull(),
+  plannedWorkoutId: uuid('planned_workout_id'),
+  date:             date('date').notNull(),
+  durationMin:      integer('duration_min'),
+  notes:            text('notes'),
+  createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => [
+  index('idx_strength_session_user_date').on(t.userId, t.date),
+]);
+
+export const pulseStrengthSet = pgTable('pulse_strength_set', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').notNull(),
+  exercise:  text('exercise').notNull(),
+  setNumber: integer('set_number').notNull(),
+  reps:      integer('reps').notNull(),
+  weightKg:  real('weight_kg'),
+  rpe:       integer('rpe'),
+  e1rmKg:    real('e1rm_kg'),
+}, (t) => [
+  index('idx_strength_set_session').on(t.sessionId),
+]);
+
+// ─── Equipment tracking ─────────────────────────────────────────────────────
+export const pulseEquipment = pgTable('pulse_equipment', {
+  id:                uuid('id').primaryKey().defaultRandom(),
+  userId:            uuid('user_id').notNull(),
+  name:              text('name').notNull(),
+  category:          text('category').$type<EquipmentCategory>().notNull(),
+  parentEquipmentId: uuid('parent_equipment_id'),
+  activityTypes:     text('activity_types').array().$type<PulseActivityType[]>().notNull().default(sql`ARRAY[]::TEXT[]`),
+  installedDate:     date('installed_date').notNull(),
+  initialKm:         real('initial_km').default(0),
+  retirementKm:      real('retirement_km'),
+  retirementDate:    date('retirement_date'),
+  retiredAt:         timestamp('retired_at', { withTimezone: true }),
+  notes:             text('notes'),
+  createdAt:         timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => [
+  index('idx_equipment_user_active').on(t.userId).where(sql`${t.retiredAt} IS NULL`),
+]);
+
+export const pulseEquipmentActivity = pgTable('pulse_equipment_activity', {
+  equipmentId: uuid('equipment_id').notNull(),
+  activityId:  uuid('activity_id').notNull(),
+  kmAdded:     real('km_added').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.equipmentId, t.activityId] }),
+  index('idx_equipment_activity_activity').on(t.activityId),
+]);
+
+export const pulseEquipmentDefault = pgTable('pulse_equipment_default', {
+  userId:       uuid('user_id').notNull(),
+  activityType: text('activity_type').$type<PulseActivityType>().notNull(),
+  equipmentId:  uuid('equipment_id').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.activityType] }),
 ]);
 
 // ─── Insights cache ───────────────────────────────────────────────────────────

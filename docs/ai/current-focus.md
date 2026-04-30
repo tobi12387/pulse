@@ -4,13 +4,14 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. Finish `codex/web-push-triggers`: briefing push, check-in reminder, and risk-critical push triggers.
-2. Then return to Phase 10 equipment/strength work.
-3. Keep completed Web Push foundation behavior stable while adding trigger jobs.
+1. Finish `codex/phase10-strength-equipment`: Phase 10 backend foundation for Strength + Equipment.
+2. Then add Phase 10 UI surfaces: Strength Logger, Equipment Settings card, ActivityDetail override, Plan analytics.
+3. Then continue Phase 11 Mental Themes.
 
 ## Current PRs / Branches
 
-- `codex/web-push-triggers`: active local branch for Web Push trigger jobs.
+- `codex/phase10-strength-equipment`: active local branch for Phase 10 backend foundation.
+- `codex/web-push-triggers`: merged and deployed via PR #35.
 - `codex/web-push-subscriptions`: merged and deployed via PR #34.
 - `codex/plan-coach-browser-qa`: merged and deployed via PR #33.
 - `codex/garmin-hr-targets`: merged and deployed via PR #32.
@@ -19,9 +20,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Open, merge, and deploy Web Push triggers after CI passes.
+- Open, merge, and deploy Phase 10 backend foundation after CI passes.
+- Next branch after backend foundation: Phase 10 UI integration against the new Strength/Equipment API.
 - Verify server has VAPID settings in `/root/pulse/.env`; without them push endpoints remain safely configured-but-skipped.
-- Next branch after Web Push triggers: Phase 10 equipment/strength from the active roadmap.
 
 ## Out Of Scope Unless Reversed
 

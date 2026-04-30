@@ -45,6 +45,22 @@ export interface CoachFullContext {
   }>;
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   activeRiskSignals?: PulseRiskSignal[];
+  recentStrengthSessions?: Array<{
+    date: string;
+    sessionId: string;
+    durationMin: number | null;
+    topLifts: Array<{
+      exercise: string;
+      bestSet: { reps: number; weightKg: number | null; rpe: number | null; e1rmKg: number | null };
+    }>;
+  }>;
+  equipmentDueForReplacement?: Array<{
+    name: string;
+    category: string;
+    kmCurrent: number;
+    kmRetirement: number;
+    pctConsumed: number;
+  }>;
   recovery?: {
     sleepDebt7dH: number;
     sleepDebtStatus: 'ok' | 'mild' | 'severe';
@@ -130,6 +146,27 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
         ? ` RPE=${a.rpe}/10${a.rpeNote ? ` ("${a.rpeNote.slice(0, 80)}")` : ''}`
         : ' kein RPE';
       s += `\n${a.date} ${a.activityType}${zone} ${dur}${tss}${np}${hr}${rpe}`;
+    });
+  }
+
+  if (ctx.recentStrengthSessions && ctx.recentStrengthSessions.length > 0) {
+    s += '\n\n== KRAFTTRAINING ==';
+    ctx.recentStrengthSessions.slice(0, 3).forEach(session => {
+      const duration = session.durationMin ? ` ${session.durationMin}min` : '';
+      const lifts = session.topLifts.map(lift => {
+        const e1rm = lift.bestSet.e1rmKg != null ? ` e1RM ${lift.bestSet.e1rmKg.toFixed(1)}kg` : '';
+        const weight = lift.bestSet.weightKg != null ? `${lift.bestSet.weightKg}kg` : 'BW';
+        const rpe = lift.bestSet.rpe != null ? ` RPE ${lift.bestSet.rpe}/10` : '';
+        return `${lift.exercise} ${lift.bestSet.reps}x${weight}${e1rm}${rpe}`;
+      }).join('; ');
+      s += `\n${session.date}${duration}: ${lifts}`;
+    });
+  }
+
+  if (ctx.equipmentDueForReplacement && ctx.equipmentDueForReplacement.length > 0) {
+    s += '\n\n== EQUIPMENT ==';
+    ctx.equipmentDueForReplacement.forEach(item => {
+      s += `\n${item.name} (${item.category}): ${item.pctConsumed.toFixed(0)}% verbraucht (${item.kmCurrent.toFixed(0)}/${item.kmRetirement.toFixed(0)} km)`;
     });
   }
 

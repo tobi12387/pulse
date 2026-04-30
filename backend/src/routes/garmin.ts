@@ -6,6 +6,7 @@ import { eq, desc, and, or } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
 import { getGarminActivitiesForDate, upsertGarminActivity } from '../lib/garmin-activities.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
+import { autoAssignDefaultEquipmentForActivity } from '../pulse/services/strength-equipment.js';
 
 interface NutritionContext {
   carbsG: number;             // sum during/post
@@ -347,6 +348,11 @@ export async function syncGarminDay(
       if (inserted) {
         activitiesWritten++;
         await matchActivityToWorkout(userId, inserted.id, dateStr, inserted.activityType, app);
+        try {
+          await autoAssignDefaultEquipmentForActivity(userId, inserted.id);
+        } catch (err) {
+          app?.log.warn(`[equipment-auto-tally] activity=${inserted.id}: ${err}`);
+        }
 
         // Backfill weather async — outdoor activities only, ignore failures
         if (!inserted.isIndoor && inserted.startLat != null && inserted.startLon != null) {
