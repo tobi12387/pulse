@@ -55,6 +55,49 @@ describe('buildRichSystemPrompt', () => {
     expect(typeof prompt).toBe('string');
     expect(prompt).toContain('50/100');
   });
+
+  it('includes RPE feedback for recent activities', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-04-27',
+      readiness: { score: 72, label: 'good' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 50, tsb: -6 },
+      profile: null,
+      recentActivities: [
+        {
+          date: '2026-04-26',
+          activityType: 'bike',
+          durationSec: 3600,
+          tss: 48,
+          normalizedPowerW: 140,
+          avgHr: 132,
+          plannedZone: 2,
+          rpe: 8,
+          rpeNote: 'Beine zäh',
+        },
+        {
+          date: '2026-04-25',
+          activityType: 'run',
+          durationSec: 1800,
+          tss: 35,
+          normalizedPowerW: null,
+          avgHr: 140,
+          plannedZone: null,
+          rpe: null,
+          rpeNote: null,
+        },
+      ],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+    });
+    expect(prompt).toContain('RPE=8/10');
+    expect(prompt).toContain('Beine zäh');
+    expect(prompt).toContain('kein RPE');
+  });
 });
 
 describe('getCoachReplyRich', () => {

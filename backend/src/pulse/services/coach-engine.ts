@@ -29,6 +29,7 @@ export interface CoachFullContext {
   recentActivities: Array<{
     date: string; activityType: string; durationSec: number | null;
     tss: number | null; normalizedPowerW: number | null; avgHr: number | null;
+    rpe?: number | null; rpeNote?: string | null; plannedZone?: number | null;
   }>;
   upcomingWorkouts: Array<{
     plannedDate: string; activityType: string; zone: number;
@@ -112,7 +113,11 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       const tss = a.tss        ? ` TSS=${a.tss.toFixed(0)}`      : '';
       const np  = a.normalizedPowerW ? ` NP=${a.normalizedPowerW}W` : '';
       const hr  = a.avgHr      ? ` HRØ=${a.avgHr}bpm`           : '';
-      s += `\n${a.date} ${a.activityType} ${dur}${tss}${np}${hr}`;
+      const zone = a.plannedZone ? ` Z${a.plannedZone}` : '';
+      const rpe = a.rpe != null
+        ? ` RPE=${a.rpe}/10${a.rpeNote ? ` ("${a.rpeNote.slice(0, 80)}")` : ''}`
+        : ' kein RPE';
+      s += `\n${a.date} ${a.activityType}${zone} ${dur}${tss}${np}${hr}${rpe}`;
     });
   }
 

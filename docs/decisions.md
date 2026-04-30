@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — RPE wird über PulseContext in Coach und Plan ausgewertet
+
+- **Decision:** RPE aus `pulse_activities` wird in den gemeinsamen PulseContext aufgenommen, im Coach-Systemprompt und Briefing-Prompt ausgespielt und in `/pulse/training-analytics` als RPE-vs-Zone-Auswertung geliefert. Geplante Zone aus completed Workouts hat Vorrang; falls keine Plan-Verknüpfung existiert, nutzt die Statistik die bestehende Intensitätsableitung als Fallback.
+- **Why:** RPE soll nicht nur im ActivityDetail gespeichert werden, sondern den täglichen Coaching-Loop beeinflussen. PulseContext ist bereits die gemeinsame Wahrheit für Coach und Briefing; die Plan-Statistik hängt an `/training-analytics`.
+- **Alternatives:** Separater RPE-Service oder neue Analytics-Route (mehr API-Oberfläche ohne Bedarf); reine Frontend-Berechnung aus Activity-Listen (würde Coach/Briefing nicht verbessern).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Drizzle-Journal muss jede SQL-Migration referenzieren
 
 - **Decision:** `backend/src/db/migrations/meta/_journal.json` wird wieder mit allen vorhandenen SQL-Migrationen synchronisiert und ein GitHub-Workflow blockt künftig Migrationen, die keinen Journal-Eintrag haben.

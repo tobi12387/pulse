@@ -192,6 +192,10 @@ export const pulseApi = {
         zones: { z1: number; z2: number; z3: number; z4: number; z5: number };
       }>;
       vo2maxTrend: Array<{ date: string; vo2max: number }>;
+      rpeByZone: {
+        totalRated: number;
+        zones: Array<{ zone: number; avgRpe: number | null; count: number; previousAvgRpe: number | null; drift: number | null }>;
+      };
     }> =>
       request(`/training-analytics?weeks=${weeks}`),
   },
