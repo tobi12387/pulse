@@ -12,18 +12,27 @@ import {
 import { hashPassword } from '../lib/auth.js';
 import type { Job } from 'bullmq';
 import { eq } from 'drizzle-orm';
-import { buildBriefingUserContentRich, processBriefingJob } from './briefing-generation.job.js';
+import { buildBriefingPushBody, buildBriefingUserContentRich, processBriefingJob } from './briefing-generation.job.js';
 import type { BriefingJobData } from './briefing-generation.job.js';
 import { llmComplete } from '../lib/llm.js';
+import { sendPushToUser } from '../lib/push.js';
 import type { PulseContext } from '../pulse/lib/pulse-context.js';
+
+const pushMocks = vi.hoisted(() => ({
+  sendPushToUser: vi.fn(),
+}));
 
 vi.mock('../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('Deine Erholung sieht gut aus. Heute Zone 2.'),
   SMART_MODEL: 'test-model',
 }));
 
+vi.mock('../lib/push.js', () => ({
+  sendPushToUser: pushMocks.sendPushToUser,
+}));
+
 const mockApp = {
-  log: { info: vi.fn(), error: vi.fn() },
+  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 } as unknown as FastifyInstance;
 
 let userId: string;
@@ -62,6 +71,7 @@ beforeEach(async () => {
   await db.delete(pulseMentalCheckins);
   await db.delete(pulseDailyMetrics);
   vi.mocked(llmComplete).mockClear();
+  vi.mocked(sendPushToUser).mockReset().mockResolvedValue({ sent: 1, failed: 0, gone: 0, skipped: 0 });
 });
 
 describe('processBriefingJob', () => {
@@ -99,6 +109,13 @@ describe('processBriefingJob', () => {
     expect(saved!.date).toBe(date);
     expect(saved!.garminSnapshot).toMatchObject({ sleepHours: 7.2, hrvStatus: 'balanced' });
     expect(saved!.checkinSnapshot).toMatchObject({ energy: 7, stress: 3 });
+    expect(sendPushToUser).toHaveBeenCalledWith(userId, {
+      topic: 'briefing',
+      title: 'Daily Briefing',
+      body: 'Deine Erholung sieht gut aus. Heute Zone 2.',
+      url: '/',
+      tag: `briefing-${date}`,
+    });
 
     const userContent = vi.mocked(llmComplete).mock.calls[0]?.[1] ?? '';
     const systemPrompt = vi.mocked(llmComplete).mock.calls[0]?.[0] ?? '';
@@ -137,6 +154,24 @@ describe('processBriefingJob', () => {
     expect(userContent).toContain('fatigue/moderate');
   });
 
+  it('does not send another briefing push when a briefing already exists for the date', async () => {
+    const date = '2026-04-23';
+    await db.insert(dailyBriefings).values({
+      userId,
+      date,
+      triggerType: 'check-in',
+      briefingText: 'Früheres Briefing.',
+      createdAt: new Date('2026-04-23T06:00:00Z'),
+    });
+
+    const job = { data: { userId, triggerType: 'garmin-alarm', date } } as Job<BriefingJobData>;
+    await processBriefingJob(job, mockApp);
+
+    const rows = await db.select().from(dailyBriefings).where(eq(dailyBriefings.userId, userId));
+    expect(rows).toHaveLength(2);
+    expect(sendPushToUser).not.toHaveBeenCalled();
+  });
+
   it('generates briefing even with no garmin data', async () => {
     const date = '2026-04-24';
 
@@ -145,6 +180,17 @@ describe('processBriefingJob', () => {
 
     const rows = await db.select().from(dailyBriefings);
     expect(rows.length).toBe(1);
+  });
+
+  it('keeps the briefing when push delivery fails', async () => {
+    const date = '2026-04-25';
+    vi.mocked(sendPushToUser).mockRejectedValueOnce(new Error('push unavailable'));
+
+    const job = { data: { userId, triggerType: 'check-in', date } } as Job<BriefingJobData>;
+    await expect(processBriefingJob(job, mockApp)).resolves.toBeUndefined();
+
+    const rows = await db.select().from(dailyBriefings);
+    expect(rows).toHaveLength(1);
   });
 
   it('adds RPE fatigue context for hard-feeling easy workouts', async () => {
@@ -180,6 +226,12 @@ describe('processBriefingJob', () => {
 });
 
 describe('buildBriefingUserContentRich', () => {
+  it('truncates briefing push bodies to notification-safe length', () => {
+    const body = buildBriefingPushBody('a'.repeat(141));
+    expect(body).toHaveLength(140);
+    expect(body.endsWith('…')).toBe(true);
+  });
+
   it('flags high RPE on easy workouts as aerobic fatigue context', () => {
     const ctx = {
       date: '2026-04-24',

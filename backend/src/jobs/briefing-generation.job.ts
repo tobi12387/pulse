@@ -1,12 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import type { Job, Queue, Worker } from 'bullmq';
+import { and, asc, eq } from 'drizzle-orm';
 import { createQueue, createWorker } from '../lib/queue.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { db } from '../lib/db.js';
 import { dailyBriefings } from '../db/schema.js';
 import { buildPulseContextFor, type PulseContext } from '../pulse/lib/pulse-context.js';
+import { sendPushToUser } from '../lib/push.js';
 
 export const BRIEFING_QUEUE_NAME = 'briefing';
+const BRIEFING_PUSH_BODY_MAX_LENGTH = 140;
 
 export interface BriefingJobData {
   userId: string;
@@ -19,6 +22,21 @@ export function buildBriefingSystemPrompt(): string {
 Deine Aufgabe: ein tägliches Coaching-Briefing auf Deutsch, 3-5 Sätze, konkret und umsetzbar.
 Fokus: Erholung, Trainingsbereitschaft, konkrete Empfehlung für heute.
 Wenn ein Risk-Signal critical ist, musst du es klar adressieren und darfst es nicht beschönigen.`;
+}
+
+export function buildBriefingPushBody(briefingText: string): string {
+  return briefingText.length > BRIEFING_PUSH_BODY_MAX_LENGTH
+    ? `${briefingText.slice(0, BRIEFING_PUSH_BODY_MAX_LENGTH - 1)}…`
+    : briefingText;
+}
+
+async function isFirstBriefingForDate(userId: string, date: string, briefingId: string): Promise<boolean> {
+  const [first] = await db.select({ id: dailyBriefings.id })
+    .from(dailyBriefings)
+    .where(and(eq(dailyBriefings.userId, userId), eq(dailyBriefings.date, date)))
+    .orderBy(asc(dailyBriefings.createdAt), asc(dailyBriefings.id))
+    .limit(1);
+  return first?.id === briefingId;
 }
 
 export function buildBriefingUserContentRich(
@@ -87,14 +105,31 @@ export async function processBriefingJob(
   const userContent  = buildBriefingUserContentRich(ctx, triggerType);
   const briefingText = await llmComplete(systemPrompt, userContent, SMART_MODEL);
 
-  await db.insert(dailyBriefings).values({
+  const [savedBriefing] = await db.insert(dailyBriefings).values({
     userId,
     date,
     triggerType,
     garminSnapshot:  ctx.todayMetrics ? { ...ctx.todayMetrics } : null,
     checkinSnapshot: ctx.todayCheckin ? { ...ctx.todayCheckin } : null,
     briefingText,
-  });
+  }).returning({ id: dailyBriefings.id });
+
+  if (savedBriefing && await isFirstBriefingForDate(userId, date, savedBriefing.id)) {
+    try {
+      const result = await sendPushToUser(userId, {
+        topic: 'briefing',
+        title: 'Daily Briefing',
+        body: buildBriefingPushBody(briefingText),
+        url: '/',
+        tag: `briefing-${date}`,
+      });
+      app.log.info(`[briefing] Push processed for ${userId} on ${date}: ${JSON.stringify(result)}`);
+    } catch (err) {
+      app.log.warn(`[briefing] Push failed for ${userId} on ${date}: ${err}`);
+    }
+  } else {
+    app.log.info(`[briefing] Push skipped for ${userId} on ${date}: briefing already sent today`);
+  }
 
   app.log.info(`[briefing] Generated for ${userId} on ${date} (trigger: ${triggerType})`);
 }
