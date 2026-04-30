@@ -10,12 +10,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/plan-intelligence-diagnostics`: Show Plan-Day decisions after generation in the Plan UI.
+- `codex/plan-intelligence-risk-gates`: Make active Risk Watch signals constrain weekly plan density and hard sessions.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Merge and deploy Plan-Day diagnostics, then add richer goal/recovery inputs to the planner.
+- Merge and deploy Risk-Watch plan gates, then add richer goal-specific workout mix rules.
 
 ## Out Of Scope Unless Reversed
 

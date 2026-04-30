@@ -1220,7 +1220,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
-    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates] = await Promise.all([
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows] = await Promise.all([
       computeFitnessLoad(userId, weekStartStr),
       db.select({
         startTime:    pulseActivities.startTime,
@@ -1256,6 +1256,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
           isNull(pulseHealthState.resolvedAt),
           or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
         )),
+      getActiveRiskSignals(userId),
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr);
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
@@ -1266,6 +1267,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
       phase,
       mesocycleWeek,
       goals,
+      riskSignals: riskSignalRows.map(r => ({
+        ruleId: r.ruleId,
+        severity: r.severity as 'info' | 'warn' | 'critical',
+        title: r.title,
+        recommendation: r.recommendation,
+      })),
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -1287,6 +1294,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
           tss:          a.tss ?? 0,
         })),
         goals,
+        riskSignals: riskSignalRows.map(r => ({
+          ruleId: r.ruleId,
+          severity: r.severity as 'info' | 'warn' | 'critical',
+          title: r.title,
+          recommendation: r.recommendation,
+        })),
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1846,7 +1859,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     // Auto-regenerate plan for this week
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
     const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
-    const [fitnessLoad, recentActs2, goals2] = await Promise.all([
+    const [fitnessLoad, recentActs2, goals2, riskSignalRows2] = await Promise.all([
       computeFitnessLoad(userId, weekStart),
       db.select({
         startTime:    pulseActivities.startTime,
@@ -1860,6 +1873,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         .from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
         .limit(5),
+      getActiveRiskSignals(userId),
     ]);
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -1878,6 +1892,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
           tss:          a.tss ?? 0,
         })),
         goals: goals2,
+        riskSignals: riskSignalRows2.map(r => ({
+          ruleId: r.ruleId,
+          severity: r.severity as 'info' | 'warn' | 'critical',
+          title: r.title,
+          recommendation: r.recommendation,
+        })),
       });
     } catch {
       generated = generateWeekWorkouts({ weekStart, phase, weeklyHoursTarget: parsed.data.weeklyHours, availableDays: parsed.data.availableDays });
