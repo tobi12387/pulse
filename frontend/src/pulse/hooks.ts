@@ -30,6 +30,7 @@ export const pulseKeys = {
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
   syncStatus:       ['pulse', 'sync-status'] as const,
+  pushSettings:     ['pulse', 'push', 'settings'] as const,
   nutrition: (workoutId: string | null, activityId: string | null) =>
     ['pulse', 'nutrition', workoutId, activityId] as const,
 };
@@ -296,6 +297,52 @@ export function useGarminCalendarSync() {
   return useMutation({
     mutationFn: pulseApi.garmin.calendarSync,
     onSuccess: () => invalidatePulsePlanContextQueries(qc),
+  });
+}
+
+export function usePushSettings() {
+  return useQuery({
+    queryKey: pulseKeys.pushSettings,
+    queryFn: pulseApi.push.settings,
+    staleTime: 30_000,
+  });
+}
+
+export function usePushSubscribe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.push.subscribe,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings }),
+  });
+}
+
+export function usePushUnsubscribe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.push.unsubscribe,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings }),
+  });
+}
+
+export function useUpdatePushTopics() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.push.updateTopics,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings }),
+  });
+}
+
+export function useUpdatePushQuietHours() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.push.updateQuietHours,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings }),
+  });
+}
+
+export function useSendTestPush() {
+  return useMutation({
+    mutationFn: pulseApi.push.test,
   });
 }
 

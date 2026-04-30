@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
-import { pulseCoachSessions, pulseMentalCheckins, pulsePlannedWorkouts, pulseUserProfile } from '../db/pulse-schema.js';
+import { pulseCoachSessions, pulseMentalCheckins, pulsePlannedWorkouts, pulsePushSubscriptions, pulseUserProfile } from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
@@ -15,6 +15,11 @@ const garminMocks = vi.hoisted(() => ({
   post: vi.fn(),
   get: vi.fn(),
   delete: vi.fn(),
+}));
+
+const pushMocks = vi.hoisted(() => ({
+  isPushConfigured: vi.fn(),
+  sendPushToUser: vi.fn(),
 }));
 
 vi.mock('../lib/llm.js', () => ({
@@ -37,6 +42,21 @@ vi.mock('../lib/garmin-client.js', () => ({
       delete: garminMocks.delete,
     },
   }),
+}));
+
+vi.mock('../lib/push.js', () => ({
+  isPushConfigured: pushMocks.isPushConfigured,
+  normalizePushTopics: (value: unknown) => {
+    const raw = typeof value === 'object' && value != null
+      ? value as { briefing?: boolean; checkin_reminder?: boolean; risk_critical?: boolean }
+      : {};
+    return {
+      briefing: raw.briefing ?? true,
+      checkin_reminder: raw.checkin_reminder ?? true,
+      risk_critical: raw.risk_critical ?? true,
+    };
+  },
+  sendPushToUser: pushMocks.sendPushToUser,
 }));
 
 let app: FastifyInstance;
@@ -62,6 +82,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (userId) {
     await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
     await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
     await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));
     await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
@@ -72,6 +93,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+  await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
   await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
   await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));
   await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
@@ -83,6 +105,8 @@ beforeEach(async () => {
   garminMocks.post.mockReset().mockResolvedValue({ workoutScheduleId: 67890 });
   garminMocks.get.mockReset().mockResolvedValue({ calendarItems: [] });
   garminMocks.delete.mockReset().mockResolvedValue(undefined);
+  pushMocks.isPushConfigured.mockReset().mockReturnValue(true);
+  pushMocks.sendPushToUser.mockReset().mockResolvedValue({ sent: 1, failed: 0, gone: 0, skipped: 0 });
 });
 
 describe('GET /api/pulse/health', () => {
@@ -109,6 +133,117 @@ describe('GET /api/pulse/home', () => {
     expect(body).toHaveProperty('date');
     expect(body).toHaveProperty('readiness');
     expect(body.readiness).toHaveProperty('score');
+  });
+});
+
+describe('Web Push settings', () => {
+  const subscriptionPayload = {
+    endpoint: 'https://push.example.test/sub/abc',
+    keys: { p256dh: 'p256dh-key', auth: 'auth-key' },
+    deviceLabel: 'Vitest Browser',
+  };
+
+  it('requires auth for push settings', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/pulse/push/settings' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('upserts and lists push subscriptions scoped to the user', async () => {
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/push/subscribe',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: subscriptionPayload,
+    });
+    expect(create.statusCode).toBe(201);
+
+    const update = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/push/subscribe',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { ...subscriptionPayload, deviceLabel: 'Mac Safari' },
+    });
+    expect(update.statusCode).toBe(201);
+
+    const settings = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/push/settings',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(settings.statusCode).toBe(200);
+    const body = settings.json<{ subscriptions: Array<{ endpoint: string; deviceLabel: string }>; topics: Record<string, boolean>; quietHours: { start: string; end: string }; configured: boolean }>();
+    expect(body.configured).toBe(true);
+    expect(body.topics).toMatchObject({ briefing: true, checkin_reminder: true, risk_critical: true });
+    expect(body.quietHours).toEqual({ start: '22:00', end: '06:30' });
+    expect(body.subscriptions).toHaveLength(1);
+    expect(body.subscriptions[0]).toMatchObject({ endpoint: subscriptionPayload.endpoint, deviceLabel: 'Mac Safari' });
+  });
+
+  it('updates topics and quiet hours', async () => {
+    const topics = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/push/topics',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { briefing: false },
+    });
+    expect(topics.statusCode).toBe(200);
+    expect(topics.json()).toMatchObject({ briefing: false, checkin_reminder: true, risk_critical: true });
+
+    const quiet = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/push/quiet-hours',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { start: '21:15', end: '06:45' },
+    });
+    expect(quiet.statusCode).toBe(200);
+    expect(quiet.json()).toEqual({ start: '21:15', end: '06:45' });
+  });
+
+  it('sends test pushes only when VAPID is configured', async () => {
+    const ok = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/push/test',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(pushMocks.sendPushToUser).toHaveBeenCalledWith(userId, expect.objectContaining({
+      topic: 'briefing',
+      tag: 'pulse-test',
+    }));
+
+    pushMocks.isPushConfigured.mockReturnValueOnce(false);
+    const missing = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/push/test',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(missing.statusCode).toBe(503);
+  });
+
+  it('deletes push subscriptions by endpoint', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/pulse/push/subscribe',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: subscriptionPayload,
+    });
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: '/api/pulse/push/subscribe',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { endpoint: subscriptionPayload.endpoint },
+    });
+    expect(del.statusCode).toBe(204);
+
+    const settings = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/push/settings',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(settings.json<{ subscriptions: unknown[] }>().subscriptions).toHaveLength(0);
   });
 });
 

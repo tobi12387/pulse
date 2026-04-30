@@ -5,6 +5,7 @@ import type {
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
+  PulsePushSettings, PulsePushTopics,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -79,6 +80,25 @@ export const pulseApi = {
       request(`/risk/${id}/snooze`, { method: 'POST', body: JSON.stringify({ hours }) }),
     resolve: (id: string): Promise<{ ok: boolean }> =>
       request(`/risk/${id}/resolve`, { method: 'POST', body: '{}' }),
+  },
+
+  push: {
+    settings: (): Promise<PulsePushSettings> =>
+      request('/push/settings'),
+    subscribe: (data: {
+      endpoint: string;
+      keys: { p256dh: string; auth: string };
+      deviceLabel?: string;
+    }): Promise<{ subscription: PulsePushSettings['subscriptions'][number] }> =>
+      request('/push/subscribe', { method: 'POST', body: JSON.stringify(data) }),
+    unsubscribe: (endpoint: string): Promise<void> =>
+      request('/push/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
+    updateTopics: (topics: Partial<PulsePushTopics>): Promise<PulsePushTopics> =>
+      request('/push/topics', { method: 'PATCH', body: JSON.stringify(topics) }),
+    updateQuietHours: (data: { start: string; end: string }): Promise<{ start: string; end: string }> =>
+      request('/push/quiet-hours', { method: 'PATCH', body: JSON.stringify(data) }),
+    test: (): Promise<{ ok: boolean; result: { sent: number; failed: number; gone: number; skipped: number } }> =>
+      request('/push/test', { method: 'POST', body: '{}' }),
   },
 
   checkin: {
