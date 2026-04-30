@@ -4,19 +4,18 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. Implement RPE & Post-Workout Feedback in small slices.
-2. Then Risk Watch.
-3. Then Web Push Notifications.
-4. Then revisit Phase 10 / 11 with the latest user priorities.
+1. Complete Risk Watch in small slices.
+2. Then Web Push Notifications.
+3. Then revisit Phase 10 / 11 with the latest user priorities.
 
 ## Current PRs / Branches
 
-- `codex/risk-watch-backend`: Add Risk Watch schema, engine, persistence, API, and Garmin post-sync hook.
+- `codex/risk-watch-home-banner`: Add the first Home UI for active Risk Watch signals.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Merge and deploy Risk Watch backend, then add Home RiskWatchBanner and Coach/Briefing risk context.
+- Merge and deploy the Home RiskWatchBanner, then add Coach/Briefing risk context.
 
 ## Out Of Scope Unless Reversed
 
