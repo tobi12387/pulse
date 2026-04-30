@@ -28,6 +28,10 @@ interface GoalLite {
   title: string;
   targetDate: string | null;
   category: GoalCategory;
+  metrics?: Record<string, unknown> | null;
+  raceDiscipline?: string | null;
+  raceDistanceKm?: number | null;
+  racePriority?: 'A' | 'B' | 'C' | null;
 }
 
 interface RiskSignalLite {
@@ -35,6 +39,22 @@ interface RiskSignalLite {
   severity: 'info' | 'warn' | 'critical';
   title: string;
   recommendation: string;
+}
+
+interface RecentPlanActivity {
+  date: string;
+  activityType: string;
+  durationMin: number;
+  tss: number;
+  rpe?: number | null;
+  plannedZone?: number | null;
+}
+
+interface RpePlanSafety {
+  blockHard: boolean;
+  reduceSessions: boolean;
+  reasons: string[];
+  summary: string | null;
 }
 
 // ─── TSS / intensity helpers ──────────────────────────────────────────────────
@@ -51,6 +71,59 @@ const IF_BY_ZONE: Record<number, number> = {
 function tssFromWorkout(durationMin: number, zone: number): number {
   const ef = IF_BY_ZONE[zone] ?? 0.70;
   return Math.round((durationMin / 60) * ef * ef * 100);
+}
+
+function inferZoneFromTss(durationMin: number, tss: number): number | null {
+  if (durationMin <= 0 || tss <= 0) return null;
+  const tssPerHour = tss / (durationMin / 60);
+  if (tssPerHour < 35) return 1;
+  if (tssPerHour < 70) return 2;
+  if (tssPerHour < 92) return 3;
+  if (tssPerHour < 120) return 4;
+  return 5;
+}
+
+function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafety {
+  const rated = activities
+    .filter((a): a is RecentPlanActivity & { rpe: number } => a.rpe != null)
+    .slice(0, 8);
+  if (rated.length === 0) {
+    return { blockHard: false, reduceSessions: false, reasons: [], summary: null };
+  }
+
+  const hardFeelingEasy = rated.find(a => {
+    const zone = a.plannedZone ?? inferZoneFromTss(a.durationMin, a.tss);
+    return zone != null && zone <= 2 && a.rpe >= 8;
+  });
+  const highRpeCount = rated.slice(0, 5).filter(a => a.rpe >= 8).length;
+  const latest = rated[0]!;
+
+  const reasons: string[] = [];
+  if (hardFeelingEasy) {
+    reasons.push(`RPE-Signal: eine leichte ${hardFeelingEasy.activityType}-Einheit fühlte sich mit RPE ${hardFeelingEasy.rpe}/10 zu hart an.`);
+  }
+  if (highRpeCount >= 2) {
+    reasons.push(`RPE-Signal: ${highRpeCount} der letzten ${Math.min(5, rated.length)} bewerteten Einheiten lagen bei RPE >= 8.`);
+  }
+
+  const blockHard = hardFeelingEasy != null || highRpeCount >= 2;
+  const reduceSessions = blockHard || latest.rpe >= 9;
+  const summary = reasons.length > 0
+    ? reasons.join(' ')
+    : `Letzte RPE-Bewertung: ${latest.activityType} am ${latest.date} mit RPE ${latest.rpe}/10.`;
+
+  return { blockHard, reduceSessions, reasons, summary };
+}
+
+function hrTargetForZone(zone: number, maxHrBpm: number, lthrBpm?: number): string {
+  const lthr = lthrBpm ?? Math.round(maxHrBpm * 0.92);
+  const range = (loPct: number, hiPct: number) =>
+    `${Math.round(lthr * loPct / 100)}-${Math.round(lthr * hiPct / 100)} bpm`;
+  if (zone <= 1) return `<${Math.round(lthr * 0.81)} bpm`;
+  if (zone === 2) return range(82, 88);
+  if (zone === 3) return range(89, 93);
+  if (zone === 4) return range(94, 99);
+  return `>${Math.round(lthr)} bpm`;
 }
 
 // ─── Mesocycle position ───────────────────────────────────────────────────────
@@ -109,6 +182,109 @@ const SPORT_ROTATION: Record<Phase, ActivityType[]> = {
   taper: ['run',  'bike',     'run',  'bike',      'run',      'bike', 'run'],
 };
 
+interface GoalWorkoutProfile {
+  label: string;
+  rotation: ActivityType[];
+  hardSequence: ActivityType[];
+  longSequence: ActivityType[];
+}
+
+function primaryGoalDetail(goals: GoalLite[]): GoalLite | null {
+  return goals.find(g => g.category === 'race')
+    ?? goals[0]
+    ?? null;
+}
+
+function goalWorkoutProfile(goals: GoalLite[], phase: Phase): GoalWorkoutProfile {
+  const goal = primaryGoalDetail(goals);
+  const category = goal?.category ?? null;
+  const raceDiscipline = goal?.raceDiscipline ?? '';
+
+  if (category === 'ftp') {
+    return {
+      label: 'FTP/Bike-Fokus',
+      rotation: ['bike', 'bike', 'run', 'bike', 'strength', 'bike', 'run'],
+      hardSequence: ['bike'],
+      longSequence: ['bike', 'bike', 'run'],
+    };
+  }
+
+  if (category === 'vo2max') {
+    return {
+      label: 'VO2max-Fokus',
+      rotation: ['run', 'bike', 'run', 'bike', 'strength', 'run', 'bike'],
+      hardSequence: ['run', 'bike'],
+      longSequence: ['run', 'bike', 'run'],
+    };
+  }
+
+  if (category === 'weight') {
+    return {
+      label: 'Gewichts-/Aerob-Fokus',
+      rotation: ['bike', 'run', 'bike', 'run', 'bike', 'swim', 'run'],
+      hardSequence: ['bike'],
+      longSequence: ['bike', 'run', 'bike'],
+    };
+  }
+
+  if (category === 'volume') {
+    return {
+      label: 'Volumen-Fokus',
+      rotation: ['bike', 'run', 'bike', 'run', 'bike', 'run', 'bike'],
+      hardSequence: ['run', 'bike'],
+      longSequence: ['bike', 'run', 'bike'],
+    };
+  }
+
+  if (category === 'race') {
+    if (raceDiscipline.includes('triathlon')) {
+      return {
+        label: 'Triathlon-Race-Fokus',
+        rotation: phase === 'taper'
+          ? ['run', 'bike', 'swim', 'run', 'bike', 'swim', 'run']
+          : ['swim', 'bike', 'run', 'bike', 'run', 'swim', 'bike'],
+        hardSequence: ['bike', 'run'],
+        longSequence: ['bike', 'run', 'swim'],
+      };
+    }
+    if (raceDiscipline === 'bike') {
+      return {
+        label: 'Bike-Race-Fokus',
+        rotation: ['bike', 'run', 'bike', 'strength', 'bike', 'bike', 'run'],
+        hardSequence: ['bike'],
+        longSequence: ['bike', 'bike', 'run'],
+      };
+    }
+    if (raceDiscipline === 'swim') {
+      return {
+        label: 'Swim-Race-Fokus',
+        rotation: ['swim', 'strength', 'swim', 'bike', 'swim', 'run', 'swim'],
+        hardSequence: ['swim'],
+        longSequence: ['swim', 'bike', 'run'],
+      };
+    }
+    return {
+      label: 'Run-Race-Fokus',
+      rotation: ['run', 'bike', 'run', 'strength', 'run', 'bike', 'run'],
+      hardSequence: ['run'],
+      longSequence: ['run', 'bike', 'run'],
+    };
+  }
+
+  return {
+    label: `${phase}-Standard`,
+    rotation: SPORT_ROTATION[phase],
+    hardSequence: phase === 'peak' ? ['run', 'bike'] : ['run'],
+    longSequence: ['bike', 'run', 'bike'],
+  };
+}
+
+function pickActivityType(profile: GoalWorkoutProfile, index: number, hardIndex: number | null, isLastSession: boolean): ActivityType {
+  if (hardIndex != null) return profile.hardSequence[hardIndex % profile.hardSequence.length]!;
+  if (isLastSession) return profile.longSequence[index % profile.longSequence.length]!;
+  return profile.rotation[index % profile.rotation.length]!;
+}
+
 // Base session duration (min) per sport per zone — used as sanity-check floor/ceiling
 const BASE_DURATION: Record<ActivityType, Record<number, number>> = {
   run:      { 1: 40, 2: 60,  3: 65,  4: 55,  5: 45 },
@@ -157,9 +333,7 @@ export interface PlanDayDecision {
 }
 
 function primaryGoal(goals: GoalLite[]): GoalCategory {
-  return goals.find(g => g.category === 'race')?.category
-    ?? goals[0]?.category
-    ?? null;
+  return primaryGoalDetail(goals)?.category ?? null;
 }
 
 function scoreDayCombination(days: number[], phase: Phase, goal: GoalCategory): number {
@@ -201,10 +375,12 @@ export function decidePlanDays(params: {
   mesocycleWeek: 1 | 2 | 3 | 4;
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
+  recentActivities?: RecentPlanActivity[];
 }): PlanDayDecision {
   const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
   const goal = primaryGoal(params.goals);
   const reasons: string[] = [];
+  const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
 
   let target = params.weeklyHoursTarget <= 3.5 ? 2
     : params.weeklyHoursTarget <= 5.5 ? 3
@@ -237,6 +413,11 @@ export function decidePlanDays(params: {
   if (params.phase === 'taper') {
     target = Math.min(target, 3);
     reasons.push('Taper: Frische hat Vorrang vor Volumen.');
+  }
+
+  if (rpeSafety.reduceSessions) {
+    target -= 1;
+    reasons.push(rpeSafety.reasons[0] ?? 'RPE-Signal: subjektive Belastung war zuletzt hoch; ein Trainingstag bleibt frei.');
   }
 
   const criticalRisk = (params.riskSignals ?? []).find(r => r.severity === 'critical');
@@ -280,30 +461,35 @@ function buildPolarizedWorkouts(params: {
   weeklyHoursTarget: number;
   tsb: number;
   primaryGoal: GoalCategory;
+  goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
+  recentActivities?: RecentPlanActivity[];
 }): WeekWorkout[] {
-  const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, riskSignals = [] } = params;
+  const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, goals, riskSignals = [] } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
   const n = sorted.length;
   if (n === 0) return [];
 
+  const profile = goalWorkoutProfile(goals, phase);
+  const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
+
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
   const hasBlockingRisk = riskSignals.some(r => r.severity === 'critical' || r.ruleId === 'rhr_drift_7d' || r.ruleId === 'hrv_trend_decline' || r.ruleId === 'sleep_debt_5d');
-  const hardCount = tsb < -20 || hasBlockingRisk || (primaryGoal === 'weight' && tsb < 5)
+  const hardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
     ? 0
     : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
   const hardDays = selectHardDays(sorted, hardCount);
 
-  const rotation = SPORT_ROTATION[phase];
   const startDate = new Date(weekStart + 'T00:00:00Z');
   const workouts: WeekWorkout[] = [];
   let tssLeft = weeklyTss;
+  let hardIndex = 0;
 
   for (let i = 0; i < n; i++) {
     const dayOffset = sorted[i]!;
     const remaining = n - i;
     const isHard = hardDays.has(dayOffset);
-    const activityType = rotation[i % rotation.length]!;
+    const activityType = pickActivityType(profile, i, isHard ? hardIndex++ : null, i === n - 1);
 
     // Zone: Z4 in base/build, Z5 for peak quality sessions, Z2 for easy days
     const zone = activityType === 'strength'
@@ -420,6 +606,37 @@ function tssRecompute(w: WeekWorkout): WeekWorkout {
   return { ...w, targetTss: tssFromWorkout(w.durationMin, w.zone) };
 }
 
+function withHrFirstDescriptions(
+  workouts: WeekWorkout[],
+  ctx: {
+    phase: Phase;
+    maxHrBpm: number;
+    lthrBpm?: number | undefined;
+    goals: GoalLite[];
+    rpeSafety: RpePlanSafety;
+  },
+): WeekWorkout[] {
+  const profile = goalWorkoutProfile(ctx.goals, ctx.phase);
+  return workouts.map((w): WeekWorkout => {
+    const hr = hrTargetForZone(w.zone, ctx.maxHrBpm, ctx.lthrBpm);
+    const goalPrefix = profile.label.endsWith('-Standard') ? '' : `${profile.label}: `;
+    const safety = ctx.rpeSafety.blockHard
+      ? ' Subjektive Ermüdung zuletzt hoch: sauber aerob bleiben, keine Zusatzreize.'
+      : '';
+    const purpose = w.zone >= 4
+      ? 'Qualitätsreiz mit klaren Erholungsphasen'
+      : w.zone === 3
+      ? 'kontrollierter Tempo-/Schwellenübergang'
+      : w.zone === 1
+      ? 'Regeneration und Bewegungsqualität'
+      : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
+    return {
+      ...w,
+      description: `${goalPrefix}${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${safety}`,
+    };
+  });
+}
+
 // Hard programmatic safety net AFTER LLM/heuristic generation.
 // Applied even if the LLM ignores the prompt instructions.
 export function enforceHealthConstraints(
@@ -531,8 +748,10 @@ async function enrichDescriptions(
     ftpWatts: number;
     maxHrBpm: number;
     weekSummaries: WeekSummary[];
-    goals: Array<{ title: string; targetDate: string | null; category: string | null }>;
+    goals: GoalLite[];
     recentFeedback?: Array<{ date: string; activityType: string; plannedZone: number; plannedDurationMin: number; feedback: string; complianceScore: number }> | undefined;
+    recentActivities?: RecentPlanActivity[] | undefined;
+    rpeSafety?: RpePlanSafety | undefined;
     healthStates?: ActiveHealthState[] | undefined;
     lthrBpm?: number | undefined;
     races?: Array<{
@@ -573,7 +792,7 @@ async function enrichDescriptions(
   ].join(' | ');
 
   const workoutList = workouts
-    .map((w, i) => `[${i}] ${w.plannedDate} | ${w.activityType.toUpperCase()} | Z${w.zone} | ${w.durationMin}min | TSS≈${w.targetTss}`)
+    .map((w, i) => `[${i}] ${w.plannedDate} | ${w.activityType.toUpperCase()} | Z${w.zone} | ${w.durationMin}min | TSS≈${w.targetTss} | Basis: ${w.description}`)
     .join('\n');
 
   const totalTss = workouts.reduce((s, w) => s + w.targetTss, 0);
@@ -586,6 +805,15 @@ async function enrichDescriptions(
         `[Compliance ${Math.round(f.complianceScore * 100)}%]: ${f.feedback}`
       ).join('\n')
     : null;
+
+  const rpeStr = (ctx.recentActivities ?? [])
+    .filter(a => a.rpe != null)
+    .slice(0, 5)
+    .map(a => {
+      const zone = a.plannedZone ?? inferZoneFromTss(a.durationMin, a.tss);
+      return `- ${a.date} ${a.activityType}${zone != null ? ` Z${zone}` : ''}: RPE ${a.rpe}/10, ${a.durationMin}min, TSS ${a.tss}`;
+    })
+    .join('\n');
 
   const healthStr = (ctx.healthStates ?? []).length > 0
     ? (ctx.healthStates ?? []).map(s => {
@@ -614,6 +842,7 @@ ATHLETEN-STATUS:
 TRAININGSHISTORIE (letzte 6 Wochen):
   ${historyStr || 'keine Daten'}
 ${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}${healthStr ? `\nGESUNDHEITSSTATUS (HARTE Constraints — diese Daten sind verbindlich):\n${healthStr}\nRegeln: bei illness/severe = Ruhetag; illness/moderate = max Z1 30min; illness/mild = max Z2 60min; injury/* = passende Sportart vermeiden; fatigue = nur Z1–Z2.\n` : ''}${racesStr ? `\nRACES (Plan periodisiert dorthin):\n${racesStr}\nPriorities: A = Saisonhöhepunkt mit 2w Taper; B = wichtig mit 1w Taper; C = Mitnahme ohne Taper. In Race-Week (≤6d): Volumen halbieren, Intensität erhalten, Race-Pace-Workout 3-5d vor Race, Tag -1 = kurzer Aktivierungslauf 15-25min mit kurzen Z3-Pickups.\n` : ''}
+${rpeStr ? `\nRPE-SIGNATUR (subjektive Belastung, verbindlich für Zusatzreize):\n${rpeStr}\n${ctx.rpeSafety?.summary ? `Safety-Auswertung: ${ctx.rpeSafety.summary}\n` : ''}` : ''}
 DIESE WOCHE: ${workouts.length} Einheiten | Ziel-TSS ${totalTss} | ${easyPct}% extensiv (polarisiertes Modell 80/20)
 ${workoutList}
 
@@ -625,6 +854,7 @@ Erstelle für jedes Workout eine 1-2-sätzige Beschreibung auf Deutsch:
 - Berücksichtige den Wochenverlauf (Ermüdung akkumuliert)
 - Berücksichtige das Workout-Feedback: Passe Umfang/Intensität an wenn nötig
 - Steuerung primär über Puls; Watt nur als Sekundär-Info erwähnen wo sinnvoll
+- Erhalte die HR-first Basis jeder Einheit; die Pulsrange darf nicht verschwinden
 ${ctx.tsb < -15 ? '- ACHTUNG: Hohe Ermüdung — betone Erholungscharakter, keine Zusatzreize\n' : ''}
 Antworte NUR mit JSON-Array (gleiche Reihenfolge wie oben):
 [{"index":0,"description":"..."}]`;
@@ -658,17 +888,8 @@ export interface ScientificPlanInput {
   ftpWatts: number;
   maxHrBpm: number;
   lthrBpm?: number | undefined;
-  recentActivities: Array<{
-    date: string;
-    activityType: string;
-    durationMin: number;
-    tss: number;
-  }>;
-  goals: Array<{
-    title: string;
-    targetDate: string | null;
-    category: GoalCategory;
-  }>;
+  recentActivities: RecentPlanActivity[];
+  goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   recentFeedback?: Array<{
     date: string;
@@ -709,6 +930,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     mesocycleWeek,
     goals: input.goals,
     riskSignals: input.riskSignals ?? [],
+    recentActivities: input.recentActivities,
   });
 
   const rawWorkouts = buildPolarizedWorkouts({
@@ -719,7 +941,9 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     weeklyHoursTarget: input.weeklyHoursTarget,
     tsb: input.tsb,
     primaryGoal: dayDecision.primaryGoal,
+    goals: input.goals,
     riskSignals: input.riskSignals ?? [],
+    recentActivities: input.recentActivities,
   });
 
   // HARD constraints: filter/cap workouts based on active health states
@@ -727,6 +951,15 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
 
   // Race-week tapering (programmatic safety net even if LLM ignores prompt)
   workouts = applyRaceTaper(workouts, input.races ?? [], input.weekStart);
+
+  const rpeSafety = summarizeRpeSafety(input.recentActivities);
+  workouts = withHrFirstDescriptions(workouts, {
+    phase,
+    maxHrBpm: input.maxHrBpm,
+    lthrBpm: input.lthrBpm,
+    goals: input.goals,
+    rpeSafety,
+  });
 
   if (workouts.length === 0) return [];
 
@@ -748,9 +981,11 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
       healthStates: input.healthStates,
       lthrBpm: input.lthrBpm,
       races: input.races,
+      recentActivities: input.recentActivities,
+      rpeSafety,
     });
   } catch (err) {
-    // Return workouts with empty descriptions rather than fail entirely
+    // Keep deterministic HR-first descriptions if LLM enrichment fails.
     return workouts;
   }
 }

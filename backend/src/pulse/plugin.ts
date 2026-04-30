@@ -77,6 +77,30 @@ function normalizeCoachMessages(messages: unknown): PulseCoachMessage[] {
   ));
 }
 
+async function getPlannedZoneByActivityId(userId: string, activityIds: string[]): Promise<Map<string, number>> {
+  const uniqueIds = [...new Set(activityIds)].filter(id => id.length > 0);
+  if (uniqueIds.length === 0) return new Map();
+
+  const rows = await db.select({
+    completedActivityId: pulsePlannedWorkouts.completedActivityId,
+    zone: pulsePlannedWorkouts.zone,
+  }).from(pulsePlannedWorkouts)
+    .where(and(
+      eq(pulsePlannedWorkouts.userId, userId),
+      inArray(pulsePlannedWorkouts.completedActivityId, uniqueIds),
+    ));
+
+  return new Map(
+    rows
+      .filter((row): row is { completedActivityId: string; zone: number } => row.completedActivityId != null)
+      .map(row => [row.completedActivityId, row.zone]),
+  );
+}
+
+function normalizeRacePriority(value: string | null): 'A' | 'B' | 'C' | null {
+  return value === 'A' || value === 'B' || value === 'C' ? value : null;
+}
+
 // ─── Streak helpers ───────────────────────────────────────────────────────────
 
 function calcStreak(dates: string[], today: string): number {
@@ -1233,15 +1257,25 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows] = await Promise.all([
       computeFitnessLoad(userId, weekStartStr),
       db.select({
+        id:            pulseActivities.id,
         startTime:    pulseActivities.startTime,
         activityType: pulseActivities.activityType,
         durationSec:  pulseActivities.durationSec,
         tss:          pulseActivities.tss,
+        rpe:          pulseActivities.rpe,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime))
         .limit(80),
-      db.select({ title: pulseGoals.title, targetDate: pulseGoals.targetDate, category: pulseGoals.category })
+      db.select({
+        title:          pulseGoals.title,
+        targetDate:     pulseGoals.targetDate,
+        category:       pulseGoals.category,
+        metrics:        pulseGoals.metrics,
+        raceDiscipline: pulseGoals.raceDiscipline,
+        raceDistanceKm: pulseGoals.raceDistanceKm,
+        racePriority:   pulseGoals.racePriority,
+      })
         .from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
         .limit(5),
@@ -1269,6 +1303,26 @@ export default async function pulsePlugin(app: FastifyInstance) {
       getActiveRiskSignals(userId),
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr);
+    const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
+    const recentPlanActivities = recentActs.map(a => ({
+      date:         a.startTime.toISOString().split('T')[0]!,
+      activityType: a.activityType,
+      durationMin:  Math.round((a.durationSec ?? 0) / 60),
+      tss:          a.tss ?? 0,
+      rpe:          a.rpe,
+      plannedZone:  plannedZoneByActivityId.get(a.id) ?? null,
+    }));
+    const planGoals = goals.map(g => ({
+      ...g,
+      metrics: (g.metrics as Record<string, unknown> | null) ?? null,
+      racePriority: normalizeRacePriority(g.racePriority),
+    }));
+    const riskSignals = riskSignalRows.map(r => ({
+      ruleId: r.ruleId,
+      severity: r.severity as 'info' | 'warn' | 'critical',
+      title: r.title,
+      recommendation: r.recommendation,
+    }));
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
     const planDecision = decidePlanDays({
       availableDays,
@@ -1276,13 +1330,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
       tsb: fitnessLoad.tsb,
       phase,
       mesocycleWeek,
-      goals,
-      riskSignals: riskSignalRows.map(r => ({
-        ruleId: r.ruleId,
-        severity: r.severity as 'info' | 'warn' | 'critical',
-        title: r.title,
-        recommendation: r.recommendation,
-      })),
+      goals: planGoals,
+      riskSignals,
+      recentActivities: recentPlanActivities,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -1297,19 +1347,10 @@ export default async function pulsePlugin(app: FastifyInstance) {
         tsb:                fitnessLoad.tsb,
         ftpWatts:           profile?.ftpWatts ?? 250,
         maxHrBpm:           profile?.maxHrBpm ?? 185,
-        recentActivities:   recentActs.map(a => ({
-          date:         a.startTime.toISOString().split('T')[0]!,
-          activityType: a.activityType,
-          durationMin:  Math.round((a.durationSec ?? 0) / 60),
-          tss:          a.tss ?? 0,
-        })),
-        goals,
-        riskSignals: riskSignalRows.map(r => ({
-          ruleId: r.ruleId,
-          severity: r.severity as 'info' | 'warn' | 'critical',
-          title: r.title,
-          recommendation: r.recommendation,
-        })),
+        lthrBpm:            profile?.lthrBpm ?? undefined,
+        recentActivities:   recentPlanActivities,
+        goals:              planGoals,
+        riskSignals,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1868,23 +1909,80 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     // Auto-regenerate plan for this week
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-    const phase = (profile?.trainingPhase ?? 'base') as 'base' | 'build' | 'peak' | 'taper';
-    const [fitnessLoad, recentActs2, goals2, riskSignalRows2] = await Promise.all([
+    const explicitPhase = profile?.trainingPhase as 'base' | 'build' | 'peak' | 'taper' | null | undefined;
+    const derivedPhase = await deriveCurrentPhase(userId, weekStart);
+    const phase: 'base' | 'build' | 'peak' | 'taper' =
+      (explicitPhase && explicitPhase !== 'base') ? explicitPhase : derivedPhase;
+    const since42d = new Date(Date.now() - 42 * 86_400_000);
+    const today = new Date().toISOString().split('T')[0]!;
+    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2] = await Promise.all([
       computeFitnessLoad(userId, weekStart),
       db.select({
+        id:            pulseActivities.id,
         startTime:    pulseActivities.startTime,
         activityType: pulseActivities.activityType,
         durationSec:  pulseActivities.durationSec,
         tss:          pulseActivities.tss,
+        rpe:          pulseActivities.rpe,
       }).from(pulseActivities)
-        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, new Date(Date.now() - 42 * 86_400_000))))
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime)).limit(80),
-      db.select({ title: pulseGoals.title, targetDate: pulseGoals.targetDate, category: pulseGoals.category })
+      db.select({
+        title:          pulseGoals.title,
+        targetDate:     pulseGoals.targetDate,
+        category:       pulseGoals.category,
+        metrics:        pulseGoals.metrics,
+        raceDiscipline: pulseGoals.raceDiscipline,
+        raceDistanceKm: pulseGoals.raceDistanceKm,
+        racePriority:   pulseGoals.racePriority,
+      })
         .from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
         .limit(5),
+      db.select({
+        plannedDate:     pulsePlannedWorkouts.plannedDate,
+        activityType:    pulsePlannedWorkouts.activityType,
+        zone:            pulsePlannedWorkouts.zone,
+        durationMin:     pulsePlannedWorkouts.durationMin,
+        workoutFeedback: pulsePlannedWorkouts.workoutFeedback,
+        complianceScore: pulsePlannedWorkouts.complianceScore,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.status, 'completed'),
+          gte(pulsePlannedWorkouts.plannedDate, since42d.toISOString().split('T')[0]!),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(10),
+      db.select().from(pulseHealthState)
+        .where(and(
+          eq(pulseHealthState.userId, userId),
+          isNull(pulseHealthState.resolvedAt),
+          or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
+        )),
       getActiveRiskSignals(userId),
     ]);
+    const activeRaces2 = await getActiveRaces(userId, weekStart);
+    const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
+    const recentPlanActivities2 = recentActs2.map(a => ({
+      date:         a.startTime.toISOString().split('T')[0]!,
+      activityType: a.activityType,
+      durationMin:  Math.round((a.durationSec ?? 0) / 60),
+      tss:          a.tss ?? 0,
+      rpe:          a.rpe,
+      plannedZone:  plannedZoneByActivityId2.get(a.id) ?? null,
+    }));
+    const planGoals2 = goals2.map(g => ({
+      ...g,
+      metrics: (g.metrics as Record<string, unknown> | null) ?? null,
+      racePriority: normalizeRacePriority(g.racePriority),
+    }));
+    const riskSignals2 = riskSignalRows2.map(r => ({
+      ruleId: r.ruleId,
+      severity: r.severity as 'info' | 'warn' | 'critical',
+      title: r.title,
+      recommendation: r.recommendation,
+    }));
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
     try {
@@ -1895,18 +1993,35 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ctl: fitnessLoad.ctl, atl: fitnessLoad.atl, tsb: fitnessLoad.tsb,
         ftpWatts:  profile?.ftpWatts ?? 250,
         maxHrBpm:  profile?.maxHrBpm ?? 185,
-        recentActivities: recentActs2.map(a => ({
-          date:         a.startTime.toISOString().split('T')[0]!,
-          activityType: a.activityType,
-          durationMin:  Math.round((a.durationSec ?? 0) / 60),
-          tss:          a.tss ?? 0,
+        lthrBpm:   profile?.lthrBpm ?? undefined,
+        recentActivities: recentPlanActivities2,
+        goals: planGoals2,
+        riskSignals: riskSignals2,
+        recentFeedback: recentFeedback2
+          .filter(w => w.workoutFeedback != null)
+          .map(w => ({
+            date:               w.plannedDate,
+            activityType:       w.activityType,
+            plannedZone:        w.zone,
+            plannedDurationMin: w.durationMin,
+            feedback:           w.workoutFeedback!,
+            complianceScore:    w.complianceScore ?? 0.7,
+          })),
+        healthStates: activeHealthStates2.map(s => ({
+          type:      s.type as 'illness' | 'injury' | 'fatigue' | 'travel',
+          severity:  s.severity as 'mild' | 'moderate' | 'severe',
+          bodyPart:  s.bodyPart,
+          startDate: s.startDate,
+          endDate:   s.endDate,
+          notes:     s.notes,
         })),
-        goals: goals2,
-        riskSignals: riskSignalRows2.map(r => ({
-          ruleId: r.ruleId,
-          severity: r.severity as 'info' | 'warn' | 'critical',
-          title: r.title,
-          recommendation: r.recommendation,
+        races: activeRaces2.map(r => ({
+          title:      r.title,
+          date:       r.date,
+          daysUntil:  r.daysUntil,
+          priority:   r.priority,
+          discipline: r.discipline,
+          distanceKm: r.distanceKm,
         })),
       });
     } catch {
@@ -2088,6 +2203,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const garminMaxHrBpm: number | null = ud.lactateThresholdHeartRate
       ? Math.round(ud.lactateThresholdHeartRate / 0.89)
       : null;
+    const lthrBpm: number | null = ud.lactateThresholdHeartRate != null
+      ? Math.round(ud.lactateThresholdHeartRate)
+      : null;
 
     // Derive maxHR from recorded activities — most accurate source
     const { max } = await import('drizzle-orm');
@@ -2113,13 +2231,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (vo2max != null)   updates.vo2max = vo2max;
     if (maxHrBpm != null) updates.maxHrBpm = maxHrBpm;
+    if (lthrBpm != null)  updates.lthrBpm = lthrBpm;
     if (ftpWatts != null) updates.ftpWatts = ftpWatts;
 
     await db.insert(pulseUserProfile)
       .values({ userId, ...updates } as any)
       .onConflictDoUpdate({ target: pulseUserProfile.userId, set: updates as any });
 
-    return { synced: { vo2max, maxHrBpm, lactateThresholdHr: ud.lactateThresholdHeartRate ?? null, ftpWatts } };
+    return { synced: { vo2max, maxHrBpm, lactateThresholdHr: lthrBpm, ftpWatts } };
   });
 
   // ─── Garmin manual sync ───────────────────────────────────────────────────────
