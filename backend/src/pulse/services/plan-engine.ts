@@ -49,7 +49,7 @@ function tssFromWorkout(durationMin: number, zone: number): number {
 // ─── Mesocycle position ───────────────────────────────────────────────────────
 
 // 3+1 periodization: weeks 1-3 progressive load, week 4 recovery
-function getMesocycleWeek(weekStart: string): 1 | 2 | 3 | 4 {
+export function getMesocycleWeek(weekStart: string): 1 | 2 | 3 | 4 {
   const d = new Date(weekStart + 'T00:00:00Z');
   // ISO week number (1-53)
   const jan4 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));

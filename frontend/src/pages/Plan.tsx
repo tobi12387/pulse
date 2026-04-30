@@ -436,6 +436,7 @@ function TrainingTab() {
 
   const workouts   = plan.data?.workouts ?? [];
   const activities = acts.data?.activities ?? [];
+  const planDecision = generate.data?.planDecision;
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -486,6 +487,44 @@ function TrainingTab() {
           }}>
             {generate.isPending ? '● Generiere…' : 'Plan erstellen'}
           </button>
+        </div>
+      )}
+
+      {planDecision && (
+        <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+            <span className="label-mono" style={{ color: 'var(--accent)' }}>Plan-Entscheidung</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+              {planDecision.targetSessionCount} Einheiten
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {planDecision.selectedDays.map(day => (
+              <span key={`sel-${day}`} style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)',
+                border: '1px solid rgba(94,230,207,0.35)', borderRadius: 4, padding: '3px 7px',
+              }}>
+                {DAY_SHORT[day]} Training
+              </span>
+            ))}
+            {planDecision.skippedAvailableDays.map(day => (
+              <span key={`skip-${day}`} style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)',
+                border: '1px solid var(--border)', borderRadius: 4, padding: '3px 7px',
+              }}>
+                {DAY_SHORT[day]} frei
+              </span>
+            ))}
+          </div>
+          {planDecision.reasons.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {planDecision.reasons.map(reason => (
+                <p key={reason} style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                  {reason}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

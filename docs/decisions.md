@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Plan-Entscheidungen werden in der UI sichtbar
+
+- **Decision:** Die Plan-Generierung gibt die Day-Decision an die UI zurück: gewählte Trainingstage, bewusst freie verfügbare Tage und kurze Begründungen. Die Anzeige erscheint direkt nach “Plan erstellen”.
+- **Why:** Planqualität soll überprüfbar sein. Wenn Pulse Tage frei lässt oder nicht alle verfügbaren Tage nutzt, muss Tobi sehen können, dass das Absicht ist und welche Daten/Ziele dahinterstehen.
+- **Alternatives:** Entscheidung nur im Log belassen (für Tobi unsichtbar); Gründe in Workout-Beschreibungen verstecken (schwer scannbar und vermischt Struktur mit Einheitendetails).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Verfügbarkeit ist Kandidatenraum, keine Trainingspflicht
 
 - **Decision:** Die Wochenplanung interpretiert verfügbare Tage ab sofort als mögliche Trainingstage. Ein neuer Plan-Day-Decision-Layer wählt daraus eine sinnvolle Anzahl und lässt bei Gewichtsziel, negativer Form oder Regenerationswoche bewusst freie Tage stehen.
