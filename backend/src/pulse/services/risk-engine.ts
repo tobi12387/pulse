@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
 import { pulseDailyMetrics, pulseMentalCheckins, pulseRiskSignals } from '../../db/pulse-schema.js';
 import { computeFitnessLoad } from './load-engine.js';
+import { sendPushToUser } from '../../lib/push.js';
 
 export type RiskSeverity = 'info' | 'warn' | 'critical';
 export type RiskRuleId =
@@ -175,6 +176,27 @@ export function evaluateRiskSignalsFromData(input: {
   return signals;
 }
 
+export function shouldSendRiskCriticalPush(
+  signal: RiskSignal,
+  current: unknown,
+): boolean {
+  return signal.severity === 'critical' && current == null;
+}
+
+async function sendRiskCriticalPush(userId: string, signal: RiskSignal): Promise<void> {
+  try {
+    await sendPushToUser(userId, {
+      topic: 'risk_critical',
+      title: signal.title,
+      body: signal.recommendation,
+      url: '/',
+      tag: `risk-${signal.ruleId}`,
+    });
+  } catch (err) {
+    console.warn(`[risk-engine] Critical push failed for ${userId}/${signal.ruleId}:`, err);
+  }
+}
+
 export async function evaluateRiskSignals(userId: string, today = new Date().toISOString().split('T')[0]!): Promise<RiskSignal[]> {
   const since90 = daysBefore(today, 89);
   const sinceMental = daysBefore(today, 14);
@@ -220,6 +242,7 @@ export async function evaluateAndPersistRiskSignals(userId: string, today?: stri
   for (const signal of signals) {
     const current = existing.find(row => row.ruleId === signal.ruleId);
     if (current?.status === 'snoozed' && current.snoozedUntil && current.snoozedUntil > now) continue;
+    const shouldPushCritical = shouldSendRiskCriticalPush(signal, current);
 
     const values = {
       severity: signal.severity,
@@ -245,6 +268,10 @@ export async function evaluateAndPersistRiskSignals(userId: string, today?: stri
         triggeredAt: now,
         createdAt: now,
       });
+    }
+
+    if (shouldPushCritical) {
+      await sendRiskCriticalPush(userId, signal);
     }
   }
 

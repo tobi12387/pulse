@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Web Push Triggers hängen an bestehenden Jobs und pushen Criticals nur neu
+
+- **Decision:** Web-Push-Trigger werden als zweiter Slice an die bestehenden Auslöser gehängt: Briefing pusht nur beim ersten erfolgreichen Insert pro Nutzer und Tag, der Check-in-Reminder läuft als eigener BullMQ-Repeat-Job um 19:30 Europe/Berlin, und Risk-Watch pusht nur neu eingefügte `critical`-Signale.
+- **Why:** Die Foundation enthält bereits Topic-Filter, Quiet-Hours und Subscription-Lifecycle. Trigger sollen diese Regeln nur nutzen und keine zweite Filterlogik bauen; bei Risk-Watch verhindert “nur neue Criticals” wiederholte Pushes aus den regelmäßigen Garmin-Sync-Läufen.
+- **Alternatives:** Alle Trigger in einen neuen zentralen Notification-Worker auslagern (mehr Infrastruktur ohne aktuellen Nutzen); auch Warn→Critical-Updates pushen (höheres Spam-Risiko); Check-in-Reminder im Frontend timen (funktioniert nicht, wenn die App geschlossen ist).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Web Push startet als Foundation-Slice ohne Trigger-Jobs
 
 - **Decision:** Web Push wird zuerst als Foundation-PR umgesetzt: additive Subscription-Tabelle, optionale VAPID-Konfiguration, Backend-Settings-/Subscribe-/Test-Endpunkte, Service Worker/Manifest und Settings-UI. Briefing-, Check-in- und Risk-Trigger folgen separat.

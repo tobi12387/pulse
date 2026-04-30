@@ -84,6 +84,14 @@ export async function buildApp() {
       await bQueue.close();
     });
 
+    const { startCheckinReminderWorker } = await import('./jobs/checkin-reminder.job.js');
+    const { queue: cQueue, worker: cWorker } = startCheckinReminderWorker(app);
+
+    app.addHook('onClose', async () => {
+      await cWorker.close();
+      await cQueue.close();
+    });
+
     const { startPulseWorkers } = await import('./pulse/queues/workers.js');
     const shutdownPulse = startPulseWorkers(app);
     app.addHook('onClose', async () => { await shutdownPulse(); });
