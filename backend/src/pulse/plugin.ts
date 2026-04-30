@@ -15,6 +15,7 @@ import {
   pulseWeekAvailability,
   pulseHealthState,
   pulseNutritionLogs,
+  pulseRiskSignals,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
@@ -32,6 +33,7 @@ import {
 import { buildPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
 import type { PulseContext } from './lib/pulse-context.js';
 import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
+import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { generateWeekWorkouts, generateScientificWeekPlan } from './services/plan-engine.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
@@ -401,6 +403,54 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/sync/status', { onRequest: [app.authenticate] }, async (req) => {
     const today = new Date().toISOString().split('T')[0]!;
     return getPulseDataStatus(req.user.sub, today);
+  });
+
+  app.get('/risk', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    await evaluateAndPersistRiskSignals(userId);
+    const rows = await getActiveRiskSignals(userId);
+    return {
+      signals: rows.map(r => ({
+        id: r.id,
+        ruleId: r.ruleId,
+        severity: r.severity,
+        status: r.status,
+        title: r.title,
+        description: r.description,
+        recommendation: r.recommendation,
+        metric: r.metricSnapshot as Record<string, unknown>,
+        triggeredAt: r.triggeredAt.toISOString(),
+        resolvedAt: r.resolvedAt?.toISOString() ?? null,
+        snoozedUntil: r.snoozedUntil?.toISOString() ?? null,
+      })),
+    };
+  });
+
+  app.post('/risk/:id/snooze', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const parsed = z.object({ hours: z.number().int().min(1).max(168).optional().default(24) }).safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Snooze-Dauer' });
+
+    const snoozedUntil = new Date(Date.now() + parsed.data.hours * 3600_000);
+    const [row] = await db.update(pulseRiskSignals)
+      .set({ status: 'snoozed', snoozedUntil, updatedAt: new Date() })
+      .where(and(eq(pulseRiskSignals.id, id), eq(pulseRiskSignals.userId, userId)))
+      .returning();
+    if (!row) return reply.status(404).send({ error: 'Risk-Signal nicht gefunden' });
+    return { ok: true, snoozedUntil: snoozedUntil.toISOString() };
+  });
+
+  app.post('/risk/:id/resolve', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const now = new Date();
+    const [row] = await db.update(pulseRiskSignals)
+      .set({ status: 'resolved', resolvedAt: now, updatedAt: now })
+      .where(and(eq(pulseRiskSignals.id, id), eq(pulseRiskSignals.userId, userId)))
+      .returning();
+    if (!row) return reply.status(404).send({ error: 'Risk-Signal nicht gefunden' });
+    return { ok: true };
   });
 
   app.post('/coach', { onRequest: [app.authenticate] }, async (req, reply) => {

@@ -11,6 +11,7 @@ import { BRIEFING_QUEUE_NAME } from './briefing-generation.job.js';
 import type { BriefingJobData } from './briefing-generation.job.js';
 import { pulseUserProfile, pulseActivities, pulseDailyMetrics } from '../db/pulse-schema.js';
 import { invalidateUser } from '../pulse/lib/pulse-cache.js';
+import { evaluateAndPersistRiskSignals } from '../pulse/services/risk-engine.js';
 
 export const CIRCUIT_FAILURES_KEY = 'garmin:circuit:failures';
 export const CIRCUIT_OPEN_KEY     = 'garmin:circuit:open';
@@ -136,6 +137,7 @@ export function startGarminSyncJob(app: FastifyInstance): { queue: Queue; worker
         await syncGarminDay(user.id, date, app);
       }
       await invalidateUser(user.id);
+      await evaluateAndPersistRiskSignals(user.id);
     });
 
     if (job.name === 'sync-nightly') {

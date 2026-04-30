@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Risk Watch startet als Backend-Regelschicht
+
+- **Decision:** Risk Watch wird zuerst als Backend-Slice umgesetzt: additive Tabelle `pulse_risk_signals`, reine Rule-Engine mit fünf Regeln, Persistenz-Lifecycle, API und Garmin-Post-Sync-Hook. UI sowie Coach-/Briefing-Anzeige folgen separat.
+- **Why:** Die Risikoerkennung ist die zentrale Logik und muss idempotent sowie testbar sein, bevor Home-Banner oder Push-Kanäle darauf aufbauen. Kleine PRs reduzieren Risiko bei Migration, Background-Job und API gleichzeitig.
+- **Alternatives:** Kompletter Risk-Watch-Plan in einem PR (zu breit: DB, Job, API, Home, Coach, Tests); nur UI auf bestehenden Insights (kein aktiver Frühwarnnutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — RPE wird über PulseContext in Coach und Plan ausgewertet
 
 - **Decision:** RPE aus `pulse_activities` wird in den gemeinsamen PulseContext aufgenommen, im Coach-Systemprompt und Briefing-Prompt ausgespielt und in `/pulse/training-analytics` als RPE-vs-Zone-Auswertung geliefert. Geplante Zone aus completed Workouts hat Vorrang; falls keine Plan-Verknüpfung existiert, nutzt die Statistik die bestehende Intensitätsableitung als Fallback.

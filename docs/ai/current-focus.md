@@ -11,12 +11,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/rpe-coach-plan-context`: Add RPE to PulseContext, Coach/Briefing prompts, and Plan statistics.
+- `codex/risk-watch-backend`: Add Risk Watch schema, engine, persistence, API, and Garmin post-sync hook.
 - Update this section after each merge or newly opened PR.
 
 ## Next Recommended Work
 
-- Merge and deploy RPE coach/plan context, then proceed to Risk Watch.
+- Merge and deploy Risk Watch backend, then add Home RiskWatchBanner and Coach/Briefing risk context.
 
 ## Out Of Scope Unless Reversed
 
