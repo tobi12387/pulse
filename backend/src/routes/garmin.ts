@@ -4,6 +4,7 @@ import { garminDailyHealth } from '../db/schema.js';
 import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts, pulseUserProfile, pulseNutritionLogs } from '../db/pulse-schema.js';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
+import { getGarminActivitiesForDate, upsertGarminActivity } from '../lib/garmin-activities.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 
 interface NutritionContext {
@@ -338,78 +339,22 @@ export async function syncGarminDay(
   // Sync activities for this date
   let activitiesWritten = 0;
   try {
-    const activities = await (gc as any).getActivities(0, 20) as any[];
-    const dayActivities = (activities ?? []).filter((a: any) => {
-      const start = a.startTimeGMT ?? a.startTimeLocal ?? '';
-      return start.startsWith(dateStr);
-    });
+    const dayActivities = await getGarminActivitiesForDate(gc, dateStr);
 
     for (const a of dayActivities) {
-      const typeKey: string = (a.activityType?.typeKey ?? '').toLowerCase();
-      const activityType =
-        typeKey.includes('running') || typeKey.includes('run') ? 'run' :
-        typeKey.includes('cycling') || typeKey.includes('biking') || typeKey.includes('bike') ? 'bike' :
-        typeKey.includes('swimming') || typeKey.includes('swim') ? 'swim' :
-        typeKey.includes('strength') || typeKey.includes('weight') ? 'strength' :
-        typeKey.includes('hiking') || typeKey.includes('hike') ? 'hike' : 'other';
-
-      const externalId = String(a.activityId);
-      const startTime = new Date(a.startTimeGMT ? `${a.startTimeGMT}Z` : a.startTimeLocal);
-      const startLat: number | null = typeof a.startLatitude === 'number' ? a.startLatitude : null;
-      const startLon: number | null = typeof a.startLongitude === 'number' ? a.startLongitude : null;
-      // Heuristic: explicit indoor flag, else no GPS coords AND no distance => indoor
-      const isIndoor: boolean =
-        a.eventType?.typeKey === 'indoor' ||
-        a.elevationCorrected === false && a.startLatitude == null ||
-        (startLat == null && startLon == null && (a.distance == null || a.distance === 0));
-      const vals = {
-        userId,
-        externalId,
-        source: 'garmin' as const,
-        startTime,
-        activityType: activityType as 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other',
-        name: a.activityName ?? null,
-        durationSec: a.duration != null ? Math.round(a.duration) : null,
-        distanceM: a.distance ?? null,
-        avgHr: a.averageHR ?? null,
-        maxHr: a.maxHR ?? null,
-        avgPowerW: a.avgPower != null ? Math.round(a.avgPower) : null,
-        normalizedPowerW: a.normPower != null ? Math.round(a.normPower) : null,
-        tss: a.trainingStressScore ?? null,
-        calories: a.calories != null ? Math.round(a.calories) : null,
-        elevationGainM: a.elevationGain ?? null,
-        trainingEffectAerobic: a.aerobicTrainingEffect ?? null,
-        trainingEffectAnaerobic: a.anaerobicTrainingEffect ?? null,
-        vo2maxEstimate: a.vO2MaxValue ?? null,
-        startLat,
-        startLon,
-        isIndoor,
-      };
-
-      const [inserted] = await db.insert(pulseActivities).values(vals)
-        .onConflictDoUpdate({
-          target: [pulseActivities.externalId, pulseActivities.source],
-          set: {
-            name: vals.name, durationSec: vals.durationSec, distanceM: vals.distanceM,
-            avgHr: vals.avgHr, maxHr: vals.maxHr, avgPowerW: vals.avgPowerW,
-            normalizedPowerW: vals.normalizedPowerW, tss: vals.tss, calories: vals.calories,
-            elevationGainM: vals.elevationGainM, trainingEffectAerobic: vals.trainingEffectAerobic,
-            trainingEffectAnaerobic: vals.trainingEffectAnaerobic, vo2maxEstimate: vals.vo2maxEstimate,
-            startLat, startLon, isIndoor,
-          },
-        }).returning({ id: pulseActivities.id });
+      const inserted = await upsertGarminActivity(userId, a);
 
       if (inserted) {
         activitiesWritten++;
-        await matchActivityToWorkout(userId, inserted.id, dateStr, activityType, app);
+        await matchActivityToWorkout(userId, inserted.id, dateStr, inserted.activityType, app);
 
         // Backfill weather async — outdoor activities only, ignore failures
-        if (!isIndoor && startLat != null && startLon != null) {
+        if (!inserted.isIndoor && inserted.startLat != null && inserted.startLon != null) {
           void (async () => {
             try {
               const { getHistoricalWeather } = await import('../lib/weather.js');
-              const ts = Math.floor(startTime.getTime() / 1000);
-              const w = await getHistoricalWeather({ latitude: startLat, longitude: startLon, timestamp: ts });
+              const ts = Math.floor(inserted.startTime.getTime() / 1000);
+              const w = await getHistoricalWeather({ latitude: inserted.startLat!, longitude: inserted.startLon!, timestamp: ts });
               if (w) {
                 await db.update(pulseActivities)
                   .set({ weather: w })

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Garmin-Activity-Import nutzt gemeinsame Upsert-Strecke
+
+- **Decision:** Tages-Sync und Activity-Backfill schreiben Garmin-Aktivitäten über einen gemeinsamen Helper (`backend/src/lib/garmin-activities.ts`). Der Backfill ist range-basiert (`BACKFILL_ACTIVITIES_START`/`END`, Default ab 2026-01-01) und der Upsert aktualisiert Garmin-Messwerte aus `excluded`, ohne RPE-Feedbackfelder zu überschreiben.
+- **Why:** Nach der RPE-Erweiterung schlug der Activity-Insert im Tages-Backfill fehl, und das alte Backfill-Skript war auf 2025 hartcodiert sowie bei Konflikten praktisch no-op. Eine gemeinsame Strecke verhindert Drift zwischen manuellem Backfill und täglichem Sync.
+- **Alternatives:** Nur das Backfill-Skript per Raw-SQL reparieren (würde den täglichen Sync weiter fragil lassen); 2025 weiterhin pauschal importieren (mehr Daten als angefragt und langsamer).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-29 — RPE zuerst als Activity-Feedback-Schnitt
 
 - **Decision:** RPE & Post-Workout-Feedback wird in mindestens zwei PRs geschnitten. Slice 1 liefert additive Activity-Spalten, PATCH-Endpoint, Shared-Kontrakt und ActivityDetail-Feedback-Sheet; Coach-/Briefing-Kontext und Plan-RPE-Trends folgen separat.
