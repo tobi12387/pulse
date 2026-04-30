@@ -1,7 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { api } from '@/api/client';
-import { usePulseHome, usePulseBriefing } from '@/pulse/hooks';
+import {
+  invalidatePulseContextQueries,
+  pulseKeys,
+  useClearCoachHistory,
+  useCoachHistory,
+  useCoachSend,
+  usePulseBriefing,
+  usePulseHome,
+} from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 
 type MicState = 'idle' | 'recording' | 'processing';
@@ -120,8 +127,12 @@ function MicButton({ micState, onDone }: {
         const base64 = await blobToBase64(blob);
         try {
           const res = await pulseApi.checkin.voice(base64, mimeType);
-          if (res.isCheckin) void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'today'] });
-          void qc.invalidateQueries({ queryKey: ['chat-history'] });
+          void qc.invalidateQueries({ queryKey: pulseKeys.coachHistory });
+          if (res.isCheckin) {
+            invalidatePulseContextQueries(qc);
+            void qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
+            void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
+          }
           onDone({ blobUrl, mimeType, transcript: res.transcript, reply: res.reply,
             isCheckin: res.isCheckin, extraction: res.extraction, followUpQuestions: res.followUpQuestions });
         } catch (err) {
@@ -184,7 +195,6 @@ function MicButton({ micState, onDone }: {
 }
 
 export default function Coach() {
-  const queryClient = useQueryClient();
   const [input, setInput]         = useState('');
   const [micState, setMicState]   = useState<MicState>('idle');
   const [voiceCard, setVoiceCard] = useState<VoiceCard | null>(null);
@@ -195,28 +205,13 @@ export default function Coach() {
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const m = home?.todayMetrics;
 
-  const { data: historyData, isLoading } = useQuery({
-    queryKey: ['chat-history'],
-    queryFn: () => api.chat.history(),
-  });
-
-  const sendMessage = useMutation({
-    mutationFn: (message: string) => api.chat.sendMessage(message),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['chat-history'] }),
-  });
-
-  const clearHistory = useMutation({
-    mutationFn: () => api.chat.deleteHistory(),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['chat-history'] });
-      setVoiceCard(null);
-      setVoiceError(null);
-    },
-  });
+  const { data: historyData, isLoading } = useCoachHistory();
+  const sendMessage = useCoachSend();
+  const clearHistory = useClearCoachHistory();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [historyData?.messages.at(-1)?.id, voiceCard]);
+  }, [historyData?.messages.at(-1)?.timestamp, voiceCard]);
 
   function handleSend() {
     const msg = input.trim();
@@ -297,9 +292,9 @@ export default function Coach() {
           )
         )}
 
-        {historyData?.messages.map(msg => (
+        {historyData?.messages.map((msg, idx) => (
           <div
-            key={msg.id}
+            key={`${msg.timestamp}-${idx}`}
             style={{
               maxWidth: '82%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
               background: msg.role === 'user' ? 'var(--surface-2)' : 'var(--surface)',
@@ -379,7 +374,12 @@ export default function Coach() {
         </div>
         <button
           type="button"
-          onClick={() => clearHistory.mutate()}
+          onClick={() => clearHistory.mutate(undefined, {
+            onSuccess: () => {
+              setVoiceCard(null);
+              setVoiceError(null);
+            },
+          })}
           disabled={clearHistory.isPending}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',

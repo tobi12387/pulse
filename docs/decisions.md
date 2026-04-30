@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Coach, Voice und Live-Briefing teilen denselben PulseContext
+
+- **Decision:** Coach-UI und neue Pulse-Coach-History laufen über `pulse_coach_sessions`; Legacy `/api/chat/*` bleibt kompatibel, nutzt aber denselben reichen PulseContext-Prompt. Voice-Check-ins erzeugen ihre finale Coach-Antwort erst nach Persistenz des Check-ins, und Live-Briefings verwenden denselben Briefing-Prompt wie der Background-Job.
+- **Why:** Text-Chat, Voice-Reply und Live-Briefing hatten dieselben Daten fachlich unterschiedlich gelesen. Dadurch konnten Check-ins, Risk-Signale, RPE und Recovery im UI-Loop unterschiedlich stark wirken. Ein gemeinsamer Context-Pfad macht Coach-Antworten und Briefings konsistenter und invalidierbar.
+- **Alternatives:** Legacy-Chat sofort entfernen (unnötiges Breaking Change); nur Coach-UI umhängen, aber Backend-Legacy flach lassen (weiter Drift); Live-Briefing weiter mit eigener SQL-Auswahl bauen (Risk/RPE/Recovery bleiben lückenhaft).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Deploy und CI werden vor weiteren Features gehärtet
 
 - **Decision:** Vor den nächsten fachlichen Features bekommt Pulse eine Phase-0-Stabilitätsrunde: SQL-Migrationen bilden alle Drizzle-Tabellen ab, der Server-Deploy führt `db:migrate` vor PM2-Restarts aus, und GitHub CI prüft Migration-Guard, Build und Backend-Tests mit Postgres/Redis-Services.

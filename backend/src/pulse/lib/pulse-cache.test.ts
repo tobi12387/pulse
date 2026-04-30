@@ -47,11 +47,13 @@ describe('pulse-cache', () => {
 
     await setCached('readiness', 'user-1', '2026-04-29', { score: 80 });
     await setCached('fitness-load', 'user-1', '2026-04-29', { ctl: 40 });
+    await setCached('briefing', 'user-1', '2026-04-29', 'Heute locker bleiben.');
     await setCached('readiness', 'user-2', '2026-04-29', { score: 60 });
 
-    expect(await invalidateUser('user-1')).toBe(2);
+    expect(await invalidateUser('user-1')).toBe(3);
     expect(await getCached('readiness', 'user-1', '2026-04-29')).toBeNull();
     expect(await getCached('fitness-load', 'user-1', '2026-04-29')).toBeNull();
+    expect(await getCached('briefing', 'user-1', '2026-04-29')).toBeNull();
     expect(await getCached('readiness', 'user-2', '2026-04-29')).toEqual({ score: 60 });
   });
 });

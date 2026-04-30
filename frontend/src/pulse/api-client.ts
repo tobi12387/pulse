@@ -4,7 +4,7 @@ import type {
   PulseWeeklyReview, PulseWeightEntry, WeekAvailability, GoalCategory,
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
-  ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal,
+  ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -64,8 +64,12 @@ export const pulseApi = {
   },
 
   coach: {
+    history: (): Promise<{ messages: PulseCoachMessage[] }> =>
+      request('/coach/history'),
     send: (message: string): Promise<{ reply: string }> =>
       request('/coach', { method: 'POST', body: JSON.stringify({ message }) }),
+    deleteHistory: (): Promise<void> =>
+      request('/coach/history', { method: 'DELETE' }),
   },
 
   risk: {

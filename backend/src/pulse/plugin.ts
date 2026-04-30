@@ -19,7 +19,6 @@ import {
   type WorkoutStep,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
-import { redis } from '../lib/redis.js';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
@@ -30,8 +29,7 @@ import {
   buildRichSystemPrompt, getCoachReplyRich,
   classifyAndExtractCheckin, type CheckinClassification,
 } from './services/coach-engine.js';
-import { buildPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
-import type { PulseContext } from './lib/pulse-context.js';
+import { buildCachedPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
 import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
@@ -43,6 +41,7 @@ import { generateDeepInsight, type InsightDomain } from './services/insight-engi
 import { syncGarminDay } from '../routes/garmin.js';
 import { users } from '../db/schema.js';
 import type { PulseDataStatus } from '@coaching-os/shared/pulse';
+import { buildBriefingSystemPrompt, buildBriefingUserContentRich } from '../jobs/briefing-generation.job.js';
 
 const coachMessageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -58,10 +57,6 @@ const activityFeedbackSchema = z.object({
   sorenessAreas: z.array(z.enum(RPE_SORENESS_AREAS)).max(8).nullable().optional(),
 });
 
-interface CachedPulseContext extends Omit<PulseContext, 'recentActivities'> {
-  recentActivities: Array<Omit<PulseContext['recentActivities'][number], 'startTime'> & { startTime: string }>;
-}
-
 async function getFitnessLoadCached(userId: string, date: string): Promise<PulseFitnessLoad> {
   const cached = await getCached<PulseFitnessLoad>('fitness-load', userId, date);
   if (cached) return cached;
@@ -71,21 +66,15 @@ async function getFitnessLoadCached(userId: string, date: string): Promise<Pulse
   return load;
 }
 
-function revivePulseContext(ctx: CachedPulseContext): PulseContext {
-  return {
-    ...ctx,
-    activeRiskSignals: ctx.activeRiskSignals ?? [],
-    recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
-  };
-}
-
-async function buildPulseContextCached(userId: string, date: string): Promise<PulseContext> {
-  const cached = await getCached<CachedPulseContext>('context', userId, date);
-  if (cached) return revivePulseContext(cached);
-
-  const ctx = await buildPulseContextFor(userId, date);
-  await setCached('context', userId, date, ctx);
-  return ctx;
+function normalizeCoachMessages(messages: unknown): PulseCoachMessage[] {
+  if (!Array.isArray(messages)) return [];
+  return messages.filter((m): m is PulseCoachMessage => (
+    typeof m === 'object' &&
+    m !== null &&
+    ((m as PulseCoachMessage).role === 'user' || (m as PulseCoachMessage).role === 'assistant') &&
+    typeof (m as PulseCoachMessage).content === 'string' &&
+    typeof (m as PulseCoachMessage).timestamp === 'string'
+  ));
 }
 
 // ─── Streak helpers ───────────────────────────────────────────────────────────
@@ -273,7 +262,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const cached = await getCached<PulseReadiness>('readiness', userId, today);
     if (cached) return { ...cached, date: today, cached: true };
 
-    const ctx = await buildPulseContextCached(userId, today);
+    const ctx = await buildCachedPulseContextFor(userId, today);
     await setCached('readiness', userId, today, ctx.readiness);
     return { ...ctx.readiness, date: today, cached: false };
   });
@@ -439,6 +428,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .where(and(eq(pulseRiskSignals.id, id), eq(pulseRiskSignals.userId, userId)))
       .returning();
     if (!row) return reply.status(404).send({ error: 'Risk-Signal nicht gefunden' });
+    await invalidateUser(userId);
     return { ok: true, snoozedUntil: snoozedUntil.toISOString() };
   });
 
@@ -451,6 +441,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .where(and(eq(pulseRiskSignals.id, id), eq(pulseRiskSignals.userId, userId)))
       .returning();
     if (!row) return reply.status(404).send({ error: 'Risk-Signal nicht gefunden' });
+    await invalidateUser(userId);
     return { ok: true };
   });
 
@@ -467,12 +458,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
         .where(eq(pulseCoachSessions.userId, userId))
         .orderBy(desc(pulseCoachSessions.lastMessageAt))
         .limit(1),
-      buildPulseContextCached(userId, today),
+      buildCachedPulseContextFor(userId, today),
     ]);
 
     const coachCtx = mapPulseContextToCoachContext(pulseContext);
     const systemPrompt = buildRichSystemPrompt(coachCtx);
-    const history = (existingSession?.messages as PulseCoachMessage[] ?? []);
+    const history = normalizeCoachMessages(existingSession?.messages);
 
     const replyText = await getCoachReplyRich(parsed.data.message, systemPrompt, history);
 
@@ -489,6 +480,21 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }
 
     return { reply: replyText };
+  });
+
+  app.get('/coach/history', { onRequest: [app.authenticate] }, async (req) => {
+    const [session] = await db.select({ messages: pulseCoachSessions.messages })
+      .from(pulseCoachSessions)
+      .where(eq(pulseCoachSessions.userId, req.user.sub))
+      .orderBy(desc(pulseCoachSessions.lastMessageAt))
+      .limit(1);
+
+    return { messages: normalizeCoachMessages(session?.messages) };
+  });
+
+  app.delete('/coach/history', { onRequest: [app.authenticate] }, async (req, reply) => {
+    await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, req.user.sub));
+    return reply.status(204).send();
   });
 
   app.post('/checkin', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -589,20 +595,24 @@ export default async function pulsePlugin(app: FastifyInstance) {
       await invalidateUser(userId);
     }
 
-    // 4. Coach-Antwort in Session speichern
-    const userMsg: PulseCoachMessage = { role: 'user',      content: transcript,                timestamp: new Date().toISOString() };
-    const botMsg:  PulseCoachMessage = { role: 'assistant', content: classification.coachReply, timestamp: new Date().toISOString() };
-
     const [session] = await db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })
       .from(pulseCoachSessions)
       .where(eq(pulseCoachSessions.userId, userId))
       .orderBy(desc(pulseCoachSessions.lastMessageAt))
       .limit(1);
 
+    // 4. Nach optionaler Check-in-Persistenz mit frischem PulseContext antworten.
+    const history = normalizeCoachMessages(session?.messages);
+    const pulseContext = await buildCachedPulseContextFor(userId, today);
+    const systemPrompt = buildRichSystemPrompt(mapPulseContextToCoachContext(pulseContext));
+    const replyText = await getCoachReplyRich(transcript, systemPrompt, history);
+
+    const userMsg: PulseCoachMessage = { role: 'user',      content: transcript, timestamp: new Date().toISOString() };
+    const botMsg:  PulseCoachMessage = { role: 'assistant', content: replyText,  timestamp: new Date().toISOString() };
+
     if (session) {
-      const msgs = session.messages as PulseCoachMessage[];
       await db.update(pulseCoachSessions)
-        .set({ messages: [...msgs.slice(-20), userMsg, botMsg], lastMessageAt: new Date() })
+        .set({ messages: [...history.slice(-20), userMsg, botMsg], lastMessageAt: new Date() })
         .where(eq(pulseCoachSessions.id, session.id));
     } else {
       await db.insert(pulseCoachSessions).values({ userId, messages: [userMsg, botMsg] });
@@ -610,7 +620,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     return {
       transcript,
-      reply:             classification.coachReply,
+      reply:             replyText,
       isCheckin:         classification.isCheckin,
       followUpQuestions: classification.extraction?.followUpQuestions ?? [],
       checkinId,
@@ -2147,31 +2157,30 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/briefing', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
-    const cacheKey = `pulse:briefing:${userId}:${today}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = await getCached<string>('briefing', userId, today);
     if (cached) return { briefing: cached, date: today, cached: true };
 
-    // ─── Race-Day check (Phase 7): if today is race day for an A/B race, switch mode ───
-    const races = await getActiveRaces(userId, today);
-    const todayRace = races.find(r => r.daysUntil === 0 && r.priority !== 'C');
+    const ctx = await buildCachedPulseContextFor(userId, today);
+    const todayRace = ctx.nextRace?.daysUntil === 0 && ctx.nextRace.priority !== 'C'
+      ? ctx.nextRace
+      : null;
+
     if (todayRace) {
-      const fitnessLoad = await computeFitnessLoad(userId, today);
       const fmtTime = (sec: number | null): string => {
         if (sec == null) return '–';
         const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
         return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
       };
-      const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-      const lthr = (profile as { lactateThresholdHr?: number | null } | undefined)?.lactateThresholdHr
-        ?? (profile?.maxHrBpm ? Math.round(profile.maxHrBpm * 0.92) : null);
+      const lthr = ctx.profile?.lthrBpm ?? (ctx.profile?.maxHrBpm ? Math.round(ctx.profile.maxHrBpm * 0.92) : null);
       const hrCap = lthr ? Math.round(lthr * (todayRace.distanceKm && todayRace.distanceKm > 30 ? 0.92 : 0.96)) : null;
       const briefingPrompt = `Du bist Coach für Tobi am RACE-DAY. Schreibe ein präzises Race-Briefing.
 RACE: ${todayRace.title}${todayRace.distanceKm ? ` ${todayRace.distanceKm}km` : ''}, ${todayRace.discipline ?? 'unspezifiziert'}, Priority ${todayRace.priority}
 Standort: ${todayRace.location ?? '–'}
 ${todayRace.notes ? `Notizen: ${todayRace.notes}` : ''}
 
-FORM: CTL ${fitnessLoad.ctl.toFixed(0)} | TSB ${fitnessLoad.tsb.toFixed(0)} (${fitnessLoad.tsb >= 0 ? 'frisch' : 'leicht müde'})
+FORM: CTL ${ctx.fitnessLoad.ctl.toFixed(0)} | TSB ${ctx.fitnessLoad.tsb.toFixed(0)} (${ctx.fitnessLoad.tsb >= 0 ? 'frisch' : 'leicht müde'})
+READINESS: ${ctx.readiness.score}/100 (${ctx.readiness.label})
 PROGNOSE: ${todayRace.predictedTimeSec ? fmtTime(todayRace.predictedTimeSec) : 'keine'} (${todayRace.predictionConfidence ?? '–'} confidence)
 ZIEL:     ${todayRace.targetTimeSec ? fmtTime(todayRace.targetTimeSec) : 'keine'}
 HR-Cap:   ${hrCap ? `${hrCap} bpm` : 'siehe Profil'}
@@ -2189,87 +2198,38 @@ Direkt, knapp, kein Smalltalk.`;
         briefingPrompt,
         SMART_MODEL,
       );
-      await redis.set(cacheKey, briefing, 'EX', 24 * 3600);
+      await setCached('briefing', userId, today, briefing);
       return { briefing, date: today, cached: false, raceDay: true };
     }
 
-    const [[metrics], [checkin], workouts, [profile]] = await Promise.all([
-      db.select({
-        sleepHours:     pulseDailyMetrics.sleepHours,
-        hrvRmssd:       pulseDailyMetrics.hrvRmssd,
-        hrvStatus:      pulseDailyMetrics.hrvStatus,
-        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
-        stressAvg:      pulseDailyMetrics.stressAvg,
-        restingHr:      pulseDailyMetrics.restingHr,
-      }).from(pulseDailyMetrics)
-        .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
-
-      db.select({
-        mood: pulseMentalCheckins.mood, energy: pulseMentalCheckins.energy,
-        stress: pulseMentalCheckins.stress, motivation: pulseMentalCheckins.motivation,
-      }).from(pulseMentalCheckins)
-        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today))),
-
-      db.select({
-        activityType: pulsePlannedWorkouts.activityType,
-        zone: pulsePlannedWorkouts.zone,
-        durationMin: pulsePlannedWorkouts.durationMin,
-        description: pulsePlannedWorkouts.description,
-        status: pulsePlannedWorkouts.status,
-      }).from(pulsePlannedWorkouts)
-        .where(and(eq(pulsePlannedWorkouts.userId, userId), eq(pulsePlannedWorkouts.plannedDate, today))),
-
-      db.select({ homeLat: pulseUserProfile.homeLat, homeLon: pulseUserProfile.homeLon })
-        .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)),
-    ]);
-
-    const parts: string[] = [];
-    if (metrics?.sleepHours)    parts.push(`Schlaf: ${metrics.sleepHours.toFixed(1)}h`);
-    if (metrics?.hrvRmssd)      parts.push(`HRV: ${metrics.hrvRmssd.toFixed(0)} ms (${metrics.hrvStatus ?? '–'})`);
-    if (metrics?.bodyBatteryMax) parts.push(`Körperbatterie: ${metrics.bodyBatteryMax}%`);
-    if (metrics?.restingHr)     parts.push(`Ruhepuls: ${metrics.restingHr} bpm`);
-    if (checkin)                parts.push(`Check-in: Stimmung ${checkin.mood}/10, Energie ${checkin.energy}/10, Stress ${checkin.stress}/10`);
-    const plannedToday = workouts[0];
-    if (plannedToday) {
-      const statusStr = plannedToday.status === 'completed' ? ' (bereits erledigt)' : '';
-      parts.push(`Geplantes Training heute: ${plannedToday.activityType} Zone ${plannedToday.zone}, ${plannedToday.durationMin} min${statusStr}`);
-      if (plannedToday.description) parts.push(`Training-Details: ${plannedToday.description}`);
-    }
-
-    // Phase 8: Wetter-Kontext für Outdoor-Workouts (kein bike-only — auch Lauf/Hike)
-    const isOutdoorSport = plannedToday && plannedToday.status !== 'completed' &&
+    let userContent = buildBriefingUserContentRich(ctx, ctx.todayCheckin ? 'check-in' : 'garmin-alarm');
+    const plannedToday = ctx.upcomingWorkouts.find(w => w.plannedDate === today) ?? null;
+    const isOutdoorSport = plannedToday &&
       (plannedToday.activityType === 'bike' || plannedToday.activityType === 'run' || plannedToday.activityType === 'hike');
-    if (isOutdoorSport && profile?.homeLat != null && profile?.homeLon != null) {
+    if (isOutdoorSport && ctx.profile?.homeLat != null && ctx.profile?.homeLon != null) {
       try {
         const { getCurrentWeather } = await import('../lib/weather.js');
-        const w = await getCurrentWeather({ latitude: profile.homeLat, longitude: profile.homeLon });
+        const w = await getCurrentWeather({ latitude: ctx.profile.homeLat, longitude: ctx.profile.homeLon });
         if (w) {
           const weatherLine = `Wetter heute: ${w.tempC.toFixed(0)}°C (gefühlt ${w.feelsC.toFixed(0)}°C), ${w.conditions}, Wind ${w.windKmh.toFixed(0)} km/h, Niederschlag ${w.precipMm.toFixed(1)} mm`;
-          parts.push(weatherLine);
-          if (w.feelsC > 28) parts.push('Hinweis: Hitze erhöht HR-Drift bei gleicher Pace; HR-Cap ggf. +5 bpm akzeptieren oder Pace reduzieren.');
-          if (w.feelsC < 0)  parts.push('Hinweis: Frost — verlängerte Aufwärmphase 15+ min, Atemwegsschutz erwägen.');
-          if (w.windKmh > 25) parts.push('Hinweis: starker Wind — Outdoor-Z2 evtl. nach HR statt nach Pace steuern, Powerausgabe asymmetrisch.');
+          const weatherHints = [weatherLine];
+          if (w.feelsC > 28) weatherHints.push('Hinweis: Hitze erhöht HR-Drift bei gleicher Pace; HR-Cap ggf. +5 bpm akzeptieren oder Pace reduzieren.');
+          if (w.feelsC < 0)  weatherHints.push('Hinweis: Frost: verlängerte Aufwärmphase 15+ min, Atemwegsschutz erwägen.');
+          if (w.windKmh > 25) weatherHints.push('Hinweis: starker Wind: Outdoor-Z2 evtl. nach HR statt nach Pace steuern, Powerausgabe asymmetrisch.');
+          userContent += `\n${weatherHints.join('\n')}`;
         }
       } catch (err) {
         app.log.warn(`[briefing] weather fetch failed: ${err}`);
       }
     }
 
-    const context = parts.length > 0 ? parts.join('\n') : 'Noch keine Daten für heute verfügbar.';
-
     const briefing = await llmComplete(
-      `Du bist Pulse, persönlicher Ausdauercoach für Tobi (polarisiertes Training, Triathlon/Radsport).
-Schreibe ein Morning Briefing: 3-4 Sätze, kein Markdown, auf Deutsch.
-Beziehe dich auf die konkreten Daten. Empfehle die passende Trainingsintensität für heute.
-Sei direkt und motivierend — wie ein erfahrener Coach, nicht wie ein Assistent.`,
-      `Heute, ${today}:\n${context}`,
+      buildBriefingSystemPrompt(),
+      userContent,
       SMART_MODEL,
     );
 
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    const ttl = Math.round((midnight.getTime() - Date.now()) / 1000);
-    await redis.set(cacheKey, briefing, 'EX', ttl);
+    await setCached('briefing', userId, today, briefing);
 
     return { briefing, date: today, cached: false };
   });
