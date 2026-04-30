@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Web Push startet als Foundation-Slice ohne Trigger-Jobs
+
+- **Decision:** Web Push wird zuerst als Foundation-PR umgesetzt: additive Subscription-Tabelle, optionale VAPID-Konfiguration, Backend-Settings-/Subscribe-/Test-Endpunkte, Service Worker/Manifest und Settings-UI. Briefing-, Check-in- und Risk-Trigger folgen separat.
+- **Why:** Push berührt DB, Backend-Env, Service Worker und Settings-UI gleichzeitig. Ein schmaler erster Slice macht die Browser-Berechtigung und den End-to-End-Test möglich, ohne die Job-Trigger und Dedupe-Regeln im selben PR zu verstecken.
+- **Alternatives:** Vollständige Push-Phase in einem PR (zu breiter Review- und Deploy-Radius); VAPID-Keys hart erforderlich machen (würde lokale Tests und Deploys ohne Secret sofort brechen); Trigger-Jobs ohne Settings/Test-Flow zuerst bauen (schwer verifizierbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Frontend-QA räumt React-Compiler-Lint vor Web Push auf
 
 - **Decision:** Vor Web Push wird eine kleine Frontend-QA-Runde abgeschlossen, die React-19/Compiler-Lint-Funde in Plan/Coach-nahen Flows und Activity-/Fueling-Komponenten behebt.

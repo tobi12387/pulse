@@ -1,7 +1,9 @@
 import {
   pgTable, pgEnum, uuid, text, varchar, integer, real,
-  timestamp, date, jsonb, boolean, index, uniqueIndex,
+  timestamp, date, jsonb, boolean, index, uniqueIndex, time,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import type { PulsePushTopics } from '@coaching-os/shared/pulse';
 
 // FK to users.id is enforced at DB level via migration SQL — not via Drizzle
 // references() because drizzle-kit cannot resolve cross-file .js imports.
@@ -17,6 +19,12 @@ export interface WorkoutStep {
   targetHrMaxBpm?: number;
   targetLabel?: string;
 }
+
+export const DEFAULT_PUSH_TOPICS: PulsePushTopics = {
+  briefing: true,
+  checkin_reminder: true,
+  risk_critical: true,
+};
 
 // ─── ENUMs (all prefixed pulse_) ─────────────────────────────────────────────
 export const pulseSleepQualityEnum = pgEnum('pulse_sleep_quality', [
@@ -43,10 +51,32 @@ export const pulseUserProfile = pgTable('pulse_user_profile', {
   vo2max:            real('vo2max'),
   trainingPhase:     varchar('training_phase', { length: 20 }).default('base'),
   weeklyHoursTarget: real('weekly_hours_target'),
+  pushTopics:        jsonb('push_topics').$type<PulsePushTopics>().notNull().default(sql`'{"briefing":true,"checkin_reminder":true,"risk_critical":true}'::jsonb`),
+  pushQuietStart:    time('push_quiet_start').notNull().default('22:00'),
+  pushQuietEnd:      time('push_quiet_end').notNull().default('06:30'),
   homeLat:           real('home_lat'),
   homeLon:           real('home_lon'),
   updatedAt:         timestamp('updated_at').notNull().defaultNow(),
 });
+
+// ─── Web Push subscriptions ─────────────────────────────────────────────────
+export const pulsePushSubscriptions = pgTable('pulse_push_subscriptions', {
+  id:                  uuid('id').primaryKey().defaultRandom(),
+  userId:              uuid('user_id').notNull(),
+  endpoint:            text('endpoint').notNull(),
+  p256dh:              text('p256dh').notNull(),
+  auth:                text('auth').notNull(),
+  deviceLabel:         varchar('device_label', { length: 64 }),
+  enabled:             boolean('enabled').notNull().default(true),
+  lastSuccessAt:       timestamp('last_success_at', { withTimezone: true }),
+  lastErrorAt:         timestamp('last_error_at', { withTimezone: true }),
+  consecutiveFailures: integer('consecutive_failures').notNull().default(0),
+  createdAt:           timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:           timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_push_subscriptions_endpoint_idx').on(t.endpoint),
+  index('idx_push_user_enabled').on(t.userId).where(sql`${t.enabled} = true`),
+]);
 
 // ─── Daily metrics (Garmin/Apple Health data per day) ────────────────────────
 export const pulseDailyMetrics = pgTable('pulse_daily_metrics', {
