@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Verfügbarkeit ist Kandidatenraum, keine Trainingspflicht
+
+- **Decision:** Die Wochenplanung interpretiert verfügbare Tage ab sofort als mögliche Trainingstage. Ein neuer Plan-Day-Decision-Layer wählt daraus eine sinnvolle Anzahl und lässt bei Gewichtsziel, negativer Form oder Regenerationswoche bewusst freie Tage stehen.
+- **Why:** Tobi meldete zurecht, dass geplante Workouts repetitiv wirken und zu oft alle verfügbaren Tage belegen. Echte Coaching-Planung muss “du könntest” von “du solltest” trennen und Ziele/Belastung in die Wochenstruktur einrechnen.
+- **Alternatives:** Feste Sportrotation weiter nutzen und nur Beschreibungen verbessern (behebt das Kernproblem nicht); LLM direkt die komplette Woche frei planen lassen (weniger deterministisch und schwerer testbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Risk Watch wird Teil des gemeinsamen PulseContext
 
 - **Decision:** Aktive Risk-Watch-Signale werden in `PulseContext` aufgenommen und von dort in Coach-Systemprompt und Briefing-Prompt ausgespielt. Kritische Signale bekommen eine explizite Prompt-Regel, dass sie adressiert werden müssen.
