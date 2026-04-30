@@ -2,7 +2,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pkg from 'pg';
 const { Pool } = pkg;
 import { env } from './env.js';
-import * as schema from '../db/schema.js';
+import * as baseSchema from '../db/schema.js';
+import * as pulseSchema from '../db/pulse-schema.js';
 
 function getConnectionString(): string {
   if (env.NODE_ENV !== 'test') return env.DATABASE_URL;
@@ -23,6 +24,7 @@ function getConnectionString(): string {
 const connectionString = getConnectionString();
 
 const pool = new Pool({ connectionString });
+const schema = { ...baseSchema, ...pulseSchema };
 
 export const db = drizzle(pool, { schema });
 export type DB = typeof db;

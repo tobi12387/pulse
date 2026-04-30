@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-04-30 — Deploy und CI werden vor weiteren Features gehärtet
+
+- **Decision:** Vor den nächsten fachlichen Features bekommt Pulse eine Phase-0-Stabilitätsrunde: SQL-Migrationen bilden alle Drizzle-Tabellen ab, der Server-Deploy führt `db:migrate` vor PM2-Restarts aus, und GitHub CI prüft Migration-Guard, Build und Backend-Tests mit Postgres/Redis-Services.
+- **Why:** Der Audit zeigte, dass Code und Server-Schema auseinanderlaufen konnten, weil Migrationen nicht Teil des Deploy-Pfads waren und CI weder Build noch Tests gate-te. Diese Fehlerklasse blockiert verlässliche Coach-, Briefing- und Plan-Verbesserungen.
+- **Alternatives:** Direkt mit Coach/Briefing-Konsolidierung weitermachen (würde auf wackeliger Deploy-Basis bauen); Migrationen weiter manuell/serverseitig prüfen (bricht GitHub-main als Single Source of Truth); nur eine einzelne Baseline-Migration ohne CI/Deploy-Änderung (verhindert Wiederholung nicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-04-30 — Claude-Code-Integration wird entfernt
 
 - **Decision:** Pulse nutzt vorerst nur noch Codex als AI-Coding-Agent. Die aktive Claude-Code-Integration wird entfernt: `CLAUDE.md` entfällt, `.claude/` wird nicht mehr als Projektzustand geführt, Branch-Regeln erwähnen nur noch `codex/<topic>` und manuelle `tobi/<topic>`-Branches.

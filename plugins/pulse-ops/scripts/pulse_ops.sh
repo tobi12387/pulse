@@ -12,7 +12,7 @@ Usage: $0 <command>
 Commands:
   status      Show server git, PM2, Docker, and Nginx site status
   health      Check server-local and LAN HTTPS health endpoints
-  deploy      Fast-forward server from origin/main, build, test, reload PM2
+  deploy      Run the canonical server deploy script, then check health
   build       Run npm run build on the server
   test        Run npm test on the server
   logs        Show recent PM2 and Nginx logs
@@ -42,14 +42,7 @@ health() {
 
 deploy() {
   ssh_pulse "cd '$APP_PATH' && \
-    git status --short --branch && \
-    git fetch origin main && \
-    git pull --ff-only origin main && \
-    npm run build && \
-    npm test && \
-    pm2 startOrReload pm2.config.js && \
-    pm2 save && \
-    nginx -t && \
+    bash scripts/deploy.sh && \
     curl -sk https://127.0.0.1/api/ping"
   echo
   curl -sk "$URL/api/ping"
