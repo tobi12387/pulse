@@ -67,15 +67,18 @@ export function buildBriefingUserContentRich(
     ? `Recovery: Score ${ctx.recovery.recoveryScore}/100, Schlafdefizit 7d ${ctx.recovery.sleepDebt7d.hours.toFixed(1)}h (${ctx.recovery.sleepDebt7d.status}), HRV ${ctx.recovery.hrvDeviation7d.pct.toFixed(1)}% (${ctx.recovery.hrvDeviation7d.status}), Empfehlung: ${ctx.recovery.recommendation}.`
     : 'Recovery: zu wenige Verlaufsdaten für eine belastbare 7d/30d-Einschätzung.';
 
-  const strengthPart = ctx.recentStrengthSessions.length > 0
-    ? `Krafttraining zuletzt: ${ctx.recentStrengthSessions.slice(0, 3).map(session => {
+  const recentStrengthSessions = ctx.recentStrengthSessions ?? [];
+  const equipmentDueForReplacement = ctx.equipmentDueForReplacement ?? [];
+
+  const strengthPart = recentStrengthSessions.length > 0
+    ? `Krafttraining zuletzt: ${recentStrengthSessions.slice(0, 3).map(session => {
         const lifts = session.topLifts.map(l => `${l.exercise} ${l.bestSet.reps}x${l.bestSet.weightKg ?? 'BW'}${l.bestSet.e1rmKg != null ? ` e1RM ${l.bestSet.e1rmKg.toFixed(1)}kg` : ''}`).join(', ');
         return `${session.date}${session.durationMin ? ` ${session.durationMin}min` : ''}: ${lifts}`;
       }).join('; ')}.`
     : 'Kein Krafttraining in den letzten 90 Tagen geloggt.';
 
-  const equipmentPart = ctx.equipmentDueForReplacement.length > 0
-    ? `Equipment-Hinweise: ${ctx.equipmentDueForReplacement.map(item => `${item.name} ${item.pctConsumed.toFixed(0)}% (${item.kmCurrent.toFixed(0)}/${item.kmRetirement.toFixed(0)} km)`).join('; ')}.`
+  const equipmentPart = equipmentDueForReplacement.length > 0
+    ? `Equipment-Hinweise: ${equipmentDueForReplacement.map(item => `${item.name} ${item.pctConsumed.toFixed(0)}% (${item.kmCurrent.toFixed(0)}/${item.kmRetirement.toFixed(0)} km)`).join('; ')}.`
     : 'Keine Equipment-Replacement-Warnungen.';
 
   const healthPart = ctx.activeHealthStates.length > 0
