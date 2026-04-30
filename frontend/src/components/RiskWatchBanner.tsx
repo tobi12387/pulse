@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useResolveRiskSignal, useRiskSignals, useSnoozeRiskSignal } from '@/pulse/hooks';
 import type { PulseRiskSignal } from '@coaching-os/shared/pulse';
 
@@ -19,15 +19,12 @@ export function RiskWatchBanner() {
   const snooze = useSnoozeRiskSignal();
   const resolve = useResolveRiskSignal();
   const visible = (data?.signals ?? []).filter(s => s.severity === 'warn' || s.severity === 'critical');
-  const [expanded, setExpanded] = useState(true);
-
-  useEffect(() => {
-    if (visible.length > 0) setExpanded(visible.length < 3);
-  }, [visible.length]);
+  const [expanded, setExpanded] = useState(false);
 
   if (isLoading || visible.length === 0) return null;
 
-  const shown = expanded ? visible : visible.slice(0, 2);
+  const canCollapse = visible.length >= 3;
+  const shown = !canCollapse || expanded ? visible : visible.slice(0, 2);
   const highest = visible.some(s => s.severity === 'critical') ? 'critical' : 'warn';
 
   return (
@@ -47,14 +44,14 @@ export function RiskWatchBanner() {
           padding: '10px 12px',
           background: 'transparent',
           border: 'none',
-          cursor: visible.length >= 3 ? 'pointer' : 'default',
+          cursor: canCollapse ? 'pointer' : 'default',
           textAlign: 'left',
         }}
       >
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase', color: severityColor(highest) }}>
           Risiko-Signale ({visible.length})
         </span>
-        {visible.length >= 3 && (
+        {canCollapse && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>{expanded ? '–' : '+'}</span>
         )}
       </button>

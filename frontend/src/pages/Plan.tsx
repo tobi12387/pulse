@@ -1041,7 +1041,7 @@ function ReviewTab() {
   function extractSections(narrative: string): { wins: string[]; watch: string[]; body: string } {
     const wins: string[] = [];
     const watch: string[] = [];
-    let body = narrative;
+    const body = narrative;
 
     // Look for markdown-style lists
     const winMatch  = narrative.match(/#+\s*Highlights?[:\s]*([\s\S]*?)(?=#+|$)/i);

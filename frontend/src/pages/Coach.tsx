@@ -208,10 +208,11 @@ export default function Coach() {
   const { data: historyData, isLoading } = useCoachHistory();
   const sendMessage = useCoachSend();
   const clearHistory = useClearCoachHistory();
+  const lastMessageTimestamp = historyData?.messages.at(-1)?.timestamp;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [historyData?.messages.at(-1)?.timestamp, voiceCard]);
+  }, [lastMessageTimestamp, voiceCard]);
 
   function handleSend() {
     const msg = input.trim();
