@@ -98,6 +98,40 @@ describe('buildRichSystemPrompt', () => {
     expect(prompt).toContain('Beine zäh');
     expect(prompt).toContain('kein RPE');
   });
+
+  it('includes active risk signals in coach context', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-04-27',
+      readiness: { score: 45, label: 'mäßig' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 50, tsb: -6 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      activeRiskSignals: [{
+        id: 'risk-1',
+        ruleId: 'ctl_ramp_overshoot',
+        severity: 'critical',
+        status: 'active',
+        title: 'CTL-Ramp +9.2 pro Woche',
+        description: 'Die Trainingslast steigt schneller als empfohlen.',
+        recommendation: 'Diese Woche TSS reduzieren.',
+        metric: { rampPerWeek: 9.2 },
+        triggeredAt: '2026-04-27T06:00:00.000Z',
+        resolvedAt: null,
+        snoozedUntil: null,
+      }],
+    });
+    expect(prompt).toContain('Risk-Signal critical');
+    expect(prompt).toContain('== RISIKO-SIGNALE');
+    expect(prompt).toContain('[CRITICAL] CTL-Ramp +9.2 pro Woche (ctl_ramp_overshoot)');
+    expect(prompt).toContain('Diese Woche TSS reduzieren.');
+  });
 });
 
 describe('getCoachReplyRich', () => {

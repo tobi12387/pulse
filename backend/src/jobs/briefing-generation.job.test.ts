@@ -101,11 +101,14 @@ describe('processBriefingJob', () => {
     expect(saved!.checkinSnapshot).toMatchObject({ energy: 7, stress: 3 });
 
     const userContent = vi.mocked(llmComplete).mock.calls[0]?.[1] ?? '';
+    const systemPrompt = vi.mocked(llmComplete).mock.calls[0]?.[0] ?? '';
+    expect(systemPrompt).toContain('Risk-Signal critical');
     expect(userContent).toContain('CTL');
     expect(userContent).toContain('ATL');
     expect(userContent).toContain('TSB');
     expect(userContent).toContain('Readiness');
     expect(userContent).toContain('Nächstes Training');
+    expect(userContent).toContain('RISIKO-SIGNALE');
   });
 
   it('generates a briefing for garmin-alarm trigger (no check-in)', async () => {
@@ -200,10 +203,44 @@ describe('buildBriefingUserContentRich', () => {
         plannedZone: 2,
       }],
       nextRace: null,
+      activeRiskSignals: [],
     } as unknown as PulseContext;
 
     const prompt = buildBriefingUserContentRich(ctx, 'check-in');
     expect(prompt).toContain('RPE 8/10');
     expect(prompt).toContain('aerobe Müdigkeit');
+  });
+
+  it('adds active risk signals before objective data', () => {
+    const ctx = {
+      date: '2026-04-24',
+      todayMetrics: null,
+      todayCheckin: null,
+      fitnessLoad: { ctl: 40, atl: 48, tsb: -8 },
+      readiness: { score: 45, label: 'mäßig' },
+      recovery: null,
+      activeHealthStates: [],
+      upcomingWorkouts: [],
+      recentActivities: [],
+      nextRace: null,
+      activeRiskSignals: [{
+        id: 'risk-1',
+        ruleId: 'rhr_drift_7d',
+        severity: 'critical',
+        status: 'active',
+        title: 'Ruhepuls seit 7 Tagen +6.0 bpm',
+        description: 'Der Ruhepuls liegt deutlich über Baseline.',
+        recommendation: 'Heute trainingsfrei oder kurzes Z1 unter 30 Minuten.',
+        metric: { deltaBpm: 6 },
+        triggeredAt: '2026-04-24T06:00:00.000Z',
+        resolvedAt: null,
+        snoozedUntil: null,
+      }],
+    } as unknown as PulseContext;
+
+    const prompt = buildBriefingUserContentRich(ctx, 'garmin-alarm');
+    expect(prompt.indexOf('RISIKO-SIGNALE')).toBeLessThan(prompt.indexOf('Keine Pulse-Metriken'));
+    expect(prompt).toContain('[CRITICAL] Ruhepuls seit 7 Tagen +6.0 bpm (rhr_drift_7d)');
+    expect(prompt).toContain('Heute trainingsfrei');
   });
 });

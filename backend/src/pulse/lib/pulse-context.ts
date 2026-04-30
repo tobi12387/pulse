@@ -12,8 +12,9 @@ import {
 import { computeRecovery } from '../../lib/recovery-metrics.js';
 import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
 import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
+import { getActiveRiskSignals } from '../services/risk-engine.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
-import type { PulseFitnessLoad, PulseReadiness, PulseRecoveryMetrics } from '@coaching-os/shared/pulse';
+import type { PulseFitnessLoad, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
 
 export type PulseDailyMetricsRow = typeof pulseDailyMetrics.$inferSelect;
 export type PulseMentalCheckinRow = typeof pulseMentalCheckins.$inferSelect;
@@ -71,6 +72,7 @@ export interface PulseContext {
   }>;
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   nextRace: RaceContext | null;
+  activeRiskSignals: PulseRiskSignal[];
 }
 
 function daysBefore(date: string, days: number): string {
@@ -110,6 +112,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     weightRows,
     dailyHistory,
     races,
+    riskSignalRows,
   ] = await Promise.all([
     db.select().from(pulseDailyMetrics)
       .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, date)))
@@ -187,6 +190,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since60)))
       .orderBy(desc(pulseDailyMetrics.date)),
     getActiveRaces(userId, date),
+    getActiveRiskSignals(userId),
   ]);
 
   const activityIds = recentActivities.map(a => a.id);
@@ -235,6 +239,19 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     checkins14d,
     latestWeight: weightTrend30d(weightRows),
     nextRace: races[0] ?? null,
+    activeRiskSignals: riskSignalRows.map(r => ({
+      id: r.id,
+      ruleId: r.ruleId,
+      severity: r.severity as PulseRiskSignal['severity'],
+      status: r.status as PulseRiskSignal['status'],
+      title: r.title,
+      description: r.description,
+      recommendation: r.recommendation,
+      metric: r.metricSnapshot as Record<string, unknown>,
+      triggeredAt: r.triggeredAt.toISOString(),
+      resolvedAt: r.resolvedAt?.toISOString() ?? null,
+      snoozedUntil: r.snoozedUntil?.toISOString() ?? null,
+    })),
   };
 }
 
@@ -289,6 +306,7 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
     metrics14: ctx.metrics14d,
     checkins14: ctx.checkins14d,
     latestWeight: ctx.latestWeight,
+    activeRiskSignals: ctx.activeRiskSignals,
     recovery: ctx.recovery ? {
       sleepDebt7dH: ctx.recovery.sleepDebt7d.hours,
       sleepDebtStatus: ctx.recovery.sleepDebt7d.status,

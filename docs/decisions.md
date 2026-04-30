@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Risk Watch wird Teil des gemeinsamen PulseContext
+
+- **Decision:** Aktive Risk-Watch-Signale werden in `PulseContext` aufgenommen und von dort in Coach-Systemprompt und Briefing-Prompt ausgespielt. Kritische Signale bekommen eine explizite Prompt-Regel, dass sie adressiert werden müssen.
+- **Why:** Coach und Briefing sollen dieselbe kanonische Tageslage sehen, ohne eigene Risk-Queries oder divergierende Formatter. Damit bleibt die Kontext-Unifizierung erhalten und Risk Watch wird im Alltag nicht nur als Home-Banner sichtbar.
+- **Alternatives:** Separate Risk-Abfragen direkt in Coach/Briefing (mehr Drift und Cache-Komplexität); nur Home-Banner ohne LLM-Kontext (weniger Coaching-Nutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Risk Watch erscheint zuerst als Home-Banner
 
 - **Decision:** Die erste Risk-Watch-UI wird als kompakter Home-Banner umgesetzt, der nur aktive `warn`/`critical`-Signale zeigt und Snooze direkt anbietet. Info-Signale bleiben aus der Startseite heraus, bis ein sinnvoller Inbox-/Historienkontext existiert.
