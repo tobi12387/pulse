@@ -18,12 +18,12 @@ Keep this file short. Update it whenever the active work queue changes.
 12. Daily Decision Center was merged and deployed via PR #87.
 13. Daily Briefing future-workout correction and stronger guided Mental Check-in was merged and deployed via PR #88.
 14. Local Test Services Hardening was merged and deployed via PR #90.
-15. Active implementation branch: none.
-16. Active implementation wave: Daily Intelligence Next Wave follow-ups, with local test service bootstrap now hardened.
+15. Active implementation branch: `codex/insight-evidence-links`.
+16. Active implementation wave: Daily Intelligence Next Wave — Insight Evidence Links, then Deep UI/UX Flow Audit.
 
 ## Current PRs / Branches
 
-- Open PRs: none.
+- `codex/insight-evidence-links`: active branch for structured Insight evidence/missing-data UI.
 - Recent completed branches:
 - `codex/local-test-services-hardening`: merged and deployed via PR #90.
 - `codex/daily-briefing-guided-checkin`: merged and deployed via PR #88.

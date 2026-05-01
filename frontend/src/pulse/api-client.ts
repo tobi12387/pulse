@@ -329,6 +329,8 @@ export const pulseApi = {
     get: (domain: string, days = 30, refresh = false): Promise<{
       domain: string; analysis: string; stats: Record<string, number | string | null>;
       date: string; cached: boolean; status?: 'ok' | 'data_missing'; action?: string | null; retryable?: boolean;
+      evidence?: Array<{ label: string; value: string; window: string; status: 'available' | 'limited' | 'missing' }>;
+      missingData?: Array<{ label: string; reason: string; action?: string }>;
     }> => request(`/insights?domain=${domain}&days=${days}&refresh=${refresh}`),
   },
 

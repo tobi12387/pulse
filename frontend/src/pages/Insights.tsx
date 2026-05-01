@@ -7,6 +7,9 @@ import { PulseApiError } from '@/pulse/api-client';
 import type { LucideIcon } from 'lucide-react';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
+type EvidenceStatus = 'available' | 'limited' | 'missing';
+type EvidenceItem = { label: string; value: string; window: string; status: EvidenceStatus };
+type MissingDataItem = { label: string; reason: string; action?: string };
 
 const DOMAINS: { key: Domain; label: string; icon: LucideIcon; color: string }[] = [
   { key: 'overall',  label: 'Gesamt',    icon: Activity,   color: 'var(--accent)' },
@@ -42,6 +45,68 @@ function insightErrorState(error: unknown): { title: string; message: string; re
     message: 'Deine Daten bleiben sichtbar. Versuche es gleich erneut oder wechsle auf einen anderen Zeitraum.',
     retryable: true,
   };
+}
+
+function statusLabel(status: EvidenceStatus): string {
+  if (status === 'available') return 'vorhanden';
+  if (status === 'limited') return 'begrenzt';
+  return 'fehlt';
+}
+
+function EvidenceList({ evidence, missingData }: { evidence?: EvidenceItem[]; missingData?: MissingDataItem[] }) {
+  const hasEvidence = Boolean(evidence?.length);
+  const hasMissing = Boolean(missingData?.length);
+
+  if (!hasEvidence && !hasMissing) return null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+      {hasEvidence && (
+        <section aria-label="Datenbasis" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+            Datenbasis
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
+            {evidence!.map(item => (
+              <div key={`${item.label}-${item.window}-${item.value}`} style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{item.label}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: item.status === 'available' ? 'var(--green)' : item.status === 'limited' ? 'var(--amber)' : 'var(--rose)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {statusLabel(item.status)}
+                  </span>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '4px 0 0' }}>{item.value}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', margin: '3px 0 0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{item.window}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {hasMissing && (
+        <section aria-label="Daten fehlen" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--rose)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+            Daten fehlen
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {missingData!.map(item => (
+              <div key={`${item.label}-${item.reason}`} style={{ borderLeft: '2px solid var(--rose)', paddingLeft: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{item.label}</p>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45, margin: '2px 0 0' }}>
+                  {item.reason}
+                </p>
+                {item.action && (
+                  <p style={{ fontSize: 11, color: 'var(--accent)', lineHeight: 1.45, margin: '2px 0 0' }}>
+                    {item.action}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
 }
 
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
@@ -129,6 +194,7 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
                     {data.action}
                   </p>
                 )}
+                <EvidenceList evidence={data.evidence} missingData={data.missingData} />
               </div>
             ) : (
             <>
@@ -151,6 +217,8 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
               <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7 }}>
                 {data.analysis}
               </p>
+
+              <EvidenceList evidence={data.evidence} missingData={data.missingData} />
 
               {/* Footer */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>

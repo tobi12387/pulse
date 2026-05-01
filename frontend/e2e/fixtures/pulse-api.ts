@@ -285,6 +285,11 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       stats: {},
       date: today,
       cached: true,
+      evidence: [
+        { label: 'Trainingsdaten', value: '4 Aktivitäten', window: '30 Tage', status: 'available' },
+        { label: 'Readiness', value: '78/100', window: 'Heute', status: 'available' },
+      ],
+      missingData: [],
     };
   }
   if (pathname === '/api/pulse/profile') {
@@ -355,6 +360,10 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
         status: 'data_missing',
         action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
         retryable: false,
+        evidence: [],
+        missingData: [
+          { label: 'Mental-Check-ins', reason: 'Keine Check-ins im gewählten Zeitraum.' },
+        ],
       });
     }
     if (url.pathname === '/api/pulse/insights' && (options.insightError || options.insightErrorKind === 'server')) {
