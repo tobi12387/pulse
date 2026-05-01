@@ -1,10 +1,36 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateScientificWeekPlan, generateWeekWorkouts, adaptIntensityForReadiness, decidePlanDays } from './plan-engine.js';
+import type { PulsePlanLearningSnapshot, PulsePlanLearningWeek } from '@coaching-os/shared/pulse';
 
 vi.mock('../../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('[]'),
   SMART_MODEL: 'test-model',
 }));
+
+function planLearning(overrides: Partial<PulsePlanLearningWeek> = {}, flags: PulsePlanLearningSnapshot['flags'] = []): PulsePlanLearningSnapshot {
+  const previousWeek = {
+    weekStart: '2026-04-27',
+    plannedSessions: 4,
+    completedSessions: 4,
+    skippedSessions: 0,
+    completionRate: 1,
+    avgComplianceScore: 0.9,
+    avgRpe: 6,
+    sportMix: { bike: { sessions: 3, totalMinutes: 210, totalTss: 180 } },
+    hardDays: [{ date: '2026-04-28', activityType: 'bike', zone: 4, durationMin: 55 }],
+    skippedAvailableDays: [],
+    ...overrides,
+  };
+
+  return {
+    lookbackWeeks: 6,
+    weeks: [previousWeek],
+    previousWeek,
+    learnedFromLastWeek: ['Vorwoche stabil.'],
+    variationComparedToLastWeek: [],
+    flags,
+  };
+}
 
 describe('generateWeekWorkouts', () => {
   it('generates workouts for the week', () => {
@@ -214,6 +240,69 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts.length).toBeLessThan(4);
     expect(workouts.every(w => w.zone <= 2)).toBe(true);
     expect(workouts.map(w => w.description).join(' ')).toContain('Subjektive Ermüdung');
+  });
+
+  it('uses low compliance learning to reduce plan density', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      planLearning: planLearning({
+        completedSessions: 2,
+        completionRate: 0.5,
+        avgComplianceScore: 0.58,
+      }, ['low_compliance', 'low_completion']),
+    });
+
+    expect(workouts).toHaveLength(3);
+  });
+
+  it('moves hard days when previous weeks had the same hard-day pattern', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      planLearning: planLearning({}, ['repeated_hard_pattern']),
+    });
+
+    const hardDates = workouts.filter(w => w.zone >= 4).map(w => w.plannedDate);
+    expect(hardDates.length).toBeGreaterThan(0);
+    expect(hardDates).not.toContain('2026-05-05');
+  });
+
+  it('does not reduce density when learning has history but no actual issue flag', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      planLearning: planLearning({ plannedSessions: 0, completedSessions: 0, completionRate: null }, []),
+    });
+
+    expect(workouts).toHaveLength(4);
   });
 
   it('keeps HR-first descriptions when LLM enrichment returns no items', async () => {

@@ -131,6 +131,35 @@ export interface PulsePlanSportMixEntry {
   totalTss: number;
 }
 
+export type PulsePlanLearningFlag =
+  | 'low_compliance'
+  | 'low_completion'
+  | 'high_rpe_easy'
+  | 'repeated_hard_pattern'
+  | 'missing_history';
+
+export interface PulsePlanLearningWeek {
+  weekStart: string;
+  plannedSessions: number;
+  completedSessions: number;
+  skippedSessions: number;
+  completionRate: number | null;
+  avgComplianceScore: number | null;
+  avgRpe: number | null;
+  sportMix: Record<string, PulsePlanSportMixEntry>;
+  hardDays: Array<{ date: string; activityType: string; zone: number; durationMin: number }>;
+  skippedAvailableDays: number[];
+}
+
+export interface PulsePlanLearningSnapshot {
+  lookbackWeeks: number;
+  weeks: PulsePlanLearningWeek[];
+  previousWeek: PulsePlanLearningWeek | null;
+  learnedFromLastWeek: string[];
+  variationComparedToLastWeek: string[];
+  flags: PulsePlanLearningFlag[];
+}
+
 export interface PulsePlanTrace {
   id: string;
   userId: string;
@@ -161,6 +190,7 @@ export interface PulsePlanTrace {
     rpeReasons: string[];
     dataWarnings: string[];
     recentSportMix: Record<string, PulsePlanSportMixEntry>;
+    learningSnapshot?: PulsePlanLearningSnapshot | null;
   };
   planDecision: PulsePlanDecision;
   sportMix: Record<string, PulsePlanSportMixEntry>;

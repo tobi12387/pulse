@@ -4,6 +4,7 @@ import { buildPlanTrace } from './plan-trace.js';
 describe('buildPlanTrace', () => {
   it('summarizes data inputs, free days, sport mix, and hard days', () => {
     const trace = buildPlanTrace({
+      weekStart: '2026-05-04',
       phase: 'build',
       mesocycleWeek: 2,
       weeklyHoursTarget: 8,
@@ -16,6 +17,36 @@ describe('buildPlanTrace', () => {
       recentActivities: [
         { date: '2026-05-01', activityType: 'bike', durationMin: 60, tss: 45, rpe: 8, plannedZone: 2 },
       ],
+      planLearning: {
+        lookbackWeeks: 6,
+        weeks: [{
+          weekStart: '2026-04-27',
+          plannedSessions: 4,
+          completedSessions: 2,
+          skippedSessions: 1,
+          completionRate: 0.5,
+          avgComplianceScore: 0.62,
+          avgRpe: 8.2,
+          sportMix: { bike: { sessions: 2, totalMinutes: 130, totalTss: 120 } },
+          hardDays: [{ date: '2026-04-30', activityType: 'bike', zone: 4, durationMin: 50 }],
+          skippedAvailableDays: [5],
+        }],
+        previousWeek: {
+          weekStart: '2026-04-27',
+          plannedSessions: 4,
+          completedSessions: 2,
+          skippedSessions: 1,
+          completionRate: 0.5,
+          avgComplianceScore: 0.62,
+          avgRpe: 8.2,
+          sportMix: { bike: { sessions: 2, totalMinutes: 130, totalTss: 120 } },
+          hardDays: [{ date: '2026-04-30', activityType: 'bike', zone: 4, durationMin: 50 }],
+          skippedAvailableDays: [5],
+        },
+        learnedFromLastWeek: ['Compliance lag bei 62%; diese Woche weniger dicht planen.'],
+        variationComparedToLastWeek: [],
+        flags: ['low_compliance'],
+      },
       planDecision: {
         selectedDays: [0, 2, 4],
         skippedAvailableDays: [5],
@@ -38,6 +69,10 @@ describe('buildPlanTrace', () => {
     expect(trace.inputSnapshot.load).toMatchObject({ ctl: 42, atl: 50, tsb: -8 });
     expect(trace.inputSnapshot.riskSignals[0]).toMatchObject({ ruleId: 'sleep_debt_5d', severity: 'warn' });
     expect(trace.inputSnapshot.healthStates[0]).toMatchObject({ type: 'fatigue', severity: 'moderate' });
+    expect(trace.inputSnapshot.learningSnapshot?.learnedFromLastWeek[0]).toContain('Compliance');
+    expect(trace.inputSnapshot.learningSnapshot?.variationComparedToLastWeek.join(' ')).toContain('Harte Tage');
     expect(trace.generatedSummary.join(' ')).toContain('1 verfügbare Tag');
+    expect(trace.generatedSummary.join(' ')).toContain('Gelernt');
+    expect(trace.generatedSummary.join(' ')).toContain('Variation');
   });
 });

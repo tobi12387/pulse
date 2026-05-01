@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Plan-Kalibrierung nutzt persistierte Lern-Snapshots statt Prompt-Hoffnung
+
+- **Decision:** Slice 2 der Everyday Utility Wave fuehrt einen kompakten Plan-Learning-Snapshot ein, der die letzten sechs Wochen aus Plan-Traces, geplanten/abgeschlossenen Workouts, Compliance und RPE verdichtet. `generateScientificWeekPlan()` nutzt diesen Snapshot deterministisch fuer Dichte-Reduktion und Hard-Day-Variation; der persistierte Plan-Trace zeigt zusaetzlich "Gelernt aus letzter Woche" und "Variation".
+- **Why:** Tobis Hauptproblem sind gleichfoermige Plaene trotz Feedback. Reine Prompt-Erweiterungen waeren schwer testbar; ein strukturierter Snapshot macht den Lernpfad sichtbar, wiederverwendbar und in Unit-Tests absicherbar.
+- **Alternatives:** Nur LLM-Prompt um Vorwochenfeedback erweitern (zu wenig deterministisch); neue Plan-Learning-Tabelle einfuehren (mehr Migration/Scope ohne akuten Bedarf, JSONB-Trace reicht); manuelle Todo-/Habit-Logik fuer Planerfuellung bauen (widerspricht Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Garmin Backfill startet begrenzt und synchron aus Coverage
 
 - **Decision:** Slice 1 der Everyday Utility Wave startet mit einem begrenzten `POST /api/pulse/garmin/backfill` Contract: maximal 31 Tage, Dry-Run-Vorschau, sequentielle Tages-Syncs ueber `syncGarminDay()` und Coverage-basierte Skip-Gründe. Die UI bietet Monats-Chunks in Data an; Queue-/Progress-Persistenz bleibt ein moeglicher Folge-Slice, falls reale 31-Tage-Laeufe zu langsam oder zu wenig beobachtbar sind.

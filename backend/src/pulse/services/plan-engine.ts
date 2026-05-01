@@ -1,5 +1,6 @@
 import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
+import type { PulsePlanLearningSnapshot } from '@coaching-os/shared/pulse';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -114,6 +115,28 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
     : `Letzte RPE-Bewertung: ${latest.activityType} am ${latest.date} mit RPE ${latest.rpe}/10.`;
 
   return { blockHard, reduceSessions, reasons, summary };
+}
+
+function hasLearningFlag(learning: PulsePlanLearningSnapshot | null | undefined, flag: PulsePlanLearningSnapshot['flags'][number]): boolean {
+  return learning?.flags.includes(flag) ?? false;
+}
+
+function dayOffsetFromWeekStart(weekStart: string, date: string): number | null {
+  const start = Date.parse(`${weekStart}T00:00:00Z`);
+  const current = Date.parse(`${date}T00:00:00Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(current)) return null;
+  const offset = Math.round((current - start) / 86_400_000);
+  return offset >= 0 && offset <= 6 ? offset : null;
+}
+
+function previousHardDayOffsets(learning: PulsePlanLearningSnapshot | null | undefined): Set<number> {
+  const previousWeek = learning?.previousWeek;
+  if (!previousWeek) return new Set();
+  return new Set(
+    previousWeek.hardDays
+      .map(day => dayOffsetFromWeekStart(previousWeek.weekStart, day.date))
+      .filter((day): day is number => day != null),
+  );
 }
 
 function hrTargetForZone(zone: number, maxHrBpm: number, lthrBpm?: number): string {
@@ -291,14 +314,18 @@ const BASE_DURATION: Record<ActivityType, Record<number, number>> = {
 
 // Polarized: ~20% of sessions are Z4-5, rest Z2.
 // Rules: no hard day first session of the week, no consecutive hard days.
-function selectHardDays(sortedDays: number[], hardCount: number): Set<number> {
+function selectHardDays(sortedDays: number[], hardCount: number, avoidDays = new Set<number>()): Set<number> {
   if (hardCount === 0) return new Set();
 
   const result = new Set<number>();
   // Skip the very first day (recovery from prior week)
   const candidates = sortedDays.slice(1);
+  const orderedCandidates = [
+    ...candidates.filter(day => !avoidDays.has(day)),
+    ...candidates.filter(day => avoidDays.has(day)),
+  ];
 
-  for (const day of candidates) {
+  for (const day of orderedCandidates) {
     if (result.size >= hardCount) break;
     // Ensure at least 1 easy day between hard sessions
     const lastHard = [...result].at(-1) ?? -99;
@@ -306,8 +333,8 @@ function selectHardDays(sortedDays: number[], hardCount: number): Set<number> {
   }
 
   // If we couldn't find enough, relax the gap constraint
-  if (result.size < hardCount && candidates.length > 0) {
-    for (const day of candidates) {
+  if (result.size < hardCount && orderedCandidates.length > 0) {
+    for (const day of orderedCandidates) {
       if (result.size >= hardCount) break;
       result.add(day);
     }
@@ -370,6 +397,7 @@ export function decidePlanDays(params: {
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
+  planLearning?: PulsePlanLearningSnapshot | null | undefined;
 }): PlanDayDecision {
   const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
   const goal = primaryGoal(params.goals);
@@ -412,6 +440,14 @@ export function decidePlanDays(params: {
   if (rpeSafety.reduceSessions) {
     target -= 1;
     reasons.push(rpeSafety.reasons[0] ?? 'RPE-Signal: subjektive Belastung war zuletzt hoch; ein Trainingstag bleibt frei.');
+  }
+
+  if (hasLearningFlag(params.planLearning, 'low_compliance') || hasLearningFlag(params.planLearning, 'low_completion')) {
+    target -= 1;
+    reasons.push('Lernsignal: niedrige Compliance/Completion der Vorwoche, deshalb eine Einheit weniger statt alle Tage zu füllen.');
+  } else if (hasLearningFlag(params.planLearning, 'high_rpe_easy') && !rpeSafety.reduceSessions) {
+    target -= 1;
+    reasons.push('Lernsignal: lockere Einheiten fühlten sich zuletzt hart an; ein verfügbarer Tag bleibt frei.');
   }
 
   const criticalRisk = (params.riskSignals ?? []).find(r => r.severity === 'critical');
@@ -458,6 +494,7 @@ function buildPolarizedWorkouts(params: {
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
+  planLearning?: PulsePlanLearningSnapshot | null | undefined;
 }): WeekWorkout[] {
   const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, goals, riskSignals = [] } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
@@ -472,7 +509,7 @@ function buildPolarizedWorkouts(params: {
   const hardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
     ? 0
     : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
-  const hardDays = selectHardDays(sorted, hardCount);
+  const hardDays = selectHardDays(sorted, hardCount, previousHardDayOffsets(params.planLearning));
 
   const startDate = new Date(weekStart + 'T00:00:00Z');
   const workouts: WeekWorkout[] = [];
@@ -746,6 +783,7 @@ async function enrichDescriptions(
     recentFeedback?: Array<{ date: string; activityType: string; plannedZone: number; plannedDurationMin: number; feedback: string; complianceScore: number }> | undefined;
     recentActivities?: RecentPlanActivity[] | undefined;
     rpeSafety?: RpePlanSafety | undefined;
+    planLearning?: PulsePlanLearningSnapshot | null | undefined;
     healthStates?: ActiveHealthState[] | undefined;
     lthrBpm?: number | undefined;
     races?: Array<{
@@ -817,6 +855,13 @@ async function enrichDescriptions(
       }).join('\n')
     : null;
 
+  const learningStr = ctx.planLearning
+    ? [
+        ...ctx.planLearning.learnedFromLastWeek.map(item => `- gelernt: ${item}`),
+        ...ctx.planLearning.variationComparedToLastWeek.map(item => `- Variation: ${item}`),
+      ].slice(0, 6).join('\n')
+    : null;
+
   const racesStr = (ctx.races ?? []).length > 0
     ? (ctx.races ?? []).slice(0, 3).map(r => {
         const dist = r.distanceKm ? ` ${r.distanceKm}km` : '';
@@ -836,6 +881,7 @@ ATHLETEN-STATUS:
 TRAININGSHISTORIE (letzte 6 Wochen):
   ${historyStr || 'keine Daten'}
 ${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}${healthStr ? `\nGESUNDHEITSSTATUS (HARTE Constraints — diese Daten sind verbindlich):\n${healthStr}\nRegeln: bei illness/severe = Ruhetag; illness/moderate = max Z1 30min; illness/mild = max Z2 60min; injury/* = passende Sportart vermeiden; fatigue = nur Z1–Z2.\n` : ''}${racesStr ? `\nRACES (Plan periodisiert dorthin):\n${racesStr}\nPriorities: A = Saisonhöhepunkt mit 2w Taper; B = wichtig mit 1w Taper; C = Mitnahme ohne Taper. In Race-Week (≤6d): Volumen halbieren, Intensität erhalten, Race-Pace-Workout 3-5d vor Race, Tag -1 = kurzer Aktivierungslauf 15-25min mit kurzen Z3-Pickups.\n` : ''}
+${learningStr ? `\nPLAN-LERNEN (Vorwochenfeedback, verbindlich für Tonalität und Zusatzreize):\n${learningStr}\n` : ''}
 ${rpeStr ? `\nRPE-SIGNATUR (subjektive Belastung, verbindlich für Zusatzreize):\n${rpeStr}\n${ctx.rpeSafety?.summary ? `Safety-Auswertung: ${ctx.rpeSafety.summary}\n` : ''}` : ''}
 DIESE WOCHE: ${workouts.length} Einheiten | Ziel-TSS ${totalTss} | ${easyPct}% extensiv (polarisiertes Modell 80/20)
 ${workoutList}
@@ -885,6 +931,7 @@ export interface ScientificPlanInput {
   recentActivities: RecentPlanActivity[];
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
+  planLearning?: PulsePlanLearningSnapshot | null;
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -925,6 +972,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     goals: input.goals,
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
+    planLearning: input.planLearning,
   });
 
   const rawWorkouts = buildPolarizedWorkouts({
@@ -938,6 +986,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     goals: input.goals,
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
+    planLearning: input.planLearning,
   });
 
   // HARD constraints: filter/cap workouts based on active health states
@@ -977,6 +1026,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
       races: input.races,
       recentActivities: input.recentActivities,
       rpeSafety,
+      planLearning: input.planLearning,
     });
   } catch (err) {
     // Keep deterministic HR-first descriptions if LLM enrichment fails.

@@ -10,7 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/garmin-bounded-backfill`: active local branch for Slice 1 from the everyday utility wave.
+- `codex/plan-feedback-calibration`: active local branch for Slice 2 from the everyday utility wave.
+- `codex/garmin-bounded-backfill`: merged and deployed via PR #48.
+- `codex/roadmap-after-next-wave`: merged and deployed via PR #47.
 - `codex/coach-action-loop`: merged and deployed via PR #46.
 - `codex/garmin-data-trust`: merged and deployed via PR #45.
 - `codex/plan-trust-learning`: merged and deployed via PR #44.
@@ -31,8 +33,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Slice 1 from the everyday utility wave: `codex/garmin-bounded-backfill`.
-- Then start Slice 2: `codex/plan-feedback-calibration`.
+- Merge and deploy Slice 2 from the everyday utility wave: `codex/plan-feedback-calibration`.
+- Then start Slice 3: `codex/action-closure-review`.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
