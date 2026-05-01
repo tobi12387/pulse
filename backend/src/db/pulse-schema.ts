@@ -258,6 +258,25 @@ export const pulseRiskSignals = pgTable('pulse_risk_signals', {
   index('idx_risk_active').on(t.userId, t.status, t.severity),
 ]);
 
+// ─── Action decision closure ────────────────────────────────────────────────
+export const pulseActionDecisions = pgTable('pulse_action_decisions', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  userId:           uuid('user_id').notNull(),
+  source:           varchar('source', { length: 64 }).notNull().default('next_best_action'),
+  sourceId:         varchar('source_id', { length: 255 }),
+  kind:             varchar('kind', { length: 40 }).notNull().default('manual'),
+  title:            text('title').notNull().default(''),
+  status:           varchar('status', { length: 20 }).notNull().default('open'),
+  createdAt:        timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt:       timestamp('resolved_at', { withTimezone: true }),
+  resolutionReason: text('resolution_reason'),
+  targetRoute:      varchar('target_route', { length: 255 }),
+  rawContext:       jsonb('raw_context').$type<Record<string, unknown>>().notNull().default(sql`'{}'::jsonb`),
+}, (t) => [
+  index('idx_action_decisions_user_status').on(t.userId, t.status, t.createdAt),
+  index('idx_action_decisions_user_source').on(t.userId, t.source, t.sourceId),
+]);
+
 // ─── Planned workouts (training plan) ────────────────────────────────────────
 export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   id:                   uuid('id').primaryKey().defaultRandom(),

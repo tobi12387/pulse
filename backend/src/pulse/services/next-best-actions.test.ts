@@ -85,4 +85,26 @@ describe('rankNextBestActions', () => {
 
     expect(actions).not.toContainEqual(expect.objectContaining({ source: 'rpe' }));
   });
+
+  it('filters actions that have already been closed in decision history', () => {
+    const actions = rankNextBestActions(baseInput({
+      todayCheckin: null,
+      actionDecisions: [{
+        id: 'decision-1',
+        userId: 'user-1',
+        source: 'next_best_action',
+        sourceId: 'checkin:/coach:0',
+        kind: 'checkin',
+        title: 'Check-in eintragen',
+        status: 'completed',
+        createdAt: '2026-05-01T07:00:00.000Z',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Check-in gespeichert.',
+        targetRoute: '/coach',
+        rawContext: {},
+      }],
+    }));
+
+    expect(actions).not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
+  });
 });

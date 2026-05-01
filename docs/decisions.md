@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Action Closure startet als explizites Statusmodell
+
+- **Decision:** Pulse fuehrt `pulse_action_decisions` als eigene Action-History ein und kapselt die ersten Statusuebergaenge in einem pure Service `decision-closure.ts`. Next-Best-Actions duerfen dadurch geschlossene oder durch echte Tagesdaten erledigte Aktionen ausblenden, ohne direkt UI-, Push- oder Coach-Memory-Logik zu vermischen.
+- **Why:** Wiederholte Empfehlungen entstehen, wenn Pulse nur Empfehlungen erzeugt, aber deren Abschluss nicht als Datenmodell kennt. Eine kleine, auditierbare Tabelle mit Status, Quelle, Zielroute und Rohkontext ist belastbarer als implizite Prompt-Erinnerung und bleibt spaeter fuer Home, Coach und Push wiederverwendbar.
+- **Alternatives:** Closure nur im Frontend-State halten (geht beim Reload verloren); direkt Home-/Coach-/Push-Flows im selben PR bauen (zu viel Scope); Coach-Memory unsichtbar im LLM-Kontext halten (nicht pruefbar und schwer zu korrigieren).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Decision Closure kommt vor weiterem Breitenwachstum
 
 - **Decision:** Nach Insight Evidence Links wird Pulse zuerst die Decision-Closure-/Coach-Memory-Welle umsetzen: persistierte Action-Zustaende, Home/Coach-Closure-Controls, sichtbare Coach-Praeferenzen und Push-Action-Journeys. Reine Erweiterungen ohne geschlossenen Tagesloop werden nachrangig behandelt.
