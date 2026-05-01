@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/ux-slice-c-plan-decision`: active branch for UI/UX Slice C, covering Plan first-screen training decision and clearer generation constraints.
+- `codex/ux-slice-d-data-settings`: active branch for UI/UX Slice D, covering Data coverage diagnosis and Settings trust states.
 - Recent completed branches:
+- `codex/ux-slice-c-plan-decision`: merged and deployed via PR #64.
 - `codex/ux-slice-b-home-coach`: merged and deployed via PR #63.
 - `codex/ux-slice-a-closeout`: merged and deployed via PR #62.
 - `codex/ux-slice-a-insights`: merged and deployed via PR #61.
@@ -48,8 +49,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy UI/UX Slice C: Plan decision flow.
-- Then implement Data/Settings trust and visual density pass in separate PRs.
+- Merge and deploy UI/UX Slice D: Data/Settings trust.
+- Then implement UI/UX Slice E: visual density pass across navigation, tabstrips and mobile readability.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

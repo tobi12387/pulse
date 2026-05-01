@@ -121,3 +121,97 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await expect(page.getByText('Verfügbarkeit: Mo/Mi/Fr/Sa')).toBeVisible();
   await expect(page.getByText('Umfang: 8 h')).toBeVisible();
 });
+
+test('Data coverage explains status, cause and action before backfill', async ({ page }) => {
+  await mockPulseApi(page, {
+    coverage: {
+      range: { from: '2026-05-01', to: '2026-05-01', days: 1, year: null },
+      summary: {
+        dailyMetricsDays: 0,
+        sleepDays: 1,
+        activityDays: 0,
+        activities: 0,
+        weatherActivities: 0,
+        weightDays: 1,
+        completeDays: 0,
+      },
+      profile: {
+        updatedAt: null,
+        ftpWatts: null,
+        maxHrBpm: 185,
+        lthrBpm: 172,
+        vo2max: 52,
+        missing: ['ftpWatts'],
+      },
+      issues: [],
+      days: [
+        {
+          date: '2026-05-01',
+          dailyMetrics: {
+            status: 'missing',
+            reason: 'not_synced',
+            syncedAt: null,
+            missingFields: ['hrvRmssd'],
+          },
+          sleep: { status: 'present', reason: 'present', durationH: 7.4, hasStages: true, missingFields: [] },
+          activities: { status: 'missing', reason: 'not_recorded', count: 0, weatherCount: 0, missingWeatherCount: 0, missingFields: [] },
+          weight: { status: 'present', reason: 'present', hasBodyComposition: true, missingFields: [] },
+        },
+      ],
+    },
+  });
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Abdeckung' }).click();
+
+  await expect(page.getByText('Coverage Diagnose')).toBeVisible();
+  await expect(page.getByText('Status', { exact: true })).toBeVisible();
+  await expect(page.getByText('Ursache', { exact: true })).toBeVisible();
+  await expect(page.getByText('Aktion', { exact: true })).toBeVisible();
+  await expect(page.getByText('Profil unvollständig')).toBeVisible();
+  await expect(page.getByText('Backfill möglich.').first()).toBeVisible();
+  await expect(page.getByText('Vorschau verändert nichts; Nachladen schreibt Garmin-Daten für den gewählten Monat in Pulse.')).toBeVisible();
+});
+
+test('Settings separates push server, browser and device state', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window.Notification, 'permission', { get: () => 'denied' });
+  });
+
+  await mockPulseApi(page, {
+    pushSettings: {
+      configured: true,
+      publicKey: 'test-vapid-key',
+      topics: {
+        briefing: true,
+        checkin_reminder: true,
+        risk_critical: true,
+      },
+      quietHours: { start: '21:00', end: '07:00' },
+      subscriptions: [
+        {
+          id: 'sub-1',
+          endpoint: 'https://push.example.test/very/long/secret/device/token',
+          deviceLabel: 'MacBook',
+          enabled: true,
+          lastSuccessAt: null,
+          lastErrorAt: null,
+          consecutiveFailures: 0,
+          createdAt: '2026-05-01T08:00:00.000Z',
+          updatedAt: '2026-05-01T08:00:00.000Z',
+        },
+      ],
+    },
+  });
+
+  await page.goto('/settings');
+
+  await expect(page.getByText('BROWSER BLOCKIERT')).toBeVisible();
+  await expect(page.getByText('Server ist bereit, aber dieser Browser erlaubt keine neuen Push-Abos.')).toBeVisible();
+  await expect(page.getByText('bereit').first()).toBeVisible();
+  await expect(page.getByText('denied')).toBeVisible();
+  await expect(page.getByText('1 aktiv')).toBeVisible();
+  await expect(page.getByText('Test sendet an alle aktiven registrierten Geräte.')).toHaveCount(0);
+  await expect(page.getByText('push.example.test · Endpunkt gespeichert')).toBeVisible();
+  await expect(page.getByText('very/long/secret')).toHaveCount(0);
+});

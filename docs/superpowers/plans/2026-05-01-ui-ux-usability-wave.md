@@ -138,7 +138,7 @@ Sie deckt aktuell nicht ab:
 
 ### 4. Plan Decision Flow
 
-**Status:** in progress via `codex/ux-slice-c-plan-decision`.
+**Status:** implemented in PR #64.
 
 - Mobile First Screen im Plan auf "heutige/naechste Trainingsentscheidung" ausrichten.
 - Kraft-Logger in eine eigene Sektion oder einen unteren Tool-Bereich verschieben.
@@ -149,6 +149,8 @@ Sie deckt aktuell nicht ab:
   - Plan-Alternativen sind semantisch klar und testbar.
 
 ### 5. Data & Settings Trust
+
+**Status:** in progress via `codex/ux-slice-d-data-settings`.
 
 - Data Coverage in "Status → Ursache → Aktion" strukturieren.
 - Deaktivierte Backfill-Aktion mit direktem Grund versehen.
