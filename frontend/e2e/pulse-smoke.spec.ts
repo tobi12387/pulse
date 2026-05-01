@@ -3,7 +3,7 @@ import { mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
   { path: '/', label: 'Dashboard', visibleText: 'READINESS' },
-  { path: '/coach', label: 'Coach', visibleText: 'MORNING BRIEFING' },
+  { path: '/coach', label: 'Coach', visibleText: 'TAGESBRIEFING' },
   { path: '/data', label: 'Data', visibleText: 'Schlaf, Metriken & Mental' },
   { path: '/plan', label: 'Plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/insights', label: 'Insights', visibleText: 'Insights' },

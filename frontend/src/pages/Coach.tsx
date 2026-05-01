@@ -196,11 +196,17 @@ function MicButton({ micState, onDone }: {
   );
 }
 
+type PromptGroup = {
+  title: string;
+  hint: string;
+  prompts: string[];
+};
+
 function QuickPrompts({
-  prompts,
+  groups,
   onSelect,
 }: {
-  prompts: string[];
+  groups: PromptGroup[];
   onSelect: (prompt: string) => void;
 }) {
   return (
@@ -225,29 +231,147 @@ function QuickPrompts({
           Tippen bereitet die Frage nur vor. Du entscheidest danach bewusst, ob du sie sendest.
         </p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {prompts.map(prompt => (
-          <button
-            key={prompt}
-            type="button"
-            onClick={() => onSelect(prompt)}
-            style={{
-              width: '100%',
-              padding: '9px 10px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              color: 'var(--text)',
-              fontSize: 12,
-              lineHeight: 1.35,
-              textAlign: 'left',
-              cursor: 'pointer',
-            }}
-          >
-            {prompt}
-          </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {groups.map(group => (
+          <div key={group.title} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {group.title}
+              </div>
+              <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 2 }}>
+                {group.hint}
+              </div>
+            </div>
+            {group.prompts.map(prompt => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => onSelect(prompt)}
+                style={{
+                  width: '100%',
+                  padding: '9px 10px',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  color: 'var(--text)',
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                }}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function readinessBoundary(score: number | null | undefined, tsb: number | null | undefined): string {
+  if (score != null && score < 55) return 'Heute defensiv bleiben: keine harte Intensität erzwingen.';
+  if (score != null && score < 70) return 'Belastung sauber dosieren und harte Spitzen nur bewusst setzen.';
+  if (tsb != null && tsb < -10) return 'Form ist belastet: Umfang oder Intensität nicht zusätzlich ausweiten.';
+  return 'Normal trainieren, aber die Einheit nicht über den Plan hinaus verlängern.';
+}
+
+function DailyBriefingGuide({
+  home,
+  briefing,
+  briefingLoading,
+  onPrompt,
+}: {
+  home: ReturnType<typeof usePulseHome>['data'];
+  briefing: string | undefined;
+  briefingLoading: boolean;
+  onPrompt: (prompt: string) => void;
+}) {
+  const readiness = home?.readiness;
+  const metrics = home?.todayMetrics;
+  const load = home?.fitnessLoad;
+  const nextAction = home?.nextBestActions?.[0] ?? null;
+  const nextWorkout = home?.nextWorkout ?? null;
+  const decision = nextAction
+    ? nextAction.title
+    : nextWorkout
+      ? `${nextWorkout.activityType} · Zone ${nextWorkout.zone} · ${nextWorkout.durationMin} min`
+      : 'Heute bewusst entscheiden, ob Training oder Erholung sinnvoller ist.';
+  const startPrompt = nextWorkout
+    ? `Soll ich ${nextWorkout.activityType} heute wie geplant machen oder anpassen?`
+    : 'Was ist heute aus meinen Daten der sinnvollste nächste Schritt?';
+
+  return (
+    <div className="card" style={{ alignSelf: 'stretch', borderColor: 'rgba(94,230,207,0.24)', padding: '12px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          TAGESBRIEFING
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          {home?.date ?? new Date().toISOString().slice(0, 10)}
+        </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 12 }}>
+        {[
+          {
+            label: 'Lage',
+            value: readiness ? `${readiness.score}/100 · ${readiness.shortLabel ?? readiness.label}` : 'Readiness wird geladen',
+            detail: metrics?.sleepHours != null ? `Schlaf ${metrics.sleepHours.toFixed(1)}h` : 'Metriken werden berücksichtigt',
+          },
+          {
+            label: 'Heutige Grenze',
+            value: readinessBoundary(readiness?.score, load?.tsb),
+            detail: load?.tsb != null ? `TSB ${load.tsb.toFixed(1)}` : 'nach Readiness und Plan',
+          },
+          {
+            label: 'Nächste Entscheidung',
+            value: decision,
+            detail: nextAction?.resolvedBy ?? 'Coach kann die Entscheidung begründen oder anpassen.',
+          },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {item.label}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+              {item.value}
+            </span>
+            <span style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
+              {item.detail}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {briefingLoading ? (
+        <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '0 0 10px' }}>Briefing wird geladen…</p>
+      ) : briefing ? (
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
+          {briefing}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => onPrompt(startPrompt)}
+        style={{
+          width: '100%',
+          padding: '9px 10px',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--accent)',
+          borderRadius: 5,
+          color: 'var(--accent)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        Gespräch damit starten
+      </button>
     </div>
   );
 }
@@ -269,12 +393,33 @@ export default function Coach() {
   const lastMessageTimestamp = historyData?.messages.at(-1)?.timestamp;
   const hasMessages = (historyData?.messages.length ?? 0) > 0;
   const nextWorkout = home?.nextWorkout;
-  const quickPrompts = [
-    nextWorkout
-      ? `Soll ich ${nextWorkout.activityType} am ${new Date(nextWorkout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} wie geplant machen?`
-      : 'Was ist heute die sinnvollste Einheit?',
-    'Warum ist meine Readiness heute so bewertet?',
-    'Was sollte ich heute nicht überziehen?',
+  const quickPromptGroups: PromptGroup[] = [
+    {
+      title: 'Heute entscheiden',
+      hint: 'Was jetzt als Nächstes sinnvoll ist.',
+      prompts: [
+        nextWorkout
+          ? `Soll ich ${nextWorkout.activityType} am ${new Date(nextWorkout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} wie geplant machen?`
+          : 'Was ist heute die sinnvollste Einheit?',
+        'Was sollte ich heute nicht überziehen?',
+      ],
+    },
+    {
+      title: 'Plan anpassen',
+      hint: 'Wenn Alltag, Müdigkeit oder Risiko dazwischenkommen.',
+      prompts: [
+        'Soll ich die Einheit heute kürzer oder leichter machen?',
+        'Wäre ein freier Tag heute sinnvoller?',
+      ],
+    },
+    {
+      title: 'Warum?',
+      hint: 'Daten und Begründung verstehen.',
+      prompts: [
+        'Warum ist meine Readiness heute so bewertet?',
+        'Welche Daten haben den heutigen Vorschlag am stärksten beeinflusst?',
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -333,40 +478,16 @@ export default function Coach() {
           <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>Lade…</p>
         )}
         {!isLoading && !hasMessages && !voiceCard && (
-          briefingLoading ? (
-            <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '32px 0' }}>
-              Briefing wird geladen…
-            </p>
-          ) : briefingData?.briefing ? (
-            <div style={{
-              alignSelf: 'flex-start', maxWidth: '88%',
-              background: 'var(--surface)', border: '1px solid rgba(94,230,207,0.2)',
-              borderRadius: 'var(--radius)', padding: '10px 14px',
-            }}>
-              <div style={{
-                fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)',
-                letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6,
-              }}>
-                MORNING BRIEFING
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.65, margin: 0 }}>
-                {briefingData.briefing}
-              </p>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '24px 0 6px' }}>
-              <p style={{ fontSize: 13, color: 'var(--text)', margin: 0 }}>
-                Womit soll der Coach helfen?
-              </p>
-              <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, margin: '6px 0 0' }}>
-                Schlaf, HRV, Body Battery und Schritte werden fuer die Antwort mit beruecksichtigt.
-              </p>
-            </div>
-          )
+          <DailyBriefingGuide
+            home={home}
+            briefing={briefingData?.briefing}
+            briefingLoading={briefingLoading}
+            onPrompt={setInput}
+          />
         )}
 
         {!isLoading && !hasMessages && !voiceCard && (
-          <QuickPrompts prompts={quickPrompts} onSelect={setInput} />
+          <QuickPrompts groups={quickPromptGroups} onSelect={setInput} />
         )}
 
         {historyData?.messages.map((msg, idx) => (

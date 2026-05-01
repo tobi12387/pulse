@@ -10,7 +10,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/everyday-flow-wave`: active branch creating the next implementation wave plan.
+- `codex/phase1-coach-daily-briefing`: active branch for Everyday Flow Phase 1, Coach-Guided Daily Briefing.
 - Recent completed branches:
 - `codex/ux-wave-closeout`: merged and deployed via PR #67.
 - `codex/ux-slice-e-density`: merged and deployed via PR #66.
@@ -52,8 +52,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy the Everyday Flow Deepening Wave plan.
-- Then implement phases in order: Coach-Guided Daily Briefing, Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.
+- Merge and deploy Phase 1: Coach-Guided Daily Briefing.
+- Then implement phases in order: Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
