@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/ux-usability-plans`: active branch for the UI/UX usability wave plan and browser-audit findings.
+- `codex/ux-slice-a-insights`: active branch for UI/UX Slice A, covering Insights on-demand loading, friendly error states, and usability E2E coverage.
 - Recent completed branches:
+- `codex/ux-usability-plans`: merged and deployed via PR #60.
 - `codex/reliability-wave-closeout`: merged and deployed via PR #58.
 - `codex/bundle-code-splitting`: merged and deployed via PR #57.
 - `codex/deploy-smoke`: merged and deployed via PR #56.
@@ -44,7 +45,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Start UI/UX Usability Wave Slice A: usability E2E foundation plus Insights raw-error guard.
+- Merge and deploy UI/UX Slice A: usability E2E foundation plus Insights raw-error guard.
 - Then implement Home/Coach daily flow, Plan decision flow, Data/Settings trust, and visual density pass in separate PRs.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 

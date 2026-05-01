@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Insights laden Deep-Analysen nur noch auf Nutzeraktion
+
+- **Decision:** Slice A der UI/UX-Welle macht Deep Insights opt-in pro Karte. `useDeepInsight()` akzeptiert ein `enabled`-Flag, Insights-Karten starten geschlossen, und der Backend-Endpoint `/api/pulse/insights` wandelt Generierungsfehler in einen kontrollierten 503 mit nutzbarem Fehlertext statt rohem Serverfehler.
+- **Why:** Der Browser-Audit zeigte einen sichtbaren `Internal Server Error`, obwohl die bestehende E2E-Suite gruen war. On-demand Loading passt zur UI-Anweisung, reduziert unnoetige LLM-/Serverlast und macht Fehler fuer Tobi handlungsfaehig.
+- **Alternatives:** Nur den Fehlertext im Frontend ersetzen (laedt weiter alle Domains automatisch); nur Backend catchen (teure automatische Requests bleiben); Insights komplett deaktivieren (verliert Nutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Naechste Welle priorisiert UI/UX-Usability und echte Interaktionen
 
 - **Decision:** Die naechste aktive Roadmap-Welle ist `docs/superpowers/plans/2026-05-01-ui-ux-usability-wave.md`. Reihenfolge: Usability-Test-Foundation plus Insights-Error-Guard, Home/Coach Daily Flow, Plan Decision Flow, Data/Settings Trust, Visual Density Pass.

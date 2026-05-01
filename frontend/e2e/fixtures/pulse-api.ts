@@ -2,6 +2,11 @@ import type { Page, Route } from '@playwright/test';
 
 const today = '2026-05-01';
 
+type MockPulseApiOptions = {
+  insightError?: boolean;
+  onRequest?: (pathname: string) => void;
+};
+
 const dataStatus = {
   userReady: true,
   profileReady: true,
@@ -239,13 +244,17 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   return { ok: true };
 }
 
-export async function mockPulseApi(page: Page) {
+export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}) {
   await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
 
     if (!url.pathname.startsWith('/api/')) return route.continue();
+    options.onRequest?.(url.pathname);
     if (request.method() === 'OPTIONS') return json(route, {});
+    if (url.pathname === '/api/pulse/insights' && options.insightError) {
+      return json(route, { error: 'Internal Server Error' }, 500);
+    }
     if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams));
     if (url.pathname === '/api/auth/me') return json(route, { id: 'user-1', name: 'Tobi', email: 'tobi@example.test' });
     if (url.pathname === '/api/auth/logout') return json(route, {}, 204);
