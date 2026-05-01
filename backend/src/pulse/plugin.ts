@@ -43,6 +43,7 @@ import { getActiveRaces } from './services/race-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { listMentalThemes } from './services/mental-themes.js';
+import { getMentalLoadOverlay } from './services/mental-load-overlay.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -823,6 +824,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const parsed = Number.parseInt(q.days ?? '90', 10);
     const days = Number.isFinite(parsed) ? Math.min(365, Math.max(30, parsed)) : 90;
     return listMentalThemes(userId, days);
+  });
+
+  // GET /api/pulse/mental/load-overlay?days=56
+  app.get('/mental/load-overlay', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { days?: string };
+    const parsed = Number.parseInt(q.days ?? '56', 10);
+    const days = Number.isFinite(parsed) ? parsed : 56;
+    return getMentalLoadOverlay(userId, days);
   });
 
   // ─── Sleep sessions ───────────────────────────────────────────────────────────

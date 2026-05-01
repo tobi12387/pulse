@@ -157,6 +157,97 @@ export function LineChart({
   );
 }
 
+// ─── MultiSparkLine — shared x-axis, independent y-scales ─────────────────────
+
+export interface SparkSeries {
+  values: (number | null)[];
+  label: string;
+  color: string;
+  yAxis?: 'primary' | 'secondary' | 'tertiary';
+}
+
+export function MultiSparkLine({
+  series,
+  width = 100,
+  height = 120,
+  yAxes,
+  ariaLabel = 'Multi-series chart',
+}: {
+  series: SparkSeries[];
+  width?: number;
+  height?: number;
+  yAxes: Record<'primary' | 'secondary' | 'tertiary', [number, number]>;
+  ariaLabel?: string;
+}) {
+  const maxLength = Math.max(0, ...series.map((item) => item.values.length));
+  const hasData = series.some((item) => item.values.some((value) => value != null));
+  if (maxLength < 2 || !hasData) return <div style={{ height }} />;
+
+  const W = width;
+  const PAD = 4;
+  const H = height - PAD * 2;
+  const toSegments = (item: SparkSeries) => {
+    const axis = yAxes[item.yAxis ?? 'primary'];
+    const [min, max] = axis;
+    const range = max - min || 1;
+    const segments: Array<Array<readonly [number, number]>> = [];
+    let current: Array<readonly [number, number]> = [];
+
+    item.values.forEach((value, index) => {
+      if (value == null) {
+        if (current.length > 0) segments.push(current);
+        current = [];
+        return;
+      }
+      const x = PAD + (index / Math.max(maxLength - 1, 1)) * (W - PAD * 2);
+      const y = PAD + H - ((value - min) / range) * H;
+      current.push([x, Math.max(PAD, Math.min(PAD + H, y))] as const);
+    });
+
+    if (current.length > 0) segments.push(current);
+    return segments;
+  };
+
+  return (
+    <svg role="img" aria-label={ariaLabel} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" width="100%" height={height}>
+      {[0.25, 0.5, 0.75].map((ratio) => (
+        <line
+          key={ratio}
+          x1={PAD}
+          x2={W - PAD}
+          y1={PAD + H * ratio}
+          y2={PAD + H * ratio}
+          stroke="var(--border)"
+          strokeWidth={0.5}
+          opacity={0.7}
+        />
+      ))}
+      {series.map((item) => {
+        const segments = toSegments(item);
+        return segments.map((segment, index) => {
+          if (segment.length === 1) {
+            const [x, y] = segment[0]!;
+            return <circle key={`${item.label}-${index}`} cx={x} cy={y} r={1.9} fill={item.color} />;
+          }
+
+          const path = segment.map(([x, y], pointIndex) => `${pointIndex === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+          return (
+            <path
+              key={`${item.label}-${index}`}
+              d={path}
+              fill="none"
+              stroke={item.color}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          );
+        });
+      })}
+    </svg>
+  );
+}
+
 interface SparkBarProps {
   values: (number | null)[];
   height?: number;

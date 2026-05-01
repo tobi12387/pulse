@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
+import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 
@@ -137,6 +138,8 @@ export default function Insights() {
       <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
         KI-Analyse deiner Gesundheits- und Trainingsdaten. Tippe auf eine Karte um die Analyse zu laden.
       </p>
+
+      <MentalLoadOverlay />
 
       {/* Domain cards */}
       {DOMAINS.map(d => (

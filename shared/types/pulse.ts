@@ -286,6 +286,29 @@ export interface PulseFitnessLoad {
   date: string;
 }
 
+export interface PulseFitnessLoadPoint extends PulseFitnessLoad {
+  tss: number;
+}
+
+export interface PulseMentalLoadOverlayPoint extends PulseFitnessLoadPoint {
+  mood: number | null;
+  energy: number | null;
+  stress: number | null;
+  motivation: number | null;
+}
+
+export interface PulseMentalLoadOverlayResponse {
+  days: number;
+  points: PulseMentalLoadOverlayPoint[];
+  stats: {
+    checkins: number;
+    avgMood: number | null;
+    avgStress: number | null;
+    moodTsbCorrelation: number | null;
+    lowTsbCheckins: number;
+  };
+}
+
 export interface PulseStreaks {
   checkinStreakDays: number;
   workoutStreakDays: number;

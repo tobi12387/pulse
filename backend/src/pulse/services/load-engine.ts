@@ -1,7 +1,7 @@
 import { db } from '../../lib/db.js';
 import { pulseActivities, pulseUserProfile } from '../../db/pulse-schema.js';
 import { eq, gte, and } from 'drizzle-orm';
-import type { PulseReadiness, PulseFitnessLoad } from '@coaching-os/shared/pulse';
+import type { PulseReadiness, PulseFitnessLoad, PulseFitnessLoadPoint } from '@coaching-os/shared/pulse';
 import { HRV_STATUS_MAP, READINESS_BUCKETS, bucketize } from '@coaching-os/shared/pulse-thresholds';
 
 // ─── TSS Computation ──────────────────────────────────────────────────────────
@@ -61,7 +61,29 @@ function dateStr(daysAgo: number, from: Date): string {
   return d.toISOString().split('T')[0]!;
 }
 
-export async function computeFitnessLoad(userId: string, referenceDate: string): Promise<PulseFitnessLoad> {
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+export function buildFitnessLoadSeriesFromDailyTss(dailyTss: Array<{ date: string; tss: number }>): PulseFitnessLoadPoint[] {
+  const values = dailyTss.map((day) => day.tss);
+  const ctlSeries = applyEma(values, 42);
+  const atlSeries = applyEma(values, 7);
+
+  return dailyTss.map((day, index) => {
+    const ctl = round1(ctlSeries[index] ?? 0);
+    const atl = round1(atlSeries[index] ?? 0);
+    return {
+      date: day.date,
+      tss: round1(day.tss),
+      ctl,
+      atl,
+      tsb: round1(ctl - atl),
+    };
+  });
+}
+
+export async function computeFitnessLoadSeries(userId: string, referenceDate: string, days = 56): Promise<PulseFitnessLoadPoint[]> {
   const [profile] = await db.select({
     ftpWatts: pulseUserProfile.ftpWatts,
     maxHrBpm: pulseUserProfile.maxHrBpm,
@@ -71,7 +93,10 @@ export async function computeFitnessLoad(userId: string, referenceDate: string):
   const maxHrBpm = profile?.maxHrBpm ?? 185;
 
   const refDate = new Date(referenceDate);
-  const since = dateStr(60, refDate);
+  const visibleDays = Math.min(180, Math.max(1, days));
+  const warmupDays = 59;
+  const totalDays = visibleDays + warmupDays;
+  const since = dateStr(totalDays - 1, refDate);
 
   const activities = await db.select({
     startTime: pulseActivities.startTime,
@@ -103,19 +128,21 @@ export async function computeFitnessLoad(userId: string, referenceDate: string):
     tssPerDay[day] = (tssPerDay[day] ?? 0) + tss;
   }
 
-  // Fill 60-day array (oldest first)
-  const dailyTss: number[] = [];
-  for (let i = 59; i >= 0; i--) {
+  // Fill oldest first with enough warm-up history for stable CTL/ATL.
+  const dailyTss: Array<{ date: string; tss: number }> = [];
+  for (let i = totalDays - 1; i >= 0; i--) {
     const day = dateStr(i, refDate);
-    dailyTss.push(tssPerDay[day] ?? 0);
+    dailyTss.push({ date: day, tss: tssPerDay[day] ?? 0 });
   }
 
-  const ctlSeries = applyEma(dailyTss, 42);
-  const atlSeries = applyEma(dailyTss, 7);
+  return buildFitnessLoadSeriesFromDailyTss(dailyTss).slice(-visibleDays);
+}
 
-  const ctl = Math.round((ctlSeries.at(-1) ?? 0) * 10) / 10;
-  const atl = Math.round((atlSeries.at(-1) ?? 0) * 10) / 10;
-  const tsb = Math.round((ctl - atl) * 10) / 10;
+export async function computeFitnessLoad(userId: string, referenceDate: string): Promise<PulseFitnessLoad> {
+  const latest = (await computeFitnessLoadSeries(userId, referenceDate, 1)).at(-1);
+  const ctl = latest?.ctl ?? 0;
+  const atl = latest?.atl ?? 0;
+  const tsb = latest?.tsb ?? 0;
 
   return { ctl, atl, tsb, date: referenceDate };
 }
