@@ -379,6 +379,56 @@ export interface PulseDataStatus {
   };
 }
 
+export type PulseDataCoverageReason =
+  | 'present'
+  | 'partial'
+  | 'not_synced'
+  | 'not_synced_yet'
+  | 'not_recorded'
+  | 'garmin_unavailable';
+
+export interface PulseDataCoverageDomain {
+  status: 'present' | 'partial' | 'missing';
+  reason: PulseDataCoverageReason;
+  count?: number;
+  missingFields?: string[];
+}
+
+export interface PulseDataCoverageDay {
+  date: string;
+  dailyMetrics: PulseDataCoverageDomain & { syncedAt: string | null };
+  sleep: PulseDataCoverageDomain & { durationH: number | null; hasStages: boolean };
+  activities: PulseDataCoverageDomain & { count: number; weatherCount: number; missingWeatherCount: number };
+  weight: PulseDataCoverageDomain & { hasBodyComposition: boolean };
+}
+
+export interface PulseDataCoverageResponse {
+  range: {
+    from: string;
+    to: string;
+    days: number;
+    year: number | null;
+  };
+  summary: {
+    dailyMetricsDays: number;
+    sleepDays: number;
+    activityDays: number;
+    activities: number;
+    weatherActivities: number;
+    weightDays: number;
+    completeDays: number;
+  };
+  profile: {
+    updatedAt: string | null;
+    ftpWatts: number | null;
+    maxHrBpm: number | null;
+    lthrBpm: number | null;
+    vo2max: number | null;
+    missing: Array<'ftpWatts' | 'maxHrBpm' | 'lthrBpm' | 'vo2max'>;
+  };
+  days: PulseDataCoverageDay[];
+}
+
 export type PushTopic = 'briefing' | 'checkin_reminder' | 'risk_critical';
 
 export type PulsePushTopics = Record<PushTopic, boolean>;

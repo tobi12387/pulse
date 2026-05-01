@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, useCheckinToday,
-  usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
+  useDataCoverage, usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
+import type { PulseDataCoverageDay, PulseDataCoverageDomain } from '@coaching-os/shared/pulse';
 
-type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
+type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -82,6 +83,155 @@ function Loading({ rows = 4 }: { rows?: number }) {
 function Empty({ msg }: { msg: string }) {
   return (
     <p style={{ color: 'var(--text-3)', fontSize: 12 }} className="py-6 text-center">{msg}</p>
+  );
+}
+
+// ─── Abdeckung ───────────────────────────────────────────────────────────────
+
+const COVERAGE_STATUS: Record<PulseDataCoverageDay['dailyMetrics']['status'], { label: string; color: string }> = {
+  present: { label: 'OK', color: 'var(--green)' },
+  partial: { label: 'TEIL', color: 'var(--amber)' },
+  missing: { label: 'FEHLT', color: 'var(--rose)' },
+};
+
+const COVERAGE_REASON: Record<string, string> = {
+  present: 'vorhanden',
+  partial: 'teilweise',
+  not_synced: 'nicht synchronisiert',
+  not_synced_yet: 'heute noch nicht synchronisiert',
+  not_recorded: 'nicht vorhanden',
+  garmin_unavailable: 'Garmin liefert nicht',
+};
+
+function CoveragePill({ status, children }: { status: PulseDataCoverageDay['dailyMetrics']['status']; children?: React.ReactNode }) {
+  const item = COVERAGE_STATUS[status];
+  return (
+    <span style={{
+      fontFamily: 'var(--font-mono)', fontSize: 9, color: item.color,
+      border: `1px solid ${item.color}`, borderRadius: 4, padding: '2px 6px',
+      whiteSpace: 'nowrap',
+    }}>
+      {children ?? item.label}
+    </span>
+  );
+}
+
+function CoverageMetric({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="card" style={{ padding: '10px 12px' }}>
+      <span className="label-mono">{label}</span>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--text)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
+  const detail = domain.missingFields && domain.missingFields.length > 0
+    ? ` · ${domain.missingFields.join(', ')}`
+    : '';
+  return (
+    <td style={{ padding: '7px 10px', textAlign: 'right' }}>
+      <CoveragePill status={domain.status} />
+      <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3 }}>
+        {COVERAGE_REASON[domain.reason] ?? domain.reason}{detail}
+      </div>
+    </td>
+  );
+}
+
+function CoverageTab() {
+  const currentYear = new Date().getFullYear();
+  const [range, setRange] = useState<'30' | '90' | 'year'>('30');
+  const coverage = useDataCoverage(range === 'year' ? { year: currentYear } : { days: Number(range) });
+
+  if (coverage.isLoading) return <Loading rows={3} />;
+  if (coverage.error) return <Empty msg={coverage.error.message} />;
+
+  const data = coverage.data;
+  if (!data) return <Empty msg="Keine Abdeckungsdaten." />;
+  const profileReady = data.profile.missing.length === 0;
+  const shownDays = data.days.slice(0, 31);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {data.range.from} bis {data.range.to}
+        </span>
+        <RangePicker
+          value={range === 'year' ? currentYear : Number(range)}
+          onChange={v => setRange(v === currentYear ? 'year' : String(v) as '30' | '90')}
+          options={[
+            { value: 30, label: '30T' },
+            { value: 90, label: '90T' },
+            { value: currentYear, label: String(currentYear) },
+          ]}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 8 }}>
+        <CoverageMetric label="Tagesmetriken" value={`${data.summary.dailyMetricsDays}/${data.range.days}`} />
+        <CoverageMetric label="Schlaf" value={`${data.summary.sleepDays}/${data.range.days}`} />
+        <CoverageMetric label="Aktivitäten" value={String(data.summary.activities)} sub={`${data.summary.activityDays} Tage`} />
+        <CoverageMetric label="Wetter" value={`${data.summary.weatherActivities}/${data.summary.activities}`} />
+        <CoverageMetric label="Gewicht" value={`${data.summary.weightDays}/${data.range.days}`} />
+        <CoverageMetric label="Profil" value={profileReady ? 'OK' : `${data.profile.missing.length} fehlt`} sub={data.profile.updatedAt ? new Date(data.profile.updatedAt).toLocaleDateString('de-DE') : undefined} />
+      </div>
+
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px 8px' }}>
+          <span className="label-mono">Domain-Abdeckung</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+            {shownDays.length} Tage
+          </span>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'var(--surface-2)', borderTop: '1px solid var(--border)' }}>
+              {['Datum', 'Metriken', 'Schlaf', 'Aktivität', 'Gewicht'].map(h => (
+                <th key={h} style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: 'var(--text-3)', fontWeight: 400,
+                  padding: '6px 10px', textAlign: h === 'Datum' ? 'left' : 'right',
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shownDays.map((day, i) => (
+              <tr key={day.date} style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                <td style={{ padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>{day.date}</td>
+                <CoverageCell domain={day.dailyMetrics} />
+                <CoverageCell domain={day.sleep} />
+                <td style={{ padding: '7px 10px', textAlign: 'right' }}>
+                  <CoveragePill status={day.activities.status}>{day.activities.count > 0 ? `${day.activities.count}x` : undefined}</CoveragePill>
+                  <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3 }}>
+                    {day.activities.count > 0 && day.activities.missingWeatherCount > 0
+                      ? `${day.activities.missingWeatherCount} ohne Wetter`
+                      : COVERAGE_REASON[day.activities.reason] ?? day.activities.reason}
+                  </div>
+                </td>
+                <CoverageCell domain={day.weight} />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {!profileReady && (
+        <div className="card" style={{ borderColor: 'rgba(245,158,11,0.28)' }}>
+          <span className="label-mono" style={{ color: 'var(--amber)' }}>Profilwerte fehlen</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+            {data.profile.missing.map(item => (
+              <span key={item} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--amber)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 4, padding: '3px 7px' }}>
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -599,6 +749,7 @@ function MentalTab() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TABS = [
+  { id: 'abdeckung', label: 'Abdeckung' },
   { id: 'schlaf',   label: 'Schlaf'   },
   { id: 'metriken', label: 'Metriken' },
   { id: 'gewicht',  label: 'Gewicht'  },
@@ -606,7 +757,7 @@ const TABS = [
 ];
 
 export default function Data() {
-  const [tab, setTab] = useState<Tab>('schlaf');
+  const [tab, setTab] = useState<Tab>('abdeckung');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -615,6 +766,7 @@ export default function Data() {
         <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Schlaf, Metriken & Mental</h1>
       </div>
       <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
+      {tab === 'abdeckung'   && <CoverageTab />}
       {tab === 'schlaf'      && <SchlafTab />}
       {tab === 'metriken'    && <MetrikenTab />}
       {tab === 'gewicht'     && <GewichtTab />}

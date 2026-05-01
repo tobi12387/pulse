@@ -2,7 +2,18 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
-import { pulseCoachSessions, pulseMentalCheckins, pulsePlanGenerations, pulsePlannedWorkouts, pulsePushSubscriptions, pulseUserProfile } from '../db/pulse-schema.js';
+import {
+  pulseActivities,
+  pulseCoachSessions,
+  pulseDailyMetrics,
+  pulseMentalCheckins,
+  pulsePlanGenerations,
+  pulsePlannedWorkouts,
+  pulsePushSubscriptions,
+  pulseSleepSessions,
+  pulseUserProfile,
+  pulseWeightLog,
+} from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
@@ -87,6 +98,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (userId) {
+    await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
+    await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
+    await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
+    await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
     await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
     await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
     await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
@@ -99,6 +114,10 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
+  await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
+  await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
+  await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
   await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
   await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
   await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
@@ -500,6 +519,74 @@ describe('GET /api/pulse/activities', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toHaveProperty('activities');
+  });
+});
+
+describe('GET /api/pulse/data-coverage', () => {
+  it('reports daily domain coverage and profile gaps', async () => {
+    const yesterday = dateDaysAgo(1);
+    await db.insert(pulseDailyMetrics).values({
+      userId,
+      date: yesterday,
+      hrvRmssd: 42,
+      restingHr: 48,
+      sleepHours: 7.2,
+      bodyBatteryMax: 86,
+      stressAvg: 21,
+      steps: 11_200,
+      source: 'garmin',
+      syncedAt: new Date(),
+    });
+    await db.insert(pulseSleepSessions).values({
+      userId,
+      date: yesterday,
+      durationH: 7.2,
+      deepSleepH: 1.1,
+      remSleepH: 1.4,
+      lightSleepH: 4.3,
+      awakeH: 0.4,
+      source: 'garmin',
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'run',
+      durationSec: 2400,
+      weather: { tempC: 12 },
+    });
+    await db.insert(pulseWeightLog).values({
+      userId,
+      date: yesterday,
+      weightKg: 78.4,
+      source: 'garmin',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/data-coverage?days=2',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      range: { days: number };
+      summary: { dailyMetricsDays: number; sleepDays: number; activities: number; weatherActivities: number; weightDays: number };
+      profile: { missing: string[] };
+      days: Array<{ date: string; dailyMetrics: { status: string }; activities: { count: number; weatherCount: number } }>;
+    }>();
+    expect(body.range.days).toBe(2);
+    expect(body.summary).toMatchObject({
+      dailyMetricsDays: 1,
+      sleepDays: 1,
+      activities: 1,
+      weatherActivities: 1,
+      weightDays: 1,
+    });
+    expect(body.profile.missing).toContain('ftpWatts');
+    expect(body.days.find(day => day.date === yesterday)).toMatchObject({
+      dailyMetrics: { status: 'present' },
+      activities: { count: 1, weatherCount: 1 },
+    });
   });
 });
 

@@ -4,7 +4,7 @@ import {
   usePulseProfile, useUpdateProfile, pulseKeys,
   useHealthStates, useCreateHealthState, useResolveHealthState, useDeleteHealthState,
   usePushSettings, usePushSubscribe, usePushUnsubscribe, useUpdatePushTopics,
-  useUpdatePushQuietHours, useSendTestPush,
+  useUpdatePushQuietHours, useSendTestPush, useDataCoverage,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
@@ -45,6 +45,7 @@ export default function Settings() {
 
   const qc = useQueryClient();
   const { data: profile } = usePulseProfile();
+  const { data: coverage30 } = useDataCoverage({ days: 30 });
   const updateProfile = useUpdateProfile();
 
   const [profileForm, setProfileForm] = useState<{
@@ -280,6 +281,24 @@ export default function Settings() {
                 {new Date(garminStatus.lastSync).toLocaleString('de-DE')}
               </span>
             </Row>
+          )}
+          {coverage30 && (
+            <>
+              <Row label="Metriken 30T">
+                <Val>{coverage30.summary.dailyMetricsDays}/{coverage30.range.days}</Val>
+              </Row>
+              <Row label="Schlaf 30T">
+                <Val>{coverage30.summary.sleepDays}/{coverage30.range.days}</Val>
+              </Row>
+              <Row label="Aktivität/Wetter">
+                <Val>{coverage30.summary.activities} / {coverage30.summary.weatherActivities}</Val>
+              </Row>
+              <Row label="Profilstatus">
+                <Pill color={coverage30.profile.missing.length === 0 ? 'var(--green)' : 'var(--amber)'}>
+                  {coverage30.profile.missing.length === 0 ? 'VOLLSTÄNDIG' : `${coverage30.profile.missing.length} FEHLT`}
+                </Pill>
+              </Row>
+            </>
           )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>

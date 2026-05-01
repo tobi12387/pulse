@@ -34,6 +34,7 @@ export const pulseKeys = {
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
   syncStatus:       ['pulse', 'sync-status'] as const,
+  dataCoverage:     (scope: string) => ['pulse', 'data-coverage', scope] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
   strengthSessions: (days: number, exercise: string | null) =>
     ['pulse', 'strength', 'sessions', days, exercise] as const,
@@ -345,6 +346,15 @@ export function useGarminStatus() {
     queryFn: pulseApi.garmin.status,
     staleTime: 60_000,
     refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useDataCoverage(params: { days?: number; year?: number } = { days: 30 }) {
+  const scope = params.year != null ? `year-${params.year}` : `days-${params.days ?? 30}`;
+  return useQuery({
+    queryKey: pulseKeys.dataCoverage(scope),
+    queryFn: () => pulseApi.garmin.coverage(params),
+    staleTime: 5 * 60_000,
   });
 }
 
