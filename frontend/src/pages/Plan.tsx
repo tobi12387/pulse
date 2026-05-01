@@ -9,6 +9,7 @@ import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { StrengthLogger } from '@/components/StrengthLogger';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
+import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import type { PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
@@ -21,30 +22,11 @@ const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
 };
 
-// ─── Shared ───────────────────────────────────────────────────────────────────
-
-function TabBar({ tabs, active, onChange }: {
-  tabs: { id: string; label: string }[];
-  active: string;
-  onChange: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, alignSelf: 'flex-start', maxWidth: '100%' }}>
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => onChange(t.id)} style={{
-          flex: '0 0 auto',
-          padding: '6px 8px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 0,
-          background: active === t.id ? 'var(--surface-2)' : 'transparent',
-          color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
-          borderRadius: 3, textTransform: 'uppercase', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-          transition: 'background 0.12s, color 0.12s',
-        }}>
-          {t.label}
-        </button>
-      ))}
-    </div>
-  );
+function translucent(color: string, percent: number) {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
 
 function Loading({ rows = 3 }: { rows?: number }) {
   return (
@@ -359,7 +341,7 @@ function AvailabilityEditor() {
                     return (
                       <button key={i} onClick={() => toggleDay(weekStart, i)} style={{
                         flex: 1, padding: '6px 0', border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                        borderRadius: 3, background: active ? 'var(--accent)22' : 'var(--surface)',
+                        borderRadius: 3, background: active ? translucent('var(--accent)', 13) : 'var(--surface)',
                         fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.06em',
                         color: active ? 'var(--accent)' : 'var(--text-3)', cursor: 'pointer',
                       }}>{label}</button>
@@ -470,7 +452,7 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
             <button key={t} onClick={() => handleTypeChange(t)} disabled={update.isPending} style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase',
               padding: '4px 10px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
-              borderRadius: 3, background: t === w.activityType ? 'var(--accent)18' : 'transparent',
+              borderRadius: 3, background: t === w.activityType ? translucent('var(--accent)', 9) : 'transparent',
               color: t === w.activityType ? 'var(--accent)' : 'var(--text-2)', cursor: 'pointer',
             }}>{ACTIVITY_LABEL[t]}</button>
           ))}
@@ -900,12 +882,12 @@ const STATUS_COLOR: Record<string, string> = {
   abandoned: 'var(--rose)',
 };
 
-const GOAL_CATEGORIES: { id: GoalCategory; label: string; icon: string; color: string }[] = [
-  { id: 'race',   label: 'Wettkampf', icon: '🏁', color: 'var(--rose)' },
-  { id: 'weight', label: 'Gewicht',   icon: '⚖️',  color: 'var(--blue)' },
-  { id: 'ftp',    label: 'FTP',       icon: '⚡',  color: 'var(--amber)' },
-  { id: 'vo2max', label: 'VO2max',    icon: '🫁',  color: 'var(--green)' },
-  { id: 'volume', label: 'Volumen',   icon: '📈',  color: 'var(--accent)' },
+const GOAL_CATEGORIES: { id: GoalCategory; label: string; color: string }[] = [
+  { id: 'race',   label: 'Wettkampf', color: 'var(--rose)' },
+  { id: 'weight', label: 'Gewicht',   color: 'var(--blue)' },
+  { id: 'ftp',    label: 'FTP',       color: 'var(--amber)' },
+  { id: 'vo2max', label: 'VO2max',    color: 'var(--green)' },
+  { id: 'volume', label: 'Volumen',   color: 'var(--accent)' },
 ];
 
 const RACE_TYPES = [
@@ -1020,7 +1002,7 @@ function GoalForm({ onDone }: { onDone: () => void }) {
             {GOAL_CATEGORIES.map(cat => (
               <button key={cat.id} type="button" onClick={() => { setCategory(cat.id); setFields(f => ({ ...f, category: cat.id })); }} style={{
                 padding: '6px 12px', border: `1px solid ${category === cat.id ? cat.color : 'var(--border)'}`,
-                borderRadius: 4, background: category === cat.id ? cat.color + '18' : 'var(--surface)',
+                borderRadius: 4, background: category === cat.id ? translucent(cat.color, 9) : 'var(--surface)',
                 color: category === cat.id ? cat.color : 'var(--text-2)',
                 fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.08em', cursor: 'pointer',
               }}>
@@ -1149,7 +1131,7 @@ function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string |
   }
 
   return (
-    <div className="card" style={{ border: '1px solid var(--accent)33' }}>
+    <div className="card" style={{ border: `1px solid ${translucent('var(--accent)', 20)}` }}>
       <div className="label-mono" style={{ marginBottom: 12 }}>Ziel bearbeiten</div>
       <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
@@ -1158,7 +1140,7 @@ function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string |
             {GOAL_CATEGORIES.map(cat => (
               <button key={cat.id} type="button" onClick={() => { setCategory(cat.id); setFields(f => ({ ...f, category: cat.id })); }} style={{
                 padding: '6px 12px', border: `1px solid ${category === cat.id ? cat.color : 'var(--border)'}`,
-                borderRadius: 4, background: category === cat.id ? cat.color + '18' : 'var(--surface)',
+                borderRadius: 4, background: category === cat.id ? translucent(cat.color, 9) : 'var(--surface)',
                 color: category === cat.id ? cat.color : 'var(--text-2)',
                 fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.08em', cursor: 'pointer',
               }}>{cat.label}</button>
@@ -1191,7 +1173,7 @@ function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string |
             {(['active','paused','completed','abandoned'] as const).map(s => (
               <button key={s} type="button" onClick={() => setStatus(s)} style={{
                 padding: '5px 10px', border: `1px solid ${status === s ? (STATUS_COLOR[s] ?? 'var(--border)') : 'var(--border)'}`,
-                borderRadius: 4, background: status === s ? (STATUS_COLOR[s] ?? 'var(--surface)') + '22' : 'var(--surface)',
+                borderRadius: 4, background: status === s ? translucent(STATUS_COLOR[s] ?? 'var(--surface)', 13) : 'var(--surface)',
                 color: status === s ? (STATUS_COLOR[s] ?? 'var(--text)') : 'var(--text-3)',
                 fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer',
               }}>{s}</button>
@@ -1241,7 +1223,7 @@ function GoalCard({ g }: { g: { id: string; title: string; description: string |
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
             {cat && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', color: catColor, background: catColor + '18', padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', color: catColor, background: translucent(catColor, 9), padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase' }}>
                 {GOAL_CATEGORIES.find(c => c.id === cat)?.label}
               </span>
             )}
@@ -1253,10 +1235,10 @@ function GoalCard({ g }: { g: { id: string; title: string; description: string |
         <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 12 }}>
           <button style={actionBtn} onClick={() => setEditing(true)}>Bearbeiten</button>
           {!confirmDelete
-            ? <button style={{ ...actionBtn, color: 'var(--rose)', borderColor: 'var(--rose)33' }} onClick={() => setConfirmDelete(true)}>Löschen</button>
+            ? <button style={{ ...actionBtn, color: 'var(--rose)', borderColor: translucent('var(--rose)', 20) }} onClick={() => setConfirmDelete(true)}>Löschen</button>
             : <>
                 <button
-                  style={{ ...actionBtn, color: 'var(--rose)', borderColor: 'var(--rose)', background: 'var(--rose)11' }}
+                  style={{ ...actionBtn, color: 'var(--rose)', borderColor: 'var(--rose)', background: translucent('var(--rose)', 7) }}
                   onClick={() => {
                     setDeleteError(null);
                     deleteGoal.mutate(g.id, {
@@ -1448,19 +1430,7 @@ function RangePicker({ value, onChange, options }: {
   value: number; onChange: (v: number) => void;
   options: { value: number; label: string }[];
 }) {
-  return (
-    <div style={{ display: 'flex', gap: 4 }}>
-      {options.map(o => (
-        <button key={o.value} onClick={() => onChange(o.value)} style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 10px', borderRadius: 4, letterSpacing: '0.1em',
-          background: value === o.value ? 'var(--surface-2)' : 'transparent',
-          color: value === o.value ? 'var(--text)' : 'var(--text-3)',
-          border: '1px solid ' + (value === o.value ? 'var(--border)' : 'transparent'),
-          cursor: 'pointer',
-        }}>{o.label}</button>
-      ))}
-    </div>
-  );
+  return <RangeControl value={value} onChange={onChange} options={options} />;
 }
 
 function rpeDriftLabel(drift: number | null): string {
@@ -1838,13 +1808,11 @@ export default function Plan() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 3 }}>PLAN</div>
-          <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Training, Ziele & Statistik</h1>
-        </div>
-        <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
-      </div>
+      <PageHeader
+        eyebrow="PLAN"
+        title="Training, Ziele & Statistik"
+        action={<SegmentedControl items={TABS} active={tab} onChange={id => setTab(id as Tab)} />}
+      />
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}
       {tab === 'review'   && <ReviewTab />}

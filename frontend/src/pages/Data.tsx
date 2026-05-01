@@ -7,6 +7,7 @@ import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
+import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
@@ -18,54 +19,12 @@ function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
-function TabBar({ tabs, active, onChange }: {
-  tabs: { id: string; label: string }[];
-  active: string;
-  onChange: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, alignSelf: 'flex-start', maxWidth: '100%' }}>
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => onChange(t.id)} style={{
-          flex: '0 0 auto',
-          padding: '6px 8px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 0,
-          background: active === t.id ? 'var(--surface-2)' : 'transparent',
-          color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
-          borderRadius: 3, textTransform: 'uppercase', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-          transition: 'background 0.12s, color 0.12s',
-        }}>
-          {t.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function RangePicker({ value, onChange, options }: {
   value: number;
   onChange: (v: number) => void;
   options: { value: number; label: string }[];
 }) {
-  return (
-    <div style={{ display: 'flex', gap: 4 }}>
-      {options.map(o => (
-        <button
-          key={o.value}
-          onClick={() => onChange(o.value)}
-          style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 10px',
-            borderRadius: 4, letterSpacing: '0.1em',
-            background: value === o.value ? 'var(--surface-2)' : 'transparent',
-            color: value === o.value ? 'var(--text)' : 'var(--text-3)',
-            border: '1px solid ' + (value === o.value ? 'var(--border)' : 'transparent'),
-            cursor: 'pointer',
-          }}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
+  return <RangeControl value={value} onChange={onChange} options={options} />;
 }
 
 function Loading({ rows = 4 }: { rows?: number }) {
@@ -1076,11 +1035,8 @@ export default function Data() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 3 }}>DATA</div>
-        <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Schlaf, Metriken & Mental</h1>
-      </div>
-      <TabBar tabs={TABS} active={tab} onChange={id => setTab(id as Tab)} />
+      <PageHeader eyebrow="DATA" title="Schlaf, Metriken & Mental" />
+      <SegmentedControl items={TABS} active={tab} onChange={id => setTab(id as Tab)} />
       {tab === 'abdeckung'   && <CoverageTab />}
       {tab === 'schlaf'      && <SchlafTab />}
       {tab === 'metriken'    && <MetrikenTab />}

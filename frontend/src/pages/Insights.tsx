@@ -1,19 +1,23 @@
 import { useState } from 'react';
+import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
+import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
+import type { LucideIcon } from 'lucide-react';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 
-const DOMAINS: { key: Domain; label: string; emoji: string; color: string }[] = [
-  { key: 'overall',  label: 'Gesamt',    emoji: '⚡', color: 'var(--accent)' },
-  { key: 'sleep',    label: 'Schlaf',    emoji: '🌙', color: 'var(--blue)'   },
-  { key: 'hrv',      label: 'HRV',       emoji: '💓', color: 'var(--green)'  },
-  { key: 'load',     label: 'Belastung', emoji: '🏋️', color: 'var(--amber)'  },
-  { key: 'weight',   label: 'Gewicht',   emoji: '⚖️', color: 'var(--text-2)' },
-  { key: 'mental',   label: 'Mental',    emoji: '🧠', color: 'var(--rose)'   },
+const DOMAINS: { key: Domain; label: string; icon: LucideIcon; color: string }[] = [
+  { key: 'overall',  label: 'Gesamt',    icon: Activity,   color: 'var(--accent)' },
+  { key: 'sleep',    label: 'Schlaf',    icon: Moon,       color: 'var(--blue)'   },
+  { key: 'hrv',      label: 'HRV',       icon: HeartPulse, color: 'var(--green)'  },
+  { key: 'load',     label: 'Belastung', icon: Dumbbell,   color: 'var(--amber)'  },
+  { key: 'weight',   label: 'Gewicht',   icon: Scale,      color: 'var(--text-2)' },
+  { key: 'mental',   label: 'Mental',    icon: Brain,      color: 'var(--rose)'   },
 ];
 
 const DAYS_OPTIONS = [7, 30, 90];
+const RANGE_OPTIONS = DAYS_OPTIONS.map(d => ({ value: d, label: `${d}T` }));
 
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const [expanded, setExpanded] = useState(false);
@@ -21,20 +25,23 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const refresh = useRefreshInsight(domain, days);
   const meta = DOMAINS.find(d => d.key === domain)!;
   const isBusy = isLoading || isFetching || refresh.isPending;
+  const contentId = `insight-${domain}-content`;
 
   return (
     <div
       className="card"
-      style={{ padding: 0, overflow: 'hidden', borderColor: expanded ? meta.color + '44' : 'var(--border)' }}
+      style={{ padding: 0, overflow: 'hidden', borderColor: expanded ? `color-mix(in srgb, ${meta.color} 28%, transparent)` : 'var(--border)' }}
     >
       {/* Header */}
       <button
         onClick={() => setExpanded(e => !e)}
+        aria-expanded={expanded}
+        aria-controls={contentId}
         className="w-full flex items-center justify-between gap-3"
         style={{ padding: '12px 14px', background: 'transparent', textAlign: 'left', cursor: 'pointer' }}
       >
         <div className="flex items-center gap-2.5">
-          <span style={{ fontSize: 16, lineHeight: 1 }}>{meta.emoji}</span>
+          <IconBadge icon={meta.icon} color={meta.color} label={meta.label} />
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, color: meta.color, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             {meta.label}
           </span>
@@ -42,14 +49,14 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--accent)', letterSpacing: '0.1em' }}>LIVE</span>
           )}
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-          {expanded ? '▲' : '▼'}
+        <span style={{ color: 'var(--text-3)', display: 'inline-flex' }}>
+          {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </span>
       </button>
 
       {/* Body */}
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 14px' }}>
+        <div id={contentId} style={{ borderTop: '1px solid var(--border)', padding: '12px 14px' }}>
           {isBusy ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[70, 90, 55].map((w, i) => (
@@ -132,32 +139,12 @@ export default function Insights() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Insights</h1>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {DAYS_OPTIONS.map(d => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              style={{
-                fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 10px',
-                borderRadius: 4, letterSpacing: '0.1em',
-                background: days === d ? 'var(--surface-2)' : 'transparent',
-                color: days === d ? 'var(--text)' : 'var(--text-3)',
-                border: '1px solid ' + (days === d ? 'var(--border)' : 'transparent'),
-                cursor: 'pointer',
-              }}
-            >
-              {d}T
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
-        KI-Analyse deiner Gesundheits- und Trainingsdaten. Öffne eine Karte, um die Analyse gezielt zu laden.
-      </p>
+      <PageHeader
+        eyebrow="INSIGHTS"
+        title="Insights"
+        description="Öffne eine Karte, um die Analyse gezielt zu laden."
+        action={<RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />}
+      />
 
       <MentalLoadOverlay />
 

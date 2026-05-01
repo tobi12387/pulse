@@ -11,6 +11,7 @@ import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
 import { getPushPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push-client';
 import { EquipmentList } from '@/components/EquipmentList';
+import { MiniButton, PageHeader } from '@/components/PulseChrome';
 import type { PushTopic } from '@coaching-os/shared/pulse';
 
 interface GarminStatus {
@@ -154,7 +155,7 @@ export default function Settings() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Settings</h1>
+      <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" />
 
       {message && (
         <div className="card" style={{
@@ -176,18 +177,13 @@ export default function Settings() {
           <span className="label-mono">Athletenprofil</span>
           {!profileForm && (
             <div style={{ display: 'flex', gap: 6 }}>
-              <button
+              <MiniButton
                 onClick={handleSyncProfile}
                 disabled={syncingProfile}
-                style={{
-                  background: 'none', border: '1px solid var(--accent)', borderRadius: 'var(--radius)',
-                  padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
-                  letterSpacing: '0.12em', textTransform: 'uppercase',
-                  color: syncingProfile ? 'var(--text-3)' : 'var(--accent)', cursor: syncingProfile ? 'default' : 'pointer',
-                }}
+                tone="accent"
               >
                 {syncingProfile ? '…' : 'Von Garmin'}
-              </button>
+              </MiniButton>
               <button
                 onClick={openProfile}
                 style={{
@@ -743,16 +739,11 @@ function HealthStateCard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <span className="label-mono">Gesundheits-Status</span>
         {!adding && (
-          <button
+          <MiniButton
             onClick={() => setAdding(true)}
-            style={{
-              background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
-              letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
-            }}
           >
             + Hinzufügen
-          </button>
+          </MiniButton>
         )}
       </div>
       <p style={{ margin: '0 0 12px', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>

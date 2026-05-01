@@ -7,6 +7,10 @@ import {
 } from '@/pulse/hooks';
 import type { EquipmentCategory, PulseActivityType, PulseEquipment } from '@coaching-os/shared/pulse';
 
+function translucent(color: string, percent: number) {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
+
 const ACTIVITY_TYPES: PulseActivityType[] = ['run', 'bike', 'swim', 'strength', 'hike', 'other'];
 
 const ACTIVITY_LABEL: Record<PulseActivityType, string> = {
@@ -336,7 +340,7 @@ export function EquipmentList({ setMessage }: {
                     padding: '5px 9px',
                     border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                     borderRadius: 4,
-                    background: active ? 'var(--accent)18' : 'transparent',
+                    background: active ? translucent('var(--accent)', 9) : 'transparent',
                     color: active ? 'var(--accent)' : 'var(--text-3)',
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
