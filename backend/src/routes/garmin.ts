@@ -5,6 +5,7 @@ import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog,
 import { eq, desc, and, or } from 'drizzle-orm';
 import { getGarminClient } from '../lib/garmin-client.js';
 import { getGarminActivitiesForDate, upsertGarminActivity } from '../lib/garmin-activities.js';
+import { normalizeGarminDailySummary, normalizeGarminSleepData } from '../lib/garmin-recovery.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { autoAssignDefaultEquipmentForActivity } from '../pulse/services/strength-equipment.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../pulse/services/workout-reconciliation.js';
@@ -307,19 +308,40 @@ export async function syncGarminDay(
   let remSleepH: number | null      = null;
   let lightSleepH: number | null    = null;
   let awakeSleepH: number | null    = null;
+  let sleepStartTime: Date | null = null;
+  let sleepEndTime: Date | null = null;
+  let sleepNeedMin: number | null = null;
+  let sleepActualMin: number | null = null;
+  let avgSleepStress: number | null = null;
+  let avgSleepHr: number | null = null;
+  let avgRespiration: number | null = null;
+  let restlessMoments: number | null = null;
+  let bodyBatteryChange: number | null = null;
+  let breathingDisruptionIndex: number | null = null;
+  let sleepRawData: unknown = null;
 
   try {
     const sleep = await gc.getSleepData(date) as any;
-    const dto   = sleep?.dailySleepDTO ?? sleep;
-    if (dto?.sleepTimeSeconds)                    sleepDurationH = dto.sleepTimeSeconds / 3600;
-    if (dto?.sleepScores?.overall?.value != null) sleepScore     = dto.sleepScores.overall.value;
-    if (dto?.deepSleepSeconds  != null)           deepSleepH  = dto.deepSleepSeconds  / 3600;
-    if (dto?.lightSleepSeconds != null)           lightSleepH = dto.lightSleepSeconds / 3600;
-    if (dto?.remSleepSeconds   != null)           remSleepH   = dto.remSleepSeconds   / 3600;
-    if (dto?.awakeSleepSeconds != null)           awakeSleepH = dto.awakeSleepSeconds / 3600;
-    // HRV is at top-level sleep object, not inside dailySleepDTO
-    if (sleep?.avgOvernightHrv != null) hrvRmssd = sleep.avgOvernightHrv;
-    if (sleep?.hrvStatus)               hrvStatus = String(sleep.hrvStatus).toLowerCase();
+    const normalized = normalizeGarminSleepData(sleep);
+    sleepDurationH = normalized.durationH;
+    sleepScore = normalized.sleepScore;
+    deepSleepH = normalized.deepSleepH;
+    remSleepH = normalized.remSleepH;
+    lightSleepH = normalized.lightSleepH;
+    awakeSleepH = normalized.awakeH;
+    hrvRmssd = normalized.hrvRmssd;
+    hrvStatus = normalized.hrvStatus;
+    sleepStartTime = normalized.startTime;
+    sleepEndTime = normalized.endTime;
+    sleepNeedMin = normalized.sleepNeedMin;
+    sleepActualMin = normalized.sleepActualMin;
+    avgSleepStress = normalized.avgSleepStress;
+    avgSleepHr = normalized.avgSleepHr;
+    avgRespiration = normalized.avgRespiration;
+    restlessMoments = normalized.restlessMoments;
+    bodyBatteryChange = normalized.bodyBatteryChange;
+    breathingDisruptionIndex = normalized.breathingDisruptionIndex;
+    sleepRawData = normalized.rawData;
   } catch (err) {
     errors.push({ domain: 'sleep', message: messageOf(err) });
   }
@@ -329,7 +351,21 @@ export async function syncGarminDay(
   let caloriesActive: number | null = null;
   let bodyBatteryMin: number | null = null;
   let bodyBatteryMax: number | null = null;
+  let bodyBatteryCharged: number | null = null;
+  let bodyBatteryDrained: number | null = null;
+  let bodyBatteryHighest: number | null = null;
+  let bodyBatteryLowest: number | null = null;
+  let bodyBatteryAtWake: number | null = null;
   let stressAvg: number | null      = null;
+  let maxStress: number | null = null;
+  let lowStressSec: number | null = null;
+  let mediumStressSec: number | null = null;
+  let highStressSec: number | null = null;
+  let moderateIntensityMin: number | null = null;
+  let vigorousIntensityMin: number | null = null;
+  let avgWakingRespiration: number | null = null;
+  let latestSpo2: number | null = null;
+  let dailyRawData: unknown = null;
 
   try {
     const hr = await gc.getHeartRate(date) as any;
@@ -343,11 +379,26 @@ export async function syncGarminDay(
     const summary = await (gc as any).get(
       `https://connectapi.garmin.com/usersummary-service/usersummary/daily/${displayName}?calendarDate=${dateStr}`,
     ) as any;
-    if (summary?.totalSteps != null)                  steps          = summary.totalSteps;
-    if (summary?.averageStressLevel != null)           stressAvg      = summary.averageStressLevel;
-    if (summary?.activeKilocalories != null)           caloriesActive = summary.activeKilocalories;
-    if (summary?.minBodyBatteryLevel != null)          bodyBatteryMin = summary.minBodyBatteryLevel;
-    if (summary?.bodyBatteryMostRecentValue != null)   bodyBatteryMax = summary.bodyBatteryMostRecentValue;
+    const normalized = normalizeGarminDailySummary(summary);
+    steps = normalized.steps;
+    stressAvg = normalized.stressAvg;
+    caloriesActive = normalized.caloriesActive;
+    bodyBatteryMin = normalized.bodyBatteryMin;
+    bodyBatteryMax = normalized.bodyBatteryMax;
+    bodyBatteryCharged = normalized.bodyBatteryCharged;
+    bodyBatteryDrained = normalized.bodyBatteryDrained;
+    bodyBatteryHighest = normalized.bodyBatteryHighest;
+    bodyBatteryLowest = normalized.bodyBatteryLowest;
+    bodyBatteryAtWake = normalized.bodyBatteryAtWake;
+    maxStress = normalized.maxStress;
+    lowStressSec = normalized.lowStressSec;
+    mediumStressSec = normalized.mediumStressSec;
+    highStressSec = normalized.highStressSec;
+    moderateIntensityMin = normalized.moderateIntensityMin;
+    vigorousIntensityMin = normalized.vigorousIntensityMin;
+    avgWakingRespiration = normalized.avgWakingRespiration;
+    latestSpo2 = normalized.latestSpo2;
+    dailyRawData = normalized.rawData;
   } catch (err) {
     errors.push({ domain: 'dailyMetrics', message: `dailySummary: ${messageOf(err)}` });
   }
@@ -368,14 +419,20 @@ export async function syncGarminDay(
     hrvRmssd, hrvStatus, restingHr,
     sleepHours: sleepDurationH, sleepScore,
     bodyBatteryMin, bodyBatteryMax, stressAvg, steps,
-    caloriesActive, source: 'garmin', syncedAt: new Date(),
+    bodyBatteryCharged, bodyBatteryDrained, bodyBatteryHighest, bodyBatteryLowest, bodyBatteryAtWake,
+    maxStress, lowStressSec, mediumStressSec, highStressSec,
+    moderateIntensityMin, vigorousIntensityMin, avgWakingRespiration, latestSpo2,
+    caloriesActive, source: 'garmin', rawData: dailyRawData, syncedAt: new Date(),
   }).onConflictDoUpdate({
     target: [pulseDailyMetrics.userId, pulseDailyMetrics.date],
     set: {
       hrvRmssd, hrvStatus, restingHr,
       sleepHours: sleepDurationH, sleepScore,
       bodyBatteryMin, bodyBatteryMax, stressAvg, steps,
-      caloriesActive, syncedAt: new Date(),
+      bodyBatteryCharged, bodyBatteryDrained, bodyBatteryHighest, bodyBatteryLowest, bodyBatteryAtWake,
+      maxStress, lowStressSec, mediumStressSec, highStressSec,
+      moderateIntensityMin, vigorousIntensityMin, avgWakingRespiration, latestSpo2,
+      caloriesActive, rawData: dailyRawData, syncedAt: new Date(),
     },
   });
 
@@ -383,12 +440,34 @@ export async function syncGarminDay(
   if (sleepDurationH != null) {
     await db.insert(pulseSleepSessions).values({
       userId, date: dateStr,
+      startTime: sleepStartTime,
+      endTime: sleepEndTime,
       durationH: sleepDurationH, sleepScore,
       deepSleepH, remSleepH, lightSleepH, awakeH: awakeSleepH,
-      source: 'garmin',
+      sleepNeedMin, sleepActualMin, avgSleepStress, avgSleepHr, avgRespiration,
+      restlessMoments, bodyBatteryChange, breathingDisruptionIndex,
+      source: 'garmin', rawData: sleepRawData,
     }).onConflictDoUpdate({
       target: [pulseSleepSessions.userId, pulseSleepSessions.date],
-      set: { durationH: sleepDurationH, sleepScore, deepSleepH, remSleepH, lightSleepH, awakeH: awakeSleepH },
+      set: {
+        startTime: sleepStartTime,
+        endTime: sleepEndTime,
+        durationH: sleepDurationH,
+        sleepScore,
+        deepSleepH,
+        remSleepH,
+        lightSleepH,
+        awakeH: awakeSleepH,
+        sleepNeedMin,
+        sleepActualMin,
+        avgSleepStress,
+        avgSleepHr,
+        avgRespiration,
+        restlessMoments,
+        bodyBatteryChange,
+        breathingDisruptionIndex,
+        rawData: sleepRawData,
+      },
     });
   }
 

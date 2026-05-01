@@ -869,6 +869,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       prognosis,
       streaks,
       dailyHistory,
+      sleepHistory,
       dataStatus,
       pulseContext,
     ] = await Promise.all([
@@ -895,16 +896,35 @@ export default async function pulsePlugin(app: FastifyInstance) {
         sleepHours: pulseDailyMetrics.sleepHours,
         hrvRmssd:   pulseDailyMetrics.hrvRmssd,
         restingHr:  pulseDailyMetrics.restingHr,
+        date: pulseDailyMetrics.date,
+        highStressSec: pulseDailyMetrics.highStressSec,
+        bodyBatteryAtWake: pulseDailyMetrics.bodyBatteryAtWake,
+        bodyBatteryCharged: pulseDailyMetrics.bodyBatteryCharged,
+        bodyBatteryDrained: pulseDailyMetrics.bodyBatteryDrained,
       }).from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since60d)))
         .orderBy(desc(pulseDailyMetrics.date)),
+      db.select({
+        date: pulseSleepSessions.date,
+        sleepNeedMin: pulseSleepSessions.sleepNeedMin,
+        sleepActualMin: pulseSleepSessions.sleepActualMin,
+      }).from(pulseSleepSessions)
+        .where(and(eq(pulseSleepSessions.userId, userId), gte(pulseSleepSessions.date, since60d)))
+        .orderBy(desc(pulseSleepSessions.date)),
       getPulseDataStatus(userId, today),
       buildCachedPulseContextFor(userId, today),
     ]);
 
     const { computeRecovery } = await import('../lib/recovery-metrics.js');
+    const sleepByDate = new Map(sleepHistory.map(row => [row.date, row]));
     const recovery = dailyHistory.length >= 1
-      ? computeRecovery({ daily: dailyHistory })
+      ? computeRecovery({
+          daily: dailyHistory.map(row => ({
+            ...row,
+            sleepNeedMin: sleepByDate.get(row.date)?.sleepNeedMin ?? null,
+            sleepActualMin: sleepByDate.get(row.date)?.sleepActualMin ?? null,
+          })),
+        })
       : null;
 
     const mentalScore = mental
@@ -928,7 +948,21 @@ export default async function pulsePlugin(app: FastifyInstance) {
         hrvRmssd: metrics.hrvRmssd, hrvStatus: metrics.hrvStatus as PulseDailyMetricsHrvStatus,
         restingHr: metrics.restingHr, sleepHours: metrics.sleepHours,
         sleepScore: metrics.sleepScore, bodyBatteryMin: metrics.bodyBatteryMin,
-        bodyBatteryMax: metrics.bodyBatteryMax, stressAvg: metrics.stressAvg,
+        bodyBatteryMax: metrics.bodyBatteryMax,
+        bodyBatteryCharged: metrics.bodyBatteryCharged,
+        bodyBatteryDrained: metrics.bodyBatteryDrained,
+        bodyBatteryHighest: metrics.bodyBatteryHighest,
+        bodyBatteryLowest: metrics.bodyBatteryLowest,
+        bodyBatteryAtWake: metrics.bodyBatteryAtWake,
+        stressAvg: metrics.stressAvg,
+        maxStress: metrics.maxStress,
+        lowStressSec: metrics.lowStressSec,
+        mediumStressSec: metrics.mediumStressSec,
+        highStressSec: metrics.highStressSec,
+        moderateIntensityMin: metrics.moderateIntensityMin,
+        vigorousIntensityMin: metrics.vigorousIntensityMin,
+        avgWakingRespiration: metrics.avgWakingRespiration,
+        latestSpo2: metrics.latestSpo2,
         steps: metrics.steps, caloriesActive: metrics.caloriesActive,
         source: metrics.source, syncedAt: metrics.syncedAt.toISOString(),
       } : null,
@@ -1539,7 +1573,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .orderBy(desc(pulseSleepSessions.date))
       .limit(limit);
     return {
-      sessions: sessions.map((s) => ({
+      sessions: sessions.map(({ rawData: _rawData, ...s }) => ({
         ...s,
         startTime: s.startTime?.toISOString() ?? null,
         endTime:   s.endTime?.toISOString()   ?? null,
@@ -3246,7 +3280,20 @@ export default async function pulsePlugin(app: FastifyInstance) {
       sleepHours:     pulseDailyMetrics.sleepHours,
       sleepScore:     pulseDailyMetrics.sleepScore,
       bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+      bodyBatteryAtWake: pulseDailyMetrics.bodyBatteryAtWake,
+      bodyBatteryCharged: pulseDailyMetrics.bodyBatteryCharged,
+      bodyBatteryDrained: pulseDailyMetrics.bodyBatteryDrained,
+      bodyBatteryHighest: pulseDailyMetrics.bodyBatteryHighest,
+      bodyBatteryLowest: pulseDailyMetrics.bodyBatteryLowest,
       stressAvg:      pulseDailyMetrics.stressAvg,
+      maxStress:      pulseDailyMetrics.maxStress,
+      lowStressSec:   pulseDailyMetrics.lowStressSec,
+      mediumStressSec: pulseDailyMetrics.mediumStressSec,
+      highStressSec:  pulseDailyMetrics.highStressSec,
+      moderateIntensityMin: pulseDailyMetrics.moderateIntensityMin,
+      vigorousIntensityMin: pulseDailyMetrics.vigorousIntensityMin,
+      avgWakingRespiration: pulseDailyMetrics.avgWakingRespiration,
+      latestSpo2:     pulseDailyMetrics.latestSpo2,
       steps:          pulseDailyMetrics.steps,
     }).from(pulseDailyMetrics)
       .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since)))

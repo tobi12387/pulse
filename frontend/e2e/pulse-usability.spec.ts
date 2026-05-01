@@ -114,6 +114,20 @@ test('Coach quick prompts prepare a question without sending it', async ({ page 
   expect(coachSends).toBe(0);
 });
 
+test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Metriken' }).click();
+
+  await expect(page.getByText('Recovery Depth')).toBeVisible();
+  await expect(page.getByText('Schlafbedarf')).toBeVisible();
+  await expect(page.getByText('Body Battery Ladung')).toBeVisible();
+  await expect(page.getByText('Stress hoch')).toBeVisible();
+  await expect(page.getByText('SpO2')).toBeVisible();
+  await expect(page.getByText('rawData')).toHaveCount(0);
+});
+
 test('Coach daily briefing guides the first conversation without auto-send', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

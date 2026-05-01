@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
-import { pulseDailyMetrics, pulseMentalCheckins, pulseRiskSignals } from '../../db/pulse-schema.js';
+import { pulseDailyMetrics, pulseMentalCheckins, pulseRiskSignals, pulseSleepSessions } from '../../db/pulse-schema.js';
 import { computeFitnessLoad } from './load-engine.js';
 import { sendPushToUser } from '../../lib/push.js';
 
@@ -26,6 +26,9 @@ interface DailyRiskRow {
   restingHr: number | null;
   hrvRmssd: number | null;
   sleepHours: number | null;
+  sleepNeedMin?: number | null;
+  sleepActualMin?: number | null;
+  highStressSec?: number | null;
 }
 
 interface MentalRiskRow {
@@ -136,21 +139,44 @@ export function evaluateRiskSignalsFromData(input: {
   }
 
   const sleepTargetH = input.sleepTargetH ?? 7.5;
-  const sleepDebt = dailyDesc.slice(0, 5).reduce((sum, row) => {
+  const sleepNeedRows = dailyDesc.slice(0, 5).filter(row =>
+    typeof row.sleepNeedMin === 'number' &&
+    Number.isFinite(row.sleepNeedMin) &&
+    typeof row.sleepActualMin === 'number' &&
+    Number.isFinite(row.sleepActualMin)
+  );
+  const sleepNeedDebt = sleepNeedRows.length >= 3
+    ? sleepNeedRows.reduce((sum, row) => sum + Math.max(0, (row.sleepNeedMin ?? 0) - (row.sleepActualMin ?? 0)), 0) / 60
+    : null;
+  const fixedSleepDebt = dailyDesc.slice(0, 5).reduce((sum, row) => {
     if (row.sleepHours == null) return sum;
     return sum + Math.max(0, sleepTargetH - row.sleepHours);
   }, 0);
-  if (dailyDesc.slice(0, 5).filter(row => row.sleepHours != null).length >= 3 && sleepDebt >= 5) {
+  const sleepDebt = sleepNeedDebt ?? fixedSleepDebt;
+  const sleepRows = sleepNeedDebt != null
+    ? sleepNeedRows.length
+    : dailyDesc.slice(0, 5).filter(row => row.sleepHours != null).length;
+  if (sleepRows >= 3 && sleepDebt >= 5) {
     const severity: RiskSeverity = sleepDebt >= 9 ? 'critical' : 'warn';
+    const highStressAvg = avg(dailyDesc.slice(0, 5)
+      .map(row => row.highStressSec)
+      .filter((v): v is number => v != null));
+    const stressHint = highStressAvg != null && highStressAvg >= 5400
+      ? ' Gleichzeitig ist die Hochstressdauer erhöht.'
+      : '';
     signals.push({
       ruleId: 'sleep_debt_5d',
       severity,
       title: `Schlafschuld ${sleepDebt.toFixed(1)} h in 5 Tagen`,
-      description: `Gegenüber ${sleepTargetH.toFixed(1)} h Zielschlaf hat sich deutliche Schlafschuld aufgebaut.`,
+      description: sleepNeedDebt != null
+        ? `Gegenüber Garmins Schlafbedarf hat sich deutliche Schlafschuld aufgebaut.${stressHint}`
+        : `Gegenüber ${sleepTargetH.toFixed(1)} h Zielschlaf hat sich deutliche Schlafschuld aufgebaut.${stressHint}`,
       recommendation: severity === 'critical'
         ? 'Heute Training stark kürzen oder pausieren und Schlaf nachholen.'
         : 'Heute Umfang reduzieren und frühe Schlafenszeit priorisieren.',
-      metric: { sleepDebtH: sleepDebt, targetH: sleepTargetH, days: 5 },
+      metric: sleepNeedDebt != null
+        ? { sleepDebtH: sleepDebt, sleepNeedGapH: sleepDebt, days: 5, source: 'garmin_sleep_need' }
+        : { sleepDebtH: sleepDebt, targetH: sleepTargetH, days: 5 },
     });
   }
 
@@ -200,14 +226,21 @@ async function sendRiskCriticalPush(userId: string, signal: RiskSignal): Promise
 export async function evaluateRiskSignals(userId: string, today = new Date().toISOString().split('T')[0]!): Promise<RiskSignal[]> {
   const since90 = daysBefore(today, 89);
   const sinceMental = daysBefore(today, 14);
-  const [daily, mental, loadNow, load7dAgo] = await Promise.all([
+  const [daily, sleepRows, mental, loadNow, load7dAgo] = await Promise.all([
     db.select({
       date: pulseDailyMetrics.date,
       restingHr: pulseDailyMetrics.restingHr,
       hrvRmssd: pulseDailyMetrics.hrvRmssd,
       sleepHours: pulseDailyMetrics.sleepHours,
+      highStressSec: pulseDailyMetrics.highStressSec,
     }).from(pulseDailyMetrics)
       .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since90))),
+    db.select({
+      date: pulseSleepSessions.date,
+      sleepNeedMin: pulseSleepSessions.sleepNeedMin,
+      sleepActualMin: pulseSleepSessions.sleepActualMin,
+    }).from(pulseSleepSessions)
+      .where(and(eq(pulseSleepSessions.userId, userId), gte(pulseSleepSessions.date, since90))),
     db.select({
       date: pulseMentalCheckins.date,
       mood: pulseMentalCheckins.mood,
@@ -219,9 +252,15 @@ export async function evaluateRiskSignals(userId: string, today = new Date().toI
     computeFitnessLoad(userId, daysBefore(today, 7)),
   ]);
 
+  const sleepByDate = new Map(sleepRows.map(row => [row.date, row]));
+
   return evaluateRiskSignalsFromData({
     today,
-    daily,
+    daily: daily.map(row => ({
+      ...row,
+      sleepNeedMin: sleepByDate.get(row.date)?.sleepNeedMin ?? null,
+      sleepActualMin: sleepByDate.get(row.date)?.sleepActualMin ?? null,
+    })),
     mental,
     ctlNow: loadNow.ctl,
     ctl7dAgo: load7dAgo.ctl,

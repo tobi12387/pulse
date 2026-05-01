@@ -148,6 +148,13 @@
       "when": 1777658909155,
       "tag": "0020_workout_execution_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777660550000,
+      "tag": "0021_recovery_data_depth",
+      "breakpoints": true
     }
   ]
 }
