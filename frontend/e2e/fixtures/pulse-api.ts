@@ -5,8 +5,10 @@ const today = '2026-05-01';
 type MockPulseApiOptions = {
   insightError?: boolean;
   home?: Partial<typeof home>;
+  coverage?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  pushSettings?: unknown;
   onRequest?: (pathname: string, method: string) => void;
 };
 
@@ -259,8 +261,10 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, { error: 'Internal Server Error' }, 500);
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
+    if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
     if (url.pathname.startsWith('/api/pulse/plan/trace/')) return json(route, { trace: options.planTrace ?? null });
+    if (url.pathname === '/api/pulse/push/settings' && options.pushSettings) return json(route, options.pushSettings);
     if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams));
     if (url.pathname === '/api/auth/me') return json(route, { id: 'user-1', name: 'Tobi', email: 'tobi@example.test' });
     if (url.pathname === '/api/auth/logout') return json(route, {}, 204);

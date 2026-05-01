@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Data und Settings erklären Vertrauenszustände vor Aktionen
+
+- **Decision:** UI/UX Slice D strukturiert Data Coverage als `Status → Ursache → Aktion` und trennt in Settings Push-Zustand nach Server, Browser, Geräten und Testfähigkeit. Backfill-, Kalender-, Push- und Health-State-Aktionen bekommen sichtbare Folgezeilen; technische Push-Endpunkte werden maskiert.
+- **Why:** Garmin-Lücken, Push-Berechtigungen und Health-State-Aktionen sind Alltagsentscheidungen, keine Debug-Tabellen. Die UI muss erklären, ob eine Lücke nachladbar ist, ob der Browser blockiert, und welche Aktion Daten oder Geräte wirklich verändert.
+- **Alternatives:** Nur Labels kürzen (löst widersprüchliche Zustände nicht); rohe Endpunkte weiter anzeigen (technisch und potenziell sensibel); Backfill weiter nur über Kandidatenzahl erklären (zu indirekt für riskantere Aktion).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Plan startet mit Trainingsentscheidung statt Logger
 
 - **Decision:** UI/UX Slice C stellt im Plan-Trainingstab eine `NÄCHSTE TRAININGSENTSCHEIDUNG` vor Wochenstrip, Verfügbarkeit und Tools. Der Kraft-Logger wandert in einen Tools-Abschnitt, `wechseln` wird zu `Sportart ändern`, und die Planerstellung zeigt vor dem Klick eine kompakte Constraint-Zusammenfassung.

@@ -356,6 +356,9 @@ export default function Settings() {
             </>
           )}
         </div>
+        <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+          Nachladen passiert in Data → Abdeckung. Die Vorschau bleibt read-only; ein echter Backfill schreibt Garmin-Daten in Pulse.
+        </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
           <button
             onClick={handleSync}
@@ -385,6 +388,9 @@ export default function Settings() {
           >
             {syncingCalendar ? '● Kalender sync…' : 'Kalender bereinigen'}
           </button>
+          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+            Prüft geplante Garmin-Workouts und entfernt veraltete Pulse-Kalendereinträge.
+          </p>
         </div>
       </div>
 
@@ -433,6 +439,11 @@ function deviceLabel(): string {
   return (navigator.platform || 'Browser').slice(0, 64);
 }
 
+function maskPushEndpoint(endpoint: string): string {
+  const host = endpoint.replace(/^https?:\/\//, '').split('/')[0] || 'Push-Endpunkt';
+  return `${host} · Endpunkt gespeichert`;
+}
+
 function PushNotificationsCard({ setMessage }: {
   setMessage: (message: { text: string; ok: boolean } | null) => void;
 }) {
@@ -452,6 +463,49 @@ function PushNotificationsCard({ setMessage }: {
   const data = settings.data;
   const topics = data?.topics ?? { briefing: true, checkin_reminder: true, risk_critical: true };
   const activeSubscriptions = data?.subscriptions.filter(sub => sub.enabled) ?? [];
+  const permissionState = supported ? permission ?? 'default' : 'unsupported';
+  const pushSummary = (() => {
+    if (!data?.configured) {
+      return {
+        label: 'Server nicht bereit',
+        color: 'var(--amber)',
+        detail: 'VAPID-Schlüssel fehlen auf dem Server; neue Geräte können keine Push-Abos anlegen.',
+      };
+    }
+    if (!supported) {
+      return {
+        label: 'Browser nicht unterstützt',
+        color: 'var(--amber)',
+        detail: 'Dieser Browser kann keine Web-Push-Benachrichtigungen empfangen.',
+      };
+    }
+    if (permissionState === 'denied') {
+      return {
+        label: 'Browser blockiert',
+        color: 'var(--amber)',
+        detail: 'Server ist bereit, aber dieser Browser erlaubt keine neuen Push-Abos. Bereits gespeicherte Geräte bleiben sichtbar.',
+      };
+    }
+    if (activeSubscriptions.length > 0) {
+      return {
+        label: 'Aktiv',
+        color: 'var(--green)',
+        detail: 'Test sendet an alle aktiven registrierten Geräte.',
+      };
+    }
+    if (permissionState === 'granted') {
+      return {
+        label: 'Bereit zur Aktivierung',
+        color: 'var(--accent)',
+        detail: 'Der Browser erlaubt Push; aktiviere dieses Gerät, um Briefings und Warnungen zu erhalten.',
+      };
+    }
+    return {
+      label: 'Erlaubnis fehlt',
+      color: 'var(--text-3)',
+      detail: 'Server ist bereit. Der Browser fragt beim Aktivieren nach der Push-Erlaubnis.',
+    };
+  })();
 
   async function handleEnable() {
     setMessage(null);
@@ -513,10 +567,14 @@ function PushNotificationsCard({ setMessage }: {
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <span className="label-mono">Benachrichtigungen</span>
-        <Pill color={data?.configured ? 'var(--green)' : 'var(--amber)'}>
-          {data?.configured ? 'BEREIT' : 'KEYS FEHLEN'}
+        <Pill color={pushSummary.color}>
+          {pushSummary.label.toUpperCase()}
         </Pill>
       </div>
+
+      <p style={{ margin: '0 0 12px', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+        {pushSummary.detail}
+      </p>
 
       {isIosSafariWithoutStandalone() && (
         <p style={{ margin: '0 0 12px', fontSize: 11, color: 'var(--amber)', lineHeight: 1.5 }}>
@@ -527,13 +585,13 @@ function PushNotificationsCard({ setMessage }: {
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <button
           onClick={() => void handleEnable()}
-          disabled={!supported || subscribe.isPending}
+          disabled={!supported || !data?.configured || permissionState === 'denied' || subscribe.isPending}
           style={{
             flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
             borderRadius: 'var(--radius)', padding: '9px',
             fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: supported ? 'var(--accent)' : 'var(--text-3)',
-            cursor: supported ? 'pointer' : 'default',
+            textTransform: 'uppercase', color: supported && data?.configured && permissionState !== 'denied' ? 'var(--accent)' : 'var(--text-3)',
+            cursor: supported && data?.configured && permissionState !== 'denied' ? 'pointer' : 'default',
           }}
         >
           {subscribe.isPending ? 'Aktiviere…' : 'Push aktivieren'}
@@ -554,8 +612,17 @@ function PushNotificationsCard({ setMessage }: {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+        <Row label="Server">
+          <Val>{data?.configured ? 'bereit' : 'nicht bereit'}</Val>
+        </Row>
         <Row label="Browser">
-          <Val>{supported ? permission ?? '–' : 'unsupported'}</Val>
+          <Val>{permissionState}</Val>
+        </Row>
+        <Row label="Geräte">
+          <Val>{activeSubscriptions.length} aktiv</Val>
+        </Row>
+        <Row label="Test">
+          <Val>{data?.configured && activeSubscriptions.length > 0 ? 'möglich' : 'nicht möglich'}</Val>
         </Row>
         {(Object.keys(PUSH_TOPIC_LABELS) as PushTopic[]).map(topic => (
           <label key={topic} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
@@ -605,6 +672,9 @@ function PushNotificationsCard({ setMessage }: {
           Dieses Gerät aus
         </button>
       </div>
+      <p style={{ margin: '0 0 8px', fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+        Dieses Gerät aus deaktiviert nur die lokale Browser-Subscription; das × entfernt ein gespeichertes Gerät vom Server.
+      </p>
 
       {settings.isLoading ? (
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-3)' }}>Lade Push-Status…</p>
@@ -619,7 +689,7 @@ function PushNotificationsCard({ setMessage }: {
                   {sub.deviceLabel ?? 'Browser'}
                 </span>
                 <span style={{ fontSize: 10, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {sub.endpoint.replace(/^https?:\/\//, '').slice(0, 56)}
+                  {maskPushEndpoint(sub.endpoint)}
                 </span>
               </span>
               <button
@@ -685,6 +755,9 @@ function HealthStateCard() {
           </button>
         )}
       </div>
+      <p style={{ margin: '0 0 12px', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+        Aktive Status beeinflussen Plan, Risk Watch und Coach-Kontext. Erledigt beendet das Signal; Löschen entfernt es aus der aktiven Bewertung.
+      </p>
 
       {adding && (
         <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>

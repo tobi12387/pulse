@@ -7,7 +7,7 @@ import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
-import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseGarminBackfillResponse } from '@coaching-os/shared/pulse';
+import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
@@ -144,6 +144,143 @@ function isBackfillCandidate(day: PulseDataCoverageDay): boolean {
   );
 }
 
+type CoverageDiagnosis = {
+  status: string;
+  cause: string;
+  action: string;
+};
+
+function coverageDiagnosis(domain: PulseDataCoverageDomain): CoverageDiagnosis {
+  const missing = domain.missingFields && domain.missingFields.length > 0
+    ? ` Fehlende Felder: ${domain.missingFields.join(', ')}.`
+    : '';
+
+  if (domain.status === 'present') {
+    return {
+      status: 'OK',
+      cause: 'Pulse hat diese Domain für den Tag.',
+      action: 'Keine Aktion.',
+    };
+  }
+
+  if (domain.reason === 'not_synced' || domain.reason === 'not_synced_yet') {
+    return {
+      status: domain.status === 'partial' ? 'Unvollständig' : 'Sync-Lücke',
+      cause: `${COVERAGE_REASON[domain.reason] ?? domain.reason}.${missing}`,
+      action: 'Backfill möglich.',
+    };
+  }
+
+  if (domain.reason === 'garmin_unavailable') {
+    return {
+      status: 'Garmin offen',
+      cause: `Garmin liefert diese Domain gerade nicht.${missing}`,
+      action: 'Später erneut prüfen.',
+    };
+  }
+
+  if (domain.reason === 'not_recorded') {
+    return {
+      status: 'Nicht erfasst',
+      cause: `Für diesen Tag wurde nichts aufgezeichnet.${missing}`,
+      action: 'Nicht per Backfill lösbar.',
+    };
+  }
+
+  return {
+    status: domain.status === 'partial' ? 'Unvollständig' : 'Fehlt',
+    cause: `${COVERAGE_REASON[domain.reason] ?? domain.reason}.${missing}`,
+    action: domain.status === 'partial' ? 'Backfill prüfen.' : 'Datenquelle prüfen.',
+  };
+}
+
+function coverageDayNeedsAction(day: PulseDataCoverageDay): boolean {
+  return (
+    day.dailyMetrics.status !== 'present' ||
+    day.sleep.status !== 'present' ||
+    day.activities.status !== 'present' ||
+    day.weight.status !== 'present' ||
+    day.activities.missingWeatherCount > 0
+  );
+}
+
+function CoverageDiagnosisPanel({
+  data,
+  shownDays,
+  candidateCount,
+}: {
+  data: PulseDataCoverageResponse;
+  shownDays: PulseDataCoverageDay[];
+  candidateCount: number;
+}) {
+  const weatherGap = Math.max(0, data.summary.activities - data.summary.weatherActivities);
+  const actionDays = shownDays.filter(coverageDayNeedsAction).length;
+  const profileMissing = data.profile.missing.length;
+
+  let status = 'Datenlage gut';
+  let cause = 'Die wichtigsten Garmin-Domains sind im sichtbaren Zeitraum vorhanden.';
+  let action = 'Keine Aktion nötig.';
+
+  if (profileMissing > 0) {
+    status = 'Profil unvollständig';
+    cause = `${profileMissing} Profilwerte fehlen und können Trainingszonen oder Plan-Kontext schwächen.`;
+    action = 'In Settings das Garmin-Profil synchronisieren.';
+  } else if (candidateCount > 0) {
+    status = 'Nachladbare Lücken';
+    cause = `${candidateCount} Tage im gewählten Monat sind gar nicht oder nur teilweise synchronisiert.`;
+    action = 'Erst Vorschau starten, dann Nachladen nur bei plausibler Liste.';
+  } else if (weatherGap > 0) {
+    status = 'Wetterlücken';
+    cause = `${weatherGap} Aktivitäten haben noch kein Wetter im Pulse-Datensatz.`;
+    action = 'Backfill prüfen oder beim nächsten Garmin-Sync erneut kontrollieren.';
+  } else if (actionDays > 0) {
+    status = 'Nicht nachladbare Lücken';
+    cause = `${actionDays} Tage zeigen fehlende Domains, die vermutlich nicht aufgezeichnet wurden.`;
+    action = 'Fachlich ignorieren oder Garmin-Aufzeichnung prüfen.';
+  }
+
+  const rows = [
+    { label: 'Status', value: status },
+    { label: 'Ursache', value: cause },
+    { label: 'Aktion', value: action },
+  ];
+
+  return (
+    <div className="card" style={{ padding: '12px 14px', borderColor: candidateCount > 0 || profileMissing > 0 ? 'rgba(245,158,11,0.28)' : 'var(--border)' }}>
+      <span className="label-mono">Coverage Diagnose</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginTop: 10 }}>
+        {rows.map(row => (
+          <div key={row.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              {row.label}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>
+              {row.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function backfillGuidance({
+  from,
+  to,
+  isPending,
+  candidateCount,
+}: {
+  from: string | null;
+  to: string | null;
+  isPending: boolean;
+  candidateCount: number;
+}): string {
+  if (isPending) return 'Backfill läuft gerade.';
+  if (!from || !to) return 'Kein Zeitraum ausgewählt.';
+  if (candidateCount === 0) return 'Keine nachladbaren Kandidaten in diesem Monat.';
+  return 'Vorschau verändert nichts; Nachladen schreibt Garmin-Daten für den gewählten Monat in Pulse.';
+}
+
 function formatMonth(month: string): string {
   const [year, monthIndex] = month.split('-').map(Number);
   if (!year || !monthIndex) return month;
@@ -155,7 +292,7 @@ function BackfillResult({ result }: { result: PulseGarminBackfillResponse }) {
   return (
     <div style={{ marginTop: 10, padding: '10px 12px', border: `1px solid ${color}`, borderRadius: 5, background: 'var(--surface-2)' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
-        {result.dryRun ? 'Vorschau' : 'Backfill'} · {result.range.from} bis {result.range.to}
+        {result.dryRun ? 'Würde nachladen' : 'Daten aktualisiert'} · {result.range.from} bis {result.range.to}
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.55 }}>
         {result.summary.planned} geplant · {result.summary.synced} synchronisiert · {result.summary.skipped} übersprungen · {result.summary.failed} Fehler
@@ -192,14 +329,14 @@ function rememberBackfillResult(result: PulseGarminBackfillResponse): void {
 }
 
 function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
-  const detail = domain.missingFields && domain.missingFields.length > 0
-    ? ` · ${domain.missingFields.join(', ')}`
-    : '';
+  const diagnosis = coverageDiagnosis(domain);
   return (
     <td style={{ padding: '7px 10px', textAlign: 'right', verticalAlign: 'top' }}>
       <CoveragePill status={domain.status} />
-      <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3, overflowWrap: 'anywhere' }}>
-        {COVERAGE_REASON[domain.reason] ?? domain.reason}{detail}
+      <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3, overflowWrap: 'anywhere', lineHeight: 1.35 }}>
+        <div>Status: {diagnosis.status}</div>
+        <div>Ursache: {diagnosis.cause}</div>
+        <div>Aktion: {diagnosis.action}</div>
       </div>
     </td>
   );
@@ -231,6 +368,7 @@ function CoverageTab() {
   const backfillFrom = activeMonthDates[0] ?? null;
   const backfillTo = activeMonthDates[activeMonthDates.length - 1] ?? null;
   const candidateCount = activeMonthDays.filter(isBackfillCandidate).length;
+  const guidance = backfillGuidance({ from: backfillFrom, to: backfillTo, isPending: backfill.isPending, candidateCount });
 
   async function runBackfill(dryRun: boolean) {
     if (!backfillFrom || !backfillTo) return;
@@ -270,6 +408,8 @@ function CoverageTab() {
         <CoverageMetric label="Gewicht" value={`${data.summary.weightDays}/${data.range.days}`} />
         <CoverageMetric label="Profil" value={profileReady ? 'OK' : `${data.profile.missing.length} fehlt`} sub={data.profile.updatedAt ? new Date(data.profile.updatedAt).toLocaleDateString('de-DE') : undefined} />
       </div>
+
+      <CoverageDiagnosisPanel data={data} shownDays={shownDays} candidateCount={candidateCount} />
 
       <div className="card" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -340,6 +480,9 @@ function CoverageTab() {
             {backfill.isPending ? 'Lädt…' : 'Nachladen'}
           </button>
         </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: candidateCount === 0 ? 'var(--text-3)' : 'var(--text-2)', lineHeight: 1.45 }}>
+          {guidance}
+        </div>
         {backfill.error && (
           <div style={{ marginTop: 8, fontSize: 11, color: 'var(--rose)' }}>
             {backfill.error.message}
@@ -376,9 +519,11 @@ function CoverageTab() {
                 <td style={{ padding: '7px 10px', textAlign: 'right', verticalAlign: 'top' }}>
                   <CoveragePill status={day.activities.status}>{day.activities.count > 0 ? `${day.activities.count}x` : undefined}</CoveragePill>
                   <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3, overflowWrap: 'anywhere' }}>
-                    {day.activities.count > 0 && day.activities.missingWeatherCount > 0
+                    <div>Status: {coverageDiagnosis(day.activities).status}</div>
+                    <div>Ursache: {day.activities.count > 0 && day.activities.missingWeatherCount > 0
                       ? `${day.activities.missingWeatherCount} ohne Wetter`
-                      : COVERAGE_REASON[day.activities.reason] ?? day.activities.reason}
+                      : coverageDiagnosis(day.activities).cause}</div>
+                    <div>Aktion: {coverageDiagnosis(day.activities).action}</div>
                   </div>
                 </td>
                 <CoverageCell domain={day.weight} />
