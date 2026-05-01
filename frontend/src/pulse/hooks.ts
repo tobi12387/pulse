@@ -19,6 +19,7 @@ export const pulseKeys = {
   coachHistory: ['pulse', 'coach', 'history'] as const,
   checkinToday:    ['pulse', 'checkin', 'today'] as const,
   checkinHistory:  (days: number) => ['pulse', 'checkin', 'history', days] as const,
+  mentalThemes:    (days: number) => ['pulse', 'mental', 'themes', days] as const,
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
@@ -221,6 +222,14 @@ export function useCheckinHistory(days = 30) {
   });
 }
 
+export function useMentalThemes(days = 90) {
+  return useQuery({
+    queryKey: pulseKeys.mentalThemes(days),
+    queryFn: () => pulseApi.checkin.themes(days),
+    staleTime: 10 * 60_000,
+  });
+}
+
 export function useCoachSend() {
   const qc = useQueryClient();
   return useMutation({
@@ -253,6 +262,7 @@ export function usePulseCheckin() {
       invalidatePulseContextQueries(qc);
       qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
     },
   });
 }

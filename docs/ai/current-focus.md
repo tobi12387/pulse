@@ -4,13 +4,14 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. Finish `codex/phase10-strength-equipment-ui`: Phase 10 UI surfaces for Strength Logger, Equipment Settings card, ActivityDetail override, and Plan analytics.
-2. Then continue Phase 11 Mental Themes.
+1. Finish `codex/phase11-mental-themes`: Phase 11 Theme-Aggregation endpoint plus Data/Mental ThemeTimeline.
+2. Then continue Phase 11 Mental-Load-Overlay in Insights and theme-aware mental insight engine.
 3. Keep Web Push production activation on the ops checklist: server still needs real VAPID settings before pushes can send.
 
 ## Current PRs / Branches
 
-- `codex/phase10-strength-equipment-ui`: active local branch for Phase 10 UI integration.
+- `codex/phase11-mental-themes`: active local branch for Phase 11 ThemeTimeline slice.
+- `codex/phase10-strength-equipment-ui`: merged and deployed via PR #37.
 - `codex/phase10-strength-equipment`: merged and deployed via PR #36.
 - `codex/web-push-triggers`: merged and deployed via PR #35.
 - `codex/web-push-subscriptions`: merged and deployed via PR #34.
@@ -21,8 +22,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Open, merge, and deploy Phase 10 UI integration after CI passes.
-- Next branch after Phase 10 UI: Phase 11 Mental Themes foundation.
+- Open, merge, and deploy Phase 11 ThemeTimeline after CI passes.
+- Next branch after ThemeTimeline: Phase 11 Mental-Load-Overlay and theme-aware Insights.
 - Verify server has VAPID settings in `/root/pulse/.env`; without them push endpoints remain safely configured-but-skipped.
 
 ## Out Of Scope Unless Reversed
