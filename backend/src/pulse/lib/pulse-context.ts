@@ -116,6 +116,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
   const since14 = daysBefore(date, 13);
   const since60 = daysBefore(date, 59);
   const since35 = daysBefore(date, 34);
+  const fitnessLoadPromise = computeFitnessLoad(userId, date);
 
   const [
     [todayMetrics],
@@ -140,7 +141,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     db.select().from(pulseMentalCheckins)
       .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, date)))
       .limit(1),
-    computeFitnessLoad(userId, date),
+    fitnessLoadPromise,
     db.select().from(pulseUserProfile)
       .where(eq(pulseUserProfile.userId, userId))
       .limit(1),
@@ -209,7 +210,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     }).from(pulseDailyMetrics)
       .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since60)))
       .orderBy(desc(pulseDailyMetrics.date)),
-    getActiveRaces(userId, date),
+    fitnessLoadPromise.then(load => getActiveRaces(userId, date, { ctl: load.ctl })),
     getActiveRiskSignals(userId),
     listStrengthSessions(userId, { days: 90 }),
     listEquipment(userId),

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Race-Prognosen nutzen echte CTL statt festen Platzhalter
+
+- **Decision:** `getActiveRaces()` akzeptiert eine optionale Fitness-Load-Quelle (`ctl`) und berechnet CTL nur als Fallback selbst. PulseContext, `/pulse/races` und Plan-Generierung reichen ihre bereits vorhandene Trainingslast weiter, damit Race-Time-Prognosen nicht mehr auf dem festen Platzhalter `ctl = 30` basieren.
+- **Why:** Die Roadmap markierte den hardcoded CTL-Wert als offenen Quickie. Race-Prognosen sollen Tobis aktuelle Form beruecksichtigen und gleichzeitig keine doppelte Load-Berechnung ausloesen, wenn der Aufrufer CTL bereits geladen hat.
+- **Alternatives:** CTL weiterhin hardcoden (fachlich falsch); in jedem Race-Aufruf immer `computeFitnessLoad()` starten (einfach, aber vermeidbare Doppelarbeit); Race-Prognosen aus PulseContext entfernen (verliert Nutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Implementierte Plan-Dokumente wandern nach completed
 
 - **Decision:** Alle Plan-Dokumente, die laut Merge-/Deploy-Historie erledigt sind, werden aus `docs/superpowers/plans/` nach `docs/superpowers/plans/completed/` verschoben. Roadmap, Current-Focus und Non-Negotiables markieren die bisherige Sequenz bis Phase 11 sowie Web Push/VAPID als erledigt.

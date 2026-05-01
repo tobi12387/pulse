@@ -1589,7 +1589,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
       getActiveRiskSignals(userId),
     ]);
-    const activeRaces = await getActiveRaces(userId, weekStartStr);
+    const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
     const recentPlanActivities = recentActs.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -1882,7 +1882,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/races', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
-    const races = await getActiveRaces(userId, today);
+    const fitnessLoad = await getFitnessLoadCached(userId, today);
+    const races = await getActiveRaces(userId, today, { ctl: fitnessLoad.ctl });
     return { races };
   });
 
@@ -2249,7 +2250,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
       getActiveRiskSignals(userId),
     ]);
-    const activeRaces2 = await getActiveRaces(userId, weekStart);
+    const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
     const recentPlanActivities2 = recentActs2.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
