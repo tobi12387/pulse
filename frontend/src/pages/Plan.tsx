@@ -434,7 +434,7 @@ function TraceInsightBlock({ title, items, color }: { title: string; items: stri
           <span key={item} style={{
             fontSize: 10.5, lineHeight: 1.35, color: 'var(--text-2)',
             border: '1px solid var(--border)', borderRadius: 4,
-            padding: '3px 7px', maxWidth: '100%',
+            padding: '3px 7px', maxWidth: '100%', overflowWrap: 'anywhere',
           }}>
             {item}
           </span>
