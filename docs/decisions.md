@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Everyday Flow Deepening priorisiert tägliche Handlung vor Feature-Breite
+
+- **Decision:** Die nächste aktive Welle ist `docs/superpowers/plans/2026-05-01-everyday-flow-deepening-wave.md`. Reihenfolge: Coach-Guided Daily Briefing, Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.
+- **Why:** Nach der UI/UX Usability Wave sind die Oberflächen verständlicher, aber die täglichen Flows brauchen mehr Handlungstiefe: Coach soll führen, Plan soll echte Anpassungen anbieten, Insights sollen Ursachen erklären, Backfill soll beobachtbar werden und Settings soll nach sicheren Aktionsgruppen funktionieren.
+- **Alternatives:** Direkt einzelne UI-Fixes ohne Plan starten (Scope-Drift); neue Produktbereiche eröffnen (widerspricht Alltagsnutzen); alle fünf Phasen in einem großen PR bauen (zu hohes Review-/Deploy-Risiko).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — UI/UX Usability Wave ist abgeschlossen
 
 - **Decision:** Die UI/UX Usability Wave wird nach PR #61, #63, #64, #65 und #66 geschlossen und nach `docs/superpowers/plans/completed/` verschoben. Es bleibt kein aktiver Implementierungsplan offen; neue Arbeit startet erst mit einem neuen Plan-Dokument.

@@ -6,12 +6,13 @@ Keep this file short. Update it whenever the active work queue changes.
 
 1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, Everyday Utility Wave, Reliability Wave, and UI/UX Usability Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. No active implementation wave is open. Next work should start with a new plan in `docs/superpowers/plans/`.
+3. Active implementation wave: `docs/superpowers/plans/2026-05-01-everyday-flow-deepening-wave.md`.
 
 ## Current PRs / Branches
 
-- `codex/ux-wave-closeout`: active docs branch closing the UI/UX Usability Wave after PR #61, #63, #64, #65 and #66.
+- `codex/everyday-flow-wave`: active branch creating the next implementation wave plan.
 - Recent completed branches:
+- `codex/ux-wave-closeout`: merged and deployed via PR #67.
 - `codex/ux-slice-e-density`: merged and deployed via PR #66.
 - `codex/ux-slice-d-data-settings`: merged and deployed via PR #65.
 - `codex/ux-slice-c-plan-decision`: merged and deployed via PR #64.
@@ -51,8 +52,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Create the next active plan from the browser UI/UX audit findings if Tobi wants another implementation wave.
-- Highest-value candidates: Coach-guided daily briefing, Plan alternatives/adaptation depth, Data backfill observability, and Settings action grouping.
+- Merge and deploy the Everyday Flow Deepening Wave plan.
+- Then implement phases in order: Coach-Guided Daily Briefing, Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
