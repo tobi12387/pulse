@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Figma wird aktiv als Design-System-Ebene eingebunden
+
+- **Decision:** Pulse nutzt Figma/FigJam ab sofort zusätzlich zu Canva und Superpowers. Figma ist die Arbeitsfläche für reusable UI-Sprache, Komponenten, Varianten, Zustände, Layout-Referenzen und perspektivisch Code Connect; Canva bleibt das leichtere Review-/Stakeholder-Board.
+- **Why:** Nach dem Core-UI-Chrome-Pass entsteht Nutzen durch konsistente Controls und Zustände. Figma ist dafür besser geeignet als Canva, während Browser/E2E weiterhin die Wahrheit über implementiertes Verhalten liefern und GitHub `main` technische Source of Truth bleibt.
+- **Alternatives:** Nur Canva nutzen (zu wenig komponenten- und variantentauglich); Figma als alleinige UX-Quelle nutzen (zu weit weg von deployter App und PR-Flow); Figma erst später prüfen (verpasst jetzt den Design-System-Moment nach `PulseChrome`).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Canva und Superpowers werden feste UX-Phase-Gates
 
 - **Decision:** Everyday-Flow-Folgephasen nutzen Superpowers als verpflichtenden Prozessrahmen und Canva als visuelles UX-Board. Das Repo bleibt die technische Source of Truth; Canva sammelt Screens, Flow-Kritik und Review-Notizen.

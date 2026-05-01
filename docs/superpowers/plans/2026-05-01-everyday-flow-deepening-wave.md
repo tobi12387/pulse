@@ -4,6 +4,8 @@
 
 > Canva UX Board: editable working doc `Pulse Everyday Flow UX Board` at https://www.canva.com/d/TGL3ff3MAzXgLkE. Use it as the visual companion for route screenshots, flow notes and acceptance review, while this Markdown file remains the implementation source of truth.
 
+> Figma/FigJam UX Toolchain Loop: claim/open at https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32. Use it as the design-system and interaction-flow surface for reusable components, states and before/after screen structure.
+
 ## Goal
 
 1. Pulse soll morgens eine zusammenhängende Tagesführung liefern: Lage, nächste Entscheidung, Warum, Grenzen und nächster Schritt.
@@ -20,16 +22,29 @@
 - Browser Use bleibt für echte Server-QA; Playwright bleibt für versionierte Regressionen.
 - Superpowers bleibt der Prozessrahmen: Pläne vor Umsetzung, TDD/Debugging bei Codeänderungen, Review vor Merge, Verification vor Completion.
 - Canva ergänzt die technische Planung als visuelles UX-Board für Daily-Flow-Screens, Interaktionskritik und Review-Notizen. Canva ersetzt keine Repo-Dokumentation.
+- Figma ergänzt Canva als Design-System-Arbeitsfläche: Komponenten, Varianten, Zustände, Layout-Referenzen und später Code-Connect-Mappings. Figma ersetzt weder Browser-QA noch das Repo als technische Source of Truth.
 
-## Canva + Superpowers Operating Model
+## Design Toolchain Operating Model
 
 Each phase uses the same lightweight loop:
 
-1. **Before implementation:** Update this plan with the exact phase goal and acceptance. Add the intended screen/flow to the Canva UX board when the change affects daily UX.
+1. **Before implementation:** Update this plan with the exact phase goal and acceptance. Add the intended screen/flow to Canva when the change affects daily UX. Add repeated controls or new interaction states to Figma when they should become reusable design language.
 2. **During implementation:** Use the matching Superpowers workflow for the task shape: `writing-plans` for multi-step phase plans, `systematic-debugging` for regressions, `test-driven-development` for feature/bug work, and `requesting-code-review` before merge.
-3. **After implementation:** Run typecheck, migration guard, E2E/browser QA, update docs/decisions, merge via PR, deploy, and add the reviewed result back to the Canva board as the current UX reference.
+3. **After implementation:** Run typecheck, migration guard, E2E/browser QA, update docs/decisions, merge via PR, deploy, and add the reviewed result back to Canva/Figma as the current UX reference.
 
 The first Canva artifact for this wave is the `Pulse Everyday Flow UX Board`. It should collect the active route sequence Home -> Coach -> Plan -> Data/Insights -> Settings, plus one "open friction" lane for issues found during browser QA.
+
+The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become the visual map for how Pulse moves from Superpowers plans to Figma design-system decisions, browser QA findings, GitHub PRs and deployed UX.
+
+## Tool Responsibilities
+
+| Tool | Role | Not Responsible For |
+|---|---|---|
+| Superpowers | Planning, TDD/debugging discipline, review and verification gates | Visual design source of truth |
+| Figma/FigJam | Reusable component language, variants, states, layout specs, interaction diagrams | Product logic, production truth, deployment |
+| Canva | Lightweight stakeholder board, screenshots, flow notes, review summaries | Component specs or code-linked design system |
+| Browser/E2E | Truth for implemented behavior and responsive usability | Long-lived design documentation |
+| GitHub PRs | Versioned source, CI, review, merge history | Visual collaboration canvas |
 
 ## Browser-Audit Ausgangslage
 
@@ -130,6 +145,7 @@ The first Canva artifact for this wave is the `Pulse Everyday Flow UX Board`. It
 
 - GitHub open PRs: none as of 2026-05-01 after checking `gh pr list`.
 - Canva: `Pulse Everyday Flow UX Board` created as the active UX companion artifact.
+- Figma: `Pulse UX Toolchain Loop` FigJam claim URL created; open/claim it before using it as an editable team file.
 - Server baseline: Phase 1 deployed and verified on `origin/main` commit `a34302c`.
 
 ## Open Questions
