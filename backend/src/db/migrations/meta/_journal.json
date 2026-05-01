@@ -162,6 +162,13 @@
       "when": 1777662300000,
       "tag": "0022_profile_provenance",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777663200000,
+      "tag": "0023_decision_closure_memory",
+      "breakpoints": true
     }
   ]
 }

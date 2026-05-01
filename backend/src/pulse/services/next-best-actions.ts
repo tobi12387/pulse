@@ -1,4 +1,5 @@
 import type { PulseNextBestAction, PulseNextBestActionPriority, PulseNextBestActionSource } from '@coaching-os/shared/pulse';
+import { shouldSuppressAction, type ActionDecisionRecord } from './decision-closure.js';
 
 export interface NextBestActionsInput {
   today: string;
@@ -33,6 +34,7 @@ export interface NextBestActionsInput {
     category: string;
     pctConsumed: number;
   }>;
+  actionDecisions?: ActionDecisionRecord[];
 }
 
 const PRIORITY_WEIGHT: Record<PulseNextBestActionPriority, number> = {
@@ -191,5 +193,9 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
 
   return actions
     .sort((a, b) => PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority])
+    .filter(action => !shouldSuppressAction(action, input.actionDecisions ?? [], {
+      today: input.today,
+      checkinDates: input.todayCheckin ? [input.today] : [],
+    }))
     .slice(0, 3);
 }
