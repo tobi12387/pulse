@@ -46,7 +46,7 @@
 
 **Design:** `GET /api/pulse/briefing` gibt eine tagesaktuelle Zusammenfassung zurück.
 Redis-Cache mit Key `briefing:{userId}:{date}` — TTL bis Mitternacht.
-Generiert von Claude SMART_MODEL, ca. 80-100 Wörter, kein Markdown.
+Generiert via `SMART_MODEL`, ca. 80-100 Wörter, kein Markdown.
 
 Der Briefing-Text ist bereits im Home-Komponent als Placeholder vorhanden aber leer — wir füllen ihn.
 

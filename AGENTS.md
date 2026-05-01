@@ -96,7 +96,7 @@ Commit-message format: `type: short description` where type ∈ `feat | fix | re
 | Runtime | Node 22 LTS (ESM), TypeScript 5 |
 | Backend | Fastify 5, Drizzle ORM 0.45+ |
 | Frontend | React 19, Vite, TanStack Query v5, Tailwind |
-| LLM | OpenRouter → `anthropic/claude-sonnet-4-5` (default) |
+| LLM | OpenRouter via `backend/src/lib/llm.ts`; model defaults are OpenAI-based and configurable through env |
 | Auth | argon2id |
 
 ---

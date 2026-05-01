@@ -4,9 +4,9 @@
 
 **Goal:** Voice-basierter täglicher Check-in im Coach-Tab, der mentale Zustände strukturiert speichert und auf der Home-Seite proaktiv vor Leistungstälern warnt.
 
-**Architecture:** Frontend nimmt Audio auf (MediaRecorder), schickt base64-kodiertes WebM an `POST /api/pulse/checkin/voice`. Backend transkribiert via Whisper, analysiert mit Claude (check-in vs. Frage, extrahiert Scores), speichert in `pulse_mental_checkins`, gibt Coach-Antwort zurück. Prognose-Engine läuft bei jedem Home-Aufruf (Redis-Cache 1h) und gibt bei negativem Trend einen Alert aus.
+**Architecture:** Frontend nimmt Audio auf (MediaRecorder), schickt base64-kodiertes WebM an `POST /api/pulse/checkin/voice`. Backend transkribiert via Whisper, analysiert per LLM (check-in vs. Frage, extrahiert Scores), speichert in `pulse_mental_checkins`, gibt Coach-Antwort zurück. Prognose-Engine läuft bei jedem Home-Aufruf (Redis-Cache 1h) und gibt bei negativem Trend einen Alert aus.
 
-**Tech Stack:** Node.js/Fastify, Drizzle ORM, OpenAI Whisper API (`openai` npm), Claude via OpenRouter, Redis, React/TanStack Query, MediaRecorder API
+**Tech Stack:** Node.js/Fastify, Drizzle ORM, OpenAI Whisper API (`openai` npm), OpenRouter, Redis, React/TanStack Query, MediaRecorder API
 
 ---
 

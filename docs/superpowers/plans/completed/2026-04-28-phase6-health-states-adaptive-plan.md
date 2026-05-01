@@ -77,7 +77,7 @@ ALTER TABLE pulse_planned_workouts ADD COLUMN adjusted_at TIMESTAMPTZ;
 
 `adjusted_reason` mögliche Werte: `'low_readiness'`, `'illness'`, `'injury'`, `'manual'`.
 
-**Drizzle-Schema in `pulse-schema.ts`** entsprechend ergänzen, Migration **additiv-only** (CLAUDE.md Regel 2).
+**Drizzle-Schema in `pulse-schema.ts`** entsprechend ergänzen, Migration **additiv-only** (AGENTS.md migration rule).
 
 ---
 

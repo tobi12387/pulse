@@ -24,13 +24,13 @@ Tobi soll täglich seine mentale Verfassung intuitiv per Sprache erfassen könne
 - Rückgabe: Transkript als Text
 - Fallback: wenn Whisper-API nicht verfügbar, Fehlermeldung im Chat ("Transkription fehlgeschlagen, bitte als Text eingeben")
 
-### Check-in-Erkennung durch Claude
-Claude analysiert das Transkript mit einem System-Prompt der unterscheidet:
+### Check-in-Erkennung durch LLM
+Das LLM analysiert das Transkript mit einem System-Prompt der unterscheidet:
 - **Check-in:** User beschreibt Befinden, Stimmung, Energie, Tagesgeschehen, Stressoren → strukturiert speichern + Nachfragen
 - **Frage/Auftrag:** normaler Coach-Flow, kein Check-in gespeichert
 
 ### Nachfragen
-Nach einem erkannten Check-in stellt Claude **gezielte Nachfragen** — so viele wie nötig um ein vollständiges Bild zu bekommen, basierend auf dem was im Transkript unklar oder relevant erscheint. Beispiele:
+Nach einem erkannten Check-in stellt das LLM **gezielte Nachfragen** — so viele wie nötig um ein vollständiges Bild zu bekommen, basierend auf dem was im Transkript unklar oder relevant erscheint. Beispiele:
 - "Du hast Rückenprobleme erwähnt — schon länger oder nur heute?"
 - "Wie viel steht heute noch an bei der Arbeit?"
 
@@ -55,7 +55,7 @@ Die Tabelle hat bereits `mood`, `energy`, `stress`, `motivation` (Integer 1–10
 | `coach_questions` | jsonb | Gestellte Nachfragen + Antworten als Array |
 
 `notes` übernimmt das vollständige Transkript + Nachfrage-Antworten.  
-Claude extrahiert `mood`, `energy`, `stress`, `motivation` als Integer 1–10 und gibt sie als strukturiertes JSON zurück (parallel zur Chat-Antwort, nicht sichtbar für User).
+Das LLM extrahiert `mood`, `energy`, `stress`, `motivation` als Integer 1–10 und gibt sie als strukturiertes JSON zurück (parallel zur Chat-Antwort, nicht sichtbar für User).
 
 ### Migration
 Additive DB-Migration — keine bestehenden Spalten werden geändert.
@@ -100,9 +100,9 @@ Frontend (Coach-Tab)
   └── MicButton → MediaRecorder → Audio-Blob
         └── POST /api/pulse/checkin/voice
               ├── Whisper API → Transkript
-              ├── Claude: check-in detection + extraction (JSON)
+              ├── LLM: check-in detection + extraction (JSON)
               ├── DB: INSERT/UPDATE pulse_mental_checkins
-              └── Claude: Chat-Antwort + Nachfragen → SSE stream
+              └── LLM: Chat-Antwort + Nachfragen → SSE stream
 
 Frontend (Home-Tab)
   └── GET /api/pulse/home
@@ -124,6 +124,6 @@ Frontend (Home-Tab)
 ## Erfolgskriterien
 
 1. User kann per Sprache in <10 Sekunden einen Check-in starten
-2. Claude erkennt zuverlässig Check-in vs. Frage (manuell validiert)
+2. Das LLM erkennt zuverlässig Check-in vs. Frage (manuell validiert)
 3. Prognose-Alert erscheint wenn HRV >3 Tage fällt + mentaler Score unter Baseline
 4. Badge verschwindet nach Check-in — kein Neustart nötig

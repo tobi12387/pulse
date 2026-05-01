@@ -7,7 +7,7 @@
 2. Trend-Charts für HRV, Schlaf, Readiness und Load (visuell statt Karten-Listen)
 3. Gewichts-Tracking mit Trendlinie und Zielgewicht
 
-**Architektur:** Kein neues Framework. Charts als leichtgewichtige SVG-Inline-Komponenten (kein Recharts/Chart.js — zu groß für den Use Case). Gewicht als Sub-Tab in der Data-Page (neben Schlaf, Metriken, Mental)elle `pulse_weight_log`. Trainingsplan-Generierung via LLM (Claude SMART_MODEL), Backend-Endpunkt `POST /api/pulse/plan/generate` bereits vorhanden — Qualität verbessern.
+**Architektur:** Kein neues Framework. Charts als leichtgewichtige SVG-Inline-Komponenten (kein Recharts/Chart.js — zu groß für den Use Case). Gewicht als Sub-Tab in der Data-Page (neben Schlaf, Metriken, Mental)elle `pulse_weight_log`. Trainingsplan-Generierung via LLM (`SMART_MODEL`), Backend-Endpunkt `POST /api/pulse/plan/generate` bereits vorhanden — Qualität verbessern.
 
 **Repo root:** `/root/pulse`
 
@@ -22,7 +22,7 @@
 | TrainingTab ohne Generate-Button (3c Task 3) | ✅ UI existiert | **Fehler: kein Button — Plan nie sichtbar** |
 | MentalTab ohne Check-in-Guard (3c Task 3) | ✅ UI existiert | **Bug: Doppel-Submit möglich** |
 | Charts waren in keinem Plan | ❌ Nie geplant | Höchste UX-Priorität |
-| Gewicht war in keinem Plan | ❌ Nie geplant | Explizit in CLAUDE.md als Fokus |
+| Gewicht war in keinem Plan | ❌ Nie geplant | Explizit in der AI-Projektdoku als Fokus |
 
 ---
 
@@ -312,7 +312,7 @@ git -C /root/pulse commit -m "feat: add trend charts (SparkLine/SparkBar) on Hom
 
 Polarisiertes Training = ~80% Z1-Z2, ~20% Z4-Z5. Die aktuellen Templates mischen das nicht korrekt und ignorieren FTP/aktuelle Load.
 
-**Ansatz für LLM-Plan:** Der bestehende `POST /plan/generate` Endpunkt ruft `generateWeekWorkouts` auf. Wir erweitern das: wenn ein LLM-Key vorhanden, generiert Claude einen JSON-Trainingsplan; sonst Fallback auf Templates.
+**Ansatz für LLM-Plan:** Der bestehende `POST /plan/generate` Endpunkt ruft `generateWeekWorkouts` auf. Wir erweitern das: wenn ein LLM-Key vorhanden, generiert das LLM einen JSON-Trainingsplan; sonst Fallback auf Templates.
 
 **Files:**
 - Modify: `backend/src/pulse/services/plan-engine.ts`
@@ -409,7 +409,7 @@ import { env } from '../lib/env.js';
 // Im Handler:
 let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
 
-if (env.OPENAI_API_KEY || true) { // LLM immer nutzen (Claude via OpenRouter)
+if (env.OPENAI_API_KEY || true) { // LLM immer nutzen (OpenRouter)
   const fitnessLoad = await computeFitnessLoad(userId, new Date().toISOString().split('T')[0]!);
   const recentActs = await db.select({
     activityType: pulseActivities.activityType,
@@ -544,7 +544,7 @@ git -C /root/pulse commit -m "feat: LLM-Trainingsplan + Generate-Button + Check-
 
 ## Task 4: Gewichts-Tracking
 
-**Warum:** CLAUDE.md nennt Gewichtsmanagement als expliziten Fokus. Kein Tracking = keine Daten = kein Coaching.
+**Warum:** Die AI-Projektdoku nennt Gewichtsmanagement als expliziten Fokus. Kein Tracking = keine Daten = kein Coaching.
 
 **Design:** Einfach halten. Tägliche Gewichtseingabe (kg, 1 Dezimalstelle), Trend über 30 Tage, Zielgewicht. Kein Body-Fat, keine Körperzusammensetzung — das gehört in Phase 5.
 
