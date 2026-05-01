@@ -171,7 +171,10 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Athletenprofil */}
+      <SettingsGroup
+        title="Profil"
+        description="Trainingszonen, Wochenziel und Phase steuern Plan- und Coach-Kontext."
+      >
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span className="label-mono">Athletenprofil</span>
@@ -285,8 +288,12 @@ export default function Settings() {
           </div>
         )}
       </div>
+      </SettingsGroup>
 
-      {/* Garmin card */}
+      <SettingsGroup
+        title="Verbindung"
+        description="Kalender-Sync und Backfill sind getrennt von Profil- und Push-Aktionen."
+      >
       <div className="card">
         <div className="label-mono" style={{ marginBottom: 14 }}>Garmin Connect</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -389,14 +396,57 @@ export default function Settings() {
           </p>
         </div>
       </div>
+      </SettingsGroup>
 
-      <EquipmentList setMessage={setMessage} />
+      <SettingsGroup
+        title="Datenpflege"
+        description="Equipment, Abdeckung und Wartung bleiben bei wiederholten Alltagsaufgaben zusammen."
+      >
+        <EquipmentList setMessage={setMessage} />
+      </SettingsGroup>
 
-      <PushNotificationsCard setMessage={setMessage} />
+      <SettingsGroup
+        title="Benachrichtigungen"
+        description="Push-Regeln betreffen Geräte und Erlaubnisse, nicht Garmin-Daten."
+      >
+        <PushNotificationsCard setMessage={setMessage} />
+      </SettingsGroup>
 
-      {/* Health States */}
-      <HealthStateCard />
+      <SettingsGroup
+        title="Health-State"
+        description="Health-State setzt harte Trainingsgrenzen und ist bewusst separat."
+      >
+        <HealthStateCard />
+      </SettingsGroup>
     </div>
+  );
+}
+
+function SettingsGroup({ title, description, children }: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+        <h2 style={{
+          margin: 0,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          color: 'var(--text)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+        }}>
+          {title}
+        </h2>
+        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45 }}>
+          {description}
+        </p>
+      </div>
+      {children}
+    </section>
   );
 }
 
