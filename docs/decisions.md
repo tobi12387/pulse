@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Insights zeigen strukturierte Datenbasis statt nur Narrativ
+
+- **Decision:** Deep Insights behalten den bestehenden `/api/pulse/insights`-Contract kompatibel, bekommen aber strukturierte `evidence`- und `missingData`-Listen. Datenmangel bleibt ein HTTP-200-Fachzustand (`status: data_missing`), Provider-/Timeoutfehler bleiben sanitizte HTTP-Fehler; leere Schlaf-/HRV-Fenster werden nicht mehr an das LLM zur Narrativbildung geschickt.
+- **Why:** Der Nutzer muss sehen, welche Daten und Zeitfenster eine Insight tragen, ohne rohe Providertexte oder Promptdetails zu sehen. Das trennt Vertrauen in die Datenbasis von technischen KI-/Providerproblemen und verhindert leere Daten-Narrative.
+- **Alternatives:** Neue Persistenztabellen fuer Insight-Belege (zu gross fuer diesen Slice); nur Frontend-Labels aus `stats` ableiten (keine belastbare API-Semantik); leere Daten weiterhin vom LLM beschreiben lassen (wirkt plausibel, ist aber fachlich schwach).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Lokale Testservices bleiben Mac-basiert und werden bootstrapbar
 
 - **Decision:** Pulse entwickelt weiter lokal im Mac-Workspace mit GitHub `main` als Source of Truth; der Ubuntu-Server bleibt Deploy-Mirror. Lokale Postgres-/Redis-Testservices werden ueber `scripts/dev-services.sh` und `npm run services:*` bootstrapbar, und `verify:local` startet diese Services standardmaessig vor Backend-Tests.

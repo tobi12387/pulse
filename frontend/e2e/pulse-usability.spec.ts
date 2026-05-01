@@ -34,6 +34,19 @@ test('Insights load analyses only after the user opens a card', async ({ page })
   expect(insightRequests).toBe(1);
 });
 
+test('Insights show evidence links for opened analysis cards', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/insights');
+  await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
+
+  await expect(page.getByText('Datenbasis')).toBeVisible();
+  await expect(page.getByText('Trainingsdaten')).toBeVisible();
+  await expect(page.getByText('4 Aktivitäten')).toBeVisible();
+  await expect(page.getByText('30 Tage')).toBeVisible();
+  await expect(page.getByText('OpenRouter')).toHaveCount(0);
+});
+
 test('Insights show a helpful state instead of raw server errors', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'server' });
 
@@ -66,6 +79,9 @@ test('Insights classify missing data without offering a retry', async ({ page })
 
   await expect(page.getByText('Noch nicht genug Daten.')).toBeVisible();
   await expect(page.getByText('Noch nicht genug Check-in-Daten für diesen Zeitraum.')).toBeVisible();
+  await expect(page.getByText('Daten fehlen')).toBeVisible();
+  await expect(page.getByText('Mental-Check-ins')).toBeVisible();
+  await expect(page.getByText('Keine Check-ins im gewählten Zeitraum.')).toBeVisible();
   await expect(page.getByText('Trage im Coach einen Check-in ein oder wähle 90T.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toHaveCount(0);
 });

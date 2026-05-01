@@ -11,6 +11,20 @@ import { getMentalLoadOverlay } from './mental-load-overlay.js';
 // ─── Deep Insight types ───────────────────────────────────────────────────────
 
 export type InsightDomain = 'sleep' | 'hrv' | 'load' | 'weight' | 'mental' | 'overall';
+export type InsightEvidenceStatus = 'available' | 'limited' | 'missing';
+
+export interface InsightEvidenceItem {
+  label: string;
+  value: string;
+  window: string;
+  status: InsightEvidenceStatus;
+}
+
+export interface InsightMissingDataItem {
+  label: string;
+  reason: string;
+  action?: string;
+}
 
 export interface DeepInsightResult {
   domain: InsightDomain;
@@ -18,10 +32,19 @@ export interface DeepInsightResult {
   stats: Record<string, number | string | null>;
   date: string;
   cached: boolean;
+  evidence: InsightEvidenceItem[];
+  missingData: InsightMissingDataItem[];
   status?: 'ok' | 'data_missing';
   action?: string | null;
   retryable?: boolean;
 }
+
+type InsightContext = {
+  prompt: string;
+  stats: Record<string, number | string | null>;
+  evidence: InsightEvidenceItem[];
+  missingData: InsightMissingDataItem[];
+};
 
 // ─── Stat helpers ─────────────────────────────────────────────────────────────
 
@@ -39,9 +62,22 @@ function numTrend(values: (number | null)[]): number | null {
   return Math.round((b - a) * 10) / 10;
 }
 
+function evidenceItem(label: string, value: string, window: string, status: InsightEvidenceStatus = 'available'): InsightEvidenceItem {
+  return { label, value, window, status };
+}
+
+function countLabel(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function dataStatus(count: number, solidThreshold: number): InsightEvidenceStatus {
+  if (count <= 0) return 'missing';
+  return count >= solidThreshold ? 'available' : 'limited';
+}
+
 // ─── Domain context builders ──────────────────────────────────────────────────
 
-async function sleepContext(userId: string, since: string) {
+async function sleepContext(userId: string, since: string, days: number): Promise<InsightContext> {
   const rows = await db.select({
     date: pulseDailyMetrics.date, sleepHours: pulseDailyMetrics.sleepHours,
     sleepScore: pulseDailyMetrics.sleepScore, bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
@@ -58,6 +94,13 @@ async function sleepContext(userId: string, since: string) {
     daysUnder7h: w.filter(r => (r.sleepHours ?? 0) < 7).length,
     daysWithData: w.length,
   };
+  const evidence = [
+    evidenceItem('Schlafdauer', countLabel(w.length, 'Nacht', 'Nächte'), `${days} Tage`, dataStatus(w.length, Math.min(7, days))),
+    ...(stats.avgScore != null ? [evidenceItem('Schlafscore', `Ø ${stats.avgScore}`, `${days} Tage`, dataStatus(w.filter(r => r.sleepScore != null).length, Math.min(7, days)))] : []),
+  ];
+  const missingData = w.length === 0
+    ? [{ label: 'Schlafdaten', reason: 'Keine Schlafdauer im gewählten Zeitraum.' }]
+    : [];
   const lines = w.slice(-14).map(r =>
     `${r.date}: ${r.sleepHours?.toFixed(1)}h Score=${r.sleepScore ?? '–'} Batt=${r.bodyBatteryMax ?? '–'}% Stress=${r.stressAvg ?? '–'}`
   ).join('\n');
@@ -65,10 +108,10 @@ async function sleepContext(userId: string, since: string) {
 Letzte 14 Tage:\n${lines || 'Keine Daten'}
 Kennzahlen: Ø ${stats.avgSleepH}h, Ø Score ${stats.avgScore}, Trend ${stats.trendH != null ? (stats.trendH > 0 ? '+' : '') + stats.trendH + 'h' : 'unklar'}, ${stats.daysUnder7h} Nächte unter 7h.
 Bewertung (3-5 Sätze): Was läuft gut, was ist problematisch, Auswirkung auf Training, konkrete Empfehlung.`;
-  return { prompt, stats };
+  return { prompt, stats, evidence, missingData };
 }
 
-async function hrvContext(userId: string, since: string) {
+async function hrvContext(userId: string, since: string, days: number): Promise<InsightContext> {
   const rows = await db.select({
     date: pulseDailyMetrics.date, hrvRmssd: pulseDailyMetrics.hrvRmssd,
     restingHr: pulseDailyMetrics.restingHr, hrvStatus: pulseDailyMetrics.hrvStatus,
@@ -87,7 +130,16 @@ async function hrvContext(userId: string, since: string) {
     avgRestingHr: numAvg(rows.filter(r => r.restingHr != null).map(r => r.restingHr)),
     poorDays: statusCount['poor'] ?? 0,
     normalDays: (statusCount['normal'] ?? 0) + (statusCount['above_normal'] ?? 0),
+    daysWithData: w.length,
   };
+  const restingHrDays = rows.filter(r => r.restingHr != null).length;
+  const evidence = [
+    evidenceItem('HRV RMSSD', countLabel(w.length, 'Tag', 'Tage'), `${days} Tage`, dataStatus(w.length, Math.min(7, days))),
+    ...(restingHrDays > 0 ? [evidenceItem('Ruhepuls', countLabel(restingHrDays, 'Tag', 'Tage'), `${days} Tage`, dataStatus(restingHrDays, Math.min(7, days)))] : []),
+  ];
+  const missingData = w.length === 0
+    ? [{ label: 'HRV-Daten', reason: 'Keine HRV-Werte im gewählten Zeitraum.' }]
+    : [];
   const lines = w.slice(-14).map(r =>
     `${r.date}: HRV=${r.hrvRmssd?.toFixed(0)} ms Status=${r.hrvStatus ?? '–'} RHR=${r.restingHr ?? '–'} bpm`
   ).join('\n');
@@ -95,10 +147,10 @@ async function hrvContext(userId: string, since: string) {
 Letzte 14 Tage:\n${lines || 'Keine Daten'}
 Kennzahlen: Ø HRV ${stats.avgHrvMs} ms, Trend ${stats.trendHrv != null ? (stats.trendHrv > 0 ? '+' : '') + stats.trendHrv + ' ms' : 'unklar'}, Ø RHR ${stats.avgRestingHr} bpm, ${stats.poorDays} Poor-Tage.
 Bewertung (3-5 Sätze): Erholungsstatus, Übertrainings-Signale, Trend-Bedeutung, Empfehlung.`;
-  return { prompt, stats };
+  return { prompt, stats, evidence, missingData };
 }
 
-async function loadContext(userId: string, since: string) {
+async function loadContext(userId: string, since: string, days: number): Promise<InsightContext> {
   const [activities, load, profileRows] = await Promise.all([
     db.select({
       startTime: pulseActivities.startTime, activityType: pulseActivities.activityType,
@@ -112,6 +164,14 @@ async function loadContext(userId: string, since: string) {
   ]);
   const ftp = profileRows[0]?.ftpWatts ?? null;
   const stats = { ctl: Math.round(load.ctl), atl: Math.round(load.atl), tsb: Math.round(load.tsb), ftpWatts: ftp, activitiesCount: activities.length };
+  const evidence = [
+    evidenceItem('Fitness Load', `CTL ${stats.ctl} / ATL ${stats.atl} / TSB ${stats.tsb}`, 'heute', 'available'),
+    evidenceItem('Aktivitäten', countLabel(activities.length, 'Aktivität', 'Aktivitäten'), `${days} Tage`, dataStatus(activities.length, 3)),
+    ...(ftp ? [evidenceItem('Profil-FTP', `${ftp} W`, 'Profil', 'available')] : []),
+  ];
+  const missingData = activities.length === 0
+    ? [{ label: 'Aktivitäten', reason: 'Keine Garmin-Aktivitäten im gewählten Zeitraum.' }]
+    : [];
   const lines = activities.slice(0, 10).map(a =>
     `${new Date(a.startTime).toISOString().split('T')[0]} ${a.activityType} ${a.durationSec ? Math.round(a.durationSec / 60) + 'min' : ''} TSS=${a.tss?.toFixed(0) ?? '–'}${a.normalizedPowerW ? ` NP=${a.normalizedPowerW}W` : ''}`
   ).join('\n');
@@ -119,10 +179,10 @@ async function loadContext(userId: string, since: string) {
 Fitness: CTL=${load.ctl.toFixed(0)} ATL=${load.atl.toFixed(0)} TSB=${load.tsb.toFixed(0)}${ftp ? ` FTP=${ftp}W` : ''}
 Letzte 10 Trainings:\n${lines || 'Keine Aktivitäten'}
 Bewertung (3-5 Sätze): Belastungsangemessenheit, Über-/Untertraining, TSB-Form, Empfehlung nächste Woche.`;
-  return { prompt, stats };
+  return { prompt, stats, evidence, missingData };
 }
 
-async function weightContext(userId: string) {
+async function weightContext(userId: string): Promise<InsightContext | null> {
   const since = new Date(Date.now() - 90 * 86_400_000).toISOString().split('T')[0]!;
   const rows = await db.select({
     date: pulseWeightLog.date, weightKg: pulseWeightLog.weightKg,
@@ -138,6 +198,11 @@ async function weightContext(userId: string) {
     avgMuscleMassKg: numAvg(rows.filter(r => r.muscleMassKg != null).map(r => r.muscleMassKg)),
     daysTracked: rows.length,
   };
+  const evidence = [
+    evidenceItem('Gewichtsverlauf', countLabel(rows.length, 'Eintrag', 'Einträge'), '90 Tage', dataStatus(rows.length, 3)),
+    ...(stats.avgBodyFatPct != null ? [evidenceItem('Körperfett', `Ø ${stats.avgBodyFatPct}%`, '90 Tage', 'available' as const)] : []),
+    ...(stats.avgMuscleMassKg != null ? [evidenceItem('Muskelmasse', `Ø ${stats.avgMuscleMassKg} kg`, '90 Tage', 'available' as const)] : []),
+  ];
   const lines = rows.slice(-10).map(r =>
     `${r.date}: ${r.weightKg?.toFixed(1)}kg${r.bodyFatPct ? ` KF=${r.bodyFatPct.toFixed(1)}%` : ''}${r.muscleMassKg ? ` Muskel=${r.muscleMassKg.toFixed(1)}kg` : ''}`
   ).join('\n');
@@ -145,10 +210,10 @@ async function weightContext(userId: string) {
 Letzte 10 Einträge:\n${lines}
 Kennzahlen: Aktuell ${last.toFixed(1)}kg, 90d-Veränderung: ${stats.change90d > 0 ? '+' : ''}${stats.change90d}kg${stats.avgBodyFatPct ? `, Ø KF ${stats.avgBodyFatPct}%` : ''}${stats.avgMuscleMassKg ? `, Ø Muskeln ${stats.avgMuscleMassKg}kg` : ''}.
 Bewertung (3-5 Sätze): Trend, Körperzusammensetzung im Kontext Ausdauersport, Empfehlung.`;
-  return { prompt, stats };
+  return { prompt, stats, evidence, missingData: [] };
 }
 
-async function mentalContext(userId: string, since: string, days: number, today: string) {
+async function mentalContext(userId: string, since: string, days: number, today: string): Promise<InsightContext | null> {
   const [ctx, themeData, overlay] = await Promise.all([
     buildCachedPulseContextFor(userId, today),
     listMentalThemes(userId, days),
@@ -181,6 +246,18 @@ async function mentalContext(userId: string, since: string, days: number, today:
     moodTsbCorrelation: overlay.stats.moodTsbCorrelation,
     lowTsbCheckins: overlay.stats.lowTsbCheckins,
   };
+  const evidence = [
+    evidenceItem('Mental-Check-ins', countLabel(rows.length, 'Eintrag', 'Einträge'), `${days} Tage`, dataStatus(rows.length, 3)),
+    ...(topThemes.length > 0
+      ? [evidenceItem('Theme-Historie', countLabel(topThemes.length, 'Theme', 'Themes'), `${days} Tage`, 'available' as const)]
+      : []),
+    evidenceItem(
+      'Mental/TSB-Overlay',
+      stats.moodTsbCorrelation != null ? `r=${stats.moodTsbCorrelation}` : countLabel(overlay.stats.checkins, 'Check-in', 'Check-ins'),
+      `${overlay.days} Tage`,
+      stats.moodTsbCorrelation != null ? 'available' : dataStatus(overlay.stats.checkins, 3),
+    ),
+  ];
   const lines = rows.slice(-14).map(r =>
     `${r.date}: Stimmung=${r.mood} Energie=${r.energy} Stress=${r.stress} Motivation=${r.motivation}`
   ).join('\n');
@@ -201,7 +278,7 @@ Top-Themes der letzten ${days} Tage:\n${themeLines || 'Keine wiederkehrenden The
 Kennzahlen: Ø Stimmung ${stats.avgMood ?? 'n/a'}/10, Energie ${stats.avgEnergy ?? 'n/a'}/10, Stress ${stats.avgStress ?? 'n/a'}/10, Motivation ${stats.avgMotivation ?? 'n/a'}/10. ${stats.highStressDays} Hochstress-Tage (>=7).
 Mood/TSB-Korrelation im Overlay (${overlayWindow}): r=${stats.moodTsbCorrelation ?? 'n/a'}, Check-ins bei TSB<-10: ${stats.lowTsbCheckins}.
 Bewertung (3-5 Sätze): Muster, Risikofaktoren, Zusammenhang mit Training und TSB, konkrete Empfehlung. Grenze dich von Risk Watch ab: hier narrativ-deskriptiv, keine Alarmregel.`;
-  return { prompt, stats };
+  return { prompt, stats, evidence, missingData: [] };
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -217,7 +294,19 @@ export async function generateDeepInsight(
 
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
-    if (cached) return { ...JSON.parse(cached) as Omit<DeepInsightResult, 'cached'>, cached: true };
+    if (cached) {
+      const parsed = JSON.parse(cached) as Partial<Omit<DeepInsightResult, 'cached'>>;
+      return {
+        ...parsed,
+        domain: parsed.domain ?? domain,
+        analysis: parsed.analysis ?? '',
+        stats: parsed.stats ?? {},
+        date: parsed.date ?? today,
+        evidence: parsed.evidence ?? [],
+        missingData: parsed.missingData ?? [],
+        cached: true,
+      };
+    }
   }
 
   const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
@@ -226,11 +315,43 @@ Antworte auf Deutsch. Kein Markdown, keine Aufzählungszeichen — fließender T
 
   let prompt: string;
   let stats: Record<string, number | string | null>;
+  let evidence: InsightEvidenceItem[] = [];
+  let missingData: InsightMissingDataItem[] = [];
 
   switch (domain) {
-    case 'sleep':  { const c = await sleepContext(userId, since);  prompt = c.prompt; stats = c.stats; break; }
-    case 'hrv':    { const c = await hrvContext(userId, since);    prompt = c.prompt; stats = c.stats; break; }
-    case 'load':   { const c = await loadContext(userId, since);   prompt = c.prompt; stats = c.stats; break; }
+    case 'sleep': {
+      const c = await sleepContext(userId, since, days);
+      if (c.missingData.length > 0) return {
+        domain,
+        analysis: 'Noch nicht genug Schlafdaten für diesen Zeitraum.',
+        stats: c.stats,
+        date: today,
+        cached: false,
+        status: 'data_missing',
+        action: 'Synchronisiere Garmin-Schlafdaten oder wähle einen längeren Zeitraum.',
+        retryable: false,
+        evidence: c.evidence,
+        missingData: c.missingData,
+      };
+      prompt = c.prompt; stats = c.stats; evidence = c.evidence; missingData = c.missingData; break;
+    }
+    case 'hrv': {
+      const c = await hrvContext(userId, since, days);
+      if (c.missingData.length > 0) return {
+        domain,
+        analysis: 'Noch nicht genug HRV-Daten für diesen Zeitraum.',
+        stats: c.stats,
+        date: today,
+        cached: false,
+        status: 'data_missing',
+        action: 'Synchronisiere Garmin-Gesundheitsdaten oder wähle einen längeren Zeitraum.',
+        retryable: false,
+        evidence: c.evidence,
+        missingData: c.missingData,
+      };
+      prompt = c.prompt; stats = c.stats; evidence = c.evidence; missingData = c.missingData; break;
+    }
+    case 'load':   { const c = await loadContext(userId, since, days);   prompt = c.prompt; stats = c.stats; evidence = c.evidence; missingData = c.missingData; break; }
     case 'mental': {
       const c = await mentalContext(userId, since, days, today);
       if (!c) return {
@@ -242,8 +363,16 @@ Antworte auf Deutsch. Kein Markdown, keine Aufzählungszeichen — fließender T
         status: 'data_missing',
         action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
         retryable: false,
+        evidence: [],
+        missingData: [
+          {
+            label: 'Mental-Check-ins',
+            reason: 'Keine Check-ins im gewählten Zeitraum.',
+            action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
+          },
+        ],
       };
-      prompt = c.prompt; stats = c.stats; break;
+      prompt = c.prompt; stats = c.stats; evidence = c.evidence; missingData = c.missingData; break;
     }
     case 'weight': {
       const c = await weightContext(userId);
@@ -256,15 +385,35 @@ Antworte auf Deutsch. Kein Markdown, keine Aufzählungszeichen — fließender T
         status: 'data_missing',
         action: 'Erfasse Gewichtsdaten oder wähle einen späteren Zeitraum.',
         retryable: false,
+        evidence: [],
+        missingData: [
+          {
+            label: 'Gewichtsdaten',
+            reason: 'Keine Gewichtseinträge für eine belastbare Tendenz.',
+            action: 'Erfasse Gewichtsdaten oder wähle einen späteren Zeitraum.',
+          },
+        ],
       };
-      prompt = c.prompt; stats = c.stats; break;
+      prompt = c.prompt; stats = c.stats; evidence = c.evidence; missingData = c.missingData; break;
     }
     case 'overall': {
       const [s, h, l, m] = await Promise.all([
-        sleepContext(userId, since), hrvContext(userId, since),
-        loadContext(userId, since), mentalContext(userId, since, days, today),
+        sleepContext(userId, since, days), hrvContext(userId, since, days),
+        loadContext(userId, since, days), mentalContext(userId, since, days, today),
       ]);
       stats = {};
+      evidence = [
+        ...s.evidence.slice(0, 2),
+        ...h.evidence.slice(0, 2),
+        ...l.evidence.slice(0, 2),
+        ...(m?.evidence.slice(0, 2) ?? []),
+      ];
+      missingData = [
+        ...s.missingData,
+        ...h.missingData,
+        ...l.missingData,
+        ...(m?.missingData ?? []),
+      ];
       prompt = `Gesamtanalyse von Tobis Gesundheits- und Trainingsstatus der letzten ${days} Tage.
 Schlaf: Ø ${s.stats.avgSleepH}h, Score ${s.stats.avgScore}, Trend ${s.stats.trendH != null ? (Number(s.stats.trendH) > 0 ? '+' : '') + s.stats.trendH + 'h' : 'unklar'}
 HRV: Ø ${h.stats.avgHrvMs} ms, Trend ${h.stats.trendHrv != null ? (Number(h.stats.trendHrv) > 0 ? '+' : '') + h.stats.trendHrv + ' ms' : 'unklar'}, RHR ${h.stats.avgRestingHr} bpm
@@ -276,7 +425,7 @@ Gesamtbild in 4-6 Sätzen: aktueller Stand, wichtigste Stärken/Risiken, Empfehl
   }
 
   const analysis = await llmComplete(sys, prompt, SMART_MODEL);
-  const result: Omit<DeepInsightResult, 'cached'> = { domain, analysis, stats, date: today };
+  const result: Omit<DeepInsightResult, 'cached'> = { domain, analysis, stats, date: today, evidence, missingData, status: 'ok' };
   const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
   await redis.set(cacheKey, JSON.stringify(result), 'EX', Math.round((midnight.getTime() - Date.now()) / 1000));
   return { ...result, cached: false };

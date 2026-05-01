@@ -194,6 +194,33 @@ describe('getRuleInsight', () => {
 });
 
 describe('generateDeepInsight mental domain', () => {
+  it('returns data-missing for sleep when the selected window has no sleep duration', async () => {
+    const { generateDeepInsight } = await import('./insight-engine.js');
+    const result = await generateDeepInsight('user-123', 'sleep', 30, true);
+
+    expect(result).toMatchObject({
+      domain: 'sleep',
+      stats: { daysWithData: 0 },
+      cached: false,
+      status: 'data_missing',
+      retryable: false,
+      evidence: [
+        expect.objectContaining({
+          label: 'Schlafdauer',
+          status: 'missing',
+          window: '30 Tage',
+        }),
+      ],
+      missingData: [
+        expect.objectContaining({
+          label: 'Schlafdaten',
+          reason: 'Keine Schlafdauer im gewählten Zeitraum.',
+        }),
+      ],
+    });
+    expect(llmMocks.llmComplete).not.toHaveBeenCalled();
+  });
+
   it('uses PulseContext, themes, load overlay stats, and a days-aware cache key', async () => {
     const { generateDeepInsight } = await import('./insight-engine.js');
 
@@ -219,6 +246,27 @@ describe('generateDeepInsight mental domain', () => {
       resurfacingThemes: 1,
       moodTsbCorrelation: -0.4,
     });
+    expect(result.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: 'Mental-Check-ins',
+        value: '3 Einträge',
+        window: '90 Tage',
+        status: 'available',
+      }),
+      expect.objectContaining({
+        label: 'Theme-Historie',
+        value: '1 Theme',
+        window: '90 Tage',
+        status: 'available',
+      }),
+      expect.objectContaining({
+        label: 'Mental/TSB-Overlay',
+        value: 'r=-0.4',
+        window: '90 Tage',
+        status: 'available',
+      }),
+    ]));
+    expect(result.missingData).toEqual([]);
   });
 
   it('still analyzes historical non-recurring check-ins outside the 14-day PulseContext slice', async () => {
@@ -255,6 +303,13 @@ describe('generateDeepInsight mental domain', () => {
       status: 'data_missing',
       action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
       retryable: false,
+      evidence: [],
+      missingData: [
+        expect.objectContaining({
+          label: 'Mental-Check-ins',
+          reason: 'Keine Check-ins im gewählten Zeitraum.',
+        }),
+      ],
     });
     expect(llmMocks.llmComplete).not.toHaveBeenCalled();
   });
