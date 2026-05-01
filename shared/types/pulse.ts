@@ -99,6 +99,14 @@ export interface WorkoutStep {
   targetLabel?: string;
 }
 
+export type WorkoutExecutionStatus =
+  | 'local_planned'
+  | 'garmin_template'
+  | 'garmin_scheduled'
+  | 'completed_matched'
+  | 'missed'
+  | 'replaced_or_off_plan';
+
 export interface PulsePlannedWorkout {
   id: string;
   userId: string;
@@ -111,10 +119,15 @@ export interface PulsePlannedWorkout {
   description: string | null;
   steps: WorkoutStep[] | null;
   garminWorkoutId: string | null;
+  garminScheduledId: string | null;
   status: 'planned' | 'completed' | 'skipped';
   workoutFeedback: string | null;
   complianceScore: number | null;
   completedActivityId: string | null;
+  executionStatus: WorkoutExecutionStatus | null;
+  executionMatchedAt: string | null;
+  executionMatchConfidence: number | null;
+  executionNotes: string | null;
 }
 
 export interface PulsePlanDecision {

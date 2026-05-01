@@ -28,6 +28,36 @@ const ACTIVITY_LABEL: Record<string, string> = {
   strength: 'Kraft', hike: 'Wandern', other: 'Sonstiges',
 };
 
+const EXECUTION_META: Record<NonNullable<PulsePlannedWorkout['executionStatus']>, { label: string; color: string }> = {
+  local_planned:        { label: 'Lokal', color: 'var(--amber)' },
+  garmin_template:      { label: 'Garmin', color: 'var(--accent)' },
+  garmin_scheduled:     { label: 'Kalender', color: 'var(--green)' },
+  completed_matched:    { label: 'Erledigt', color: 'var(--green)' },
+  missed:               { label: 'Verpasst', color: 'var(--rose)' },
+  replaced_or_off_plan: { label: 'Ersetzt', color: 'var(--amber)' },
+};
+
+function executionStatusFor(workout: PulsePlannedWorkout): NonNullable<PulsePlannedWorkout['executionStatus']> {
+  if (workout.executionStatus) return workout.executionStatus;
+  if (workout.status === 'completed') return 'completed_matched';
+  if (workout.garminScheduledId) return 'garmin_scheduled';
+  if (workout.garminWorkoutId) return 'garmin_template';
+  return 'local_planned';
+}
+
+function ExecutionBadge({ workout }: { workout: PulsePlannedWorkout }) {
+  const meta = EXECUTION_META[executionStatusFor(workout)];
+  return (
+    <span style={{
+      fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em',
+      color: meta.color, background: translucent(meta.color, 9),
+      padding: '2px 5px', borderRadius: 2, textTransform: 'uppercase',
+    }}>
+      {meta.label}
+    </span>
+  );
+}
+
 function fmtDuration(min: number): string {
   if (min < 60) return `${min} min`;
   const h = Math.floor(min / 60);
@@ -128,8 +158,8 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
 
   const syncGarmin = useMutation({
     mutationFn: () => pulseApi.plan.syncGarmin(workout.id),
-    onSuccess: ({ garminWorkoutId }) => {
-      const updated = { ...workout, garminWorkoutId };
+    onSuccess: ({ garminWorkoutId, garminScheduledId, workout: syncedWorkout }) => {
+      const updated = syncedWorkout ?? { ...workout, garminWorkoutId, garminScheduledId };
       setWorkout(updated);
       onUpdate(updated);
       qc.invalidateQueries({ queryKey: pulseKeys.plan });
@@ -177,13 +207,7 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em' }}>
                   {new Date(workout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
                 </span>
-                {workout.garminWorkoutId && (
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em',
-                    color: 'var(--green)', background: translucent('var(--green)', 9),
-                    padding: '2px 5px', borderRadius: 2,
-                  }}>✓ Garmin</span>
-                )}
+                <ExecutionBadge workout={workout} />
               </div>
               <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>
                 {ACTIVITY_LABEL[workout.activityType] ?? workout.activityType}
@@ -205,6 +229,11 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
           {workout.description && (
             <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 8, lineHeight: 1.5 }}>
               {workout.description}
+            </p>
+          )}
+          {workout.executionNotes && (
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, lineHeight: 1.45 }}>
+              {workout.executionNotes}
             </p>
           )}
         </div>

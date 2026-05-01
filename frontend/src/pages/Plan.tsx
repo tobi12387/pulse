@@ -74,6 +74,40 @@ type WorkoutUpdate = {
 
 type PlanAlternativeId = 'shorter' | 'easier' | 'move' | 'rest';
 
+const EXECUTION_META: Record<NonNullable<PlannedWorkout['executionStatus']>, { label: string; color: string }> = {
+  local_planned:        { label: 'Lokal', color: 'var(--amber)' },
+  garmin_template:      { label: 'Garmin', color: 'var(--accent)' },
+  garmin_scheduled:     { label: 'Kalender', color: 'var(--green)' },
+  completed_matched:    { label: 'Erledigt', color: 'var(--green)' },
+  missed:               { label: 'Verpasst', color: 'var(--rose)' },
+  replaced_or_off_plan: { label: 'Ersetzt', color: 'var(--amber)' },
+};
+
+function executionStatusFor(workout: PlannedWorkout): NonNullable<PlannedWorkout['executionStatus']> {
+  if (workout.executionStatus) return workout.executionStatus;
+  if (workout.status === 'completed') return 'completed_matched';
+  if (workout.garminScheduledId) return 'garmin_scheduled';
+  if (workout.garminWorkoutId) return 'garmin_template';
+  return 'local_planned';
+}
+
+function ExecutionBadge({ workout }: { workout: PlannedWorkout }) {
+  const meta = EXECUTION_META[executionStatusFor(workout)];
+  return (
+    <span style={{
+      fontFamily: 'var(--font-mono)',
+      fontSize: 9,
+      color: meta.color,
+      border: `1px solid ${meta.color}`,
+      borderRadius: 3,
+      padding: '1px 5px',
+      textTransform: 'uppercase',
+    }}>
+      {meta.label}
+    </span>
+  );
+}
+
 function roundToFive(value: number): number {
   return Math.max(5, Math.round(value / 5) * 5);
 }
@@ -584,16 +618,7 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
               border: `1px solid ${ZONE_COLOR[w.zone] ?? 'var(--border)'}`,
               borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
             }}>Z{w.zone}</span>
-            {w.status === 'completed' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--green)' }}>✓</span>}
-            {w.status === 'planned' && (
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                color: w.garminWorkoutId ? 'var(--green)' : 'var(--amber)',
-              }}>
-                {w.garminWorkoutId ? '✓ Garmin' : 'Garmin offen'}
-              </span>
-            )}
+            <ExecutionBadge workout={w} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>

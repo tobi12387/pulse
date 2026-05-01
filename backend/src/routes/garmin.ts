@@ -7,6 +7,7 @@ import { getGarminClient } from '../lib/garmin-client.js';
 import { getGarminActivitiesForDate, upsertGarminActivity } from '../lib/garmin-activities.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { autoAssignDefaultEquipmentForActivity } from '../pulse/services/strength-equipment.js';
+import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../pulse/services/workout-reconciliation.js';
 
 interface NutritionContext {
   carbsG: number;             // sum during/post
@@ -126,24 +127,64 @@ async function matchActivityToWorkout(
   activityType: string,
   app?: FastifyInstance,
 ): Promise<void> {
-  if (activityType === 'other') return;
+  const [activityForMatch] = await db.select({
+    id: pulseActivities.id,
+    startTime: pulseActivities.startTime,
+    activityType: pulseActivities.activityType,
+    durationSec: pulseActivities.durationSec,
+  }).from(pulseActivities).where(eq(pulseActivities.id, activityId));
 
-  const matchType = activityType === 'hike' ? 'run' : activityType;
+  if (!activityForMatch) return;
 
-  const [planned] = await db.select()
+  const plannedWorkouts = await db.select()
     .from(pulsePlannedWorkouts)
     .where(and(
       eq(pulsePlannedWorkouts.userId, userId),
       eq(pulsePlannedWorkouts.plannedDate, date),
       eq(pulsePlannedWorkouts.status, 'planned'),
-      eq(pulsePlannedWorkouts.activityType, matchType as 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other'),
-    ))
-    .limit(1);
+    ));
 
-  if (!planned) return;
+  if (plannedWorkouts.length === 0) return;
+
+  const ranked = plannedWorkouts
+    .map(workout => ({
+      workout,
+      score: scoreActivityWorkoutMatch(workout, activityForMatch),
+    }))
+    .sort((a, b) => b.score - a.score);
+  const best = ranked[0];
+  if (!best) return;
+
+  const state = deriveWorkoutExecutionState(
+    best.workout,
+    null,
+    activityForMatch,
+    new Date(),
+  );
+
+  if (best.score < 0.6 || state.status === 'replaced_or_off_plan') {
+    await db.update(pulsePlannedWorkouts)
+      .set({
+        executionStatus: 'replaced_or_off_plan',
+        executionMatchedAt: new Date(),
+        executionMatchConfidence: best.score,
+        executionNotes: `Am Plantag wurde eine andere Aktivitaet (${activityType}) gefunden.`,
+      })
+      .where(eq(pulsePlannedWorkouts.id, best.workout.id));
+    return;
+  }
+
+  const planned = best.workout;
 
   await db.update(pulsePlannedWorkouts)
-    .set({ status: 'completed', completedActivityId: activityId })
+    .set({
+      status: 'completed',
+      completedActivityId: activityId,
+      executionStatus: 'completed_matched',
+      executionMatchedAt: new Date(),
+      executionMatchConfidence: best.score,
+      executionNotes: `Mit Garmin-Aktivitaet ${activityId} abgeglichen.`,
+    })
     .where(eq(pulsePlannedWorkouts.id, planned.id));
 
   // Async feedback generation — fire and forget

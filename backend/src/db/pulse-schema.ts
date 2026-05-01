@@ -3,7 +3,7 @@ import {
   timestamp, date, jsonb, boolean, index, uniqueIndex, time, primaryKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import type { EquipmentCategory, PulseActivityType, PulsePlanDecision, PulsePlanTrace, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { EquipmentCategory, PulseActivityType, PulsePlanDecision, PulsePlanTrace, PulsePushTopics, WorkoutExecutionStatus } from '@coaching-os/shared/pulse';
 
 // FK to users.id is enforced at DB level via migration SQL — not via Drizzle
 // references() because drizzle-kit cannot resolve cross-file .js imports.
@@ -245,6 +245,10 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   garminScheduledId:    varchar('garmin_scheduled_id', { length: 64 }),
   status:               varchar('status', { length: 20 }).notNull().default('planned'),
   completedActivityId:  uuid('completed_activity_id'),
+  executionStatus:      varchar('execution_status', { length: 40 }).$type<WorkoutExecutionStatus>(),
+  executionMatchedAt:   timestamp('execution_matched_at', { withTimezone: true }),
+  executionMatchConfidence: real('execution_match_confidence'),
+  executionNotes:       text('execution_notes'),
   workoutFeedback:      text('workout_feedback'),
   complianceScore:      real('compliance_score'),
   originalZone:         integer('original_zone'),

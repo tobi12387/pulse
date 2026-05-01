@@ -141,6 +141,13 @@
       "when": 1777657861684,
       "tag": "0019_garmin_raw_detail_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777658909155,
+      "tag": "0020_workout_execution_reconciliation",
+      "breakpoints": true
     }
   ]
 }

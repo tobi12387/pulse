@@ -219,7 +219,7 @@ export const pulseApi = {
       request(`/plan/workout/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     generateDetail: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}/detail`, { method: 'POST', body: '{}' }),
-    syncGarmin: (id: string): Promise<{ garminWorkoutId: string; date: string }> =>
+    syncGarmin: (id: string): Promise<{ garminWorkoutId: string; garminScheduledId: string | null; date: string; workout: PulsePlannedWorkout | null }> =>
       request(`/plan/workout/${id}/sync-garmin`, { method: 'POST', body: '{}' }),
   },
 
