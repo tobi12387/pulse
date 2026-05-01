@@ -56,6 +56,7 @@ import {
   workoutHasRepeatSteps,
 } from './services/garmin-workout.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './services/workout-reconciliation.js';
+import { profileWithProvenance, syncProfileFromGarmin } from './services/profile-sync.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -1079,9 +1080,17 @@ export default async function pulsePlugin(app: FastifyInstance) {
         .where(and(eq(pulseWeightLog.userId, userId), gte(pulseWeightLog.date, from), lte(pulseWeightLog.date, to))),
       db.select({
         ftpWatts: pulseUserProfile.ftpWatts,
+        ftpWattsSource: pulseUserProfile.ftpWattsSource,
+        ftpWattsUpdatedAt: pulseUserProfile.ftpWattsUpdatedAt,
         maxHrBpm: pulseUserProfile.maxHrBpm,
+        maxHrBpmSource: pulseUserProfile.maxHrBpmSource,
+        maxHrBpmUpdatedAt: pulseUserProfile.maxHrBpmUpdatedAt,
         lthrBpm: pulseUserProfile.lthrBpm,
+        lthrBpmSource: pulseUserProfile.lthrBpmSource,
+        lthrBpmUpdatedAt: pulseUserProfile.lthrBpmUpdatedAt,
         vo2max: pulseUserProfile.vo2max,
+        vo2maxSource: pulseUserProfile.vo2maxSource,
+        vo2maxUpdatedAt: pulseUserProfile.vo2maxUpdatedAt,
         updatedAt: pulseUserProfile.updatedAt,
       }).from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
     ]);
@@ -1177,6 +1186,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         maxHrBpm: profile?.maxHrBpm ?? null,
         lthrBpm: profile?.lthrBpm ?? null,
         vo2max: profile?.vo2max ?? null,
+        provenance: profileWithProvenance(profile ?? null, userId).provenance,
         missing: profileMissing,
       },
       days: coverageDays.reverse(),
@@ -2268,6 +2278,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const [profile] = await db.select()
       .from(pulseUserProfile)
       .where(eq(pulseUserProfile.userId, userId));
+    const profileProvenance = profileWithProvenance(profile ?? null, userId).provenance;
 
     // Auto-derive phase from next race (Phase 8 wird das ergänzen). Fallback: profile.trainingPhase.
     // 'base' default in profile bedeutet "Auto"; nur explizite Werte überschreiben den Race-derived.
@@ -2505,6 +2516,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ftpWatts: profile?.ftpWatts ?? null,
         maxHrBpm: profile?.maxHrBpm ?? null,
         lthrBpm: profile?.lthrBpm ?? null,
+        provenance: profileProvenance,
       },
       goals: planGoals,
       riskSignals,
@@ -3012,6 +3024,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     // Auto-regenerate plan for this week
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+    const profileProvenance2 = profileWithProvenance(profile ?? null, userId).provenance;
     const explicitPhase = profile?.trainingPhase as 'base' | 'build' | 'peak' | 'taper' | null | undefined;
     const derivedPhase = await deriveCurrentPhase(userId, weekStart);
     const phase: 'base' | 'build' | 'peak' | 'taper' =
@@ -3221,6 +3234,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ftpWatts: profile?.ftpWatts ?? null,
         maxHrBpm: profile?.maxHrBpm ?? null,
         lthrBpm: profile?.lthrBpm ?? null,
+        provenance: profileProvenance2,
       },
       goals: planGoals2,
       riskSignals: riskSignals2,
@@ -3487,13 +3501,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/profile', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-    return profile ?? { userId, ftpWatts: null, maxHrBpm: null, restingHrBpm: null, weightKg: null, vo2max: null, trainingPhase: 'base', weeklyHoursTarget: null };
+    return profileWithProvenance(profile ?? null, userId);
   });
 
   app.patch('/profile', { onRequest: [app.authenticate] }, async (req, reply) => {
     const schema = z.object({
       ftpWatts:          z.number().int().min(50).max(600).optional(),
       maxHrBpm:          z.number().int().min(100).max(250).optional(),
+      lthrBpm:           z.number().int().min(80).max(230).optional(),
       restingHrBpm:      z.number().int().min(30).max(100).optional(),
       weeklyHoursTarget: z.number().min(1).max(40).optional(),
       trainingPhase:     z.enum(['base','build','peak','taper']).optional(),
@@ -3503,66 +3518,45 @@ export default async function pulsePlugin(app: FastifyInstance) {
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
 
     const userId = req.user.sub;
+    const now = new Date();
+    const provenanceUpdates: Record<string, unknown> = {};
+    if (parsed.data.ftpWatts !== undefined) {
+      provenanceUpdates.ftpWattsSource = 'manual';
+      provenanceUpdates.ftpWattsUpdatedAt = now;
+    }
+    if (parsed.data.maxHrBpm !== undefined) {
+      provenanceUpdates.maxHrBpmSource = 'manual';
+      provenanceUpdates.maxHrBpmUpdatedAt = now;
+    }
+    if (parsed.data.lthrBpm !== undefined) {
+      provenanceUpdates.lthrBpmSource = 'manual';
+      provenanceUpdates.lthrBpmUpdatedAt = now;
+    }
+    if (parsed.data.vo2max !== undefined) {
+      provenanceUpdates.vo2maxSource = 'manual';
+      provenanceUpdates.vo2maxUpdatedAt = now;
+    }
+    const updates = { ...parsed.data, ...provenanceUpdates, updatedAt: now };
     const [profile] = await db.insert(pulseUserProfile)
-      .values({ userId, ...parsed.data, updatedAt: new Date() })
+      .values({ userId, ...updates } as typeof pulseUserProfile.$inferInsert)
       .onConflictDoUpdate({
         target: pulseUserProfile.userId,
-        set: { ...parsed.data, updatedAt: new Date() },
+        set: updates as Partial<typeof pulseUserProfile.$inferInsert>,
       }).returning();
-    return profile;
+    return profileWithProvenance(profile ?? null, userId);
   });
 
   // ─── Garmin profile sync (VO2max, maxHR, threshold HR) ──────────────────────
   app.post('/garmin/sync-profile', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
     const gc = await import('../lib/garmin-client.js').then(m => m.getGarminClient());
-
-    const settings = await gc.getUserSettings() as any;
-    const ud = settings?.userData ?? {};
-
-    const vo2max: number | null = ud.vo2MaxRunning != null && ud.vo2MaxCycling != null
-      ? Math.round((ud.vo2MaxRunning + ud.vo2MaxCycling) / 2)
-      : (ud.vo2MaxRunning ?? ud.vo2MaxCycling ?? null);
-
-    const garminMaxHrBpm: number | null = ud.lactateThresholdHeartRate
-      ? Math.round(ud.lactateThresholdHeartRate / 0.89)
-      : null;
-    const lthrBpm: number | null = ud.lactateThresholdHeartRate != null
-      ? Math.round(ud.lactateThresholdHeartRate)
-      : null;
-
-    // Derive maxHR from recorded activities — most accurate source
-    const { max } = await import('drizzle-orm');
-    const [activityMaxRow] = await db.select({ maxHrRecorded: max(pulseActivities.maxHr) })
-      .from(pulseActivities)
-      .where(eq(pulseActivities.userId, userId));
-
-    const maxHrBpm: number | null = activityMaxRow?.maxHrRecorded ?? garminMaxHrBpm;
-
-    // FTP from best 20-min power across all activities (standard: best20min × 0.95)
-    let ftpWatts: number | null = null;
-    try {
-      const allActivities = await gc.getActivities(0, 200) as any[];
-      const best20min = allActivities
-        .map((a: any) => a.max20MinPower as number | undefined)
-        .filter((p): p is number => p != null && p > 0)
-        .reduce((best, p) => Math.max(best, p), 0);
-      if (best20min > 0) ftpWatts = Math.round(best20min * 0.95);
-    } catch {
-      // non-fatal — continue without FTP
-    }
-
-    const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (vo2max != null)   updates.vo2max = vo2max;
-    if (maxHrBpm != null) updates.maxHrBpm = maxHrBpm;
-    if (lthrBpm != null)  updates.lthrBpm = lthrBpm;
-    if (ftpWatts != null) updates.ftpWatts = ftpWatts;
-
-    await db.insert(pulseUserProfile)
-      .values({ userId, ...updates } as any)
-      .onConflictDoUpdate({ target: pulseUserProfile.userId, set: updates as any });
-
-    return { synced: { vo2max, maxHrBpm, lactateThresholdHr: lthrBpm, ftpWatts } };
+    const result = await syncProfileFromGarmin(userId, gc, { logger: app.log });
+    await invalidateUser(userId);
+    return {
+      synced: result.synced,
+      diagnostics: result.diagnostics,
+      profile: profileWithProvenance(result.profile, userId),
+    };
   });
 
   // ─── Garmin manual sync ───────────────────────────────────────────────────────

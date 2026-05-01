@@ -194,6 +194,24 @@ export interface PulsePlanLearningSnapshot {
   flags: PulsePlanLearningFlag[];
 }
 
+export type PulseProfileMetricKey = 'ftpWatts' | 'maxHrBpm' | 'lthrBpm' | 'vo2max';
+export type PulseProfileValueSource = 'manual' | 'garmin_settings' | 'activity_derived' | 'estimated' | 'missing';
+
+export interface PulseProfileMetricProvenance {
+  key: PulseProfileMetricKey;
+  label: string;
+  value: number | null;
+  source: PulseProfileValueSource;
+  sourceLabel: string;
+  updatedAt: string | null;
+  warning: string | null;
+}
+
+export interface PulseProfileProvenanceView {
+  fields: Record<PulseProfileMetricKey, PulseProfileMetricProvenance>;
+  warnings: string[];
+}
+
 export interface PulsePlanTrace {
   id: string;
   userId: string;
@@ -209,6 +227,7 @@ export interface PulsePlanTrace {
       ftpWatts: number | null;
       maxHrBpm: number | null;
       lthrBpm: number | null;
+      provenance?: PulseProfileProvenanceView;
     };
     goals: Array<{
       title: string;
@@ -488,6 +507,7 @@ export interface PulseDataCoverageResponse {
     maxHrBpm: number | null;
     lthrBpm: number | null;
     vo2max: number | null;
+    provenance?: PulseProfileProvenanceView;
     missing: Array<'ftpWatts' | 'maxHrBpm' | 'lthrBpm' | 'vo2max'>;
   };
   days: PulseDataCoverageDay[];

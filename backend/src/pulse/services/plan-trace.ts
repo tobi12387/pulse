@@ -53,6 +53,7 @@ export interface BuildPlanTraceInput {
     ftpWatts: number | null;
     maxHrBpm: number | null;
     lthrBpm: number | null;
+    provenance?: PulsePlanTrace['inputSnapshot']['profile']['provenance'];
   };
   goals: PlanTraceGoal[];
   riskSignals: PlanTraceRiskSignal[];
@@ -217,9 +218,26 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
     }));
   const dataWarnings: string[] = [];
   if (input.goals.length === 0) dataWarnings.push('Kein aktives Ziel hinterlegt.');
-  if (input.profile.maxHrBpm == null) dataWarnings.push('MaxHF fehlt; HR-Zonen nutzen Fallback.');
+  const profileWarnings = input.profile.provenance?.warnings ?? [];
+  if (profileWarnings.length > 0) {
+    dataWarnings.push(...profileWarnings);
+  } else if (input.profile.maxHrBpm == null) {
+    dataWarnings.push('MaxHF fehlt; HR-Zonen nutzen Fallback.');
+  }
   if (input.recentActivities.length === 0) dataWarnings.push('Keine Aktivitätshistorie der letzten 42 Tage.');
   if (recentRpe.length === 0) dataWarnings.push('Keine RPE-Bewertungen in den jüngsten Aktivitäten.');
+  const profileSnapshot = input.profile.provenance
+    ? {
+        ftpWatts: input.profile.ftpWatts,
+        maxHrBpm: input.profile.maxHrBpm,
+        lthrBpm: input.profile.lthrBpm,
+        provenance: input.profile.provenance,
+      }
+    : {
+        ftpWatts: input.profile.ftpWatts,
+        maxHrBpm: input.profile.maxHrBpm,
+        lthrBpm: input.profile.lthrBpm,
+      };
 
   return {
     inputSnapshot: {
@@ -228,7 +246,7 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
       weeklyHoursTarget: input.weeklyHoursTarget,
       availableDays: input.availableDays,
       load: input.load,
-      profile: input.profile,
+      profile: profileSnapshot,
       goals: input.goals,
       riskSignals: input.riskSignals,
       healthStates: input.healthStates,

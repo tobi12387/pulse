@@ -128,6 +128,19 @@ test('Data shows Garmin recovery depth signals without exposing raw payloads', a
   await expect(page.getByText('rawData')).toHaveCount(0);
 });
 
+test('Settings show profile value provenance for Garmin planning inputs', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/settings');
+
+  await expect(page.getByText('Athletenprofil')).toBeVisible();
+  await expect(page.getByText('LTHR')).toBeVisible();
+  await expect(page.getByText('VO2max')).toBeVisible();
+  await expect(page.getByText('Manuell').first()).toBeVisible();
+  await expect(page.getByText('Aktivitaeten').first()).toBeVisible();
+  await expect(page.getByText('Garmin').first()).toBeVisible();
+});
+
 test('Coach daily briefing guides the first conversation without auto-send', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

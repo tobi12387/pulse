@@ -6,12 +6,13 @@ import type { Queue, Worker } from 'bullmq';
 import { syncGarminDay } from '../routes/garmin.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
-import { eq, and, max } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { BRIEFING_QUEUE_NAME } from './briefing-generation.job.js';
 import type { BriefingJobData } from './briefing-generation.job.js';
-import { pulseUserProfile, pulseActivities, pulseDailyMetrics } from '../db/pulse-schema.js';
+import { pulseDailyMetrics } from '../db/pulse-schema.js';
 import { invalidateUser } from '../pulse/lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals } from '../pulse/services/risk-engine.js';
+import { syncProfileFromGarmin } from '../pulse/services/profile-sync.js';
 
 export const CIRCUIT_FAILURES_KEY = 'garmin:circuit:failures';
 export const CIRCUIT_OPEN_KEY     = 'garmin:circuit:open';
@@ -60,38 +61,12 @@ export function detectAlarms(health: {
 async function syncGarminProfile(userId: string, app: FastifyInstance): Promise<void> {
   try {
     const gc = await import('../lib/garmin-client.js').then(m => m.getGarminClient());
-    const settings = await gc.getUserSettings() as any;
-    const ud = settings?.userData ?? {};
-
-    const vo2max: number | null = ud.vo2MaxRunning != null && ud.vo2MaxCycling != null
-      ? Math.round((ud.vo2MaxRunning + ud.vo2MaxCycling) / 2)
-      : (ud.vo2MaxRunning ?? ud.vo2MaxCycling ?? null);
-
-    const garminMaxHrBpm: number | null = ud.lactateThresholdHeartRate
-      ? Math.round(ud.lactateThresholdHeartRate / 0.89)
-      : null;
-
-    const [activityMaxRow] = await db.select({ maxHrRecorded: max(pulseActivities.maxHr) })
-      .from(pulseActivities).where(eq(pulseActivities.userId, userId));
-    const maxHrBpm: number | null = activityMaxRow?.maxHrRecorded ?? garminMaxHrBpm;
-
-    const allActivities = await gc.getActivities(0, 200) as any[];
-    const best20min = allActivities
-      .map((a: any) => a.max20MinPower as number | undefined)
-      .filter((p): p is number => p != null && p > 0)
-      .reduce((best, p) => Math.max(best, p), 0);
-    const ftpWatts: number | null = best20min > 0 ? Math.round(best20min * 0.95) : null;
-
-    const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (vo2max != null)   updates.vo2max    = vo2max;
-    if (maxHrBpm != null) updates.maxHrBpm  = maxHrBpm;
-    if (ftpWatts != null) updates.ftpWatts  = ftpWatts;
-
-    await db.insert(pulseUserProfile)
-      .values({ userId, ...updates } as any)
-      .onConflictDoUpdate({ target: pulseUserProfile.userId, set: updates as any });
-
-    app.log.info(`[garmin-sync] profile updated — FTP ${ftpWatts}W, maxHR ${maxHrBpm}, VO2max ${vo2max}`);
+    const result = await syncProfileFromGarmin(userId, gc, { logger: app.log });
+    const updated = Object.values(result.synced)
+      .filter(field => field.status === 'updated')
+      .map(field => `${field.field}=${field.value} (${field.source})`)
+      .join(', ');
+    app.log.info(`[garmin-sync] profile provenance checked${updated ? ` — ${updated}` : ''}`);
   } catch (err) {
     app.log.warn(`[garmin-sync] profile sync failed: ${err}`);
   }
