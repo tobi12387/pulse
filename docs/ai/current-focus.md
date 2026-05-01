@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/status-roadmap-cleanup`: active local branch for status hygiene.
+- `codex/race-ctl-context`: active local branch for Race-CTL quickie.
+- `codex/status-roadmap-cleanup`: merged and deployed via PR #41.
 - `codex/phase11-theme-aware-insights`: merged and deployed via PR #40.
 - `codex/phase11-mental-load-overlay`: merged and deployed via PR #39.
 - `codex/phase11-mental-themes`: merged and deployed via PR #38.
@@ -25,7 +26,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy status hygiene after CI passes.
+- Merge and deploy Race-CTL quickie after CI passes.
 - Run a fresh product/technical audit for the next roadmap wave and create a new active plan before implementation.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 

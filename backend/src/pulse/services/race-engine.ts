@@ -3,6 +3,7 @@
 import { db } from '../../lib/db.js';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { pulseGoals, pulseActivities } from '../../db/pulse-schema.js';
+import { computeFitnessLoad } from './load-engine.js';
 
 export type RacePhase = 'base' | 'build' | 'peak' | 'taper' | 'race_week' | 'race_day' | 'past';
 
@@ -57,6 +58,11 @@ export interface PredictionResult {
   basis: string;     // human-readable description of input used
 }
 
+export interface RacePredictionLoad {
+  ctl: number;
+  ctlBaseline?: number | undefined;
+}
+
 export function predictRaceTime(args: {
   discipline: string | null;
   distanceKm: number;
@@ -107,7 +113,21 @@ function formatTime(sec: number): string {
 
 // ─── Active races for user ────────────────────────────────────────────────────
 
-export async function getActiveRaces(userId: string, today: string): Promise<RaceContext[]> {
+function shouldPredictRace(row: typeof pulseGoals.$inferSelect): boolean {
+  return Boolean(row.raceDistanceKm && (row.raceDiscipline === 'run' || (row.raceDiscipline ?? '').includes('triathlon')));
+}
+
+function daysBefore(referenceDate: string, days: number): Date {
+  const date = new Date(`${referenceDate}T12:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() - days);
+  return date;
+}
+
+export async function getActiveRaces(
+  userId: string,
+  today: string,
+  predictionLoad?: RacePredictionLoad,
+): Promise<RaceContext[]> {
   const rows = await db.select().from(pulseGoals)
     .where(and(
       eq(pulseGoals.userId, userId),
@@ -118,20 +138,29 @@ export async function getActiveRaces(userId: string, today: string): Promise<Rac
 
   if (rows.length === 0) return [];
 
-  // Pre-fetch run history once for prediction (reused across races)
-  const since60d = new Date(Date.now() - 60 * 86_400_000);
-  const runs = await db.select({
-    startTime:  pulseActivities.startTime,
-    activityType: pulseActivities.activityType,
-    distanceM:  pulseActivities.distanceM,
-    durationSec: pulseActivities.durationSec,
-  }).from(pulseActivities)
-    .where(and(
-      eq(pulseActivities.userId, userId),
-      gte(pulseActivities.startTime, since60d),
-    ))
-    .orderBy(desc(pulseActivities.startTime))
-    .limit(80);
+  const needsPrediction = rows.some(shouldPredictRace);
+  const getPredictionLoad = (): Promise<RacePredictionLoad> => predictionLoad
+    ? Promise.resolve(predictionLoad)
+    : computeFitnessLoad(userId, today).then((load): RacePredictionLoad => ({ ctl: load.ctl }));
+  const predictionData = needsPrediction
+    ? await Promise.all([
+        db.select({
+          startTime:  pulseActivities.startTime,
+          activityType: pulseActivities.activityType,
+          distanceM:  pulseActivities.distanceM,
+          durationSec: pulseActivities.durationSec,
+        }).from(pulseActivities)
+          .where(and(
+            eq(pulseActivities.userId, userId),
+            gte(pulseActivities.startTime, daysBefore(today, 59)),
+          ))
+          .orderBy(desc(pulseActivities.startTime))
+          .limit(80),
+        getPredictionLoad(),
+      ])
+    : null;
+  const runs = predictionData?.[0] ?? [];
+  const loadForPrediction = predictionData?.[1] ?? null;
 
   const runRefs: RecentRun[] = runs
     .filter(r => r.activityType === 'run' && r.distanceM != null && r.durationSec != null)
@@ -154,15 +183,15 @@ export async function getActiveRaces(userId: string, today: string): Promise<Rac
     if (daysUntil < -7) continue;
 
     let predicted: PredictionResult | null = null;
-    if (r.raceDistanceKm && (r.raceDiscipline === 'run' || (r.raceDiscipline ?? '').includes('triathlon'))) {
+    if (shouldPredictRace(r) && loadForPrediction) {
       // For triathlons we predict run leg only — bike pacing is power-based, swim is pool-dependent.
       // For now, single-discipline running prediction; mixed disciplines are 'low' confidence.
-      const ctl = 30; // TODO: pass real CTL when this gets wired into plugin.ts
       predicted = predictRaceTime({
         discipline:  r.raceDiscipline,
-        distanceKm:  r.raceDiscipline === 'run' ? r.raceDistanceKm : 21.1, // assume HM run for 70.3
+        distanceKm:  r.raceDiscipline === 'run' ? r.raceDistanceKm! : 21.1, // assume HM run for 70.3
         recentRuns:  runRefs,
-        ctl,
+        ctl:         loadForPrediction.ctl,
+        ctlBaseline: loadForPrediction.ctlBaseline,
       });
     }
 
