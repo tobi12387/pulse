@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Daily Decision Center startet ohne neues Memory-Modell
+
+- **Decision:** Der erste Daily-Decision-Center-Slice nutzt eine deterministische Frontend-Ableitung aus dem bestehenden `/api/pulse/home`-Payload und zeigt dieselbe Tagesentscheidung in Home, Coach und Plan. Die Entscheidung enthält Grund, Grenze, Alternative und Abschlusskriterium; persistente Action-Closure-/Coach-Memory-Tabellen bleiben einem separaten Folge-PR vorbehalten.
+- **Why:** Home, Coach und Plan sollen sofort konsistent beantworten, was heute zu tun ist, ohne die nächste größere Decision-Closure-Migration mit UI-Flow und Coach-Memory zu vermischen. Die bestehende Datenbasis reicht für eine verlässliche Tagesentscheidung; Persistenz wird erst nötig, wenn Annahme, Zurückstellung und Abschluss dauerhaft gespeichert werden.
+- **Alternatives:** Direkt `pulse_action_decisions` und Preference-Memory bauen (größerer Scope, Migration, Push-Integration); weiterhin drei lokale Tageslogiken behalten (inkonsistente Startfragen); Tagesentscheidung nur in Home anzeigen (Coach/Plan bleiben uneinheitlich).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Plan-Personalisierung variiert wiederholten Sportmix erklärbar
 
 - **Decision:** Ein wiederholter Sportmix der Vorwochen wird als eigenes Plan-Lernsignal (`repeated_sport_mix`) geführt. Dieses Signal erhöht nicht automatisch die Trainingsdichte, sondern rotiert leichte Einheiten deterministisch und macht die Variation im PlanDecision/PlanTrace sichtbar; Health-/Race-Anpassungen werden über `adjustedReason` bis in Persistenz und Trace mitgeführt.

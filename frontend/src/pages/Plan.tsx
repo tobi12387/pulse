@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, useUpdateGoal, useDeleteGoal, useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
+  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, usePulseHome,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { StrengthLogger } from '@/components/StrengthLogger';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
+import { DailyDecisionCard } from '@/components/DailyDecisionCard';
+import { deriveDailyDecision } from '@/pulse/daily-decision';
 import type { PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
@@ -848,6 +850,7 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
 function TrainingTab() {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
+  const home      = usePulseHome();
   const goals     = usePulseGoals();
   const availability = useWeekAvailability();
   const generate  = useGeneratePlan();
@@ -871,6 +874,7 @@ function TrainingTab() {
   const availableDays = weekAvailability?.availableDays ?? [0, 2, 4, 5];
   const weeklyHours = weekAvailability?.weeklyHours ?? planTrace?.inputSnapshot.weeklyHoursTarget ?? 8;
   const activeGoals = goals.data?.goals.filter(goal => goal.status === 'active') ?? [];
+  const dailyDecision = deriveDailyDecision(home.data);
   const today = isoDateLocal(new Date());
   const nextDecisionWorkout = getNextOpenWorkout(workouts, today);
   const decisionWeekStart = nextDecisionWorkout ? weekStartForDate(nextDecisionWorkout.plannedDate) : selectedWeekStart;
@@ -899,6 +903,14 @@ function TrainingTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {dailyDecision && (
+        <DailyDecisionCard
+          decision={dailyDecision}
+          labelCase="upper"
+          onActivate={() => navigate(dailyDecision.targetPath)}
+        />
+      )}
 
       <NextTrainingDecisionCard
         nextWorkout={nextDecisionWorkout}

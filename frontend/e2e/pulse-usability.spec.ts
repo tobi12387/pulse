@@ -89,13 +89,86 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   });
 
   await page.goto('/');
-  await expect(page.getByText('HEUTE TUN')).toBeVisible();
+  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByText('WARUM')).toBeVisible();
-  await expect(page.getByText('FERTIG WENN')).toBeVisible();
+  await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
 
   await page.getByRole('button').filter({ hasText: 'Check-in eintragen' }).click();
   await expect(page).toHaveURL('/coach');
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
+});
+
+test('Home and Coach share one daily decision with boundary alternative and done criteria', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    home: {
+      readiness: {
+        date: '2026-05-01',
+        score: 52,
+        label: 'vorsichtig',
+        shortLabel: 'vorsichtig',
+        color: 'amber',
+        cached: false,
+        components: {
+          sleep: 55,
+          hrv: 50,
+          tsb: 44,
+          battery: 54,
+          mental: 60,
+          stress: 52,
+        },
+      },
+      fitnessLoad: {
+        date: '2026-05-01',
+        ctl: 42.4,
+        atl: 58.1,
+        tsb: -15.7,
+        cached: false,
+      },
+      nextWorkout: {
+        id: 'workout-today',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 60,
+        targetTss: 78,
+        status: 'planned',
+        description: 'Schwellenreiz mit klarer Pulsgrenze.',
+      },
+      nextBestActions: [
+        {
+          id: 'plan-today',
+          source: 'plan',
+          priority: 'high',
+          title: 'Training heute defensiv entscheiden',
+          reason: 'Readiness und TSB sprechen gegen einen ungeprüften harten Reiz.',
+          cta: 'Coach fragen',
+          targetPath: '/coach',
+          resolvedBy: 'Entscheidung zur Einheit treffen und Plan bei Bedarf anpassen.',
+        },
+      ],
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByText('Training heute defensiv entscheiden')).toBeVisible();
+  await expect(page.getByText('GRENZE', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('ALTERNATIVE', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
+
+  await page.getByRole('button').filter({ hasText: 'Training heute defensiv entscheiden' }).click();
+  await expect(page).toHaveURL('/coach');
+  await expect(page.getByText('Training heute defensiv entscheiden')).toBeVisible();
+  await expect(page.getByText('Alternative', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Abschluss', { exact: true }).first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Training heute defensiv entscheiden/);
+  expect(coachSends).toBe(0);
 });
 
 test('Coach quick prompts prepare a question without sending it', async ({ page }) => {
@@ -137,7 +210,7 @@ test('Coach does not treat a future workout as today training', async ({ page })
   await expect(page.getByText(/Soll ich bike.*wie geplant machen/)).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
-  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Heute ist kein Training geplant. Wie nutze ich den freien Tag für Erholung, mentale Stabilität und Vorbereitung?');
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
 });
 
 test('Data mental check-in uses guided mental fitness questions', async ({ page }) => {
@@ -217,14 +290,16 @@ test('Coach daily briefing guides the first conversation without auto-send', asy
 
   await page.goto('/coach');
   await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
-  await expect(page.getByText('Heutige Grenze')).toBeVisible();
-  await expect(page.getByText('Nächste Entscheidung')).toBeVisible();
+  await expect(page.getByText('Tagesentscheidung')).toBeVisible();
+  await expect(page.getByText('Grenze', { exact: true })).toBeVisible();
+  await expect(page.getByText('Alternative', { exact: true })).toBeVisible();
+  await expect(page.getByText('Abschluss', { exact: true })).toBeVisible();
   await expect(page.getByText('Heute entscheiden')).toBeVisible();
   await expect(page.getByText('Plan anpassen')).toBeVisible();
   await expect(page.getByText('Warum?')).toBeVisible();
 
   await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
-  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Soll ich bike heute wie geplant machen oder anpassen?');
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Training bewusst prüfen/);
   expect(coachSends).toBe(0);
 });
 
