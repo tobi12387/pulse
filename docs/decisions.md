@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Lokale Testservices bleiben Mac-basiert und werden bootstrapbar
+
+- **Decision:** Pulse entwickelt weiter lokal im Mac-Workspace mit GitHub `main` als Source of Truth; der Ubuntu-Server bleibt Deploy-Mirror. Lokale Postgres-/Redis-Testservices werden ueber `scripts/dev-services.sh` und `npm run services:*` bootstrapbar, und `verify:local` startet diese Services standardmaessig vor Backend-Tests.
+- **Why:** Direktentwicklung auf dem Server wuerde Deploy-Zustand, PM2, echte `.env` und Datenbankbetrieb mit Codearbeit vermischen. Die wiederkehrenden Testprobleme lagen nicht am Mac-Workspace selbst, sondern an fehlendem Service-Bootstrap und unklarer `.env.test`-Prioritaet.
+- **Alternatives:** Mac-Checkout loeschen und nur auf dem Server arbeiten (hohes Betriebsrisiko); weiterhin voraussetzen, dass Postgres/Redis manuell laufen (Agentenfehler wiederholen sich); Docker-Services nur dokumentieren, aber nicht in `verify:local` integrieren (zu leicht zu ueberspringen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Daily Briefing ignoriert Future-Workouts ohne heutiges Training
 
 - **Decision:** Daily Briefing, Daily Decision und Coach-Startfragen erwähnen zukünftige geplante Workouts nicht mehr, wenn heute kein Training geplant ist. Der Daily Check-in bleibt ohne neue Datenbankfelder, wird aber als geführter Mental-Fitness-Flow über die bestehenden Werte und Notiz-Tags geführt.
