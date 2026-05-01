@@ -239,4 +239,23 @@ describe('generateDeepInsight mental domain', () => {
     expect(prompt).toContain('2026-03-12');
     expect(prompt).toContain('Ø Stimmung 4/10');
   });
+
+  it('returns a non-retryable data-missing result when no mental data exists', async () => {
+    dbMocks.rows = [];
+    themeMocks.listMentalThemes.mockResolvedValueOnce({ totalCheckins: 0, themes: [] });
+
+    const { generateDeepInsight } = await import('./insight-engine.js');
+    const result = await generateDeepInsight('user-123', 'mental', 30, true);
+
+    expect(result).toMatchObject({
+      domain: 'mental',
+      analysis: 'Noch nicht genug Check-in-Daten für diesen Zeitraum.',
+      stats: {},
+      cached: false,
+      status: 'data_missing',
+      action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
+      retryable: false,
+    });
+    expect(llmMocks.llmComplete).not.toHaveBeenCalled();
+  });
 });

@@ -169,6 +169,44 @@ function hhmm(value: string | null | undefined, fallback: string): string {
   return (value ?? fallback).slice(0, 5);
 }
 
+function classifyInsightFailure(error: unknown): {
+  status: number;
+  body: { error: string; code: string; retryable: boolean; action: string };
+} {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/OpenRouter error: (401|402|403|429|5\d\d)/i.test(message)) {
+    return {
+      status: 503,
+      body: {
+        error: 'KI-Provider gerade nicht verfügbar.',
+        code: 'provider_unavailable',
+        retryable: true,
+        action: 'Versuche es später erneut oder nutze den gecachten Stand.',
+      },
+    };
+  }
+  if (/timeout|abort|etimedout/i.test(message)) {
+    return {
+      status: 504,
+      body: {
+        error: 'Analyse dauert gerade zu lange.',
+        code: 'timeout',
+        retryable: true,
+        action: 'Versuche es erneut oder wähle einen kürzeren Zeitraum.',
+      },
+    };
+  }
+  return {
+    status: 500,
+    body: {
+      error: 'Analyse konnte gerade nicht geladen werden.',
+      code: 'server_error',
+      retryable: true,
+      action: 'Deine Daten bleiben sichtbar. Versuche es gleich erneut oder wechsle auf einen anderen Zeitraum.',
+    },
+  };
+}
+
 async function getFitnessLoadCached(userId: string, date: string): Promise<PulseFitnessLoad> {
   const cached = await getCached<PulseFitnessLoad>('fitness-load', userId, date);
   if (cached) return cached;
@@ -3511,16 +3549,19 @@ Direkt, knapp, kein Smalltalk.`;
     const forceRefresh = query.refresh === 'true';
     const validDomains: InsightDomain[] = ['sleep', 'hrv', 'load', 'weight', 'mental', 'overall'];
     if (!validDomains.includes(domain)) {
-      return { error: 'Invalid domain' };
+      return reply.code(400).send({
+        error: 'Ungültige Insight-Domain.',
+        code: 'invalid_domain',
+        retryable: false,
+        action: 'Wähle eine der sichtbaren Insight-Karten.',
+      });
     }
     try {
       return await generateDeepInsight(userId, domain, days, forceRefresh);
     } catch (error) {
       req.log.error({ err: error, domain, days }, 'pulse insight generation failed');
-      return reply.code(503).send({
-        error: 'Analyse konnte gerade nicht geladen werden.',
-        code: 'insight_unavailable',
-      });
+      const classified = classifyInsightFailure(error);
+      return reply.code(classified.status).send(classified.body);
     }
   });
 

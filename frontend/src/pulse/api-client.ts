@@ -14,6 +14,20 @@ import type {
 
 const BASE = '/api/pulse';
 
+export class PulseApiError extends Error {
+  code: string | null;
+  retryable: boolean;
+  action: string | null;
+
+  constructor(message: string, options: { code?: string | null; retryable?: boolean; action?: string | null } = {}) {
+    super(message);
+    this.name = 'PulseApiError';
+    this.code = options.code ?? null;
+    this.retryable = options.retryable ?? true;
+    this.action = options.action ?? null;
+  }
+}
+
 function getToken(): string | null {
   try {
     const stored = localStorage.getItem('coaching-os-auth');
@@ -35,8 +49,17 @@ async function requestAt<T>(base: string, path: string, options: RequestInit = {
   const res = await fetch(`${base}${path}`, { ...options, headers });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Fehler' })) as { error?: string };
-    throw new Error(err.error ?? `HTTP ${res.status}`);
+    const err = await res.json().catch(() => ({ error: 'Fehler' })) as {
+      error?: string;
+      code?: string | null;
+      retryable?: boolean;
+      action?: string | null;
+    };
+    throw new PulseApiError(err.error ?? `HTTP ${res.status}`, {
+      code: err.code ?? null,
+      retryable: err.retryable ?? res.status >= 500,
+      action: err.action ?? null,
+    });
   }
 
   if (res.status === 204) return undefined as T;
@@ -295,7 +318,7 @@ export const pulseApi = {
   insights: {
     get: (domain: string, days = 30, refresh = false): Promise<{
       domain: string; analysis: string; stats: Record<string, number | string | null>;
-      date: string; cached: boolean;
+      date: string; cached: boolean; status?: 'ok' | 'data_missing'; action?: string | null; retryable?: boolean;
     }> => request(`/insights?domain=${domain}&days=${days}&refresh=${refresh}`),
   },
 

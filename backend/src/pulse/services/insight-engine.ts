@@ -18,6 +18,9 @@ export interface DeepInsightResult {
   stats: Record<string, number | string | null>;
   date: string;
   cached: boolean;
+  status?: 'ok' | 'data_missing';
+  action?: string | null;
+  retryable?: boolean;
 }
 
 // ─── Stat helpers ─────────────────────────────────────────────────────────────
@@ -228,8 +231,34 @@ Antworte auf Deutsch. Kein Markdown, keine Aufzählungszeichen — fließender T
     case 'sleep':  { const c = await sleepContext(userId, since);  prompt = c.prompt; stats = c.stats; break; }
     case 'hrv':    { const c = await hrvContext(userId, since);    prompt = c.prompt; stats = c.stats; break; }
     case 'load':   { const c = await loadContext(userId, since);   prompt = c.prompt; stats = c.stats; break; }
-    case 'mental': { const c = await mentalContext(userId, since, days, today); if (!c) return { domain, analysis: 'Noch keine Check-in-Daten.', stats: {}, date: today, cached: false }; prompt = c.prompt; stats = c.stats; break; }
-    case 'weight': { const c = await weightContext(userId);        if (!c) return { domain, analysis: 'Noch keine Gewichtsdaten.', stats: {}, date: today, cached: false }; prompt = c.prompt; stats = c.stats; break; }
+    case 'mental': {
+      const c = await mentalContext(userId, since, days, today);
+      if (!c) return {
+        domain,
+        analysis: 'Noch nicht genug Check-in-Daten für diesen Zeitraum.',
+        stats: {},
+        date: today,
+        cached: false,
+        status: 'data_missing',
+        action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
+        retryable: false,
+      };
+      prompt = c.prompt; stats = c.stats; break;
+    }
+    case 'weight': {
+      const c = await weightContext(userId);
+      if (!c) return {
+        domain,
+        analysis: 'Noch nicht genug Gewichtsdaten für eine belastbare Tendenz.',
+        stats: {},
+        date: today,
+        cached: false,
+        status: 'data_missing',
+        action: 'Erfasse Gewichtsdaten oder wähle einen späteren Zeitraum.',
+        retryable: false,
+      };
+      prompt = c.prompt; stats = c.stats; break;
+    }
     case 'overall': {
       const [s, h, l, m] = await Promise.all([
         sleepContext(userId, since), hrvContext(userId, since),

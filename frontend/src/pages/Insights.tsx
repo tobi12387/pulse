@@ -3,6 +3,7 @@ import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Sc
 import { useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
+import { PulseApiError } from '@/pulse/api-client';
 import type { LucideIcon } from 'lucide-react';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
@@ -19,6 +20,30 @@ const DOMAINS: { key: Domain; label: string; icon: LucideIcon; color: string }[]
 const DAYS_OPTIONS = [7, 30, 90];
 const RANGE_OPTIONS = DAYS_OPTIONS.map(d => ({ value: d, label: `${d}T` }));
 
+function insightErrorState(error: unknown): { title: string; message: string; retryable: boolean } {
+  if (error instanceof PulseApiError) {
+    if (error.code === 'provider_unavailable') {
+      return {
+        title: 'KI-Provider gerade nicht erreichbar.',
+        message: error.action ?? 'Versuche es später erneut oder nutze einen anderen Zeitraum.',
+        retryable: error.retryable,
+      };
+    }
+    if (error.code === 'timeout') {
+      return {
+        title: 'Analyse dauert gerade zu lange.',
+        message: error.action ?? 'Versuche es erneut oder wähle einen kürzeren Zeitraum.',
+        retryable: error.retryable,
+      };
+    }
+  }
+  return {
+    title: 'Analyse konnte gerade nicht geladen werden.',
+    message: 'Deine Daten bleiben sichtbar. Versuche es gleich erneut oder wechsle auf einen anderen Zeitraum.',
+    retryable: true,
+  };
+}
+
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const [expanded, setExpanded] = useState(false);
   const { data, isLoading, isFetching, error, refetch } = useDeepInsight(domain, days, expanded);
@@ -26,6 +51,8 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const meta = DOMAINS.find(d => d.key === domain)!;
   const isBusy = isLoading || isFetching || refresh.isPending;
   const contentId = `insight-${domain}-content`;
+  const activeError = error ?? refresh.error;
+  const errorState = activeError ? insightErrorState(activeError) : null;
 
   return (
     <div
@@ -63,30 +90,47 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
                 <div key={i} style={{ height: 10, borderRadius: 4, background: 'var(--surface-2)', width: `${w}%`, animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
-          ) : error ? (
+          ) : errorState ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                  Analyse konnte gerade nicht geladen werden.
+                  {errorState.title}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
-                  Deine Daten bleiben sichtbar. Versuche es gleich erneut oder wechsle auf einen anderen Zeitraum.
+                  {errorState.message}
                 </p>
               </div>
-              <button
-                onClick={() => refetch()}
-                style={{
-                  alignSelf: 'flex-start',
-                  fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text)',
-                  letterSpacing: '0.1em', textTransform: 'uppercase',
-                  padding: '5px 9px', border: '1px solid var(--border)', borderRadius: 4,
-                  background: 'var(--surface-2)', cursor: 'pointer',
-                }}
-              >
-                Erneut versuchen
-              </button>
+              {errorState.retryable && (
+                <button
+                  onClick={() => refetch()}
+                  style={{
+                    alignSelf: 'flex-start',
+                    fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text)',
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    padding: '5px 9px', border: '1px solid var(--border)', borderRadius: 4,
+                    background: 'var(--surface-2)', cursor: 'pointer',
+                  }}
+                >
+                  Erneut versuchen
+                </button>
+              )}
             </div>
           ) : data ? (
+            data.status === 'data_missing' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+                  Noch nicht genug Daten.
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, margin: 0 }}>
+                  {data.analysis}
+                </p>
+                {data.action && (
+                  <p style={{ fontSize: 11, color: 'var(--accent)', lineHeight: 1.5, margin: 0 }}>
+                    {data.action}
+                  </p>
+                )}
+              </div>
+            ) : (
             <>
               {/* Stats chips */}
               {Object.keys(data.stats).length > 0 && (
@@ -127,6 +171,7 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
                 </button>
               </div>
             </>
+            )
           ) : null}
         </div>
       )}

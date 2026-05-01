@@ -35,7 +35,7 @@ test('Insights load analyses only after the user opens a card', async ({ page })
 });
 
 test('Insights show a helpful state instead of raw server errors', async ({ page }) => {
-  await mockPulseApi(page, { insightError: true });
+  await mockPulseApi(page, { insightErrorKind: 'server' });
 
   await page.goto('/insights');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
@@ -44,6 +44,30 @@ test('Insights show a helpful state instead of raw server errors', async ({ page
   await expect(page.getByText('Deine Daten bleiben sichtbar.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
   await expect(page.getByText('Internal Server Error')).toHaveCount(0);
+});
+
+test('Insights classify provider errors with a retry action', async ({ page }) => {
+  await mockPulseApi(page, { insightErrorKind: 'provider' });
+
+  await page.goto('/insights');
+  await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
+
+  await expect(page.getByText('KI-Provider gerade nicht erreichbar.')).toBeVisible();
+  await expect(page.getByText('Versuche es später erneut oder nutze den gecachten Stand.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
+  await expect(page.getByText('OpenRouter')).toHaveCount(0);
+});
+
+test('Insights classify missing data without offering a retry', async ({ page }) => {
+  await mockPulseApi(page, { insightErrorKind: 'data_missing' });
+
+  await page.goto('/insights');
+  await page.getByRole('button').filter({ hasText: 'Mental' }).click();
+
+  await expect(page.getByText('Noch nicht genug Daten.')).toBeVisible();
+  await expect(page.getByText('Noch nicht genug Check-in-Daten für diesen Zeitraum.')).toBeVisible();
+  await expect(page.getByText('Trage im Coach einen Check-in ein oder wähle 90T.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toHaveCount(0);
 });
 
 test('Home daily action explains the next step and opens Coach', async ({ page }) => {
