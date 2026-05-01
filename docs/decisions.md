@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — FigJam ist Loop-Diagramm, Canva bleibt Screenshot-/Review-Board
+
+- **Decision:** Der aktuelle Pulse Daily Loop wird in FigJam als Architektur-/Ablaufdiagramm gepflegt; Canva bleibt das visuelle UX-Review-Board fuer Screenshots, Route-Notizen und Vorher/Nachher-Reviews. Canva-Edits werden erst nach Preview-Freigabe gespeichert, weil der Canva-Connector dies fuer Design-Commits verlangt.
+- **Why:** FigJam eignet sich besser fuer schnelle System- und Flow-Diagramme, waehrend Canva fuer visuelle Route-Sammlungen und Review-Artefakte sinnvoll bleibt. Die Trennung verhindert, dass beide Boards unterschiedliche Wahrheiten ueber Status und Ablauf enthalten.
+- **Alternatives:** Alles in Canva pflegen (Canva-Commit-Freigabe bremst autonome Updates); alles in FigJam pflegen (schwaecher fuer Screenshot-/Review-Boards); nur Repo-Docs nutzen (weniger visuell fuer UI/UX-Reviews).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Real-iPhone-QA wird als Evidence-Record gefuehrt
 
 - **Decision:** Real-device iPhone/VPN/PWA-QA wird nicht nur im Chat bestaetigt, sondern in `docs/qa/2026-05-02-iphone-pwa-real-device.md` als ausfuellbarer Evidence-Record festgehalten. Die bestehende Checkliste verweist auf diesen Record.
