@@ -13,6 +13,17 @@ import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageRe
 type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
 
+type BackfillMemory = {
+  at: string;
+  dryRun: boolean;
+  from: string;
+  to: string;
+  planned: number;
+  synced: number;
+  skipped: number;
+  failed: number;
+};
+
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
 }
@@ -247,45 +258,141 @@ function formatMonth(month: string): string {
   return new Date(Date.UTC(year, monthIndex - 1, 1)).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
 }
 
+function backfillNextAction(result: PulseGarminBackfillResponse): string {
+  if (result.summary.failed > 0) return 'Fehlerhafte Tage zuerst prüfen.';
+  if (result.dryRun && result.summary.planned > 0) return 'Nachladen starten.';
+  if (result.dryRun) return 'Keine Aktion nötig.';
+  if (result.summary.synced > 0) return 'Coverage wird neu geladen; Monatsliste kontrollieren.';
+  return 'Beim nächsten Garmin-Sync erneut prüfen.';
+}
+
+function backfillStatusLabel(status: PulseGarminBackfillResponse['days'][number]['status']): string {
+  if (status === 'failed') return 'Fehler';
+  if (status === 'planned') return 'Geplant';
+  if (status === 'synced') return 'Synchronisiert';
+  return 'Übersprungen';
+}
+
+function prioritizedBackfillDays(result: PulseGarminBackfillResponse): PulseGarminBackfillResponse['days'] {
+  const priority: Record<PulseGarminBackfillResponse['days'][number]['status'], number> = {
+    failed: 0,
+    planned: 1,
+    synced: 2,
+    skipped: 3,
+  };
+  return [...result.days].sort((a, b) => {
+    const byStatus = priority[a.status] - priority[b.status];
+    if (byStatus !== 0) return byStatus;
+    return a.date.localeCompare(b.date);
+  });
+}
+
 function BackfillResult({ result }: { result: PulseGarminBackfillResponse }) {
   const color = result.summary.failed > 0 ? 'var(--rose)' : result.dryRun ? 'var(--amber)' : 'var(--green)';
+  const nextAction = backfillNextAction(result);
+  const priorityDays = prioritizedBackfillDays(result).slice(0, 5);
+  const summaryRows = [
+    { label: 'Zeitraum', value: `${result.range.from} bis ${result.range.to}` },
+    { label: 'Geplant', value: String(result.summary.planned) },
+    { label: 'Synchronisiert', value: String(result.summary.synced) },
+    { label: 'Fehler', value: String(result.summary.failed) },
+    { label: 'Nächste Aktion', value: nextAction },
+  ];
+
   return (
     <div style={{ marginTop: 10, padding: '10px 12px', border: `1px solid ${color}`, borderRadius: 5, background: 'var(--surface-2)' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
-        {result.dryRun ? 'Würde nachladen' : 'Daten aktualisiert'} · {result.range.from} bis {result.range.to}
+        {result.dryRun ? 'Vorschau' : 'Backfill Ergebnis'}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.55 }}>
-        {result.summary.planned} geplant · {result.summary.synced} synchronisiert · {result.summary.skipped} übersprungen · {result.summary.failed} Fehler
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 8 }}>
+        {summaryRows.map(row => (
+          <div key={row.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              {row.label}
+            </span>
+            <span style={{ fontSize: 11, color: row.label === 'Nächste Aktion' ? color : 'var(--text-2)', lineHeight: 1.45 }}>
+              {row.value}
+            </span>
+          </div>
+        ))}
       </div>
       {result.summary.activities > 0 && (
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
           Aktivitäten {result.summary.activities} · Gewichtstage {result.summary.weightDays}
         </div>
       )}
-      {result.days.some(day => day.status === 'failed') && (
-        <div style={{ marginTop: 6, fontSize: 10, color: 'var(--rose)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
-          {result.days.filter(day => day.status === 'failed').slice(0, 3).map(day => `${day.date}: ${day.error ?? 'Fehler'}`).join(' · ')}
-        </div>
+      {priorityDays.length > 0 && (
+        <ul data-testid="backfill-priority-days" style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, padding: 0, listStyle: 'none' }}>
+          {priorityDays.map(day => (
+            <li key={`${day.date}-${day.status}`} style={{ fontSize: 10, color: day.status === 'failed' ? 'var(--rose)' : 'var(--text-3)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+              {day.date} · {backfillStatusLabel(day.status)}{day.error ? ` · ${day.error}` : day.reason ? ` · ${day.reason}` : ''}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
 }
 
-function rememberBackfillResult(result: PulseGarminBackfillResponse): void {
+function toBackfillMemory(result: PulseGarminBackfillResponse): BackfillMemory {
+  return {
+    at: new Date().toISOString(),
+    dryRun: result.dryRun,
+    from: result.range.from,
+    to: result.range.to,
+    planned: result.summary.planned,
+    synced: result.summary.synced,
+    skipped: result.summary.skipped,
+    failed: result.summary.failed,
+  };
+}
+
+function rememberBackfillResult(result: PulseGarminBackfillResponse): BackfillMemory {
+  const memory = toBackfillMemory(result);
   try {
-    localStorage.setItem(BACKFILL_LAST_STORAGE_KEY, JSON.stringify({
-      at: new Date().toISOString(),
-      dryRun: result.dryRun,
-      from: result.range.from,
-      to: result.range.to,
-      planned: result.summary.planned,
-      synced: result.summary.synced,
-      skipped: result.summary.skipped,
-      failed: result.summary.failed,
-    }));
+    localStorage.setItem(BACKFILL_LAST_STORAGE_KEY, JSON.stringify(memory));
   } catch {
     // Local status memory is optional.
   }
+  return memory;
+}
+
+function loadLastBackfillResult(): BackfillMemory | null {
+  try {
+    const raw = localStorage.getItem(BACKFILL_LAST_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<BackfillMemory>;
+    if (!parsed.at || !parsed.from || !parsed.to) return null;
+    return {
+      at: parsed.at,
+      dryRun: Boolean(parsed.dryRun),
+      from: parsed.from,
+      to: parsed.to,
+      planned: Number(parsed.planned ?? 0),
+      synced: Number(parsed.synced ?? 0),
+      skipped: Number(parsed.skipped ?? 0),
+      failed: Number(parsed.failed ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function LastBackfillCard({ last }: { last: BackfillMemory }) {
+  const color = last.failed > 0 ? 'var(--rose)' : last.dryRun ? 'var(--amber)' : 'var(--green)';
+  return (
+    <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 5, background: 'var(--surface)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        Letzter Backfill
+      </div>
+      <div style={{ marginTop: 4, fontSize: 10.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        {last.dryRun ? 'Vorschau' : 'Echter Lauf'} · {last.from} bis {last.to} · {last.planned} geplant · {last.synced} synchronisiert · {last.failed} Fehler
+      </div>
+      <div style={{ marginTop: 2, fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
+        {new Date(last.at).toLocaleString('de-DE')}
+      </div>
+    </div>
+  );
 }
 
 function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
@@ -307,6 +414,7 @@ function CoverageTab() {
   const [range, setRange] = useState<'30' | '90' | 'year'>('30');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [backfillResult, setBackfillResult] = useState<PulseGarminBackfillResponse | null>(null);
+  const [lastBackfill, setLastBackfill] = useState<BackfillMemory | null>(() => loadLastBackfillResult());
   const coverage = useDataCoverage(range === 'year' ? { year: currentYear } : { days: Number(range) });
   const backfill = useGarminBackfill();
 
@@ -339,7 +447,7 @@ function CoverageTab() {
       domains: ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'],
     });
     setBackfillResult(result);
-    rememberBackfillResult(result);
+    setLastBackfill(rememberBackfillResult(result));
     if (!dryRun) void coverage.refetch();
   }
 
@@ -443,6 +551,7 @@ function CoverageTab() {
         <div style={{ marginTop: 8, fontSize: 11, color: candidateCount === 0 ? 'var(--text-3)' : 'var(--text-2)', lineHeight: 1.45 }}>
           {guidance}
         </div>
+        {lastBackfill && <LastBackfillCard last={lastBackfill} />}
         {backfill.error && (
           <div style={{ marginTop: 8, fontSize: 11, color: 'var(--rose)' }}>
             {backfill.error.message}

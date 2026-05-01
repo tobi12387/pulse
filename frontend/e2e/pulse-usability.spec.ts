@@ -343,6 +343,76 @@ test('Data coverage explains status, cause and action before backfill', async ({
   await expect(page.getByText('Vorschau verändert nichts; Nachladen schreibt Garmin-Daten für den gewählten Monat in Pulse.')).toBeVisible();
 });
 
+test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
+  const coverage = {
+    range: { from: '2026-05-01', to: '2026-05-02', days: 2, year: null },
+    summary: {
+      dailyMetricsDays: 0,
+      sleepDays: 2,
+      activityDays: 0,
+      activities: 0,
+      weatherActivities: 0,
+      weightDays: 2,
+      completeDays: 0,
+    },
+    profile: {
+      updatedAt: '2026-05-01T05:00:00.000Z',
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 172,
+      vo2max: 52,
+      missing: [],
+    },
+    issues: [],
+    days: ['2026-05-02', '2026-05-01'].map(date => ({
+      date,
+      dailyMetrics: { status: 'missing', reason: 'not_synced', syncedAt: null, missingFields: ['hrvRmssd'] },
+      sleep: { status: 'present', reason: 'present', durationH: 7.4, hasStages: true, missingFields: [] },
+      activities: { status: 'missing', reason: 'not_recorded', count: 0, weatherCount: 0, missingWeatherCount: 0, missingFields: [] },
+      weight: { status: 'present', reason: 'present', hasBodyComposition: true, missingFields: [] },
+    })),
+  };
+
+  await mockPulseApi(page, {
+    coverage,
+    backfillResult: body => {
+      const dryRun = Boolean((body as { dryRun?: boolean }).dryRun);
+      return {
+        dryRun,
+        range: { from: '2026-05-01', to: '2026-05-02', days: 2 },
+        domains: ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'],
+        limitDays: 31,
+        summary: dryRun
+          ? { planned: 2, synced: 0, skipped: 0, failed: 0, activities: 0, weightDays: 0 }
+          : { planned: 2, synced: 1, skipped: 0, failed: 1, activities: 0, weightDays: 0 },
+        days: dryRun
+          ? [
+              { date: '2026-05-01', status: 'planned', dailyMetrics: false, activities: 0, weight: false, reason: 'dailyMetrics:not_synced', error: null },
+              { date: '2026-05-02', status: 'planned', dailyMetrics: false, activities: 0, weight: false, reason: 'dailyMetrics:not_synced', error: null },
+            ]
+          : [
+              { date: '2026-05-02', status: 'synced', dailyMetrics: true, activities: 0, weight: false, reason: null, error: null },
+              { date: '2026-05-01', status: 'failed', dailyMetrics: false, activities: 0, weight: false, reason: 'dailyMetrics:not_synced', error: 'Garmin-Fehler: dailyMetrics:quota' },
+            ],
+      };
+    },
+  });
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Abdeckung' }).click();
+  await page.getByRole('button', { name: 'Vorschau' }).click();
+
+  await expect(page.getByText('Nächste Aktion')).toBeVisible();
+  await expect(page.getByText('Nachladen starten.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Nachladen' }).click();
+
+  await expect(page.getByText('Letzter Backfill')).toBeVisible();
+  await expect(page.getByText('Fehlerhafte Tage zuerst prüfen.')).toBeVisible();
+  await expect(page.getByTestId('backfill-priority-days').locator('li').first()).toContainText('2026-05-01');
+  await expect(page.getByTestId('backfill-priority-days').locator('li').first()).toContainText('Fehler');
+});
+
 test('Settings separates push server, browser and device state', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window.Notification, 'permission', { get: () => 'denied' });
