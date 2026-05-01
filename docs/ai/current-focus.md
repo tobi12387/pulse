@@ -18,13 +18,16 @@ Keep this file short. Update it whenever the active work queue changes.
 12. Daily Decision Center was merged and deployed via PR #87.
 13. Daily Briefing future-workout correction and stronger guided Mental Check-in was merged and deployed via PR #88.
 14. Local Test Services Hardening was merged and deployed via PR #90.
-15. Active implementation branch: `codex/insight-evidence-links`.
-16. Active implementation wave: Daily Intelligence Next Wave — Insight Evidence Links, then Deep UI/UX Flow Audit.
+15. Insight Evidence Links was merged and deployed via PR #92.
+16. Deep UI/UX Flow Audit baseline and overnight sequencing are documented in `docs/superpowers/plans/2026-05-02-overnight-next-steps.md`.
+17. Active implementation branch: none.
+18. Active implementation wave: Decision Closure & Coach Memory, starting with the Decision Closure Model.
 
 ## Current PRs / Branches
 
-- `codex/insight-evidence-links`: active branch for structured Insight evidence/missing-data UI.
+- Open PRs: none.
 - Recent completed branches:
+- `codex/insight-evidence-links`: merged and deployed via PR #92.
 - `codex/local-test-services-hardening`: merged and deployed via PR #90.
 - `codex/daily-briefing-guided-checkin`: merged and deployed via PR #88.
 - `codex/daily-decision-center`: merged and deployed via PR #87.
