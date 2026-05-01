@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Decision Closure kommt vor weiterem Breitenwachstum
+
+- **Decision:** Nach Insight Evidence Links wird Pulse zuerst die Decision-Closure-/Coach-Memory-Welle umsetzen: persistierte Action-Zustaende, Home/Coach-Closure-Controls, sichtbare Coach-Praeferenzen und Push-Action-Journeys. Reine Erweiterungen ohne geschlossenen Tagesloop werden nachrangig behandelt.
+- **Why:** Die groesste verbleibende Alltagsluecke ist nicht noch ein Dashboard, sondern ob Pulse weiss, ob eine Empfehlung erledigt, verschoben oder ueberholt wurde. Erst dieser Verlauf verhindert wiederholte oder generische Empfehlungen.
+- **Alternatives:** Zuerst weitere Garmin-Felder oder neue UI-Flächen bauen (mehr Oberflaeche, weniger Loop-Closure); Coach-Memory implizit im Prompt halten (nicht auditierbar); Push-Journeys vor Action-State bauen (Spam-/Wiederholungsrisiko).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Insights zeigen strukturierte Datenbasis statt nur Narrativ
 
 - **Decision:** Deep Insights behalten den bestehenden `/api/pulse/insights`-Contract kompatibel, bekommen aber strukturierte `evidence`- und `missingData`-Listen. Datenmangel bleibt ein HTTP-200-Fachzustand (`status: data_missing`), Provider-/Timeoutfehler bleiben sanitizte HTTP-Fehler; leere Schlaf-/HRV-Fenster werden nicht mehr an das LLM zur Narrativbildung geschickt.
