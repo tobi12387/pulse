@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   usePulseProfile, useUpdateProfile, pulseKeys,
   useHealthStates, useCreateHealthState, useResolveHealthState, useDeleteHealthState,
@@ -19,6 +20,28 @@ interface GarminStatus {
   errorMessage: string | null;
 }
 
+interface GarminBackfillSnapshot {
+  at: string;
+  dryRun: boolean;
+  from: string;
+  to: string;
+  planned: number;
+  synced: number;
+  skipped: number;
+  failed: number;
+}
+
+const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
+
+function loadLastBackfillSnapshot(): GarminBackfillSnapshot | null {
+  try {
+    const raw = localStorage.getItem(BACKFILL_LAST_STORAGE_KEY);
+    return raw ? JSON.parse(raw) as GarminBackfillSnapshot : null;
+  } catch {
+    return null;
+  }
+}
+
 const SYNC_COLOR: Record<string, string> = {
   ok:    'var(--green)',
   stale: 'var(--amber)',
@@ -32,7 +55,9 @@ const SYNC_LABEL: Record<string, string> = {
 };
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [lastBackfill] = useState<GarminBackfillSnapshot | null>(() => loadLastBackfillSnapshot());
   const [syncing, setSyncing] = useState(false);
   const [syncingProfile, setSyncingProfile] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
@@ -297,6 +322,36 @@ export default function Settings() {
                 <Pill color={coverage30.profile.missing.length === 0 ? 'var(--green)' : 'var(--amber)'}>
                   {coverage30.profile.missing.length === 0 ? 'VOLLSTÄNDIG' : `${coverage30.profile.missing.length} FEHLT`}
                 </Pill>
+              </Row>
+              <Row label="Backfill">
+                <button
+                  type="button"
+                  onClick={() => navigate('/data')}
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    color: 'var(--text-2)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.12em',
+                    padding: '4px 8px',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Abdeckung
+                </button>
+              </Row>
+              <Row label="Backfill-Regel">
+                <Val>31 Tage max.</Val>
+              </Row>
+              <Row label="Letzter Backfill">
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: lastBackfill ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'right' }}>
+                  {lastBackfill
+                    ? `${lastBackfill.dryRun ? 'Vorschau' : 'Sync'} ${lastBackfill.from}–${lastBackfill.to} · ${lastBackfill.synced}/${lastBackfill.planned}`
+                    : 'Noch keiner'}
+                </span>
               </Row>
             </>
           )}

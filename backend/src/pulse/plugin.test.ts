@@ -591,6 +591,54 @@ describe('GET /api/pulse/data-coverage', () => {
   });
 });
 
+describe('POST /api/pulse/garmin/backfill', () => {
+  it('previews bounded backfill days without calling Garmin', async () => {
+    const from = dateDaysAgo(3);
+    const to = dateDaysAgo(1);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/garmin/backfill',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { from, to, dryRun: true },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      dryRun: boolean;
+      range: { days: number };
+      summary: { planned: number; synced: number; failed: number };
+      days: Array<{ status: string; reason: string | null }>;
+    }>();
+    expect(body.dryRun).toBe(true);
+    expect(body.range.days).toBe(3);
+    expect(body.summary.planned).toBe(3);
+    expect(body.summary.synced).toBe(0);
+    expect(body.summary.failed).toBe(0);
+    expect(body.days.every(day => day.status === 'planned')).toBe(true);
+    expect(body.days[0]?.reason).toContain('not_synced');
+  });
+
+  it('rejects ranges over 31 days and future dates', async () => {
+    const tooLong = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/garmin/backfill',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { from: dateDaysAgo(40), to: dateDaysAgo(1), dryRun: true },
+    });
+    expect(tooLong.statusCode).toBe(400);
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const future = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/garmin/backfill',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { from: dateDaysAgo(1), to: tomorrow.toISOString().split('T')[0]!, dryRun: true },
+    });
+    expect(future.statusCode).toBe(400);
+  });
+});
+
 describe('GET /api/pulse/plan', () => {
   it('returns 200 with empty workouts', async () => {
     const res = await app.inject({

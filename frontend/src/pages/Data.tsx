@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, useCheckinToday,
-  useDataCoverage, usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
+  useDataCoverage, useGarminBackfill, usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
-import type { PulseDataCoverageDay, PulseDataCoverageDomain } from '@coaching-os/shared/pulse';
+import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseGarminBackfillResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
+const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -126,6 +127,70 @@ function CoverageMetric({ label, value, sub }: { label: string; value: string; s
   );
 }
 
+function isBackfillCandidate(day: PulseDataCoverageDay): boolean {
+  return (
+    day.dailyMetrics.reason === 'not_synced' ||
+    day.dailyMetrics.reason === 'not_synced_yet' ||
+    day.dailyMetrics.status === 'partial' ||
+    day.sleep.reason === 'not_synced' ||
+    day.sleep.reason === 'not_synced_yet' ||
+    day.sleep.status === 'partial' ||
+    day.activities.reason === 'not_synced' ||
+    day.activities.reason === 'not_synced_yet' ||
+    day.activities.status === 'partial' ||
+    day.weight.reason === 'not_synced' ||
+    day.weight.reason === 'not_synced_yet' ||
+    day.weight.status === 'partial'
+  );
+}
+
+function formatMonth(month: string): string {
+  const [year, monthIndex] = month.split('-').map(Number);
+  if (!year || !monthIndex) return month;
+  return new Date(Date.UTC(year, monthIndex - 1, 1)).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+}
+
+function BackfillResult({ result }: { result: PulseGarminBackfillResponse }) {
+  const color = result.summary.failed > 0 ? 'var(--rose)' : result.dryRun ? 'var(--amber)' : 'var(--green)';
+  return (
+    <div style={{ marginTop: 10, padding: '10px 12px', border: `1px solid ${color}`, borderRadius: 5, background: 'var(--surface-2)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
+        {result.dryRun ? 'Vorschau' : 'Backfill'} · {result.range.from} bis {result.range.to}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.55 }}>
+        {result.summary.planned} geplant · {result.summary.synced} synchronisiert · {result.summary.skipped} übersprungen · {result.summary.failed} Fehler
+      </div>
+      {result.summary.activities > 0 && (
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+          Aktivitäten {result.summary.activities} · Gewichtstage {result.summary.weightDays}
+        </div>
+      )}
+      {result.days.some(day => day.status === 'failed') && (
+        <div style={{ marginTop: 6, fontSize: 10, color: 'var(--rose)', lineHeight: 1.45 }}>
+          {result.days.filter(day => day.status === 'failed').slice(0, 3).map(day => `${day.date}: ${day.error ?? 'Fehler'}`).join(' · ')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function rememberBackfillResult(result: PulseGarminBackfillResponse): void {
+  try {
+    localStorage.setItem(BACKFILL_LAST_STORAGE_KEY, JSON.stringify({
+      at: new Date().toISOString(),
+      dryRun: result.dryRun,
+      from: result.range.from,
+      to: result.range.to,
+      planned: result.summary.planned,
+      synced: result.summary.synced,
+      skipped: result.summary.skipped,
+      failed: result.summary.failed,
+    }));
+  } catch {
+    // Local status memory is optional.
+  }
+}
+
 function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
   const detail = domain.missingFields && domain.missingFields.length > 0
     ? ` · ${domain.missingFields.join(', ')}`
@@ -143,7 +208,10 @@ function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
 function CoverageTab() {
   const currentYear = new Date().getFullYear();
   const [range, setRange] = useState<'30' | '90' | 'year'>('30');
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [backfillResult, setBackfillResult] = useState<PulseGarminBackfillResponse | null>(null);
   const coverage = useDataCoverage(range === 'year' ? { year: currentYear } : { days: Number(range) });
+  const backfill = useGarminBackfill();
 
   if (coverage.isLoading) return <Loading rows={3} />;
   if (coverage.error) return <Empty msg={coverage.error.message} />;
@@ -152,6 +220,30 @@ function CoverageTab() {
   if (!data) return <Empty msg="Keine Abdeckungsdaten." />;
   const profileReady = data.profile.missing.length === 0;
   const shownDays = data.days.slice(0, 31);
+  const monthOptions = [...new Set(data.days.map(day => day.date.slice(0, 7)))].sort().reverse();
+  const activeMonth = selectedMonth && monthOptions.includes(selectedMonth)
+    ? selectedMonth
+    : monthOptions[0] ?? '';
+  const activeMonthDays = activeMonth
+    ? data.days.filter(day => day.date.startsWith(activeMonth))
+    : shownDays;
+  const activeMonthDates = activeMonthDays.map(day => day.date).sort();
+  const backfillFrom = activeMonthDates[0] ?? null;
+  const backfillTo = activeMonthDates[activeMonthDates.length - 1] ?? null;
+  const candidateCount = activeMonthDays.filter(isBackfillCandidate).length;
+
+  async function runBackfill(dryRun: boolean) {
+    if (!backfillFrom || !backfillTo) return;
+    const result = await backfill.mutateAsync({
+      from: backfillFrom,
+      to: backfillTo,
+      dryRun,
+      domains: ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'],
+    });
+    setBackfillResult(result);
+    rememberBackfillResult(result);
+    if (!dryRun) void coverage.refetch();
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -177,6 +269,83 @@ function CoverageTab() {
         <CoverageMetric label="Wetter" value={`${data.summary.weatherActivities}/${data.summary.activities}`} />
         <CoverageMetric label="Gewicht" value={`${data.summary.weightDays}/${data.range.days}`} />
         <CoverageMetric label="Profil" value={profileReady ? 'OK' : `${data.profile.missing.length} fehlt`} sub={data.profile.updatedAt ? new Date(data.profile.updatedAt).toLocaleDateString('de-DE') : undefined} />
+      </div>
+
+      <div className="card" style={{ padding: '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+          <div>
+            <span className="label-mono">Garmin Backfill</span>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+              {candidateCount} Kandidaten · max. 31 Tage
+            </div>
+          </div>
+          <select
+            value={activeMonth}
+            onChange={event => {
+              setSelectedMonth(event.target.value);
+              setBackfillResult(null);
+            }}
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              padding: '6px 8px',
+            }}
+          >
+            {monthOptions.map(month => (
+              <option key={month} value={month}>{formatMonth(month)}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+          <button
+            type="button"
+            disabled={!backfillFrom || !backfillTo || backfill.isPending}
+            onClick={() => void runBackfill(true)}
+            style={{
+              padding: '9px 10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              color: 'var(--text-2)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              cursor: backfill.isPending ? 'default' : 'pointer',
+            }}
+          >
+            Vorschau
+          </button>
+          <button
+            type="button"
+            disabled={!backfillFrom || !backfillTo || backfill.isPending || candidateCount === 0}
+            onClick={() => void runBackfill(false)}
+            style={{
+              padding: '9px 10px',
+              background: candidateCount === 0 ? 'var(--surface-2)' : 'var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 5,
+              color: candidateCount === 0 ? 'var(--text-3)' : 'var(--bg)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              cursor: backfill.isPending || candidateCount === 0 ? 'default' : 'pointer',
+            }}
+          >
+            {backfill.isPending ? 'Lädt…' : 'Nachladen'}
+          </button>
+        </div>
+        {backfill.error && (
+          <div style={{ marginTop: 8, fontSize: 11, color: 'var(--rose)' }}>
+            {backfill.error.message}
+          </div>
+        )}
+        {backfillResult && <BackfillResult result={backfillResult} />}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>

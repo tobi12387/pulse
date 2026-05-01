@@ -358,6 +358,18 @@ export function useDataCoverage(params: { days?: number; year?: number } = { day
   });
 }
 
+export function useGarminBackfill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.garmin.backfill,
+    onSuccess: (_data, variables) => {
+      if (!variables.dryRun) {
+        void qc.invalidateQueries({ queryKey: pulseKeys.all });
+      }
+    },
+  });
+}
+
 export function useGarminCalendarSync() {
   const qc = useQueryClient();
   return useMutation({
