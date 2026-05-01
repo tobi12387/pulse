@@ -46,6 +46,8 @@
 
 ### 1. Coach-Guided Daily Briefing
 
+**Status:** in progress via `codex/phase1-coach-daily-briefing`.
+
 - Coach bekommt eine geführte Tageskarte: Lage, heutige Grenze, nächste Entscheidung, empfohlene Frage.
 - Home → Coach soll nicht nur navigieren, sondern den passenden Gesprächsstart sichtbar machen.
 - Quick Prompts werden nach Zweck gruppiert: "Heute entscheiden", "Plan anpassen", "Warum?".

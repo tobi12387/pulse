@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Coach startet als geführter Tagesdialog statt nur Chat
+
+- **Decision:** Everyday Flow Phase 1 macht den Coach-Empty-State zu einem geführten Tagesbriefing mit Lage, heutiger Grenze, nächster Entscheidung und bewusst vorbereiteten Prompt-Gruppen. Prompts füllen weiter nur das Eingabefeld und senden keine LLM-Anfrage automatisch.
+- **Why:** Home führt bereits zur nächsten Aktion, aber der Coach muss den Tagesfaden aufnehmen und nicht wie ein leerer Chat wirken. Die Karte nutzt vorhandene Home-/Briefing-/PulseContext-Daten statt neuer Backend- oder LLM-Wege.
+- **Alternatives:** Quick Prompts nur erweitern (zu wenig Führung); automatisches Briefing als Chatnachricht senden (überraschender LLM-Flow); neuen Backend-Contract bauen (nicht nötig für ersten Nutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Everyday Flow Deepening priorisiert tägliche Handlung vor Feature-Breite
 
 - **Decision:** Die nächste aktive Welle ist `docs/superpowers/plans/2026-05-01-everyday-flow-deepening-wave.md`. Reihenfolge: Coach-Guided Daily Briefing, Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.

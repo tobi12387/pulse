@@ -90,6 +90,51 @@ test('Coach quick prompts prepare a question without sending it', async ({ page 
   expect(coachSends).toBe(0);
 });
 
+test('Coach daily briefing guides the first conversation without auto-send', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    home: {
+      nextWorkout: {
+        id: 'workout-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage, primär über Puls steuern.',
+      },
+      nextBestActions: [
+        {
+          id: 'plan-today',
+          source: 'plan',
+          priority: 'normal',
+          title: 'Training bewusst prüfen',
+          reason: 'Heute steht eine Einheit an; Readiness und Plan sollten zusammen betrachtet werden.',
+          cta: 'Coach fragen',
+          targetPath: '/coach',
+          resolvedBy: 'Entscheidung zur heutigen Einheit treffen.',
+        },
+      ],
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/coach');
+  await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
+  await expect(page.getByText('Heutige Grenze')).toBeVisible();
+  await expect(page.getByText('Nächste Entscheidung')).toBeVisible();
+  await expect(page.getByText('Heute entscheiden')).toBeVisible();
+  await expect(page.getByText('Plan anpassen')).toBeVisible();
+  await expect(page.getByText('Warum?')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Soll ich bike heute wie geplant machen oder anpassen?');
+  expect(coachSends).toBe(0);
+});
+
 test('Plan prioritizes the next training decision before tools', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [
