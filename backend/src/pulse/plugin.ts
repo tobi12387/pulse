@@ -585,6 +585,41 @@ function hrZoneReference(maxHrBpm: number, lthrBpm: number | null | undefined): 
     .join(', ');
 }
 
+function buildDeterministicWorkoutSteps(
+  workout: { activityType: string; zone: number; durationMin: number; description: string | null },
+  profile: { maxHrBpm: number | null; lthrBpm: number | null } | undefined,
+): WorkoutStep[] {
+  const duration = Math.max(5, workout.durationMin);
+  const zone = Math.max(1, Math.min(5, workout.zone));
+  let steps: WorkoutStep[];
+
+  if (duration <= 20) {
+    steps = [{ type: 'steady', durationMin: duration, zone, description: 'Kurze Aktivierung sauber und kontrolliert ausführen.' }];
+  } else if (zone >= 4) {
+    const warmup = Math.min(15, Math.max(8, Math.round(duration * 0.25)));
+    const cooldown = Math.min(10, Math.max(5, Math.round(duration * 0.15)));
+    const workBudget = Math.max(8, duration - warmup - cooldown);
+    const reps = Math.max(2, Math.min(zone >= 5 ? 6 : 5, Math.floor(workBudget / (zone >= 5 ? 5 : 8))));
+    const restMin = zone >= 5 ? 2 : 3;
+    const intervalMin = Math.max(2, Math.floor((workBudget - restMin * (reps - 1)) / reps));
+    steps = [
+      { type: 'warmup', durationMin: warmup, zone: 1, description: 'Progressiv aufwaermen, locker starten.' },
+      { type: 'interval', reps, durationMin: intervalMin, restMin, zone, description: `Qualitaetsblock in Z${zone}, Pausen wirklich locker.` },
+      { type: 'cooldown', durationMin: cooldown, zone: 1, description: 'Ausschwingen und Puls beruhigen.' },
+    ];
+  } else {
+    const warmup = duration >= 45 ? 10 : 5;
+    const cooldown = duration >= 45 ? 10 : 5;
+    steps = [
+      { type: 'warmup', durationMin: warmup, zone: 1, description: 'Locker einrollen/einlaufen.' },
+      { type: 'steady', durationMin: Math.max(5, duration - warmup - cooldown), zone, description: `Stabiler aerober Block in Z${zone}.` },
+      { type: 'cooldown', durationMin: cooldown, zone: 1, description: 'Ruhig beenden.' },
+    ];
+  }
+
+  return steps.map(step => supportsHrStepTargets(workout.activityType) ? addHrTargetToStep(step, profile) : step);
+}
+
 async function buildWorkoutSteps(
   workout: { id: string; activityType: string; zone: number; durationMin: number; description: string | null },
   profile: { ftpWatts: number | null; maxHrBpm: number | null; lthrBpm: number | null } | undefined,
@@ -623,34 +658,44 @@ Gesamtdauer der steps muss ~${workout.durationMin} Minuten ergeben (inkl. Pausen
 Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.
 Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur als Sekundaerkontrolle.`;
 
-  const raw = await llmComplete(
-    'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON.',
-    prompt,
-    SMART_MODEL,
-  );
+  try {
+    const raw = await llmComplete(
+      'Du bist Sportwissenschaftler und Ausdauercoach. Antworte nur mit validem JSON.',
+      prompt,
+      SMART_MODEL,
+    );
 
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('LLM returned no valid JSON for workout steps');
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('LLM returned no valid JSON for workout steps');
 
-  const parsed = JSON.parse(jsonMatch[0]) as { steps: WorkoutStep[]; coachingNote?: string };
-  const steps: WorkoutStep[] = (parsed.steps ?? []).map(s => {
-    const step: WorkoutStep = {
-      type: (['warmup','interval','rest','cooldown','steady'].includes(s.type) ? s.type : 'steady') as WorkoutStep['type'],
-      durationMin: Math.max(1, s.durationMin ?? 10),
-      zone: Math.max(1, Math.min(5, s.zone ?? workout.zone)),
+    const parsed = JSON.parse(jsonMatch[0]) as { steps: WorkoutStep[]; coachingNote?: string };
+    if (!Array.isArray(parsed.steps) || parsed.steps.length === 0) {
+      throw new Error('LLM returned empty workout steps');
+    }
+    const steps: WorkoutStep[] = parsed.steps.map(s => {
+      const step: WorkoutStep = {
+        type: (['warmup','interval','rest','cooldown','steady'].includes(s.type) ? s.type : 'steady') as WorkoutStep['type'],
+        durationMin: Math.max(1, s.durationMin ?? 10),
+        zone: Math.max(1, Math.min(5, s.zone ?? workout.zone)),
+      };
+      if (s.reps != null) step.reps = s.reps;
+      if (s.restMin != null) step.restMin = s.restMin;
+      if (s.description) step.description = s.description;
+      return supportsHrStepTargets(workout.activityType) ? addHrTargetToStep(step, profile) : step;
+    });
+
+    const coachingNote = parsed.coachingNote ?? null;
+    const updatedDescription = coachingNote
+      ? `${workout.description ?? ''}\n\n${coachingNote}`.trim()
+      : workout.description;
+
+    return { steps, updatedDescription };
+  } catch {
+    return {
+      steps: buildDeterministicWorkoutSteps(workout, profile),
+      updatedDescription: workout.description,
     };
-    if (s.reps != null) step.reps = s.reps;
-    if (s.restMin != null) step.restMin = s.restMin;
-    if (s.description) step.description = s.description;
-    return supportsHrStepTargets(workout.activityType) ? addHrTargetToStep(step, profile) : step;
-  });
-
-  const coachingNote = parsed.coachingNote ?? null;
-  const updatedDescription = coachingNote
-    ? `${workout.description ?? ''}\n\n${coachingNote}`.trim()
-    : workout.description;
-
-  return { steps, updatedDescription };
+  }
 }
 
 // ─── Plugin ───────────────────────────────────────────────────────────────────

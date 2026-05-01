@@ -382,10 +382,10 @@ export default function Settings() {
               cursor: syncingCalendar ? 'default' : 'pointer',
             }}
           >
-            {syncingCalendar ? '● Kalender sync…' : 'Kalender bereinigen'}
+            {syncingCalendar ? '● Kalender sync…' : 'Kalender synchronisieren'}
           </button>
           <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
-            Prüft geplante Garmin-Workouts und entfernt veraltete Pulse-Kalendereinträge.
+            Lädt fehlende geplante Workouts zu Garmin und entfernt veraltete Pulse-Kalendereinträge.
           </p>
         </div>
       </div>

@@ -154,6 +154,7 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await page.goto('/plan');
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sportart ändern' })).toBeVisible();
+  await expect(page.getByText('Garmin offen')).toBeVisible();
   await expect(page.getByRole('button', { name: 'wechseln' })).toHaveCount(0);
 
   const decisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();

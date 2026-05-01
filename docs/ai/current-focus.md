@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/phase2-plan-alternatives`: active branch for Plan Alternatives 2.0.
+- `codex/plan-descriptions-garmin-sync`: active bugfix branch for deterministic workout steps and visible Garmin plan sync status.
 - Recent completed branches:
+- `codex/phase2-plan-alternatives`: merged and deployed via PR #72.
 - `codex/figma-ux-integration`: merged via PR #71.
 - `codex/design-system-pass`: merged and deployed via PR #70.
 - `codex/phase1-coach-daily-briefing`: merged and deployed via PR #69.
@@ -55,7 +56,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/phase2-plan-alternatives`.
+- Finish, PR, merge and deploy `codex/plan-descriptions-garmin-sync`.
 - Then implement phases in order: Insights Reliability, Data Backfill Observability, Settings Action Grouping.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
