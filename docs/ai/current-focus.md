@@ -6,11 +6,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, and the Everyday Utility Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. No active implementation wave is selected. Create or approve the next plan in `docs/superpowers/plans/` before new feature work starts.
+3. Active implementation wave: `docs/superpowers/plans/2026-05-01-ui-ux-usability-wave.md`.
 
 ## Current PRs / Branches
 
-- None active. Recent completed branches:
+- `codex/ux-usability-plans`: active branch for the UI/UX usability wave plan and browser-audit findings.
+- Recent completed branches:
 - `codex/reliability-wave-closeout`: merged and deployed via PR #58.
 - `codex/bundle-code-splitting`: merged and deployed via PR #57.
 - `codex/deploy-smoke`: merged and deployed via PR #56.
@@ -43,7 +44,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- No implementation plan is active right now; choose the next product or reliability wave explicitly from a new active plan.
+- Start UI/UX Usability Wave Slice A: usability E2E foundation plus Insights raw-error guard.
+- Then implement Home/Coach daily flow, Plan decision flow, Data/Settings trust, and visual density pass in separate PRs.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

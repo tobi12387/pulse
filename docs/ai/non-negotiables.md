@@ -29,7 +29,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 
 ## Current Priority
 
-- The previous sequence (Bundle A/B/C, RPE, Risk Watch, Web Push, Phase 10/11, Trust Wave) is implemented and belongs to `docs/superpowers/plans/completed/`.
-- Current active plan: `docs/superpowers/plans/2026-05-01-everyday-utility-wave.md`.
-- Next implementation order: Bounded Garmin Backfill, Plan Feedback Calibration, Action Closure & Review, Mobile UI QA.
+- The previous sequence (Bundle A/B/C, RPE, Risk Watch, Web Push, Phase 10/11, Trust Wave, Everyday Utility Wave, Reliability Wave) is implemented and belongs to `docs/superpowers/plans/completed/`.
+- Current active plan: `docs/superpowers/plans/2026-05-01-ui-ux-usability-wave.md`.
+- Next implementation order: Usability E2E foundation plus Insights error guard, Home/Coach Daily Flow, Plan Decision Flow, Data/Settings Trust, Visual Density Pass.
 - Do not rebuild completed plans unless Tobi explicitly reverses scope.

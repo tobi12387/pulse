@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Naechste Welle priorisiert UI/UX-Usability und echte Interaktionen
+
+- **Decision:** Die naechste aktive Roadmap-Welle ist `docs/superpowers/plans/2026-05-01-ui-ux-usability-wave.md`. Reihenfolge: Usability-Test-Foundation plus Insights-Error-Guard, Home/Coach Daily Flow, Plan Decision Flow, Data/Settings Trust, Visual Density Pass.
+- **Why:** Der Browser-Audit auf dem deployten Server zeigte trotz gruener Smoke-E2E reale Nutzbarkeitsrisiken: ein roher `Internal Server Error` in Insights, mobile Dichteprobleme, unklare Action-/Backfill-/Push-Zustaende und zu technische Alltagskommunikation. Die naechste Arbeit soll deshalb echte Interaktionen und Verstaendlichkeit absichern, bevor neue Feature-Breite entsteht.
+- **Alternatives:** Direkt kosmetisches UI-Polish starten (behebt den Insights-Fehler und Flow-Verstaendlichkeit nicht); nur weitere Mock-Smokes schreiben (verpasst echte Serverfehler); grosses Redesign beginnen (zu viel Scope und Risiko).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Reliability Wave wird nach Slice 4 geschlossen
 
 - **Decision:** Nach PR #54 bis PR #57 gilt die Reliability Wave als abgeschlossen und das Plan-Dokument wird nach `completed/` verschoben. Es gibt keinen aktiven Folgeplan; neue Arbeit startet erst wieder mit einem explizit angelegten Plan in `docs/superpowers/plans/`.
