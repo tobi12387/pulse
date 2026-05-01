@@ -126,7 +126,7 @@ Sie deckt aktuell nicht ab:
 
 ### 3. Daily Action & Coach Flow
 
-**Status:** in progress via `codex/ux-slice-b-home-coach`.
+**Status:** implemented in PR #63.
 
 - Home Next Actions zu einer klaren Tagesentscheidung verdichten.
 - Weitere Actions sichtbar erreichbar machen: z.B. Stepper, "alle anzeigen" oder klare Kartenliste.
@@ -137,6 +137,8 @@ Sie deckt aktuell nicht ab:
   - Coach wirkt ohne Chatverlauf nicht leer.
 
 ### 4. Plan Decision Flow
+
+**Status:** in progress via `codex/ux-slice-c-plan-decision`.
 
 - Mobile First Screen im Plan auf "heutige/naechste Trainingsentscheidung" ausrichten.
 - Kraft-Logger in eine eigene Sektion oder einen unteren Tool-Bereich verschieben.

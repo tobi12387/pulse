@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/ux-slice-b-home-coach`: active branch for UI/UX Slice B, covering Home daily action clarity and Coach quick prompts.
+- `codex/ux-slice-c-plan-decision`: active branch for UI/UX Slice C, covering Plan first-screen training decision and clearer generation constraints.
 - Recent completed branches:
+- `codex/ux-slice-b-home-coach`: merged and deployed via PR #63.
 - `codex/ux-slice-a-closeout`: merged and deployed via PR #62.
 - `codex/ux-slice-a-insights`: merged and deployed via PR #61.
 - `codex/ux-usability-plans`: merged and deployed via PR #60.
@@ -47,8 +48,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy UI/UX Slice B: Home/Coach daily flow.
-- Then implement Plan decision flow, Data/Settings trust, and visual density pass in separate PRs.
+- Merge and deploy UI/UX Slice C: Plan decision flow.
+- Then implement Data/Settings trust and visual density pass in separate PRs.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

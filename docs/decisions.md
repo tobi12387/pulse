@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Plan startet mit Trainingsentscheidung statt Logger
+
+- **Decision:** UI/UX Slice C stellt im Plan-Trainingstab eine `NÄCHSTE TRAININGSENTSCHEIDUNG` vor Wochenstrip, Verfügbarkeit und Tools. Der Kraft-Logger wandert in einen Tools-Abschnitt, `wechseln` wird zu `Sportart ändern`, und die Planerstellung zeigt vor dem Klick eine kompakte Constraint-Zusammenfassung.
+- **Why:** Tobis Kernfrage im Plan ist "Was soll ich trainieren?", nicht zuerst "welchen Satz logge ich?". Die UI muss die Trainingsentscheidung, ihre groben Constraints und gezielte Änderungen sichtbar machen, ohne neue Planlogik einzuführen.
+- **Alternatives:** Kraft-Logger oben lassen (falsche Priorität im täglichen Flow); echten Alternativgenerator bauen (größerer Backend-Scope); nur Textlabels ändern (behebt First-Screen-Priorität nicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Home/Coach Daily Flow wird als vorbereitender Handlungsflow gebaut
 
 - **Decision:** UI/UX Slice B macht Home zur klaren Tagesaktion mit "HEUTE TUN", "WARUM" und "FERTIG WENN". Coach bekommt kontextuelle Quick Prompts, die nur die Eingabe vorbereiten und keine Anfrage automatisch senden.

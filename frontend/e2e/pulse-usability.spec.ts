@@ -89,3 +89,35 @@ test('Coach quick prompts prepare a question without sending it', async ({ page 
   await expect(page.getByPlaceholder('Frage…')).toHaveValue('Warum ist meine Readiness heute so bewertet?');
   expect(coachSends).toBe(0);
 });
+
+test('Plan prioritizes the next training decision before tools', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage, primär über Puls steuern.',
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sportart ändern' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'wechseln' })).toHaveCount(0);
+
+  const decisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
+  const strengthBox = await page.getByText('Kraft-Logger').boundingBox();
+  expect(decisionBox).not.toBeNull();
+  expect(strengthBox).not.toBeNull();
+  expect(decisionBox!.y).toBeLessThan(strengthBox!.y);
+
+  await page.getByRole('button', { name: '+ Plan generieren' }).click();
+  await expect(page.getByText('Verfügbarkeit: Mo/Mi/Fr/Sa')).toBeVisible();
+  await expect(page.getByText('Umfang: 8 h')).toBeVisible();
+});
