@@ -8,6 +8,7 @@ import type {
   PulsePushSettings, PulsePushTopics,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
+  PulseMentalLoadOverlayResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -121,6 +122,8 @@ export const pulseApi = {
       request(`/checkin/history?days=${days}`),
     themes: (days = 90): Promise<PulseMentalThemesResponse> =>
       request(`/mental/themes?days=${days}`),
+    loadOverlay: (days = 56): Promise<PulseMentalLoadOverlayResponse> =>
+      request(`/mental/load-overlay?days=${days}`),
   },
 
   sleep: {

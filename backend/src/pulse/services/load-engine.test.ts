@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeTss,
   applyEma,
+  buildFitnessLoadSeriesFromDailyTss,
   computeReadinessScore,
 } from './load-engine.js';
 
@@ -59,6 +60,22 @@ describe('applyEma', () => {
     const values = [...Array(20).fill(0), ...Array(42).fill(100)];
     const ema = applyEma(values, 42);
     expect(ema.at(-1)!).toBeGreaterThan(50);
+  });
+});
+
+describe('buildFitnessLoadSeriesFromDailyTss', () => {
+  it('returns aligned CTL/ATL/TSB points for every input day', () => {
+    const series = buildFitnessLoadSeriesFromDailyTss([
+      { date: '2026-04-01', tss: 0 },
+      { date: '2026-04-02', tss: 100 },
+      { date: '2026-04-03', tss: 50 },
+    ]);
+
+    expect(series).toHaveLength(3);
+    expect(series[0]).toMatchObject({ date: '2026-04-01', tss: 0, ctl: 0, atl: 0, tsb: 0 });
+    expect(series[1]!.ctl).toBeGreaterThan(0);
+    expect(series[1]!.atl).toBeGreaterThan(series[1]!.ctl);
+    expect(series[1]!.tsb).toBeLessThan(0);
   });
 });
 

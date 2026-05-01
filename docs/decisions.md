@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Mental-Load-Overlay nutzt berechnete Serien statt persistierter Load-Tabelle
+
+- **Decision:** Das Phase-11-Overlay wird aus einer wiederverwendbaren `computeFitnessLoadSeries`-Berechnung gespeist und nicht aus einer neuen `pulse_fitness_load` Tabelle. Der Insights-Overlay-Endpunkt kombiniert diese taeglichen CTL/ATL/TSB/TSS-Punkte mit sparse `pulse_mental_checkins`-Werten.
+- **Why:** Im aktuellen Schema gibt es keine persistierte Fitness-Load-Tabelle; `computeFitnessLoad` ist die kanonische Quelle fuer CTL/ATL/TSB. Eine Serienfunktion vermeidet dutzende Einzelberechnungen und schafft die Grundlage fuer Multi-Series-Charts und spaetere theme-aware Insight-Prompts.
+- **Alternatives:** Neue Persistenz fuer Fitness Load einfuehren (groesserer Scope und Migration ohne akuten Bedarf); `computeFitnessLoad` pro Chart-Tag aufrufen (ineffizient und inkonsistent); Overlay nur im Frontend aus bestehenden Einzelendpunkten approximieren (keine saubere X-Achsen-Ausrichtung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Phase 11 startet mit Theme-Timeline als eigenem Slice
 
 - **Decision:** Phase 11 wird zuerst als Mental-Theme-Slice umgesetzt: ein `/api/pulse/mental/themes` Endpunkt aggregiert wiederkehrende Voice-/Check-in-Themes inklusive Wochenfrequenz, Resurfacing/Resolved-Heuristik und Check-in-Occurrences fuer das Timeline-Modal; Mental-Load-Overlay und theme-aware Insights folgen in separaten PRs.
