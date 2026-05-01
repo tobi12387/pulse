@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/next-roadmap-audit`: active local branch for next-wave plan.
+- `codex/plan-trust-learning`: active local branch for Slice 1 from the next-wave plan.
+- `codex/next-roadmap-audit`: merged and deployed via PR #43.
 - `codex/race-ctl-context`: merged and deployed via PR #42.
 - `codex/status-roadmap-cleanup`: merged and deployed via PR #41.
 - `codex/phase11-theme-aware-insights`: merged and deployed via PR #40.
@@ -27,8 +28,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy next-wave roadmap plan.
-- Then start Slice 1 from the new plan: `codex/plan-trust-learning`.
+- Merge and deploy Slice 1: `codex/plan-trust-learning`.
+- Then start Slice 2 from the new plan: `codex/garmin-data-trust`.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

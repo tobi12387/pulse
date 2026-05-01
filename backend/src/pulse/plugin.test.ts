@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { buildApp } from '../app.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
-import { pulseCoachSessions, pulseMentalCheckins, pulsePlannedWorkouts, pulsePushSubscriptions, pulseUserProfile } from '../db/pulse-schema.js';
+import { pulseCoachSessions, pulseMentalCheckins, pulsePlanGenerations, pulsePlannedWorkouts, pulsePushSubscriptions, pulseUserProfile } from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
@@ -87,6 +87,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (userId) {
+    await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
     await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
     await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
     await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
@@ -98,6 +99,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
   await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
   await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
   await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
@@ -513,13 +515,59 @@ describe('GET /api/pulse/plan', () => {
 });
 
 describe('POST /api/pulse/plan/generate', () => {
-  it('generates workouts and returns 201', async () => {
+  it('generates workouts and returns a persisted trace', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 260,
+      maxHrBpm: 186,
+      lthrBpm: 172,
+      weeklyHoursTarget: 7,
+      updatedAt: new Date(),
+    });
+
     const res = await app.inject({
       method: 'POST', url: '/api/pulse/plan/generate',
       headers: { Authorization: `Bearer ${token}` },
+      payload: { weekStart: '2026-05-04' },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json()).toHaveProperty('workouts');
+    const body = res.json<{
+      workouts: unknown[];
+      planDecision: { targetSessionCount: number; selectedDays: number[] };
+      planTrace: {
+        id: string;
+        weekStart: string;
+        inputSnapshot: { weeklyHoursTarget: number; profile: { maxHrBpm: number | null }; dataWarnings: string[] };
+        sportMix: Record<string, { sessions: number }>;
+      };
+    }>();
+    expect(body.workouts.length).toBeGreaterThan(0);
+    expect(body.planTrace).toMatchObject({
+      weekStart: '2026-05-04',
+      inputSnapshot: {
+        weeklyHoursTarget: 7,
+        profile: { maxHrBpm: 186 },
+      },
+    });
+    expect(body.planTrace.inputSnapshot.dataWarnings).toContain('Kein aktives Ziel hinterlegt.');
+    expect(Object.keys(body.planTrace.sportMix).length).toBeGreaterThan(0);
+
+    const [persisted] = await db.select()
+      .from(pulsePlanGenerations)
+      .where(eq(pulsePlanGenerations.userId, userId));
+    expect(persisted?.id).toBe(body.planTrace.id);
+    expect(persisted?.planDecision).toMatchObject({ targetSessionCount: body.planDecision.targetSessionCount });
+
+    const traceRes = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/plan/trace/2026-05-04',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(traceRes.statusCode).toBe(200);
+    expect(traceRes.json<{ trace: { id: string; weekStart: string } }>().trace).toMatchObject({
+      id: body.planTrace.id,
+      weekStart: '2026-05-04',
+    });
   });
 });
 

@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, useUpdateGoal, useDeleteGoal, useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
+  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { StrengthLogger } from '@/components/StrengthLogger';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
-import type { PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
+import type { PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -424,6 +424,132 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
   );
 }
 
+function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isLoading: boolean }) {
+  if (isLoading && !trace) {
+    return (
+      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.14)' }}>
+        <Skeleton height={10} width="34%" />
+        <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+          <Skeleton height={42} />
+          <Skeleton height={42} />
+          <Skeleton height={42} />
+        </div>
+      </div>
+    );
+  }
+  if (!trace) return null;
+
+  const sports = Object.entries(trace.sportMix);
+  const recentSports = Object.entries(trace.inputSnapshot.recentSportMix);
+  const goalNames = trace.inputSnapshot.goals.map(g => g.title);
+  const riskTitles = trace.inputSnapshot.riskSignals.map(r => r.title);
+  const load = trace.inputSnapshot.load;
+
+  return (
+    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>Einbezogene Daten</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          Woche {trace.weekStart}
+        </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 8, marginBottom: 12 }}>
+        {[
+          ['CTL', load.ctl.toFixed(1)],
+          ['ATL', load.atl.toFixed(1)],
+          ['TSB', load.tsb.toFixed(1)],
+          ['Phase', trace.inputSnapshot.phase],
+          ['Zielstunden', `${trace.inputSnapshot.weeklyHoursTarget}h`],
+        ].map(([label, value]) => (
+          <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 10px', background: 'var(--surface)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>{label}</div>
+            <div style={{ marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: 14, color: label === 'TSB' && Number(value) < -12 ? 'var(--amber)' : 'var(--text)' }}>
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {trace.generatedSummary.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+          {trace.generatedSummary.map(item => (
+            <p key={item} style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5 }}>{item}</p>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {(goalNames.length > 0 ? goalNames : ['Kein aktives Ziel']).map(goal => (
+          <span key={`goal-${goal}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', border: '1px solid rgba(94,230,207,0.35)', borderRadius: 4, padding: '3px 7px' }}>
+            Ziel: {goal}
+          </span>
+        ))}
+        {riskTitles.map(title => (
+          <span key={`risk-${title}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--amber)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 4, padding: '3px 7px' }}>
+            Risk: {title}
+          </span>
+        ))}
+        {trace.inputSnapshot.healthStates.map(state => (
+          <span key={`${state.type}-${state.startDate}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--rose)', border: '1px solid rgba(244,63,94,0.35)', borderRadius: 4, padding: '3px 7px' }}>
+            Health: {state.type}{state.bodyPart ? ` · ${state.bodyPart}` : ''}
+          </span>
+        ))}
+        {trace.inputSnapshot.recentRpe.length > 0 && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 7px' }}>
+            RPE: {trace.inputSnapshot.recentRpe.length} jüngste Bewertung(en)
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+        <div>
+          <div className="label-mono" style={{ fontSize: 9, marginBottom: 6 }}>Sportmix Plan</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {sports.map(([sport, mix]) => (
+              <span key={sport} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 7px' }}>
+                {ACTIVITY_LABEL[sport] ?? sport}: {mix.sessions}x · {mix.totalMinutes}m
+              </span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="label-mono" style={{ fontSize: 9, marginBottom: 6 }}>Letzte 6 Wochen</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {recentSports.length > 0 ? recentSports.map(([sport, mix]) => (
+              <span key={sport} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 7px' }}>
+                {ACTIVITY_LABEL[sport] ?? sport}: {mix.sessions}x
+              </span>
+            )) : (
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Keine Aktivitätshistorie.</span>
+            )}
+          </div>
+        </div>
+        <div>
+          <div className="label-mono" style={{ fontSize: 9, marginBottom: 6 }}>Harte Tage</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {trace.hardDays.length > 0 ? trace.hardDays.map(day => (
+              <span key={`${day.date}-${day.activityType}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--rose)', border: '1px solid rgba(244,63,94,0.35)', borderRadius: 4, padding: '3px 7px' }}>
+                {day.date} · Z{day.zone}
+              </span>
+            )) : (
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Keine Z4/Z5-Reize.</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {trace.inputSnapshot.dataWarnings.length > 0 && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {trace.inputSnapshot.dataWarnings.map(warning => (
+            <p key={warning} style={{ margin: 0, fontSize: 10.5, color: 'var(--amber)', lineHeight: 1.45 }}>{warning}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -435,9 +561,17 @@ function TrainingTab() {
   const [showConfig, setShowConfig] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
 
+  const selectedWeekDate = getMonday(new Date());
+  selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
+  const selectedWeekStart = isoDate(selectedWeekDate);
+  const traceQuery = usePlanTrace(selectedWeekStart);
   const workouts   = plan.data?.workouts ?? [];
   const activities = acts.data?.activities ?? [];
-  const planDecision = generate.data?.planDecision;
+  const generatedTrace = generate.data?.planTrace ?? null;
+  const planTrace = traceQuery.data?.trace
+    ?? (generatedTrace?.weekStart === selectedWeekStart ? generatedTrace : null);
+  const planDecision = planTrace?.planDecision
+    ?? (generatedTrace?.weekStart === selectedWeekStart ? generate.data?.planDecision : undefined);
   const today = isoDateLocal(new Date());
   const strengthWorkout = workouts.find(w =>
     w.activityType === 'strength'
@@ -536,6 +670,8 @@ function TrainingTab() {
           )}
         </div>
       )}
+
+      <PlanTraceCard trace={planTrace} isLoading={traceQuery.isLoading} />
 
       {plan.isLoading && <Loading />}
       {!plan.isLoading && workouts.length === 0 && !showConfig && (

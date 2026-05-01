@@ -13,6 +13,7 @@ export const pulseKeys = {
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
   activityDetail: (id: string) => ['pulse', 'activity-detail', id] as const,
   plan:         ['pulse', 'plan'] as const,
+  planTrace:    (weekStart: string) => ['pulse', 'plan', 'trace', weekStart] as const,
   availability: ['pulse', 'availability'] as const,
   goals:        ['pulse', 'goals'] as const,
   review:       ['pulse', 'review', 'latest'] as const,
@@ -50,6 +51,7 @@ export function invalidatePulseContextQueries(qc: QueryClient): void {
 
 function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: pulseKeys.plan });
+  void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'trace'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.home });
   void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
 }
@@ -171,6 +173,15 @@ export function usePulsePlan() {
   });
 }
 
+export function usePlanTrace(weekStart: string) {
+  return useQuery({
+    queryKey: pulseKeys.planTrace(weekStart),
+    queryFn: () => pulseApi.plan.trace(weekStart),
+    staleTime: 30 * 60_000,
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(weekStart),
+  });
+}
+
 export function usePulseGoals() {
   return useQuery({
     queryKey: pulseKeys.goals,
@@ -192,7 +203,10 @@ export function useSaveAvailability() {
   return useMutation({
     mutationFn: ({ weekStart, data }: { weekStart: string; data: { availableDays: number[]; weeklyHours: number; notes?: string } }) =>
       pulseApi.availability.save(weekStart, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.planTrace) {
+        qc.setQueryData(pulseKeys.planTrace(data.planTrace.weekStart), { trace: data.planTrace });
+      }
       qc.invalidateQueries({ queryKey: pulseKeys.availability });
       invalidatePulsePlanContextQueries(qc);
     },
@@ -507,7 +521,12 @@ export function useGeneratePlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.plan.generate,
-    onSuccess: () => invalidatePulsePlanContextQueries(qc),
+    onSuccess: (data) => {
+      if (data.planTrace) {
+        qc.setQueryData(pulseKeys.planTrace(data.planTrace.weekStart), { trace: data.planTrace });
+      }
+      invalidatePulsePlanContextQueries(qc);
+    },
   });
 }
 

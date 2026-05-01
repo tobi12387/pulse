@@ -5,7 +5,7 @@ import type {
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
-  PulsePushSettings, PulsePushTopics,
+  PulsePlanTrace, PulsePushSettings, PulsePushTopics,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse,
@@ -178,8 +178,10 @@ export const pulseApi = {
   plan: {
     list: (): Promise<{ workouts: PulsePlannedWorkout[] }> =>
       request('/plan'),
-    generate: (): Promise<{ workouts: PulsePlannedWorkout[]; planDecision?: PulsePlanDecision }> =>
+    generate: (): Promise<{ workouts: PulsePlannedWorkout[]; planDecision?: PulsePlanDecision; planTrace?: PulsePlanTrace | null }> =>
       request('/plan/generate', { method: 'POST', body: '{}' }),
+    trace: (weekStart: string): Promise<{ trace: PulsePlanTrace | null }> =>
+      request(`/plan/trace/${weekStart}`),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),
     updateWorkout: (id: string, data: { activityType?: string; zone?: number; durationMin?: number }): Promise<{ workout: PulsePlannedWorkout }> =>
@@ -193,7 +195,7 @@ export const pulseApi = {
   availability: {
     list: (): Promise<{ weeks: WeekAvailability[] }> =>
       request('/plan/availability'),
-    save: (weekStart: string, data: { availableDays: number[]; weeklyHours: number; notes?: string }): Promise<{ ok: boolean; workouts?: PulsePlannedWorkout[] }> =>
+    save: (weekStart: string, data: { availableDays: number[]; weeklyHours: number; notes?: string }): Promise<{ ok: boolean; workouts?: PulsePlannedWorkout[]; planDecision?: PulsePlanDecision; planTrace?: PulsePlanTrace | null }> =>
       request(`/plan/availability/${weekStart}`, { method: 'PUT', body: JSON.stringify({ ...data, regenerate: true }) }),
   },
 

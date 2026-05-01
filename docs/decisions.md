@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Plan-Generierungen bekommen einen persistierten Trace
+
+- **Decision:** Jede neue Wochenplan-Generierung persistiert einen `pulse_plan_generations` Trace mit Input-Snapshot, Plan-Decision, Sportmix, harten Tagen und Summary; Rohprompts oder Provider-Antworten werden nicht gespeichert. Der Trace wird ueber `/api/pulse/plan/trace/:weekStart` gelesen und in der Plan-UI als "Einbezogene Daten" angezeigt.
+- **Why:** Tobi muss nachvollziehen koennen, ob Ziele, Garmin-Last, RPE, Risk-Signale, Health-States und Verfuegbarkeit wirklich in den Plan eingeflossen sind. Ein persistierter, strukturierter Trace bleibt nach Reload pruefbar und vermeidet Debugging ueber transienten LLM-Text.
+- **Alternatives:** Nur die bestehende `planDecision` im Response anzeigen (nach Reload weg und zu schmal); LLM-Prompt/Antwort komplett speichern (unnötige Datenmenge und potenziell sensible Rohdaten); Trace rein im Frontend rekonstruieren (nicht kanonisch und nicht auditierbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Naechste Welle priorisiert Vertrauen vor Feature-Breite
 
 - **Decision:** Die naechste aktive Roadmap-Welle ist `docs/superpowers/plans/2026-05-01-next-wave-product-technical-audit.md`. Reihenfolge: Plan Trust & Learning, Garmin Data Trust, Coach Action Loop.
