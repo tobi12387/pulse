@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Coach Action Loop nutzt PulseContext als Actions-Quelle
+
+- **Decision:** Slice 3 fuehrt `nextBestActions` im PulseContext ein und macht daraus die gemeinsame Server-Quelle fuer Home, Coach-Prompt und Briefing-Kontext. Aktionen sind auf maximal drei priorisierte Eintraege begrenzt und decken Risk, Check-in, RPE, Plan, Push-Aktivierung und Equipment ab; der Context-Cache nutzt `context-v2`, damit alte Cache-Payloads ohne Actions nicht wiederverwendet werden.
+- **Why:** Tobi soll auf Home direkt sehen, was als Naechstes sinnvoll ist, ohne einen Habit-Tracker oder duplizierte Frontend-Heuristiken einzufuehren. Coach und Briefing bleiben dadurch auf PulseContext statt eigener Datenlogik.
+- **Alternatives:** Aktionen nur im Frontend aus vorhandenen Endpunkten ableiten (nicht kanonisch); separaten Habit-/Task-Tracker bauen (nicht Ziel des Produkts); Coach/Briefing eigene Action-Heuristiken geben (Drift-Risiko).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Garmin Data Trust startet read-only ueber Coverage statt Backfill
 
 - **Decision:** Slice 2 liefert zuerst einen read-only `/api/pulse/data-coverage` Contract mit Domain-Abdeckung fuer Tagesmetriken, Schlaf, Aktivitaeten/Wetter, Gewicht und Profilwerte. Data zeigt die Abdeckung als eigenen Tab; Settings zeigt kompakte 30-Tage-Domainwerte. Ein Range-Backfill folgt erst nach sichtbarer Diagnose.

@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/garmin-data-trust`: active local branch for Slice 2 from the next-wave plan.
+- `codex/coach-action-loop`: active local branch for Slice 3 from the next-wave plan.
+- `codex/garmin-data-trust`: merged and deployed via PR #45.
 - `codex/plan-trust-learning`: merged and deployed via PR #44.
 - `codex/next-roadmap-audit`: merged and deployed via PR #43.
 - `codex/race-ctl-context`: merged and deployed via PR #42.
@@ -29,8 +30,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Slice 2: `codex/garmin-data-trust`.
-- Then start Slice 3 from the new plan: `codex/coach-action-loop`.
+- Merge and deploy Slice 3: `codex/coach-action-loop`.
+- After Slice 3 is deployed, archive the completed next-wave plan and create the next small roadmap from the latest product/technical audit.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

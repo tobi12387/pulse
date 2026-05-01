@@ -7,6 +7,7 @@ import { RiskWatchBanner } from '@/components/RiskWatchBanner';
 import { AdjustTodayCard } from '@/components/AdjustTodayCard';
 import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
+import type { PulseNextBestAction } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -185,6 +186,81 @@ function ZoneBar({ zone }: { zone: number }) {
   );
 }
 
+function actionColor(priority: PulseNextBestAction['priority']): string {
+  if (priority === 'critical') return 'var(--rose)';
+  if (priority === 'high') return 'var(--amber)';
+  return 'var(--accent)';
+}
+
+function priorityLabel(priority: PulseNextBestAction['priority']): string {
+  if (priority === 'critical') return 'KRITISCH';
+  if (priority === 'high') return 'WICHTIG';
+  return 'NÄCHSTES';
+}
+
+function NextBestActionsCard({
+  actions,
+  onNavigate,
+}: {
+  actions: PulseNextBestAction[];
+  onNavigate: (path: string) => void;
+}) {
+  if (actions.length === 0) return null;
+
+  return (
+    <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
+          NÄCHSTE AKTIONEN
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          {actions.length}/3
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--border)', borderRadius: 5, overflow: 'hidden' }}>
+        {actions.map(action => {
+          const color = actionColor(action.priority);
+          return (
+            <button
+              key={action.id}
+              type="button"
+              onClick={() => onNavigate(action.targetPath)}
+              style={{
+                width: '100%',
+                padding: '11px 12px',
+                background: 'var(--surface-2)',
+                border: 'none',
+                display: 'grid',
+                gridTemplateColumns: '62px minmax(0, 1fr) auto',
+                gap: 10,
+                alignItems: 'center',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.1em' }}>
+                {priorityLabel(action.priority)}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13, color: 'var(--text)', fontWeight: 500, marginBottom: 3 }}>
+                  {action.title}
+                </span>
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                  {action.reason}
+                </span>
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, whiteSpace: 'nowrap' }}>
+                {action.cta} →
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -294,6 +370,8 @@ export default function Home() {
           </button>
         </div>
       )}
+
+      <NextBestActionsCard actions={data.nextBestActions ?? []} onNavigate={navigate} />
 
       {/* ── Adjust-Today Proposal (if readiness/health requires) ── */}
       <AdjustTodayCard />
