@@ -25,6 +25,7 @@ export const pulseKeys = {
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
+  coachPreferences: ['pulse', 'coach', 'preferences'] as const,
   briefing:     ['pulse', 'briefing'] as const,
   actions:      ['pulse', 'actions'] as const,
   risk:         ['pulse', 'risk'] as const,
@@ -85,6 +86,26 @@ export function useUpdatePulseAction() {
       pulseApi.actions.update(id, { status, reason }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.actions });
+      invalidatePulseContextQueries(qc);
+    },
+  });
+}
+
+export function useCoachPreferences() {
+  return useQuery({
+    queryKey: pulseKeys.coachPreferences,
+    queryFn: pulseApi.coachPreferences.get,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useUpdateCoachPreferences() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: pulseApi.coachPreferences.update,
+    onSuccess: (data) => {
+      qc.setQueryData(pulseKeys.coachPreferences, data);
+      void qc.invalidateQueries({ queryKey: pulseKeys.coachHistory });
       invalidatePulseContextQueries(qc);
     },
   });

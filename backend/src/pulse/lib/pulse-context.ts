@@ -3,6 +3,7 @@ import { db } from '../../lib/db.js';
 import {
   pulseActivities,
   pulseActionDecisions,
+  pulseCoachPreferences,
   pulseDailyMetrics,
   pulseHealthState,
   pulseMentalCheckins,
@@ -20,7 +21,7 @@ import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { listEquipment, listStrengthSessions } from '../services/strength-equipment.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
-import type { PulseFitnessLoad, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
+import type { PulseCoachPreferences, PulseFitnessLoad, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
 import { getCached, setCached } from './pulse-cache.js';
 
 export type PulseDailyMetricsRow = typeof pulseDailyMetrics.$inferSelect;
@@ -60,6 +61,7 @@ export interface PulseContext {
   readiness: PulseReadiness;
   recovery: PulseRecoveryMetrics | null;
   profile: PulseUserProfileRow | null;
+  coachPreferences: PulseCoachPreferences | null;
   activeHealthStates: PulseHealthStateRow[];
   recentActivities: PulseActivitySummary[];
   upcomingWorkouts: PulsePlannedWorkoutSummary[];
@@ -133,6 +135,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     [todayCheckin],
     fitnessLoad,
     [profile],
+    [coachPreferencesRow],
     activeHealthStates,
     recentActivities,
     upcomingWorkouts,
@@ -155,6 +158,9 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     fitnessLoadPromise,
     db.select().from(pulseUserProfile)
       .where(eq(pulseUserProfile.userId, userId))
+      .limit(1),
+    db.select().from(pulseCoachPreferences)
+      .where(eq(pulseCoachPreferences.userId, userId))
       .limit(1),
     db.select().from(pulseHealthState)
       .where(and(
@@ -349,6 +355,14 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     readiness,
     recovery: dailyHistory.length >= 3 ? computeRecovery({ daily: dailyHistory }) : null,
     profile: profile ?? null,
+    coachPreferences: coachPreferencesRow ? {
+      timeWindows: coachPreferencesRow.timeWindows,
+      dislikedWorkoutPatterns: coachPreferencesRow.dislikedWorkoutPatterns,
+      preferredLongDays: coachPreferencesRow.preferredLongDays,
+      injurySensitiveConstraints: coachPreferencesRow.injurySensitiveConstraints,
+      communicationStyle: coachPreferencesRow.communicationStyle,
+      updatedAt: coachPreferencesRow.updatedAt.toISOString(),
+    } : null,
     activeHealthStates,
     recentActivities: recentActivitySummaries,
     upcomingWorkouts,
@@ -372,6 +386,7 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
   return {
     ...ctx,
     activeRiskSignals: ctx.activeRiskSignals ?? [],
+    coachPreferences: ctx.coachPreferences ?? null,
     push: ctx.push ?? { configured: false, activeSubscriptions: 0 },
     nextBestActions: ctx.nextBestActions ?? [],
     recentStrengthSessions: ctx.recentStrengthSessions ?? [],
@@ -417,6 +432,7 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
       vo2max: ctx.profile.vo2max,
       trainingPhase: ctx.profile.trainingPhase,
     } : null,
+    coachPreferences: ctx.coachPreferences,
     activeHealthStates: ctx.activeHealthStates.map(s => ({
       type: s.type,
       severity: s.severity,

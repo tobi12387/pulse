@@ -606,6 +606,17 @@ export interface PulseActionState extends PulseNextBestAction {
   resolutionReason: string | null;
 }
 
+export type PulseCoachCommunicationStyle = 'direct' | 'gentle' | 'data_first';
+
+export interface PulseCoachPreferences {
+  timeWindows: string;
+  dislikedWorkoutPatterns: string[];
+  preferredLongDays: number[];
+  injurySensitiveConstraints: string[];
+  communicationStyle: PulseCoachCommunicationStyle;
+  updatedAt: string | null;
+}
+
 export type EquipmentCategory =
   | 'chain'
   | 'tire'

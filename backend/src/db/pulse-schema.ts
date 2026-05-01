@@ -3,7 +3,15 @@ import {
   timestamp, date, jsonb, boolean, index, uniqueIndex, time, primaryKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import type { EquipmentCategory, PulseActivityType, PulsePlanDecision, PulsePlanTrace, PulsePushTopics, WorkoutExecutionStatus } from '@coaching-os/shared/pulse';
+import type {
+  EquipmentCategory,
+  PulseActivityType,
+  PulseCoachCommunicationStyle,
+  PulsePlanDecision,
+  PulsePlanTrace,
+  PulsePushTopics,
+  WorkoutExecutionStatus,
+} from '@coaching-os/shared/pulse';
 
 // FK to users.id is enforced at DB level via migration SQL — not via Drizzle
 // references() because drizzle-kit cannot resolve cross-file .js imports.
@@ -90,6 +98,17 @@ export const pulseUserProfile = pgTable('pulse_user_profile', {
   homeLat:           real('home_lat'),
   homeLon:           real('home_lon'),
   updatedAt:         timestamp('updated_at').notNull().defaultNow(),
+});
+
+// ─── Visible coach preferences ──────────────────────────────────────────────
+export const pulseCoachPreferences = pgTable('pulse_coach_preferences', {
+  userId:                     uuid('user_id').primaryKey().notNull(),
+  timeWindows:                text('time_windows').notNull().default(''),
+  dislikedWorkoutPatterns:    text('disliked_workout_patterns').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  preferredLongDays:          integer('preferred_long_days').array().notNull().default(sql`ARRAY[]::INTEGER[]`),
+  injurySensitiveConstraints: text('injury_sensitive_constraints').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  communicationStyle:         varchar('communication_style', { length: 32 }).$type<PulseCoachCommunicationStyle>().notNull().default('data_first'),
+  updatedAt:                  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ─── Web Push subscriptions ─────────────────────────────────────────────────

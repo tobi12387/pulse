@@ -1,11 +1,12 @@
 # Pulse Overnight Next Steps — 2026-05-02 Morning Plan
 
-> Stand: 2026-05-02 after Decision Closure Model (PR #94). This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
+> Stand: 2026-05-02 after Home/Coach Closure Flow (PR #95) and during Explicit Coach Preferences. This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
 
 ## Verified Baseline
 
 - PR #92 added structured Insight `evidence` and `missingData` and was merged/deployed to server commit `4f31eaf`.
 - PR #94 added the durable `pulse_action_decisions` model, pure closure transitions and stale-action suppression; it was merged/deployed to server commit `78b2fa4`.
+- PR #95 added the shared `/api/pulse/actions` contract, Home closure controls and Coach action-state sync; it was merged/deployed to server commit `698280d`.
 - Server checks after deploy:
   - `/api/pulse/health` returned `{"status":"ok","namespace":"pulse"}`.
   - `https://localhost:5175` returned `HTTP/2 200`.
@@ -24,8 +25,8 @@
 | Priority | Finding | Evidence | Next Action |
 |---|---|---|---|
 | P0 | No active production regression found in deterministic daily flows | Full E2E suite green; server health green | Continue with feature work, keep E2E gate mandatory |
-| P1 | Daily decisions still lack durable closure state | Home/Coach agree on one decision, but completion/defer history is not persisted | Implement Decision Closure model first |
-| P1 | Coach memory/preferences are not explicit enough | Current Coach can reference visible action state, but preference memory remains planned | Add visible coach preferences after action closure |
+| P1 | Daily decisions now have durable closure state | PR #94 stores action decisions; PR #95 lets Home close actions and Coach reflect the shared state | Extend the same action contract into push journeys |
+| P1 | Coach memory/preferences are not explicit enough | Action state is explicit, but time windows, disliked patterns and communication style need editable state | Finish visible coach preferences before push journeys |
 | P1 | Real iPhone/VPN QA is not yet captured as evidence | WebKit gate passes locally, but real iPhone add-to-home-screen and VPN certificate behavior remain manual | Run `docs/ai/checklists/iphone-pwa-qa.md` on device and record results |
 | P2 | Insight evidence is visible but not yet route-linked | Insight cards show Datenbasis/Daten fehlen, but evidence items do not open Data/Plan detail routes | Add target routes in a small follow-up if user flow needs drilling into source data |
 | P2 | Push journeys are still separate from action state | Push settings are clear, but repeated pushes are not tied to completed/deferred action records | Implement Push Action Journeys after closure state |
@@ -68,7 +69,7 @@
 
 ### Phase 3 — Home/Coach Closure Controls
 
-**Status:** In progress on `codex/home-coach-closure-flow`.
+**Status:** Done via PR #95 and deployed.
 
 **Goal:** Let the user complete/defer the primary daily decision from Home and keep Coach in sync.
 
@@ -82,6 +83,8 @@
 - E2E: Home completion updates Coach-visible state.
 
 ### Phase 4 — Explicit Coach Preferences
+
+**Status:** In progress on `codex/coach-preferences`.
 
 **Goal:** Store visible, editable coaching preferences rather than hidden chat memory.
 

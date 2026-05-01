@@ -10,9 +10,11 @@ type MockPulseApiOptions = {
   planTrace?: unknown;
   planWorkouts?: unknown[];
   actions?: unknown[];
+  coachPreferences?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
   onActionPatch?: (decisionId: string, body: unknown) => void;
+  onCoachPreferencesPatch?: (body: unknown) => void;
   pushSettings?: unknown;
   checkinToday?: unknown;
   metrics?: unknown[];
@@ -257,6 +259,18 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
     };
   }
   if (pathname === '/api/pulse/coach/history') return { messages: [] };
+  if (pathname === '/api/pulse/coach/preferences') {
+    return {
+      preferences: {
+        timeWindows: '',
+        dislikedWorkoutPatterns: [],
+        preferredLongDays: [],
+        injurySensitiveConstraints: [],
+        communicationStyle: 'data_first',
+        updatedAt: null,
+      },
+    };
+  }
   if (pathname === '/api/pulse/plan') return { workouts: [] };
   if (pathname === '/api/pulse/plan/availability') return { weeks: [] };
   if (pathname.startsWith('/api/pulse/plan/trace/')) return { trace: null };
@@ -385,6 +399,32 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           status: body.status,
           resolvedAt: `${today}T08:00:00.000Z`,
           resolutionReason: body.reason ?? null,
+        },
+      });
+    }
+    if (url.pathname === '/api/pulse/coach/preferences' && request.method() === 'GET') {
+      return json(route, {
+        preferences: options.coachPreferences ?? {
+          timeWindows: '',
+          dislikedWorkoutPatterns: [],
+          preferredLongDays: [],
+          injurySensitiveConstraints: [],
+          communicationStyle: 'data_first',
+          updatedAt: null,
+        },
+      });
+    }
+    if (url.pathname === '/api/pulse/coach/preferences' && request.method() === 'PATCH') {
+      const body = request.postDataJSON();
+      options.onCoachPreferencesPatch?.(body);
+      return json(route, {
+        preferences: {
+          timeWindows: body.timeWindows ?? '',
+          dislikedWorkoutPatterns: body.dislikedWorkoutPatterns ?? [],
+          preferredLongDays: body.preferredLongDays ?? [],
+          injurySensitiveConstraints: body.injurySensitiveConstraints ?? [],
+          communicationStyle: body.communicationStyle ?? 'data_first',
+          updatedAt: `${today}T08:00:00.000Z`,
         },
       });
     }
