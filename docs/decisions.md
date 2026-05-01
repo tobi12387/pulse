@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Naechste Welle priorisiert Vertrauen vor Feature-Breite
+
+- **Decision:** Die naechste aktive Roadmap-Welle ist `docs/superpowers/plans/2026-05-01-next-wave-product-technical-audit.md`. Reihenfolge: Plan Trust & Learning, Garmin Data Trust, Coach Action Loop.
+- **Why:** Nach Phase 11 ist das Kernproblem nicht fehlende Feature-Breite, sondern Alltagvertrauen: Tobi muss sehen, warum Wochenplaene so entstehen, welche Garmin-Daten fehlen und welche naechste Aktion wirklich wichtig ist.
+- **Alternatives:** Direkt neue Features bauen (hohes Risiko fuer weitere Breite ohne Nutzenklarheit); nur UI-Polish (behebt fachliche Transparenz nicht); Garmin-Backfill ohne Coverage-Plan (Symptom statt Diagnose).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Race-Prognosen nutzen echte CTL statt festen Platzhalter
 
 - **Decision:** `getActiveRaces()` akzeptiert eine optionale Fitness-Load-Quelle (`ctl`) und berechnet CTL nur als Fallback selbst. PulseContext, `/pulse/races` und Plan-Generierung reichen ihre bereits vorhandene Trainingslast weiter, damit Race-Time-Prognosen nicht mehr auf dem festen Platzhalter `ctl = 30` basieren.
