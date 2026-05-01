@@ -1163,8 +1163,41 @@ function MentalTab() {
                 <SegmentedBar label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} color="var(--blue)" />
               </div>
             </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 8,
+              padding: '10px 12px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+            }}>
+              {[
+                'Was brauchst du mental, damit heute stabil bleibt?',
+                'Was darf heute bewusst kleiner bleiben?',
+                'Welcher kleine Abschluss würde sich heute gut anfühlen?',
+              ].map(question => (
+                <button
+                  key={question}
+                  type="button"
+                  onClick={() => appendNote(question)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-2)',
+                    fontSize: 12,
+                    lineHeight: 1.4,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {['Mental: ruhig', 'Mental: angespannt', 'Mental: überladen', 'Fokus: klar', 'Fokus: zerstreut', 'Heute genug: klein halten'].map(tag => (
+              {['Mental: ruhig', 'Mental: angespannt', 'Mental: überladen', 'Fokus: klar', 'Fokus: zerstreut', 'Schutz: aktiv einplanen', 'Heute genug: klein halten'].map(tag => (
                 <button
                   key={tag}
                   type="button"

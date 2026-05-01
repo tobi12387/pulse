@@ -297,7 +297,7 @@ describe('buildBriefingUserContentRich', () => {
     expect(prompt).toContain('Heute trainingsfrei');
   });
 
-  it('separates today from a future next workout in the briefing prompt', () => {
+  it('keeps future workouts out of a no-training daily briefing prompt', () => {
     const ctx = {
       date: '2026-05-01',
       todayMetrics: null,
@@ -320,9 +320,10 @@ describe('buildBriefingUserContentRich', () => {
 
     const prompt = buildBriefingUserContentRich(ctx, 'check-in');
     expect(prompt).toContain('Heute ist kein Training geplant.');
-    expect(prompt).toContain('Nächster Trainingsausblick: 2026-05-04 bike Z2, 80min');
-    expect(prompt).toContain('darf nicht als heutige Trainingsempfehlung formuliert werden');
-    expect(prompt).not.toContain('Nächstes Training: 2026-05-04');
+    expect(prompt).toContain('Kommende Einheiten gehören in den Plan-Ausblick, nicht in die heutige Empfehlung.');
+    expect(prompt).not.toContain('2026-05-04');
+    expect(prompt).not.toContain('bike Z2');
+    expect(prompt).not.toContain('Nächster Trainingsausblick');
   });
 
   it('passes urgent next best actions into briefing context', () => {

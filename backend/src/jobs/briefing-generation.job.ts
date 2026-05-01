@@ -46,7 +46,6 @@ export function buildBriefingUserContentRich(
   const m = ctx.todayMetrics;
   const c = ctx.todayCheckin;
   const todayWorkout = ctx.upcomingWorkouts.find(workout => workout.plannedDate === ctx.date) ?? null;
-  const nextWorkout = ctx.upcomingWorkouts.find(workout => workout.plannedDate > ctx.date) ?? null;
   const nextBestActions = ctx.nextBestActions ?? [];
 
   const formatWorkout = (workout: NonNullable<typeof todayWorkout>): string =>
@@ -97,9 +96,7 @@ export function buildBriefingUserContentRich(
 
   const workoutPart = todayWorkout
     ? `Heutiges Training: ${formatWorkout(todayWorkout)}.`
-    : nextWorkout
-    ? `Heute ist kein Training geplant. Nächster Trainingsausblick: ${formatWorkout(nextWorkout)}. Dieser Ausblick dient nur zur Vorbereitung und darf nicht als heutige Trainingsempfehlung formuliert werden.`
-    : 'Heute ist kein Training geplant und es liegt kein kommendes Training im Plan.';
+    : 'Heute ist kein Training geplant. Kommende Einheiten gehören in den Plan-Ausblick, nicht in die heutige Empfehlung.';
 
   const lastRatedActivity = ctx.recentActivities.find(a => a.rpe != null) ?? null;
   let rpePart = lastRatedActivity
@@ -117,7 +114,7 @@ export function buildBriefingUserContentRich(
     ? `Nächstes Rennen/Ziel: ${ctx.nextRace.title} am ${ctx.nextRace.date} (${ctx.nextRace.daysUntil} Tage).`
     : 'Kein aktives Rennen hinterlegt.';
 
-  return `${riskPart}\n${actionsPart}\n${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${strengthPart}\n${equipmentPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn heute kein Training geplant ist, formuliere keine heutige Trainingsausführung aus einem zukünftigen Workout. Wenn eine nächste Aktion critical/high ist, ein aktiver Health-State existiert, RPE auf aerobe Müdigkeit hindeutet, Equipment ersetzt werden sollte oder ein Risk-Signal warn/critical ist, muss das konkret in der Empfehlung berücksichtigt werden.`;
+  return `${riskPart}\n${actionsPart}\n${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${strengthPart}\n${equipmentPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn heute kein Training geplant ist, geht es um Erholung, Check-in, mentale Lage und Tagesgrenze; formuliere keine heutige Trainingsausführung aus einem zukünftigen Workout. Wenn eine nächste Aktion critical/high ist, ein aktiver Health-State existiert, RPE auf aerobe Müdigkeit hindeutet, Equipment ersetzt werden sollte oder ein Risk-Signal warn/critical ist, muss das konkret in der Empfehlung berücksichtigt werden.`;
 }
 
 export async function processBriefingJob(

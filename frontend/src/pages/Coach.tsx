@@ -272,14 +272,6 @@ function QuickPrompts({
   );
 }
 
-function formatPlannedDate(date: string): string {
-  return new Date(`${date}T12:00:00`).toLocaleDateString('de-DE', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-  });
-}
-
 function DailyBriefingGuide({
   home,
   briefing,
@@ -357,14 +349,13 @@ export default function Coach() {
   const hasMessages = (historyData?.messages.length ?? 0) > 0;
   const nextWorkout = home?.nextWorkout;
   const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
-  const futureWorkout = nextWorkout && nextWorkout.plannedDate !== home?.date ? nextWorkout : null;
   const quickPromptGroups: PromptGroup[] = [
     {
       title: 'Daily Check-in',
       hint: 'Körper, Kopf und mentale Last sauber einordnen.',
       prompts: [
-        'Führe mich durch einen kurzen Check-in für Stimmung, Energie, Stress, Motivation und mentale Belastung.',
-        'Welche mentale Belastung sollte ich heute ernst nehmen?',
+        'Führe mich mit kurzen Fragen durch Stimmung, Energie, Stress, Motivation und mentale Belastung.',
+        'Welche mentale Belastung sollte ich heute ernst nehmen, und was schützt mich?',
       ],
     },
     {
@@ -383,9 +374,7 @@ export default function Coach() {
       prompts: [
         todayWorkout
           ? 'Soll ich die Einheit heute kürzer oder leichter machen?'
-          : futureWorkout
-            ? `Was sollte ich bis zum Training am ${formatPlannedDate(futureWorkout.plannedDate)} beobachten?`
-            : 'Muss ich heute etwas am Plan ändern oder reicht Erholung?',
+          : 'Muss ich heute etwas am Plan ändern oder reicht Erholung?',
         'Wäre ein freier Tag heute sinnvoller?',
       ],
     },

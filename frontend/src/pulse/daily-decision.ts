@@ -53,20 +53,15 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
 
   const action = home.nextBestActions?.[0] ?? null;
   const todayWorkout = workoutLabel(home);
-  const futureWorkout = home.nextWorkout && home.nextWorkout.plannedDate !== home.date ? home.nextWorkout : null;
   const boundary = readinessBoundary(home.readiness?.score, home.fitnessLoad?.tsb);
   const title = action?.title
     ?? (todayWorkout
       ? `Heute ${todayWorkout} entscheiden`
-      : futureWorkout
-        ? 'Heute ist kein Training geplant.'
-        : 'Heute Erholung und Check-in schließen');
+      : 'Heute ist kein Training geplant.');
   const reason = action?.reason
     ?? (todayWorkout
       ? 'Heute steht ein Training an; Readiness, Load und mentale Lage entscheiden über Ausführung oder Anpassung.'
-      : futureWorkout
-        ? `Nächster Ausblick: ${futureWorkout.plannedDate} · ${futureWorkout.activityType} Z${futureWorkout.zone}.`
-        : 'Ohne geplantes Training zählt heute vor allem, ob Erholung und Check-in sauber abgeschlossen werden.');
+      : 'Ohne geplantes Training zählt heute vor allem, ob Erholung, Check-in und mentale Stabilität sauber abgeschlossen werden.');
   const completionCriterion = action?.resolvedBy
     ?? (todayWorkout
       ? 'Entscheidung zur Einheit treffen und bei Anpassung den Plan aktualisieren.'

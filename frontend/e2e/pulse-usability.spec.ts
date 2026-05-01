@@ -205,8 +205,11 @@ test('Coach does not treat a future workout as today training', async ({ page })
 
   await page.goto('/coach');
   await expect(page.getByText('Heute ist kein Training geplant.', { exact: true })).toBeVisible();
-  await expect(page.getByText('Nächster Ausblick')).toBeVisible();
   await expect(page.getByText('Heute ist kein Training geplant. Wie nutze ich den freien Tag sinnvoll?')).toBeVisible();
+  await expect(page.getByText('Nächster Ausblick')).toHaveCount(0);
+  await expect(page.getByText('2026-05-04')).toHaveCount(0);
+  await expect(page.getByText('04.05.')).toHaveCount(0);
+  await expect(page.getByText(/bis zum Training/)).toHaveCount(0);
   await expect(page.getByText(/Soll ich bike.*wie geplant machen/)).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
@@ -224,9 +227,12 @@ test('Data mental check-in uses guided mental fitness questions', async ({ page 
   await expect(page.getByText('Geführter Daily Check-in')).toBeVisible();
   await expect(page.getByText('Wie ist dein Kopf gerade?')).toBeVisible();
   await expect(page.getByText('Was zieht gerade mentale Energie?')).toBeVisible();
+  await expect(page.getByText('Was brauchst du mental, damit heute stabil bleibt?')).toBeVisible();
   await expect(page.getByText('Was wäre heute genug?')).toBeVisible();
   await page.getByRole('button', { name: 'Mental: angespannt' }).click();
+  await page.getByRole('button', { name: 'Schutz: aktiv einplanen' }).click();
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Mental: angespannt/);
+  await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Schutz: aktiv einplanen/);
 });
 
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
