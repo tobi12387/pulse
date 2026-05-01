@@ -7,6 +7,11 @@ import { pulseKeys } from '@/pulse/hooks';
 const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
 };
+
+function translucent(color: string, percent: number) {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
+
 const ZONE_LABEL: Record<number, string> = {
   1: 'Z1 · Regeneration', 2: 'Z2 · Grundlage', 3: 'Z3 · Tempo',
   4: 'Z4 · Schwelle', 5: 'Z5 · VO2max',
@@ -55,7 +60,7 @@ function StepRow({ step }: { step: WorkoutStep }) {
     }}>
       <div style={{
         width: 24, height: 24, borderRadius: 3, flexShrink: 0,
-        background: isPause ? 'transparent' : zoneColor + '22',
+        background: isPause ? 'transparent' : translucent(zoneColor, 13),
         border: `1px solid ${isPause ? 'var(--border)' : zoneColor}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: 'var(--font-mono)', fontSize: 11, color: zoneColor,
@@ -77,7 +82,7 @@ function StepRow({ step }: { step: WorkoutStep }) {
           {!isPause && (
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em',
-              color: zoneColor, background: zoneColor + '18',
+              color: zoneColor, background: translucent(zoneColor, 9),
               padding: '1px 5px', borderRadius: 2,
             }}>
               {ZONE_LABEL[step.zone] ?? `Z${step.zone}`}
@@ -86,7 +91,7 @@ function StepRow({ step }: { step: WorkoutStep }) {
           {hrTarget && (
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.06em',
-              color: 'var(--rose)', background: 'var(--rose)18',
+              color: 'var(--rose)', background: translucent('var(--rose)', 9),
               padding: '1px 5px', borderRadius: 2,
               whiteSpace: 'nowrap',
             }}>
@@ -164,7 +169,7 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
                 <span style={{
                   fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.12em',
-                  color: zoneColor, background: zoneColor + '18',
+                  color: zoneColor, background: translucent(zoneColor, 9),
                   padding: '2px 6px', borderRadius: 2, textTransform: 'uppercase',
                 }}>
                   {ZONE_LABEL[workout.zone] ?? `Z${workout.zone}`}
@@ -175,7 +180,7 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
                 {workout.garminWorkoutId && (
                   <span style={{
                     fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em',
-                    color: 'var(--green)', background: 'var(--green)18',
+                    color: 'var(--green)', background: translucent('var(--green)', 9),
                     padding: '2px 5px', borderRadius: 2,
                   }}>✓ Garmin</span>
                 )}
@@ -241,7 +246,7 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
                   disabled={syncGarmin.isPending || generateDetail.isPending}
                   style={{
                     flex: 1, padding: '8px',
-                    background: syncGarmin.isSuccess ? 'var(--green)' + '22' : 'none',
+                    background: syncGarmin.isSuccess ? translucent('var(--green)', 13) : 'none',
                     border: `1px solid ${syncGarmin.isSuccess ? 'var(--green)' : 'var(--border)'}`,
                     borderRadius: 4, cursor: syncGarmin.isPending ? 'default' : 'pointer',
                     fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.12em',

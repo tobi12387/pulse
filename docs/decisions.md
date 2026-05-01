@@ -18,6 +18,26 @@
 
 ---
 
+## 2026-05-01 — Canva und Superpowers werden feste UX-Phase-Gates
+
+- **Decision:** Everyday-Flow-Folgephasen nutzen Superpowers als verpflichtenden Prozessrahmen und Canva als visuelles UX-Board. Das Repo bleibt die technische Source of Truth; Canva sammelt Screens, Flow-Kritik und Review-Notizen.
+- **Why:** Die wiederkehrenden Probleme entstehen weniger durch einzelne fehlende Komponenten als durch unklare Übergänge zwischen Plan, Browserprüfung, Review und sichtbarer UX-Absprache. Ein festes Gate macht die tägliche Nutzbarkeit prüfbar, ohne Markdown-Pläne oder PRs durch ein externes Design-Tool zu ersetzen.
+- **Alternatives:** Nur Markdown-Pläne weiterführen (zu wenig visuelle UX-Kontrolle); Canva als alleinige Planung nutzen (nicht versioniert genug); Superpowers nur optional verwenden (zu leicht zu überspringen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
+## 2026-05-01 — Core UI nutzt technische Line-Icons statt Emoji-Metaphern
+
+- **Decision:** Pulse Core UI verwendet für wiederkehrende Navigations-, Status- und Analyse-Symbole ruhige Line-Icons und gemeinsame Chrome-Komponenten (`PageHeader`, `SegmentedControl`, `RangeControl`, `MiniButton`, `IconBadge`) statt lokaler Emoji-/Button-Varianten.
+- **Why:** Das bestehende Cockpit-Design ist technisch, dicht und mono-orientiert. Emoji-Icons in Insights und verwandten Core-Flows wirkten wie eine andere Produktsprache und machten die Seiten weniger konsistent.
+- **Alternatives:** Emojis nur in Insights ersetzen (zu punktuell); komplette Shadcn-Migration (zu großer Scope); gar keine Icons verwenden (verliert schnelle Domain-Erkennung).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Coach startet als geführter Tagesdialog statt nur Chat
 
 - **Decision:** Everyday Flow Phase 1 macht den Coach-Empty-State zu einem geführten Tagesbriefing mit Lage, heutiger Grenze, nächster Entscheidung und bewusst vorbereiteten Prompt-Gruppen. Prompts füllen weiter nur das Eingabefeld und senden keine LLM-Anfrage automatisch.

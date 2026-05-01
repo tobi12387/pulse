@@ -2,6 +2,8 @@
 
 > Stand: 2026-05-01. Neuer aktiver Plan nach UI/UX Usability Wave und Browser-Audit auf `https://192.168.178.46:5175`. Fokus: die täglichen Flows nicht nur verständlicher machen, sondern handlungsfähiger und lernender.
 
+> Canva UX Board: editable working doc `Pulse Everyday Flow UX Board` at https://www.canva.com/d/TGL3ff3MAzXgLkE. Use it as the visual companion for route screenshots, flow notes and acceptance review, while this Markdown file remains the implementation source of truth.
+
 ## Goal
 
 1. Pulse soll morgens eine zusammenhängende Tagesführung liefern: Lage, nächste Entscheidung, Warum, Grenzen und nächster Schritt.
@@ -16,6 +18,18 @@
 - DB-Migrationen nur additive, falls eine Phase Persistenz wirklich braucht.
 - Jede Phase wird als eigener `codex/<topic>` Branch mit PR, CI, Merge und Deploy umgesetzt.
 - Browser Use bleibt für echte Server-QA; Playwright bleibt für versionierte Regressionen.
+- Superpowers bleibt der Prozessrahmen: Pläne vor Umsetzung, TDD/Debugging bei Codeänderungen, Review vor Merge, Verification vor Completion.
+- Canva ergänzt die technische Planung als visuelles UX-Board für Daily-Flow-Screens, Interaktionskritik und Review-Notizen. Canva ersetzt keine Repo-Dokumentation.
+
+## Canva + Superpowers Operating Model
+
+Each phase uses the same lightweight loop:
+
+1. **Before implementation:** Update this plan with the exact phase goal and acceptance. Add the intended screen/flow to the Canva UX board when the change affects daily UX.
+2. **During implementation:** Use the matching Superpowers workflow for the task shape: `writing-plans` for multi-step phase plans, `systematic-debugging` for regressions, `test-driven-development` for feature/bug work, and `requesting-code-review` before merge.
+3. **After implementation:** Run typecheck, migration guard, E2E/browser QA, update docs/decisions, merge via PR, deploy, and add the reviewed result back to the Canva board as the current UX reference.
+
+The first Canva artifact for this wave is the `Pulse Everyday Flow UX Board`. It should collect the active route sequence Home -> Coach -> Plan -> Data/Insights -> Settings, plus one "open friction" lane for issues found during browser QA.
 
 ## Browser-Audit Ausgangslage
 
@@ -46,7 +60,7 @@
 
 ### 1. Coach-Guided Daily Briefing
 
-**Status:** in progress via `codex/phase1-coach-daily-briefing`.
+**Status:** completed, merged and deployed via PR #69 (`codex/phase1-coach-daily-briefing`, deploy commit `a34302c`).
 
 - Coach bekommt eine geführte Tageskarte: Lage, heutige Grenze, nächste Entscheidung, empfohlene Frage.
 - Home → Coach soll nicht nur navigieren, sondern den passenden Gesprächsstart sichtbar machen.
@@ -55,6 +69,20 @@
   - Nutzer erkennt im Coach ohne Chatverlauf den heutigen roten Faden.
   - Kein Prompt sendet automatisch eine LLM-Anfrage.
   - E2E deckt Home → Coach → Prompt-Auswahl ab.
+
+### 1.5 Core UI Chrome Consistency
+
+**Status:** in progress via `codex/design-system-pass`.
+
+- Introduce shared low-level chrome components for repeated app controls: `PageHeader`, `SegmentedControl`, `RangeControl`, `MiniButton`, `IconBadge`.
+- Replace local Data/Plan tab bars and range pickers where they are direct duplicates.
+- Replace emoji metaphors in Insights and critical status labels with line icons that match the technical cockpit language.
+- Keep scope narrow: no information architecture rewrite, no new data contracts, no visual rebrand.
+- Acceptance:
+  - Data, Plan, Insights and Settings use the same header/control language without losing existing functionality.
+  - Insights domain recognition stays fast, but no longer relies on emoji.
+  - Mobile controls wrap without text clipping or layout shifts.
+  - Existing E2E route smokes remain green.
 
 ### 2. Plan Alternatives 2.0
 
@@ -92,11 +120,17 @@
 
 ## Suggested Sequence
 
-1. Coach-Guided Daily Briefing.
+1. Finish Core UI Chrome Consistency because the branch already exists and reduces UI drift before deeper phases.
 2. Plan Alternatives 2.0.
 3. Insights Reliability & Cause Classification.
 4. Data Backfill Observability.
 5. Settings Action Grouping.
+
+## Current External Checks
+
+- GitHub open PRs: none as of 2026-05-01 after checking `gh pr list`.
+- Canva: `Pulse Everyday Flow UX Board` created as the active UX companion artifact.
+- Server baseline: Phase 1 deployed and verified on `origin/main` commit `a34302c`.
 
 ## Open Questions
 

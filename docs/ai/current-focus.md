@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/phase1-coach-daily-briefing`: active branch for Everyday Flow Phase 1, Coach-Guided Daily Briefing.
+- `codex/design-system-pass`: active branch for the focused UI consistency pass on Pulse chrome, Insights icons, and shared controls.
 - Recent completed branches:
+- `codex/phase1-coach-daily-briefing`: merged and deployed via PR #69.
 - `codex/ux-wave-closeout`: merged and deployed via PR #67.
 - `codex/ux-slice-e-density`: merged and deployed via PR #66.
 - `codex/ux-slice-d-data-settings`: merged and deployed via PR #65.
@@ -52,8 +53,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Phase 1: Coach-Guided Daily Briefing.
+- Finish, PR, merge and deploy `codex/design-system-pass`.
 - Then implement phases in order: Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.
+- Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react';
 import { useTodayProposal, useAcceptTodayAdjustment } from '@/pulse/hooks';
 import type { AdjustProposal } from '@/pulse/api-client';
 
@@ -43,8 +44,10 @@ export function AdjustTodayCard() {
         <span style={{
           fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
           color: 'var(--amber)', textTransform: 'uppercase',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
-          ⚠ Heute anpassen?
+          <AlertTriangle size={13} strokeWidth={1.8} aria-hidden="true" />
+          Heute anpassen?
         </span>
         <span style={{
           fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)',
