@@ -9,8 +9,8 @@ const NAV_ITEMS = [
   { to: '/coach',     label: 'Coach',     mobileLabel: 'Coach',   key: '2', end: false },
   { to: '/data',      label: 'Data',      mobileLabel: 'Data',    key: '3', end: false },
   { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',    key: '4', end: false },
-  { to: '/insights',  label: 'Insights',  mobileLabel: 'Insight', key: '5', end: false },
-  { to: '/settings',  label: 'Settings',  mobileLabel: 'Set',     key: '6', end: false },
+  { to: '/insights',  label: 'Insights',  mobileLabel: 'Insights', key: '5', end: false },
+  { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '6', end: false },
 ];
 
 export default function Layout() {
@@ -42,7 +42,7 @@ export default function Layout() {
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
               fontWeight: 600,
-              letterSpacing: '0.18em',
+              letterSpacing: 0,
               color: 'var(--accent)',
             }}
           >
@@ -71,7 +71,7 @@ export default function Layout() {
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   color: 'var(--text-3)',
-                  letterSpacing: '0.06em',
+                  letterSpacing: 0,
                 }}
               >
                 {key}
@@ -109,10 +109,10 @@ export default function Layout() {
         className="md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 border-b"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 44 }}
       >
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', color: 'var(--accent)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: 0, color: 'var(--accent)' }}>
           PULSE
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.1em' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: 0 }}>
           {new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
         </span>
       </div>
@@ -127,7 +127,7 @@ export default function Layout() {
       {/* ── Mobile bottom nav ── */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 52 }}
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 56 }}
       >
         {NAV_ITEMS.map(({ to, label, mobileLabel, end }) => (
           <NavLink
@@ -154,9 +154,10 @@ export default function Layout() {
                   }}
                 />
                 <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 9,
-                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  fontFamily: 'var(--font-mono)', fontSize: 8.5,
+                  letterSpacing: 0, textTransform: 'uppercase',
                   color: isActive ? 'var(--accent)' : 'var(--text-3)',
+                  lineHeight: 1.15, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis',
                   transition: 'color 0.15s',
                 }}>
                   {mobileLabel ?? label}

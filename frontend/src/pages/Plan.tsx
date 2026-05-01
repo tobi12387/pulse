@@ -29,13 +29,14 @@ function TabBar({ tabs, active, onChange }: {
   onChange: (id: string) => void;
 }) {
   return (
-    <div style={{ display: 'flex', gap: 1, padding: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, alignSelf: 'flex-start' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5, alignSelf: 'flex-start', maxWidth: '100%' }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)} style={{
-          padding: '6px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em',
+          flex: '0 0 auto',
+          padding: '6px 8px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 0,
           background: active === t.id ? 'var(--surface-2)' : 'transparent',
           color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
-          borderRadius: 3, textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+          borderRadius: 3, textTransform: 'uppercase', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
           transition: 'background 0.12s, color 0.12s',
         }}>
           {t.label}
@@ -1837,7 +1838,7 @@ export default function Plan() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 3 }}>PLAN</div>
           <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>Training, Ziele & Statistik</h1>

@@ -215,3 +215,25 @@ test('Settings separates push server, browser and device state', async ({ page }
   await expect(page.getByText('push.example.test · Endpunkt gespeichert')).toBeVisible();
   await expect(page.getByText('very/long/secret')).toHaveCount(0);
 });
+
+test('Mobile navigation and tabs keep core labels readable', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile density check');
+
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
+  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
+  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');
+
+  await page.goto('/data');
+  const mentalTab = page.getByRole('button', { name: 'Mental' });
+  await expect(mentalTab).toBeVisible();
+  const box = await mentalTab.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+
+  await page.goto('/plan');
+  await expect(page.getByRole('button', { name: 'Statistik' })).toBeVisible();
+});

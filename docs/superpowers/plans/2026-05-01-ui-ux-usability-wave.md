@@ -150,7 +150,7 @@ Sie deckt aktuell nicht ab:
 
 ### 5. Data & Settings Trust
 
-**Status:** in progress via `codex/ux-slice-d-data-settings`.
+**Status:** implemented in PR #65.
 
 - Data Coverage in "Status → Ursache → Aktion" strukturieren.
 - Deaktivierte Backfill-Aktion mit direktem Grund versehen.
@@ -162,6 +162,8 @@ Sie deckt aktuell nicht ab:
   - Keine destructive-adjacent Aktion erscheint ohne erklaerende Folgezeile.
 
 ### 6. Visual Density Pass
+
+**Status:** in progress via `codex/ux-slice-e-density`.
 
 - Mobile Tabstrips, Bottom Nav, Tabellen und Karten auf Ueberlauf pruefen.
 - Navigation labels angleichen: Desktop und Mobile sollten semantisch gleich bleiben, auch wenn sie kuerzer sind.
