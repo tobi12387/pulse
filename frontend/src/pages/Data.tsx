@@ -166,7 +166,7 @@ function BackfillResult({ result }: { result: PulseGarminBackfillResponse }) {
         </div>
       )}
       {result.days.some(day => day.status === 'failed') && (
-        <div style={{ marginTop: 6, fontSize: 10, color: 'var(--rose)', lineHeight: 1.45 }}>
+        <div style={{ marginTop: 6, fontSize: 10, color: 'var(--rose)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
           {result.days.filter(day => day.status === 'failed').slice(0, 3).map(day => `${day.date}: ${day.error ?? 'Fehler'}`).join(' · ')}
         </div>
       )}
@@ -196,9 +196,9 @@ function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
     ? ` · ${domain.missingFields.join(', ')}`
     : '';
   return (
-    <td style={{ padding: '7px 10px', textAlign: 'right' }}>
+    <td style={{ padding: '7px 10px', textAlign: 'right', verticalAlign: 'top' }}>
       <CoveragePill status={domain.status} />
-      <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3 }}>
+      <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3, overflowWrap: 'anywhere' }}>
         {COVERAGE_REASON[domain.reason] ?? domain.reason}{detail}
       </div>
     </td>
@@ -348,14 +348,14 @@ function CoverageTab() {
         {backfillResult && <BackfillResult result={backfillResult} />}
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px 8px' }}>
           <span className="label-mono">Domain-Abdeckung</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
             {shownDays.length} Tage
           </span>
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--surface-2)', borderTop: '1px solid var(--border)' }}>
               {['Datum', 'Metriken', 'Schlaf', 'Aktivität', 'Gewicht'].map(h => (
@@ -373,9 +373,9 @@ function CoverageTab() {
                 <td style={{ padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>{day.date}</td>
                 <CoverageCell domain={day.dailyMetrics} />
                 <CoverageCell domain={day.sleep} />
-                <td style={{ padding: '7px 10px', textAlign: 'right' }}>
+                <td style={{ padding: '7px 10px', textAlign: 'right', verticalAlign: 'top' }}>
                   <CoveragePill status={day.activities.status}>{day.activities.count > 0 ? `${day.activities.count}x` : undefined}</CoveragePill>
-                  <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3 }}>
+                  <div style={{ fontSize: 9.5, color: 'var(--text-3)', marginTop: 3, overflowWrap: 'anywhere' }}>
                     {day.activities.count > 0 && day.activities.missingWeatherCount > 0
                       ? `${day.activities.missingWeatherCount} ohne Wetter`
                       : COVERAGE_REASON[day.activities.reason] ?? day.activities.reason}

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Mobile-Density-QA bleibt ein gezielter Kernfluss-Pass
+
+- **Decision:** Slice 4 der Everyday Utility Wave begrenzt Mobile-Density-Fixes auf die zuletzt angefassten Kernfluesse Home Actions, Plan Trace, Data Coverage und Settings Backfill/Push-Status. Die Coverage-Tabelle darf auf Mobile horizontal scrollen; lange deutsche Status- und Evidence-Texte werden umbrochen statt gekuerzt.
+- **Why:** Der hoechste Alltagsnutzen liegt darin, Ueberlaeufe in den neuen Trust-/Utility-Oberflaechen zu verhindern, ohne parallel ein Design-System-Refactor oder Auth-abhaengige Voll-QA zu starten.
+- **Alternatives:** Breiter Frontend-Redesign-Pass (zu grosser Scope fuer die Abschlussrunde); Texte hart kuerzen (verliert Diagnosewert); Tabellen weiter quetschen oder verstecken (schlechter auf Mobile).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Next Actions bleiben source-driven und bekommen Erledigungs-Evidence
 
 - **Decision:** Slice 3 erweitert `PulseNextBestAction` um optionale `openedAt`, `resolvedBy` und `evidence` Felder. Home zeigt damit, warum eine Action offen ist und wodurch sie verschwindet; Coach bekommt dieselben Hinweise, Briefings nutzen nur noch critical/high Actions und lassen normale Nudges auf Home.

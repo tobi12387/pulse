@@ -234,7 +234,7 @@ function NextBestActionsCard({
                 display: 'grid',
                 gridTemplateColumns: '62px minmax(0, 1fr) auto',
                 gap: 10,
-                alignItems: 'center',
+                alignItems: 'start',
                 textAlign: 'left',
                 cursor: 'pointer',
               }}
@@ -246,16 +246,16 @@ function NextBestActionsCard({
                 <span style={{ display: 'block', fontSize: 13, color: 'var(--text)', fontWeight: 500, marginBottom: 3 }}>
                   {action.title}
                 </span>
-                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
                   {action.reason}
                 </span>
                 {(action.resolvedBy || action.evidence?.length) && (
-                  <span style={{ display: 'block', marginTop: 4, fontSize: 10, color: 'var(--text-3)', lineHeight: 1.4 }}>
+                  <span style={{ display: 'block', marginTop: 4, fontSize: 10, color: 'var(--text-3)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
                     {action.resolvedBy ? `Erledigt durch: ${action.resolvedBy}` : action.evidence?.slice(0, 2).join(' · ')}
                   </span>
                 )}
               </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, whiteSpace: 'normal', textAlign: 'right', lineHeight: 1.3 }}>
                 {action.cta} →
               </span>
             </button>

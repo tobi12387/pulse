@@ -347,7 +347,7 @@ export default function Settings() {
                 <Val>31 Tage max.</Val>
               </Row>
               <Row label="Letzter Backfill">
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: lastBackfill ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'right' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: lastBackfill ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'right', overflowWrap: 'anywhere', minWidth: 0, maxWidth: '62%', lineHeight: 1.35 }}>
                   {lastBackfill
                     ? `${lastBackfill.dryRun ? 'Vorschau' : 'Sync'} ${lastBackfill.from}–${lastBackfill.to} · ${lastBackfill.synced}/${lastBackfill.planned}`
                     : 'Noch keiner'}
@@ -400,8 +400,8 @@ export default function Settings() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{label}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+      <span style={{ fontSize: 12, color: 'var(--text-2)', flexShrink: 0 }}>{label}</span>
       {children}
     </div>
   );

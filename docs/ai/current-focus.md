@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/action-closure-review`: active local branch for Slice 3 from the everyday utility wave.
+- `codex/mobile-density-qa`: active local branch for Slice 4 from the everyday utility wave.
+- `codex/action-closure-review`: merged and deployed via PR #50.
 - `codex/plan-feedback-calibration`: merged and deployed via PR #49.
 - `codex/garmin-bounded-backfill`: merged and deployed via PR #48.
 - `codex/roadmap-after-next-wave`: merged and deployed via PR #47.
@@ -34,8 +35,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Slice 3 from the everyday utility wave: `codex/action-closure-review`.
-- Then start Slice 4: `codex/mobile-density-qa`.
+- Merge and deploy Slice 4 from the everyday utility wave: `codex/mobile-density-qa`.
+- After that, close the everyday utility wave with a status summary and pick the next plan only from active files in `docs/superpowers/plans/`.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
