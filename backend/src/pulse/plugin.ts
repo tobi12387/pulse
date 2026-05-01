@@ -31,7 +31,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionState, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulseNextBestAction, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -57,6 +57,11 @@ import {
   garminWorkoutHasBrokenRepeatIterations,
   workoutHasRepeatSteps,
 } from './services/garmin-workout.js';
+import {
+  actionStateFromDecision,
+  ensureActionDecisionForAction,
+  listActionDecisionRows,
+} from './services/action-push.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './services/workout-reconciliation.js';
 import { profileWithProvenance, syncProfileFromGarmin } from './services/profile-sync.js';
 import {
@@ -837,63 +842,15 @@ Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur
   }
 }
 
-type ActionDecisionRow = typeof pulseActionDecisions.$inferSelect;
-
-function actionStateFromRow(action: PulseNextBestAction, row: ActionDecisionRow): PulseActionState {
-  return {
-    ...action,
-    decisionId: row.id,
-    status: row.status as PulseActionState['status'],
-    resolvedAt: row.resolvedAt?.toISOString() ?? null,
-    resolutionReason: row.resolutionReason ?? null,
-  };
-}
-
-function matchesActionRow(action: PulseNextBestAction, row: ActionDecisionRow): boolean {
-  if (row.sourceId === action.id) return true;
-  if (row.kind !== action.source) return false;
-  return row.targetRoute === action.targetPath || row.title === action.title;
-}
-
-async function listActionDecisionRows(userId: string): Promise<ActionDecisionRow[]> {
-  return db.select().from(pulseActionDecisions)
-    .where(eq(pulseActionDecisions.userId, userId))
-    .orderBy(desc(pulseActionDecisions.createdAt))
-    .limit(100);
-}
-
-async function ensureActionDecision(userId: string, action: PulseNextBestAction, existingRows: ActionDecisionRow[]): Promise<ActionDecisionRow> {
-  const existing = existingRows.find(row => matchesActionRow(action, row));
-  if (existing) return existing;
-
-  const [created] = await db.insert(pulseActionDecisions).values({
-    userId,
-    source: 'next_best_action',
-    sourceId: action.id,
-    kind: action.source,
-    title: action.title,
-    status: 'open',
-    targetRoute: action.targetPath,
-    rawContext: {
-      actionId: action.id,
-      openedAt: action.openedAt ?? null,
-      priority: action.priority,
-      evidence: action.evidence ?? [],
-    },
-  }).returning();
-
-  return created!;
-}
-
 async function listCurrentActionStates(userId: string, date: string): Promise<PulseActionState[]> {
   const context = await buildPulseContextFor(userId, date);
   const existingRows = await listActionDecisionRows(userId);
   const states: PulseActionState[] = [];
 
   for (const action of context.nextBestActions) {
-    const decision = await ensureActionDecision(userId, action, existingRows);
+    const decision = await ensureActionDecisionForAction(userId, action, existingRows);
     existingRows.unshift(decision);
-    states.push(actionStateFromRow(action, decision));
+    states.push(actionStateFromDecision(action, decision));
   }
 
   return states;

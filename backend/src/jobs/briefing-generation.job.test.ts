@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { db } from '../lib/db.js';
 import { dailyBriefings, users } from '../db/schema.js';
 import {
+  pulseActionDecisions,
   pulseActivities,
   pulseDailyMetrics,
   pulseHealthState,
@@ -40,6 +41,7 @@ let userId: string;
 
 beforeAll(async () => {
   await db.delete(dailyBriefings);
+  await db.delete(pulseActionDecisions);
   await db.delete(pulseHealthState);
   await db.delete(pulsePlannedWorkouts);
   await db.delete(pulseActivities);
@@ -56,6 +58,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.delete(dailyBriefings);
+  await db.delete(pulseActionDecisions);
   await db.delete(pulseHealthState);
   await db.delete(pulsePlannedWorkouts);
   await db.delete(pulseActivities);
@@ -66,6 +69,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.delete(dailyBriefings);
+  await db.delete(pulseActionDecisions);
   await db.delete(pulseHealthState);
   await db.delete(pulsePlannedWorkouts);
   await db.delete(pulseActivities);
@@ -153,6 +157,27 @@ describe('processBriefingJob', () => {
     const userContent = vi.mocked(llmComplete).mock.calls[0]?.[1] ?? '';
     expect(userContent).toContain('Aktive Health-States');
     expect(userContent).toContain('fatigue/moderate');
+  });
+
+  it('links the first urgent action in the briefing push journey', async () => {
+    const date = '2026-04-23';
+
+    const job = { data: { userId, triggerType: 'garmin-alarm', date } } as Job<BriefingJobData>;
+    await processBriefingJob(job, mockApp);
+
+    expect(sendPushToUser).toHaveBeenCalledWith(userId, expect.objectContaining({
+      topic: 'briefing',
+      url: expect.stringMatching(/^\/coach\?actionId=checkin%3A%2Fcoach%3A0&decisionId=[0-9a-f-]{36}$/),
+      tag: `briefing-${date}`,
+    }));
+
+    const rows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      sourceId: 'checkin:/coach:0',
+      kind: 'checkin',
+      status: 'open',
+    });
   });
 
   it('does not send another briefing push when a briefing already exists for the date', async () => {
