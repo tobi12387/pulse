@@ -142,6 +142,7 @@ export default function Settings() {
       await qc.invalidateQueries({ queryKey: pulseKeys.plan });
       const parts = [];
       if (res.uploaded > 0) parts.push(`${res.uploaded} hochgeladen`);
+      if ((res.repaired ?? 0) > 0) parts.push(`${res.repaired} repariert`);
       if (res.removed > 0) parts.push(`${res.removed} entfernt`);
       setMessage({ text: `Garmin Kalender synchronisiert: ${parts.join(', ') || 'keine Änderungen'}.`, ok: true });
     } catch (err) {

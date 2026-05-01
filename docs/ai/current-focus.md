@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/everyday-flow-closeout`: active docs branch for moving the completed Everyday Flow wave to history and opening the Daily Intelligence next wave.
+- `codex/garmin-repeat-sync`: active bugfix branch for Garmin workout repeat groups showing `null` repetitions after sync.
 - Recent completed branches:
+- `codex/everyday-flow-closeout`: merged and deployed via PR #77.
 - `codex/settings-action-grouping`: merged and deployed via PR #76.
 - `codex/data-backfill-observability`: merged and deployed via PR #75.
 - `codex/insights-reliability`: merged and deployed via PR #74.
@@ -60,7 +61,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/everyday-flow-closeout`.
+- Finish, PR, merge and deploy `codex/garmin-repeat-sync`.
 - Then start `codex/garmin-execution-reconciliation` from `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
