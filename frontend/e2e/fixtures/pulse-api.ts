@@ -12,6 +12,7 @@ type MockPulseApiOptions = {
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
   pushSettings?: unknown;
+  checkinToday?: unknown;
   metrics?: unknown[];
   sleepSessions?: unknown[];
   onRequest?: (pathname: string, method: string) => void;
@@ -360,6 +361,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, { error: 'Internal Server Error' }, 500);
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
+    if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);

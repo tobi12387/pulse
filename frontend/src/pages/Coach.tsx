@@ -277,6 +277,14 @@ function readinessBoundary(score: number | null | undefined, tsb: number | null 
   return 'Normal trainieren, aber die Einheit nicht über den Plan hinaus verlängern.';
 }
 
+function formatPlannedDate(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  });
+}
+
 function DailyBriefingGuide({
   home,
   briefing,
@@ -293,14 +301,24 @@ function DailyBriefingGuide({
   const load = home?.fitnessLoad;
   const nextAction = home?.nextBestActions?.[0] ?? null;
   const nextWorkout = home?.nextWorkout ?? null;
+  const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
+  const futureWorkout = nextWorkout && nextWorkout.plannedDate !== home?.date ? nextWorkout : null;
   const decision = nextAction
     ? nextAction.title
-    : nextWorkout
-      ? `${nextWorkout.activityType} · Zone ${nextWorkout.zone} · ${nextWorkout.durationMin} min`
+    : todayWorkout
+      ? `${todayWorkout.activityType} · Zone ${todayWorkout.zone} · ${todayWorkout.durationMin} min`
+      : futureWorkout
+        ? 'Heute ist kein Training geplant.'
       : 'Heute bewusst entscheiden, ob Training oder Erholung sinnvoller ist.';
-  const startPrompt = nextWorkout
-    ? `Soll ich ${nextWorkout.activityType} heute wie geplant machen oder anpassen?`
-    : 'Was ist heute aus meinen Daten der sinnvollste nächste Schritt?';
+  const decisionDetail = nextAction?.resolvedBy
+    ?? (todayWorkout
+      ? 'Coach kann die heutige Einheit begründen oder anpassen.'
+      : futureWorkout
+        ? `Nächster Ausblick: ${formatPlannedDate(futureWorkout.plannedDate)} · ${futureWorkout.activityType} Z${futureWorkout.zone}.`
+        : 'Coach kann Training, Erholung und mentale Lage einordnen.');
+  const startPrompt = todayWorkout
+    ? `Soll ich ${todayWorkout.activityType} heute wie geplant machen oder anpassen?`
+    : 'Heute ist kein Training geplant. Wie nutze ich den freien Tag für Erholung, mentale Stabilität und Vorbereitung?';
 
   return (
     <div className="card" style={{ alignSelf: 'stretch', borderColor: 'rgba(94,230,207,0.24)', padding: '12px 14px' }}>
@@ -328,7 +346,7 @@ function DailyBriefingGuide({
           {
             label: 'Nächste Entscheidung',
             value: decision,
-            detail: nextAction?.resolvedBy ?? 'Coach kann die Entscheidung begründen oder anpassen.',
+            detail: decisionDetail,
           },
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -393,14 +411,24 @@ export default function Coach() {
   const lastMessageTimestamp = historyData?.messages.at(-1)?.timestamp;
   const hasMessages = (historyData?.messages.length ?? 0) > 0;
   const nextWorkout = home?.nextWorkout;
+  const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
+  const futureWorkout = nextWorkout && nextWorkout.plannedDate !== home?.date ? nextWorkout : null;
   const quickPromptGroups: PromptGroup[] = [
+    {
+      title: 'Daily Check-in',
+      hint: 'Körper, Kopf und mentale Last sauber einordnen.',
+      prompts: [
+        'Führe mich durch einen kurzen Check-in für Stimmung, Energie, Stress, Motivation und mentale Belastung.',
+        'Welche mentale Belastung sollte ich heute ernst nehmen?',
+      ],
+    },
     {
       title: 'Heute entscheiden',
       hint: 'Was jetzt als Nächstes sinnvoll ist.',
       prompts: [
-        nextWorkout
-          ? `Soll ich ${nextWorkout.activityType} am ${new Date(nextWorkout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} wie geplant machen?`
-          : 'Was ist heute die sinnvollste Einheit?',
+        todayWorkout
+          ? `Soll ich ${todayWorkout.activityType} heute wie geplant machen oder anpassen?`
+          : 'Heute ist kein Training geplant. Wie nutze ich den freien Tag sinnvoll?',
         'Was sollte ich heute nicht überziehen?',
       ],
     },
@@ -408,7 +436,11 @@ export default function Coach() {
       title: 'Plan anpassen',
       hint: 'Wenn Alltag, Müdigkeit oder Risiko dazwischenkommen.',
       prompts: [
-        'Soll ich die Einheit heute kürzer oder leichter machen?',
+        todayWorkout
+          ? 'Soll ich die Einheit heute kürzer oder leichter machen?'
+          : futureWorkout
+            ? `Was sollte ich bis zum Training am ${formatPlannedDate(futureWorkout.plannedDate)} beobachten?`
+            : 'Muss ich heute etwas am Plan ändern oder reicht Erholung?',
         'Wäre ein freier Tag heute sinnvoller?',
       ],
     },

@@ -1111,6 +1111,13 @@ function MentalTab() {
   const [form, setForm]    = useState({ mood: 7, energy: 7, stress: 3, motivation: 7, notes: '' });
   const [submitted, setSubmitted] = useState(false);
 
+  function appendNote(label: string) {
+    setForm(f => {
+      const next = f.notes.trim().length > 0 ? `${f.notes.trim()}\n${label}` : label;
+      return { ...f, notes: next };
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await checkin.mutateAsync({ ...form, notes: form.notes || undefined });
@@ -1131,17 +1138,56 @@ function MentalTab() {
         </div>
       ) : (
         <div className="card">
-          <div className="label-mono" style={{ marginBottom: 16 }}>Täglicher Check-in</div>
+          <div style={{ marginBottom: 14 }}>
+            <div className="label-mono" style={{ marginBottom: 6 }}>Geführter Daily Check-in</div>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+              Kurzer Lageabgleich für Körper und Kopf. Die Werte bleiben kompakt, die Notiz hält fest, was mental wirklich zählt.
+            </p>
+          </div>
           <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <SegmentedBar label="Stimmung"   value={form.mood}       onChange={(v) => setForm(f => ({ ...f, mood: v }))}       color="var(--accent)" />
-            <SegmentedBar label="Energie"    value={form.energy}     onChange={(v) => setForm(f => ({ ...f, energy: v }))}     color="var(--green)"  />
-            <SegmentedBar label="Stress"     value={form.stress}     onChange={(v) => setForm(f => ({ ...f, stress: v }))}     color="var(--amber)"  />
-            <SegmentedBar label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} color="var(--blue)"   />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+              <div>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Wie ist dein Kopf gerade?</p>
+                <SegmentedBar label="Stimmung" value={form.mood} onChange={(v) => setForm(f => ({ ...f, mood: v }))} color="var(--accent)" />
+              </div>
+              <div>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Wie viel Energie ist verfügbar?</p>
+                <SegmentedBar label="Energie" value={form.energy} onChange={(v) => setForm(f => ({ ...f, energy: v }))} color="var(--green)" />
+              </div>
+              <div>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Was zieht gerade mentale Energie?</p>
+                <SegmentedBar label="Stress" value={form.stress} onChange={(v) => setForm(f => ({ ...f, stress: v }))} color="var(--amber)" />
+              </div>
+              <div>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Was wäre heute genug?</p>
+                <SegmentedBar label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} color="var(--blue)" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {['Mental: ruhig', 'Mental: angespannt', 'Mental: überladen', 'Fokus: klar', 'Fokus: zerstreut', 'Heute genug: klein halten'].map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => appendNote(tag)}
+                  style={{
+                    padding: '5px 8px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    color: 'var(--text-2)',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
             <textarea
               value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-              rows={2}
-              placeholder="Notizen (optional)"
+              rows={4}
+              placeholder="Was ist mental gerade wichtig? Was belastet, was schützt dich heute, und was wäre ein guter kleiner Abschluss?"
               style={{
                 background: 'var(--surface-2)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius)', padding: '8px 12px',
