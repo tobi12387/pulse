@@ -10,6 +10,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
+- `codex/browser-e2e-smoke`: active local branch for Browser/Playwright smoke-test foundation.
 - `codex/everyday-utility-closeout`: active local branch for closing the completed Everyday Utility Wave docs.
 - `codex/mobile-density-qa`: merged and deployed via PR #51.
 - `codex/action-closure-review`: merged and deployed via PR #50.

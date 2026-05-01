@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-01 — Browser-QA bekommt eine zweistufige Teststrategie
+
+- **Decision:** Pulse nutzt Browser Use weiter für interaktive Codex-QA und ergänzt Playwright als versionierte E2E-Smoke-Suite. Die erste Suite mockt `/api`-Antworten und prüft die sechs Hauptseiten plus Navigation in Desktop- und Mobile-Chromium.
+- **Why:** Browser Use ist schnell für visuelle Exploration, aber nicht commitbar oder CI-fähig. Playwright gibt wiederholbare Regressionstests ohne echte Garmin-/Serverdaten und deckt Routing, Runtime Errors und zentrale Render-Brüche ab.
+- **Alternatives:** Nur Browser Use verwenden (keine wiederholbare Regression); Playwright gegen den echten Backend-Server fahren (fragiler und langsamer); sofort breite End-to-End-Mutationsflows bauen (zu hoher Pflegeaufwand für den Einstieg).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-01 — Everyday Utility Wave wird nach Slice 4 geschlossen
 
 - **Decision:** Nach PR #48 bis PR #51 gilt die Everyday Utility Wave als abgeschlossen und das Plan-Dokument wird nach `completed/` verschoben. Neue Feature-Arbeit startet erst wieder mit einem explizit aktiven Plan; die naechsten Kandidaten sind Browser-E2E-Smoke-Tests, lokale Test-Environment-Haertung und Bundle-/Code-Splitting-Cleanup.
