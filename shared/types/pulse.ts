@@ -140,6 +140,32 @@ export interface PulseMentalCheckin {
   createdAt: string;
 }
 
+export interface PulseMentalThemeOccurrence {
+  id: string;
+  date: string;
+  mood: number;
+  energy: number;
+  stress: number;
+  motivation: number;
+  notes: string | null;
+}
+
+export interface PulseMentalThemeSummary {
+  theme: string;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+  weeklyFrequency: Array<{ weekStart: string; count: number }>;
+  isResurfacing: boolean;
+  isResolved: boolean;
+  occurrences: PulseMentalThemeOccurrence[];
+}
+
+export interface PulseMentalThemesResponse {
+  themes: PulseMentalThemeSummary[];
+  totalCheckins: number;
+}
+
 export interface PulseWeightEntry {
   id: string;
   date: string;

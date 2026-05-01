@@ -63,6 +63,12 @@ let app: FastifyInstance;
 let token: string;
 let userId: string;
 
+function dateDaysAgo(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().split('T')[0]!;
+}
+
 beforeAll(async () => {
   app = await buildApp();
   await db.delete(users).where(eq(users.email, 'pulse-test@coaching.os'));
@@ -399,6 +405,76 @@ describe('POST /api/pulse/checkin/voice', () => {
     });
     const messages = history.json<{ messages: Array<{ role: string; content: string }> }>().messages;
     expect(messages.at(-1)).toMatchObject({ role: 'assistant', content: 'Frische Coach-Antwort nach Check-in.' });
+  });
+});
+
+describe('GET /api/pulse/mental/themes', () => {
+  it('aggregates recurring themes and deduplicates theme variants per check-in', async () => {
+    await db.insert(pulseMentalCheckins).values([
+      {
+        userId,
+        date: dateDaysAgo(1),
+        mood: 5,
+        energy: 5,
+        stress: 8,
+        motivation: 4,
+        notes: 'Arbeit doppelt genannt.',
+        themes: ['Work-Stress', 'work-stress', '  WORK-STRESS  '],
+        source: 'voice',
+      },
+      {
+        userId,
+        date: dateDaysAgo(3),
+        mood: 6,
+        energy: 6,
+        stress: 6,
+        motivation: 6,
+        notes: 'Arbeit taucht erneut auf.',
+        themes: ['work-stress', 'schlaf'],
+        source: 'voice',
+      },
+      {
+        userId,
+        date: dateDaysAgo(6),
+        mood: 7,
+        energy: 7,
+        stress: 3,
+        motivation: 7,
+        notes: 'Ein einzelnes Thema.',
+        themes: ['einmalig'],
+        source: 'voice',
+      },
+    ]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/mental/themes?days=90',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      totalCheckins: number;
+      themes: Array<{
+        theme: string;
+        count: number;
+        isResurfacing: boolean;
+        occurrences: Array<{ id: string; notes: string | null }>;
+      }>;
+    }>();
+
+    expect(body.totalCheckins).toBe(3);
+    expect(body.themes).toHaveLength(1);
+    expect(body.themes[0]).toMatchObject({
+      theme: 'work-stress',
+      count: 2,
+      isResurfacing: true,
+    });
+    expect(body.themes[0]!.occurrences).toHaveLength(2);
+    expect(body.themes[0]!.occurrences.map((occurrence) => occurrence.notes)).toEqual([
+      'Arbeit taucht erneut auf.',
+      'Arbeit doppelt genannt.',
+    ]);
   });
 });
 

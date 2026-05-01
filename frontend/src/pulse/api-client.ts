@@ -7,7 +7,7 @@ import type {
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
   PulsePushSettings, PulsePushTopics,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
-  PulseStrengthSession, PulseStrengthTrendPoint,
+  PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -119,6 +119,8 @@ export const pulseApi = {
       id: string; date: string; mood: number; energy: number; stress: number; motivation: number;
     }> }> =>
       request(`/checkin/history?days=${days}`),
+    themes: (days = 90): Promise<PulseMentalThemesResponse> =>
+      request(`/mental/themes?days=${days}`),
   },
 
   sleep: {

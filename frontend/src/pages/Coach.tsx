@@ -132,6 +132,7 @@ function MicButton({ micState, onDone }: {
             invalidatePulseContextQueries(qc);
             void qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
             void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
+            void qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
           }
           onDone({ blobUrl, mimeType, transcript: res.transcript, reply: res.reply,
             isCheckin: res.isCheckin, extraction: res.extraction, followUpQuestions: res.followUpQuestions });

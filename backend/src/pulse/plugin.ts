@@ -42,6 +42,7 @@ import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-eng
 import { getActiveRaces } from './services/race-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
+import { listMentalThemes } from './services/mental-themes.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -813,6 +814,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since)))
       .orderBy(pulseMentalCheckins.date);
     return { checkins };
+  });
+
+  // GET /api/pulse/mental/themes?days=90
+  app.get('/mental/themes', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { days?: string };
+    const parsed = Number.parseInt(q.days ?? '90', 10);
+    const days = Number.isFinite(parsed) ? Math.min(365, Math.max(30, parsed)) : 90;
+    return listMentalThemes(userId, days);
   });
 
   // ─── Sleep sessions ───────────────────────────────────────────────────────────

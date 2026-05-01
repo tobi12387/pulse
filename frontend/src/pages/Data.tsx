@@ -6,6 +6,7 @@ import {
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
+import { ThemeTimeline } from '@/components/ThemeTimeline';
 
 type Tab = 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 
@@ -547,6 +548,8 @@ function MentalTab() {
           </form>
         </div>
       )}
+
+      <ThemeTimeline />
 
       {/* History chart — multi-line SVG */}
       {checkins.length >= 3 && (

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Phase 11 startet mit Theme-Timeline als eigenem Slice
+
+- **Decision:** Phase 11 wird zuerst als Mental-Theme-Slice umgesetzt: ein `/api/pulse/mental/themes` Endpunkt aggregiert wiederkehrende Voice-/Check-in-Themes inklusive Wochenfrequenz, Resurfacing/Resolved-Heuristik und Check-in-Occurrences fuer das Timeline-Modal; Mental-Load-Overlay und theme-aware Insights folgen in separaten PRs.
+- **Why:** Theme-Timeline ist fachlich eigenstaendig und liefert sofort Alltagssichtbarkeit fuer vorhandene `pulse_mental_checkins.themes`. Die Occurrences direkt im Aggregat vermeiden einen zweiten Detail-Endpunkt und halten die Data/Mental-UI ohne weitere Roundtrips bedienbar.
+- **Alternatives:** Alle Phase-11-Tasks in einem PR bauen (zu breit fuer Review und Deployment); Modal-Daten ueber `checkin/history` im Frontend zusammensuchen (mehr Client-Logik und groesserer Datenabruf); neue persistente Theme-Tabelle einfuehren (laut Plan nicht noetig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Phase 10 UI bleibt in Plan, Settings und ActivityDetail
 
 - **Decision:** Strength Logging und Equipment Tracking bekommen keine neue Hauptnavigation. Der Strength Logger sitzt im Plan-Training-Tab mit e1RM/Recent-Session-Summary, Equipment-Verwaltung und Defaults sitzen in Settings, und das manuelle Equipment-Override sitzt direkt im ActivityDetail; dafür liefert `GET /pulse/activities/:id` die aktuellen `equipmentIds` mit.
