@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Garmin Data Trust startet read-only ueber Coverage statt Backfill
+
+- **Decision:** Slice 2 liefert zuerst einen read-only `/api/pulse/data-coverage` Contract mit Domain-Abdeckung fuer Tagesmetriken, Schlaf, Aktivitaeten/Wetter, Gewicht und Profilwerte. Data zeigt die Abdeckung als eigenen Tab; Settings zeigt kompakte 30-Tage-Domainwerte. Ein Range-Backfill folgt erst nach sichtbarer Diagnose.
+- **Why:** Tobi braucht zuerst Klarheit, welche Garmin-Daten fehlen und welche Domain betroffen ist. Eine pauschale Nachladefunktion ohne Coverage-Diagnose wuerde Rate-Limit- und Datenqualitaetsprobleme verschleiern.
+- **Alternatives:** Sofort alle 2026-Daten neu laden (zu grob, nicht auditierbar); nur Home-Datenstatus erweitern (zu wenig Detail); Legacy-Garmin-Tabellen auswerten (widerspricht Pulse-Schema-Entscheidung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Plan-Generierungen bekommen einen persistierten Trace
 
 - **Decision:** Jede neue Wochenplan-Generierung persistiert einen `pulse_plan_generations` Trace mit Input-Snapshot, Plan-Decision, Sportmix, harten Tagen und Summary; Rohprompts oder Provider-Antworten werden nicht gespeichert. Der Trace wird ueber `/api/pulse/plan/trace/:weekStart` gelesen und in der Plan-UI als "Einbezogene Daten" angezeigt.

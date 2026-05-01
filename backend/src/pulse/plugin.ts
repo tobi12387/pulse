@@ -26,7 +26,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseDataCoverageResponse, PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -370,6 +370,30 @@ async function getPulseDataStatus(userId: string, today: string): Promise<PulseD
   };
 }
 
+function addDateDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function toIsoDate(date: Date): string {
+  return date.toISOString().split('T')[0]!;
+}
+
+function dateRange(from: string, to: string): string[] {
+  const start = new Date(`${from}T00:00:00.000Z`);
+  const end = new Date(`${to}T00:00:00.000Z`);
+  const result: string[] = [];
+  for (let cur = start; cur <= end; cur = addDateDays(cur, 1)) {
+    result.push(toIsoDate(cur));
+  }
+  return result;
+}
+
+function missingSyncReason(date: string, today: string): 'not_synced' | 'not_synced_yet' {
+  return date === today ? 'not_synced_yet' : 'not_synced';
+}
+
 // ─── Workout step generation ──────────────────────────────────────────────────
 
 function supportsHrStepTargets(activityType: string): boolean {
@@ -619,6 +643,173 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/sync/status', { onRequest: [app.authenticate] }, async (req) => {
     const today = new Date().toISOString().split('T')[0]!;
     return getPulseDataStatus(req.user.sub, today);
+  });
+
+  app.get('/data-coverage', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(366).optional().default(30),
+      year: z.coerce.number().int().min(2020).max(2100).optional(),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    let from: string;
+    let to: string;
+    let year: number | null = null;
+    if (parsed.data.year != null) {
+      year = parsed.data.year;
+      from = `${year}-01-01`;
+      const yearEnd = `${year}-12-31`;
+      to = yearEnd > today ? today : yearEnd;
+    } else {
+      to = today;
+      from = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), -(parsed.data.days - 1)));
+    }
+
+    const days = dateRange(from, to);
+    const [dailyRows, sleepRows, activityRows, weightRows, [profile]] = await Promise.all([
+      db.select({
+        date: pulseDailyMetrics.date,
+        hrvRmssd: pulseDailyMetrics.hrvRmssd,
+        restingHr: pulseDailyMetrics.restingHr,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        sleepScore: pulseDailyMetrics.sleepScore,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg,
+        steps: pulseDailyMetrics.steps,
+        syncedAt: pulseDailyMetrics.syncedAt,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, from), lte(pulseDailyMetrics.date, to))),
+      db.select({
+        date: pulseSleepSessions.date,
+        durationH: pulseSleepSessions.durationH,
+        deepSleepH: pulseSleepSessions.deepSleepH,
+        remSleepH: pulseSleepSessions.remSleepH,
+        lightSleepH: pulseSleepSessions.lightSleepH,
+        awakeH: pulseSleepSessions.awakeH,
+      }).from(pulseSleepSessions)
+        .where(and(eq(pulseSleepSessions.userId, userId), gte(pulseSleepSessions.date, from), lte(pulseSleepSessions.date, to))),
+      db.select({
+        startTime: pulseActivities.startTime,
+        weather: pulseActivities.weather,
+      }).from(pulseActivities)
+        .where(and(
+          eq(pulseActivities.userId, userId),
+          gte(pulseActivities.startTime, new Date(`${from}T00:00:00.000Z`)),
+          lte(pulseActivities.startTime, new Date(`${to}T23:59:59.999Z`)),
+        )),
+      db.select({
+        date: pulseWeightLog.date,
+        bodyFatPct: pulseWeightLog.bodyFatPct,
+        muscleMassKg: pulseWeightLog.muscleMassKg,
+        bmi: pulseWeightLog.bmi,
+      }).from(pulseWeightLog)
+        .where(and(eq(pulseWeightLog.userId, userId), gte(pulseWeightLog.date, from), lte(pulseWeightLog.date, to))),
+      db.select({
+        ftpWatts: pulseUserProfile.ftpWatts,
+        maxHrBpm: pulseUserProfile.maxHrBpm,
+        lthrBpm: pulseUserProfile.lthrBpm,
+        vo2max: pulseUserProfile.vo2max,
+        updatedAt: pulseUserProfile.updatedAt,
+      }).from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
+    ]);
+
+    const dailyByDate = new Map(dailyRows.map(row => [row.date, row]));
+    const sleepByDate = new Map(sleepRows.map(row => [row.date, row]));
+    const weightByDate = new Map(weightRows.map(row => [row.date, row]));
+    const activitiesByDate = new Map<string, { count: number; weatherCount: number }>();
+    for (const row of activityRows) {
+      const date = toIsoDate(row.startTime);
+      const current = activitiesByDate.get(date) ?? { count: 0, weatherCount: 0 };
+      current.count += 1;
+      if (row.weather != null) current.weatherCount += 1;
+      activitiesByDate.set(date, current);
+    }
+
+    const coverageDays: PulseDataCoverageResponse['days'] = days.map(date => {
+      const daily = dailyByDate.get(date);
+      const sleep = sleepByDate.get(date);
+      const activity = activitiesByDate.get(date) ?? { count: 0, weatherCount: 0 };
+      const weight = weightByDate.get(date);
+      const missingFields = daily
+        ? ([
+            ['hrvRmssd', daily.hrvRmssd],
+            ['restingHr', daily.restingHr],
+            ['sleepHours', daily.sleepHours],
+            ['bodyBatteryMax', daily.bodyBatteryMax],
+            ['stressAvg', daily.stressAvg],
+            ['steps', daily.steps],
+          ] as const)
+          .filter(([, value]) => value == null)
+          .map(([field]) => field)
+        : [];
+      const hasStages = !!sleep && [sleep.deepSleepH, sleep.remSleepH, sleep.lightSleepH, sleep.awakeH].some(value => value != null);
+      const missingWeatherCount = Math.max(0, activity.count - activity.weatherCount);
+      const hasDaily = daily != null;
+      const hasSleep = sleep != null || daily?.sleepHours != null;
+
+      return {
+        date,
+        dailyMetrics: {
+          status: !daily ? 'missing' : missingFields.length > 0 ? 'partial' : 'present',
+          reason: !daily ? missingSyncReason(date, today) : missingFields.length > 0 ? 'partial' : 'present',
+          syncedAt: daily?.syncedAt?.toISOString() ?? null,
+          missingFields,
+        },
+        sleep: {
+          status: hasSleep ? (hasStages ? 'present' : 'partial') : 'missing',
+          reason: hasSleep ? (hasStages ? 'present' : 'partial') : hasDaily ? 'garmin_unavailable' : missingSyncReason(date, today),
+          durationH: sleep?.durationH ?? daily?.sleepHours ?? null,
+          hasStages,
+          missingFields: hasSleep && !hasStages ? ['sleepStages'] : [],
+        },
+        activities: {
+          status: activity.count > 0 ? missingWeatherCount > 0 ? 'partial' : 'present' : 'missing',
+          reason: activity.count > 0 ? missingWeatherCount > 0 ? 'partial' : 'present' : hasDaily ? 'not_recorded' : missingSyncReason(date, today),
+          count: activity.count,
+          weatherCount: activity.weatherCount,
+          missingWeatherCount,
+          missingFields: missingWeatherCount > 0 ? ['weather'] : [],
+        },
+        weight: {
+          status: weight ? 'present' : 'missing',
+          reason: weight ? 'present' : hasDaily ? 'not_recorded' : missingSyncReason(date, today),
+          hasBodyComposition: !!weight && [weight.bodyFatPct, weight.muscleMassKg, weight.bmi].some(value => value != null),
+          missingFields: weight && [weight.bodyFatPct, weight.muscleMassKg, weight.bmi].every(value => value == null)
+            ? ['bodyComposition']
+            : [],
+        },
+      };
+    });
+
+    const profileMissing: PulseDataCoverageResponse['profile']['missing'] = [];
+    if (profile?.ftpWatts == null) profileMissing.push('ftpWatts');
+    if (profile?.maxHrBpm == null) profileMissing.push('maxHrBpm');
+    if (profile?.lthrBpm == null) profileMissing.push('lthrBpm');
+    if (profile?.vo2max == null) profileMissing.push('vo2max');
+
+    return {
+      range: { from, to, days: coverageDays.length, year },
+      summary: {
+        dailyMetricsDays: coverageDays.filter(day => day.dailyMetrics.status !== 'missing').length,
+        sleepDays: coverageDays.filter(day => day.sleep.status !== 'missing').length,
+        activityDays: coverageDays.filter(day => day.activities.count > 0).length,
+        activities: activityRows.length,
+        weatherActivities: activityRows.filter(row => row.weather != null).length,
+        weightDays: coverageDays.filter(day => day.weight.status !== 'missing').length,
+        completeDays: coverageDays.filter(day => day.dailyMetrics.status === 'present' && day.sleep.status !== 'missing').length,
+      },
+      profile: {
+        updatedAt: profile?.updatedAt?.toISOString() ?? null,
+        ftpWatts: profile?.ftpWatts ?? null,
+        maxHrBpm: profile?.maxHrBpm ?? null,
+        lthrBpm: profile?.lthrBpm ?? null,
+        vo2max: profile?.vo2max ?? null,
+        missing: profileMissing,
+      },
+      days: coverageDays.reverse(),
+    } satisfies PulseDataCoverageResponse;
   });
 
   app.get('/risk', { onRequest: [app.authenticate] }, async (req) => {
