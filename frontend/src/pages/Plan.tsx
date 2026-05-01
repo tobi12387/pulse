@@ -177,6 +177,85 @@ function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
   );
 }
 
+function NextTrainingDecisionCard({
+  workouts,
+  onOpen,
+}: {
+  workouts: PlannedWorkout[];
+  onOpen: (workout: PlannedWorkout) => void;
+}) {
+  const today = isoDateLocal(new Date());
+  const nextWorkout = [...workouts]
+    .filter(w => w.status !== 'completed' && w.status !== 'skipped' && w.plannedDate >= today)
+    .sort((a, b) => a.plannedDate.localeCompare(b.plannedDate))[0] ?? null;
+
+  if (!nextWorkout) {
+    return (
+      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+        <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>
+          NÄCHSTE TRAININGSENTSCHEIDUNG
+        </div>
+        <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 6px', fontWeight: 600 }}>
+          Kein offenes Training geplant
+        </h2>
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+          Prüfe deine Verfügbarkeit oder erstelle einen neuen Wochenplan, wenn du diese Woche trainieren willst.
+        </p>
+      </div>
+    );
+  }
+
+  const dateLabel = new Date(nextWorkout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  });
+  const isToday = nextWorkout.plannedDate === today;
+
+  return (
+    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 8 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>
+          NÄCHSTE TRAININGSENTSCHEIDUNG
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isToday ? 'var(--accent)' : 'var(--text-3)' }}>
+          {isToday ? 'Heute' : dateLabel}
+        </span>
+      </div>
+      <h2 style={{ fontSize: 17, color: 'var(--text)', margin: '0 0 5px', fontWeight: 600 }}>
+        {ACTIVITY_LABEL[nextWorkout.activityType] ?? nextWorkout.activityType} · Zone {nextWorkout.zone}
+      </h2>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', marginBottom: 9 }}>
+        {nextWorkout.durationMin} min{nextWorkout.targetTss ? ` · TSS ${nextWorkout.targetTss}` : ''}
+      </div>
+      {nextWorkout.description && (
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: '0 0 12px' }}>
+          {nextWorkout.description.split('\n')[0]}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => onOpen(nextWorkout)}
+        style={{
+          width: '100%',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius)',
+          color: 'var(--accent)',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.14em',
+          padding: '9px 10px',
+          textTransform: 'uppercase',
+        }}
+      >
+        Details öffnen
+      </button>
+    </div>
+  );
+}
+
 // ─── Availability Editor ──────────────────────────────────────────────────────
 
 const DAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -367,7 +446,7 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
                 padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 2,
                 background: 'transparent', color: 'var(--text-3)', cursor: 'pointer',
               }}
-            >wechseln</button>
+            >Sportart ändern</button>
           </div>
           {w.description && !switching && (
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
@@ -383,6 +462,9 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
 
       {switching && (
         <div style={{ padding: '0 14px 10px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ flexBasis: '100%', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            Sportart auswählen
+          </div>
           {ACTIVITY_TYPES.map(t => (
             <button key={t} onClick={() => handleTypeChange(t)} disabled={update.isPending} style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase',
@@ -583,6 +665,8 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
 function TrainingTab() {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
+  const goals     = usePulseGoals();
+  const availability = useWeekAvailability();
   const generate  = useGeneratePlan();
   const navigate  = useNavigate();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -600,6 +684,17 @@ function TrainingTab() {
     ?? (generatedTrace?.weekStart === selectedWeekStart ? generatedTrace : null);
   const planDecision = planTrace?.planDecision
     ?? (generatedTrace?.weekStart === selectedWeekStart ? generate.data?.planDecision : undefined);
+  const weekAvailability = availability.data?.weeks.find(w => w.weekStart === selectedWeekStart);
+  const availableDays = weekAvailability?.availableDays ?? [0, 2, 4, 5];
+  const weeklyHours = weekAvailability?.weeklyHours ?? planTrace?.inputSnapshot.weeklyHoursTarget ?? 8;
+  const activeGoals = goals.data?.goals.filter(goal => goal.status === 'active') ?? [];
+  const constraintChips = [
+    `Verfügbarkeit: ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'keine Tage'}`,
+    `Umfang: ${weeklyHours} h`,
+    planTrace ? `Phase: ${planTrace.inputSnapshot.phase}` : 'Phase: aus Profil',
+    activeGoals.length > 0 ? `Ziele: ${activeGoals.length} aktiv` : 'Ziele: keine aktiven',
+    planTrace?.inputSnapshot.riskSignals.length ? `Risiko: ${planTrace.inputSnapshot.riskSignals.length} Signal(e)` : 'Risiko: wird geprüft',
+  ];
   const today = isoDateLocal(new Date());
   const strengthWorkout = workouts.find(w =>
     w.activityType === 'strength'
@@ -616,6 +711,8 @@ function TrainingTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+      <NextTrainingDecisionCard workouts={workouts} onOpen={setSelectedWorkout} />
+
       {/* WeekStrip */}
       <WeekStrip
         workouts={workouts}
@@ -623,8 +720,6 @@ function TrainingTab() {
         onChangeWeek={d => setWeekOffset(o => o + d)}
         onSelectWorkout={setSelectedWorkout}
       />
-
-      <StrengthLogger key={strengthWorkout?.id ?? 'free'} plannedWorkout={strengthWorkout} />
 
       {/* Availability */}
       <AvailabilityEditor />
@@ -650,6 +745,20 @@ function TrainingTab() {
           <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6, margin: '0 0 12px' }}>
             Erstellt einen wissenschaftlich fundierten Wochenplan auf Basis von CTL/ATL/TSB, deiner eingetragenen Verfügbarkeit und aktiven Zielen.
           </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {constraintChips.map(chip => (
+              <span key={chip} style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--text-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '4px 7px',
+              }}>
+                {chip}
+              </span>
+            ))}
+          </div>
           <button onClick={() => void handleGenerate({ preventDefault: () => {} } as React.FormEvent)} disabled={generate.isPending} style={{
             width: '100%', background: 'var(--surface-2)', border: '1px solid var(--accent)',
             borderRadius: 'var(--radius)', padding: '9px', fontFamily: 'var(--font-mono)',
@@ -715,6 +824,9 @@ function TrainingTab() {
           ))}
         </div>
       )}
+
+      <div className="label-mono" style={{ marginTop: 2 }}>Tools</div>
+      <StrengthLogger key={strengthWorkout?.id ?? 'free'} plannedWorkout={strengthWorkout} />
 
       {/* Activities */}
       <div className="label-mono" style={{ marginTop: 4 }}>Aktivitäten — 14 Tage</div>
