@@ -966,6 +966,46 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
     expect(steps.map(s => s.zoneNumber)).toEqual([1, 2, 1]);
   });
 
+  it('exports interval repeats as Garmin iteration end conditions', async () => {
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-05',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 26,
+      targetTss: 40,
+      description: 'Repeat-Test',
+      steps: [
+        { type: 'warmup', durationMin: 8, zone: 1, description: 'Warmup' },
+        { type: 'interval', durationMin: 5, zone: 4, reps: 2, restMin: 3, description: 'Z4' },
+        { type: 'cooldown', durationMin: 5, zone: 1, description: 'Cooldown' },
+      ],
+    }).returning();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/sync-garmin`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const payload = garminMocks.addWorkout.mock.calls[0]![0] as {
+      workoutSegments: Array<{ workoutSteps: Array<{
+        type: string;
+        endConditionValue: number | null;
+        numberOfIterations: number | null;
+        endCondition: { conditionTypeKey: string };
+        workoutSteps?: Array<{ stepType: { stepTypeKey: string } }>;
+      }> }>;
+    };
+    const repeat = payload.workoutSegments[0]!.workoutSteps.find(step => step.type === 'RepeatGroupDTO');
+    expect(repeat).toBeDefined();
+    expect(repeat!.endCondition.conditionTypeKey).toBe('iterations');
+    expect(repeat!.endConditionValue).toBe(2);
+    expect(repeat!.numberOfIterations).toBe(2);
+    expect(repeat!.workoutSteps?.map(step => step.stepType.stepTypeKey)).toEqual(['interval', 'recovery']);
+  });
+
   it('uploads deterministic Garmin steps when a workout has no steps and LLM is unavailable', async () => {
     await db.insert(pulseUserProfile).values({
       userId,

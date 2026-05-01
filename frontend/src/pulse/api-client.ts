@@ -281,7 +281,7 @@ export const pulseApi = {
       request('/garmin/sync', { method: 'POST', body: '{}' }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
       request('/garmin/sync-profile', { method: 'POST', body: '{}' }),
-    calendarSync: (): Promise<{ uploaded: number; removed: number; errors?: string[] }> =>
+    calendarSync: (): Promise<{ uploaded: number; repaired?: number; removed: number; errors?: string[] }> =>
       request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
   },
 

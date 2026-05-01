@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Garmin Repeat-Gruppen brauchen Iterations-EndCondition plus Anzahlfeld
+
+- **Decision:** Pulse exportiert Garmin-Repeat-Gruppen mit `numberOfIterations = reps` und zusätzlich `endCondition.conditionTypeKey = iterations` sowie `endConditionValue = reps`. Der Garmin-Payload-Bau liegt als pure Helper-Schicht in `backend/src/pulse/services/garmin-workout.ts`.
+- **Why:** Die bisherige Variante setzte nur `numberOfIterations` und `lap.button`; Garmin akzeptierte den Upload, speicherte die Wiederholungen aber als `null`. Ein temporärer Live-Probe gegen Garmin bestätigte, dass `numberOfIterations` für die Create-Validierung erforderlich bleibt, der sichtbare Wiederholungswert aber über die Iterations-EndCondition erhalten bleibt.
+- **Alternatives:** Nur `endConditionValue` ohne `numberOfIterations` senden (Garmin lehnt mit 400 ab); Repeat-Gruppen in einzelne Steps auflösen (verlängert Workouts und verliert Gruppensemantik); bestehendes Payload belassen (Wiederholungen erscheinen als null).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Nächste Welle priorisiert Daily Intelligence vor Feature-Breite
 
 - **Decision:** Nach der Everyday Flow Deepening Wave startet `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`. Reihenfolge: Garmin Execution Reconciliation, Plan Personalization Loop, Daily Decision Center, Insight Evidence Links, Deep UI/UX Flow Audit.
