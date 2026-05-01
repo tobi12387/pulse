@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Backfill-Beobachtung startet ohne neue Persistenz
+
+- **Decision:** Data Backfill Observability nutzt vorerst die vorhandene Backfill-Response plus lokale Browser-Erinnerung (`localStorage`) für den letzten Lauf. Eine serverseitige Backfill-Historie wird erst eingeführt, wenn mehrere Geräte, Auditing oder Langzeitverlauf wirklich gebraucht werden.
+- **Why:** Der direkte Alltagsnutzen ist Sichtbarkeit nach Vorschau/echtem Lauf: Zeitraum, geplante Tage, synchronisierte Tage, Fehler und nächste Aktion. Dafür reicht der bestehende API-Contract; eine neue Migration würde den Scope erhöhen, ohne den aktuellen Flow wesentlich robuster zu machen.
+- **Alternatives:** Neue Backfill-History-Tabelle sofort einführen (größerer Backend-/Migrations-Scope); nur Toast/kurzen Text zeigen (zu wenig beobachtbar); Fehler als langen Textblock belassen (schwer scanbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Insights-Fehler werden am API-Rand klassifiziert
 
 - **Decision:** `/api/pulse/insights` gibt kontrollierte Fehlercodes (`provider_unavailable`, `timeout`, `server_error`, `invalid_domain`) mit Retry-/Action-Hinweisen zurück. Echte Datenlücken bleiben erfolgreiche Responses mit `status: data_missing`, `retryable: false` und konkreter nächster Aktion.

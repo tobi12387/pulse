@@ -9,6 +9,7 @@ type MockPulseApiOptions = {
   coverage?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
   pushSettings?: unknown;
   onRequest?: (pathname: string, method: string) => void;
@@ -284,6 +285,11 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
+    if (url.pathname === '/api/pulse/garmin/backfill' && request.method() === 'POST' && options.backfillResult) {
+      const body = request.postDataJSON();
+      const result = typeof options.backfillResult === 'function' ? options.backfillResult(body) : options.backfillResult;
+      return json(route, result);
+    }
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
     if (url.pathname.startsWith('/api/pulse/plan/workout/') && request.method() === 'PATCH') {
       const workoutId = url.pathname.split('/').at(-1) ?? 'workout-1';
