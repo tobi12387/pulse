@@ -52,9 +52,10 @@ export function buildBriefingUserContentRich(
     ? `RISIKO-SIGNALE (Risk-Engine):\n${ctx.activeRiskSignals.map(r => `- [${r.severity.toUpperCase()}] ${r.title} (${r.ruleId})\n  Empfehlung: ${r.recommendation}`).join('\n')}`
     : 'RISIKO-SIGNALE (Risk-Engine): keine aktiven Signale.';
 
-  const actionsPart = nextBestActions.length > 0
-    ? `NÄCHSTE AKTIONEN:\n${nextBestActions.map(action => `- [${action.priority.toUpperCase()}] ${action.title}: ${action.reason} → ${action.cta} (${action.targetPath})`).join('\n')}`
-    : 'NÄCHSTE AKTIONEN: keine offenen Sofortaktionen.';
+  const briefingActions = nextBestActions.filter(action => action.priority === 'critical' || action.priority === 'high');
+  const actionsPart = briefingActions.length > 0
+    ? `NÄCHSTE AKTIONEN:\n${briefingActions.map(action => `- [${action.priority.toUpperCase()}] ${action.title}: ${action.reason} Erledigt durch: ${action.resolvedBy ?? action.cta} → ${action.cta} (${action.targetPath})`).join('\n')}`
+    : 'NÄCHSTE AKTIONEN: keine dringenden Sofortaktionen; normale Nudges bleiben auf Home.';
 
   const metricsPart = m
     ? `Pulse-Daten (${ctx.date}): Schlaf ${m.sleepHours ?? '–'}h (Score: ${m.sleepScore ?? '–'}), HRV ${m.hrvRmssd ?? '–'}ms (${m.hrvStatus ?? '–'}), Ruhepuls ${m.restingHr ?? '–'} bpm, Body Battery ${m.bodyBatteryMax ?? '–'}, Stress ${m.stressAvg ?? '–'}, Schritte ${m.steps ?? '–'}.`

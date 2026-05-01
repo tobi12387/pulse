@@ -47,7 +47,11 @@ describe('rankNextBestActions', () => {
       priority: 'critical',
       title: 'Kritisches Risk-Signal prüfen',
       targetPath: '/',
+      resolvedBy: 'Risk-Signal snoozen oder auflösen.',
+      evidence: ['rhr_drift_7d', 'critical'],
     });
+    expect(actions[1]?.resolvedBy).toContain('Check-in');
+    expect(actions[2]).toMatchObject({ source: 'rpe', evidence: expect.arrayContaining(['Plan-Zone 2']) });
   });
 
   it('adds push activation only when the server is configured and no device is active', () => {

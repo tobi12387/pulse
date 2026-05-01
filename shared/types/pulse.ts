@@ -537,6 +537,9 @@ export interface PulseNextBestAction {
   reason: string;
   cta: string;
   targetPath: string;
+  openedAt?: string | null;
+  resolvedBy?: string;
+  evidence?: string[];
 }
 
 export type EquipmentCategory =

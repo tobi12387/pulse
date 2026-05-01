@@ -249,6 +249,11 @@ function NextBestActionsCard({
                 <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
                   {action.reason}
                 </span>
+                {(action.resolvedBy || action.evidence?.length) && (
+                  <span style={{ display: 'block', marginTop: 4, fontSize: 10, color: 'var(--text-3)', lineHeight: 1.4 }}>
+                    {action.resolvedBy ? `Erledigt durch: ${action.resolvedBy}` : action.evidence?.slice(0, 2).join(' · ')}
+                  </span>
+                )}
               </span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, whiteSpace: 'nowrap' }}>
                 {action.cta} →

@@ -129,9 +129,11 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
     ctx.nextBestActions.forEach(action => {
       s += `\n[${action.priority.toUpperCase()}] ${action.title}`;
       s += `\nGrund: ${action.reason}`;
+      if (action.resolvedBy) s += `\nErledigt durch: ${action.resolvedBy}`;
       s += `\nCTA: ${action.cta} (${action.targetPath})`;
+      if (action.evidence?.length) s += `\nEvidence: ${action.evidence.join(' | ')}`;
     });
-    s += '\nWenn Tobi fragt, was als Nächstes ansteht, priorisiere diese Liste.';
+    s += '\nWenn Tobi fragt, was als Nächstes ansteht, priorisiere diese Liste. Bei fachfremden Fragen nur critical/high Actions erwähnen oder wenn sie direkt zur Frage passen.';
   }
 
   s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;
