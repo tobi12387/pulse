@@ -4,13 +4,14 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. All prior implementation plans through Phase 11 and the 2026-04-30 follow-up slices are merged, deployed, and moved to `completed/`.
+1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, and the Everyday Utility Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. Next active wave: `docs/superpowers/plans/2026-05-01-everyday-utility-wave.md`.
+3. No active implementation wave is selected. Create or approve the next plan in `docs/superpowers/plans/` before new feature work starts.
 
 ## Current PRs / Branches
 
-- `codex/mobile-density-qa`: active local branch for Slice 4 from the everyday utility wave.
+- `codex/everyday-utility-closeout`: active local branch for closing the completed Everyday Utility Wave docs.
+- `codex/mobile-density-qa`: merged and deployed via PR #51.
 - `codex/action-closure-review`: merged and deployed via PR #50.
 - `codex/plan-feedback-calibration`: merged and deployed via PR #49.
 - `codex/garmin-bounded-backfill`: merged and deployed via PR #48.
@@ -35,8 +36,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Slice 4 from the everyday utility wave: `codex/mobile-density-qa`.
-- After that, close the everyday utility wave with a status summary and pick the next plan only from active files in `docs/superpowers/plans/`.
+- Merge and deploy the closeout docs branch.
+- Then plan the next wave explicitly. Recommended candidates: authenticated browser E2E smoke tests, local test-environment hardening, and bundle/code-splitting cleanup.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

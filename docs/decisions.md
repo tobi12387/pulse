@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Everyday Utility Wave wird nach Slice 4 geschlossen
+
+- **Decision:** Nach PR #48 bis PR #51 gilt die Everyday Utility Wave als abgeschlossen und das Plan-Dokument wird nach `completed/` verschoben. Neue Feature-Arbeit startet erst wieder mit einem explizit aktiven Plan; die naechsten Kandidaten sind Browser-E2E-Smoke-Tests, lokale Test-Environment-Haertung und Bundle-/Code-Splitting-Cleanup.
+- **Why:** Backfill, Plan-Kalibrierung, Action Closure und Mobile-Density-Fixes sind gemergt und deployed. Ohne Closeout wuerde `current-focus` kuenftige AI-Sessions auf erledigte Slices lenken und Doppelarbeit beguenstigen.
+- **Alternatives:** Everyday Utility als aktiven Plan liegen lassen (Rebuild-Risiko); sofort ohne Plan in weitere Features springen (Scope-Drift); nur Chat-Zusammenfassung ohne Repo-Status (nicht belastbar fuer Claude/Codex).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Mobile-Density-QA bleibt ein gezielter Kernfluss-Pass
 
 - **Decision:** Slice 4 der Everyday Utility Wave begrenzt Mobile-Density-Fixes auf die zuletzt angefassten Kernfluesse Home Actions, Plan Trace, Data Coverage und Settings Backfill/Push-Status. Die Coverage-Tabelle darf auf Mobile horizontal scrollen; lange deutsche Status- und Evidence-Texte werden umbrochen statt gekuerzt.
