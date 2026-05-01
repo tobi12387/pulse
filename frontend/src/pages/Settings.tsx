@@ -9,6 +9,7 @@ import {
 import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
 import { getPushPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push-client';
+import { EquipmentList } from '@/components/EquipmentList';
 import type { PushTopic } from '@coaching-os/shared/pulse';
 
 interface GarminStatus {
@@ -312,6 +313,8 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      <EquipmentList setMessage={setMessage} />
 
       <PushNotificationsCard setMessage={setMessage} />
 

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { pulseApi } from './api-client.js';
-import type { NutritionLogInput } from './api-client.js';
+import type { EquipmentInput, NutritionLogInput, StrengthSessionInput } from './api-client.js';
+import type { PulseActivityType } from '@coaching-os/shared/pulse';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const pulseKeys = {
@@ -31,6 +32,9 @@ export const pulseKeys = {
   races:            ['pulse', 'races'] as const,
   syncStatus:       ['pulse', 'sync-status'] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
+  strengthSessions: (days: number, exercise: string | null) =>
+    ['pulse', 'strength', 'sessions', days, exercise] as const,
+  equipment:        ['pulse', 'equipment'] as const,
   nutrition: (workoutId: string | null, activityId: string | null) =>
     ['pulse', 'nutrition', workoutId, activityId] as const,
 };
@@ -128,13 +132,31 @@ export function useActivityFeedback(activityId: string) {
     mutationFn: (data: Parameters<typeof pulseApi.activities.updateFeedback>[1]) =>
       pulseApi.activities.updateFeedback(activityId, data),
     onSuccess: (data) => {
-      qc.setQueryData<{ activity: typeof data.activity }>(
+      qc.setQueryData<{ activity: typeof data.activity & { equipmentIds?: string[] } }>(
         pulseKeys.activityDetail(activityId),
-        (current) => current ? { ...current, activity: data.activity } : current,
+        (current) => current
+          ? { ...current, activity: { ...data.activity, equipmentIds: current.activity.equipmentIds ?? [] } }
+          : current,
       );
       qc.invalidateQueries({ queryKey: ['pulse', 'activities'] });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
       qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+    },
+  });
+}
+
+export function useAssignActivityEquipment(activityId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (equipmentIds: string[]) => pulseApi.activities.assignEquipment(activityId, equipmentIds),
+    onSuccess: (data) => {
+      qc.setQueryData<{ activity: { equipmentIds: string[] } }>(
+        pulseKeys.activityDetail(activityId),
+        (current) => current ? { ...current, activity: { ...current.activity, equipmentIds: data.equipmentIds } } : current,
+      );
+      void qc.invalidateQueries({ queryKey: pulseKeys.equipment });
+      void qc.invalidateQueries({ queryKey: pulseKeys.home });
+      void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
   });
 }
@@ -360,6 +382,104 @@ export function useUpdateWorkout() {
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof pulseApi.plan.updateWorkout>[1] }) =>
       pulseApi.plan.updateWorkout(id, data),
     onSuccess: () => invalidatePulsePlanContextQueries(qc),
+  });
+}
+
+export function useStrengthSessions(days = 90, exercise: string | null = null) {
+  return useQuery({
+    queryKey: pulseKeys.strengthSessions(days, exercise),
+    queryFn: () => pulseApi.strength.list(days, exercise ?? undefined),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useCreateStrengthSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: StrengthSessionInput) => pulseApi.strength.create(data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pulse', 'strength', 'sessions'] });
+      void qc.invalidateQueries({ queryKey: pulseKeys.trainingAnalytics(12) });
+      invalidatePulsePlanContextQueries(qc);
+    },
+  });
+}
+
+export function useUpdateStrengthSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<StrengthSessionInput> }) =>
+      pulseApi.strength.update(id, data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pulse', 'strength', 'sessions'] });
+      invalidatePulsePlanContextQueries(qc);
+    },
+  });
+}
+
+export function useDeleteStrengthSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pulseApi.strength.delete(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pulse', 'strength', 'sessions'] });
+      invalidatePulsePlanContextQueries(qc);
+    },
+  });
+}
+
+export function useEquipment(includeRetired = false) {
+  return useQuery({
+    queryKey: includeRetired ? [...pulseKeys.equipment, 'retired'] as const : pulseKeys.equipment,
+    queryFn: () => pulseApi.equipment.list(includeRetired),
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateEquipment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: EquipmentInput) => pulseApi.equipment.create(data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.equipment });
+      invalidatePulseContextQueries(qc);
+    },
+  });
+}
+
+export function useUpdateEquipment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<EquipmentInput> }) =>
+      pulseApi.equipment.update(id, data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.equipment });
+      invalidatePulseContextQueries(qc);
+    },
+  });
+}
+
+export function useRetireEquipment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, retirementDate }: { id: string; retirementDate?: string }) =>
+      pulseApi.equipment.retire(id, retirementDate),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.equipment });
+      invalidatePulseContextQueries(qc);
+    },
+  });
+}
+
+export function useSetEquipmentDefault() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ activityType, equipmentId }: { activityType: PulseActivityType; equipmentId: string }) =>
+      pulseApi.equipment.setDefault(activityType, equipmentId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.equipment });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 

@@ -6,6 +6,8 @@ import type {
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
   PulsePushSettings, PulsePushTopics,
+  EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
+  PulseStrengthSession, PulseStrengthTrendPoint,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -128,7 +130,7 @@ export const pulseApi = {
     list: (limit = 10): Promise<{ activities: PulseActivity[] }> =>
       request(`/activities?limit=${limit}`),
     detail: (id: string): Promise<{
-      activity: PulseActivity & { externalId: string | null };
+      activity: PulseActivity & { externalId: string | null; equipmentIds: string[] };
       laps: Array<{
         index: number; distanceM: number | null; durationSec: number | null;
         avgHr: number | null; maxHr: number | null; avgPowerW: number | null;
@@ -140,6 +142,32 @@ export const pulseApi = {
       request(`/activities/${id}`),
     updateFeedback: (id: string, data: ActivityFeedbackInput): Promise<{ activity: PulseActivity & { externalId: string | null } }> =>
       request(`/activities/${id}/feedback`, { method: 'PATCH', body: JSON.stringify(data) }),
+    assignEquipment: (id: string, equipmentIds: string[]): Promise<{ activityId: string; equipmentIds: string[]; kmAdded: number }> =>
+      request(`/activities/${id}/equipment`, { method: 'PUT', body: JSON.stringify({ equipmentIds }) }),
+  },
+
+  strength: {
+    list: (days = 90, exercise?: string): Promise<{ sessions: PulseStrengthSession[]; trends: PulseStrengthTrendPoint[] }> =>
+      request(`/strength/sessions?days=${days}${exercise ? `&exercise=${encodeURIComponent(exercise)}` : ''}`),
+    create: (data: StrengthSessionInput): Promise<PulseStrengthSession> =>
+      request('/strength/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<StrengthSessionInput>): Promise<PulseStrengthSession> =>
+      request(`/strength/sessions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<void> =>
+      request(`/strength/sessions/${id}`, { method: 'DELETE' }),
+  },
+
+  equipment: {
+    list: (includeRetired = false): Promise<{ equipment: PulseEquipment[]; defaults: PulseEquipmentDefault[] }> =>
+      request(`/equipment?includeRetired=${includeRetired}`),
+    create: (data: EquipmentInput): Promise<PulseEquipment> =>
+      request('/equipment', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<EquipmentInput>): Promise<PulseEquipment> =>
+      request(`/equipment/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    retire: (id: string, retirementDate?: string): Promise<PulseEquipment> =>
+      request(`/equipment/${id}/retire`, { method: 'POST', body: JSON.stringify(retirementDate ? { retirementDate } : {}) }),
+    setDefault: (activityType: PulseActivityType, equipmentId: string): Promise<PulseEquipmentDefault> =>
+      request(`/equipment/defaults/${activityType}`, { method: 'PUT', body: JSON.stringify({ equipmentId }) }),
   },
 
   plan: {
@@ -320,6 +348,35 @@ export interface NutritionLogInput {
   carbsG?: number; gelsCount?: number; drinksMl?: number; sodiumMg?: number;
   calories?: number; proteinG?: number; fatG?: number;
   description?: string; notes?: string;
+}
+
+// ─── Phase 10: Strength + Equipment inputs ──────────────────────────────────
+export interface StrengthSetInput {
+  exercise: string;
+  setNumber?: number;
+  reps: number;
+  weightKg?: number | null;
+  rpe?: number | null;
+}
+
+export interface StrengthSessionInput {
+  date?: string;
+  plannedWorkoutId?: string | null;
+  durationMin?: number | null;
+  notes?: string | null;
+  sets: StrengthSetInput[];
+}
+
+export interface EquipmentInput {
+  name: string;
+  category: EquipmentCategory;
+  parentEquipmentId?: string | null;
+  activityTypes: PulseActivityType[];
+  installedDate: string;
+  initialKm?: number | null;
+  retirementKm?: number | null;
+  retirementDate?: string | null;
+  notes?: string | null;
 }
 
 // ─── Phase 6 types ───────────────────────────────────────────────────────────
