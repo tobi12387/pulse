@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/ux-slice-a-insights`: active branch for UI/UX Slice A, covering Insights on-demand loading, friendly error states, and usability E2E coverage.
+- `codex/ux-slice-a-closeout`: active branch for marking UI/UX Slice A as merged and deployed.
 - Recent completed branches:
+- `codex/ux-slice-a-insights`: merged and deployed via PR #61.
 - `codex/ux-usability-plans`: merged and deployed via PR #60.
 - `codex/reliability-wave-closeout`: merged and deployed via PR #58.
 - `codex/bundle-code-splitting`: merged and deployed via PR #57.
@@ -45,8 +46,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy UI/UX Slice A: usability E2E foundation plus Insights raw-error guard.
-- Then implement Home/Coach daily flow, Plan decision flow, Data/Settings trust, and visual density pass in separate PRs.
+- Start UI/UX Slice B: Home/Coach daily flow.
+- Then implement Plan decision flow, Data/Settings trust, and visual density pass in separate PRs.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
