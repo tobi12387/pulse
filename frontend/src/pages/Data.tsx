@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
-import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse } from '@coaching-os/shared/pulse';
+import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse, PulseSleepSession } from '@coaching-os/shared/pulse';
 
 type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
@@ -742,10 +742,91 @@ function MetricCard({ label, values, labels, latest, suffix, color }: {
   );
 }
 
+type RecoveryMetricRow = {
+  date: string;
+  bodyBatteryAtWake?: number | null;
+  bodyBatteryCharged?: number | null;
+  bodyBatteryDrained?: number | null;
+  highStressSec?: number | null;
+  latestSpo2?: number | null;
+  avgWakingRespiration?: number | null;
+  moderateIntensityMin?: number | null;
+  vigorousIntensityMin?: number | null;
+};
+
+function fmtMinutes(min: number | null | undefined): string {
+  return min == null ? '–' : `${Math.round(min)} min`;
+}
+
+function fmtHoursFromSec(sec: number | null | undefined): string {
+  return sec == null ? '–' : `${(sec / 3600).toFixed(1)}h`;
+}
+
+function RecoveryDepthCard({ metrics, sessions }: { metrics: RecoveryMetricRow[]; sessions: PulseSleepSession[] }) {
+  const latestMetric = metrics.at(-1);
+  const latestSleep = sessions[0];
+  const sleepNeedGap = latestSleep?.sleepNeedMin != null && latestSleep.sleepActualMin != null
+    ? Math.max(0, latestSleep.sleepNeedMin - latestSleep.sleepActualMin)
+    : null;
+  const charged = latestMetric?.bodyBatteryCharged ?? null;
+  const drained = latestMetric?.bodyBatteryDrained ?? null;
+  const intensityMin = (latestMetric?.moderateIntensityMin ?? 0) + (latestMetric?.vigorousIntensityMin ?? 0);
+
+  const rows = [
+    {
+      label: 'Schlafbedarf',
+      value: sleepNeedGap != null ? `${fmtMinutes(sleepNeedGap)} offen` : '–',
+      sub: latestSleep?.sleepNeedMin != null ? `Bedarf ${fmtMinutes(latestSleep.sleepNeedMin)}` : 'nicht geliefert',
+    },
+    {
+      label: 'Body Battery Ladung',
+      value: charged != null || drained != null ? `+${charged ?? 0} / -${drained ?? 0}` : '–',
+      sub: latestMetric?.bodyBatteryAtWake != null ? `Aufwachen ${latestMetric.bodyBatteryAtWake}%` : 'Aufwachen offen',
+    },
+    {
+      label: 'Stress hoch',
+      value: fmtHoursFromSec(latestMetric?.highStressSec),
+      sub: latestMetric?.avgWakingRespiration != null ? `Resp. ${latestMetric.avgWakingRespiration.toFixed(1)}` : 'Resp. offen',
+    },
+    {
+      label: 'SpO2',
+      value: latestMetric?.latestSpo2 != null ? `${latestMetric.latestSpo2.toFixed(0)}%` : '–',
+      sub: intensityMin > 0 ? `Intensität ${intensityMin} min` : 'Intensität offen',
+    },
+  ];
+
+  return (
+    <div className="card" style={{ padding: '10px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 10 }}>
+        <span className="label-mono">Recovery Depth</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {latestMetric?.date ?? latestSleep?.date ?? '–'}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 8 }}>
+        {rows.map(row => (
+          <div key={row.label} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              {row.label}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--text)', marginTop: 3 }}>
+              {row.value}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+              {row.sub}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MetrikenTab() {
   const [days, setDays] = useState(30);
   const { data, isLoading } = usePulseMetrics(days);
-  if (isLoading) return <Loading />;
+  const { data: sleepData, isLoading: sleepLoading } = usePulseSleep(days);
+  if (isLoading || sleepLoading) return <Loading />;
   const rows = data?.metrics ?? [];
   if (rows.length === 0) return <Empty msg="Noch keine Daten — Garmin sync." />;
 
@@ -759,6 +840,7 @@ function MetrikenTab() {
         <RangePicker value={days} onChange={setDays} options={RANGE_OPTS} />
       </div>
 
+      <RecoveryDepthCard metrics={rows} sessions={sleepData?.sessions ?? []} />
       <MetricCard label="HRV (ms)"         values={rows.map(r => r.hrvRmssd)}      labels={labels} latest={last?.hrvRmssd ?? null}      color="var(--accent)" />
       <MetricCard label="Ruhepuls (bpm)"   values={rows.map(r => r.restingHr)}     labels={labels} latest={last?.restingHr ?? null}     color="var(--rose)" />
       <MetricCard label="Body Battery"     values={rows.map(r => r.bodyBatteryMax)} labels={labels} latest={last?.bodyBatteryMax ?? null} suffix="%" color="var(--green)" />

@@ -38,7 +38,20 @@ export interface PulseDailyMetrics {
   sleepScore: number | null;
   bodyBatteryMin: number | null;
   bodyBatteryMax: number | null;
+  bodyBatteryCharged: number | null;
+  bodyBatteryDrained: number | null;
+  bodyBatteryHighest: number | null;
+  bodyBatteryLowest: number | null;
+  bodyBatteryAtWake: number | null;
   stressAvg: number | null;
+  maxStress: number | null;
+  lowStressSec: number | null;
+  mediumStressSec: number | null;
+  highStressSec: number | null;
+  moderateIntensityMin: number | null;
+  vigorousIntensityMin: number | null;
+  avgWakingRespiration: number | null;
+  latestSpo2: number | null;
   steps: number | null;
   caloriesActive: number | null;
   source: string;
@@ -57,6 +70,14 @@ export interface PulseSleepSession {
   lightSleepH: number | null;
   awakeH: number | null;
   sleepScore: number | null;
+  sleepNeedMin: number | null;
+  sleepActualMin: number | null;
+  avgSleepStress: number | null;
+  avgSleepHr: number | null;
+  avgRespiration: number | null;
+  restlessMoments: number | null;
+  bodyBatteryChange: number | null;
+  breathingDisruptionIndex: number | null;
   quality: 'poor' | 'fair' | 'good' | 'excellent' | null;
   source: string;
 }
@@ -401,7 +422,7 @@ export interface PulseStreaks {
 }
 
 export interface PulseRecoveryMetrics {
-  sleepDebt7d:    { hours: number; targetH: number; baselineSource: 'adaptive' | 'fixed_default'; status: 'ok' | 'mild' | 'severe' };
+  sleepDebt7d:    { hours: number; targetH: number; baselineSource: 'adaptive' | 'fixed_default' | 'garmin_sleep_need'; status: 'ok' | 'mild' | 'severe' };
   hrvDeviation7d: { pct: number; recentMs: number | null; baselineMs: number | null; status: 'recovering' | 'stable' | 'declining' };
   rhrDrift7d:     { bpmAboveBaseline: number; recent: number | null; baseline: number | null; status: 'normal' | 'elevated' };
   recoveryScore:  number;

@@ -9,13 +9,15 @@ Keep this file short. Update it whenever the active work queue changes.
 3. Garmin repeat sync was fixed in PR #78 and is no longer the active branch.
 4. Garmin data/iPhone/PWA roadmap baseline was merged and deployed via PR #79.
 5. Garmin Raw Preservation was merged and deployed via PR #80.
-6. Active implementation branch: `codex/garmin-execution-reconciliation`.
-7. Active implementation wave: `docs/superpowers/plans/2026-05-01-garmin-data-enrichment-wave.md`, Task 2 Garmin Execution Reconciliation.
+6. Garmin Execution Reconciliation was merged and deployed via PR #81.
+7. Active implementation branch: `codex/garmin-recovery-depth`.
+8. Active implementation wave: `docs/superpowers/plans/2026-05-01-garmin-data-enrichment-wave.md`, Task 3 Recovery Data Depth.
 
 ## Current PRs / Branches
 
-- `codex/garmin-execution-reconciliation`: active Garmin execution-state branch.
+- `codex/garmin-recovery-depth`: active Garmin recovery-depth branch.
 - Recent completed branches:
+- `codex/garmin-execution-reconciliation`: merged and deployed via PR #81.
 - `codex/garmin-raw-preservation`: merged and deployed via PR #80.
 - `codex/garmin-data-ux-roadmap`: merged and deployed via PR #79.
 - `codex/garmin-repeat-sync`: merged and deployed via PR #78.
@@ -68,8 +70,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/garmin-execution-reconciliation`.
-- After execution reconciliation, start Recovery Data Depth before expanding plan personalization.
+- Finish, PR, merge and deploy `codex/garmin-recovery-depth`.
+- After Recovery Data Depth, continue with Training Metadata And Profile Quality before expanding plan personalization.
 - Use `docs/superpowers/plans/2026-05-01-iphone-pwa-readiness.md` for any iPhone/VPN/PWA follow-up; the current branch contains the first baseline.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.

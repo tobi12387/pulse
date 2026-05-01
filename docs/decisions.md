@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Garmin-Recovery-Depth bleibt optional, erklärend und raw-snapshot-getrennt
+
+- **Decision:** Erweiterte Garmin-Recovery-Signale werden additiv und nullable gespeichert: Sleep-Need/Actual, Schlafstress/HR/Respiration/Body-Battery-Change in `pulse_sleep_sessions`; Body-Battery Charge/Drain/Highest/Lowest/AtWake, Stressdauer, Intensitätsminuten, Respiration und SpO2 in `pulse_daily_metrics`. `bodyBatteryMax` bleibt aus Kompatibilitaetsgruenden der bisherige "most recent"-Wert; echte Tages-Extrema landen in `bodyBatteryHighest`/`bodyBatteryLowest`.
+- **Why:** Garmin liefert diese Felder nicht immer und die Payload-Namen sind nicht stabil dokumentiert. Pulse soll Syncs deshalb nicht abbrechen, sondern vorhandene Signale erklaeren und konservativ in Recovery/Risk einbeziehen.
+- **Alternatives:** Live-Garmin-Probing fuer jede Ansicht (Rate-Limit- und Latenzrisiko); bestehende Body-Battery-Semantik heimlich umdeuten (Regression in Readiness/Charts); Raw-Garmin-Payloads direkt im Frontend anzeigen (zu laut und fachlich wenig handlungsorientiert).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Workout-Ausführung bekommt eigenes Garmin-Reconciliation-Statusmodell
 
 - **Decision:** Geplante Workouts behalten `status` fuer bestehende Planlogik, bekommen aber zusaetzlich nullable Execution-Felder (`execution_status`, `execution_matched_at`, `execution_match_confidence`, `execution_notes`). Die sechs UI-Zustaende sind `Lokal`, `Garmin`, `Kalender`, `Erledigt`, `Verpasst` und `Ersetzt`; `completed_activity_id` bleibt der kanonische Link zur ausgefuehrten Garmin-Aktivitaet.

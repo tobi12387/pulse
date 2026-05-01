@@ -338,7 +338,14 @@ export const pulseApi = {
     list: (days = 14): Promise<{ metrics: Array<{
       date: string; hrvRmssd: number | null; restingHr: number | null;
       sleepHours: number | null; sleepScore: number | null;
-      bodyBatteryMax: number | null; stressAvg: number | null; steps: number | null;
+      bodyBatteryMax: number | null; bodyBatteryAtWake: number | null;
+      bodyBatteryCharged: number | null; bodyBatteryDrained: number | null;
+      bodyBatteryHighest: number | null; bodyBatteryLowest: number | null;
+      stressAvg: number | null; maxStress: number | null;
+      lowStressSec: number | null; mediumStressSec: number | null; highStressSec: number | null;
+      moderateIntensityMin: number | null; vigorousIntensityMin: number | null;
+      avgWakingRespiration: number | null; latestSpo2: number | null;
+      steps: number | null;
     }> }> =>
       request(`/metrics?days=${days}`),
   },

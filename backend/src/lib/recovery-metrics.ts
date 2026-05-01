@@ -8,7 +8,7 @@
 export interface SleepDebt {
   hours: number;                      // sum(baseline - actual) over last 7 days, negative = surplus
   targetH: number;                    // baseline used (adaptive median of days 8-60, or default if too little data)
-  baselineSource: 'adaptive' | 'fixed_default';
+  baselineSource: 'adaptive' | 'fixed_default' | 'garmin_sleep_need';
   status: 'ok' | 'mild' | 'severe';   // <2h ok, 2-5h mild, >5h severe (vs personal baseline)
 }
 
@@ -36,7 +36,17 @@ export interface RecoveryMetrics {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-interface Sample { sleepHours: number | null; hrvRmssd: number | null; restingHr: number | null }
+interface Sample {
+  sleepHours: number | null;
+  hrvRmssd: number | null;
+  restingHr: number | null;
+  sleepNeedMin?: number | null;
+  sleepActualMin?: number | null;
+  highStressSec?: number | null;
+  bodyBatteryAtWake?: number | null;
+  bodyBatteryCharged?: number | null;
+  bodyBatteryDrained?: number | null;
+}
 
 function avg(values: number[]): number {
   if (values.length === 0) return 0;
@@ -81,6 +91,22 @@ function computeAdaptiveBaseline(samples: Sample[], fallbackH: number): { h: num
 }
 
 function computeSleepDebt(samples: Sample[], fallbackTargetH: number): SleepDebt {
+  const sleepNeedRows = samples.slice(0, 7).filter(s =>
+    typeof s.sleepNeedMin === 'number' &&
+    Number.isFinite(s.sleepNeedMin) &&
+    typeof s.sleepActualMin === 'number' &&
+    Number.isFinite(s.sleepActualMin)
+  );
+  if (sleepNeedRows.length >= 3) {
+    let debtMin = sleepNeedRows.reduce((sum, row) =>
+      sum + Math.max(0, (row.sleepNeedMin ?? 0) - (row.sleepActualMin ?? 0)), 0);
+    if (sleepNeedRows.length < 7) debtMin = (debtMin / sleepNeedRows.length) * 7;
+    const hours = Math.round((debtMin / 60) * 10) / 10;
+    const targetH = Math.round(avg(sleepNeedRows.map(row => (row.sleepNeedMin ?? 0) / 60)) * 10) / 10;
+    const status: SleepDebt['status'] = hours < 2 ? 'ok' : hours < 5 ? 'mild' : 'severe';
+    return { hours, targetH, baselineSource: 'garmin_sleep_need', status };
+  }
+
   const baseline = computeAdaptiveBaseline(samples, fallbackTargetH);
   const targetH = baseline.h;
 
@@ -155,7 +181,7 @@ function computeRhrDrift(samples: Sample[]): RhrDrift {
 
 // ─── Composite recovery score ────────────────────────────────────────────────
 
-function computeRecoveryScore(d: SleepDebt, h: HrvDeviation, r: RhrDrift): number {
+function computeRecoveryScore(d: SleepDebt, h: HrvDeviation, r: RhrDrift, samples: Sample[]): number {
   // sleep factor: 100 at debt=0, linear -10/hour shortfall, surplus capped at 100
   const sleepFactor = Math.max(0, 100 - Math.max(0, d.hours) * 10);
   // hrv factor: 100 at +10%, linear -3 per pct point below 0
@@ -167,21 +193,37 @@ function computeRecoveryScore(d: SleepDebt, h: HrvDeviation, r: RhrDrift): numbe
     r.recent == null || r.baseline == null ? 60 :
     Math.max(0, 100 - r.bpmAboveBaseline * 8);
 
-  const score = sleepFactor * 0.4 + hrvFactor * 0.4 + rhrFactor * 0.2;
-  return Math.round(score);
+  const highStressAvg = avgN(samples.slice(0, 7).map(s => s.highStressSec));
+  const wakeBatteryAvg = avgN(samples.slice(0, 7).map(s => s.bodyBatteryAtWake));
+  const stressPenalty = highStressAvg != null && highStressAvg >= 5400 ? 5 : 0;
+  const batteryPenalty = wakeBatteryAvg != null && wakeBatteryAvg < 35 ? 5 : 0;
+
+  const score = sleepFactor * 0.4 + hrvFactor * 0.4 + rhrFactor * 0.2 - stressPenalty - batteryPenalty;
+  return Math.max(0, Math.round(score));
 }
 
-function buildRecommendation(d: SleepDebt, h: HrvDeviation, r: RhrDrift, score: number): string {
+function buildRecommendation(d: SleepDebt, h: HrvDeviation, r: RhrDrift, score: number, samples: Sample[]): string {
   // Pick the dominant deficit
   const issues: { weight: number; msg: string }[] = [];
 
-  if (d.status === 'severe')      issues.push({ weight: 3, msg: `Schlafdefizit ${d.hours.toFixed(1)}h — heute Z2 statt Z4, 8.5h Schlaf anpeilen` });
-  else if (d.status === 'mild')   issues.push({ weight: 2, msg: `Schlafrückstand ${d.hours.toFixed(1)}h — eine Z2-Einheit reicht heute, früh ins Bett` });
+  const sleepLabel = d.baselineSource === 'garmin_sleep_need' ? 'Schlafbedarf-Lücke' : 'Schlafdefizit';
+  if (d.status === 'severe')      issues.push({ weight: 3, msg: `${sleepLabel} ${d.hours.toFixed(1)}h — heute Z2 statt Z4, 8.5h Schlaf anpeilen` });
+  else if (d.status === 'mild')   issues.push({ weight: 2, msg: `${sleepLabel} ${d.hours.toFixed(1)}h — eine Z2-Einheit reicht heute, früh ins Bett` });
 
   if (h.status === 'declining')   issues.push({ weight: 3, msg: `HRV ${h.pct.toFixed(1)}% unter 30d-Baseline — Intensität diese Woche reduzieren` });
   else if (h.status === 'recovering' && score >= 75) issues.push({ weight: 1, msg: 'HRV im Aufwärtstrend — Intensität geht klar' });
 
   if (r.status === 'elevated')    issues.push({ weight: 3, msg: `Ruhepuls +${r.bpmAboveBaseline.toFixed(0)} bpm über Baseline — Erkältungsanzeichen, Z1 oder Pause` });
+
+  const highStressAvg = avgN(samples.slice(0, 7).map(s => s.highStressSec));
+  if (highStressAvg != null && highStressAvg >= 5400) {
+    issues.push({ weight: 2, msg: 'Hohe Stressdauer in den letzten Tagen — Intensität nur mit gutem Tagesgefühl.' });
+  }
+
+  const wakeBatteryAvg = avgN(samples.slice(0, 7).map(s => s.bodyBatteryAtWake));
+  if (wakeBatteryAvg != null && wakeBatteryAvg < 35) {
+    issues.push({ weight: 2, msg: 'Body Battery morgens niedrig — Training eher locker halten.' });
+  }
 
   if (issues.length === 0) {
     if (score >= 80)  return 'Recovery exzellent — geplante Intensität voll umsetzen.';
@@ -205,8 +247,8 @@ export function computeRecovery(args: {
   const sleepDebt7d   = computeSleepDebt(samples, targetH);
   const hrvDeviation7d = computeHrvDeviation(samples);
   const rhrDrift7d    = computeRhrDrift(samples);
-  const recoveryScore = computeRecoveryScore(sleepDebt7d, hrvDeviation7d, rhrDrift7d);
-  const recommendation = buildRecommendation(sleepDebt7d, hrvDeviation7d, rhrDrift7d, recoveryScore);
+  const recoveryScore = computeRecoveryScore(sleepDebt7d, hrvDeviation7d, rhrDrift7d, samples);
+  const recommendation = buildRecommendation(sleepDebt7d, hrvDeviation7d, rhrDrift7d, recoveryScore, samples);
 
   return { sleepDebt7d, hrvDeviation7d, rhrDrift7d, recoveryScore, recommendation };
 }

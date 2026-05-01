@@ -12,6 +12,8 @@ type MockPulseApiOptions = {
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
   pushSettings?: unknown;
+  metrics?: unknown[];
+  sleepSessions?: unknown[];
   onRequest?: (pathname: string, method: string) => void;
 };
 
@@ -138,8 +140,44 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/metrics') {
     return {
       metrics: [
-        { date: today, hrvRmssd: 51, restingHr: 49, sleepHours: 7.4, sleepScore: 82, bodyBatteryMax: 78, stressAvg: 24, steps: 8400 },
-        { date: '2026-04-30', hrvRmssd: 49, restingHr: 50, sleepHours: 7.1, sleepScore: 79, bodyBatteryMax: 75, stressAvg: 28, steps: 7200 },
+        {
+          date: today,
+          hrvRmssd: 51,
+          restingHr: 49,
+          sleepHours: 7.4,
+          sleepScore: 82,
+          bodyBatteryMax: 78,
+          bodyBatteryAtWake: 72,
+          bodyBatteryCharged: 46,
+          bodyBatteryDrained: 38,
+          stressAvg: 24,
+          maxStress: 68,
+          highStressSec: 1800,
+          moderateIntensityMin: 32,
+          vigorousIntensityMin: 12,
+          avgWakingRespiration: 14.4,
+          latestSpo2: 96,
+          steps: 8400,
+        },
+        {
+          date: '2026-04-30',
+          hrvRmssd: 49,
+          restingHr: 50,
+          sleepHours: 7.1,
+          sleepScore: 79,
+          bodyBatteryMax: 75,
+          bodyBatteryAtWake: 68,
+          bodyBatteryCharged: 42,
+          bodyBatteryDrained: 44,
+          stressAvg: 28,
+          maxStress: 74,
+          highStressSec: 2700,
+          moderateIntensityMin: 20,
+          vigorousIntensityMin: 0,
+          avgWakingRespiration: 14.8,
+          latestSpo2: 95,
+          steps: 7200,
+        },
       ],
     };
   }
@@ -152,7 +190,35 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
   if (pathname === '/api/pulse/plan/today/proposal') return { proposal: null };
   if (pathname === '/api/pulse/races') return { races: [] };
-  if (pathname === '/api/pulse/sleep') return { sessions: [] };
+  if (pathname === '/api/pulse/sleep') {
+    return {
+      sessions: [
+        {
+          id: 'sleep-1',
+          userId: 'user-1',
+          date: today,
+          startTime: '2026-04-30T21:42:00.000Z',
+          endTime: '2026-05-01T05:50:00.000Z',
+          durationH: 8.1,
+          deepSleepH: 1.5,
+          remSleepH: 1.7,
+          lightSleepH: 4.4,
+          awakeH: 0.5,
+          sleepScore: 82,
+          sleepNeedMin: 510,
+          sleepActualMin: 488,
+          avgSleepStress: 17,
+          avgSleepHr: 48,
+          avgRespiration: 13.8,
+          restlessMoments: 24,
+          bodyBatteryChange: 51,
+          breathingDisruptionIndex: 3.2,
+          quality: null,
+          source: 'garmin',
+        },
+      ],
+    };
+  }
   if (pathname === '/api/pulse/activities') return { activities: [] };
   if (pathname === '/api/pulse/weight') return { entries: [] };
   if (pathname === '/api/pulse/data-coverage') {
@@ -284,6 +350,8 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, { error: 'Internal Server Error' }, 500);
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
+    if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
+    if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/garmin/backfill' && request.method() === 'POST' && options.backfillResult) {
       const body = request.postDataJSON();

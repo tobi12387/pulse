@@ -75,6 +75,25 @@ describe('evaluateRiskSignalsFromData', () => {
     expect(signals.find(s => s.ruleId === 'sleep_debt_5d')?.severity).toBe('critical');
   });
 
+  it('uses Garmin sleep need gaps for sleep debt when available', () => {
+    const daily = Array.from({ length: 5 }, (_, i) => ({
+      ...dailyRow(i, { sleepHours: 7.6 }),
+      sleepNeedMin: 540,
+      sleepActualMin: 390,
+    }));
+    const signals = evaluateRiskSignalsFromData({
+      today: '2026-03-05',
+      daily,
+      mental: [],
+      ctlNow: 40,
+      ctl7dAgo: 38,
+      sleepTargetH: 8,
+    });
+    const sleep = signals.find(s => s.ruleId === 'sleep_debt_5d');
+    expect(sleep?.severity).toBe('critical');
+    expect(sleep?.metric.sleepNeedGapH).toBeGreaterThan(12);
+  });
+
   it('triggers mental warning but never critical', () => {
     const mental = Array.from({ length: 4 }, (_, i) => ({
       date: dailyRow(i).date,
