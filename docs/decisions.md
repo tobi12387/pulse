@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Workout-Ausführung darf nicht von LLM-Verfügbarkeit abhängen
+
+- **Decision:** Strukturierte Workout-Steps bekommen einen deterministischen HR-first-Fallback. Garmin-Upload nutzt diese Steps, wenn die LLM-Detailgenerierung wegen Provider-/Budgetfehlern, leerer Antwort oder ungültigem JSON nicht verfügbar ist.
+- **Why:** Der Server zeigte OpenRouter `402`; dadurch blieben geplante Workouts ohne Steps und konnten nicht zuverlässig zu Garmin/Edge/Uhr synchronisiert werden. Die LLM-Schicht darf Coaching-Qualität verbessern, aber nicht die Ausführbarkeit des Plans blockieren.
+- **Alternatives:** LLM-Fehler nur in der UI anzeigen (Plan bleibt nicht ausführbar); Garmin-Sync bei fehlenden Steps abbrechen (aktuelles Problem bleibt); alle Garmin-Syncs ausschließlich manuell erzwingen (zu wenig Alltagsnutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Plan-Alternativen erweitern Workout-PATCH statt neuen Alternativen-Service
 
 - **Decision:** Plan Alternatives 2.0 nutzt die bestehende Workout-Aktualisierung und erweitert sie um `plannedDate`, `status` und `description`. Die Plan-UI berechnet die ersten semantischen Alternativen deterministisch im Frontend aus Workout, Verfügbarkeit, Zielen und PlanTrace-Kontext.

@@ -894,6 +894,39 @@ describe('POST /api/pulse/plan/workout/:id/detail', () => {
     expect(steps[1]).toMatchObject({ targetHrMinBpm: 139, targetHrMaxBpm: 150, targetLabel: '139-150 bpm' });
     expect(steps[1]!.description).toContain('HR 139-150 bpm');
   });
+
+  it('falls back to deterministic HR-first steps when LLM detail generation is unavailable', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      updatedAt: new Date(),
+    });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-04',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 60,
+      targetTss: 86,
+      description: 'Schwellenreiz',
+    }).returning();
+    vi.mocked(llmComplete).mockRejectedValueOnce(new Error('OpenRouter error: 402'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/detail`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ workout: { steps: Array<{ type: string; targetLabel?: string; targetHrMinBpm?: number; targetHrMaxBpm?: number }> } }>();
+    expect(body.workout.steps.length).toBeGreaterThan(0);
+    expect(body.workout.steps.some(step => step.type === 'interval')).toBe(true);
+    expect(body.workout.steps.every(step => step.targetLabel != null)).toBe(true);
+    expect(body.workout.steps.some(step => step.targetHrMinBpm != null || step.targetHrMaxBpm != null)).toBe(true);
+  });
 });
 
 describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
@@ -925,6 +958,46 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
       workoutSegments: Array<{ workoutSteps: Array<{ targetType: { workoutTargetTypeKey: string }; zoneNumber: number | null }> }>;
     };
     const steps = payload.workoutSegments[0]!.workoutSteps;
+    expect(steps.map(s => s.targetType.workoutTargetTypeKey)).toEqual([
+      'heart.rate.zone',
+      'heart.rate.zone',
+      'heart.rate.zone',
+    ]);
+    expect(steps.map(s => s.zoneNumber)).toEqual([1, 2, 1]);
+  });
+
+  it('uploads deterministic Garmin steps when a workout has no steps and LLM is unavailable', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      updatedAt: new Date(),
+    });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-04',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 80,
+      targetTss: 65,
+      description: 'Aerobe Grundlage',
+    }).returning();
+    vi.mocked(llmComplete).mockRejectedValueOnce(new Error('OpenRouter error: 402'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/sync-garmin`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
+    const payload = garminMocks.addWorkout.mock.calls[0]![0] as {
+      workoutSegments: Array<{ workoutSteps: Array<{ targetType: { workoutTargetTypeKey: string }; zoneNumber: number | null }> }>;
+    };
+    const steps = payload.workoutSegments[0]!.workoutSteps;
+    expect(steps.length).toBeGreaterThan(0);
     expect(steps.map(s => s.targetType.workoutTargetTypeKey)).toEqual([
       'heart.rate.zone',
       'heart.rate.zone',

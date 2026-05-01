@@ -585,6 +585,15 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
               borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
             }}>Z{w.zone}</span>
             {w.status === 'completed' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--green)' }}>✓</span>}
+            {w.status === 'planned' && (
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: w.garminWorkoutId ? 'var(--green)' : 'var(--amber)',
+              }}>
+                {w.garminWorkoutId ? '✓ Garmin' : 'Garmin offen'}
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>
