@@ -18,11 +18,11 @@
 
 ---
 
-## 2026-05-01 — Pulse ist Codex-only und nutzt OpenAI-Modelle als Defaults
+## 2026-05-01 — Pulse ist Codex-only und nutzt aktuelle OpenRouter-Defaults
 
-- **Decision:** Pulse entfernt die verbliebenen Referenzen auf den vorherigen AI-Coding-Workflow aus aktiver Doku, historischen Handoff-Texten und Modell-Defaults. OpenRouter bleibt der Provider-Pfad; `FAST_MODEL` und `SMART_MODEL` zeigen standardmaessig auf OpenAI-Modell-IDs und bleiben per Env ueberschreibbar.
-- **Why:** Tobi moechte nicht mehr mit dem vorherigen AI-Coding-Tool arbeiten. Ein Codex-only Repo reduziert Drift, und providerneutrale bzw. OpenAI-basierte Defaults verhindern, dass alte Tool- oder Modellnamen neue Sessions verwirren.
-- **Alternatives:** Nur aktive Regeln bereinigen (alte Treffer bleiben bei Suche sichtbar); Modell-Defaults unveraendert lassen (Runtime wuerde weiter den alten Providerpfad bevorzugen); OpenRouter entfernen (zu grosser Scope, da `backend/src/lib/llm.ts` bereits der zentrale LLM-Pfad ist).
+- **Decision:** Pulse entfernt die verbliebenen Referenzen auf den vorherigen AI-Coding-Workflow aus aktiver Doku, historischen Handoff-Texten und Modell-Defaults. OpenRouter bleibt der Provider-Pfad; `FAST_MODEL` nutzt `openai/gpt-5-mini`, `SMART_MODEL` nutzt `openai/gpt-5.5`, beide bleiben per Env ueberschreibbar.
+- **Why:** Tobi moechte nicht mehr mit dem vorherigen AI-Coding-Tool arbeiten. Ein Codex-only Repo reduziert Drift; die Modell-Defaults muessen ausserdem gegen OpenRouter aktualisiert werden, weil Modellverfuegbarkeit und Preise volatile Produktdaten sind.
+- **Alternatives:** Nur aktive Regeln bereinigen (alte Treffer bleiben bei Suche sichtbar); konservative GPT-4.1-Defaults setzen (zu alt fuer Pulse als Smart-Default); `SMART_MODEL` ebenfalls guenstig halten (spart Kosten, aber reduziert Plan-/Coach-/Insight-Qualitaet); OpenRouter entfernen (zu grosser Scope, da `backend/src/lib/llm.ts` bereits der zentrale LLM-Pfad ist).
 - **Decided by:** Tobi + Codex.
 - **Status:** active.
 
