@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
 import {
   pulseActivities,
+  pulseActionDecisions,
   pulseDailyMetrics,
   pulseHealthState,
   pulseMentalCheckins,
@@ -14,6 +15,7 @@ import { isPushConfigured } from '../../lib/push.js';
 import { computeRecovery } from '../../lib/recovery-metrics.js';
 import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
 import { rankNextBestActions } from '../services/next-best-actions.js';
+import type { ActionDecisionRecord } from '../services/decision-closure.js';
 import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { listEquipment, listStrengthSessions } from '../services/strength-equipment.js';
@@ -309,6 +311,24 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     configured: isPushConfigured(),
     activeSubscriptions: Number(pushSubscriptionCount?.activeSubscriptions ?? 0),
   };
+  const actionDecisionRows = await db.select().from(pulseActionDecisions)
+    .where(eq(pulseActionDecisions.userId, userId))
+    .orderBy(desc(pulseActionDecisions.createdAt))
+    .limit(100);
+  const actionDecisions: ActionDecisionRecord[] = actionDecisionRows.map(row => ({
+    id: row.id,
+    userId: row.userId,
+    source: row.source,
+    sourceId: row.sourceId,
+    kind: row.kind,
+    title: row.title,
+    status: row.status as ActionDecisionRecord['status'],
+    createdAt: row.createdAt.toISOString(),
+    resolvedAt: row.resolvedAt?.toISOString() ?? null,
+    resolutionReason: row.resolutionReason,
+    targetRoute: row.targetRoute,
+    rawContext: row.rawContext,
+  }));
   const nextBestActions = rankNextBestActions({
     today: date,
     todayCheckin: todayCheckin ?? null,
@@ -317,6 +337,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     upcomingWorkouts,
     push,
     equipmentDueForReplacement,
+    actionDecisions,
   });
 
   return {

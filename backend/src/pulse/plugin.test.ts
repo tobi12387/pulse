@@ -4,6 +4,7 @@ import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
 import {
   pulseActivities,
+  pulseActionDecisions,
   pulseCoachSessions,
   pulseDailyMetrics,
   pulseMentalCheckins,
@@ -122,6 +123,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (userId) {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
+    await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
     await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
     await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
     await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -138,6 +140,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
+  await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
   await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
   await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
   await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -186,6 +189,68 @@ describe('GET /api/pulse/home', () => {
     expect(body).toHaveProperty('readiness');
     expect(body.readiness).toHaveProperty('score');
     expect(Array.isArray(body.nextBestActions)).toBe(true);
+  });
+});
+
+describe('Pulse action closure', () => {
+  it('returns current actions with persisted open decision ids', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/actions',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ actions: Array<{ id: string; decisionId: string; status: string; title: string }> }>();
+    expect(body.actions[0]).toMatchObject({
+      source: 'checkin',
+      status: 'open',
+      title: 'Check-in eintragen',
+    });
+    expect(body.actions[0]!.decisionId).toMatch(/[0-9a-f-]{36}/);
+
+    const rows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    expect(rows).toHaveLength(body.actions.length);
+    expect(rows[0]).toMatchObject({
+      source: 'next_best_action',
+      status: 'open',
+      title: body.actions[0]!.title,
+    });
+  });
+
+  it('closes an action and suppresses it from the next home payload', async () => {
+    const actionRes = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/actions',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const action = actionRes.json<{ actions: Array<{ decisionId: string; source: string }> }>().actions
+      .find(candidate => candidate.source === 'checkin')!;
+
+    const patchRes = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/actions/${action.decisionId}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { status: 'completed', reason: 'Heute erledigt.' },
+    });
+
+    expect(patchRes.statusCode).toBe(200);
+    expect(patchRes.json()).toMatchObject({
+      decision: {
+        id: action.decisionId,
+        status: 'completed',
+        resolutionReason: 'Heute erledigt.',
+      },
+    });
+
+    const homeRes = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/home',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(homeRes.statusCode).toBe(200);
+    expect(homeRes.json<{ nextBestActions: Array<{ source: string }> }>().nextBestActions)
+      .not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
   });
 });
 

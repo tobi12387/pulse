@@ -114,6 +114,46 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
 });
 
+test('Home closes a daily action and Coach shows the shared closed state', async ({ page }) => {
+  const actions = [{
+    id: 'checkin:/coach:0',
+    decisionId: 'decision-1',
+    source: 'checkin',
+    priority: 'high',
+    title: 'Check-in eintragen',
+    reason: 'Heute fehlt dein subjektives Signal; Coach, Readiness und Briefing bleiben dadurch vorsichtiger.',
+    cta: 'Zum Coach',
+    targetPath: '/coach',
+    openedAt: '2026-05-01',
+    resolvedBy: 'Check-in für 2026-05-01 speichern.',
+    evidence: ['Tages-Check-in fehlt'],
+    status: 'open',
+    resolvedAt: null,
+    resolutionReason: null,
+  }];
+  let patched: { id: string; body: unknown } | null = null;
+
+  await mockPulseApi(page, {
+    actions,
+    onActionPatch: (id, body) => {
+      patched = { id, body };
+      actions.length = 0;
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('TAGESAKTION', { exact: true })).toBeVisible();
+  await expect(page.getByText('Check-in eintragen')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Erledigt' }).click();
+  await expect.poll(() => patched).toEqual({ id: 'decision-1', body: { status: 'completed', reason: 'In Home erledigt.' } });
+  await expect(page.getByText('Check-in eintragen')).toHaveCount(0);
+
+  await page.goto('/coach');
+  await expect(page.getByText('TAGESAKTION', { exact: true })).toBeVisible();
+  await expect(page.getByText('Keine offene Tagesaktion')).toBeVisible();
+});
+
 test('Home and Coach share one daily decision with boundary alternative and done criteria', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

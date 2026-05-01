@@ -1,10 +1,11 @@
 # Pulse Overnight Next Steps — 2026-05-02 Morning Plan
 
-> Stand: 2026-05-01 after Insight Evidence Links (PR #92). This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
+> Stand: 2026-05-02 after Decision Closure Model (PR #94). This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
 
 ## Verified Baseline
 
 - PR #92 added structured Insight `evidence` and `missingData` and was merged/deployed to server commit `4f31eaf`.
+- PR #94 added the durable `pulse_action_decisions` model, pure closure transitions and stale-action suppression; it was merged/deployed to server commit `78b2fa4`.
 - Server checks after deploy:
   - `/api/pulse/health` returned `{"status":"ok","namespace":"pulse"}`.
   - `https://localhost:5175` returned `HTTP/2 200`.
@@ -47,6 +48,8 @@
 
 ### Phase 2 — Decision Closure Model
 
+**Status:** Done via PR #94 and deployed.
+
 **Plan source:** `docs/superpowers/plans/2026-05-01-decision-closure-coach-memory-wave.md`
 
 **Goal:** Persist whether a daily recommendation was completed, deferred, dismissed or superseded.
@@ -64,6 +67,8 @@
 - No UI change beyond contract shape unless needed for tests.
 
 ### Phase 3 — Home/Coach Closure Controls
+
+**Status:** In progress on `codex/home-coach-closure-flow`.
 
 **Goal:** Let the user complete/defer the primary daily decision from Home and keep Coach in sync.
 
@@ -140,4 +145,3 @@ By Saturday morning, 2026-05-02, the useful status view should answer:
 3. Which daily-flow risks remain?
 4. Which manual iPhone/VPN checks still need Tobi's device?
 5. Whether Decision Closure is ready to become the next default daily loop.
-

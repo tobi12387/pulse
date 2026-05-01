@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFitnessLoad, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness } from '@/pulse/hooks';
+import { useFitnessLoad, usePulseActions, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -9,7 +9,7 @@ import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseNextBestAction } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseNextBestAction } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -318,10 +318,131 @@ function NextBestActionsCard({
   );
 }
 
+function ActionClosureCard({
+  action,
+  isPending,
+  onNavigate,
+  onResolve,
+}: {
+  action: PulseActionState;
+  isPending: boolean;
+  onNavigate: (path: string) => void;
+  onResolve: (status: 'completed' | 'deferred') => void;
+}) {
+  const color = actionColor(action.priority);
+
+  return (
+    <div style={{ padding: '14px 16px', background: 'var(--surface)', border: `1px solid ${color}55`, borderRadius: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.14em' }}>
+          TAGESAKTION
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          {priorityLabel(action.priority)}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <button
+          type="button"
+          onClick={() => onNavigate(action.targetPath)}
+          style={{
+            width: '100%',
+            padding: 0,
+            background: 'transparent',
+            border: 'none',
+            textAlign: 'left',
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
+            {action.title}
+          </span>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, marginTop: 6, overflowWrap: 'anywhere' }}>
+            {action.reason}
+          </span>
+        </button>
+
+        {(action.resolvedBy || action.evidence?.length) && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em' }}>
+              FERTIG WENN
+            </div>
+            <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+              {action.resolvedBy ?? action.evidence?.slice(0, 2).join(' · ')}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => onResolve('completed')}
+            disabled={isPending}
+            style={{
+              padding: '9px 10px',
+              background: isPending ? 'var(--surface-2)' : 'var(--green)',
+              border: 'none',
+              borderRadius: 5,
+              color: isPending ? 'var(--text-3)' : 'var(--bg)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '.1em',
+              textTransform: 'uppercase',
+              cursor: isPending ? 'default' : 'pointer',
+            }}
+          >
+            Erledigt
+          </button>
+          <button
+            type="button"
+            onClick={() => onResolve('deferred')}
+            disabled={isPending}
+            style={{
+              padding: '9px 10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              color: 'var(--text-2)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '.1em',
+              textTransform: 'uppercase',
+              cursor: isPending ? 'default' : 'pointer',
+            }}
+          >
+            Später
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate(action.targetPath)}
+            style={{
+              padding: '9px 10px',
+              background: 'var(--surface-2)',
+              border: `1px solid ${color}`,
+              borderRadius: 5,
+              color,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '.1em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            Öffnen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const { data, isLoading, error } = usePulseHome();
+  const actionsQuery = usePulseActions();
+  const updateAction = useUpdatePulseAction();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
   const { data: metricsData } = usePulseMetrics(14);
@@ -354,7 +475,9 @@ export default function Home() {
   const fl = loadQuery.data;
   const nw = data.nextWorkout;
   const dailyDecision = deriveDailyDecision(data);
-  const followUpActions = data.nextBestActions?.slice(1) ?? [];
+  const actionStates = actionsQuery.data?.actions ?? [];
+  const primaryAction = actionStates[0] ?? null;
+  const followUpActions = primaryAction ? actionStates.slice(1) : data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
   const showDataStatus = dataStatus.garmin.status !== 'ready' || !dataStatus.userReady || !dataStatus.profileReady;
 
@@ -435,6 +558,19 @@ export default function Home() {
           decision={dailyDecision}
           labelCase="upper"
           onActivate={() => navigate(dailyDecision.targetPath)}
+        />
+      )}
+
+      {primaryAction && (
+        <ActionClosureCard
+          action={primaryAction}
+          isPending={updateAction.isPending}
+          onNavigate={navigate}
+          onResolve={(status) => updateAction.mutate({
+            id: primaryAction.decisionId,
+            status,
+            reason: status === 'completed' ? 'In Home erledigt.' : 'In Home verschoben.',
+          })}
         />
       )}
 

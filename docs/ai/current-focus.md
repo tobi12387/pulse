@@ -20,15 +20,17 @@ Keep this file short. Update it whenever the active work queue changes.
 14. Local Test Services Hardening was merged and deployed via PR #90.
 15. Insight Evidence Links was merged and deployed via PR #92.
 16. Deep UI/UX Flow Audit baseline and overnight sequencing are documented in `docs/superpowers/plans/2026-05-02-overnight-next-steps.md`.
-17. Active implementation branch: `codex/decision-closure-model`.
-18. Active implementation wave: Decision Closure & Coach Memory. Current slice: Decision Closure Model (action decision table, pure closure service, Next-Best-Action suppression).
+17. Decision Closure Model was merged and deployed via PR #94.
+18. Active implementation branch: `codex/home-coach-closure-flow`.
+19. Active implementation wave: Decision Closure & Coach Memory. Current slice: Home/Coach Closure Flow (actions API, Home controls, Coach shared action state).
 
 ## Current PRs / Branches
 
 - Open PRs: none.
 - Active branch:
-- `codex/decision-closure-model`: Decision Closure Model in progress.
+- `codex/home-coach-closure-flow`: Home/Coach Closure Flow in progress.
 - Recent completed branches:
+- `codex/decision-closure-model`: merged and deployed via PR #94.
 - `codex/insight-evidence-links`: merged and deployed via PR #92.
 - `codex/local-test-services-hardening`: merged and deployed via PR #90.
 - `codex/daily-briefing-guided-checkin`: merged and deployed via PR #88.

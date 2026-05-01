@@ -597,6 +597,15 @@ export interface PulseNextBestAction {
   evidence?: string[];
 }
 
+export type PulseActionDecisionStatus = 'open' | 'completed' | 'deferred' | 'dismissed' | 'superseded';
+
+export interface PulseActionState extends PulseNextBestAction {
+  decisionId: string;
+  status: PulseActionDecisionStatus;
+  resolvedAt: string | null;
+  resolutionReason: string | null;
+}
+
 export type EquipmentCategory =
   | 'chain'
   | 'tire'
