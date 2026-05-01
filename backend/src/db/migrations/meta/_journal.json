@@ -127,6 +127,13 @@
       "when": 1777135589451,
       "tag": "0017_strength_equipment",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1777135589452,
+      "tag": "0018_plan_generations",
+      "breakpoints": true
     }
   ]
 }

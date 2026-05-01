@@ -3,7 +3,7 @@ import {
   timestamp, date, jsonb, boolean, index, uniqueIndex, time, primaryKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import type { EquipmentCategory, PulseActivityType, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { EquipmentCategory, PulseActivityType, PulsePlanDecision, PulsePlanTrace, PulsePushTopics } from '@coaching-os/shared/pulse';
 
 // FK to users.id is enforced at DB level via migration SQL — not via Drizzle
 // references() because drizzle-kit cannot resolve cross-file .js imports.
@@ -225,6 +225,21 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   createdAt:            timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('pulse_planned_workouts_user_date_idx').on(t.userId, t.plannedDate),
+]);
+
+// ─── Plan generation trace ──────────────────────────────────────────────────
+export const pulsePlanGenerations = pgTable('pulse_plan_generations', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  userId:           uuid('user_id').notNull(),
+  weekStart:        date('week_start').notNull(),
+  inputSnapshot:    jsonb('input_snapshot').$type<PulsePlanTrace['inputSnapshot']>().notNull(),
+  planDecision:     jsonb('plan_decision').$type<PulsePlanDecision>().notNull(),
+  sportMix:         jsonb('sport_mix').$type<PulsePlanTrace['sportMix']>().notNull(),
+  hardDays:         jsonb('hard_days').$type<PulsePlanTrace['hardDays']>().notNull(),
+  generatedSummary: text('generated_summary').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => [
+  index('idx_plan_generations_user_week').on(t.userId, t.weekStart, t.createdAt),
 ]);
 
 // ─── Health states (illness, injury, fatigue, travel) ────────────────────────

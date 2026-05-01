@@ -125,6 +125,49 @@ export interface PulsePlanDecision {
   reasons: string[];
 }
 
+export interface PulsePlanSportMixEntry {
+  sessions: number;
+  totalMinutes: number;
+  totalTss: number;
+}
+
+export interface PulsePlanTrace {
+  id: string;
+  userId: string;
+  weekStart: string;
+  createdAt: string;
+  inputSnapshot: {
+    phase: string;
+    mesocycleWeek: number;
+    weeklyHoursTarget: number;
+    availableDays: number[];
+    load: PulseFitnessLoad;
+    profile: {
+      ftpWatts: number | null;
+      maxHrBpm: number | null;
+      lthrBpm: number | null;
+    };
+    goals: Array<{
+      title: string;
+      category: string | null;
+      targetDate: string | null;
+      raceDiscipline: string | null;
+      raceDistanceKm: number | null;
+      racePriority: string | null;
+    }>;
+    riskSignals: Array<{ ruleId: string; severity: string; title: string }>;
+    healthStates: Array<{ type: string; severity: string; bodyPart: string | null; startDate: string; endDate: string | null }>;
+    recentRpe: Array<{ date: string; activityType: string; plannedZone: number | null; rpe: number; durationMin: number; tss: number }>;
+    rpeReasons: string[];
+    dataWarnings: string[];
+    recentSportMix: Record<string, PulsePlanSportMixEntry>;
+  };
+  planDecision: PulsePlanDecision;
+  sportMix: Record<string, PulsePlanSportMixEntry>;
+  hardDays: Array<{ date: string; activityType: string; zone: number; durationMin: number }>;
+  generatedSummary: string[];
+}
+
 export interface PulseMentalCheckin {
   id: string;
   userId: string;
