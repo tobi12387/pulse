@@ -126,6 +126,8 @@ Sie deckt aktuell nicht ab:
 
 ### 3. Daily Action & Coach Flow
 
+**Status:** in progress via `codex/ux-slice-b-home-coach`.
+
 - Home Next Actions zu einer klaren Tagesentscheidung verdichten.
 - Weitere Actions sichtbar erreichbar machen: z.B. Stepper, "alle anzeigen" oder klare Kartenliste.
 - Coach Empty State mit kontextuellen Quick Prompts und sichtbarer Bedeutung der Top-Metriken.

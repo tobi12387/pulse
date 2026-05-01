@@ -206,62 +206,112 @@ function NextBestActionsCard({
   onNavigate: (path: string) => void;
 }) {
   if (actions.length === 0) return null;
+  const primary = actions[0]!;
+  const secondary = actions.slice(1);
+  const primaryColor = actionColor(primary.priority);
 
   return (
     <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
-          NÄCHSTE AKTIONEN
+          HEUTE TUN
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
-          {actions.length}/3
+          {actions.length === 1 ? '1 Schritt' : `${actions.length} Schritte`}
         </span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--border)', borderRadius: 5, overflow: 'hidden' }}>
-        {actions.map(action => {
-          const color = actionColor(action.priority);
-          return (
-            <button
-              key={action.id}
-              type="button"
-              onClick={() => onNavigate(action.targetPath)}
-              style={{
-                width: '100%',
-                padding: '11px 12px',
-                background: 'var(--surface-2)',
-                border: 'none',
-                display: 'grid',
-                gridTemplateColumns: '62px minmax(0, 1fr) auto',
-                gap: 10,
-                alignItems: 'start',
-                textAlign: 'left',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.1em' }}>
-                {priorityLabel(action.priority)}
+      <button
+        type="button"
+        onClick={() => onNavigate(primary.targetPath)}
+        style={{
+          width: '100%',
+          padding: '14px',
+          background: 'var(--surface-2)',
+          border: `1px solid ${primaryColor}66`,
+          borderRadius: 6,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          textAlign: 'left',
+          cursor: 'pointer',
+        }}
+      >
+        <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 9, color: primaryColor, letterSpacing: '.1em', marginBottom: 4 }}>
+              {priorityLabel(primary.priority)}
+            </span>
+            <span style={{ display: 'block', fontSize: 15, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
+              {primary.title}
+            </span>
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: primaryColor, whiteSpace: 'nowrap', paddingTop: 2 }}>
+            {primary.cta} →
+          </span>
+        </span>
+        <span style={{ display: 'grid', gridTemplateColumns: '72px minmax(0, 1fr)', gap: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em' }}>
+            WARUM
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, overflowWrap: 'anywhere' }}>
+            {primary.reason}
+          </span>
+          {(primary.resolvedBy || primary.evidence?.length) && (
+            <>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em' }}>
+                FERTIG WENN
               </span>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13, color: 'var(--text)', fontWeight: 500, marginBottom: 3 }}>
-                  {action.title}
-                </span>
-                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
-                  {action.reason}
-                </span>
-                {(action.resolvedBy || action.evidence?.length) && (
-                  <span style={{ display: 'block', marginTop: 4, fontSize: 10, color: 'var(--text-3)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
-                    {action.resolvedBy ? `Erledigt durch: ${action.resolvedBy}` : action.evidence?.slice(0, 2).join(' · ')}
+              <span style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+                {primary.resolvedBy ?? primary.evidence?.slice(0, 2).join(' · ')}
+              </span>
+            </>
+          )}
+        </span>
+      </button>
+
+      {secondary.length > 0 && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.12em' }}>
+            DANACH
+          </div>
+          {secondary.map(action => {
+            const color = actionColor(action.priority);
+            return (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => onNavigate(action.targetPath)}
+                style={{
+                  width: '100%',
+                  padding: '9px 10px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  alignItems: 'center',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>
+                    {action.title}
                   </span>
-                )}
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, whiteSpace: 'normal', textAlign: 'right', lineHeight: 1.3 }}>
-                {action.cta} →
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                  <span style={{ display: 'block', fontSize: 10, color: 'var(--text-3)', marginTop: 2, overflowWrap: 'anywhere' }}>
+                    {action.reason}
+                  </span>
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, flexShrink: 0 }}>
+                  {action.cta} →
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -196,6 +196,62 @@ function MicButton({ micState, onDone }: {
   );
 }
 
+function QuickPrompts({
+  prompts,
+  onSelect,
+}: {
+  prompts: string[];
+  onSelect: (prompt: string) => void;
+}) {
+  return (
+    <div
+      className="card"
+      style={{
+        alignSelf: 'stretch',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        padding: '12px 14px',
+      }}
+    >
+      <div>
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)',
+          letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4,
+        }}>
+          GUTE STARTFRAGEN
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
+          Tippen bereitet die Frage nur vor. Du entscheidest danach bewusst, ob du sie sendest.
+        </p>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {prompts.map(prompt => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => onSelect(prompt)}
+            style={{
+              width: '100%',
+              padding: '9px 10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              color: 'var(--text)',
+              fontSize: 12,
+              lineHeight: 1.35,
+              textAlign: 'left',
+              cursor: 'pointer',
+            }}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Coach() {
   const [input, setInput]         = useState('');
   const [micState, setMicState]   = useState<MicState>('idle');
@@ -211,6 +267,15 @@ export default function Coach() {
   const sendMessage = useCoachSend();
   const clearHistory = useClearCoachHistory();
   const lastMessageTimestamp = historyData?.messages.at(-1)?.timestamp;
+  const hasMessages = (historyData?.messages.length ?? 0) > 0;
+  const nextWorkout = home?.nextWorkout;
+  const quickPrompts = [
+    nextWorkout
+      ? `Soll ich ${nextWorkout.activityType} am ${new Date(nextWorkout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} wie geplant machen?`
+      : 'Was ist heute die sinnvollste Einheit?',
+    'Warum ist meine Readiness heute so bewertet?',
+    'Was sollte ich heute nicht überziehen?',
+  ];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -267,7 +332,7 @@ export default function Coach() {
         {isLoading && (
           <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>Lade…</p>
         )}
-        {!isLoading && historyData?.messages.length === 0 && !voiceCard && (
+        {!isLoading && !hasMessages && !voiceCard && (
           briefingLoading ? (
             <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '32px 0' }}>
               Briefing wird geladen…
@@ -289,10 +354,19 @@ export default function Coach() {
               </p>
             </div>
           ) : (
-            <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '32px 0' }}>
-              Stell dem Coach eine Frage.
-            </p>
+            <div style={{ textAlign: 'center', padding: '24px 0 6px' }}>
+              <p style={{ fontSize: 13, color: 'var(--text)', margin: 0 }}>
+                Womit soll der Coach helfen?
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, margin: '6px 0 0' }}>
+                Schlaf, HRV, Body Battery und Schritte werden fuer die Antwort mit beruecksichtigt.
+              </p>
+            </div>
           )
+        )}
+
+        {!isLoading && !hasMessages && !voiceCard && (
+          <QuickPrompts prompts={quickPrompts} onSelect={setInput} />
         )}
 
         {historyData?.messages.map((msg, idx) => (

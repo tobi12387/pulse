@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Home/Coach Daily Flow wird als vorbereitender Handlungsflow gebaut
+
+- **Decision:** UI/UX Slice B macht Home zur klaren Tagesaktion mit "HEUTE TUN", "WARUM" und "FERTIG WENN". Coach bekommt kontextuelle Quick Prompts, die nur die Eingabe vorbereiten und keine Anfrage automatisch senden.
+- **Why:** Der tägliche Nutzen entsteht, wenn Tobi sofort erkennt, was jetzt wichtig ist und warum. Gleichzeitig sollen Coach-Fragen bewusst abgeschickt werden, damit keine unbeabsichtigten LLM-Aufrufe oder missverständlichen Aktionen entstehen.
+- **Alternatives:** Home als technische Aktionsliste lassen (weniger Alltagsschärfe); Quick Prompts direkt absenden (zu überraschend und potenziell kosten-/kontextintensiv); Coach nur mit leerem Eingabefeld starten (zu wenig Orientierung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Insights laden Deep-Analysen nur noch auf Nutzeraktion
 
 - **Decision:** Slice A der UI/UX-Welle macht Deep Insights opt-in pro Karte. `useDeepInsight()` akzeptiert ein `enabled`-Flag, Insights-Karten starten geschlossen, und der Backend-Endpoint `/api/pulse/insights` wandelt Generierungsfehler in einen kontrollierten 503 mit nutzbarem Fehlertext statt rohem Serverfehler.

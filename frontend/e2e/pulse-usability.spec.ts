@@ -45,3 +45,47 @@ test('Insights show a helpful state instead of raw server errors', async ({ page
   await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
   await expect(page.getByText('Internal Server Error')).toHaveCount(0);
 });
+
+test('Home daily action explains the next step and opens Coach', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      nextBestActions: [
+        {
+          id: 'checkin-today',
+          source: 'checkin',
+          priority: 'high',
+          title: 'Check-in eintragen',
+          reason: 'Heute fehlt dein subjektives Signal; Coach, Readiness und Briefing bleiben dadurch vorsichtiger.',
+          cta: 'Zum Coach',
+          targetPath: '/coach',
+          resolvedBy: 'Check-in für 2026-05-01 speichern.',
+        },
+      ],
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('HEUTE TUN')).toBeVisible();
+  await expect(page.getByText('WARUM')).toBeVisible();
+  await expect(page.getByText('FERTIG WENN')).toBeVisible();
+
+  await page.getByRole('button').filter({ hasText: 'Check-in eintragen' }).click();
+  await expect(page).toHaveURL('/coach');
+  await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
+});
+
+test('Coach quick prompts prepare a question without sending it', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/coach');
+  await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
+  await page.getByRole('button', { name: 'Warum ist meine Readiness heute so bewertet?' }).click();
+
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Warum ist meine Readiness heute so bewertet?');
+  expect(coachSends).toBe(0);
+});
