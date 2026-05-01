@@ -70,3 +70,19 @@ jobs:
 
       - name: Backend tests
         run: npm test
+
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+
+      - name: Browser smoke tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

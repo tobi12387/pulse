@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Reliability Wave priorisiert E2E-CI vor neuen Produktfeatures
+
+- **Decision:** Nach PR #53 startet Pulse eine Reliability Wave mit der Reihenfolge E2E in CI, Local Test Env, Deploy Smoke, Bundle Cleanup. Slice 1 macht die Playwright-Smokes zum CI-Gate, bevor weitere Produktfeatures begonnen werden.
+- **Why:** Die wiederkehrenden Probleme waren Browser-Vertrauen, lokale Test-Env-Luecken, manuelle Deploy-Verifikation und die grosse Vite-Bundle-Warnung. Diese Fehlerklassen zu schließen erhoeht die Qualitaet kuenftiger Features mehr als sofort neue UI-/Coach-Funktionalitaet.
+- **Alternatives:** Direkt neue Produktfeatures bauen (Risiko weiterer Regressionen); nur lokal Playwright nutzen (kein Merge-Gate); Bundle-Cleanup vor Tests (weniger Schutz fuer Refactor).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Pulse ist Codex-only und nutzt aktuelle OpenRouter-Defaults
 
 - **Decision:** Pulse entfernt die verbliebenen Referenzen auf den vorherigen AI-Coding-Workflow aus aktiver Doku, historischen Handoff-Texten und Modell-Defaults. OpenRouter bleibt der Provider-Pfad; `FAST_MODEL` nutzt `openai/gpt-5-mini`, `SMART_MODEL` nutzt `openai/gpt-5.5`, beide bleiben per Env ueberschreibbar.
