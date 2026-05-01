@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/reliability-wave-closeout`: active local branch for closing the completed Reliability Wave docs.
+- None active. Recent completed branches:
+- `codex/reliability-wave-closeout`: merged and deployed via PR #58.
 - `codex/bundle-code-splitting`: merged and deployed via PR #57.
 - `codex/deploy-smoke`: merged and deployed via PR #56.
 - `codex/local-test-env`: merged and deployed via PR #55.
@@ -42,8 +43,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy the Reliability Wave closeout branch.
-- Then choose the next product or reliability wave explicitly from a new active plan.
+- No implementation plan is active right now; choose the next product or reliability wave explicitly from a new active plan.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
