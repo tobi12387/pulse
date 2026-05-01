@@ -2,6 +2,8 @@
 
 Use this checklist for real-device checks. Do not trigger Garmin calendar sync during this QA unless the task explicitly requires repairing Garmin workouts.
 
+Record the result in `docs/qa/2026-05-02-iphone-pwa-real-device.md` so the evidence survives beyond chat context.
+
 ## Network
 
 - iPhone is connected to the VPN that routes the home network.

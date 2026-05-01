@@ -23,15 +23,17 @@ Keep this file short. Update it whenever the active work queue changes.
 17. Decision Closure Model was merged and deployed via PR #94.
 18. Home/Coach Closure Flow was merged and deployed via PR #95.
 19. Explicit Coach Preferences was merged and deployed via PR #96.
-20. Active implementation branch: `codex/push-action-journeys`.
-21. Active implementation wave: Decision Closure & Coach Memory. Current slice: Push Action Journeys (push URLs tied to durable action decisions).
+20. Push Action Journeys was merged and deployed via PR #97.
+21. Active implementation branch: `codex/iphone-qa-recording`.
+22. Active implementation wave: Decision Closure & Coach Memory. Current slice: Real iPhone/VPN QA evidence recording.
 
 ## Current PRs / Branches
 
 - Open PRs: none.
 - Active branch:
-- `codex/push-action-journeys`: Push Action Journeys in progress.
+- `codex/iphone-qa-recording`: iPhone/VPN/PWA QA evidence record in progress.
 - Recent completed branches:
+- `codex/push-action-journeys`: merged and deployed via PR #97.
 - `codex/coach-preferences`: merged and deployed via PR #96.
 - `codex/home-coach-closure-flow`: merged and deployed via PR #95.
 - `codex/decision-closure-model`: merged and deployed via PR #94.
