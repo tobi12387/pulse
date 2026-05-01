@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Frontend-Bundle wird ueber Route-Level Lazy Loading geschnitten
+
+- **Decision:** Reliability Wave Slice 4 nutzt `React.lazy` und `Suspense` fuer die grossen Page-Komponenten in `frontend/src/App.tsx`. Layout, Router, QueryClient und ErrorBoundary bleiben eager; einzelne Pages werden erst beim jeweiligen Route-Aufruf geladen.
+- **Why:** Die Vite-Warnung zeigte einen zu grossen gemeinsamen JS-Chunk. Route-Level Splitting reduziert den initialen App-Chunk mit geringem Risiko, und die Playwright-Smokes sichern die Hauptnavigation nach dem Split ab.
+- **Alternatives:** Vite-Warnlimit nur erhoehen (verdeckt das Problem); manuelle Vendor-Chunks zuerst schneiden (mehr Build-Komplexitaet); alle Komponenten lazy laden (unnötige Fragmentierung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Deploy-Smoke wird als Repo-Script standardisiert
 
 - **Decision:** Reliability Wave Slice 3 fuehrt `scripts/verify-server.sh` und `npm run verify:server` ein. Der Check validiert Server-Branch, sauberen Worktree, erwarteten Commit, PM2-Prozesse sowie Frontend-, `/api/ping`- und `/api/pulse/health`-Healthchecks.

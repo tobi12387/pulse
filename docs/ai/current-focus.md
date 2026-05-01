@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/deploy-smoke`: active local branch for Reliability Wave Slice 3.
+- `codex/bundle-code-splitting`: active local branch for Reliability Wave Slice 4.
+- `codex/deploy-smoke`: merged and deployed via PR #56.
 - `codex/local-test-env`: merged and deployed via PR #55.
 - `codex/e2e-ci-reliability`: merged and deployed via PR #54.
 - `codex/browser-e2e-smoke`: merged and deployed via PR #53.
@@ -40,8 +41,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Reliability Wave Slice 3: `codex/deploy-smoke`.
-- Then continue Reliability Wave Slice 4: bundle/code-splitting cleanup.
+- Merge and deploy Reliability Wave Slice 4: `codex/bundle-code-splitting`.
+- Then close the Reliability Wave and move its plan to `completed/`.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
