@@ -11,7 +11,7 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Current PRs / Branches
 
 - `codex/browser-e2e-smoke`: active local branch for Browser/Playwright smoke-test foundation.
-- `codex/everyday-utility-closeout`: active local branch for closing the completed Everyday Utility Wave docs.
+- `codex/everyday-utility-closeout`: merged and deployed via PR #52.
 - `codex/mobile-density-qa`: merged and deployed via PR #51.
 - `codex/action-closure-review`: merged and deployed via PR #50.
 - `codex/plan-feedback-calibration`: merged and deployed via PR #49.
@@ -37,8 +37,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy the closeout docs branch.
-- Then plan the next wave explicitly. Recommended candidates: authenticated browser E2E smoke tests, local test-environment hardening, and bundle/code-splitting cleanup.
+- Merge and deploy PR #53 (`codex/browser-e2e-smoke`).
+- Then plan the next reliability wave explicitly. Recommended candidates: E2E in CI, local test-environment hardening, deploy-smoke automation, and bundle/code-splitting cleanup.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
