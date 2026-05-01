@@ -21,15 +21,17 @@ Keep this file short. Update it whenever the active work queue changes.
 15. Insight Evidence Links was merged and deployed via PR #92.
 16. Deep UI/UX Flow Audit baseline and overnight sequencing are documented in `docs/superpowers/plans/2026-05-02-overnight-next-steps.md`.
 17. Decision Closure Model was merged and deployed via PR #94.
-18. Active implementation branch: `codex/home-coach-closure-flow`.
-19. Active implementation wave: Decision Closure & Coach Memory. Current slice: Home/Coach Closure Flow (actions API, Home controls, Coach shared action state).
+18. Home/Coach Closure Flow was merged and deployed via PR #95.
+19. Active implementation branch: `codex/coach-preferences`.
+20. Active implementation wave: Decision Closure & Coach Memory. Current slice: Explicit Coach Preferences (editable Settings state feeding Coach context).
 
 ## Current PRs / Branches
 
 - Open PRs: none.
 - Active branch:
-- `codex/home-coach-closure-flow`: Home/Coach Closure Flow in progress.
+- `codex/coach-preferences`: Explicit Coach Preferences in progress.
 - Recent completed branches:
+- `codex/home-coach-closure-flow`: merged and deployed via PR #95.
 - `codex/decision-closure-model`: merged and deployed via PR #94.
 - `codex/insight-evidence-links`: merged and deployed via PR #92.
 - `codex/local-test-services-hardening`: merged and deployed via PR #90.
@@ -93,7 +95,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Continue Daily Intelligence Next Wave priorities: Insight Evidence Links and Deep UI/UX Flow Audit, then the larger Decision Closure / Coach Memory wave.
+- Continue Decision Closure & Coach Memory priorities: finish Explicit Coach Preferences, then Push Action Journeys, real iPhone/VPN QA recording, and Canva/Figma UX companion refresh.
 - Use `docs/superpowers/plans/2026-05-01-iphone-pwa-readiness.md` for any iPhone/VPN/PWA follow-up; the current branch contains the first baseline.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.

@@ -169,6 +169,13 @@
       "when": 1777663200000,
       "tag": "0023_decision_closure_memory",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1777664100000,
+      "tag": "0024_coach_preferences",
+      "breakpoints": true
     }
   ]
 }

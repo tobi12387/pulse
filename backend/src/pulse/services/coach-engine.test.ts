@@ -166,6 +166,39 @@ describe('buildRichSystemPrompt', () => {
     expect(prompt).toContain('Evidence: Tages-Check-in fehlt');
     expect(prompt).toContain('Zum Coach (/coach)');
   });
+
+  it('includes visible coach preferences without inferring hidden traits', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-05-02',
+      readiness: { score: 70, label: 'gut' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 48, tsb: -4 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      coachPreferences: {
+        timeWindows: 'Werktags vor 07:30 oder nach 18:30.',
+        dislikedWorkoutPatterns: ['lange Sweetspot-Blöcke'],
+        preferredLongDays: [6],
+        injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
+        communicationStyle: 'data_first',
+        updatedAt: '2026-05-02T06:00:00.000Z',
+      },
+    });
+
+    expect(prompt).toContain('== SICHTBARE COACH-PRÄFERENZEN ==');
+    expect(prompt).toContain('Werktags vor 07:30 oder nach 18:30.');
+    expect(prompt).toContain('lange Sweetspot-Blöcke');
+    expect(prompt).toContain('Lange Tage bevorzugt: Sa');
+    expect(prompt).toContain('Achillessehne vorsichtig steigern');
+    expect(prompt).toContain('Kommunikation: datenorientiert');
+    expect(prompt).not.toContain('Persönlichkeitsprofil');
+  });
 });
 
 describe('getCoachReplyRich', () => {

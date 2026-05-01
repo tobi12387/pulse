@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Coach Preferences bleiben explizit editierbarer Zustand
+
+- **Decision:** Pulse speichert Coach-Praeferenzen in `pulse_coach_preferences` und macht sie in Settings sichtbar editierbar. Der Coach-Kontext darf diese Zeitfenster, gemiedenen Muster, bevorzugten langen Tage, verletzungssensitiven Constraints und Kommunikationsstil nutzen, aber keine versteckten Persoenlichkeitseigenschaften ableiten.
+- **Why:** Wiederholte oder unpassende Empfehlungen lassen sich besser ueber explizite, pruefbare Praeferenzen korrigieren als ueber implizite Chat-Erinnerung. So kann Tobi den Coach steuern, ohne dass Pulse sensible oder nicht sichtbare Annahmen aus Garmin-/Mentaldaten konstruiert.
+- **Alternatives:** Praeferenzen nur im Chatverlauf halten (nicht auditierbar); aus Verhalten automatisch ableiten (Risiko falscher und sensibler Schluesse); alles in das Athletenprofil mischen (vermischt physiologische Werte mit Coaching-Stil).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Home und Coach nutzen denselben Action-Closure-Contract
 
 - **Decision:** Die sichtbare Tagesaktion wird ueber `/api/pulse/actions` mit `decisionId` und Status geladen und ueber `PATCH /api/pulse/actions/:id` abgeschlossen, verschoben oder verworfen. Home bekommt kompakte Abschlusskontrollen; Coach zeigt denselben offenen oder leeren Action-State, ohne automatisch eine Nachricht zu senden.

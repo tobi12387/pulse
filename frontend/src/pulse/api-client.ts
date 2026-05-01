@@ -10,7 +10,7 @@ import type {
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
-  PulseMentalLoadOverlayResponse, PulseActionState,
+  PulseMentalLoadOverlayResponse, PulseActionState, PulseCoachPreferences,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -99,6 +99,13 @@ export const pulseApi = {
       request('/coach', { method: 'POST', body: JSON.stringify({ message }) }),
     deleteHistory: (): Promise<void> =>
       request('/coach/history', { method: 'DELETE' }),
+  },
+
+  coachPreferences: {
+    get: (): Promise<{ preferences: PulseCoachPreferences }> =>
+      request('/coach/preferences'),
+    update: (data: Partial<Omit<PulseCoachPreferences, 'updatedAt'>>): Promise<{ preferences: PulseCoachPreferences }> =>
+      request('/coach/preferences', { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   risk: {

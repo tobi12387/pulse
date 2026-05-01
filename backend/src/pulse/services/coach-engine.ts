@@ -1,5 +1,5 @@
 import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
-import type { PulseNextBestAction, PulseRiskSignal } from '@coaching-os/shared/pulse';
+import type { PulseCoachPreferences, PulseNextBestAction, PulseRiskSignal } from '@coaching-os/shared/pulse';
 
 // ─── Rich context ─────────────────────────────────────────────────────────────
 
@@ -46,6 +46,7 @@ export interface CoachFullContext {
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   activeRiskSignals?: PulseRiskSignal[];
   nextBestActions?: PulseNextBestAction[];
+  coachPreferences?: PulseCoachPreferences | null;
   recentStrengthSessions?: Array<{
     date: string;
     sessionId: string;
@@ -72,6 +73,49 @@ export interface CoachFullContext {
     recoveryScore: number;
     recommendation: string;
   } | null;
+}
+
+const COACH_PREFERENCE_DAY_LABELS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+const COACH_COMMUNICATION_LABELS: Record<PulseCoachPreferences['communicationStyle'], string> = {
+  direct: 'direkt',
+  gentle: 'behutsam',
+  data_first: 'datenorientiert',
+};
+
+function hasVisibleCoachPreferences(preferences: PulseCoachPreferences | null | undefined): preferences is PulseCoachPreferences {
+  if (!preferences) return false;
+  return Boolean(
+    preferences.timeWindows.trim()
+      || preferences.dislikedWorkoutPatterns.length > 0
+      || preferences.preferredLongDays.length > 0
+      || preferences.injurySensitiveConstraints.length > 0
+      || preferences.communicationStyle,
+  );
+}
+
+function formatCoachPreferences(preferences: PulseCoachPreferences): string {
+  const lines = ['== SICHTBARE COACH-PRÄFERENZEN =='];
+
+  if (preferences.timeWindows.trim()) {
+    lines.push(`Zeitfenster: ${preferences.timeWindows.trim()}`);
+  }
+  if (preferences.dislikedWorkoutPatterns.length > 0) {
+    lines.push(`Unbeliebte Muster: ${preferences.dislikedWorkoutPatterns.join('; ')}`);
+  }
+  if (preferences.preferredLongDays.length > 0) {
+    const days = preferences.preferredLongDays
+      .map(day => COACH_PREFERENCE_DAY_LABELS[day] ?? String(day))
+      .join(', ');
+    lines.push(`Lange Tage bevorzugt: ${days}`);
+  }
+  if (preferences.injurySensitiveConstraints.length > 0) {
+    lines.push(`Vorsicht/Constraints: ${preferences.injurySensitiveConstraints.join('; ')}`);
+  }
+  lines.push(`Kommunikation: ${COACH_COMMUNICATION_LABELS[preferences.communicationStyle] ?? preferences.communicationStyle}`);
+  lines.push('Nur diese expliziten Präferenzen verwenden; keine versteckten Eigenschaften ableiten.');
+
+  return lines.join('\n');
 }
 
 export function buildRichSystemPrompt(ctx: CoachFullContext): string {
@@ -134,6 +178,10 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       if (action.evidence?.length) s += `\nEvidence: ${action.evidence.join(' | ')}`;
     });
     s += '\nWenn Tobi fragt, was als Nächstes ansteht, priorisiere diese Liste. Bei fachfremden Fragen nur critical/high Actions erwähnen oder wenn sie direkt zur Frage passen.';
+  }
+
+  if (hasVisibleCoachPreferences(ctx.coachPreferences)) {
+    s += `\n\n${formatCoachPreferences(ctx.coachPreferences)}`;
   }
 
   s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;

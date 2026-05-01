@@ -5,6 +5,7 @@ import { users } from '../db/schema.js';
 import {
   pulseActivities,
   pulseActionDecisions,
+  pulseCoachPreferences,
   pulseCoachSessions,
   pulseDailyMetrics,
   pulseMentalCheckins,
@@ -124,6 +125,7 @@ afterAll(async () => {
   if (userId) {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
     await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
     await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
     await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
     await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -141,6 +143,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
   await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+  await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
   await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
   await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
   await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -251,6 +254,55 @@ describe('Pulse action closure', () => {
     expect(homeRes.statusCode).toBe(200);
     expect(homeRes.json<{ nextBestActions: Array<{ source: string }> }>().nextBestActions)
       .not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
+  });
+});
+
+describe('Coach preferences', () => {
+  it('returns defaults and persists explicit visible preferences', async () => {
+    const defaults = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/coach/preferences',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(defaults.statusCode).toBe(200);
+    expect(defaults.json()).toMatchObject({
+      preferences: {
+        timeWindows: '',
+        dislikedWorkoutPatterns: [],
+        preferredLongDays: [],
+        injurySensitiveConstraints: [],
+        communicationStyle: 'data_first',
+        updatedAt: null,
+      },
+    });
+
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/coach/preferences',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        timeWindows: 'Werktags vor 07:30 oder nach 18:30.',
+        dislikedWorkoutPatterns: ['lange Sweetspot-Blöcke'],
+        preferredLongDays: [6, 6, 5],
+        injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
+        communicationStyle: 'data_first',
+      },
+    });
+
+    expect(patch.statusCode).toBe(200);
+    const body = patch.json<{ preferences: { preferredLongDays: number[]; updatedAt: string | null } }>();
+    expect(body.preferences).toMatchObject({
+      timeWindows: 'Werktags vor 07:30 oder nach 18:30.',
+      dislikedWorkoutPatterns: ['lange Sweetspot-Blöcke'],
+      preferredLongDays: [5, 6],
+      injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
+      communicationStyle: 'data_first',
+    });
+    expect(body.preferences.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+    const rows = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ timeWindows: 'Werktags vor 07:30 oder nach 18:30.' });
   });
 });
 

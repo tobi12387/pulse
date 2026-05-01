@@ -6,6 +6,7 @@ import {
   pulseMentalCheckins,
   pulseActivities,
   pulseActionDecisions,
+  pulseCoachPreferences,
   pulsePlannedWorkouts,
   pulsePlanGenerations,
   pulseCoachSessions,
@@ -30,7 +31,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionState, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulseNextBestAction, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulseNextBestAction, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -182,6 +183,13 @@ const actionDecisionPatchSchema = z.object({
   status: z.enum(['completed', 'deferred', 'dismissed']),
   reason: z.string().trim().max(500).optional(),
 });
+const coachPreferencesPatchSchema = z.object({
+  timeWindows: z.string().trim().max(500).optional(),
+  dislikedWorkoutPatterns: z.array(z.string().trim().min(1).max(120)).max(10).optional(),
+  preferredLongDays: z.array(z.number().int().min(0).max(6)).max(7).optional(),
+  injurySensitiveConstraints: z.array(z.string().trim().min(1).max(160)).max(10).optional(),
+  communicationStyle: z.enum(['direct', 'gentle', 'data_first']).optional(),
+}).strict().refine(value => Object.keys(value).length > 0, { message: 'Mindestens ein Feld erforderlich' });
 
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
 const isoDateSchema = z.string()
@@ -891,6 +899,29 @@ async function listCurrentActionStates(userId: string, date: string): Promise<Pu
   return states;
 }
 
+type CoachPreferencesRow = typeof pulseCoachPreferences.$inferSelect;
+
+const DEFAULT_COACH_PREFERENCES: PulseCoachPreferences = {
+  timeWindows: '',
+  dislikedWorkoutPatterns: [],
+  preferredLongDays: [],
+  injurySensitiveConstraints: [],
+  communicationStyle: 'data_first',
+  updatedAt: null,
+};
+
+function serializeCoachPreferences(row: CoachPreferencesRow | null | undefined): PulseCoachPreferences {
+  if (!row) return DEFAULT_COACH_PREFERENCES;
+  return {
+    timeWindows: row.timeWindows,
+    dislikedWorkoutPatterns: row.dislikedWorkoutPatterns,
+    preferredLongDays: row.preferredLongDays,
+    injurySensitiveConstraints: row.injurySensitiveConstraints,
+    communicationStyle: row.communicationStyle as PulseCoachCommunicationStyle,
+    updatedAt: row.updatedAt?.toISOString() ?? null,
+  };
+}
+
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 export default async function pulsePlugin(app: FastifyInstance) {
@@ -1435,6 +1466,45 @@ export default async function pulsePlugin(app: FastifyInstance) {
     if (!row) return reply.status(404).send({ error: 'Risk-Signal nicht gefunden' });
     await invalidateUser(userId);
     return { ok: true };
+  });
+
+  app.get('/coach/preferences', { onRequest: [app.authenticate] }, async (req): Promise<{ preferences: PulseCoachPreferences }> => {
+    const [row] = await db.select().from(pulseCoachPreferences)
+      .where(eq(pulseCoachPreferences.userId, req.user.sub))
+      .limit(1);
+    return { preferences: serializeCoachPreferences(row) };
+  });
+
+  app.patch('/coach/preferences', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = coachPreferencesPatchSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const now = new Date();
+    const updates: Partial<typeof pulseCoachPreferences.$inferInsert> = { updatedAt: now };
+
+    if (parsed.data.timeWindows !== undefined) updates.timeWindows = parsed.data.timeWindows;
+    if (parsed.data.dislikedWorkoutPatterns !== undefined) {
+      updates.dislikedWorkoutPatterns = [...new Set(parsed.data.dislikedWorkoutPatterns)];
+    }
+    if (parsed.data.preferredLongDays !== undefined) {
+      updates.preferredLongDays = [...new Set(parsed.data.preferredLongDays)].sort((a, b) => a - b);
+    }
+    if (parsed.data.injurySensitiveConstraints !== undefined) {
+      updates.injurySensitiveConstraints = [...new Set(parsed.data.injurySensitiveConstraints)];
+    }
+    if (parsed.data.communicationStyle !== undefined) updates.communicationStyle = parsed.data.communicationStyle;
+
+    const [row] = await db.insert(pulseCoachPreferences)
+      .values({ userId, ...updates } as typeof pulseCoachPreferences.$inferInsert)
+      .onConflictDoUpdate({
+        target: pulseCoachPreferences.userId,
+        set: updates,
+      })
+      .returning();
+
+    await invalidateUser(userId);
+    return { preferences: serializeCoachPreferences(row) };
   });
 
   app.post('/coach', { onRequest: [app.authenticate] }, async (req, reply) => {

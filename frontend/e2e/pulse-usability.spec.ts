@@ -318,6 +318,44 @@ test('Settings show profile value provenance for Garmin planning inputs', async 
   await expect(page.getByText('Garmin').first()).toBeVisible();
 });
 
+test('Settings edits explicit coach preferences for future recommendations', async ({ page }) => {
+  let patched: unknown = null;
+  await mockPulseApi(page, {
+    coachPreferences: {
+      timeWindows: 'Werktags nach 18:30.',
+      dislikedWorkoutPatterns: ['lange Sweetspot-Blöcke'],
+      preferredLongDays: [6],
+      injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
+      communicationStyle: 'data_first',
+      updatedAt: '2026-05-01T08:00:00.000Z',
+    },
+    onCoachPreferencesPatch: (body) => {
+      patched = body;
+    },
+  });
+
+  await page.goto('/settings');
+  await expect(page.getByText('Coach-Präferenzen')).toBeVisible();
+  await expect(page.getByText('lange Sweetspot-Blöcke')).toBeVisible();
+
+  await page.locator('.card').filter({ hasText: 'Coach-Präferenzen' }).getByRole('button', { name: 'Bearbeiten' }).click();
+  await page.getByLabel('Zeitfenster').fill('Werktags vor 07:30 oder nach 18:30.');
+  await page.getByLabel('Unbeliebte Muster').fill('lange Sweetspot-Blöcke\nzu viele harte Tage');
+  await page.getByRole('button', { name: 'Fr' }).click();
+  await page.getByLabel('Vorsicht / Constraints').fill('Achillessehne vorsichtig steigern');
+  await page.getByLabel('Kommunikation').selectOption('direct');
+  await page.getByRole('button', { name: 'Coach speichern' }).click();
+
+  await expect.poll(() => patched).toEqual({
+    timeWindows: 'Werktags vor 07:30 oder nach 18:30.',
+    dislikedWorkoutPatterns: ['lange Sweetspot-Blöcke', 'zu viele harte Tage'],
+    preferredLongDays: [5, 6],
+    injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
+    communicationStyle: 'direct',
+  });
+  await expect(page.getByText('Coach-Präferenzen gespeichert.')).toBeVisible();
+});
+
 test('Coach daily briefing guides the first conversation without auto-send', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {
@@ -768,6 +806,7 @@ test('Settings groups actions by risk and daily maintenance area', async ({ page
   await page.goto('/settings');
 
   await expect(page.getByRole('heading', { name: 'Profil', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Coach' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Verbindung' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Datenpflege' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Benachrichtigungen' })).toBeVisible();
