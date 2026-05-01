@@ -123,7 +123,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ### 4. Data Backfill Observability
 
-**Status:** in progress via `codex/data-backfill-observability`.
+**Status:** completed, merged and deployed via PR #75 (`codex/data-backfill-observability`, deploy commit `c686782`).
 
 - Data zeigt letzten Backfill und Vorschau/echten Lauf klarer: Zeitraum, geplant, synchronisiert, Fehler, nächste Aktion.
 - Falls Persistenz nicht nötig ist, bleibt der erste Schritt lokale Snapshot-/Response-basierte Beobachtung.
@@ -133,6 +133,8 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ### 5. Settings Action Grouping
 
+**Status:** in progress via `codex/settings-action-grouping`.
+
 - Settings wird in sichere Aktionsgruppen gegliedert: Verbindung, Datenpflege, Benachrichtigungen, Profil, Health-State.
 - Gefährlichere oder externe Aktionen bekommen stärkere visuelle Distanz und kurze Konsequenzzeilen.
 - Acceptance:
@@ -141,8 +143,8 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ## Suggested Sequence
 
-1. Finish Data Backfill Observability.
-2. Settings Action Grouping.
+1. Finish Settings Action Grouping.
+2. Close out Everyday Flow Deepening Wave with browser/UI-UX review and next-phase proposal.
 
 ## Current External Checks
 
@@ -150,7 +152,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 - Canva: `Pulse Everyday Flow UX Board` created as the active UX companion artifact.
 - Figma: `Pulse UX Toolchain Loop` FigJam claim URL created; open/claim it before using it as an editable team file.
 - Figma: `Pulse Plan Alternatives 2.0 States` diagram added to the Pulse UX loop.
-- Server baseline: Insights Reliability deployed and verified on `origin/main` commit `2b2c9b9`; Settings Garmin calendar sync previously uploaded 3 future workouts with Garmin schedule IDs.
+- Server baseline: Data Backfill Observability deployed and verified on `origin/main` commit `c686782`; Settings Garmin calendar sync previously uploaded 3 future workouts with Garmin schedule IDs.
 
 ## Open Questions
 

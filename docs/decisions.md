@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Settings werden als sichtbare Aktionsgruppen geführt
+
+- **Decision:** Settings nutzt sichtbare Gruppen für Profil, Verbindung, Datenpflege, Benachrichtigungen und Health-State. Die Gruppierung ist zunächst reine Informationsarchitektur und verwendet die bestehenden Contracts und Komponenten.
+- **Why:** Kalender-Sync, Backfill, Push, Profilwerte und Health-State haben unterschiedliche Risiken und Frequenzen. Sie dürfen nicht wie eine gleichwertige Button-Liste wirken, sollen aber ohne neuen Backend-Scope besser scanbar werden.
+- **Alternatives:** Neue Settings-Unterseiten bauen (zu groß für diese Phase); alle Karten unverändert lassen (Acceptance bleibt unerfüllt); gefährliche Aktionen nur farblich hervorheben (hilft weniger bei Orientierung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Backfill-Beobachtung startet ohne neue Persistenz
 
 - **Decision:** Data Backfill Observability nutzt vorerst die vorhandene Backfill-Response plus lokale Browser-Erinnerung (`localStorage`) für den letzten Lauf. Eine serverseitige Backfill-Historie wird erst eingeführt, wenn mehrere Geräte, Auditing oder Langzeitverlauf wirklich gebraucht werden.

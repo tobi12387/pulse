@@ -456,6 +456,20 @@ test('Settings separates push server, browser and device state', async ({ page }
   await expect(page.getByText('very/long/secret')).toHaveCount(0);
 });
 
+test('Settings groups actions by risk and daily maintenance area', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/settings');
+
+  await expect(page.getByRole('heading', { name: 'Profil', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Verbindung' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Datenpflege' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Benachrichtigungen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Health-State' })).toBeVisible();
+  await expect(page.getByText('Kalender-Sync und Backfill sind getrennt von Profil- und Push-Aktionen.')).toBeVisible();
+  await expect(page.getByText('Health-State setzt harte Trainingsgrenzen und ist bewusst separat.')).toBeVisible();
+});
+
 test('Mobile navigation and tabs keep core labels readable', async ({ page }) => {
   const viewport = page.viewportSize();
   test.skip(!viewport || viewport.width > 600, 'mobile density check');
