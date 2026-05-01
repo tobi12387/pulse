@@ -92,6 +92,15 @@ function hardPattern(week: PulsePlanLearningWeek | null): string {
     .join('|');
 }
 
+function sportMixPattern(week: PulsePlanLearningWeek | null): string {
+  if (!week) return '';
+  return Object.entries(week.sportMix)
+    .filter(([, mix]) => mix.sessions > 0)
+    .map(([sport, mix]) => `${sport}:${mix.sessions}`)
+    .sort()
+    .join('|');
+}
+
 function deriveMessages(week: PulsePlanLearningWeek | null, flags: PulsePlanLearningFlag[]): string[] {
   if (!week) return ['Noch keine Vorwoche mit Plan-Trace im Lernfenster.'];
 
@@ -107,6 +116,9 @@ function deriveMessages(week: PulsePlanLearningWeek | null, flags: PulsePlanLear
   }
   if (flags.includes('high_rpe_easy')) {
     messages.push('Lockere Einheiten fühlten sich zuletzt zu hart an.');
+  }
+  if (flags.includes('repeated_sport_mix')) {
+    messages.push('Sportmix wiederholte sich; diese Woche werden leichte Einheiten bewusst rotiert.');
   }
   if (week.skippedAvailableDays.length > 0) {
     messages.push(`${week.skippedAvailableDays.length} verfügbare Tag(e) blieben bewusst frei.`);
@@ -248,6 +260,9 @@ export async function buildPlanLearningSnapshot(
   const lastTwo = orderedWeeks.slice(-2);
   if (lastTwo.length === 2 && hardPattern(lastTwo[0]!) === hardPattern(lastTwo[1]!) && hardPattern(lastTwo[1]!) !== '') {
     flags.push('repeated_hard_pattern');
+  }
+  if (lastTwo.length === 2 && sportMixPattern(lastTwo[0]!) === sportMixPattern(lastTwo[1]!) && sportMixPattern(lastTwo[1]!) !== '') {
+    flags.push('repeated_sport_mix');
   }
 
   return {

@@ -8,6 +8,7 @@ export interface PlanTraceWorkout {
   zone: number;
   durationMin: number;
   targetTss: number | null;
+  adjustedReason?: string | null;
 }
 
 export interface PlanTraceRecentActivity {
@@ -111,6 +112,18 @@ function summarizeTrace(
 
   if (hardDays.length > 0) {
     summary.push(`${hardDays.length} harte Einheit(en) ab Z4: ${hardDays.map(day => `${day.activityType} ${day.date}`).join(', ')}.`);
+  }
+
+  const adjustedCounts = input.workouts.reduce<Record<string, number>>((counts, workout) => {
+    if (!workout.adjustedReason) return counts;
+    counts[workout.adjustedReason] = (counts[workout.adjustedReason] ?? 0) + 1;
+    return counts;
+  }, {});
+  const adjusted = Object.entries(adjustedCounts)
+    .map(([reason, count]) => `${reason}×${count}`)
+    .join(', ');
+  if (adjusted) {
+    summary.push(`Angepasst: ${adjusted} hat Umfang, Intensität oder Sportart verändert.`);
   }
 
   const sports = Object.entries(sportMix)

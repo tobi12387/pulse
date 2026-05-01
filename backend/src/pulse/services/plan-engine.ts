@@ -296,10 +296,20 @@ function goalWorkoutProfile(goals: GoalLite[], phase: Phase): GoalWorkoutProfile
   };
 }
 
-function pickActivityType(profile: GoalWorkoutProfile, index: number, hardIndex: number | null, isLastSession: boolean): ActivityType {
+function rotationShiftForLearning(learning: PulsePlanLearningSnapshot | null | undefined): number {
+  return hasLearningFlag(learning, 'repeated_sport_mix') ? 1 : 0;
+}
+
+function pickActivityType(
+  profile: GoalWorkoutProfile,
+  index: number,
+  hardIndex: number | null,
+  isLastSession: boolean,
+  rotationShift = 0,
+): ActivityType {
   if (hardIndex != null) return profile.hardSequence[hardIndex % profile.hardSequence.length]!;
   if (isLastSession) return profile.longSequence[index % profile.longSequence.length]!;
-  return profile.rotation[index % profile.rotation.length]!;
+  return profile.rotation[(index + rotationShift) % profile.rotation.length]!;
 }
 
 // Base session duration (min) per sport per zone — used as sanity-check floor/ceiling
@@ -449,6 +459,9 @@ export function decidePlanDays(params: {
     target -= 1;
     reasons.push('Lernsignal: lockere Einheiten fühlten sich zuletzt hart an; ein verfügbarer Tag bleibt frei.');
   }
+  if (hasLearningFlag(params.planLearning, 'repeated_sport_mix')) {
+    reasons.push('Lernsignal: Sportmix der letzten Wochen war gleich; leichte Einheiten werden bewusst rotiert, ohne die Dichte zu erhöhen.');
+  }
 
   const criticalRisk = (params.riskSignals ?? []).find(r => r.severity === 'critical');
   const warnRisks = (params.riskSignals ?? []).filter(r => r.severity === 'warn');
@@ -503,6 +516,7 @@ function buildPolarizedWorkouts(params: {
 
   const profile = goalWorkoutProfile(goals, phase);
   const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
+  const rotationShift = rotationShiftForLearning(params.planLearning);
 
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
   const hasBlockingRisk = riskSignals.some(r => r.severity === 'critical' || r.ruleId === 'rhr_drift_7d' || r.ruleId === 'hrv_trend_decline' || r.ruleId === 'sleep_debt_5d');
@@ -520,7 +534,7 @@ function buildPolarizedWorkouts(params: {
     const dayOffset = sorted[i]!;
     const remaining = n - i;
     const isHard = hardDays.has(dayOffset);
-    const activityType = pickActivityType(profile, i, isHard ? hardIndex++ : null, i === n - 1);
+    const activityType = pickActivityType(profile, i, isHard ? hardIndex++ : null, i === n - 1, rotationShift);
 
     // Zone: Z4 in base/build, Z5 for peak quality sessions, Z2 for easy days
     const zone = activityType === 'strength'

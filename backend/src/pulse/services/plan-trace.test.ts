@@ -3,6 +3,14 @@ import { buildPlanTrace } from './plan-trace.js';
 
 describe('buildPlanTrace', () => {
   it('summarizes data inputs, free days, sport mix, and hard days', () => {
+    const adjustedWorkout = {
+      plannedDate: '2026-05-04',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 60,
+      targetTss: 40,
+      adjustedReason: 'fatigue',
+    };
     const trace = buildPlanTrace({
       weekStart: '2026-05-04',
       phase: 'build',
@@ -55,13 +63,13 @@ describe('buildPlanTrace', () => {
         reasons: ['FTP-Ziel: wenige, gezielte Reize statt viele Fülltage.', 'RPE-Signal: eine leichte bike-Einheit fühlte sich mit RPE 8/10 zu hart an.'],
       },
       workouts: [
-        { plannedDate: '2026-05-04', activityType: 'bike', zone: 2, durationMin: 75, targetTss: 55 },
+        adjustedWorkout,
         { plannedDate: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 50, targetTss: 80 },
         { plannedDate: '2026-05-08', activityType: 'strength', zone: 1, durationMin: 45, targetTss: 20 },
       ],
     });
 
-    expect(trace.sportMix.bike).toMatchObject({ sessions: 2, totalMinutes: 125, totalTss: 135 });
+    expect(trace.sportMix.bike).toMatchObject({ sessions: 2, totalMinutes: 110, totalTss: 120 });
     expect(trace.hardDays).toEqual([{ date: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 50 }]);
     expect(trace.inputSnapshot.recentRpe).toHaveLength(1);
     expect(trace.inputSnapshot.rpeReasons).toHaveLength(1);
@@ -74,5 +82,7 @@ describe('buildPlanTrace', () => {
     expect(trace.generatedSummary.join(' ')).toContain('1 verfügbare Tag');
     expect(trace.generatedSummary.join(' ')).toContain('Gelernt');
     expect(trace.generatedSummary.join(' ')).toContain('Variation');
+    expect(trace.generatedSummary.join(' ')).toContain('Angepasst');
+    expect(trace.generatedSummary.join(' ')).toContain('fatigue');
   });
 });

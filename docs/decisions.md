@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Plan-Personalisierung variiert wiederholten Sportmix erklärbar
+
+- **Decision:** Ein wiederholter Sportmix der Vorwochen wird als eigenes Plan-Lernsignal (`repeated_sport_mix`) geführt. Dieses Signal erhöht nicht automatisch die Trainingsdichte, sondern rotiert leichte Einheiten deterministisch und macht die Variation im PlanDecision/PlanTrace sichtbar; Health-/Race-Anpassungen werden über `adjustedReason` bis in Persistenz und Trace mitgeführt.
+- **Why:** Der Nutzer soll nicht das Gefühl bekommen, jede Woche dieselben Workouts zu erhalten, während der Plan trotzdem stabil, datengetrieben und reproduzierbar bleibt. Außerdem müssen gekürzte oder veränderte Einheiten nachvollziehbar begründet werden, statt nur still im Ergebnis aufzutauchen.
+- **Alternatives:** Zufällige Variation pro Generierung (nicht reproduzierbar); mehr Tage füllen, um Abwechslung zu erzeugen (fachlich schlechter); alles über LLM-Beschreibungen erklären (verliert Auditierbarkeit).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Daily Briefing trennt heutige Entscheidung von zukünftigem Trainingsausblick
 
 - **Decision:** Daily Briefing und Coach-Startfragen behandeln nur Workouts mit `plannedDate === today` als heutige Trainingsempfehlung. Zukünftige Workouts bleiben ein klar markierter Ausblick; der manuelle Daily Check-in wird ohne Migration als geführter Mental-Fitness-Flow über die bestehenden Felder `mood`, `energy`, `stress`, `motivation` und `notes` geführt.

@@ -345,6 +345,7 @@ type TraceWorkout = {
   zone: number;
   durationMin: number;
   targetTss: number | null;
+  adjustedReason?: string | null;
 };
 
 function mapPlanTrace(row: PlanTraceRow): PulsePlanTrace {
@@ -2472,6 +2473,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
         durationMin:  w.durationMin,
         targetTss:    w.targetTss,
         description:  w.description,
+        adjustedReason: w.adjustedReason ?? null,
+        adjustedAt:   w.adjustedReason ? new Date() : null,
       })),
     ).returning();
 
@@ -2497,6 +2500,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       zone:         w.zone,
       durationMin:  w.durationMin,
       targetTss:    w.targetTss ?? null,
+      adjustedReason: w.adjustedReason ?? null,
     }));
     const finalPlanDecision = reconcilePlanDecisionWithWorkouts({
       decision: planDecision,
@@ -3191,7 +3195,17 @@ export default async function pulsePlugin(app: FastifyInstance) {
     ));
 
     const inserted2 = await db.insert(pulsePlannedWorkouts).values(
-      generated.map(w => ({ userId, plannedDate: w.plannedDate, activityType: w.activityType, zone: w.zone, durationMin: w.durationMin, targetTss: w.targetTss, description: w.description })),
+      generated.map(w => ({
+        userId,
+        plannedDate: w.plannedDate,
+        activityType: w.activityType,
+        zone: w.zone,
+        durationMin: w.durationMin,
+        targetTss: w.targetTss,
+        description: w.description,
+        adjustedReason: w.adjustedReason ?? null,
+        adjustedAt: w.adjustedReason ? new Date() : null,
+      })),
     ).returning();
 
     const workouts = await Promise.all(
@@ -3214,6 +3228,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       zone:         w.zone,
       durationMin:  w.durationMin,
       targetTss:    w.targetTss ?? null,
+      adjustedReason: w.adjustedReason ?? null,
     }));
     const finalPlanDecision2 = reconcilePlanDecisionWithWorkouts({
       decision: planDecision2,

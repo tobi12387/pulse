@@ -170,6 +170,7 @@ export type PulsePlanLearningFlag =
   | 'low_completion'
   | 'high_rpe_easy'
   | 'repeated_hard_pattern'
+  | 'repeated_sport_mix'
   | 'missing_history';
 
 export interface PulsePlanLearningWeek {

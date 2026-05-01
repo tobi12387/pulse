@@ -115,6 +115,21 @@ describe('decidePlanDays', () => {
     expect(decision.selectedDays).toHaveLength(2);
     expect(decision.reasons.join(' ')).toContain('Kritisches Risk-Signal');
   });
+
+  it('explains repeated sport mix learning without reducing density', () => {
+    const decision = decidePlanDays({
+      availableDays: [0, 1, 2, 3, 5],
+      weeklyHoursTarget: 7,
+      tsb: 0,
+      phase: 'base',
+      mesocycleWeek: 1,
+      goals: [{ title: 'Gewicht: 75 kg', targetDate: '2026-06-30', category: 'weight' }],
+      planLearning: planLearning({}, ['repeated_sport_mix']),
+    });
+
+    expect(decision.selectedDays).toHaveLength(4);
+    expect(decision.reasons.join(' ')).toContain('Sportmix');
+  });
 });
 
 describe('generateScientificWeekPlan', () => {
@@ -284,6 +299,48 @@ describe('generateScientificWeekPlan', () => {
     const hardDates = workouts.filter(w => w.zone >= 4).map(w => w.plannedDate);
     expect(hardDates.length).toBeGreaterThan(0);
     expect(hardDates).not.toContain('2026-05-05');
+  });
+
+  it('varies repeated sport mix deterministically without changing session count', async () => {
+    const input = {
+      weekStart: '2026-05-04',
+      phase: 'base' as const,
+      weeklyHoursTarget: 7,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 25,
+      atl: 24,
+      tsb: 0,
+      ftpWatts: 210,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Gewicht: 75 kg', targetDate: '2026-06-30', category: 'weight' }],
+    };
+    const baseline = await generateScientificWeekPlan({
+      ...input,
+      planLearning: planLearning({}, []),
+    });
+    const varied = await generateScientificWeekPlan({
+      ...input,
+      planLearning: planLearning({
+        sportMix: {
+          bike: { sessions: 3, totalMinutes: 210, totalTss: 150 },
+          run: { sessions: 1, totalMinutes: 45, totalTss: 35 },
+        },
+      }, ['repeated_sport_mix']),
+    });
+    const repeated = await generateScientificWeekPlan({
+      ...input,
+      planLearning: planLearning({
+        sportMix: {
+          bike: { sessions: 3, totalMinutes: 210, totalTss: 150 },
+          run: { sessions: 1, totalMinutes: 45, totalTss: 35 },
+        },
+      }, ['repeated_sport_mix']),
+    });
+
+    expect(varied).toHaveLength(baseline.length);
+    expect(varied.map(w => w.activityType)).toEqual(repeated.map(w => w.activityType));
+    expect(varied.map(w => w.activityType)).not.toEqual(baseline.map(w => w.activityType));
   });
 
   it('does not reduce density when learning has history but no actual issue flag', async () => {
