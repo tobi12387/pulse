@@ -414,6 +414,13 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        title="iPhone & PWA"
+        description="Lokaler Zugriff, HTTPS und Browser-Fähigkeiten für iPhone/VPN bleiben sichtbar."
+      >
+        <PwaDeviceCard />
+      </SettingsGroup>
+
+      <SettingsGroup
         title="Health-State"
         description="Health-State setzt harte Trainingsgrenzen und ist bewusst separat."
       >
@@ -489,6 +496,82 @@ function deviceLabel(): string {
 function maskPushEndpoint(endpoint: string): string {
   const host = endpoint.replace(/^https?:\/\//, '').split('/')[0] || 'Push-Endpunkt';
   return `${host} · Endpunkt gespeichert`;
+}
+
+function pwaReadiness() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return {
+      origin: 'Browser',
+      secure: false,
+      standalone: false,
+      serviceWorker: false,
+      push: false,
+      localNetwork: false,
+    };
+  }
+
+  const serviceWorkerSupported = Boolean(navigator.serviceWorker && typeof navigator.serviceWorker.register === 'function');
+
+  return {
+    origin: window.location.origin,
+    secure: window.isSecureContext,
+    standalone: window.matchMedia?.('(display-mode: standalone)').matches
+      || (navigator as Navigator & { standalone?: boolean }).standalone === true,
+    serviceWorker: serviceWorkerSupported,
+    push: isPushSupported(),
+    localNetwork: /^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(window.location.hostname),
+  };
+}
+
+function PwaDeviceCard() {
+  const status = pwaReadiness();
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <span className="label-mono">Gerätezugriff</span>
+        <Pill color={status.secure && status.serviceWorker ? 'var(--green)' : 'var(--amber)'}>
+          {status.secure && status.serviceWorker ? 'BEREIT' : 'PRÜFEN'}
+        </Pill>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Row label="Adresse">
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--text)',
+            textAlign: 'right',
+            overflowWrap: 'anywhere',
+            minWidth: 0,
+          }}>
+            {status.origin}
+          </span>
+        </Row>
+        <Row label="HTTPS">
+          <Pill color={status.secure ? 'var(--green)' : 'var(--amber)'}>
+            {status.secure ? 'SICHER' : 'OFFEN'}
+          </Pill>
+        </Row>
+        <Row label="PWA-Modus">
+          <Val>{status.standalone ? 'installiert' : 'Browser'}</Val>
+        </Row>
+        <Row label="Service Worker">
+          <Val>{status.serviceWorker ? 'unterstützt' : 'nicht verfügbar'}</Val>
+        </Row>
+        <Row label="Push">
+          <Val>{status.push ? 'unterstützt' : 'nicht verfügbar'}</Val>
+        </Row>
+        <Row label="Netz">
+          <Val>{status.localNetwork ? 'lokal/VPN' : 'extern'}</Val>
+        </Row>
+      </div>
+
+      <p style={{ margin: '12px 0 0', fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+        Für iPhone per VPN bleibt der lokale Server die Quelle. Wenn Safari warnt, muss der verwendete Host zur lokalen HTTPS-Konfiguration passen.
+      </p>
+    </div>
+  );
 }
 
 function PushNotificationsCard({ setMessage }: {

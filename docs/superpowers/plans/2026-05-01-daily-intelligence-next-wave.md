@@ -15,6 +15,7 @@
 - LLM-Aufrufe bleiben ausschließlich über `backend/src/lib/llm.ts`.
 - Neue Persistenz nur, wenn ein Flow ohne Verlauf nicht korrekt lösbar ist.
 - Canva bleibt Review-Board; Figma bleibt Design-System- und Interaktionsfläche; Repo bleibt technische Source of Truth.
+- Build Web Apps kann als zusätzliche PWA/mobile QA-Schicht genutzt werden, sobald das Plugin in Codex-Tools sichtbar ist. Build iOS Apps bleibt vorerst nur Evaluationsoption für einen späteren nativen Wrapper.
 - Jede Phase bleibt eigener `codex/<topic>` Branch mit PR, Checks, Merge und Deploy.
 
 ## Phases
@@ -70,6 +71,7 @@
 
 ## Current Checks
 
-- Previous wave deployed and verified on `origin/main` commit `583c33d`.
+- Previous wave plus Garmin repeat sync deployed and verified on `origin/main` commit `b082e5c` after PR #78.
 - Open PRs: none at closeout time.
-- Garmin calendar had 3 future workouts uploaded and scheduled after the deterministic workout-step fallback.
+- Garmin calendar had repeat groups repaired by payload shape; broad live Garmin probing should wait until provider rate limiting has cooled down.
+- Companion plans now exist for Garmin data enrichment, iPhone/PWA readiness, decision closure/coach memory and the full app potential audit.

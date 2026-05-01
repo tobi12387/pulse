@@ -55,3 +55,39 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
     await expectHealthyPage(page, route.visibleText);
   }
 });
+
+test('PWA manifest and service worker endpoints are available', async ({ request }) => {
+  const manifest = await request.get('/manifest.webmanifest');
+  expect(manifest.ok()).toBeTruthy();
+  const manifestJson = await manifest.json() as {
+    id?: string;
+    scope?: string;
+    display?: string;
+    start_url?: string;
+    theme_color?: string;
+  };
+
+  expect(manifestJson).toMatchObject({
+    id: '/',
+    scope: '/',
+    display: 'standalone',
+    start_url: '/',
+    theme_color: '#0a0b0d',
+  });
+
+  const serviceWorker = await request.get('/sw.js');
+  expect(serviceWorker.ok()).toBeTruthy();
+  expect(await serviceWorker.text()).toContain('Pulse ist offline');
+});
+
+test('app starts when service workers are unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'serviceWorker', {
+      configurable: true,
+      get: () => undefined,
+    });
+  });
+
+  await page.goto('/');
+  await expectHealthyPage(page, 'READINESS');
+});

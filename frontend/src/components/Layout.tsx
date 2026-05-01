@@ -27,7 +27,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className="pulse-app-shell flex overflow-hidden">
 
       {/* ── Sidebar (desktop) ── */}
       <aside
@@ -106,8 +106,8 @@ export default function Layout() {
 
       {/* ── Mobile topbar ── */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 border-b"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 44 }}
+        className="pulse-mobile-topbar md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 border-b"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: 0, color: 'var(--accent)' }}>
           PULSE
@@ -119,15 +119,15 @@ export default function Layout() {
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto px-4 max-w-3xl pt-[60px] pb-[68px] md:pt-6 md:pb-6">
+        <div className="pulse-page-shell mx-auto px-4 max-w-3xl">
           <Outlet />
         </div>
       </main>
 
       {/* ── Mobile bottom nav ── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)', height: 56 }}
+        className="pulse-mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         {NAV_ITEMS.map(({ to, label, mobileLabel, end }) => (
           <NavLink

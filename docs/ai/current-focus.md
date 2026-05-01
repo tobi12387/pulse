@@ -6,12 +6,15 @@ Keep this file short. Update it whenever the active work queue changes.
 
 1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, Everyday Utility Wave, Reliability Wave, and UI/UX Usability Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. Active implementation wave: `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`.
+3. Garmin repeat sync was fixed in PR #78 and is no longer the active branch.
+4. Active planning/implementation branch: `codex/garmin-data-ux-roadmap`.
+5. Active implementation wave: `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`, extended by Garmin data enrichment, iPhone/PWA readiness and decision-closure plans.
 
 ## Current PRs / Branches
 
-- `codex/garmin-repeat-sync`: active bugfix branch for Garmin workout repeat groups showing `null` repetitions after sync.
+- `codex/garmin-data-ux-roadmap`: active docs + iPhone/PWA baseline branch.
 - Recent completed branches:
+- `codex/garmin-repeat-sync`: merged and deployed via PR #78.
 - `codex/everyday-flow-closeout`: merged and deployed via PR #77.
 - `codex/settings-action-grouping`: merged and deployed via PR #76.
 - `codex/data-backfill-observability`: merged and deployed via PR #75.
@@ -61,10 +64,13 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/garmin-repeat-sync`.
-- Then start `codex/garmin-execution-reconciliation` from `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`.
+- Finish, PR, merge and deploy `codex/garmin-data-ux-roadmap`.
+- Then start `codex/garmin-raw-preservation` from `docs/superpowers/plans/2026-05-01-garmin-data-enrichment-wave.md`.
+- After raw preservation, start `codex/garmin-execution-reconciliation` before expanding plan personalization.
+- Use `docs/superpowers/plans/2026-05-01-iphone-pwa-readiness.md` for any iPhone/VPN/PWA follow-up; the current branch contains the first baseline.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
+- Use Build Web Apps for PWA/mobile QA if the plugin becomes visible in Codex tools. Use Build iOS Apps only for a later native-wrapper evaluation; current scope remains local web/PWA over VPN.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
