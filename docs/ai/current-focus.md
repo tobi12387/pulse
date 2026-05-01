@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/design-system-pass`: active branch for the focused UI consistency pass on Pulse chrome, Insights icons, and shared controls.
+- `codex/figma-ux-integration`: short docs/tooling branch to add Figma/FigJam to the Pulse UX toolchain and plan gates.
 - Recent completed branches:
+- `codex/design-system-pass`: merged and deployed via PR #70.
 - `codex/phase1-coach-daily-briefing`: merged and deployed via PR #69.
 - `codex/ux-wave-closeout`: merged and deployed via PR #67.
 - `codex/ux-slice-e-density`: merged and deployed via PR #66.
@@ -53,9 +54,10 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/design-system-pass`.
+- Claim/open the Figma/FigJam UX loop and use it for reusable component states during the next UI phase.
 - Then implement phases in order: Plan Alternatives 2.0, Insights Reliability, Data Backfill Observability, Settings Action Grouping.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
+- Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
