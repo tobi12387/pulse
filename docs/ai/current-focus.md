@@ -10,7 +10,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/e2e-ci-reliability`: active local branch for Reliability Wave Slice 1.
+- `codex/local-test-env`: active local branch for Reliability Wave Slice 2.
+- `codex/e2e-ci-reliability`: merged and deployed via PR #54.
 - `codex/browser-e2e-smoke`: merged and deployed via PR #53.
 - `codex/everyday-utility-closeout`: merged and deployed via PR #52.
 - `codex/mobile-density-qa`: merged and deployed via PR #51.
@@ -38,8 +39,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Reliability Wave Slice 1: `codex/e2e-ci-reliability`.
-- Then continue Reliability Wave Slice 2: local test-environment hardening.
+- Merge and deploy Reliability Wave Slice 2: `codex/local-test-env`.
+- Then continue Reliability Wave Slice 3: deploy-smoke automation.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

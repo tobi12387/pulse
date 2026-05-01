@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Lokale Tests bekommen einen expliziten Verify-Pfad
+
+- **Decision:** Reliability Wave Slice 2 fuehrt `.env.test.example`, `scripts/verify-local.sh`, `npm run verify:local` und `npm run verify:local:e2e` ein. Der Verify-Pfad prueft zuerst, dass `DATABASE_URL_TEST` separat und erreichbar ist, migriert dann die Testdatenbank und startet Backend-Tests plus Typecheck.
+- **Why:** Lokale Testlaeufe sind wiederholt an fehlender DB/Env oder stillen Produktions-DB-Risiken gescheitert. Ein expliziter Verify-Pfad macht die Voraussetzungen sichtbar und verhindert, dass Tests versehentlich gegen dieselbe DB wie die App laufen.
+- **Alternatives:** Weiter nur CI als Autoritaet nutzen (langsamer Feedback-Loop); Docker Compose sofort einfuehren (groesserer Infrastruktur-Scope); Backend-Tests ohne DB-Gate starten (unklare Fehlerbilder).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Reliability Wave priorisiert E2E-CI vor neuen Produktfeatures
 
 - **Decision:** Nach PR #53 startet Pulse eine Reliability Wave mit der Reihenfolge E2E in CI, Local Test Env, Deploy Smoke, Bundle Cleanup. Slice 1 macht die Playwright-Smokes zum CI-Gate, bevor weitere Produktfeatures begonnen werden.
