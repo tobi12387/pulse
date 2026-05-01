@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Garmin-Sync bleibt lokales Single-User-Modell mit benanntem Raw-Adapter
+
+- **Decision:** Pulse bleibt fuer den lokalen Server bei `GARMIN_EMAIL`/`GARMIN_PASSWORD` als serverseitigem Single-User-Garmin-Modell. Raw-ConnectAPI-Zugriffe werden hinter `garminApi` in `backend/src/lib/garmin-client.ts` benannt; der Sidecar-Adapter bleibt nur Fallback fuer Worker-Kontexte ohne Fastify-App. Eine offizielle Garmin-API/OAuth-Migration wird erst relevant, wenn Pulse bewusst multi-user oder extern gehostet wird.
+- **Why:** Das aktuelle Ziel ist eine lokal betriebene Alltags-App ueber VPN. OAuth/Token-UX wuerde jetzt mehr Angriffs- und Wartungsflaeche erzeugen, waehrend die echten Probleme aus verstreuten Raw-URLs und unklaren Sync-Pfaden kamen.
+- **Alternatives:** Sofort OAuth/Official-API einfuehren (zu frueh fuer lokalen Single-User-Betrieb); Raw-URLs weiter inline lassen (Drift bei Kalender, Workout und Activity-Details); Sidecar wieder zur primaeren Quelle machen (verliert die inzwischen reichere direkte Pulse-Sync-Logik).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Profilwerte bekommen Feld-Herkunft und manuelle Autoritaet
 
 - **Decision:** FTP, MaxHF, LTHR und VO2max bekommen eigene Source-/Timestamp-Felder. Manuell gesetzte Werte sind autoritativ und werden durch Garmin-Sync nicht ueberschrieben; bestehende Profilwerte werden per Migration konservativ als `manual` markiert. Garmin-Profil-Sync nutzt eine kontrollierte Settings-Lesung plus bereits gespeicherte Aktivitaeten fuer Activity-derived FTP/MaxHF.
