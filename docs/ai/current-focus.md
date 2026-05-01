@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/plan-descriptions-garmin-sync`: active bugfix branch for deterministic workout steps and visible Garmin plan sync status.
+- `codex/insights-reliability`: active branch for Everyday Flow phase 3, controlled Insight failure classes and non-retryable data-missing UI.
 - Recent completed branches:
+- `codex/plan-descriptions-garmin-sync`: merged and deployed via PR #73.
 - `codex/phase2-plan-alternatives`: merged and deployed via PR #72.
 - `codex/figma-ux-integration`: merged via PR #71.
 - `codex/design-system-pass`: merged and deployed via PR #70.
@@ -56,8 +57,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/plan-descriptions-garmin-sync`.
-- Then implement phases in order: Insights Reliability, Data Backfill Observability, Settings Action Grouping.
+- Finish, PR, merge and deploy `codex/insights-reliability`.
+- Then implement phases in order: Data Backfill Observability, Settings Action Grouping.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.

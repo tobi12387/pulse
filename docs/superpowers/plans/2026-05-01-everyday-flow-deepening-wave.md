@@ -101,7 +101,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ### 2. Plan Alternatives 2.0
 
-**Status:** in progress via `codex/phase2-plan-alternatives`.
+**Status:** completed, merged and deployed via PR #72 (`codex/phase2-plan-alternatives`, deploy commit `449dde0`).
 
 - Nächste Trainingsentscheidung bekommt semantische Anpassungen: kürzer, leichter, verschieben, frei lassen.
 - Bestehender Workout-PATCH-Contract wird erweitert, bevor ein neuer Alternativen-Endpunkt oder neue Persistenz entsteht.
@@ -111,6 +111,8 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
   - Anpassungsoptionen sind testbar und kollidieren nicht mit Plan-Generierung.
 
 ### 3. Insights Reliability & Cause Classification
+
+**Status:** in progress via `codex/insights-reliability`.
 
 - Insights trennt Fehlerursachen sichtbar: Datenmangel, LLM/Provider, Timeout/Server, Cache.
 - Backend liefert kontrollierte Fehlerpayloads, soweit der aktuelle Contract das zulässt.
@@ -137,10 +139,9 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ## Suggested Sequence
 
-1. Finish Plan Alternatives 2.0.
-2. Insights Reliability & Cause Classification.
-3. Data Backfill Observability.
-4. Settings Action Grouping.
+1. Finish Insights Reliability & Cause Classification.
+2. Data Backfill Observability.
+3. Settings Action Grouping.
 
 ## Current External Checks
 
@@ -148,7 +149,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 - Canva: `Pulse Everyday Flow UX Board` created as the active UX companion artifact.
 - Figma: `Pulse UX Toolchain Loop` FigJam claim URL created; open/claim it before using it as an editable team file.
 - Figma: `Pulse Plan Alternatives 2.0 States` diagram added to the Pulse UX loop.
-- Server baseline: Core UI Chrome Consistency deployed and verified on `origin/main` commit `c650d27`.
+- Server baseline: Plan description/Garmin sync fallback deployed and verified on `origin/main` commit `fbf453e`; Settings Garmin calendar sync uploaded 3 future workouts with Garmin schedule IDs.
 
 ## Open Questions
 

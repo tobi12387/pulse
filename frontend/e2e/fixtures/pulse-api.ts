@@ -4,6 +4,7 @@ const today = '2026-05-01';
 
 type MockPulseApiOptions = {
   insightError?: boolean;
+  insightErrorKind?: 'server' | 'provider' | 'data_missing';
   home?: Partial<typeof home>;
   coverage?: unknown;
   planTrace?: unknown;
@@ -258,7 +259,27 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (!url.pathname.startsWith('/api/')) return route.continue();
     options.onRequest?.(url.pathname, request.method());
     if (request.method() === 'OPTIONS') return json(route, {});
-    if (url.pathname === '/api/pulse/insights' && options.insightError) {
+    if (url.pathname === '/api/pulse/insights' && options.insightErrorKind === 'provider') {
+      return json(route, {
+        error: 'KI-Provider gerade nicht verfügbar.',
+        code: 'provider_unavailable',
+        retryable: true,
+        action: 'Versuche es später erneut oder nutze den gecachten Stand.',
+      }, 503);
+    }
+    if (url.pathname === '/api/pulse/insights' && options.insightErrorKind === 'data_missing') {
+      return json(route, {
+        domain: url.searchParams.get('domain') ?? 'mental',
+        analysis: 'Noch nicht genug Check-in-Daten für diesen Zeitraum.',
+        stats: {},
+        date: today,
+        cached: false,
+        status: 'data_missing',
+        action: 'Trage im Coach einen Check-in ein oder wähle 90T.',
+        retryable: false,
+      });
+    }
+    if (url.pathname === '/api/pulse/insights' && (options.insightError || options.insightErrorKind === 'server')) {
       return json(route, { error: 'Internal Server Error' }, 500);
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Insights-Fehler werden am API-Rand klassifiziert
+
+- **Decision:** `/api/pulse/insights` gibt kontrollierte Fehlercodes (`provider_unavailable`, `timeout`, `server_error`, `invalid_domain`) mit Retry-/Action-Hinweisen zurück. Echte Datenlücken bleiben erfolgreiche Responses mit `status: data_missing`, `retryable: false` und konkreter nächster Aktion.
+- **Why:** Die UI soll keine rohen Provider- oder Servertexte zeigen und Retry nur anbieten, wenn ein erneuter Versuch fachlich sinnvoll ist. Datenmangel ist kein technischer Fehler und braucht eine Datenanforderung statt eines Retry-Buttons.
+- **Alternatives:** Alle Fehler weiter als generischen 503 behandeln (zu wenig Diagnose); Datenmangel als Fehler werfen (falsche Nutzerführung); Providertexte in der UI durchreichen (instabil und potenziell sensibel).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Workout-Ausführung darf nicht von LLM-Verfügbarkeit abhängen
 
 - **Decision:** Strukturierte Workout-Steps bekommen einen deterministischen HR-first-Fallback. Garmin-Upload nutzt diese Steps, wenn die LLM-Detailgenerierung wegen Provider-/Budgetfehlern, leerer Antwort oder ungültigem JSON nicht verfügbar ist.
