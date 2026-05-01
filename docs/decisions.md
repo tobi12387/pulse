@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Garmin Activity Details bekommen eigenen Cache statt `raw_data`-Overwrite
+
+- **Decision:** `pulse_activities.raw_data` bleibt der originale Garmin-Activity-Summary-Snapshot. Garmin-Splits, HR-Zonen und Detailpayloads werden in den nullable Spalten `garmin_detail_data`, `garmin_laps`, `garmin_hr_zones` und `garmin_detail_synced_at` gecacht; alte `{ laps, hrZones }`-Werte in `raw_data` bleiben als Legacy-Fallback lesbar und werden per Migration in den neuen Cache übernommen.
+- **Why:** Die Activity-Detailroute hat bisher beim ersten Detailaufruf den ursprünglichen Garmin-Summary-Snapshot zerstört. Die Trennung erhält Audit-/Sync-Rohdaten und erlaubt trotzdem schnelle Detailansichten sowie bestehende Analytics.
+- **Alternatives:** Weiter `raw_data` überschreiben (Datenverlust); separate Detailtabelle einführen (mehr Join-/Migrations-Scope für denselben Nutzen); alte Summary-Snapshots rekonstruieren (ohne erneuten Garmin-Summary-Sync nicht zuverlässig möglich).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Pulse priorisiert lokalen iPhone/PWA-Zugriff und Garmin-Datentiefe vor nativer App
 
 - **Decision:** Die nächste Arbeitsfolge bleibt Web/PWA über den lokalen Server per VPN und erweitert zuerst Garmin-Rohdatenerhalt, Execution Reconciliation, Recovery-Datentiefe und sichtbare Entscheidungs-/Preference-Loops. Build Web Apps wird genutzt, sobald das Plugin als Codex-Tool sichtbar ist; Build iOS Apps bleibt eine spätere Native-Wrapper-Evaluation.

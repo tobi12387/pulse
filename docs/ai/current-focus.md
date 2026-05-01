@@ -7,13 +7,15 @@ Keep this file short. Update it whenever the active work queue changes.
 1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, Everyday Utility Wave, Reliability Wave, and UI/UX Usability Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
 3. Garmin repeat sync was fixed in PR #78 and is no longer the active branch.
-4. Active planning/implementation branch: `codex/garmin-data-ux-roadmap`.
-5. Active implementation wave: `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`, extended by Garmin data enrichment, iPhone/PWA readiness and decision-closure plans.
+4. Garmin data/iPhone/PWA roadmap baseline was merged and deployed via PR #79.
+5. Active implementation branch: `codex/garmin-raw-preservation`.
+6. Active implementation wave: `docs/superpowers/plans/2026-05-01-garmin-data-enrichment-wave.md`, Task 1 Garmin Raw Preservation.
 
 ## Current PRs / Branches
 
-- `codex/garmin-data-ux-roadmap`: active docs + iPhone/PWA baseline branch.
+- `codex/garmin-raw-preservation`: active Garmin raw/detail-cache branch.
 - Recent completed branches:
+- `codex/garmin-data-ux-roadmap`: merged and deployed via PR #79.
 - `codex/garmin-repeat-sync`: merged and deployed via PR #78.
 - `codex/everyday-flow-closeout`: merged and deployed via PR #77.
 - `codex/settings-action-grouping`: merged and deployed via PR #76.
@@ -64,8 +66,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/garmin-data-ux-roadmap`.
-- Then start `codex/garmin-raw-preservation` from `docs/superpowers/plans/2026-05-01-garmin-data-enrichment-wave.md`.
+- Finish, PR, merge and deploy `codex/garmin-raw-preservation`.
 - After raw preservation, start `codex/garmin-execution-reconciliation` before expanding plan personalization.
 - Use `docs/superpowers/plans/2026-05-01-iphone-pwa-readiness.md` for any iPhone/VPN/PWA follow-up; the current branch contains the first baseline.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.

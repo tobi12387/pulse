@@ -47,6 +47,7 @@ vi.mock('../lib/whisper.js', () => ({
 vi.mock('../lib/garmin-client.js', () => ({
   getGarminClient: vi.fn().mockResolvedValue({
     addWorkout: garminMocks.addWorkout,
+    get: garminMocks.get,
     client: {
       post: garminMocks.post,
       get: garminMocks.get,
@@ -520,6 +521,97 @@ describe('GET /api/pulse/activities', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toHaveProperty('activities');
+  });
+});
+
+describe('GET /api/pulse/activities/:id', () => {
+  it('caches Garmin detail data without replacing the activity summary rawData', async () => {
+    const activitySummary = {
+      activityId: 998877,
+      activityName: 'Morning Ride',
+      activityType: { typeKey: 'cycling' },
+      providerSummary: true,
+    };
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: '998877',
+      source: 'garmin',
+      startTime: new Date('2026-05-01T08:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 3600,
+      rawData: activitySummary,
+    }).returning({ id: pulseActivities.id });
+
+    garminMocks.get.mockImplementation(async (url: string) => {
+      if (url.endsWith('/splits')) {
+        return {
+          lapDTOs: [{
+            distance: 10_000,
+            duration: 1_800,
+            averageHR: 142,
+            maxHR: 158,
+            averagePower: 210,
+            averageSpeed: 5.55,
+            elevationGain: 80,
+          }],
+        };
+      }
+      if (url.endsWith('/hrTimeInZones')) {
+        return [{ zoneNumber: 2, secsInZone: 1_200, zoneLowBoundary: 130 }];
+      }
+      return {};
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/activities/${activity!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ laps: unknown[]; hrZones: unknown[] }>();
+    expect(body.laps).toHaveLength(1);
+    expect(body.hrZones).toHaveLength(1);
+
+    const [saved] = await db.select({
+      rawData: pulseActivities.rawData,
+      garminLaps: pulseActivities.garminLaps,
+      garminHrZones: pulseActivities.garminHrZones,
+      garminDetailSyncedAt: pulseActivities.garminDetailSyncedAt,
+    }).from(pulseActivities).where(eq(pulseActivities.id, activity!.id));
+
+    expect(saved?.rawData).toEqual(activitySummary);
+    expect(saved?.garminLaps).toEqual(body.laps);
+    expect(saved?.garminHrZones).toEqual(body.hrZones);
+    expect(saved?.garminDetailSyncedAt).toBeInstanceOf(Date);
+  });
+
+  it('continues to read legacy cached laps and HR zones from rawData', async () => {
+    const legacyCache = {
+      laps: [{ index: 1, durationSec: 900, avgHr: 138, avgPowerW: 185, avgSpeedMs: 4.8 }],
+      hrZones: [{ zone: 2, secsInZone: 700, zoneLowBoundary: 130 }],
+    };
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: '112233',
+      source: 'garmin',
+      startTime: new Date('2026-05-01T09:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 900,
+      rawData: legacyCache,
+    }).returning({ id: pulseActivities.id });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/activities/${activity!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ laps: unknown[]; hrZones: unknown[] }>();
+    expect(body.laps).toEqual(legacyCache.laps);
+    expect(body.hrZones).toEqual(legacyCache.hrZones);
+    expect(garminMocks.get).not.toHaveBeenCalled();
   });
 });
 

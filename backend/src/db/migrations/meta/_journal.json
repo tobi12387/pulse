@@ -134,6 +134,13 @@
       "when": 1777135589452,
       "tag": "0018_plan_generations",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777657861684,
+      "tag": "0019_garmin_raw_detail_cache",
+      "breakpoints": true
     }
   ]
 }

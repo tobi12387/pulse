@@ -20,6 +20,9 @@ import {
   pulsePushSubscriptions,
   pulseEquipmentActivity,
   DEFAULT_PUSH_TOPICS,
+  type GarminActivityDetailCache,
+  type GarminActivityHrZoneCache,
+  type GarminActivityLapCache,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
 import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
@@ -89,6 +92,43 @@ const garminBackfillSchema = z.object({
   domains: z.array(z.enum(garminBackfillDomains)).min(1).max(garminBackfillDomains.length).optional(),
   dryRun: z.boolean().optional().default(false),
 });
+
+function asGarminLapCache(value: unknown): GarminActivityLapCache[] {
+  return Array.isArray(value) ? value as GarminActivityLapCache[] : [];
+}
+
+function asGarminHrZoneCache(value: unknown): GarminActivityHrZoneCache[] {
+  return Array.isArray(value) ? value as GarminActivityHrZoneCache[] : [];
+}
+
+function legacyRawDetailCache(rawData: unknown): {
+  hasLegacyCache: boolean;
+  laps: GarminActivityLapCache[];
+  hrZones: GarminActivityHrZoneCache[];
+} {
+  if (typeof rawData !== 'object' || rawData == null) {
+    return { hasLegacyCache: false, laps: [], hrZones: [] };
+  }
+
+  const candidate = rawData as { laps?: unknown; hrZones?: unknown };
+  const laps = asGarminLapCache(candidate.laps);
+  const hrZones = asGarminHrZoneCache(candidate.hrZones);
+  return {
+    hasLegacyCache: Array.isArray(candidate.laps) || Array.isArray(candidate.hrZones),
+    laps,
+    hrZones,
+  };
+}
+
+function analyticsLapsFromCache(laps: GarminActivityLapCache[]) {
+  return laps.map(l => ({
+    index:        l.index,
+    durationSec:  l.durationSec ?? null,
+    avgHr:        l.avgHr ?? null,
+    avgPowerW:    l.avgPowerW ?? null,
+    avgSpeedMs:   l.avgSpeedMs ?? null,
+  }));
+}
 
 const activityFeedbackSchema = z.object({
   rpe: z.number().int().min(1).max(10),
@@ -1494,15 +1534,22 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }).from(pulseEquipmentActivity)
       .where(eq(pulseEquipmentActivity.activityId, id));
 
-    // Use cached rawData if present, else fetch from Garmin
-    let laps: any[] = [];
-    let hrZones: { zone: number; secsInZone: number; zoneLowBoundary: number }[] = [];
+    let laps: GarminActivityLapCache[] = [];
+    let hrZones: GarminActivityHrZoneCache[] = [];
 
-    if (activity.rawData && (activity.rawData as any).laps) {
-      const rd = activity.rawData as { laps?: any[]; hrZones?: any[] };
-      laps    = rd.laps    ?? [];
-      hrZones = rd.hrZones ?? [];
-    } else if (activity.externalId) {
+    const hasDetailCache = activity.garminLaps != null || activity.garminHrZones != null;
+    const legacyCache = hasDetailCache
+      ? { hasLegacyCache: false, laps: [], hrZones: [] }
+      : legacyRawDetailCache(activity.rawData);
+    if (hasDetailCache) {
+      laps = asGarminLapCache(activity.garminLaps);
+      hrZones = asGarminHrZoneCache(activity.garminHrZones);
+    } else if (legacyCache.hasLegacyCache) {
+      laps = legacyCache.laps;
+      hrZones = legacyCache.hrZones;
+    }
+
+    if (!hasDetailCache && !legacyCache.hasLegacyCache && activity.externalId) {
       try {
         const { getGarminClient } = await import('../lib/garmin-client.js');
         const gc = await getGarminClient();
@@ -1514,7 +1561,10 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ]);
 
         if (splitsRes.status === 'fulfilled') {
-          const raw = (splitsRes.value as any).lapDTOs ?? [];
+          const splitPayload = splitsRes.value;
+          const raw = splitPayload && typeof splitPayload === 'object'
+            ? (splitPayload as { lapDTOs?: unknown[] }).lapDTOs ?? []
+            : [];
           laps = raw.map((l: any, i: number) => ({
             index:    i + 1,
             distanceM: l.distance ?? null,
@@ -1528,18 +1578,39 @@ export default async function pulsePlugin(app: FastifyInstance) {
         }
 
         if (zonesRes.status === 'fulfilled') {
-          const raw = zonesRes.value as any[];
-          hrZones = (Array.isArray(raw) ? raw : Object.values(raw)).map((z: any) => ({
-            zone: z.zoneNumber,
-            secsInZone: z.secsInZone,
-            zoneLowBoundary: z.zoneLowBoundary,
-          }));
+          const raw = zonesRes.value;
+          const rows = Array.isArray(raw)
+            ? raw
+            : raw && typeof raw === 'object'
+              ? Object.values(raw as Record<string, unknown>)
+              : [];
+          hrZones = rows.map((z: any) => {
+            const zone = z && typeof z === 'object' ? z : {};
+            return {
+              zone: zone.zoneNumber,
+              secsInZone: zone.secsInZone,
+              zoneLowBoundary: zone.zoneLowBoundary ?? null,
+            };
+          });
         }
 
-        // Cache in rawData
-        await db.update(pulseActivities)
-          .set({ rawData: { laps, hrZones } })
-          .where(eq(pulseActivities.id, id));
+        if (splitsRes.status === 'fulfilled' || zonesRes.status === 'fulfilled') {
+          const detailData: GarminActivityDetailCache = {
+            source: 'garmin',
+            fetchedAt: new Date().toISOString(),
+            splits: splitsRes.status === 'fulfilled' ? splitsRes.value : null,
+            hrTimeInZones: zonesRes.status === 'fulfilled' ? zonesRes.value : null,
+          };
+
+          await db.update(pulseActivities)
+            .set({
+              garminDetailData: detailData,
+              garminLaps: laps,
+              garminHrZones: hrZones,
+              garminDetailSyncedAt: new Date(),
+            })
+            .where(eq(pulseActivities.id, id));
+        }
 
       } catch (err) {
         app.log.warn(`[activity-detail] Garmin fetch failed for ${id}: ${err}`);
@@ -1562,13 +1633,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       const { computeFromLaps } = await import('../lib/activity-analytics.js');
       const result = computeFromLaps({
         activityType: activity.activityType,
-        laps: laps.map(l => ({
-          index:        l.index,
-          durationSec:  l.durationSec,
-          avgHr:        l.avgHr,
-          avgPowerW:    l.avgPowerW,
-          avgSpeedMs:   l.avgSpeedMs,
-        })),
+        laps: analyticsLapsFromCache(laps),
       });
 
       // Compare to last 30d activities of same type (loose ±25% duration)
@@ -1577,7 +1642,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const since30d = new Date(activity.startTime.getTime() - 30 * 86_400_000);
         const dur = activity.durationSec ?? 0;
         const peers = await db.select({
-          rawData:     pulseActivities.rawData,
+          rawData:      pulseActivities.rawData,
+          garminLaps:   pulseActivities.garminLaps,
           activityType: pulseActivities.activityType,
           durationSec: pulseActivities.durationSec,
         }).from(pulseActivities)
@@ -1588,12 +1654,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
           ))
           .limit(40);
 
-        // Use only ones with cached laps in rawData and similar duration
+        // Use only ones with cached laps and similar duration.
         const efs: number[] = [];
         const decs: number[] = [];
         for (const p of peers) {
-          if (p.rawData == null) continue;
-          const peerLaps = (p.rawData as { laps?: Array<{ durationSec: number|null; avgHr: number|null; avgPowerW: number|null; avgSpeedMs: number|null; index: number }> }).laps;
+          const peerLaps = asGarminLapCache(p.garminLaps);
+          if (!peerLaps.length) {
+            peerLaps.push(...legacyRawDetailCache(p.rawData).laps);
+          }
           if (!peerLaps?.length) continue;
           if (dur > 0 && p.durationSec != null) {
             const ratio = p.durationSec / dur;
@@ -1601,7 +1669,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
           }
           const r = computeFromLaps({
             activityType: p.activityType,
-            laps: peerLaps,
+            laps: analyticsLapsFromCache(peerLaps),
           });
           if (r.ef) efs.push(r.ef.ef);
           if (r.decoupling) decs.push(r.decoupling.decouplingPct);
