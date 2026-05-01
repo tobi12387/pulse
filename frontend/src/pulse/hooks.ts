@@ -630,13 +630,13 @@ export function useCorrelations(days = 30) {
   });
 }
 
-export function useDeepInsight(domain: string, days = 30) {
+export function useDeepInsight(domain: string, days = 30, enabled = true) {
   return useQuery({
     queryKey: pulseKeys.insight(domain, days),
     queryFn: () => pulseApi.insights.get(domain, days),
     staleTime: 60 * 60_000,
     retry: false,
-    enabled: !!domain,
+    enabled: !!domain && enabled,
   });
 }
 

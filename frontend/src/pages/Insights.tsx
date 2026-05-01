@@ -16,10 +16,11 @@ const DOMAINS: { key: Domain; label: string; emoji: string; color: string }[] = 
 const DAYS_OPTIONS = [7, 30, 90];
 
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
-  const [expanded, setExpanded] = useState(domain === 'overall');
-  const { data, isLoading, error } = useDeepInsight(domain, days);
+  const [expanded, setExpanded] = useState(false);
+  const { data, isLoading, isFetching, error, refetch } = useDeepInsight(domain, days, expanded);
   const refresh = useRefreshInsight(domain, days);
   const meta = DOMAINS.find(d => d.key === domain)!;
+  const isBusy = isLoading || isFetching || refresh.isPending;
 
   return (
     <div
@@ -49,16 +50,35 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
       {/* Body */}
       {expanded && (
         <div style={{ borderTop: '1px solid var(--border)', padding: '12px 14px' }}>
-          {isLoading || refresh.isPending ? (
+          {isBusy ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[70, 90, 55].map((w, i) => (
                 <div key={i} style={{ height: 10, borderRadius: 4, background: 'var(--surface-2)', width: `${w}%`, animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
           ) : error ? (
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--rose)' }}>
-              {error.message}
-            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+                  Analyse konnte gerade nicht geladen werden.
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+                  Deine Daten bleiben sichtbar. Versuche es gleich erneut oder wechsle auf einen anderen Zeitraum.
+                </p>
+              </div>
+              <button
+                onClick={() => refetch()}
+                style={{
+                  alignSelf: 'flex-start',
+                  fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text)',
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  padding: '5px 9px', border: '1px solid var(--border)', borderRadius: 4,
+                  background: 'var(--surface-2)', cursor: 'pointer',
+                }}
+              >
+                Erneut versuchen
+              </button>
+            </div>
           ) : data ? (
             <>
               {/* Stats chips */}
@@ -136,7 +156,7 @@ export default function Insights() {
       </div>
 
       <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
-        KI-Analyse deiner Gesundheits- und Trainingsdaten. Tippe auf eine Karte um die Analyse zu laden.
+        KI-Analyse deiner Gesundheits- und Trainingsdaten. Öffne eine Karte, um die Analyse gezielt zu laden.
       </p>
 
       <MentalLoadOverlay />

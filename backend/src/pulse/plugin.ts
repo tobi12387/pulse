@@ -3430,7 +3430,7 @@ Direkt, knapp, kein Smalltalk.`;
   });
 
   // GET /api/pulse/insights?domain=sleep|hrv|load|weight|mental|overall&days=30&refresh=false
-  app.get('/insights', { onRequest: [app.authenticate] }, async (req) => {
+  app.get('/insights', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
     const query = req.query as { domain?: string; days?: string; refresh?: string };
     const domain = (query.domain ?? 'overall') as InsightDomain;
@@ -3440,7 +3440,15 @@ Direkt, knapp, kein Smalltalk.`;
     if (!validDomains.includes(domain)) {
       return { error: 'Invalid domain' };
     }
-    return generateDeepInsight(userId, domain, days, forceRefresh);
+    try {
+      return await generateDeepInsight(userId, domain, days, forceRefresh);
+    } catch (error) {
+      req.log.error({ err: error, domain, days }, 'pulse insight generation failed');
+      return reply.code(503).send({
+        error: 'Analyse konnte gerade nicht geladen werden.',
+        code: 'insight_unavailable',
+      });
+    }
   });
 
   // GET /api/pulse/correlations?days=30
