@@ -55,6 +55,7 @@ import {
   garminWorkoutHasBrokenRepeatIterations,
   workoutHasRepeatSteps,
 } from './services/garmin-workout.js';
+import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './services/workout-reconciliation.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -128,6 +129,44 @@ function analyticsLapsFromCache(laps: GarminActivityLapCache[]) {
     avgPowerW:    l.avgPowerW ?? null,
     avgSpeedMs:   l.avgSpeedMs ?? null,
   }));
+}
+
+function enrichWorkoutExecutionState(
+  workout: typeof pulsePlannedWorkouts.$inferSelect,
+  activities: Array<Pick<typeof pulseActivities.$inferSelect, 'id' | 'startTime' | 'activityType' | 'durationSec'>>,
+  now: Date,
+) {
+  const sameDayActivities = activities.filter(activity => toIsoDate(activity.startTime) === workout.plannedDate);
+  const completedActivity = workout.completedActivityId
+    ? activities.find(activity => activity.id === workout.completedActivityId) ?? null
+    : null;
+  const bestSameDayActivity = sameDayActivities
+    .map(activity => ({ activity, score: scoreActivityWorkoutMatch(workout, activity) }))
+    .sort((a, b) => b.score - a.score)[0]?.activity ?? null;
+  const activity = completedActivity ?? bestSameDayActivity;
+  const state = deriveWorkoutExecutionState({
+    id: workout.id,
+    plannedDate: workout.plannedDate,
+    activityType: workout.activityType,
+    status: workout.status,
+    garminWorkoutId: workout.garminWorkoutId,
+    garminScheduledId: workout.garminScheduledId,
+    completedActivityId: workout.completedActivityId,
+    durationMin: workout.durationMin,
+  }, null, activity ? {
+    id: activity.id,
+    startTime: activity.startTime,
+    activityType: activity.activityType,
+    durationSec: activity.durationSec,
+  } : null, now);
+
+  return {
+    ...workout,
+    executionStatus: state.status,
+    executionMatchedAt: workout.executionMatchedAt?.toISOString() ?? null,
+    executionMatchConfidence: state.confidence ?? workout.executionMatchConfidence ?? null,
+    executionNotes: workout.executionNotes ?? state.notes,
+  };
 }
 
 const activityFeedbackSchema = z.object({
@@ -918,10 +957,17 @@ export default async function pulsePlugin(app: FastifyInstance) {
         description: nextWorkout.description,
         steps: (nextWorkout.steps ?? null) as import('@coaching-os/shared/pulse').WorkoutStep[] | null,
         garminWorkoutId: nextWorkout.garminWorkoutId ?? null,
+        garminScheduledId: nextWorkout.garminScheduledId ?? null,
         status: nextWorkout.status as PulseWorkoutStatus,
         workoutFeedback: nextWorkout.workoutFeedback ?? null,
         complianceScore: nextWorkout.complianceScore ?? null,
         completedActivityId: nextWorkout.completedActivityId ?? null,
+        executionStatus: nextWorkout.executionStatus ?? (
+          nextWorkout.garminScheduledId ? 'garmin_scheduled' : nextWorkout.garminWorkoutId ? 'garmin_template' : 'local_planned'
+        ),
+        executionMatchedAt: nextWorkout.executionMatchedAt?.toISOString() ?? null,
+        executionMatchConfidence: nextWorkout.executionMatchConfidence ?? null,
+        executionNotes: nextWorkout.executionNotes ?? null,
       } : null,
       prognosis,
       streaks,
@@ -1863,13 +1909,27 @@ export default async function pulsePlugin(app: FastifyInstance) {
   // ─── Training plan ────────────────────────────────────────────────────────────
   app.get('/plan', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
-    const today = new Date().toISOString().split('T')[0]!;
+    const now = new Date();
+    const since = toIsoDate(addDateDays(now, -7));
     const workouts = await db.select()
       .from(pulsePlannedWorkouts)
-      .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, today)))
+      .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, since)))
       .orderBy(pulsePlannedWorkouts.plannedDate)
-      .limit(14);
-    return { workouts };
+      .limit(21);
+
+    const activities = await db.select({
+      id: pulseActivities.id,
+      startTime: pulseActivities.startTime,
+      activityType: pulseActivities.activityType,
+      durationSec: pulseActivities.durationSec,
+    }).from(pulseActivities)
+      .where(and(
+        eq(pulseActivities.userId, userId),
+        gte(pulseActivities.startTime, new Date(`${since}T00:00:00.000Z`)),
+      ))
+      .limit(100);
+
+    return { workouts: workouts.map(workout => enrichWorkoutExecutionState(workout, activities, now)) };
   });
 
   // ─── Single workout + detail generation ──────────────────────────────────────
@@ -1879,7 +1939,19 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const [workout] = await db.select().from(pulsePlannedWorkouts)
       .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
     if (!workout) return reply.status(404).send({ error: 'Not found' });
-    return { workout };
+    const activities = await db.select({
+      id: pulseActivities.id,
+      startTime: pulseActivities.startTime,
+      activityType: pulseActivities.activityType,
+      durationSec: pulseActivities.durationSec,
+    }).from(pulseActivities)
+      .where(and(
+        eq(pulseActivities.userId, userId),
+        gte(pulseActivities.startTime, new Date(`${workout.plannedDate}T00:00:00.000Z`)),
+        lte(pulseActivities.startTime, new Date(`${workout.plannedDate}T23:59:59.999Z`)),
+      ))
+      .limit(20);
+    return { workout: enrichWorkoutExecutionState(workout, activities, new Date()) };
   });
 
   app.patch('/plan/workout/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -1975,11 +2047,22 @@ export default async function pulsePlugin(app: FastifyInstance) {
           ? String(scheduled.scheduledWorkoutId)
           : null;
 
-      await db.update(pulsePlannedWorkouts)
-        .set({ garminWorkoutId, garminScheduledId })
-        .where(eq(pulsePlannedWorkouts.id, id));
+      const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
+      const executionNotes = garminScheduledId
+        ? 'Workout ist auf Garmin im Kalender geplant.'
+        : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
 
-      return { garminWorkoutId, date: workout.plannedDate };
+      const [updated] = await db.update(pulsePlannedWorkouts)
+        .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
+        .where(eq(pulsePlannedWorkouts.id, id))
+        .returning();
+
+      return {
+        garminWorkoutId,
+        garminScheduledId,
+        date: workout.plannedDate,
+        workout: updated ? enrichWorkoutExecutionState(updated, [], new Date()) : null,
+      };
     } catch (err) {
       app.log.error(`Garmin workout sync failed: ${err}`);
       return reply.status(502).send({ error: `Garmin-Sync fehlgeschlagen: ${String(err).slice(0, 120)}` });
@@ -2051,7 +2134,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
           app.log.warn(`[calendar-sync] Failed to remove broken repeat workout ${workout.garminWorkoutId}: ${err}`);
         });
         await db.update(pulsePlannedWorkouts)
-          .set({ garminWorkoutId: null, garminScheduledId: null })
+          .set({
+            garminWorkoutId: null,
+            garminScheduledId: null,
+            executionStatus: null,
+            executionNotes: null,
+            executionMatchConfidence: null,
+            executionMatchedAt: null,
+          })
           .where(eq(pulsePlannedWorkouts.id, workout.id));
         workout.garminWorkoutId = null;
         workout.garminScheduledId = null;
@@ -2080,8 +2170,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const garminScheduledId = scheduled?.workoutScheduleId != null
           ? String(scheduled.workoutScheduleId)
           : scheduled?.id != null ? String(scheduled.id) : null;
+        const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
+        const executionNotes = garminScheduledId
+          ? 'Workout ist auf Garmin im Kalender geplant.'
+          : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
         await db.update(pulsePlannedWorkouts)
-          .set({ garminWorkoutId, garminScheduledId })
+          .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
           .where(eq(pulsePlannedWorkouts.id, w.id));
         uploaded++;
       } catch (err) {
@@ -2417,8 +2511,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
             const garminScheduledId = scheduled?.workoutScheduleId != null
               ? String(scheduled.workoutScheduleId)
               : scheduled?.id != null ? String(scheduled.id) : null;
+            const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
+            const executionNotes = garminScheduledId
+              ? 'Workout ist auf Garmin im Kalender geplant.'
+              : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
             await db.update(pulsePlannedWorkouts)
-              .set({ garminWorkoutId, garminScheduledId })
+              .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
               .where(eq(pulsePlannedWorkouts.id, w.id));
             app.log.info(`[plan-generate] Synced workout ${w.id} → Garmin ${garminWorkoutId}`);
           } catch (err) {

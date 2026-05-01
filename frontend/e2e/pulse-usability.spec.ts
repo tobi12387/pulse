@@ -178,7 +178,7 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await page.goto('/plan');
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sportart ändern' })).toBeVisible();
-  await expect(page.getByText('Garmin offen')).toBeVisible();
+  await expect(page.getByText('Lokal')).toBeVisible();
   await expect(page.getByRole('button', { name: 'wechseln' })).toHaveCount(0);
 
   const decisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
@@ -190,6 +190,106 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await page.getByRole('button', { name: '+ Plan generieren' }).click();
   await expect(page.getByText('Verfügbarkeit: Mo/Mi/Fr/Sa')).toBeVisible();
   await expect(page.getByText('Umfang: 8 h')).toBeVisible();
+});
+
+test('Plan shows Garmin execution states and match explanations', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-local',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        targetTss: 45,
+        status: 'planned',
+        description: 'Lokale Grundlage.',
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        executionStatus: 'local_planned',
+        executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+      },
+      {
+        id: 'workout-garmin',
+        plannedDate: '2026-05-02',
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        status: 'planned',
+        description: 'Garmin-Vorlage.',
+        garminWorkoutId: 'gw-1',
+        garminScheduledId: null,
+        executionStatus: 'garmin_template',
+        executionNotes: 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.',
+      },
+      {
+        id: 'workout-calendar',
+        plannedDate: '2026-05-03',
+        activityType: 'swim',
+        zone: 2,
+        durationMin: 40,
+        targetTss: 25,
+        status: 'planned',
+        description: 'Kalendertermin.',
+        garminWorkoutId: 'gw-2',
+        garminScheduledId: 'sched-2',
+        executionStatus: 'garmin_scheduled',
+        executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+      },
+      {
+        id: 'workout-done',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 3,
+        durationMin: 75,
+        targetTss: 70,
+        status: 'completed',
+        description: 'Durchgeführt.',
+        garminWorkoutId: 'gw-3',
+        garminScheduledId: 'sched-3',
+        completedActivityId: 'activity-1',
+        executionStatus: 'completed_matched',
+        executionNotes: 'Mit Garmin-Aktivität activity-1 abgeglichen.',
+        executionMatchConfidence: 0.92,
+        workoutFeedback: 'Sauber getroffen.',
+        complianceScore: 0.92,
+      },
+      {
+        id: 'workout-missed',
+        plannedDate: '2026-04-30',
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        status: 'planned',
+        description: 'Nicht erledigt.',
+        executionStatus: 'missed',
+        executionNotes: 'Plantag ist vorbei und keine passende Garmin-Aktivität ist zugeordnet.',
+      },
+      {
+        id: 'workout-replaced',
+        plannedDate: '2026-05-05',
+        activityType: 'swim',
+        zone: 2,
+        durationMin: 40,
+        targetTss: 25,
+        status: 'planned',
+        description: 'Durch anderes Training ersetzt.',
+        executionStatus: 'replaced_or_off_plan',
+        executionNotes: 'Am Plantag wurde eine andere Aktivität (run) gefunden.',
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  for (const label of ['Lokal', 'Garmin', 'Kalender', 'Erledigt', 'Verpasst', 'Ersetzt']) {
+    await expect(page.getByText(label).first()).toBeVisible();
+  }
+
+  await page.getByText('Durchgeführt.').click();
+  await expect(page.getByText('Erledigt').last()).toBeVisible();
+  await expect(page.getByText('Mit Garmin-Aktivität activity-1 abgeglichen.')).toBeVisible();
 });
 
 test('Plan alternatives adapt the next workout with semantic choices', async ({ page }) => {

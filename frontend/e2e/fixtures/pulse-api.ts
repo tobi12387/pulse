@@ -308,10 +308,15 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           description: body.description ?? null,
           steps: null,
           garminWorkoutId: null,
+          garminScheduledId: null,
           status: body.status ?? 'planned',
           workoutFeedback: null,
           complianceScore: null,
           completedActivityId: null,
+          executionStatus: body.status === 'skipped' ? 'missed' : 'local_planned',
+          executionMatchedAt: null,
+          executionMatchConfidence: null,
+          executionNotes: 'Workout ist nur lokal in Pulse geplant.',
         },
       });
     }

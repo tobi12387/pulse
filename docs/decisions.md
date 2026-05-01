@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Workout-Ausführung bekommt eigenes Garmin-Reconciliation-Statusmodell
+
+- **Decision:** Geplante Workouts behalten `status` fuer bestehende Planlogik, bekommen aber zusaetzlich nullable Execution-Felder (`execution_status`, `execution_matched_at`, `execution_match_confidence`, `execution_notes`). Die sechs UI-Zustaende sind `Lokal`, `Garmin`, `Kalender`, `Erledigt`, `Verpasst` und `Ersetzt`; `completed_activity_id` bleibt der kanonische Link zur ausgefuehrten Garmin-Aktivitaet.
+- **Why:** Plan-, Lern- und Feedbacklogik duerfen nicht mehr nur zwischen `planned` und `completed` unterscheiden. Der Alltag braucht sichtbar, ob eine Einheit nur lokal existiert, als Garmin-Vorlage vorhanden ist, wirklich im Garmin-Kalender liegt, ausgefuehrt wurde, verpasst ist oder durch eine andere Aktivitaet ersetzt wurde.
+- **Alternatives:** Bestehende `status`-Spalte mit neuen Werten ueberladen (Regression fuer Plan-Learning/Filter); nur im Frontend aus Garmin-IDs ableiten (keine Sync-/Audit-Spur); Live-Garmin-Kalender bei jedem Planaufruf lesen (Rate-Limit- und Latenzrisiko).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Garmin Activity Details bekommen eigenen Cache statt `raw_data`-Overwrite
 
 - **Decision:** `pulse_activities.raw_data` bleibt der originale Garmin-Activity-Summary-Snapshot. Garmin-Splits, HR-Zonen und Detailpayloads werden in den nullable Spalten `garmin_detail_data`, `garmin_laps`, `garmin_hr_zones` und `garmin_detail_synced_at` gecacht; alte `{ laps, hrZones }`-Werte in `raw_data` bleiben als Legacy-Fallback lesbar und werden per Migration in den neuen Cache übernommen.

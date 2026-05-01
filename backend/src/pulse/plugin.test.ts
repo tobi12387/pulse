@@ -740,6 +740,57 @@ describe('GET /api/pulse/plan', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toHaveProperty('workouts');
   });
+
+  it('returns derived Garmin execution states for planned workouts', async () => {
+    const yesterday = dateDaysAgo(1);
+    const today = dateDaysAgo(0);
+    const tomorrow = dateDaysAgo(-1);
+
+    const [completedActivity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'completed-activity',
+      source: 'garmin',
+      startTime: new Date(`${today}T09:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 5_200,
+    }).returning({ id: pulseActivities.id });
+
+    await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'off-plan-activity',
+      source: 'garmin',
+      startTime: new Date(`${today}T12:00:00.000Z`),
+      activityType: 'run',
+      durationSec: 2_700,
+    });
+
+    await db.insert(pulsePlannedWorkouts).values([
+      { userId, plannedDate: tomorrow, activityType: 'bike', zone: 2, durationMin: 60, status: 'planned' },
+      { userId, plannedDate: tomorrow, activityType: 'run', zone: 2, durationMin: 45, status: 'planned', garminWorkoutId: 'gw-1' },
+      { userId, plannedDate: tomorrow, activityType: 'swim', zone: 2, durationMin: 40, status: 'planned', garminWorkoutId: 'gw-2', garminScheduledId: 'sched-2' },
+      { userId, plannedDate: today, activityType: 'bike', zone: 2, durationMin: 90, status: 'completed', completedActivityId: completedActivity!.id },
+      { userId, plannedDate: yesterday, activityType: 'run', zone: 2, durationMin: 45, status: 'planned' },
+      { userId, plannedDate: today, activityType: 'swim', zone: 2, durationMin: 40, status: 'planned' },
+    ]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/plan',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ workouts: Array<{ executionStatus: string; executionNotes: string | null; executionMatchConfidence: number | null }> }>();
+    const statuses = body.workouts.map(w => w.executionStatus);
+    expect(statuses).toContain('local_planned');
+    expect(statuses).toContain('garmin_template');
+    expect(statuses).toContain('garmin_scheduled');
+    expect(statuses).toContain('completed_matched');
+    expect(statuses).toContain('missed');
+    expect(statuses).toContain('replaced_or_off_plan');
+    expect(body.workouts.find(w => w.executionStatus === 'completed_matched')?.executionMatchConfidence).toBeGreaterThanOrEqual(0.8);
+    expect(body.workouts.find(w => w.executionStatus === 'replaced_or_off_plan')?.executionNotes).toContain('andere Aktivitaet');
+  });
 });
 
 describe('POST /api/pulse/plan/generate', () => {
