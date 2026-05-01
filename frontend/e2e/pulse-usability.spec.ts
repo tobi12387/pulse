@@ -167,6 +167,106 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await expect(page.getByText('Umfang: 8 h')).toBeVisible();
 });
 
+test('Plan alternatives adapt the next workout with semantic choices', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const updates: unknown[] = [];
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 90,
+        targetTss: 92,
+        status: 'planned',
+        description: 'Schwellenintervalle, nur wenn die Tagesform passt.',
+      },
+    ],
+    planTrace: {
+      weekStart: '2026-04-27',
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 58.2, tsb: -15.8 },
+        phase: 'build',
+        weeklyHoursTarget: 8,
+        goals: [{ title: '70.3 Vorbereitung' }],
+        riskSignals: [{ title: 'TSB niedrig' }],
+        healthStates: [],
+        recentRpe: [],
+        dataWarnings: [],
+        recentSportMix: { bike: 2 },
+        learningSnapshot: null,
+      },
+      sportMix: { bike: 2 },
+      generatedSummary: [],
+      hardDays: [],
+      planDecision: null,
+    },
+    onPlanWorkoutUpdate: (_id, body) => updates.push(body),
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('ALTERNATIVEN')).toBeVisible();
+  await expect(page.getByText('Einbezogen: TSB -15.8')).toBeVisible();
+  await expect(page.getByText('Ziele 1 aktiv')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Kürzer/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Leichter/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Verschieben/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Frei lassen/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /Leichter/ }).click();
+  await expect.poll(() => updates).toHaveLength(1);
+  expect(updates[0]).toMatchObject({
+    zone: 2,
+    durationMin: 75,
+    status: 'planned',
+  });
+});
+
+test('Plan alternatives avoid stale trace context for next-week workouts', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 90,
+        targetTss: 92,
+        status: 'planned',
+        description: 'Schwellenintervalle, nur wenn die Tagesform passt.',
+      },
+    ],
+    planTrace: {
+      weekStart: '2026-04-27',
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 58.2, tsb: -15.8 },
+        phase: 'build',
+        weeklyHoursTarget: 8,
+        goals: [{ title: '70.3 Vorbereitung' }],
+        riskSignals: [{ title: 'TSB niedrig' }],
+        healthStates: [],
+        recentRpe: [],
+        dataWarnings: [],
+        recentSportMix: { bike: 2 },
+        learningSnapshot: null,
+      },
+      sportMix: { bike: 2 },
+      generatedSummary: [],
+      hardDays: [],
+      planDecision: null,
+    },
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('Einbezogen: TSB -15.8')).toHaveCount(0);
+  await expect(page.getByText('Einbezogen: aktueller Plan')).toBeVisible();
+  await expect(page.getByText('Verfügbarkeit offen')).toBeVisible();
+});
+
 test('Data coverage explains status, cause and action before backfill', async ({ page }) => {
   await mockPulseApi(page, {
     coverage: {

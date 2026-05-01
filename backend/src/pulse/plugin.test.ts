@@ -782,6 +782,79 @@ describe('POST /api/pulse/plan/generate', () => {
   });
 });
 
+describe('PATCH /api/pulse/plan/workout/:id', () => {
+  it('preserves generated steps for schedule/status alternatives and recalculates TSS for prescription changes', async () => {
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-04',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 90,
+      targetTss: 130,
+      description: 'Schwellenintervalle',
+      steps: [{ type: 'steady', durationMin: 90, zone: 4, description: 'Original' }],
+    }).returning();
+
+    const moved = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        plannedDate: '2026-05-05',
+        status: 'planned',
+        description: 'Alternative: verschoben',
+      },
+    });
+
+    expect(moved.statusCode).toBe(200);
+    const movedWorkout = moved.json<{ workout: { plannedDate: string; steps: unknown[] | null; targetTss: number | null } }>().workout;
+    expect(movedWorkout.plannedDate).toBe('2026-05-05');
+    expect(movedWorkout.steps).toEqual([{ type: 'steady', durationMin: 90, zone: 4, description: 'Original' }]);
+    expect(movedWorkout.targetTss).toBe(130);
+
+    const easier = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { zone: 2, durationMin: 75 },
+    });
+
+    expect(easier.statusCode).toBe(200);
+    const easierWorkout = easier.json<{ workout: { zone: number; durationMin: number; steps: unknown[] | null; targetTss: number | null } }>().workout;
+    expect(easierWorkout.zone).toBe(2);
+    expect(easierWorkout.durationMin).toBe(75);
+    expect(easierWorkout.steps).toBeNull();
+    expect(easierWorkout.targetTss).toBe(61);
+  });
+
+  it('rejects empty updates and impossible planned dates', async () => {
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-04',
+      activityType: 'run',
+      zone: 2,
+      durationMin: 45,
+      targetTss: 37,
+    }).returning();
+
+    const empty = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(empty.statusCode).toBe(400);
+
+    const invalidDate = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { plannedDate: '2026-02-31' },
+    });
+    expect(invalidDate.statusCode).toBe(400);
+  });
+});
+
 describe('POST /api/pulse/plan/workout/:id/detail', () => {
   it('adds deterministic HR targets to generated endurance steps', async () => {
     await db.insert(pulseUserProfile).values({

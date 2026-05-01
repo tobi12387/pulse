@@ -63,6 +63,86 @@ function isoDate(d: Date): string {
 }
 
 type PlannedWorkout = PulsePlannedWorkout;
+type WorkoutUpdate = {
+  activityType?: string;
+  zone?: number;
+  durationMin?: number;
+  plannedDate?: string;
+  status?: 'planned' | 'skipped';
+  description?: string | null;
+};
+
+type PlanAlternativeId = 'shorter' | 'easier' | 'move' | 'rest';
+
+function roundToFive(value: number): number {
+  return Math.max(5, Math.round(value / 5) * 5);
+}
+
+function appendPlanNote(description: string | null, note: string): string {
+  const base = description?.trim();
+  const next = base ? `${base}\n${note}` : note;
+  return next.length > 1000 ? next.slice(0, 997) + '...' : next;
+}
+
+function dayIndexFromDate(date: string): number {
+  const day = new Date(date + 'T12:00:00').getDay();
+  return day === 0 ? 6 : day - 1;
+}
+
+function nextAvailableDateAfter(date: string, availableDays: number[]): string {
+  const allowed = availableDays.length > 0 ? availableDays : [dayIndexFromDate(date)];
+  for (let offset = 1; offset <= 14; offset += 1) {
+    const next = new Date(date + 'T12:00:00');
+    next.setDate(next.getDate() + offset);
+    if (allowed.includes(dayIndexFromDate(isoDate(next)))) return isoDate(next);
+  }
+  const next = new Date(date + 'T12:00:00');
+  next.setDate(next.getDate() + 1);
+  return isoDate(next);
+}
+
+function weekStartForDate(date: string): string {
+  return isoDate(getMonday(new Date(date + 'T12:00:00')));
+}
+
+function getNextOpenWorkout(workouts: PlannedWorkout[], today: string): PlannedWorkout | null {
+  return [...workouts]
+    .filter(w => w.status !== 'completed' && w.status !== 'skipped' && w.plannedDate >= today)
+    .sort((a, b) => a.plannedDate.localeCompare(b.plannedDate))[0] ?? null;
+}
+
+function buildPlanAlternative(workout: PlannedWorkout, id: PlanAlternativeId, availableDays: number[]): WorkoutUpdate {
+  if (id === 'shorter') {
+    const durationMin = roundToFive(workout.durationMin * 0.65);
+    return {
+      durationMin,
+      status: 'planned',
+      description: appendPlanNote(workout.description, `Alternative: kürzer (${durationMin} min), damit der Trainingsreiz bleibt, aber weniger Tagesbudget verbraucht.`),
+    };
+  }
+  if (id === 'easier') {
+    const zone = Math.max(1, Math.min(2, workout.zone - 1));
+    const durationMin = roundToFive(workout.durationMin * 0.85);
+    return {
+      zone,
+      durationMin,
+      status: 'planned',
+      description: appendPlanNote(workout.description, `Alternative: leichter (Z${zone}, ${durationMin} min), wenn Load oder Tagesform gegen die geplante Intensität sprechen.`),
+    };
+  }
+  if (id === 'move') {
+    const plannedDate = nextAvailableDateAfter(workout.plannedDate, availableDays);
+    return {
+      plannedDate,
+      status: 'planned',
+      description: appendPlanNote(workout.description, `Alternative: verschoben auf ${plannedDate}, damit die Einheit nicht erzwungen wird.`),
+    };
+  }
+  return {
+    status: 'skipped',
+    description: appendPlanNote(workout.description, 'Alternative: bewusst frei gelassen, damit Erholung heute Vorrang hat.'),
+  };
+}
 
 function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
   workouts: PlannedWorkout[];
@@ -161,16 +241,20 @@ function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
 }
 
 function NextTrainingDecisionCard({
-  workouts,
+  nextWorkout,
+  availableDays,
+  activeGoalsCount,
+  planTrace,
   onOpen,
 }: {
-  workouts: PlannedWorkout[];
+  nextWorkout: PlannedWorkout | null;
+  availableDays: number[];
+  activeGoalsCount: number;
+  planTrace: PulsePlanTrace | null;
   onOpen: (workout: PlannedWorkout) => void;
 }) {
+  const update = useUpdateWorkout();
   const today = isoDateLocal(new Date());
-  const nextWorkout = [...workouts]
-    .filter(w => w.status !== 'completed' && w.status !== 'skipped' && w.plannedDate >= today)
-    .sort((a, b) => a.plannedDate.localeCompare(b.plannedDate))[0] ?? null;
 
   if (!nextWorkout) {
     return (
@@ -194,6 +278,46 @@ function NextTrainingDecisionCard({
     month: '2-digit',
   });
   const isToday = nextWorkout.plannedDate === today;
+  const load = planTrace?.inputSnapshot.load ?? null;
+  const riskCount = planTrace?.inputSnapshot.riskSignals.length ?? 0;
+  const goalsCount = activeGoalsCount || planTrace?.inputSnapshot.goals.length || 0;
+  const sourceChips = [
+    load ? `Einbezogen: TSB ${load.tsb.toFixed(1)}` : 'Einbezogen: aktueller Plan',
+    `Verfügbarkeit ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'offen'}`,
+    goalsCount > 0 ? `Ziele ${goalsCount} aktiv` : 'Ziele keine aktiven',
+    riskCount > 0 ? `Risiko ${riskCount} Signal(e)` : 'Risiko unauffällig',
+  ];
+  const alternatives: Array<{ id: PlanAlternativeId; label: string; detail: string }> = [
+    {
+      id: 'shorter',
+      label: 'Kürzer',
+      detail: `${roundToFive(nextWorkout.durationMin * 0.65)} min, Intensität bleibt`,
+    },
+    {
+      id: 'easier',
+      label: 'Leichter',
+      detail: `Z${Math.max(1, Math.min(2, nextWorkout.zone - 1))}, ${roundToFive(nextWorkout.durationMin * 0.85)} min`,
+    },
+    {
+      id: 'move',
+      label: 'Verschieben',
+      detail: nextAvailableDateAfter(nextWorkout.plannedDate, availableDays),
+    },
+    {
+      id: 'rest',
+      label: 'Frei lassen',
+      detail: 'bewusster Ruhetag',
+    },
+  ];
+
+  function applyAlternative(id: PlanAlternativeId) {
+    const workout = nextWorkout;
+    if (!workout) return;
+    void update.mutateAsync({
+      id: workout.id,
+      data: buildPlanAlternative(workout, id, availableDays),
+    });
+  }
 
   return (
     <div className="card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
@@ -216,6 +340,48 @@ function NextTrainingDecisionCard({
           {nextWorkout.description.split('\n')[0]}
         </p>
       )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {sourceChips.map(chip => (
+          <span key={chip} style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: '3px 6px',
+          }}>
+            {chip}
+          </span>
+        ))}
+      </div>
+      <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>ALTERNATIVEN</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 7, marginBottom: 10 }}>
+        {alternatives.map(option => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => applyAlternative(option.id)}
+            disabled={update.isPending}
+            style={{
+              minHeight: 58,
+              textAlign: 'left',
+              background: option.id === 'rest' ? 'transparent' : 'var(--surface)',
+              border: `1px solid ${option.id === 'rest' ? 'var(--border)' : 'rgba(94,230,207,0.28)'}`,
+              borderRadius: 5,
+              color: 'var(--text)',
+              cursor: update.isPending ? 'wait' : 'pointer',
+              padding: '8px 9px',
+            }}
+          >
+            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: option.id === 'rest' ? 'var(--amber)' : 'var(--accent)', textTransform: 'uppercase' }}>
+              {option.label}
+            </span>
+            <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: 'var(--text-3)', lineHeight: 1.35 }}>
+              {option.detail}
+            </span>
+          </button>
+        ))}
+      </div>
       <button
         type="button"
         onClick={() => onOpen(nextWorkout)}
@@ -228,7 +394,7 @@ function NextTrainingDecisionCard({
           cursor: 'pointer',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.14em',
+          letterSpacing: 0,
           padding: '9px 10px',
           textTransform: 'uppercase',
         }}
@@ -671,6 +837,13 @@ function TrainingTab() {
   const availableDays = weekAvailability?.availableDays ?? [0, 2, 4, 5];
   const weeklyHours = weekAvailability?.weeklyHours ?? planTrace?.inputSnapshot.weeklyHoursTarget ?? 8;
   const activeGoals = goals.data?.goals.filter(goal => goal.status === 'active') ?? [];
+  const today = isoDateLocal(new Date());
+  const nextDecisionWorkout = getNextOpenWorkout(workouts, today);
+  const decisionWeekStart = nextDecisionWorkout ? weekStartForDate(nextDecisionWorkout.plannedDate) : selectedWeekStart;
+  const decisionAvailability = availability.data?.weeks.find(w => w.weekStart === decisionWeekStart);
+  const decisionAvailableDays = decisionAvailability?.availableDays
+    ?? (decisionWeekStart === selectedWeekStart ? availableDays : []);
+  const decisionPlanTrace = decisionWeekStart === selectedWeekStart ? planTrace : null;
   const constraintChips = [
     `Verfügbarkeit: ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'keine Tage'}`,
     `Umfang: ${weeklyHours} h`,
@@ -678,7 +851,6 @@ function TrainingTab() {
     activeGoals.length > 0 ? `Ziele: ${activeGoals.length} aktiv` : 'Ziele: keine aktiven',
     planTrace?.inputSnapshot.riskSignals.length ? `Risiko: ${planTrace.inputSnapshot.riskSignals.length} Signal(e)` : 'Risiko: wird geprüft',
   ];
-  const today = isoDateLocal(new Date());
   const strengthWorkout = workouts.find(w =>
     w.activityType === 'strength'
     && w.status !== 'completed'
@@ -694,7 +866,13 @@ function TrainingTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      <NextTrainingDecisionCard workouts={workouts} onOpen={setSelectedWorkout} />
+      <NextTrainingDecisionCard
+        nextWorkout={nextDecisionWorkout}
+        availableDays={decisionAvailableDays}
+        activeGoalsCount={activeGoals.length}
+        planTrace={decisionPlanTrace}
+        onOpen={setSelectedWorkout}
+      />
 
       {/* WeekStrip */}
       <WeekStrip

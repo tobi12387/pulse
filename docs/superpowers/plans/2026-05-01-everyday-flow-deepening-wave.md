@@ -87,7 +87,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ### 1.5 Core UI Chrome Consistency
 
-**Status:** in progress via `codex/design-system-pass`.
+**Status:** completed, merged and deployed via PR #70 (`codex/design-system-pass`, deploy commit `c650d27`).
 
 - Introduce shared low-level chrome components for repeated app controls: `PageHeader`, `SegmentedControl`, `RangeControl`, `MiniButton`, `IconBadge`.
 - Replace local Data/Plan tab bars and range pickers where they are direct duplicates.
@@ -101,8 +101,10 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ### 2. Plan Alternatives 2.0
 
+**Status:** in progress via `codex/phase2-plan-alternatives`.
+
 - Nächste Trainingsentscheidung bekommt semantische Anpassungen: kürzer, leichter, verschieben, frei lassen.
-- Bestehender `/plan/today/proposal`-Contract und `AdjustTodayCard` werden zuerst genutzt, bevor neue Backend-Persistenz entsteht.
+- Bestehender Workout-PATCH-Contract wird erweitert, bevor ein neuer Alternativen-Endpunkt oder neue Persistenz entsteht.
 - Plan-UI erklärt, wann freie Tage sinnvoll sind und welche Daten in die Anpassung einfließen.
 - Acceptance:
   - Nutzer kann die nächste Einheit fachlich sinnvoll anpassen, ohne zu raten, was "wechseln" bedeutet.
@@ -135,18 +137,18 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ## Suggested Sequence
 
-1. Finish Core UI Chrome Consistency because the branch already exists and reduces UI drift before deeper phases.
-2. Plan Alternatives 2.0.
-3. Insights Reliability & Cause Classification.
-4. Data Backfill Observability.
-5. Settings Action Grouping.
+1. Finish Plan Alternatives 2.0.
+2. Insights Reliability & Cause Classification.
+3. Data Backfill Observability.
+4. Settings Action Grouping.
 
 ## Current External Checks
 
 - GitHub open PRs: none as of 2026-05-01 after checking `gh pr list`.
 - Canva: `Pulse Everyday Flow UX Board` created as the active UX companion artifact.
 - Figma: `Pulse UX Toolchain Loop` FigJam claim URL created; open/claim it before using it as an editable team file.
-- Server baseline: Phase 1 deployed and verified on `origin/main` commit `a34302c`.
+- Figma: `Pulse Plan Alternatives 2.0 States` diagram added to the Pulse UX loop.
+- Server baseline: Core UI Chrome Consistency deployed and verified on `origin/main` commit `c650d27`.
 
 ## Open Questions
 
