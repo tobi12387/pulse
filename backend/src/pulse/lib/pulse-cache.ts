@@ -1,6 +1,6 @@
 import { redis } from '../../lib/redis.js';
 
-export type PulseCacheKind = 'readiness' | 'fitness-load' | 'context' | 'context-v2' | 'briefing';
+export type PulseCacheKind = 'readiness' | 'fitness-load' | 'context' | 'context-v2' | 'briefing' | 'briefing-v2';
 
 const TTL_SECONDS: Record<PulseCacheKind, number> = {
   'readiness': 5 * 60,
@@ -8,6 +8,7 @@ const TTL_SECONDS: Record<PulseCacheKind, number> = {
   'context': 5 * 60,
   'context-v2': 5 * 60,
   'briefing': 24 * 60 * 60,
+  'briefing-v2': 24 * 60 * 60,
 };
 
 export function cacheKey(kind: PulseCacheKind, userId: string, date: string): string {

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Daily Briefing trennt heutige Entscheidung von zukünftigem Trainingsausblick
+
+- **Decision:** Daily Briefing und Coach-Startfragen behandeln nur Workouts mit `plannedDate === today` als heutige Trainingsempfehlung. Zukünftige Workouts bleiben ein klar markierter Ausblick; der manuelle Daily Check-in wird ohne Migration als geführter Mental-Fitness-Flow über die bestehenden Felder `mood`, `energy`, `stress`, `motivation` und `notes` geführt.
+- **Why:** Ein Training am 04.05. darf am 01.05. nicht als heutige Entscheidung erscheinen. Der höchste Nutzen liegt hier in sauberer Tagesorientierung und besserer subjektiver/mentaler Datenerfassung, ohne sofort neue sensible Mental-Health-Felder einzuführen.
+- **Alternatives:** Backend-Contract sofort um `todayWorkout` erweitern (größerer Shared-/API-Scope); zukünftige Workouts komplett aus Briefings entfernen (verliert sinnvollen Ausblick); neue Mental-Check-in-Tabelle/Felder sofort bauen (eigener PR wegen Migration, Context, Risk und Insights).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Garmin-Sync bleibt lokales Single-User-Modell mit benanntem Raw-Adapter
 
 - **Decision:** Pulse bleibt fuer den lokalen Server bei `GARMIN_EMAIL`/`GARMIN_PASSWORD` als serverseitigem Single-User-Garmin-Modell. Raw-ConnectAPI-Zugriffe werden hinter `garminApi` in `backend/src/lib/garmin-client.ts` benannt; der Sidecar-Adapter bleibt nur Fallback fuer Worker-Kontexte ohne Fastify-App. Eine offizielle Garmin-API/OAuth-Migration wird erst relevant, wenn Pulse bewusst multi-user oder extern gehostet wird.

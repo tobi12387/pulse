@@ -12,13 +12,15 @@ Keep this file short. Update it whenever the active work queue changes.
 6. Garmin Execution Reconciliation was merged and deployed via PR #81.
 7. Garmin Recovery Data Depth was merged and deployed via PR #82.
 8. Garmin Training Metadata And Profile Quality was merged and deployed via PR #83.
-9. Active implementation branch: `codex/garmin-sync-access-cleanup`.
-10. Active implementation wave: `docs/superpowers/plans/2026-05-01-garmin-data-enrichment-wave.md`, Task 5 Garmin Sync Architecture Cleanup.
+9. Garmin Sync Architecture Cleanup was merged and deployed via PR #84.
+10. Active implementation branch: `codex/daily-briefing-checkin`.
+11. Active implementation wave: Daily Intelligence / Decision Closure precursor: fix Daily Briefing today-vs-future workout semantics and guide the manual Daily Check-in with stronger mental-fitness focus.
 
 ## Current PRs / Branches
 
-- `codex/garmin-sync-access-cleanup`: active Garmin sync architecture cleanup branch.
+- `codex/daily-briefing-checkin`: active Daily Briefing / guided check-in branch.
 - Recent completed branches:
+- `codex/garmin-sync-access-cleanup`: merged and deployed via PR #84.
 - `codex/garmin-profile-provenance`: merged and deployed via PR #83.
 - `codex/garmin-recovery-depth`: merged and deployed via PR #82.
 - `codex/garmin-execution-reconciliation`: merged and deployed via PR #81.
@@ -74,8 +76,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/garmin-sync-access-cleanup`.
-- After Garmin Sync Architecture Cleanup, return to Daily Intelligence Next Wave priorities: Plan Personalization Loop, Daily Decision Center, Insight Evidence Links, Deep UI/UX Flow Audit.
+- Finish, PR, merge and deploy `codex/daily-briefing-checkin`.
+- After Daily Briefing / guided Check-in, continue Daily Intelligence Next Wave priorities: Plan Personalization Loop, Daily Decision Center, Insight Evidence Links, Deep UI/UX Flow Audit.
 - Use `docs/superpowers/plans/2026-05-01-iphone-pwa-readiness.md` for any iPhone/VPN/PWA follow-up; the current branch contains the first baseline.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.

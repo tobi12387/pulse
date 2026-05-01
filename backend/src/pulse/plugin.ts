@@ -3593,7 +3593,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
 
-    const cached = await getCached<string>('briefing', userId, today);
+    const cached = await getCached<string>('briefing-v2', userId, today);
     if (cached) return { briefing: cached, date: today, cached: true };
 
     const ctx = await buildCachedPulseContextFor(userId, today);
@@ -3633,7 +3633,7 @@ Direkt, knapp, kein Smalltalk.`;
         briefingPrompt,
         SMART_MODEL,
       );
-      await setCached('briefing', userId, today, briefing);
+      await setCached('briefing-v2', userId, today, briefing);
       return { briefing, date: today, cached: false, raceDay: true };
     }
 
@@ -3664,7 +3664,7 @@ Direkt, knapp, kein Smalltalk.`;
       SMART_MODEL,
     );
 
-    await setCached('briefing', userId, today, briefing);
+    await setCached('briefing-v2', userId, today, briefing);
 
     return { briefing, date: today, cached: false };
   });

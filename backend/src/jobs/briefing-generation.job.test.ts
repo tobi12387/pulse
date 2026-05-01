@@ -125,7 +125,7 @@ describe('processBriefingJob', () => {
     expect(userContent).toContain('ATL');
     expect(userContent).toContain('TSB');
     expect(userContent).toContain('Readiness');
-    expect(userContent).toContain('Nächstes Training');
+    expect(userContent).toContain('Heutiges Training');
     expect(userContent).toContain('RISIKO-SIGNALE');
   });
 
@@ -295,6 +295,34 @@ describe('buildBriefingUserContentRich', () => {
     expect(prompt.indexOf('RISIKO-SIGNALE')).toBeLessThan(prompt.indexOf('Keine Pulse-Metriken'));
     expect(prompt).toContain('[CRITICAL] Ruhepuls seit 7 Tagen +6.0 bpm (rhr_drift_7d)');
     expect(prompt).toContain('Heute trainingsfrei');
+  });
+
+  it('separates today from a future next workout in the briefing prompt', () => {
+    const ctx = {
+      date: '2026-05-01',
+      todayMetrics: null,
+      todayCheckin: null,
+      fitnessLoad: { ctl: 40, atl: 48, tsb: -8 },
+      readiness: { score: 62, label: 'moderate' },
+      recovery: null,
+      activeHealthStates: [],
+      upcomingWorkouts: [{
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        description: 'Aerobe Grundlage',
+      }],
+      recentActivities: [],
+      nextRace: null,
+      activeRiskSignals: [],
+    } as unknown as PulseContext;
+
+    const prompt = buildBriefingUserContentRich(ctx, 'check-in');
+    expect(prompt).toContain('Heute ist kein Training geplant.');
+    expect(prompt).toContain('Nächster Trainingsausblick: 2026-05-04 bike Z2, 80min');
+    expect(prompt).toContain('darf nicht als heutige Trainingsempfehlung formuliert werden');
+    expect(prompt).not.toContain('Nächstes Training: 2026-05-04');
   });
 
   it('passes urgent next best actions into briefing context', () => {

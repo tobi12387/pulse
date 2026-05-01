@@ -114,6 +114,48 @@ test('Coach quick prompts prepare a question without sending it', async ({ page 
   expect(coachSends).toBe(0);
 });
 
+test('Coach does not treat a future workout as today training', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      nextWorkout: {
+        id: 'workout-future',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage.',
+      },
+    },
+  });
+
+  await page.goto('/coach');
+  await expect(page.getByText('Heute ist kein Training geplant.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Nächster Ausblick')).toBeVisible();
+  await expect(page.getByText('Heute ist kein Training geplant. Wie nutze ich den freien Tag sinnvoll?')).toBeVisible();
+  await expect(page.getByText(/Soll ich bike.*wie geplant machen/)).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Heute ist kein Training geplant. Wie nutze ich den freien Tag für Erholung, mentale Stabilität und Vorbereitung?');
+});
+
+test('Data mental check-in uses guided mental fitness questions', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+  });
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Mental' }).click();
+
+  await expect(page.getByText('Geführter Daily Check-in')).toBeVisible();
+  await expect(page.getByText('Wie ist dein Kopf gerade?')).toBeVisible();
+  await expect(page.getByText('Was zieht gerade mentale Energie?')).toBeVisible();
+  await expect(page.getByText('Was wäre heute genug?')).toBeVisible();
+  await page.getByRole('button', { name: 'Mental: angespannt' }).click();
+  await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Mental: angespannt/);
+});
+
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
   await mockPulseApi(page);
 
