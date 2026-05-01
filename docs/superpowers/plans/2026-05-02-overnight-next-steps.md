@@ -1,6 +1,6 @@
 # Pulse Overnight Next Steps — 2026-05-02 Morning Plan
 
-> Stand: 2026-05-02 after Real iPhone/VPN QA recording (PR #98) and during Canva/Figma UX companion refresh. This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
+> Stand: 2026-05-02 after Canva/Figma UX companion refresh (PR #99). The autonomous overnight sequence is complete; remaining items require Tobi's real iPhone or explicit Canva preview approval.
 
 ## Verified Baseline
 
@@ -10,6 +10,7 @@
 - PR #96 added explicit editable Coach Preferences and fed them into Coach context; it was merged/deployed to server commit `071f487`.
 - PR #97 connected check-in and briefing push journeys to durable action decisions; it was merged/deployed to server commit `d05493f`.
 - PR #98 added the real-device iPhone/VPN/PWA QA evidence record; it was merged/deployed to server commit `251c81c`.
+- PR #99 recorded the Canva/Figma UX companion refresh and added the FigJam daily-loop diagram; it was merged/deployed to server commit `36a77e1`.
 - Server checks after deploy:
   - `/api/pulse/health` returned `{"status":"ok","namespace":"pulse"}`.
   - `https://localhost:5175` returned `HTTP/2 200`.
@@ -135,7 +136,7 @@
 
 ### Phase 7 — Canva/Figma UX Companion Refresh
 
-**Status:** In progress on `codex/ux-companion-refresh`.
+**Status:** Done via PR #99 and deployed. Canva content update still needs explicit preview approval before saving.
 
 **Goal:** Update visual review artifacts from observed daily flows, not speculative layouts.
 
@@ -161,3 +162,10 @@ By Saturday morning, 2026-05-02, the useful status view should answer:
 3. Which daily-flow risks remain?
 4. Which manual iPhone/VPN checks still need Tobi's device?
 5. Whether Decision Closure is ready to become the next default daily loop.
+
+## Morning Next Steps
+
+1. Run the real iPhone/VPN/PWA checklist on Tobi's device and fill `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
+2. Approve a Canva preview update so the stale `Pulse Everyday Flow UX Board` can be saved with PR #94-#99 status.
+3. Decide whether Insight evidence should deep-link into Data/Plan detail routes.
+4. Use the new action-decision history for the next Daily Loop refinement: show "why this action is hidden" or a compact action history if repeated nudges still feel confusing.

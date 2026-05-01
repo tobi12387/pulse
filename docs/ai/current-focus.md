@@ -25,15 +25,16 @@ Keep this file short. Update it whenever the active work queue changes.
 19. Explicit Coach Preferences was merged and deployed via PR #96.
 20. Push Action Journeys was merged and deployed via PR #97.
 21. Real iPhone/VPN QA evidence recording was merged and deployed via PR #98.
-22. Active implementation branch: `codex/ux-companion-refresh`.
-23. Active implementation wave: Decision Closure & Coach Memory. Current slice: Canva/Figma UX companion refresh.
+22. Canva/Figma UX companion refresh was merged and deployed via PR #99.
+23. Active implementation branch: none.
+24. Active implementation wave: Morning review / manual gates. Current slice: real iPhone QA and Canva preview approval are waiting for Tobi.
 
 ## Current PRs / Branches
 
 - Open PRs: none.
-- Active branch:
-- `codex/ux-companion-refresh`: Canva/Figma UX companion refresh in progress.
+- Active branch: none.
 - Recent completed branches:
+- `codex/ux-companion-refresh`: merged and deployed via PR #99.
 - `codex/iphone-qa-recording`: merged and deployed via PR #98.
 - `codex/push-action-journeys`: merged and deployed via PR #97.
 - `codex/coach-preferences`: merged and deployed via PR #96.
