@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Push-Journeys referenzieren Action-Decisions
+
+- **Decision:** Briefing- und Check-in-Pushes werden mit offenen `pulse_action_decisions` verbunden, wenn eine critical/high Next-Best-Action existiert. Die Push-URL enthaelt dann `actionId` und `decisionId`; wenn keine passende offene Action existiert, bleibt der Push eine normale Zielroute ohne Action-Parameter oder wird beim Check-in-Reminder uebersprungen.
+- **Why:** Push darf nicht wiederholen, was Tobi bereits erledigt, verschoben oder bewusst verworfen hat. Dieselbe Action-History wie Home/Coach verhindert parallele Erinnerungslogiken und macht Push-Einstiege auditierbar.
+- **Alternatives:** Pushes nur ueber Topic/Tag deduplizieren (kennt keine fachliche Erledigung); immer nach `/coach` oder `/` senden (verliert Kontext); eigene Push-Tabelle fuer Journey-State bauen (unnötig, solange `pulse_action_decisions` den Tagesloop abbildet).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Coach Preferences bleiben explizit editierbarer Zustand
 
 - **Decision:** Pulse speichert Coach-Praeferenzen in `pulse_coach_preferences` und macht sie in Settings sichtbar editierbar. Der Coach-Kontext darf diese Zeitfenster, gemiedenen Muster, bevorzugten langen Tage, verletzungssensitiven Constraints und Kommunikationsstil nutzen, aber keine versteckten Persoenlichkeitseigenschaften ableiten.

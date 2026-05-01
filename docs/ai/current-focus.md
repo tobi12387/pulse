@@ -22,15 +22,17 @@ Keep this file short. Update it whenever the active work queue changes.
 16. Deep UI/UX Flow Audit baseline and overnight sequencing are documented in `docs/superpowers/plans/2026-05-02-overnight-next-steps.md`.
 17. Decision Closure Model was merged and deployed via PR #94.
 18. Home/Coach Closure Flow was merged and deployed via PR #95.
-19. Active implementation branch: `codex/coach-preferences`.
-20. Active implementation wave: Decision Closure & Coach Memory. Current slice: Explicit Coach Preferences (editable Settings state feeding Coach context).
+19. Explicit Coach Preferences was merged and deployed via PR #96.
+20. Active implementation branch: `codex/push-action-journeys`.
+21. Active implementation wave: Decision Closure & Coach Memory. Current slice: Push Action Journeys (push URLs tied to durable action decisions).
 
 ## Current PRs / Branches
 
 - Open PRs: none.
 - Active branch:
-- `codex/coach-preferences`: Explicit Coach Preferences in progress.
+- `codex/push-action-journeys`: Push Action Journeys in progress.
 - Recent completed branches:
+- `codex/coach-preferences`: merged and deployed via PR #96.
 - `codex/home-coach-closure-flow`: merged and deployed via PR #95.
 - `codex/decision-closure-model`: merged and deployed via PR #94.
 - `codex/insight-evidence-links`: merged and deployed via PR #92.

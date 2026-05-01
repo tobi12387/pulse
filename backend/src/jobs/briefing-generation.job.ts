@@ -7,6 +7,11 @@ import { db } from '../lib/db.js';
 import { dailyBriefings } from '../db/schema.js';
 import { buildPulseContextFor, type PulseContext } from '../pulse/lib/pulse-context.js';
 import { sendPushToUser } from '../lib/push.js';
+import {
+  buildActionPushUrl,
+  ensureActionDecisionForAction,
+  selectPushJourneyAction,
+} from '../pulse/services/action-push.js';
 
 export const BRIEFING_QUEUE_NAME = 'briefing';
 const BRIEFING_PUSH_BODY_MAX_LENGTH = 140;
@@ -139,11 +144,15 @@ export async function processBriefingJob(
 
   if (savedBriefing && await isFirstBriefingForDate(userId, date, savedBriefing.id)) {
     try {
+      const pushAction = selectPushJourneyAction(ctx.nextBestActions ?? []);
+      const pushUrl = pushAction
+        ? buildActionPushUrl(pushAction, (await ensureActionDecisionForAction(userId, pushAction)).id)
+        : '/';
       const result = await sendPushToUser(userId, {
         topic: 'briefing',
         title: 'Daily Briefing',
         body: buildBriefingPushBody(briefingText),
-        url: '/',
+        url: pushUrl,
         tag: `briefing-${date}`,
       });
       app.log.info(`[briefing] Push processed for ${userId} on ${date}: ${JSON.stringify(result)}`);

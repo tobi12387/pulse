@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../lib/db.js';
 import { hashPassword } from '../lib/auth.js';
 import { users } from '../db/schema.js';
-import { pulseMentalCheckins } from '../db/pulse-schema.js';
+import { pulseActionDecisions, pulseMentalCheckins } from '../db/pulse-schema.js';
 import { sendPushToUser } from '../lib/push.js';
 import {
   CHECKIN_REMINDER_PATTERN,
@@ -33,6 +33,7 @@ const queueMocks = vi.hoisted(() => {
 });
 
 vi.mock('../lib/push.js', () => ({
+  isPushConfigured: vi.fn().mockReturnValue(true),
   sendPushToUser: pushMocks.sendPushToUser,
 }));
 
@@ -59,12 +60,14 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (userId) {
+    await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
     await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
   }
   await db.delete(users).where(eq(users.email, 'checkin-reminder@coaching.os'));
 });
 
 beforeEach(async () => {
+  await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
   await db.delete(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
   vi.mocked(sendPushToUser).mockReset().mockResolvedValue({ sent: 1, failed: 0, gone: 0, skipped: 0 });
   queueMocks.queue.add.mockClear().mockResolvedValue(undefined);
@@ -83,8 +86,18 @@ describe('processCheckinReminderJob', () => {
       topic: 'checkin_reminder',
       title: 'Wie war dein Tag?',
       body: 'Kurzer Mental-Check-in (30s).',
-      url: '/coach',
+      url: expect.stringMatching(/^\/coach\?actionId=checkin%3A%2Fcoach%3A0&decisionId=[0-9a-f-]{36}$/),
       tag: `checkin-${date}`,
+    });
+
+    const rows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      source: 'next_best_action',
+      sourceId: 'checkin:/coach:0',
+      kind: 'checkin',
+      title: 'Check-in eintragen',
+      status: 'open',
     });
   });
 
@@ -97,6 +110,32 @@ describe('processCheckinReminderJob', () => {
       energy: 6,
       stress: 3,
       motivation: 8,
+    });
+
+    const job = { data: { userId, date } } as Job<CheckinReminderJobData>;
+    await processCheckinReminderJob(job, mockApp);
+
+    expect(sendPushToUser).not.toHaveBeenCalled();
+  });
+
+  it('does not send a reminder when the check-in action was already deferred', async () => {
+    const date = '2026-04-30';
+    await db.insert(pulseActionDecisions).values({
+      userId,
+      source: 'next_best_action',
+      sourceId: 'checkin:/coach:0',
+      kind: 'checkin',
+      title: 'Check-in eintragen',
+      status: 'deferred',
+      resolvedAt: new Date(`${date}T12:00:00.000Z`),
+      resolutionReason: 'Heute nicht relevant.',
+      targetRoute: '/coach',
+      rawContext: {
+        actionId: 'checkin:/coach:0',
+        openedAt: date,
+        priority: 'high',
+        evidence: ['Tages-Check-in fehlt'],
+      },
     });
 
     const job = { data: { userId, date } } as Job<CheckinReminderJobData>;

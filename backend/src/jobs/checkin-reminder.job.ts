@@ -6,6 +6,8 @@ import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
 import { pulseMentalCheckins } from '../db/pulse-schema.js';
 import { sendPushToUser } from '../lib/push.js';
+import { buildPulseContextFor } from '../pulse/lib/pulse-context.js';
+import { buildActionPushUrl, ensureActionDecisionForAction } from '../pulse/services/action-push.js';
 
 export const CHECKIN_REMINDER_QUEUE_NAME = 'checkin-reminder';
 export const CHECKIN_REMINDER_TIME_ZONE = 'Europe/Berlin';
@@ -54,12 +56,20 @@ export async function processCheckinReminderJob(
       continue;
     }
 
+    const ctx = await buildPulseContextFor(userId, date);
+    const action = ctx.nextBestActions.find(candidate => candidate.source === 'checkin') ?? null;
+    if (!action) {
+      app.log.info(`[checkin-reminder] Skipped for ${userId} on ${date}: no open check-in action`);
+      continue;
+    }
+    const decision = await ensureActionDecisionForAction(userId, action);
+
     try {
       const result = await sendPushToUser(userId, {
         topic: 'checkin_reminder',
         title: 'Wie war dein Tag?',
         body: 'Kurzer Mental-Check-in (30s).',
-        url: '/coach',
+        url: buildActionPushUrl(action, decision.id),
         tag: `checkin-${date}`,
       });
       app.log.info(`[checkin-reminder] Push processed for ${userId} on ${date}: ${JSON.stringify(result)}`);
