@@ -34,6 +34,7 @@
 | `2026-04-28-phase11-mental-polish.md` | Phase 11 — Mental Themes | PR #38, PR #39, PR #40 |
 | `2026-05-01-next-wave-product-technical-audit.md` | Trust Wave — Plan Trace, Garmin Coverage, Coach Action Loop | PR #44, PR #45, PR #46 |
 | `2026-05-01-everyday-utility-wave.md` | Everyday Utility Wave — Garmin Backfill, Plan Calibration, Action Closure, Mobile Density | PR #48, PR #49, PR #50, PR #51 |
+| `2026-05-01-reliability-wave.md` | Reliability Wave — E2E CI, Local Tests, Deploy Smoke, Bundle Cleanup | PR #54, PR #55, PR #56, PR #57 |
 
 ## Bekannte veraltete Stellen
 
