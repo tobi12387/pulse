@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Implementierte Plan-Dokumente wandern nach completed
+
+- **Decision:** Alle Plan-Dokumente, die laut Merge-/Deploy-Historie erledigt sind, werden aus `docs/superpowers/plans/` nach `docs/superpowers/plans/completed/` verschoben. Roadmap, Current-Focus und Non-Negotiables markieren die bisherige Sequenz bis Phase 11 sowie Web Push/VAPID als erledigt.
+- **Why:** Aktive Plan-Dokumente sind Arbeits-Backlog. Wenn implementierte Plaene dort liegen bleiben, riskieren neue AI-Sessions Doppelarbeit oder widerspruechliche Priorisierung.
+- **Alternatives:** Plaene aktiv liegen lassen (hohes Rebuild-Risiko); nur Current-Focus aktualisieren (Roadmap bleibt irrefuehrend); Completed-Historie ohne PR-/Commit-Referenz pflegen (schlechter nachvollziehbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Mental Insights nutzen PulseContext, Theme-Aggregat und days-aware Cache
 
 - **Decision:** Die Mental-Domain der Deep Insights baut ihren Prompt aus dem gecachten PulseContext fuer Readiness/Load, einem expliziten Check-in-Fenster fuer die angeforderten `days`, dem Mental-Theme-Aggregat und der Mental-Load-Overlay-Statistik. Der Deep-Insight-Cache-Key enthaelt zusaetzlich `days`, damit 7/30/90-Tage-Analysen nicht gegenseitig ueberschrieben werden.
