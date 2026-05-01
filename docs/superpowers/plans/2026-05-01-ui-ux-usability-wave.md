@@ -97,7 +97,7 @@ Sie deckt aktuell nicht ab:
 
 ### 1. Usability-Test-Foundation
 
-**Status:** in progress via `codex/ux-slice-a-insights`.
+**Status:** implemented in PR #61.
 
 - Neue `pulse-usability.spec.ts` mit mobilen und Desktop-Kernwegen:
   - Home zeigt eine klare Primaeraktion und Zielroute.
@@ -112,7 +112,7 @@ Sie deckt aktuell nicht ab:
 
 ### 2. Insights Resilience
 
-**Status:** in progress via `codex/ux-slice-a-insights`.
+**Status:** implemented in PR #61.
 
 - Gesamtanalyse nicht automatisch als teurer/fragiler Deep-Insight laden, wenn die Seite sagt, dass Karten per Tap geladen werden.
 - Fehlerzustand ersetzen:
