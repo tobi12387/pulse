@@ -2,7 +2,7 @@
 
 > **Für agentic workers:** REQUIRED SUB-SKILL: `superpowers:subagent-driven-development`.
 >
-> **Querschnitt:** [HR-First](completed/2026-04-28-cross-cutting-hr-first.md) — alle Risiko-Signale primär aus HR/HRV/RHR + Plan-Load, nicht aus Power.
+> **Querschnitt:** [HR-First](2026-04-28-cross-cutting-hr-first.md) — alle Risiko-Signale primär aus HR/HRV/RHR + Plan-Load, nicht aus Power.
 >
 > **Voraussetzung:** Phase 6 (Health States) — `pulse_health_state` existiert; Risk Watch ergänzt darum eine **prädiktive Schicht** vor dem akuten State.
 

@@ -4,13 +4,14 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. Finish `codex/phase11-theme-aware-insights`: Phase 11 Mental-Domain Insights use PulseContext, themes, and load overlay stats.
-2. Then reassess next open roadmap/ops work.
-3. Keep Web Push production activation on the ops checklist: server still needs real VAPID settings before pushes can send.
+1. All prior implementation plans through Phase 11 and the 2026-04-30 follow-up slices are merged, deployed, and moved to `completed/`.
+2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
+3. Next implementation work should start with product/quality reassessment plus a new active plan doc, not rebuilding completed plans.
 
 ## Current PRs / Branches
 
-- `codex/phase11-theme-aware-insights`: active local branch for Phase 11 theme-aware Insight Engine slice.
+- `codex/status-roadmap-cleanup`: active local branch for status hygiene.
+- `codex/phase11-theme-aware-insights`: merged and deployed via PR #40.
 - `codex/phase11-mental-load-overlay`: merged and deployed via PR #39.
 - `codex/phase11-mental-themes`: merged and deployed via PR #38.
 - `codex/phase10-strength-equipment-ui`: merged and deployed via PR #37.
@@ -24,9 +25,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Open, merge, and deploy Phase 11 theme-aware Insights after CI passes.
-- After Phase 11, reassess remaining roadmap/ops items; Web Push VAPID production settings remain the known ops task.
-- Verify server has VAPID settings in `/root/pulse/.env`; without them push endpoints remain safely configured-but-skipped.
+- Merge and deploy status hygiene after CI passes.
+- Run a fresh product/technical audit for the next roadmap wave and create a new active plan before implementation.
+- Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
 
