@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Daily Briefing ignoriert Future-Workouts ohne heutiges Training
+
+- **Decision:** Daily Briefing, Daily Decision und Coach-Startfragen erwähnen zukünftige geplante Workouts nicht mehr, wenn heute kein Training geplant ist. Der Daily Check-in bleibt ohne neue Datenbankfelder, wird aber als geführter Mental-Fitness-Flow über die bestehenden Werte und Notiz-Tags geführt.
+- **Why:** Ein Training am 04.05. darf am 01.05. weder wie eine heutige Entscheidung noch wie eine Startfrage wirken. Für trainingsfreie Tage ist der höchste Nutzen die Tagesgrenze, Erholung, Check-in und mentale Stabilität; der konkrete nächste Workout-Ausblick gehört in Plan, nicht ins Daily Briefing.
+- **Alternatives:** Zukünftige Workouts weiter als Ausblick im Briefing zeigen (zu leicht als heutige Empfehlung missverständlich); eigene Check-in-Felder für mentale Gesundheit sofort migrieren (zu großer Scope für diese Korrektur); Future-Workout nur visuell abschwächen (Prompt/LLM könnten ihn weiter aufgreifen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active; supersedes the future-workout-outlook part of "2026-05-01 — Daily Briefing trennt heutige Entscheidung von zukünftigem Trainingsausblick".
+
+---
+
 ## 2026-05-01 — Daily Decision Center startet ohne neues Memory-Modell
 
 - **Decision:** Der erste Daily-Decision-Center-Slice nutzt eine deterministische Frontend-Ableitung aus dem bestehenden `/api/pulse/home`-Payload und zeigt dieselbe Tagesentscheidung in Home, Coach und Plan. Die Entscheidung enthält Grund, Grenze, Alternative und Abschlusskriterium; persistente Action-Closure-/Coach-Memory-Tabellen bleiben einem separaten Folge-PR vorbehalten.
