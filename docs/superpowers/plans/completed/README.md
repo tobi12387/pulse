@@ -35,6 +35,7 @@
 | `2026-05-01-next-wave-product-technical-audit.md` | Trust Wave — Plan Trace, Garmin Coverage, Coach Action Loop | PR #44, PR #45, PR #46 |
 | `2026-05-01-everyday-utility-wave.md` | Everyday Utility Wave — Garmin Backfill, Plan Calibration, Action Closure, Mobile Density | PR #48, PR #49, PR #50, PR #51 |
 | `2026-05-01-reliability-wave.md` | Reliability Wave — E2E CI, Local Tests, Deploy Smoke, Bundle Cleanup | PR #54, PR #55, PR #56, PR #57 |
+| `2026-05-01-ui-ux-usability-wave.md` | UI/UX Usability Wave — Insights resilience, daily action, Plan decision, Data/Settings trust, mobile density | PR #61, PR #63, PR #64, PR #65, PR #66 |
 
 ## Bekannte veraltete Stellen
 

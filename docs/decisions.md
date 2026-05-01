@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — UI/UX Usability Wave ist abgeschlossen
+
+- **Decision:** Die UI/UX Usability Wave wird nach PR #61, #63, #64, #65 und #66 geschlossen und nach `docs/superpowers/plans/completed/` verschoben. Es bleibt kein aktiver Implementierungsplan offen; neue Arbeit startet erst mit einem neuen Plan-Dokument.
+- **Why:** Insights-Resilience, Home/Coach Daily Flow, Plan Decision Flow, Data/Settings Trust und Visual Density sind gemerged, deployed und durch lokale E2E plus CI abgesichert. Der Closeout verhindert Doppelarbeit in künftigen AI-Sessions.
+- **Alternatives:** Plan aktiv liegen lassen (Rebuild-Risiko); nur Chat-Zusammenfassung ohne Repo-Status (nicht belastbar); direkt Folgefeatures ohne Plan starten (Scope-Drift).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Visual Density bleibt ein gezielter Label- und Tabstrip-Pass
 
 - **Decision:** UI/UX Slice E begrenzt den Visual-Density-Pass auf klare mobile Hauptnavigation und umbruchfähige Data-/Plan-Tabstrips. Mobile Labels bleiben semantisch gleich zu Desktop (`Insights`, `Settings`), und Tabs werden verdichtet statt abgeschnitten.

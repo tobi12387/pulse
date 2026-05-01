@@ -4,14 +4,15 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, and the Everyday Utility Wave are merged, deployed, and moved to `completed/`.
+1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, Everyday Utility Wave, Reliability Wave, and UI/UX Usability Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. Active implementation wave: `docs/superpowers/plans/2026-05-01-ui-ux-usability-wave.md`.
+3. No active implementation wave is open. Next work should start with a new plan in `docs/superpowers/plans/`.
 
 ## Current PRs / Branches
 
-- `codex/ux-slice-e-density`: active branch for UI/UX Slice E, covering mobile navigation labels and tabstrip density.
+- `codex/ux-wave-closeout`: active docs branch closing the UI/UX Usability Wave after PR #61, #63, #64, #65 and #66.
 - Recent completed branches:
+- `codex/ux-slice-e-density`: merged and deployed via PR #66.
 - `codex/ux-slice-d-data-settings`: merged and deployed via PR #65.
 - `codex/ux-slice-c-plan-decision`: merged and deployed via PR #64.
 - `codex/ux-slice-b-home-coach`: merged and deployed via PR #63.
@@ -50,8 +51,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy UI/UX Slice E: visual density pass across navigation, tabstrips and mobile readability.
-- Then run a deep browser UI/UX audit across daily flows on the deployed server.
+- Create the next active plan from the browser UI/UX audit findings if Tobi wants another implementation wave.
+- Highest-value candidates: Coach-guided daily briefing, Plan alternatives/adaptation depth, Data backfill observability, and Settings action grouping.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
