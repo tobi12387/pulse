@@ -6,29 +6,38 @@ cd "$ROOT_DIR"
 
 ENV_FILE="${PULSE_TEST_ENV_FILE:-.env.test}"
 WITH_E2E=false
+START_SERVICES="${PULSE_START_DEV_SERVICES:-true}"
 
 for arg in "$@"; do
   case "$arg" in
     --with-e2e)
       WITH_E2E=true
       ;;
+    --no-services)
+      START_SERVICES=false
+      ;;
+    --start-services)
+      START_SERVICES=true
+      ;;
     -h|--help)
       cat <<'USAGE'
-Usage: scripts/verify-local.sh [--with-e2e]
+Usage: scripts/verify-local.sh [--with-e2e] [--no-services]
 
 Runs the local Pulse verification path:
   1. load .env.test, or .env.test.example if .env.test does not exist
-  2. verify DATABASE_URL_TEST is separate and reachable
-  3. run migration guard
-  4. migrate the test database
-  5. run backend tests
-  6. run typecheck/build
-  7. optionally run Playwright smoke tests with --with-e2e
+  2. start local Postgres/Redis through scripts/dev-services.sh unless --no-services is passed
+  3. verify DATABASE_URL_TEST is separate and reachable
+  4. run migration guard
+  5. migrate the test database
+  6. run backend tests
+  7. run typecheck/build
+  8. optionally run Playwright smoke tests with --with-e2e
 
 Requirements:
   - npm dependencies installed
-  - PostgreSQL reachable at DATABASE_URL_TEST
-  - Redis reachable at REDIS_URL for integration tests that need it
+  - Docker Desktop or equivalent Docker CLI for default service startup
+  - PostgreSQL reachable at DATABASE_URL_TEST if --no-services is used
+  - Redis reachable at REDIS_URL if --no-services is used
 USAGE
       exit 0
       ;;
@@ -50,6 +59,11 @@ source "$ENV_FILE"
 set +a
 
 export NODE_ENV="${NODE_ENV:-test}"
+
+if [[ "$START_SERVICES" == "true" ]]; then
+  echo "==> local test services"
+  bash scripts/dev-services.sh up
+fi
 
 node --input-type=module <<'NODE'
 import net from 'node:net';

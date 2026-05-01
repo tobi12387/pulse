@@ -17,12 +17,12 @@ Keep this file short. Update it whenever the active work queue changes.
 11. Plan Personalization Loop was merged and deployed via PR #86.
 12. Daily Decision Center was merged and deployed via PR #87.
 13. Daily Briefing future-workout correction and stronger guided Mental Check-in was merged and deployed via PR #88.
-14. Active implementation branch: none.
-15. Active implementation wave: Daily Intelligence Next Wave follow-ups.
+14. Active implementation branch: `codex/local-test-services-hardening`.
+15. Active implementation wave: Local Test Services Hardening before continuing Daily Intelligence Next Wave follow-ups.
 
 ## Current PRs / Branches
 
-- Open PRs: none.
+- `codex/local-test-services-hardening`: active infrastructure hardening branch for local Postgres/Redis/bootstrap and test env reliability.
 - Recent completed branches:
 - `codex/daily-briefing-guided-checkin`: merged and deployed via PR #88.
 - `codex/daily-decision-center`: merged and deployed via PR #87.
