@@ -24,15 +24,17 @@ Keep this file short. Update it whenever the active work queue changes.
 18. Home/Coach Closure Flow was merged and deployed via PR #95.
 19. Explicit Coach Preferences was merged and deployed via PR #96.
 20. Push Action Journeys was merged and deployed via PR #97.
-21. Active implementation branch: `codex/iphone-qa-recording`.
-22. Active implementation wave: Decision Closure & Coach Memory. Current slice: Real iPhone/VPN QA evidence recording.
+21. Real iPhone/VPN QA evidence recording was merged and deployed via PR #98.
+22. Active implementation branch: `codex/ux-companion-refresh`.
+23. Active implementation wave: Decision Closure & Coach Memory. Current slice: Canva/Figma UX companion refresh.
 
 ## Current PRs / Branches
 
 - Open PRs: none.
 - Active branch:
-- `codex/iphone-qa-recording`: iPhone/VPN/PWA QA evidence record in progress.
+- `codex/ux-companion-refresh`: Canva/Figma UX companion refresh in progress.
 - Recent completed branches:
+- `codex/iphone-qa-recording`: merged and deployed via PR #98.
 - `codex/push-action-journeys`: merged and deployed via PR #97.
 - `codex/coach-preferences`: merged and deployed via PR #96.
 - `codex/home-coach-closure-flow`: merged and deployed via PR #95.
@@ -103,6 +105,7 @@ Keep this file short. Update it whenever the active work queue changes.
 - Use `docs/superpowers/plans/2026-05-01-iphone-pwa-readiness.md` for any iPhone/VPN/PWA follow-up; the current branch contains the first baseline.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
+- Latest UX companion record: `docs/qa/2026-05-02-ux-companion-refresh.md`.
 - Use Build Web Apps for PWA/mobile QA if the plugin becomes visible in Codex tools. Use Build iOS Apps only for a later native-wrapper evaluation; current scope remains local web/PWA over VPN.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
