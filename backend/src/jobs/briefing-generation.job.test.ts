@@ -297,7 +297,39 @@ describe('buildBriefingUserContentRich', () => {
     expect(prompt).toContain('Heute trainingsfrei');
   });
 
-  it('passes next best actions into briefing context', () => {
+  it('passes urgent next best actions into briefing context', () => {
+    const ctx = {
+      date: '2026-05-01',
+      todayMetrics: null,
+      todayCheckin: null,
+      fitnessLoad: { ctl: 40, atl: 48, tsb: -8 },
+      readiness: { score: 62, label: 'moderate' },
+      recovery: null,
+      activeHealthStates: [],
+      upcomingWorkouts: [],
+      recentActivities: [],
+      nextRace: null,
+      activeRiskSignals: [],
+      nextBestActions: [{
+        id: 'checkin:/coach:0',
+        source: 'checkin',
+        priority: 'high',
+        title: 'Check-in eintragen',
+        reason: 'Heute fehlt dein subjektives Signal.',
+        cta: 'Zum Coach',
+        targetPath: '/coach',
+        resolvedBy: 'Check-in speichern.',
+      }],
+    } as unknown as PulseContext;
+
+    const prompt = buildBriefingUserContentRich(ctx, 'check-in');
+    expect(prompt).toContain('NÄCHSTE AKTIONEN');
+    expect(prompt).toContain('[HIGH] Check-in eintragen');
+    expect(prompt).toContain('Erledigt durch: Check-in speichern.');
+    expect(prompt).toContain('Zum Coach (/coach)');
+  });
+
+  it('keeps normal next best actions out of briefing nudges', () => {
     const ctx = {
       date: '2026-05-01',
       todayMetrics: null,
@@ -322,8 +354,7 @@ describe('buildBriefingUserContentRich', () => {
     } as unknown as PulseContext;
 
     const prompt = buildBriefingUserContentRich(ctx, 'check-in');
-    expect(prompt).toContain('NÄCHSTE AKTIONEN');
-    expect(prompt).toContain('[NORMAL] Plan erzeugen');
-    expect(prompt).toContain('Zum Plan (/plan)');
+    expect(prompt).toContain('keine dringenden Sofortaktionen');
+    expect(prompt).not.toContain('[NORMAL] Plan erzeugen');
   });
 });

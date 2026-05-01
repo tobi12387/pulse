@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Next Actions bleiben source-driven und bekommen Erledigungs-Evidence
+
+- **Decision:** Slice 3 erweitert `PulseNextBestAction` um optionale `openedAt`, `resolvedBy` und `evidence` Felder. Home zeigt damit, warum eine Action offen ist und wodurch sie verschwindet; Coach bekommt dieselben Hinweise, Briefings nutzen nur noch critical/high Actions und lassen normale Nudges auf Home.
+- **Why:** Tobi braucht nachvollziehbare Actions, aber keine manuelle Todo-Liste. Die bestehende PulseContext-Quelle bleibt kanonisch: Wenn Check-in, RPE, Plan, Push, Risk oder Equipment-Quelle erledigt ist, verschwindet die Action beim nächsten Context-Reload.
+- **Alternatives:** Persistente Todo-Tabelle (zu viel Produkt-Scope und Habit-Tracker-Nähe); reine Frontend-Hinweise ohne Server-Contract (Drift-Risiko); alle Actions in jedem Briefing wiederholen (Nudge-Spam).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Plan-Kalibrierung nutzt persistierte Lern-Snapshots statt Prompt-Hoffnung
 
 - **Decision:** Slice 2 der Everyday Utility Wave fuehrt einen kompakten Plan-Learning-Snapshot ein, der die letzten sechs Wochen aus Plan-Traces, geplanten/abgeschlossenen Workouts, Compliance und RPE verdichtet. `generateScientificWeekPlan()` nutzt diesen Snapshot deterministisch fuer Dichte-Reduktion und Hard-Day-Variation; der persistierte Plan-Trace zeigt zusaetzlich "Gelernt aus letzter Woche" und "Variation".

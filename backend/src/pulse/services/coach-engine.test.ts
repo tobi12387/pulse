@@ -155,11 +155,15 @@ describe('buildRichSystemPrompt', () => {
         reason: 'Heute fehlt dein subjektives Signal.',
         cta: 'Zum Coach',
         targetPath: '/coach',
+        resolvedBy: 'Check-in speichern.',
+        evidence: ['Tages-Check-in fehlt'],
       }],
     });
 
     expect(prompt).toContain('== NÄCHSTE AKTIONEN ==');
     expect(prompt).toContain('[HIGH] Check-in eintragen');
+    expect(prompt).toContain('Erledigt durch: Check-in speichern.');
+    expect(prompt).toContain('Evidence: Tages-Check-in fehlt');
     expect(prompt).toContain('Zum Coach (/coach)');
   });
 });

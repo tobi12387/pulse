@@ -8,6 +8,7 @@ export interface NextBestActionsInput {
     title: string;
     recommendation: string;
     ruleId: string;
+    triggeredAt?: string;
   }>;
   recentActivities: Array<{
     id: string;
@@ -48,6 +49,11 @@ function addAction(
   reason: string,
   cta: string,
   targetPath: string,
+  details: {
+    openedAt?: string | null;
+    resolvedBy: string;
+    evidence?: string[];
+  },
 ): void {
   actions.push({
     id: `${source}:${targetPath}:${actions.length}`,
@@ -57,6 +63,9 @@ function addAction(
     reason,
     cta,
     targetPath,
+    openedAt: details.openedAt ?? null,
+    resolvedBy: details.resolvedBy,
+    evidence: details.evidence ?? [],
   });
 }
 
@@ -80,6 +89,11 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
       `${risk.title}: ${risk.recommendation}`,
       'Risk ansehen',
       '/',
+      {
+        openedAt: risk.triggeredAt ?? input.today,
+        resolvedBy: 'Risk-Signal snoozen oder auflösen.',
+        evidence: [risk.ruleId, risk.severity],
+      },
     );
   }
 
@@ -92,6 +106,11 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
       'Heute fehlt dein subjektives Signal; Coach, Readiness und Briefing bleiben dadurch vorsichtiger.',
       'Zum Coach',
       '/coach',
+      {
+        openedAt: input.today,
+        resolvedBy: `Check-in für ${input.today} speichern.`,
+        evidence: ['Tages-Check-in fehlt'],
+      },
     );
   }
 
@@ -107,6 +126,14 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
       `Die letzte ${unratedRecentActivity.activityType}-Einheit hat noch kein Belastungsfeedback; das hilft dem nächsten Plan.`,
       'Feedback öffnen',
       `/activity/${unratedRecentActivity.id}`,
+      {
+        openedAt: unratedRecentActivity.startTime.toISOString(),
+        resolvedBy: 'RPE-Feedback für diese Aktivität speichern.',
+        evidence: [
+          `${Math.max(0, Math.round(hoursSince(unratedRecentActivity.startTime, input.today)))}h offen`,
+          unratedRecentActivity.plannedZone != null ? `Plan-Zone ${unratedRecentActivity.plannedZone}` : 'Ohne Plan-Zone',
+        ],
+      },
     );
   }
 
@@ -119,6 +146,11 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
       'Es gibt aktuell kein geplantes Training; Pulse kann die nächste Woche aus Zielen, Last, RPE und Risiken ableiten.',
       'Zum Plan',
       '/plan',
+      {
+        openedAt: input.today,
+        resolvedBy: 'Plan erzeugen oder Wochenverfügbarkeit speichern.',
+        evidence: ['Keine geplanten Workouts ab heute'],
+      },
     );
   }
 
@@ -131,6 +163,11 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
       'Der Server ist bereit, aber dieser Account hat noch kein aktives Gerät für Briefings und kritische Hinweise.',
       'Settings öffnen',
       '/settings',
+      {
+        openedAt: input.today,
+        resolvedBy: 'Push in Settings aktivieren.',
+        evidence: ['0 aktive Push-Geräte', 'VAPID konfiguriert'],
+      },
     );
   }
 
@@ -144,6 +181,11 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
       `${dueEquipment.name} ist zu ${dueEquipment.pctConsumed.toFixed(0)}% der Laufleistung verbraucht.`,
       'Settings öffnen',
       '/settings',
+      {
+        openedAt: input.today,
+        resolvedBy: 'Equipment ersetzen oder Limit anpassen.',
+        evidence: [dueEquipment.category, `${dueEquipment.pctConsumed.toFixed(0)}% verbraucht`],
+      },
     );
   }
 
