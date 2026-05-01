@@ -1,0 +1,103 @@
+# Everyday Flow Deepening Wave
+
+> Stand: 2026-05-01. Neuer aktiver Plan nach UI/UX Usability Wave und Browser-Audit auf `https://192.168.178.46:5175`. Fokus: die täglichen Flows nicht nur verständlicher machen, sondern handlungsfähiger und lernender.
+
+## Goal
+
+1. Pulse soll morgens eine zusammenhängende Tagesführung liefern: Lage, nächste Entscheidung, Warum, Grenzen und nächster Schritt.
+2. Trainingspläne sollen nicht nur angezeigt, sondern alltagstauglich angepasst werden: kürzer, leichter, verschieben, bewusst frei lassen.
+3. Fehler-, Backfill- und Settings-Aktionen sollen weiter beobachtbarer werden, damit Tobi erkennt, was passiert ist und was noch offen bleibt.
+
+## Architektur
+
+- Kein neuer Produktbereich: kein Telegram, kein Habit-Tracker, kein Datenexport.
+- LLM-Aufrufe bleiben ausschließlich über `backend/src/lib/llm.ts`.
+- Coach, Home und Briefing bleiben auf PulseContext als kanonischer Kontextquelle.
+- DB-Migrationen nur additive, falls eine Phase Persistenz wirklich braucht.
+- Jede Phase wird als eigener `codex/<topic>` Branch mit PR, CI, Merge und Deploy umgesetzt.
+- Browser Use bleibt für echte Server-QA; Playwright bleibt für versionierte Regressionen.
+
+## Browser-Audit Ausgangslage
+
+- Home → Coach funktioniert und zeigt `HEUTE TUN`, `WARUM`, `FERTIG WENN`.
+- Coach Quick Prompts starten gut, aber der Tagesdialog ist noch nicht als geführtes Briefing komponiert.
+- Plan priorisiert die nächste Trainingsentscheidung, bietet aber noch keine echten semantischen Anpassungen wie "leichter", "kürzer" oder "verschieben".
+- Insights zeigt inzwischen hilfreiche Fehler statt rohem `Internal Server Error`, die eigentliche Ursache bleibt aber noch zu grob klassifiziert.
+- Data erklärt Coverage und Backfill, zeigt aber noch keinen Verlauf echter Backfill-Läufe.
+- Settings erklärt Push/Health-State besser, ist aber weiterhin lang und könnte stärker nach sicheren Aktionsgruppen geführt werden.
+
+## File Map
+
+| Type | Path | Purpose |
+|---|---|---|
+| Modify | `frontend/src/pages/Coach.tsx` | Tagesbriefing-Flow, Prompt-Gruppen, Übergang Home → Coach |
+| Modify | `frontend/src/pages/Home.tsx` | Daily-Flow-Brücke und klare Tagesentscheidung |
+| Modify | `frontend/src/pages/Plan.tsx` | Anpassungsoptionen für nächste Einheit, Alternativen, freie Tage |
+| Modify | `backend/src/pulse/plugin.ts` | Falls nötig: stabile Contracts für Plan-Alternativen, Insight-Fehler, Backfill-Verlauf |
+| Modify | `frontend/src/pages/Insights.tsx` | Fehlerklassifizierung und Retry-/Datenmangel-Zustände |
+| Modify | `frontend/src/pages/Data.tsx` | Backfill-Verlauf und Ausführungsbeobachtung |
+| Modify | `frontend/src/pages/Settings.tsx` | Aktionsgruppen und bessere Sicherheits-/Folgekommunikation |
+| Modify | `frontend/e2e/fixtures/pulse-api.ts` | Fixtures für tägliche Flows, Alternativen, Backfill-Verlauf, Fehlerklassen |
+| Modify | `frontend/e2e/pulse-usability.spec.ts` | Regressionen für echte Alltagsinteraktionen |
+| Modify | `docs/ai/current-focus.md` | Aktive Phase und nächste Schritte |
+| Modify | `docs/decisions.md` | Scope-/Prioritätsentscheidungen |
+
+## Phases
+
+### 1. Coach-Guided Daily Briefing
+
+- Coach bekommt eine geführte Tageskarte: Lage, heutige Grenze, nächste Entscheidung, empfohlene Frage.
+- Home → Coach soll nicht nur navigieren, sondern den passenden Gesprächsstart sichtbar machen.
+- Quick Prompts werden nach Zweck gruppiert: "Heute entscheiden", "Plan anpassen", "Warum?".
+- Acceptance:
+  - Nutzer erkennt im Coach ohne Chatverlauf den heutigen roten Faden.
+  - Kein Prompt sendet automatisch eine LLM-Anfrage.
+  - E2E deckt Home → Coach → Prompt-Auswahl ab.
+
+### 2. Plan Alternatives 2.0
+
+- Nächste Trainingsentscheidung bekommt semantische Anpassungen: kürzer, leichter, verschieben, frei lassen.
+- Bestehender `/plan/today/proposal`-Contract und `AdjustTodayCard` werden zuerst genutzt, bevor neue Backend-Persistenz entsteht.
+- Plan-UI erklärt, wann freie Tage sinnvoll sind und welche Daten in die Anpassung einfließen.
+- Acceptance:
+  - Nutzer kann die nächste Einheit fachlich sinnvoll anpassen, ohne zu raten, was "wechseln" bedeutet.
+  - Anpassungsoptionen sind testbar und kollidieren nicht mit Plan-Generierung.
+
+### 3. Insights Reliability & Cause Classification
+
+- Insights trennt Fehlerursachen sichtbar: Datenmangel, LLM/Provider, Timeout/Server, Cache.
+- Backend liefert kontrollierte Fehlerpayloads, soweit der aktuelle Contract das zulässt.
+- UI zeigt Retry nur dort, wo Retry sinnvoll ist; Datenmangel bekommt eine konkrete Datenanforderung.
+- Acceptance:
+  - Kein roher Provider-/Servertext erscheint in der UI.
+  - E2E deckt mindestens zwei Fehlerklassen ab.
+
+### 4. Data Backfill Observability
+
+- Data zeigt letzten Backfill und Vorschau/echten Lauf klarer: Zeitraum, geplant, synchronisiert, Fehler, nächste Aktion.
+- Falls Persistenz nicht nötig ist, bleibt der erste Schritt lokale Snapshot-/Response-basierte Beobachtung.
+- Acceptance:
+  - Nach Vorschau und nach echtem Backfill ist sichtbar, ob Daten verändert wurden.
+  - Fehlerhafte Tage werden priorisiert und nicht nur als langer Textblock gezeigt.
+
+### 5. Settings Action Grouping
+
+- Settings wird in sichere Aktionsgruppen gegliedert: Verbindung, Datenpflege, Benachrichtigungen, Profil, Health-State.
+- Gefährlichere oder externe Aktionen bekommen stärkere visuelle Distanz und kurze Konsequenzzeilen.
+- Acceptance:
+  - Push-, Kalender-, Backfill- und Health-State-Aktionen sind nicht mehr als gleichwertige Button-Liste wahrnehmbar.
+  - Mobile Settings bleibt scanbar.
+
+## Suggested Sequence
+
+1. Coach-Guided Daily Briefing.
+2. Plan Alternatives 2.0.
+3. Insights Reliability & Cause Classification.
+4. Data Backfill Observability.
+5. Settings Action Grouping.
+
+## Open Questions
+
+- Soll der Daily Briefing Flow langfristig eher im Coach starten oder auf Home als primärem Morgenbildschirm bleiben?
+- Sollen Plan-Alternativen zunächst nur UI-seitig vorbereitete Aktionen sein oder direkt echte Backend-Persistenz auslösen?
+- Soll ein echter Backfill-Lauf später persistent historisiert werden, falls lokale Snapshots nicht reichen?
