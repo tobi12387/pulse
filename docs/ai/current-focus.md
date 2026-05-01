@@ -6,11 +6,11 @@ Keep this file short. Update it whenever the active work queue changes.
 
 1. All prior implementation plans through Phase 11 and the 2026-04-30 follow-up slices are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. Next active wave: `docs/superpowers/plans/2026-05-01-next-wave-product-technical-audit.md`.
+3. Next active wave: `docs/superpowers/plans/2026-05-01-everyday-utility-wave.md`.
 
 ## Current PRs / Branches
 
-- `codex/coach-action-loop`: active local branch for Slice 3 from the next-wave plan.
+- `codex/coach-action-loop`: merged and deployed via PR #46.
 - `codex/garmin-data-trust`: merged and deployed via PR #45.
 - `codex/plan-trust-learning`: merged and deployed via PR #44.
 - `codex/next-roadmap-audit`: merged and deployed via PR #43.
@@ -30,8 +30,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Slice 3: `codex/coach-action-loop`.
-- After Slice 3 is deployed, archive the completed next-wave plan and create the next small roadmap from the latest product/technical audit.
+- Start Slice 1 from the everyday utility wave: `codex/garmin-bounded-backfill`.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

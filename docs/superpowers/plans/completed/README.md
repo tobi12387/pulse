@@ -32,6 +32,7 @@
 | `2026-04-30-garmin-hr-targets.md` | Garmin HR Targets | PR #32 |
 | `2026-04-28-phase10-auxiliary-tracking.md` | Phase 10 — Strength & Equipment | PR #36, PR #37 |
 | `2026-04-28-phase11-mental-polish.md` | Phase 11 — Mental Themes | PR #38, PR #39, PR #40 |
+| `2026-05-01-next-wave-product-technical-audit.md` | Trust Wave — Plan Trace, Garmin Coverage, Coach Action Loop | PR #44, PR #45, PR #46 |
 
 ## Bekannte veraltete Stellen
 
