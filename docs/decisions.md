@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Profilwerte bekommen Feld-Herkunft und manuelle Autoritaet
+
+- **Decision:** FTP, MaxHF, LTHR und VO2max bekommen eigene Source-/Timestamp-Felder. Manuell gesetzte Werte sind autoritativ und werden durch Garmin-Sync nicht ueberschrieben; bestehende Profilwerte werden per Migration konservativ als `manual` markiert. Garmin-Profil-Sync nutzt eine kontrollierte Settings-Lesung plus bereits gespeicherte Aktivitaeten fuer Activity-derived FTP/MaxHF.
+- **Why:** Trainingszonen und PlanTrace duerfen nicht mehr nackte Zahlen zeigen, deren Herkunft unklar ist. Der Nutzer muss sehen, ob ein Wert manuell, aus Garmin-Settings oder aus Aktivitaeten stammt, und manuelle Korrekturen muessen stabil bleiben.
+- **Alternatives:** Garmin-Werte immer ueberschreiben lassen (zerstoert bewusst gesetzte Zonen); Live-Activity-Probing fuer jede Profilaktualisierung (Rate-Limit- und Latenzrisiko); nur UI-Labels ohne Persistenz einfuehren (keine belastbare PlanTrace-/Audit-Basis).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Garmin-Recovery-Depth bleibt optional, erklärend und raw-snapshot-getrennt
 
 - **Decision:** Erweiterte Garmin-Recovery-Signale werden additiv und nullable gespeichert: Sleep-Need/Actual, Schlafstress/HR/Respiration/Body-Battery-Change in `pulse_sleep_sessions`; Body-Battery Charge/Drain/Highest/Lowest/AtWake, Stressdauer, Intensitätsminuten, Respiration und SpO2 in `pulse_daily_metrics`. `bodyBatteryMax` bleibt aus Kompatibilitaetsgruenden der bisherige "most recent"-Wert; echte Tages-Extrema landen in `bodyBatteryHighest`/`bodyBatteryLowest`.

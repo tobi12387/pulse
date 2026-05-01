@@ -7,6 +7,7 @@ import type {
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
   PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse,
   PulsePlanTrace, PulsePushSettings, PulsePushTopics,
+  PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse,
@@ -279,7 +280,16 @@ export const pulseApi = {
       request('/garmin/backfill', { method: 'POST', body: JSON.stringify(data) }),
     sync: (): Promise<{ status: string; days?: number; dates?: string[]; activities?: number }> =>
       request('/garmin/sync', { method: 'POST', body: '{}' }),
-    syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>
+    syncProfile: (): Promise<{
+      synced: Record<PulseProfileMetricKey, {
+        field: PulseProfileMetricKey;
+        value: number | null;
+        source: PulseProfileValueSource;
+        status: 'updated' | 'kept_manual' | 'unavailable';
+        label: string;
+      }>;
+      diagnostics: { garminSettings: 'ok' | 'unavailable'; activityRows: number };
+    }> =>
       request('/garmin/sync-profile', { method: 'POST', body: '{}' }),
     calendarSync: (): Promise<{ uploaded: number; repaired?: number; removed: number; errors?: string[] }> =>
       request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
@@ -325,11 +335,13 @@ export const pulseApi = {
   profile: {
     get: (): Promise<{
       userId: string; ftpWatts: number | null; maxHrBpm: number | null;
+      lthrBpm: number | null;
       restingHrBpm: number | null; weeklyHoursTarget: number | null;
       trainingPhase: string | null; vo2max: number | null;
+      provenance: PulseProfileProvenanceView;
     }> => request('/profile'),
     update: (data: {
-      ftpWatts?: number; maxHrBpm?: number; restingHrBpm?: number;
+      ftpWatts?: number; maxHrBpm?: number; lthrBpm?: number; restingHrBpm?: number;
       weeklyHoursTarget?: number; trainingPhase?: string; vo2max?: number;
     }): Promise<unknown> => request('/profile', { method: 'PATCH', body: JSON.stringify(data) }),
   },

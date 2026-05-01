@@ -12,7 +12,7 @@ import { api } from '@/api/client';
 import { getPushPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push-client';
 import { EquipmentList } from '@/components/EquipmentList';
 import { MiniButton, PageHeader } from '@/components/PulseChrome';
-import type { PushTopic } from '@coaching-os/shared/pulse';
+import type { PulseProfileMetricProvenance, PushTopic } from '@coaching-os/shared/pulse';
 
 interface GarminStatus {
   connected: boolean;
@@ -75,13 +75,15 @@ export default function Settings() {
   const updateProfile = useUpdateProfile();
 
   const [profileForm, setProfileForm] = useState<{
-    ftpWatts: string; maxHrBpm: string; weeklyHoursTarget: string; trainingPhase: string;
+    ftpWatts: string; maxHrBpm: string; lthrBpm: string; vo2max: string; weeklyHoursTarget: string; trainingPhase: string;
   } | null>(null);
 
   function openProfile() {
     setProfileForm({
       ftpWatts:          String(profile?.ftpWatts ?? ''),
       maxHrBpm:          String(profile?.maxHrBpm ?? ''),
+      lthrBpm:           String(profile?.lthrBpm ?? ''),
+      vo2max:            String(profile?.vo2max ?? ''),
       weeklyHoursTarget: String(profile?.weeklyHoursTarget ?? ''),
       trainingPhase:     profile?.trainingPhase ?? 'base',
     });
@@ -93,6 +95,8 @@ export default function Settings() {
     const data: Record<string, number | string> = {};
     if (profileForm.ftpWatts)          data.ftpWatts          = Number(profileForm.ftpWatts);
     if (profileForm.maxHrBpm)          data.maxHrBpm          = Number(profileForm.maxHrBpm);
+    if (profileForm.lthrBpm)           data.lthrBpm           = Number(profileForm.lthrBpm);
+    if (profileForm.vo2max)            data.vo2max            = Number(profileForm.vo2max);
     if (profileForm.weeklyHoursTarget) data.weeklyHoursTarget = Number(profileForm.weeklyHoursTarget);
     if (profileForm.trainingPhase)     data.trainingPhase     = profileForm.trainingPhase;
     await updateProfile.mutateAsync(data);
@@ -119,14 +123,13 @@ export default function Settings() {
     setMessage(null);
     try {
       const res = await pulseApi.garmin.syncProfile();
-      const { vo2max, maxHrBpm, lactateThresholdHr, ftpWatts } = res.synced;
       await qc.invalidateQueries({ queryKey: pulseKeys.profile });
-      const parts = [];
-      if (ftpWatts != null)           parts.push(`FTP ${ftpWatts} W`);
-      if (vo2max != null)             parts.push(`VO2max ${vo2max}`);
-      if (maxHrBpm != null)           parts.push(`MaxHR ${maxHrBpm} bpm`);
-      if (lactateThresholdHr != null) parts.push(`Schwellen-HR ${lactateThresholdHr} bpm`);
-      setMessage({ text: `Garmin Profil geladen: ${parts.join(', ') || 'keine neuen Werte'}.`, ok: true });
+      const updated = Object.values(res.synced).filter(field => field.status === 'updated');
+      const kept = Object.values(res.synced).filter(field => field.status === 'kept_manual');
+      const parts = updated.map(field => field.label);
+      if (kept.length > 0) parts.push(`${kept.length} manuell behalten`);
+      if (res.diagnostics.garminSettings === 'unavailable') parts.push('Garmin-Settings nicht verfügbar');
+      setMessage({ text: `Garmin Profil geprüft: ${parts.join(', ') || 'keine neuen Werte'}.`, ok: true });
     } catch (err) {
       setMessage({ text: err instanceof Error ? err.message : 'Profil-Sync fehlgeschlagen.', ok: false });
     } finally {
@@ -210,6 +213,8 @@ export default function Settings() {
             {([
               ['FTP (Watt)', 'ftpWatts', 'number'],
               ['Max. Puls (bpm)', 'maxHrBpm', 'number'],
+              ['LTHR (bpm)', 'lthrBpm', 'number'],
+              ['VO2max', 'vo2max', 'number'],
               ['Wochenstunden', 'weeklyHoursTarget', 'number'],
             ] as [string, keyof typeof profileForm, string][]).map(([label, key, type]) => (
               <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
@@ -275,10 +280,16 @@ export default function Settings() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Row label="FTP">
-              <Val>{profile?.ftpWatts ? `${profile.ftpWatts} W` : '–'}</Val>
+              <ProfileMetricValue metric={profile?.provenance.fields.ftpWatts} unit="W" />
             </Row>
             <Row label="Max. Puls">
-              <Val>{profile?.maxHrBpm ? `${profile.maxHrBpm} bpm` : '–'}</Val>
+              <ProfileMetricValue metric={profile?.provenance.fields.maxHrBpm} unit="bpm" />
+            </Row>
+            <Row label="LTHR">
+              <ProfileMetricValue metric={profile?.provenance.fields.lthrBpm} unit="bpm" />
+            </Row>
+            <Row label="VO2max">
+              <ProfileMetricValue metric={profile?.provenance.fields.vo2max} />
             </Row>
             <Row label="Wochenstunden">
               <Val>{profile?.weeklyHoursTarget ? `${profile.weeklyHoursTarget} h` : '–'}</Val>
@@ -470,6 +481,37 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function Val({ children }: { children: React.ReactNode }) {
   return (
     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>{children}</span>
+  );
+}
+
+const PROFILE_SOURCE_COLOR: Record<string, string> = {
+  manual: 'var(--green)',
+  garmin_settings: 'var(--accent)',
+  activity_derived: 'var(--amber)',
+  estimated: 'var(--text-2)',
+  missing: 'var(--text-3)',
+};
+
+function ProfileMetricValue({ metric, unit }: { metric?: PulseProfileMetricProvenance; unit?: string }) {
+  const color = PROFILE_SOURCE_COLOR[metric?.source ?? 'missing'] ?? 'var(--text-3)';
+  const value = metric?.value != null ? `${metric.value}${unit ? ` ${unit}` : ''}` : '–';
+  const refreshed = metric?.updatedAt
+    ? new Date(metric.updatedAt).toLocaleDateString('de-DE')
+    : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, minWidth: 110 }}>
+      <Val>{value}</Val>
+      <span style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 9,
+        color,
+        textAlign: 'right',
+        lineHeight: 1.35,
+      }}>
+        {metric?.sourceLabel ?? 'Fehlt'}{refreshed ? ` · ${refreshed}` : ''}
+      </span>
+    </div>
   );
 }
 

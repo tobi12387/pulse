@@ -291,10 +291,20 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       userId: 'user-1',
       ftpWatts: 250,
       maxHrBpm: 185,
+      lthrBpm: 170,
       restingHrBpm: 49,
       weeklyHoursTarget: 6,
       trainingPhase: 'base',
       vo2max: 52,
+      provenance: {
+        fields: {
+          ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+          maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+          lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+          vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+        },
+        warnings: [],
+      },
     };
   }
   if (pathname === '/api/pulse/sync/status') return dataStatus;

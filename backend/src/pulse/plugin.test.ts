@@ -23,6 +23,8 @@ import { invalidateUser } from './lib/pulse-cache.js';
 
 const garminMocks = vi.hoisted(() => ({
   addWorkout: vi.fn(),
+  getActivities: vi.fn(),
+  getUserSettings: vi.fn(),
   post: vi.fn(),
   get: vi.fn(),
   delete: vi.fn(),
@@ -47,6 +49,8 @@ vi.mock('../lib/whisper.js', () => ({
 vi.mock('../lib/garmin-client.js', () => ({
   getGarminClient: vi.fn().mockResolvedValue({
     addWorkout: garminMocks.addWorkout,
+    getActivities: garminMocks.getActivities,
+    getUserSettings: garminMocks.getUserSettings,
     get: garminMocks.get,
     client: {
       post: garminMocks.post,
@@ -130,6 +134,8 @@ beforeEach(async () => {
   vi.mocked(llmComplete).mockReset().mockResolvedValue('[{"index":0,"description":"Test-Workout"}]');
   vi.mocked(transcribeAudio).mockReset().mockResolvedValue('Ich bin heute muede und gestresst.');
   garminMocks.addWorkout.mockReset().mockResolvedValue({ workoutId: 12345 });
+  garminMocks.getActivities.mockReset().mockResolvedValue([]);
+  garminMocks.getUserSettings.mockReset().mockResolvedValue({ userData: {} });
   garminMocks.post.mockReset().mockResolvedValue({ workoutScheduleId: 67890 });
   garminMocks.get.mockReset().mockResolvedValue({ calendarItems: [] });
   garminMocks.delete.mockReset().mockResolvedValue(undefined);
@@ -793,6 +799,139 @@ describe('GET /api/pulse/plan', () => {
   });
 });
 
+describe('Pulse profile provenance', () => {
+  it('marks manual profile edits and protects them from Garmin profile sync', async () => {
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/profile',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        ftpWatts: 255,
+        maxHrBpm: 184,
+        lthrBpm: 171,
+        vo2max: 52,
+      },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    garminMocks.getUserSettings.mockResolvedValueOnce({
+      userData: {
+        vo2MaxRunning: 58,
+        vo2MaxCycling: 56,
+        lactateThresholdHeartRate: 176,
+        maxHeartRate: 190,
+      },
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'profile-activity-1',
+      startTime: new Date('2026-04-30T08:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 3600,
+      maxHr: 192,
+      rawData: { max20MinPower: 310 },
+    });
+
+    const sync = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/garmin/sync-profile',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(sync.statusCode).toBe(200);
+    const syncBody = sync.json<{
+      synced: {
+        ftpWatts: { value: number | null; source: string; status: string };
+        maxHrBpm: { value: number | null; source: string; status: string };
+        lthrBpm: { value: number | null; source: string; status: string };
+        vo2max: { value: number | null; source: string; status: string };
+      };
+    }>();
+    expect(syncBody.synced.ftpWatts).toMatchObject({ value: 255, source: 'manual', status: 'kept_manual' });
+    expect(syncBody.synced.maxHrBpm).toMatchObject({ value: 184, source: 'manual', status: 'kept_manual' });
+    expect(syncBody.synced.lthrBpm).toMatchObject({ value: 171, source: 'manual', status: 'kept_manual' });
+    expect(syncBody.synced.vo2max).toMatchObject({ value: 52, source: 'manual', status: 'kept_manual' });
+
+    const profile = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/profile',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(profile.statusCode).toBe(200);
+    expect(profile.json<{
+      ftpWatts: number;
+      maxHrBpm: number;
+      lthrBpm: number;
+      vo2max: number;
+      provenance: { fields: { ftpWatts: { source: string }; maxHrBpm: { source: string }; lthrBpm: { source: string }; vo2max: { source: string } } };
+    }>()).toMatchObject({
+      ftpWatts: 255,
+      maxHrBpm: 184,
+      lthrBpm: 171,
+      vo2max: 52,
+      provenance: {
+        fields: {
+          ftpWatts: { source: 'manual' },
+          maxHrBpm: { source: 'manual' },
+          lthrBpm: { source: 'manual' },
+          vo2max: { source: 'manual' },
+        },
+      },
+    });
+  });
+
+  it('fills missing profile values from Garmin and stored activities with sources', async () => {
+    garminMocks.getUserSettings.mockResolvedValueOnce({
+      userData: {
+        vo2MaxRunning: 54,
+        vo2MaxCycling: 56,
+        lactateThresholdHeartRate: 172,
+      },
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'profile-activity-2',
+      startTime: new Date('2026-04-29T08:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 3600,
+      maxHr: 189,
+      rawData: { max20MinPower: 300 },
+    });
+
+    const sync = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/garmin/sync-profile',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(sync.statusCode).toBe(200);
+    const profile = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/profile',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(profile.json<{
+      ftpWatts: number;
+      maxHrBpm: number;
+      lthrBpm: number;
+      vo2max: number;
+      provenance: { fields: Record<string, { source: string }> };
+    }>()).toMatchObject({
+      ftpWatts: 285,
+      maxHrBpm: 189,
+      lthrBpm: 172,
+      vo2max: 55,
+      provenance: {
+        fields: {
+          ftpWatts: { source: 'activity_derived' },
+          maxHrBpm: { source: 'activity_derived' },
+          lthrBpm: { source: 'garmin_settings' },
+          vo2max: { source: 'garmin_settings' },
+        },
+      },
+    });
+  });
+});
+
 describe('POST /api/pulse/plan/generate', () => {
   it('generates workouts and returns a persisted trace', async () => {
     await db.insert(pulseUserProfile).values({
@@ -816,7 +955,14 @@ describe('POST /api/pulse/plan/generate', () => {
       planTrace: {
         id: string;
         weekStart: string;
-        inputSnapshot: { weeklyHoursTarget: number; profile: { maxHrBpm: number | null }; dataWarnings: string[] };
+        inputSnapshot: {
+          weeklyHoursTarget: number;
+          profile: {
+            maxHrBpm: number | null;
+            provenance: { fields: { maxHrBpm: { source: string }; lthrBpm: { source: string } } };
+          };
+          dataWarnings: string[];
+        };
         sportMix: Record<string, { sessions: number }>;
       };
     }>();
@@ -825,7 +971,15 @@ describe('POST /api/pulse/plan/generate', () => {
       weekStart: '2026-05-04',
       inputSnapshot: {
         weeklyHoursTarget: 7,
-        profile: { maxHrBpm: 186 },
+        profile: {
+          maxHrBpm: 186,
+          provenance: {
+            fields: {
+              maxHrBpm: { source: 'manual' },
+              lthrBpm: { source: 'manual' },
+            },
+          },
+        },
       },
     });
     expect(body.planTrace.inputSnapshot.dataWarnings).toContain('Kein aktives Ziel hinterlegt.');
