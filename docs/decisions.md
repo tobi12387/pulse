@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Mental Insights nutzen PulseContext, Theme-Aggregat und days-aware Cache
+
+- **Decision:** Die Mental-Domain der Deep Insights baut ihren Prompt aus dem gecachten PulseContext fuer Readiness/Load, einem expliziten Check-in-Fenster fuer die angeforderten `days`, dem Mental-Theme-Aggregat und der Mental-Load-Overlay-Statistik. Der Deep-Insight-Cache-Key enthaelt zusaetzlich `days`, damit 7/30/90-Tage-Analysen nicht gegenseitig ueberschrieben werden.
+- **Why:** Phase 11 soll descriptive Mental-Analyse liefern, die Check-ins, wiederkehrende Themes und Belastung/TSB gemeinsam interpretiert. PulseContext ist die etablierte gemeinsame Quelle fuer Coach-/Briefing-Kontext, reicht mit `checkins14d` allein aber nicht fuer 30/90-Tage-Analysen; der `days`-Cache-Fix verhindert fachlich falsche Wiederverwendung alter Analysen.
+- **Alternatives:** Mental Insights nur ueber `checkins14d` bauen (verliert historische 30/90-Tage-Check-ins); nur Prompt-Text ohne Theme-/Load-Daten erweitern (keine echte Phase-11-Integration); Cache-Key unveraendert lassen (verschiedene Zeitraeume koennten dieselbe Analyse sehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Mental-Load-Overlay nutzt berechnete Serien statt persistierter Load-Tabelle
 
 - **Decision:** Das Phase-11-Overlay wird aus einer wiederverwendbaren `computeFitnessLoadSeries`-Berechnung gespeist und nicht aus einer neuen `pulse_fitness_load` Tabelle. Der Insights-Overlay-Endpunkt kombiniert diese taeglichen CTL/ATL/TSB/TSS-Punkte mit sparse `pulse_mental_checkins`-Werten.

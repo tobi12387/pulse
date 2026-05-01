@@ -4,13 +4,14 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Active Sequence
 
-1. Finish `codex/phase11-mental-load-overlay`: Phase 11 CTL/TSB + Mood/Stress overlay in Insights.
-2. Then continue Phase 11 theme-aware mental insight engine.
+1. Finish `codex/phase11-theme-aware-insights`: Phase 11 Mental-Domain Insights use PulseContext, themes, and load overlay stats.
+2. Then reassess next open roadmap/ops work.
 3. Keep Web Push production activation on the ops checklist: server still needs real VAPID settings before pushes can send.
 
 ## Current PRs / Branches
 
-- `codex/phase11-mental-load-overlay`: active local branch for Phase 11 Mental-Load-Overlay slice.
+- `codex/phase11-theme-aware-insights`: active local branch for Phase 11 theme-aware Insight Engine slice.
+- `codex/phase11-mental-load-overlay`: merged and deployed via PR #39.
 - `codex/phase11-mental-themes`: merged and deployed via PR #38.
 - `codex/phase10-strength-equipment-ui`: merged and deployed via PR #37.
 - `codex/phase10-strength-equipment`: merged and deployed via PR #36.
@@ -23,8 +24,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Open, merge, and deploy Phase 11 Mental-Load-Overlay after CI passes.
-- Next branch after overlay: Phase 11 theme-aware Insights using PulseContext + theme summaries.
+- Open, merge, and deploy Phase 11 theme-aware Insights after CI passes.
+- After Phase 11, reassess remaining roadmap/ops items; Web Push VAPID production settings remain the known ops task.
 - Verify server has VAPID settings in `/root/pulse/.env`; without them push endpoints remain safely configured-but-skipped.
 
 ## Out Of Scope Unless Reversed

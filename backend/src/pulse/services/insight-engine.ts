@@ -4,6 +4,9 @@ import { eq, and, gt, gte, desc } from 'drizzle-orm';
 import { llmComplete, FAST_MODEL, SMART_MODEL } from '../../lib/llm.js';
 import { redis } from '../../lib/redis.js';
 import { computeFitnessLoad } from './load-engine.js';
+import { buildCachedPulseContextFor } from '../lib/pulse-context.js';
+import { listMentalThemes } from './mental-themes.js';
+import { getMentalLoadOverlay } from './mental-load-overlay.js';
 
 // ─── Deep Insight types ───────────────────────────────────────────────────────
 
@@ -142,29 +145,59 @@ Bewertung (3-5 Sätze): Trend, Körperzusammensetzung im Kontext Ausdauersport, 
   return { prompt, stats };
 }
 
-async function mentalContext(userId: string, since: string) {
+async function mentalContext(userId: string, since: string, days: number, today: string) {
+  const [ctx, themeData, overlay] = await Promise.all([
+    buildCachedPulseContextFor(userId, today),
+    listMentalThemes(userId, days),
+    getMentalLoadOverlay(userId, Math.max(28, Math.min(90, days))),
+  ]);
   const rows = await db.select({
-    date: pulseMentalCheckins.date, mood: pulseMentalCheckins.mood,
-    energy: pulseMentalCheckins.energy, stress: pulseMentalCheckins.stress,
+    date: pulseMentalCheckins.date,
+    mood: pulseMentalCheckins.mood,
+    energy: pulseMentalCheckins.energy,
+    stress: pulseMentalCheckins.stress,
     motivation: pulseMentalCheckins.motivation,
   }).from(pulseMentalCheckins)
     .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since)))
     .orderBy(pulseMentalCheckins.date);
-  if (!rows.length) return null;
+  const topThemes = themeData.themes.slice(0, 10);
+  if (!rows.length && topThemes.length === 0) return null;
   const stats = {
     avgMood: numAvg(rows.map(r => r.mood)), avgEnergy: numAvg(rows.map(r => r.energy)),
     avgStress: numAvg(rows.map(r => r.stress)), avgMotivation: numAvg(rows.map(r => r.motivation)),
     trendMood: numTrend(rows.map(r => r.mood)),
     highStressDays: rows.filter(r => (r.stress ?? 0) >= 7).length,
     checkinCount: rows.length,
+    ctl: Math.round(ctx.fitnessLoad.ctl),
+    atl: Math.round(ctx.fitnessLoad.atl),
+    tsb: Math.round(ctx.fitnessLoad.tsb),
+    readiness: ctx.readiness.score,
+    topTheme: topThemes[0]?.theme ?? null,
+    resurfacingThemes: topThemes.filter(theme => theme.isResurfacing).length,
+    resolvedThemes: topThemes.filter(theme => theme.isResolved).length,
+    moodTsbCorrelation: overlay.stats.moodTsbCorrelation,
+    lowTsbCheckins: overlay.stats.lowTsbCheckins,
   };
   const lines = rows.slice(-14).map(r =>
     `${r.date}: Stimmung=${r.mood} Energie=${r.energy} Stress=${r.stress} Motivation=${r.motivation}`
   ).join('\n');
-  const prompt = `Analysiere Tobis mentale Verfassung der letzten ${rows.length} Check-ins.
-Letzte 14 Tage:\n${lines}
-Kennzahlen: Ø Stimmung ${stats.avgMood}/10, Energie ${stats.avgEnergy}/10, Stress ${stats.avgStress}/10, Motivation ${stats.avgMotivation}/10. ${stats.highStressDays} Hochstress-Tage (≥7).
-Bewertung (3-5 Sätze): Muster, Risikofaktoren, Zusammenhang mit Training, Empfehlung.`;
+  const themeLines = topThemes.map(theme => {
+    const flags = [
+      theme.isResurfacing ? 'resurfacing' : null,
+      theme.isResolved ? 'resolved' : null,
+    ].filter(Boolean).join(', ');
+    const stressHits = theme.occurrences.filter(occ => occ.stress >= 7).length;
+    const lowMoodHits = theme.occurrences.filter(occ => occ.mood <= 5).length;
+    return `${theme.theme}: ${theme.count}x, zuletzt ${theme.lastSeen}, Stress>=7 ${stressHits}x, Stimmung<=5 ${lowMoodHits}x${flags ? ` (${flags})` : ''}`;
+  }).join('\n');
+  const overlayWindow = overlay.days === days ? `${days} Tage` : `${overlay.days} Tage (Mindestfenster fuer stabile Korrelation)`;
+  const prompt = `Analysiere Tobis mentale Verfassung anhand des gemeinsamen PulseContext.
+Aktueller Kontext: Readiness=${ctx.readiness.score}/100 (${ctx.readiness.label}), CTL=${ctx.fitnessLoad.ctl.toFixed(1)}, ATL=${ctx.fitnessLoad.atl.toFixed(1)}, TSB=${ctx.fitnessLoad.tsb.toFixed(1)}.
+Letzte bis zu 14 Check-ins im Analysefenster (${days} Tage):\n${lines || 'Keine aktuellen Check-ins'}
+Top-Themes der letzten ${days} Tage:\n${themeLines || 'Keine wiederkehrenden Themes'}
+Kennzahlen: Ø Stimmung ${stats.avgMood ?? 'n/a'}/10, Energie ${stats.avgEnergy ?? 'n/a'}/10, Stress ${stats.avgStress ?? 'n/a'}/10, Motivation ${stats.avgMotivation ?? 'n/a'}/10. ${stats.highStressDays} Hochstress-Tage (>=7).
+Mood/TSB-Korrelation im Overlay (${overlayWindow}): r=${stats.moodTsbCorrelation ?? 'n/a'}, Check-ins bei TSB<-10: ${stats.lowTsbCheckins}.
+Bewertung (3-5 Sätze): Muster, Risikofaktoren, Zusammenhang mit Training und TSB, konkrete Empfehlung. Grenze dich von Risk Watch ab: hier narrativ-deskriptiv, keine Alarmregel.`;
   return { prompt, stats };
 }
 
@@ -177,7 +210,7 @@ export async function generateDeepInsight(
   forceRefresh = false,
 ): Promise<DeepInsightResult> {
   const today = new Date().toISOString().split('T')[0]!;
-  const cacheKey = `pulse:deep-insight:${userId}:${domain}:${today}`;
+  const cacheKey = `pulse:deep-insight:${userId}:${domain}:${days}:${today}`;
 
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
@@ -195,12 +228,12 @@ Antworte auf Deutsch. Kein Markdown, keine Aufzählungszeichen — fließender T
     case 'sleep':  { const c = await sleepContext(userId, since);  prompt = c.prompt; stats = c.stats; break; }
     case 'hrv':    { const c = await hrvContext(userId, since);    prompt = c.prompt; stats = c.stats; break; }
     case 'load':   { const c = await loadContext(userId, since);   prompt = c.prompt; stats = c.stats; break; }
-    case 'mental': { const c = await mentalContext(userId, since); if (!c) return { domain, analysis: 'Noch keine Check-in-Daten.', stats: {}, date: today, cached: false }; prompt = c.prompt; stats = c.stats; break; }
+    case 'mental': { const c = await mentalContext(userId, since, days, today); if (!c) return { domain, analysis: 'Noch keine Check-in-Daten.', stats: {}, date: today, cached: false }; prompt = c.prompt; stats = c.stats; break; }
     case 'weight': { const c = await weightContext(userId);        if (!c) return { domain, analysis: 'Noch keine Gewichtsdaten.', stats: {}, date: today, cached: false }; prompt = c.prompt; stats = c.stats; break; }
     case 'overall': {
       const [s, h, l, m] = await Promise.all([
         sleepContext(userId, since), hrvContext(userId, since),
-        loadContext(userId, since), mentalContext(userId, since),
+        loadContext(userId, since), mentalContext(userId, since, days, today),
       ]);
       stats = {};
       prompt = `Gesamtanalyse von Tobis Gesundheits- und Trainingsstatus der letzten ${days} Tage.
