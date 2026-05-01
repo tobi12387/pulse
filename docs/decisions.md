@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Home und Coach nutzen denselben Action-Closure-Contract
+
+- **Decision:** Die sichtbare Tagesaktion wird ueber `/api/pulse/actions` mit `decisionId` und Status geladen und ueber `PATCH /api/pulse/actions/:id` abgeschlossen, verschoben oder verworfen. Home bekommt kompakte Abschlusskontrollen; Coach zeigt denselben offenen oder leeren Action-State, ohne automatisch eine Nachricht zu senden.
+- **Why:** Der Tagesloop muss an einer Stelle geschlossen werden, sonst koennen Home, Coach und Push spaeter auseinanderlaufen. Ein eigener Action-Contract trennt die durable Closure-Historie von `/home`, bleibt aber durch Cache-Invalidierung sofort in Briefing/Home/Coach wirksam.
+- **Alternatives:** Nur `/home.nextBestActions` erweitern (vermischt Dashboard-Payload und Mutationen); Abschluss nur im Frontend ausblenden (nicht dauerhaft); Coach bei Action-Klick automatisch losschicken (nimmt Kontrolle aus dem Nutzerflow).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Action Closure startet als explizites Statusmodell
 
 - **Decision:** Pulse fuehrt `pulse_action_decisions` als eigene Action-History ein und kapselt die ersten Statusuebergaenge in einem pure Service `decision-closure.ts`. Next-Best-Actions duerfen dadurch geschlossene oder durch echte Tagesdaten erledigte Aktionen ausblenden, ohne direkt UI-, Push- oder Coach-Memory-Logik zu vermischen.

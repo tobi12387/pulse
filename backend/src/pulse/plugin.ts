@@ -5,6 +5,7 @@ import {
   pulseDailyMetrics,
   pulseMentalCheckins,
   pulseActivities,
+  pulseActionDecisions,
   pulsePlannedWorkouts,
   pulsePlanGenerations,
   pulseCoachSessions,
@@ -29,7 +30,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulseNextBestAction, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -37,7 +38,7 @@ import {
   buildRichSystemPrompt, getCoachReplyRich,
   classifyAndExtractCheckin, type CheckinClassification,
 } from './services/coach-engine.js';
-import { buildCachedPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
+import { buildCachedPulseContextFor, buildPulseContextFor, mapPulseContextToCoachContext } from './lib/pulse-context.js';
 import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
@@ -175,6 +176,11 @@ const activityFeedbackSchema = z.object({
   rpe: z.number().int().min(1).max(10),
   rpeNote: z.string().trim().max(500).nullable().optional(),
   sorenessAreas: z.array(z.enum(RPE_SORENESS_AREAS)).max(8).nullable().optional(),
+});
+
+const actionDecisionPatchSchema = z.object({
+  status: z.enum(['completed', 'deferred', 'dismissed']),
+  reason: z.string().trim().max(500).optional(),
 });
 
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
@@ -823,6 +829,68 @@ Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur
   }
 }
 
+type ActionDecisionRow = typeof pulseActionDecisions.$inferSelect;
+
+function actionStateFromRow(action: PulseNextBestAction, row: ActionDecisionRow): PulseActionState {
+  return {
+    ...action,
+    decisionId: row.id,
+    status: row.status as PulseActionState['status'],
+    resolvedAt: row.resolvedAt?.toISOString() ?? null,
+    resolutionReason: row.resolutionReason ?? null,
+  };
+}
+
+function matchesActionRow(action: PulseNextBestAction, row: ActionDecisionRow): boolean {
+  if (row.sourceId === action.id) return true;
+  if (row.kind !== action.source) return false;
+  return row.targetRoute === action.targetPath || row.title === action.title;
+}
+
+async function listActionDecisionRows(userId: string): Promise<ActionDecisionRow[]> {
+  return db.select().from(pulseActionDecisions)
+    .where(eq(pulseActionDecisions.userId, userId))
+    .orderBy(desc(pulseActionDecisions.createdAt))
+    .limit(100);
+}
+
+async function ensureActionDecision(userId: string, action: PulseNextBestAction, existingRows: ActionDecisionRow[]): Promise<ActionDecisionRow> {
+  const existing = existingRows.find(row => matchesActionRow(action, row));
+  if (existing) return existing;
+
+  const [created] = await db.insert(pulseActionDecisions).values({
+    userId,
+    source: 'next_best_action',
+    sourceId: action.id,
+    kind: action.source,
+    title: action.title,
+    status: 'open',
+    targetRoute: action.targetPath,
+    rawContext: {
+      actionId: action.id,
+      openedAt: action.openedAt ?? null,
+      priority: action.priority,
+      evidence: action.evidence ?? [],
+    },
+  }).returning();
+
+  return created!;
+}
+
+async function listCurrentActionStates(userId: string, date: string): Promise<PulseActionState[]> {
+  const context = await buildPulseContextFor(userId, date);
+  const existingRows = await listActionDecisionRows(userId);
+  const states: PulseActionState[] = [];
+
+  for (const action of context.nextBestActions) {
+    const decision = await ensureActionDecision(userId, action, existingRows);
+    existingRows.unshift(decision);
+    states.push(actionStateFromRow(action, decision));
+  }
+
+  return states;
+}
+
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 export default async function pulsePlugin(app: FastifyInstance) {
@@ -1017,6 +1085,39 @@ export default async function pulsePlugin(app: FastifyInstance) {
   app.get('/sync/status', { onRequest: [app.authenticate] }, async (req) => {
     const today = new Date().toISOString().split('T')[0]!;
     return getPulseDataStatus(req.user.sub, today);
+  });
+
+  app.get('/actions', { onRequest: [app.authenticate] }, async (req): Promise<{ actions: PulseActionState[] }> => {
+    const today = new Date().toISOString().split('T')[0]!;
+    const actions = await listCurrentActionStates(req.user.sub, today);
+    return { actions };
+  });
+
+  app.patch('/actions/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsedParams = z.object({ id: z.string().uuid() }).safeParse(req.params);
+    const parsedBody = actionDecisionPatchSchema.safeParse(req.body);
+    if (!parsedParams.success || !parsedBody.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const [updated] = await db.update(pulseActionDecisions)
+      .set({
+        status: parsedBody.data.status,
+        resolvedAt: new Date(),
+        resolutionReason: parsedBody.data.reason ?? null,
+      })
+      .where(and(eq(pulseActionDecisions.id, parsedParams.data.id), eq(pulseActionDecisions.userId, req.user.sub)))
+      .returning();
+
+    if (!updated) return reply.status(404).send({ error: 'Aktion nicht gefunden' });
+    await invalidateUser(req.user.sub);
+
+    return {
+      decision: {
+        id: updated.id,
+        status: updated.status,
+        resolvedAt: updated.resolvedAt?.toISOString() ?? null,
+        resolutionReason: updated.resolutionReason ?? null,
+      },
+    };
   });
 
   app.get('/data-coverage', { onRequest: [app.authenticate] }, async (req, reply) => {

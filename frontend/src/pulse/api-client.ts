@@ -10,7 +10,7 @@ import type {
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
-  PulseMentalLoadOverlayResponse,
+  PulseMentalLoadOverlayResponse, PulseActionState,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -108,6 +108,20 @@ export const pulseApi = {
       request(`/risk/${id}/snooze`, { method: 'POST', body: JSON.stringify({ hours }) }),
     resolve: (id: string): Promise<{ ok: boolean }> =>
       request(`/risk/${id}/resolve`, { method: 'POST', body: '{}' }),
+  },
+
+  actions: {
+    list: (): Promise<{ actions: PulseActionState[] }> =>
+      request('/actions'),
+    update: (id: string, data: { status: 'completed' | 'deferred' | 'dismissed'; reason?: string }): Promise<{
+      decision: {
+        id: string;
+        status: PulseActionState['status'];
+        resolvedAt: string | null;
+        resolutionReason: string | null;
+      };
+    }> =>
+      request(`/actions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   push: {

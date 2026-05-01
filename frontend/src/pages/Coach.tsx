@@ -7,11 +7,13 @@ import {
   useCoachHistory,
   useCoachSend,
   usePulseBriefing,
+  usePulseActions,
   usePulseHome,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
+import type { PulseActionState } from '@coaching-os/shared/pulse';
 
 type MicState = 'idle' | 'recording' | 'processing';
 
@@ -274,11 +276,13 @@ function QuickPrompts({
 
 function DailyBriefingGuide({
   home,
+  actions,
   briefing,
   briefingLoading,
   onPrompt,
 }: {
   home: ReturnType<typeof usePulseHome>['data'];
+  actions: PulseActionState[];
   briefing: string | undefined;
   briefingLoading: boolean;
   onPrompt: (prompt: string) => void;
@@ -327,6 +331,43 @@ function DailyBriefingGuide({
           onPrompt={() => onPrompt(dailyDecision.prompt)}
         />
       )}
+
+      <div className="card" style={{ padding: '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            TAGESAKTION
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+            {actions.length > 0 ? `${actions.length} offen` : 'klar'}
+          </span>
+        </div>
+        {actions[0] ? (
+          <button
+            type="button"
+            onClick={() => onPrompt(`Tagesaktion: ${actions[0]!.title}. ${actions[0]!.reason}`)}
+            style={{
+              width: '100%',
+              padding: '10px 11px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              textAlign: 'left',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ display: 'block', fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
+              {actions[0].title}
+            </span>
+            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, marginTop: 4 }}>
+              {actions[0].resolvedBy ?? actions[0].reason}
+            </span>
+          </button>
+        ) : (
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            Keine offene Tagesaktion
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -339,6 +380,7 @@ export default function Coach() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: home } = usePulseHome();
+  const { data: actionsData } = usePulseActions();
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const m = home?.todayMetrics;
 
@@ -446,6 +488,7 @@ export default function Coach() {
         {!isLoading && !hasMessages && !voiceCard && (
           <DailyBriefingGuide
             home={home}
+            actions={actionsData?.actions ?? []}
             briefing={briefingData?.briefing}
             briefingLoading={briefingLoading}
             onPrompt={setInput}

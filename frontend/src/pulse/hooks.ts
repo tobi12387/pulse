@@ -26,6 +26,7 @@ export const pulseKeys = {
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
   briefing:     ['pulse', 'briefing'] as const,
+  actions:      ['pulse', 'actions'] as const,
   risk:         ['pulse', 'risk'] as const,
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
   correlations:      (days: number)  => ['pulse', 'correlations', days] as const,
@@ -65,6 +66,27 @@ export function usePulseHome() {
     queryFn: pulseApi.home.get,
     staleTime: 60_000,
     refetchInterval: 5 * 60_000,
+  });
+}
+
+export function usePulseActions() {
+  return useQuery({
+    queryKey: pulseKeys.actions,
+    queryFn: pulseApi.actions.list,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useUpdatePulseAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, reason }: { id: string; status: 'completed' | 'deferred' | 'dismissed'; reason?: string }) =>
+      pulseApi.actions.update(id, { status, reason }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.actions });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 

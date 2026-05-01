@@ -9,8 +9,10 @@ type MockPulseApiOptions = {
   coverage?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  actions?: unknown[];
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
+  onActionPatch?: (decisionId: string, body: unknown) => void;
   pushSettings?: unknown;
   checkinToday?: unknown;
   metrics?: unknown[];
@@ -370,6 +372,22 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, { error: 'Internal Server Error' }, 500);
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
+    if (url.pathname === '/api/pulse/actions' && request.method() === 'GET') {
+      return json(route, { actions: options.actions ?? [] });
+    }
+    if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
+      const decisionId = url.pathname.split('/').at(-1) ?? 'decision-1';
+      const body = request.postDataJSON();
+      options.onActionPatch?.(decisionId, body);
+      return json(route, {
+        decision: {
+          id: decisionId,
+          status: body.status,
+          resolvedAt: `${today}T08:00:00.000Z`,
+          resolutionReason: body.reason ?? null,
+        },
+      });
+    }
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
