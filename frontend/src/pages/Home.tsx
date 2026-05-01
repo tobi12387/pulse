@@ -7,6 +7,8 @@ import { RiskWatchBanner } from '@/components/RiskWatchBanner';
 import { AdjustTodayCard } from '@/components/AdjustTodayCard';
 import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
+import { DailyDecisionCard } from '@/components/DailyDecisionCard';
+import { deriveDailyDecision } from '@/pulse/daily-decision';
 import type { PulseNextBestAction } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
@@ -351,6 +353,8 @@ export default function Home() {
   const readiness = readinessQuery.data;
   const fl = loadQuery.data;
   const nw = data.nextWorkout;
+  const dailyDecision = deriveDailyDecision(data);
+  const followUpActions = data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
   const showDataStatus = dataStatus.garmin.status !== 'ready' || !dataStatus.userReady || !dataStatus.profileReady;
 
@@ -426,7 +430,15 @@ export default function Home() {
         </div>
       )}
 
-      <NextBestActionsCard actions={data.nextBestActions ?? []} onNavigate={navigate} />
+      {dailyDecision && (
+        <DailyDecisionCard
+          decision={dailyDecision}
+          labelCase="upper"
+          onActivate={() => navigate(dailyDecision.targetPath)}
+        />
+      )}
+
+      <NextBestActionsCard actions={followUpActions} onNavigate={navigate} />
 
       {/* ── Adjust-Today Proposal (if readiness/health requires) ── */}
       <AdjustTodayCard />

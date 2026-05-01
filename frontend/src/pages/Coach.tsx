@@ -10,6 +10,8 @@ import {
   usePulseHome,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
+import { DailyDecisionCard } from '@/components/DailyDecisionCard';
+import { deriveDailyDecision } from '@/pulse/daily-decision';
 
 type MicState = 'idle' | 'recording' | 'processing';
 
@@ -270,13 +272,6 @@ function QuickPrompts({
   );
 }
 
-function readinessBoundary(score: number | null | undefined, tsb: number | null | undefined): string {
-  if (score != null && score < 55) return 'Heute defensiv bleiben: keine harte Intensität erzwingen.';
-  if (score != null && score < 70) return 'Belastung sauber dosieren und harte Spitzen nur bewusst setzen.';
-  if (tsb != null && tsb < -10) return 'Form ist belastet: Umfang oder Intensität nicht zusätzlich ausweiten.';
-  return 'Normal trainieren, aber die Einheit nicht über den Plan hinaus verlängern.';
-}
-
 function formatPlannedDate(date: string): string {
   return new Date(`${date}T12:00:00`).toLocaleDateString('de-DE', {
     weekday: 'short',
@@ -298,98 +293,48 @@ function DailyBriefingGuide({
 }) {
   const readiness = home?.readiness;
   const metrics = home?.todayMetrics;
-  const load = home?.fitnessLoad;
-  const nextAction = home?.nextBestActions?.[0] ?? null;
-  const nextWorkout = home?.nextWorkout ?? null;
-  const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
-  const futureWorkout = nextWorkout && nextWorkout.plannedDate !== home?.date ? nextWorkout : null;
-  const decision = nextAction
-    ? nextAction.title
-    : todayWorkout
-      ? `${todayWorkout.activityType} · Zone ${todayWorkout.zone} · ${todayWorkout.durationMin} min`
-      : futureWorkout
-        ? 'Heute ist kein Training geplant.'
-      : 'Heute bewusst entscheiden, ob Training oder Erholung sinnvoller ist.';
-  const decisionDetail = nextAction?.resolvedBy
-    ?? (todayWorkout
-      ? 'Coach kann die heutige Einheit begründen oder anpassen.'
-      : futureWorkout
-        ? `Nächster Ausblick: ${formatPlannedDate(futureWorkout.plannedDate)} · ${futureWorkout.activityType} Z${futureWorkout.zone}.`
-        : 'Coach kann Training, Erholung und mentale Lage einordnen.');
-  const startPrompt = todayWorkout
-    ? `Soll ich ${todayWorkout.activityType} heute wie geplant machen oder anpassen?`
-    : 'Heute ist kein Training geplant. Wie nutze ich den freien Tag für Erholung, mentale Stabilität und Vorbereitung?';
+  const dailyDecision = deriveDailyDecision(home);
 
   return (
-    <div className="card" style={{ alignSelf: 'stretch', borderColor: 'rgba(94,230,207,0.24)', padding: '12px 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          TAGESBRIEFING
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
-          {home?.date ?? new Date().toISOString().slice(0, 10)}
-        </span>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 12 }}>
-        {[
-          {
-            label: 'Lage',
-            value: readiness ? `${readiness.score}/100 · ${readiness.shortLabel ?? readiness.label}` : 'Readiness wird geladen',
-            detail: metrics?.sleepHours != null ? `Schlaf ${metrics.sleepHours.toFixed(1)}h` : 'Metriken werden berücksichtigt',
-          },
-          {
-            label: 'Heutige Grenze',
-            value: readinessBoundary(readiness?.score, load?.tsb),
-            detail: load?.tsb != null ? `TSB ${load.tsb.toFixed(1)}` : 'nach Readiness und Plan',
-          },
-          {
-            label: 'Nächste Entscheidung',
-            value: decision,
-            detail: decisionDetail,
-          },
-        ].map(item => (
-          <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)', padding: '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            TAGESBRIEFING
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+            {home?.date ?? new Date().toISOString().slice(0, 10)}
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              {item.label}
+              Lage
             </span>
             <span style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
-              {item.value}
+              {readiness ? `${readiness.score}/100 · ${readiness.shortLabel ?? readiness.label}` : 'Readiness wird geladen'}
             </span>
             <span style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
-              {item.detail}
+              {metrics?.sleepHours != null ? `Schlaf ${metrics.sleepHours.toFixed(1)}h` : 'Metriken werden berücksichtigt'}
             </span>
           </div>
-        ))}
+        </div>
+        {briefingLoading ? (
+          <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '10px 0 0' }}>Briefing wird geladen…</p>
+        ) : briefing ? (
+          <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '10px 0 0' }}>
+            {briefing}
+          </p>
+        ) : null}
       </div>
 
-      {briefingLoading ? (
-        <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '0 0 10px' }}>Briefing wird geladen…</p>
-      ) : briefing ? (
-        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
-          {briefing}
-        </p>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={() => onPrompt(startPrompt)}
-        style={{
-          width: '100%',
-          padding: '9px 10px',
-          background: 'var(--surface-2)',
-          border: '1px solid var(--accent)',
-          borderRadius: 5,
-          color: 'var(--accent)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-        }}
-      >
-        Gespräch damit starten
-      </button>
+      {dailyDecision && (
+        <DailyDecisionCard
+          decision={dailyDecision}
+          labelCase="title"
+          onPrompt={() => onPrompt(dailyDecision.prompt)}
+        />
+      )}
     </div>
   );
 }
