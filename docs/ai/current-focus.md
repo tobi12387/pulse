@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/ux-slice-a-closeout`: active branch for marking UI/UX Slice A as merged and deployed.
+- `codex/ux-slice-b-home-coach`: active branch for UI/UX Slice B, covering Home daily action clarity and Coach quick prompts.
 - Recent completed branches:
+- `codex/ux-slice-a-closeout`: merged and deployed via PR #62.
 - `codex/ux-slice-a-insights`: merged and deployed via PR #61.
 - `codex/ux-usability-plans`: merged and deployed via PR #60.
 - `codex/reliability-wave-closeout`: merged and deployed via PR #58.
@@ -46,7 +47,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Start UI/UX Slice B: Home/Coach daily flow.
+- Merge and deploy UI/UX Slice B: Home/Coach daily flow.
 - Then implement Plan decision flow, Data/Settings trust, and visual density pass in separate PRs.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
