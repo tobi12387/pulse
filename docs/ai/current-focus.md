@@ -6,11 +6,12 @@ Keep this file short. Update it whenever the active work queue changes.
 
 1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, and the Everyday Utility Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. Active wave: `docs/superpowers/plans/2026-05-01-reliability-wave.md`.
+3. No active implementation wave is selected. Create or approve the next plan in `docs/superpowers/plans/` before new feature work starts.
 
 ## Current PRs / Branches
 
-- `codex/bundle-code-splitting`: active local branch for Reliability Wave Slice 4.
+- `codex/reliability-wave-closeout`: active local branch for closing the completed Reliability Wave docs.
+- `codex/bundle-code-splitting`: merged and deployed via PR #57.
 - `codex/deploy-smoke`: merged and deployed via PR #56.
 - `codex/local-test-env`: merged and deployed via PR #55.
 - `codex/e2e-ci-reliability`: merged and deployed via PR #54.
@@ -41,8 +42,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy Reliability Wave Slice 4: `codex/bundle-code-splitting`.
-- Then close the Reliability Wave and move its plan to `completed/`.
+- Merge and deploy the Reliability Wave closeout branch.
+- Then choose the next product or reliability wave explicitly from a new active plan.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed

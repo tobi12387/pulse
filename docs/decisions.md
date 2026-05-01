@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Reliability Wave wird nach Slice 4 geschlossen
+
+- **Decision:** Nach PR #54 bis PR #57 gilt die Reliability Wave als abgeschlossen und das Plan-Dokument wird nach `completed/` verschoben. Es gibt keinen aktiven Folgeplan; neue Arbeit startet erst wieder mit einem explizit angelegten Plan in `docs/superpowers/plans/`.
+- **Why:** E2E-CI, lokaler Verify-Pfad, Server-Smoke und Route-Code-Splitting sind gemergt und deployed. Ein Closeout verhindert, dass kuenftige AI-Sessions erledigte Reliability-Slices erneut beginnen.
+- **Alternatives:** Reliability Wave aktiv liegen lassen (Rebuild-Risiko); direkt weitere Tasks ohne Plan starten (Scope-Drift); nur Chat-Zusammenfassung ohne Repo-Status (nicht belastbar fuer spaetere Sessions).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Frontend-Bundle wird ueber Route-Level Lazy Loading geschnitten
 
 - **Decision:** Reliability Wave Slice 4 nutzt `React.lazy` und `Suspense` fuer die grossen Page-Komponenten in `frontend/src/App.tsx`. Layout, Router, QueryClient und ErrorBoundary bleiben eager; einzelne Pages werden erst beim jeweiligen Route-Aufruf geladen.
