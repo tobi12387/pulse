@@ -2,17 +2,17 @@
 
 > **⚠ HISTORISCH (Stand 2026-04-29).** Dieses Handoff bezog sich auf eine
 > Next.js+Supabase-Iteration von Pulse. Der aktuelle Stack ist React 19 + Vite +
-> Fastify + Postgres — siehe [../CLAUDE.md](../CLAUDE.md). Die **Design-Tokens
+> Fastify + Postgres — siehe [../AGENTS.md](../AGENTS.md). Die **Design-Tokens
 > sind bereits in der aktuellen Codebase implementiert** (CSS-Variablen in
 > `frontend/src/`). Dokumentation hier nur noch als visuelle Referenz, nicht
 > als Implementierungs-Anweisung.
 
-Dieser Ordner enthält **alles, was Claude Code braucht**, um das Variante-B-Design gegen die Pulse-Codebase umzusetzen.
+Dieser Ordner enthält die historische visuelle Referenz für das Variante-B-Design der Pulse-Codebase.
 
 ## Inhalt
 
 ```
-handoff-claude-code/
+design-handoff/
 ├── README.md            ← du bist hier
 ├── HANDOFF.md           ← Spec: Tokens, Komponenten-Map, Datentypen, Sprints, offene Fragen
 ├── preview.html         ← öffne im Browser, um alle Screens lebend zu sehen
@@ -25,17 +25,17 @@ handoff-claude-code/
     └── icons.jsx              Optional — Icon-Stubs
 ```
 
-## Empfohlener Claude-Code-Prompt
+## Historischer Implementierungs-Prompt
 
 ```
-Lies handoff-claude-code/HANDOFF.md für Designsystem, Tokens, Komponenten-Map
+Lies design-handoff/HANDOFF.md für Designsystem, Tokens, Komponenten-Map
 und Sprint-Reihenfolge.
 
-Die JSX-Mocks unter handoff-claude-code/mocks/ sind die visuelle Wahrheit:
+Die JSX-Mocks unter design-handoff/mocks/ sind die visuelle Wahrheit:
 inline styles statt Tailwind, ABER alle Werte (Farben, Spacing, Typo) sind
 1:1 das, was im Production-Code rauskommen soll.
 
-Öffne handoff-claude-code/preview.html im Browser, um die Screens live zu sehen,
+Öffne design-handoff/preview.html im Browser, um die Screens live zu sehen,
 bevor du anfängst. Stelle dann die Fragen aus §8 von HANDOFF.md, BEVOR du Code
 schreibst.
 

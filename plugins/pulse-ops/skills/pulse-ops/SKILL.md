@@ -27,7 +27,7 @@ git -C /root/pulse status --short --branch
 git -C /root/pulse log --oneline --decorate -3
 ```
 
-Only commit server-side changes when the user explicitly says the server is the newest source of truth. Do not commit `.env`, private keys, logs, `node_modules`, `dist`, `.claude`, `.superpowers`, or scratch files.
+Only commit server-side changes when the user explicitly says the server is the newest source of truth. Do not commit `.env`, private keys, logs, `node_modules`, `dist`, legacy AI-tool directories, `.superpowers`, or scratch files.
 
 ## Preferred script
 

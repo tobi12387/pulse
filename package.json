@@ -8,6 +8,10 @@
     "check:migrations": "node scripts/check-migrations.mjs",
     "typecheck": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
     "test": "npm run test -w backend",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e:ui": "playwright test --ui",
     "dev:backend": "npm run dev -w backend",
     "dev:frontend": "npm run dev -w frontend"
   },

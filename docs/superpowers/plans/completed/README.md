@@ -1,6 +1,6 @@
 # Completed Plans — Read-Only History
 
-> **⚠ Hinweis für AI-Tools (Claude Code, Codex):** Diese Pläne sind **bereits implementiert**.
+> **⚠ Hinweis für Codex und andere AI-Tools:** Diese Pläne sind **bereits implementiert**.
 > Sie dienen als historische Referenz, nicht als Aufgaben-Backlog. Lies sie nur, wenn du
 > verstehen willst *warum* etwas im Code so ist, wie es ist. Implementiere **nichts** aus
 > diesem Ordner.

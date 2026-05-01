@@ -38,15 +38,24 @@ Key files:
 ## QA Flow
 
 1. Run the focused frontend check used by the repo, or at minimum the frontend build/typecheck if available.
-2. Start or reuse the Vite dev server when browser QA is useful.
-3. Use the Browser plugin for local pages when available.
-4. Check desktop and mobile widths for:
+2. For repeatable smoke coverage, run `npm run test:e2e`. Use `npm run test:e2e:install` once on machines without the Playwright Chromium cache.
+3. Start or reuse the Vite dev server when ad-hoc browser QA is useful.
+4. Use the Browser plugin for local pages when interactive inspection or screenshots are needed.
+5. Check desktop and mobile widths for:
    - text overflow
    - overlapping panels
    - broken loading/error states
    - stale cache after mutations
    - empty data states
-5. For API-backed pages, verify query invalidation after create/update/delete actions.
+6. For API-backed pages, verify query invalidation after create/update/delete actions.
+
+## Playwright Smoke Suite
+
+- Config: `playwright.config.ts`.
+- Tests: `frontend/e2e/`.
+- API mocks: `frontend/e2e/fixtures/pulse-api.ts`.
+- Scope: fast route/render/navigation checks for `/`, `/coach`, `/data`, `/plan`, `/insights`, and `/settings` in desktop and mobile Chromium.
+- Keep this suite deterministic. Mock API data unless the task explicitly needs a real backend/browser flow.
 
 ## Report
 

@@ -18,11 +18,29 @@
 
 ---
 
+## 2026-05-01 — Pulse ist Codex-only und nutzt aktuelle OpenRouter-Defaults
+
+- **Decision:** Pulse entfernt die verbliebenen Referenzen auf den vorherigen AI-Coding-Workflow aus aktiver Doku, historischen Handoff-Texten und Modell-Defaults. OpenRouter bleibt der Provider-Pfad; `FAST_MODEL` nutzt `openai/gpt-5-mini`, `SMART_MODEL` nutzt `openai/gpt-5.5`, beide bleiben per Env ueberschreibbar.
+- **Why:** Tobi moechte nicht mehr mit dem vorherigen AI-Coding-Tool arbeiten. Ein Codex-only Repo reduziert Drift; die Modell-Defaults muessen ausserdem gegen OpenRouter aktualisiert werden, weil Modellverfuegbarkeit und Preise volatile Produktdaten sind.
+- **Alternatives:** Nur aktive Regeln bereinigen (alte Treffer bleiben bei Suche sichtbar); konservative GPT-4.1-Defaults setzen (zu alt fuer Pulse als Smart-Default); `SMART_MODEL` ebenfalls guenstig halten (spart Kosten, aber reduziert Plan-/Coach-/Insight-Qualitaet); OpenRouter entfernen (zu grosser Scope, da `backend/src/lib/llm.ts` bereits der zentrale LLM-Pfad ist).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
+## 2026-05-01 — Browser-QA bekommt eine zweistufige Teststrategie
+
+- **Decision:** Pulse nutzt Browser Use weiter für interaktive Codex-QA und ergänzt Playwright als versionierte E2E-Smoke-Suite. Die erste Suite mockt `/api`-Antworten und prüft die sechs Hauptseiten plus Navigation in Desktop- und Mobile-Chromium.
+- **Why:** Browser Use ist schnell für visuelle Exploration, aber nicht commitbar oder CI-fähig. Playwright gibt wiederholbare Regressionstests ohne echte Garmin-/Serverdaten und deckt Routing, Runtime Errors und zentrale Render-Brüche ab.
+- **Alternatives:** Nur Browser Use verwenden (keine wiederholbare Regression); Playwright gegen den echten Backend-Server fahren (fragiler und langsamer); sofort breite End-to-End-Mutationsflows bauen (zu hoher Pflegeaufwand für den Einstieg).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-01 — Everyday Utility Wave wird nach Slice 4 geschlossen
 
 - **Decision:** Nach PR #48 bis PR #51 gilt die Everyday Utility Wave als abgeschlossen und das Plan-Dokument wird nach `completed/` verschoben. Neue Feature-Arbeit startet erst wieder mit einem explizit aktiven Plan; die naechsten Kandidaten sind Browser-E2E-Smoke-Tests, lokale Test-Environment-Haertung und Bundle-/Code-Splitting-Cleanup.
 - **Why:** Backfill, Plan-Kalibrierung, Action Closure und Mobile-Density-Fixes sind gemergt und deployed. Ohne Closeout wuerde `current-focus` kuenftige AI-Sessions auf erledigte Slices lenken und Doppelarbeit beguenstigen.
-- **Alternatives:** Everyday Utility als aktiven Plan liegen lassen (Rebuild-Risiko); sofort ohne Plan in weitere Features springen (Scope-Drift); nur Chat-Zusammenfassung ohne Repo-Status (nicht belastbar fuer Claude/Codex).
+- **Alternatives:** Everyday Utility als aktiven Plan liegen lassen (Rebuild-Risiko); sofort ohne Plan in weitere Features springen (Scope-Drift); nur Chat-Zusammenfassung ohne Repo-Status (nicht belastbar fuer AI-Tools).
 - **Decided by:** Codex.
 - **Status:** active.
 
@@ -256,11 +274,11 @@
 - **Decided by:** Codex.
 - **Status:** active.
 
-## 2026-04-30 — Claude-Code-Integration wird entfernt
+## 2026-04-30 — Zweite AI-Coding-Integration wird entfernt
 
-- **Decision:** Pulse nutzt vorerst nur noch Codex als AI-Coding-Agent. Die aktive Claude-Code-Integration wird entfernt: `CLAUDE.md` entfällt, `.claude/` wird nicht mehr als Projektzustand geführt, Branch-Regeln erwähnen nur noch `codex/<topic>` und manuelle `tobi/<topic>`-Branches.
-- **Why:** Tobi möchte aktuell mit Codex weitermachen und keine parallele Claude-Code-Konfiguration im Projekt pflegen. Eine aktive AI-Regeldatei reduziert Drift und macht `AGENTS.md` zur klaren Wahrheit für Codex.
-- **Alternatives:** Claude-Code-Doku als parallele zweite Quelle behalten (unnötige Drift); `CLAUDE.md` leer als Platzhalter behalten (weiterhin missverständlich); historische Plan- und Decision-Referenzen umschreiben (würde Verlauf verfälschen).
+- **Decision:** Pulse nutzt vorerst nur noch Codex als AI-Coding-Agent. Die aktive zweite AI-Coding-Integration wird entfernt: die Legacy-Regeldatei entfällt, alte Tool-Verzeichnisse werden nicht mehr als Projektzustand geführt, Branch-Regeln erwähnen nur noch `codex/<topic>` und manuelle `tobi/<topic>`-Branches.
+- **Why:** Tobi möchte aktuell mit Codex weitermachen und keine parallele zweite AI-Coding-Konfiguration im Projekt pflegen. Eine aktive AI-Regeldatei reduziert Drift und macht `AGENTS.md` zur klaren Wahrheit für Codex.
+- **Alternatives:** Parallele zweite AI-Doku als Quelle behalten (unnötige Drift); Legacy-Regeldatei leer als Platzhalter behalten (weiterhin missverständlich); historische Plan- und Decision-Referenzen umschreiben (würde Verlauf verfälschen).
 - **Decided by:** Tobi + Codex.
 - **Status:** active.
 
@@ -386,7 +404,7 @@
 ## 2026-04-29 — Bundle C trennt Plan-Statistik von Insights
 
 - **Decision:** Der Plan-Untertab heisst `Statistik` und bleibt rein trainingsmetrisch (TSS-Kalender, Intensitaetsverteilung, VO2max, Wochenumfang). `Insights` bleibt als eigener Top-Level-Bereich fuer KI-Narrativ sichtbar und bekommt zusaetzlich eine Home-Quick-Action; die Mobile-Nav nutzt kurze Labels, damit sechs Tabs nicht umbrechen.
-- **Why:** Der Code hatte bereits eine `/insights`-Route in der Navigation, waehrend `CLAUDE.md` noch fuenf Tabs dokumentierte. Die Trennung verhindert, dass Plan-Statistiken und KI-Interpretation wieder in einem unscharfen Analyse-Tab verschwimmen.
+- **Why:** Der Code hatte bereits eine `/insights`-Route in der Navigation, waehrend die alte Regeldatei noch fuenf Tabs dokumentierte. Die Trennung verhindert, dass Plan-Statistiken und KI-Interpretation wieder in einem unscharfen Analyse-Tab verschwimmen.
 - **Alternatives:** Insights aus der Bottom-Nav entfernen und nur ueber Home verlinken (verworfen, weil die bestehende App Insights bereits als Top-Level-Route fuehrt); Plan-Analyse unveraendert lassen (Dokumentationsdrift und unklarer Page-Auftrag).
 - **Decided by:** Codex, PR pending.
 - **Status:** active.
@@ -407,7 +425,7 @@
 
 - **Decision:** AI-Sessions starten mit `docs/ai/session-brief.md`, `docs/ai/current-focus.md`, `docs/ai/non-negotiables.md` und `docs/ai/context-map.md`, bevor lange Historien oder breite Codebereiche gelesen werden. `docs/decisions.md` bleibt die vollstaendige Chronik, wird aber nicht mehr als primaere Arbeitszusammenfassung verwendet.
 - **Why:** Pulse hat genug Regeln, Plaene und Historie, dass wiederholtes Voll-Lesen pro Session Tokens verschwendet und alte Scope-Details leichter versehentlich reaktiviert. Die kompakten Dateien geben Agents denselben Qualitaetsrahmen mit weniger Kontextlast.
-- **Alternatives:** Nur den Pointer-Prompt verwenden (spart Prompt-Tokens, aber nicht Repo-Lese-Tokens); alle Regeln weiter in `CLAUDE.md`/`AGENTS.md` duplizieren (mehr Drift).
+- **Alternatives:** Nur den Pointer-Prompt verwenden (spart Prompt-Tokens, aber nicht Repo-Lese-Tokens); alle Regeln weiter in mehreren Regeldateien duplizieren (mehr Drift).
 - **Decided by:** Tobi + Codex, PR pending.
 - **Status:** active.
 
@@ -455,20 +473,20 @@
 
 ## 2026-04-29 — Codex-System-Prompt auf Pointer reduziert
 
-- **Decision:** `docs/codex-system-prompt.md` enthält statt des langen ~150-Zeilen-Prompts nur noch einen ~10-Zeilen-Pointer-Prompt zum Kopieren. Hard Rules, Roadmap, Anti-Patterns leben in `AGENTS.md`, `CLAUDE.md`, `docs/decisions.md`, `docs/superpowers/plans/`. CI-Sync-Check prüft jetzt nur noch `CLAUDE.md` und `AGENTS.md`.
+- **Decision:** `docs/codex-system-prompt.md` enthält statt des langen ~150-Zeilen-Prompts nur noch einen ~10-Zeilen-Pointer-Prompt zum Kopieren. Hard Rules, Roadmap, Anti-Patterns leben in `AGENTS.md`, `docs/decisions.md`, `docs/superpowers/plans/`. CI-Sync-Check prüft jetzt die Codex-Regeldatei.
 - **Why:** Codex CLI lädt `AGENTS.md` automatisch beim Session-Start. Den langen Prompt zu pasten dupliziert Repo-Inhalt, kostet ~2000 Tokens pro Session und hat ein Drift-Risiko, sobald sich die Roadmap ändert. Mit `decisions.md` + CI-Check sind die Repo-Files zuverlässig die Wahrheit.
 - **Alternatives:** Langen Prompt behalten (Token-Verschwendung + manuelles Sync-Risiko); `codex-system-prompt.md` ganz löschen (verlieren Doku, wie Codex aufgesetzt wird).
-- **Decided by:** Tobi + Claude Code, supersedes ein Teil der Entscheidung vom Setup-Tag.
+- **Decided by:** Tobi + vorheriger AI-Agent, supersedes ein Teil der Entscheidung vom Setup-Tag.
 - **Status:** active. Supersedet: den 2026-04-29-Eintrag „Codex-System-Prompt als eigene Datei" (Datei existiert weiter, aber als reine Doku, nicht als Roadmap-Mirror).
 
 ---
 
 ## 2026-04-29 — Decision-Log eingeführt + CI-Sync-Check
 
-- **Decision:** Diese Datei (`docs/decisions.md`) wird zur Pflicht für jede AI-Session. Zusätzlich CI-Workflow `.github/workflows/docs-sync.yml`, der prüft, ob Hard-Rule-Marker in CLAUDE.md, AGENTS.md, codex-system-prompt.md vorhanden sind.
-- **Why:** Setup mit drei Tools (Claude Code, Codex, Tobi manuell) und drei Doc-Dateien hat zwei Drift-Risiken: (a) Chat-Entscheidungen werden nicht persistiert; (b) die drei Doc-Dateien laufen auseinander, wenn nur eine geändert wird.
+- **Decision:** Diese Datei (`docs/decisions.md`) wird zur Pflicht für jede AI-Session. Zusätzlich CI-Workflow `.github/workflows/docs-sync.yml`, der prüft, ob Hard-Rule-Marker in AGENTS.md und codex-system-prompt.md vorhanden sind.
+- **Why:** Setup mit mehreren Tools und mehreren Doc-Dateien hat zwei Drift-Risiken: (a) Chat-Entscheidungen werden nicht persistiert; (b) die Doc-Dateien laufen auseinander, wenn nur eine geändert wird.
 - **Alternatives:** „Nur ehrliche Disziplin" (zu fragil); ein einziges Master-Doc mit Includes (zu invasiv für die unterschiedliche Tonalität pro Audience).
-- **Decided by:** Tobi + Claude Code, [PR pending].
+- **Decided by:** Tobi + vorheriger AI-Agent, [PR pending].
 - **Status:** active.
 
 ---
@@ -478,17 +496,17 @@
 - **Decision:** 11 Plan-Dateien (Phasen 3a–9, Mental-Check-in, HR-First) und 1 Spec nach `docs/superpowers/plans/completed/` bzw. `specs/completed/` verschoben. `completed/README.md` mit „⚠ do not implement"-Banner.
 - **Why:** AI-Tools sollen nicht versehentlich abgeschlossene Pläne re-implementieren. Top-Level `plans/` enthält nur noch aktive Pläne.
 - **Alternatives:** Pläne in-place mit Banner markieren (visuell schwächer); Pläne löschen (verliert Historie).
-- **Decided by:** Tobi + Claude Code, [PR #7](https://github.com/tobi12387/pulse/pull/7).
+- **Decided by:** Tobi + vorheriger AI-Agent, [PR #7](https://github.com/tobi12387/pulse/pull/7).
 - **Status:** active.
 
 ---
 
 ## 2026-04-29 — Codex-System-Prompt als eigene Datei
 
-- **Decision:** `docs/codex-system-prompt.md` enthält den vollen kopierbaren Prompt für OpenAI Codex. AGENTS.md und CLAUDE.md verlinken darauf.
-- **Why:** Codex liest AGENTS.md je nach Setup nicht garantiert vollständig. Eine dezidierte Prompt-Datei macht es explizit, was reinkopiert werden muss, und enthält die roadmap-spezifischen „nicht mehr verhandelbaren" Entscheidungen, die Claude Code im eigenen System-Prompt schon hat.
+- **Decision:** `docs/codex-system-prompt.md` enthält den vollen kopierbaren Prompt für OpenAI Codex. AGENTS.md verlinkt darauf.
+- **Why:** Codex liest AGENTS.md je nach Setup nicht garantiert vollständig. Eine dezidierte Prompt-Datei macht es explizit, was reinkopiert werden muss, und enthält die roadmap-spezifischen „nicht mehr verhandelbaren" Entscheidungen.
 - **Alternatives:** Nur AGENTS.md (Codex könnte sie übersehen); System-Prompt direkt in Codex-Konfiguration ohne Repo-Spiegel (Drift-Risiko).
-- **Decided by:** Tobi + Claude Code, [PR #7](https://github.com/tobi12387/pulse/pull/7).
+- **Decided by:** Tobi + vorheriger AI-Agent, [PR #7](https://github.com/tobi12387/pulse/pull/7).
 - **Status:** active.
 
 ---
@@ -498,7 +516,7 @@
 - **Decision:** Phase 10 (vorher „Auxiliary Tracking") heißt jetzt „Strength & Equipment Tracking". Habit-Tracker komplett verworfen.
 - **Why:** Drei der ursprünglich vorgeschlagenen 5 Habits sind schon auto-erfasst (Schritte aus `pulse_daily_metrics`); die übrigen werden im Voice-Check-in als Themes besser dokumentiert. Manuelles Toggling würde den Eingabekanal duplizieren. Risk Watch deckt zusätzlich datengetriebene Trends ab.
 - **Alternatives:** Habit-Tracker als Backlog-Item (verworfen — soll keine Last sein); reduzierten Habit-Tracker mit nur 2 Habits (Aufwand-Nutzen passt nicht).
-- **Decided by:** Tobi + Claude Code, [PR #6](https://github.com/tobi12387/pulse/pull/6).
+- **Decided by:** Tobi + vorheriger AI-Agent, [PR #6](https://github.com/tobi12387/pulse/pull/6).
 - **Status:** active.
 
 ---
@@ -508,7 +526,7 @@
 - **Decision:** Drei Refactor-Bündel (A: Context Unification, B: Threshold Canonicalization, C: Endpoint & Page Consolidation) werden **vor** den Feature-Phasen RPE/Risk/Push und vor Phase 10/11 implementiert. Reihenfolge: A → B → C → RPE → Risk Watch → Web Push → Phase 10 → Phase 11.
 - **Why:** Code-Review nach Phase 9 fand strukturelle Inkonsistenzen: Briefing-Job liest aus Legacy-Schema, Coach-Context wird inline doppelt aufgebaut, TSB-Schwellen widersprechen sich, Server-Readiness-Label ≠ Frontend-Label. Diese Lücken multiplizieren sich, wenn Features ohne Refactor-Basis dazukommen.
 - **Alternatives:** Features zuerst, Refactor später (verworfen — Drift wächst); großer Single-Refactor (verworfen — zu groß für sauberen PR).
-- **Decided by:** Tobi + Claude Code, [PR #5](https://github.com/tobi12387/pulse/pull/5).
+- **Decided by:** Tobi + vorheriger AI-Agent, [PR #5](https://github.com/tobi12387/pulse/pull/5).
 - **Status:** active.
 
 ---
@@ -523,10 +541,10 @@
 
 ---
 
-## 2026-04-29 — Parallel-Workflow für Claude Code + Codex
+## 2026-04-29 — Parallel-Workflow für mehrere AI-Tools
 
-- **Decision:** GitHub `main` ist Single Source of Truth. Mac und Server sind Konsumenten, niemals Editoren. Branch-Namespaces: `claude/<topic>` (Claude Code), `codex/<topic>` (Codex), `tobi/<topic>` (manuell). Server-Deploy nur via `scripts/deploy.sh`, das dirty Trees und Non-Main-Branches verweigert.
+- **Decision:** GitHub `main` ist Single Source of Truth. Mac und Server sind Konsumenten, niemals Editoren. Branch-Namespaces trennen AI- und manuelle Arbeit; aktuell gelten `codex/<topic>` (Codex) und `tobi/<topic>` (manuell). Server-Deploy nur via `scripts/deploy.sh`, das dirty Trees und Non-Main-Branches verweigert.
 - **Why:** Zwei AI-Tools parallel im selben Repo ohne Konfliktregelung führt zu untracked Files, doppelten Migrationen, und Server-State-Drift. Eine harte Single-Source-of-Truth + Read-Only-Server-Mirror beendet alle drei Drift-Klassen.
 - **Alternatives:** Nur ein Tool benutzen (verworfen — beide haben Stärken); manuelles Konflikt-Management (verworfen — fragil).
-- **Decided by:** Tobi + Claude Code, [PR #1](https://github.com/tobi12387/pulse/pull/1).
+- **Decided by:** Tobi + vorheriger AI-Agent, [PR #1](https://github.com/tobi12387/pulse/pull/1).
 - **Status:** active.

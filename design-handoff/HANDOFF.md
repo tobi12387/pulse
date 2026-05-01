@@ -1,9 +1,9 @@
-# Pulse Redesign — Handoff für Claude Code
+# Pulse Redesign — Handoff
 
 > **⚠ HISTORISCHES DOKUMENT (Stand 2026-04-29).**
 > Dieses Handoff war für eine *frühere* Pulse-Iteration auf **Next.js + Supabase**
 > geschrieben. Der aktuelle Pulse-Stack ist **React 19 + Vite + Fastify + Postgres**
-> (siehe [../CLAUDE.md](../CLAUDE.md)).
+> (siehe [../AGENTS.md](../AGENTS.md)).
 >
 > Die **visuellen Tokens, Layout-Prinzipien und Farb-/Typo-Werte** in diesem
 > Dokument sind weiterhin verbindlich — sie wurden 1:1 ins aktuelle Pulse-Frontend
@@ -11,10 +11,10 @@
 >
 > **NICHT befolgen:** Jegliche Implementierungs-Anweisungen, die `app/(app)/`,
 > `Next.js`, `Supabase`, `tailwind.config.ts` o.ä. erwähnen — das ist die alte Welt.
-> AI-Tools (Claude Code, Codex): Mocks im Browser anschauen, Tokens lesen, dann
+> AI-Tools: Mocks im Browser anschauen, Tokens lesen, dann
 > in der Vite-/React-19-Codebase umsetzen.
 
-> **Kontext (historisch):** Pulse ist eine personal coaching app (Web/Mobile, Next.js + Supabase + LLM-Backend). Dieses Dokument fasst das aktuelle Designsystem, die explorierten Dark-Mode-Varianten und konkrete Implementierungs-Tasks zusammen, damit ein Engineering-Agent (Claude Code) das Redesign gegen die existierende Codebase umsetzen kann.
+> **Kontext (historisch):** Pulse ist eine personal coaching app (Web/Mobile, Next.js + Supabase + LLM-Backend). Dieses Dokument fasst das damalige Designsystem, die explorierten Dark-Mode-Varianten und konkrete Implementierungs-Tasks zusammen, damit ein Engineering-Agent das Redesign gegen die existierende Codebase umsetzen kann.
 
 ---
 
@@ -199,14 +199,14 @@ Vorgeschlagen für 1–2 Sprints:
 
 ---
 
-## 9 · Was Claude Code als Erstes braucht
+## 9 · Was ein Engineering-Agent als Erstes braucht
 
 1. **Read access** zum Repo (oder Import via GitHub Tool).
 2. Diese Datei (`HANDOFF.md`).
 3. Die Mock-Files: `src/variant-b*.jsx` + `Pulse Redesign.html` zur visuellen Referenz.
 4. Antworten auf §8.
 
-Dann startet Claude Code mit Sprint 1, Task 1.
+Dann startet Sprint 1, Task 1.
 
 ---
 

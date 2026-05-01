@@ -1,5 +1,5 @@
 -- Phase 6: Health States & Adaptive Plan
--- Additive only (CLAUDE.md rule 2)
+-- Additive only (AGENTS.md migration rule)
 
 CREATE TABLE IF NOT EXISTS "pulse_health_state" (
   "id"           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
