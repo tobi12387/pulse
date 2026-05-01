@@ -46,10 +46,15 @@ export function buildBriefingUserContentRich(
   const m = ctx.todayMetrics;
   const c = ctx.todayCheckin;
   const nextWorkout = ctx.upcomingWorkouts[0] ?? null;
+  const nextBestActions = ctx.nextBestActions ?? [];
 
   const riskPart = ctx.activeRiskSignals.length > 0
     ? `RISIKO-SIGNALE (Risk-Engine):\n${ctx.activeRiskSignals.map(r => `- [${r.severity.toUpperCase()}] ${r.title} (${r.ruleId})\n  Empfehlung: ${r.recommendation}`).join('\n')}`
     : 'RISIKO-SIGNALE (Risk-Engine): keine aktiven Signale.';
+
+  const actionsPart = nextBestActions.length > 0
+    ? `NÄCHSTE AKTIONEN:\n${nextBestActions.map(action => `- [${action.priority.toUpperCase()}] ${action.title}: ${action.reason} → ${action.cta} (${action.targetPath})`).join('\n')}`
+    : 'NÄCHSTE AKTIONEN: keine offenen Sofortaktionen.';
 
   const metricsPart = m
     ? `Pulse-Daten (${ctx.date}): Schlaf ${m.sleepHours ?? '–'}h (Score: ${m.sleepScore ?? '–'}), HRV ${m.hrvRmssd ?? '–'}ms (${m.hrvStatus ?? '–'}), Ruhepuls ${m.restingHr ?? '–'} bpm, Body Battery ${m.bodyBatteryMax ?? '–'}, Stress ${m.stressAvg ?? '–'}, Schritte ${m.steps ?? '–'}.`
@@ -105,7 +110,7 @@ export function buildBriefingUserContentRich(
     ? `Nächstes Rennen/Ziel: ${ctx.nextRace.title} am ${ctx.nextRace.date} (${ctx.nextRace.daysUntil} Tage).`
     : 'Kein aktives Rennen hinterlegt.';
 
-  return `${riskPart}\n${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${strengthPart}\n${equipmentPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn ein aktiver Health-State existiert, RPE auf aerobe Müdigkeit hindeutet, Equipment ersetzt werden sollte oder ein Risk-Signal warn/critical ist, muss das konkret in der Empfehlung berücksichtigt werden.`;
+  return `${riskPart}\n${actionsPart}\n${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${strengthPart}\n${equipmentPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn eine nächste Aktion critical/high ist, ein aktiver Health-State existiert, RPE auf aerobe Müdigkeit hindeutet, Equipment ersetzt werden sollte oder ein Risk-Signal warn/critical ist, muss das konkret in der Empfehlung berücksichtigt werden.`;
 }
 
 export async function processBriefingJob(

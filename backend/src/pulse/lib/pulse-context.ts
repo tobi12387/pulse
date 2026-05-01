@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { db } from '../../lib/db.js';
 import {
   pulseActivities,
@@ -6,16 +6,19 @@ import {
   pulseHealthState,
   pulseMentalCheckins,
   pulsePlannedWorkouts,
+  pulsePushSubscriptions,
   pulseUserProfile,
   pulseWeightLog,
 } from '../../db/pulse-schema.js';
+import { isPushConfigured } from '../../lib/push.js';
 import { computeRecovery } from '../../lib/recovery-metrics.js';
 import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
+import { rankNextBestActions } from '../services/next-best-actions.js';
 import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { listEquipment, listStrengthSessions } from '../services/strength-equipment.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
-import type { PulseFitnessLoad, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
+import type { PulseFitnessLoad, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
 import { getCached, setCached } from './pulse-cache.js';
 
 export type PulseDailyMetricsRow = typeof pulseDailyMetrics.$inferSelect;
@@ -75,6 +78,11 @@ export interface PulseContext {
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   nextRace: RaceContext | null;
   activeRiskSignals: PulseRiskSignal[];
+  push: {
+    configured: boolean;
+    activeSubscriptions: number;
+  };
+  nextBestActions: PulseNextBestAction[];
   recentStrengthSessions: Array<{
     date: string;
     sessionId: string;
@@ -132,6 +140,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     dailyHistory,
     races,
     riskSignalRows,
+    [pushSubscriptionCount],
     strengthData,
     equipmentData,
   ] = await Promise.all([
@@ -212,6 +221,9 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       .orderBy(desc(pulseDailyMetrics.date)),
     fitnessLoadPromise.then(load => getActiveRaces(userId, date, { ctl: load.ctl })),
     getActiveRiskSignals(userId),
+    db.select({ activeSubscriptions: sql<number>`cast(count(*) as int)` })
+      .from(pulsePushSubscriptions)
+      .where(and(eq(pulsePushSubscriptions.userId, userId), eq(pulsePushSubscriptions.enabled, true))),
     listStrengthSessions(userId, { days: 90 }),
     listEquipment(userId),
   ]);
@@ -280,6 +292,33 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       pctConsumed: item.pctConsumed!,
     }));
 
+  const activeRiskSignals = riskSignalRows.map(r => ({
+    id: r.id,
+    ruleId: r.ruleId,
+    severity: r.severity as PulseRiskSignal['severity'],
+    status: r.status as PulseRiskSignal['status'],
+    title: r.title,
+    description: r.description,
+    recommendation: r.recommendation,
+    metric: r.metricSnapshot as Record<string, unknown>,
+    triggeredAt: r.triggeredAt.toISOString(),
+    resolvedAt: r.resolvedAt?.toISOString() ?? null,
+    snoozedUntil: r.snoozedUntil?.toISOString() ?? null,
+  }));
+  const push = {
+    configured: isPushConfigured(),
+    activeSubscriptions: Number(pushSubscriptionCount?.activeSubscriptions ?? 0),
+  };
+  const nextBestActions = rankNextBestActions({
+    today: date,
+    todayCheckin: todayCheckin ?? null,
+    activeRiskSignals,
+    recentActivities: recentActivitySummaries,
+    upcomingWorkouts,
+    push,
+    equipmentDueForReplacement,
+  });
+
   return {
     userId,
     date,
@@ -296,19 +335,9 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     checkins14d,
     latestWeight: weightTrend30d(weightRows),
     nextRace: races[0] ?? null,
-    activeRiskSignals: riskSignalRows.map(r => ({
-      id: r.id,
-      ruleId: r.ruleId,
-      severity: r.severity as PulseRiskSignal['severity'],
-      status: r.status as PulseRiskSignal['status'],
-      title: r.title,
-      description: r.description,
-      recommendation: r.recommendation,
-      metric: r.metricSnapshot as Record<string, unknown>,
-      triggeredAt: r.triggeredAt.toISOString(),
-      resolvedAt: r.resolvedAt?.toISOString() ?? null,
-      snoozedUntil: r.snoozedUntil?.toISOString() ?? null,
-    })),
+    activeRiskSignals,
+    push,
+    nextBestActions,
     recentStrengthSessions,
     equipmentDueForReplacement,
   };
@@ -322,6 +351,8 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
   return {
     ...ctx,
     activeRiskSignals: ctx.activeRiskSignals ?? [],
+    push: ctx.push ?? { configured: false, activeSubscriptions: 0 },
+    nextBestActions: ctx.nextBestActions ?? [],
     recentStrengthSessions: ctx.recentStrengthSessions ?? [],
     equipmentDueForReplacement: ctx.equipmentDueForReplacement ?? [],
     recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
@@ -329,11 +360,11 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
 }
 
 export async function buildCachedPulseContextFor(userId: string, date: string): Promise<PulseContext> {
-  const cached = await getCached<CachedPulseContext>('context', userId, date);
+  const cached = await getCached<CachedPulseContext>('context-v2', userId, date);
   if (cached) return revivePulseContext(cached);
 
   const ctx = await buildPulseContextFor(userId, date);
-  await setCached('context', userId, date, ctx);
+  await setCached('context-v2', userId, date, ctx);
   return ctx;
 }
 
@@ -389,6 +420,7 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
     checkins14: ctx.checkins14d,
     latestWeight: ctx.latestWeight,
     activeRiskSignals: ctx.activeRiskSignals,
+    nextBestActions: ctx.nextBestActions,
     recentStrengthSessions: ctx.recentStrengthSessions,
     equipmentDueForReplacement: ctx.equipmentDueForReplacement,
     recovery: ctx.recovery ? {

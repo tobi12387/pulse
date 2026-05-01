@@ -1,5 +1,5 @@
 import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
-import type { PulseRiskSignal } from '@coaching-os/shared/pulse';
+import type { PulseNextBestAction, PulseRiskSignal } from '@coaching-os/shared/pulse';
 
 // ─── Rich context ─────────────────────────────────────────────────────────────
 
@@ -45,6 +45,7 @@ export interface CoachFullContext {
   }>;
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   activeRiskSignals?: PulseRiskSignal[];
+  nextBestActions?: PulseNextBestAction[];
   recentStrengthSessions?: Array<{
     date: string;
     sessionId: string;
@@ -121,6 +122,16 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       s += `\nBeschreibung: ${r.description}`;
       s += `\nEmpfehlung: ${r.recommendation}`;
     });
+  }
+
+  if (ctx.nextBestActions && ctx.nextBestActions.length > 0) {
+    s += '\n\n== NÄCHSTE AKTIONEN ==';
+    ctx.nextBestActions.forEach(action => {
+      s += `\n[${action.priority.toUpperCase()}] ${action.title}`;
+      s += `\nGrund: ${action.reason}`;
+      s += `\nCTA: ${action.cta} (${action.targetPath})`;
+    });
+    s += '\nWenn Tobi fragt, was als Nächstes ansteht, priorisiere diese Liste.';
   }
 
   s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;

@@ -378,7 +378,10 @@ export function usePushSubscribe() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.push.subscribe,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 
@@ -386,7 +389,10 @@ export function usePushUnsubscribe() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.push.unsubscribe,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pulseKeys.pushSettings });
+      invalidatePulseContextQueries(qc);
+    },
   });
 }
 

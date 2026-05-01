@@ -156,10 +156,11 @@ describe('GET /api/pulse/home', () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ date: string; readiness: { score: number } }>();
+    const body = res.json<{ date: string; readiness: { score: number }; nextBestActions: unknown[] }>();
     expect(body).toHaveProperty('date');
     expect(body).toHaveProperty('readiness');
     expect(body.readiness).toHaveProperty('score');
+    expect(Array.isArray(body.nextBestActions)).toBe(true);
   });
 });
 

@@ -132,6 +132,36 @@ describe('buildRichSystemPrompt', () => {
     expect(prompt).toContain('[CRITICAL] CTL-Ramp +9.2 pro Woche (ctl_ramp_overshoot)');
     expect(prompt).toContain('Diese Woche TSS reduzieren.');
   });
+
+  it('includes next best actions in the coach context', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-05-01',
+      readiness: { score: 68, label: 'mäßig' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 50, tsb: -6 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      nextBestActions: [{
+        id: 'checkin:/coach:0',
+        source: 'checkin',
+        priority: 'high',
+        title: 'Check-in eintragen',
+        reason: 'Heute fehlt dein subjektives Signal.',
+        cta: 'Zum Coach',
+        targetPath: '/coach',
+      }],
+    });
+
+    expect(prompt).toContain('== NÄCHSTE AKTIONEN ==');
+    expect(prompt).toContain('[HIGH] Check-in eintragen');
+    expect(prompt).toContain('Zum Coach (/coach)');
+  });
 });
 
 describe('getCoachReplyRich', () => {

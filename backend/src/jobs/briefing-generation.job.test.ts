@@ -28,6 +28,7 @@ vi.mock('../lib/llm.js', () => ({
 }));
 
 vi.mock('../lib/push.js', () => ({
+  isPushConfigured: vi.fn().mockReturnValue(true),
   sendPushToUser: pushMocks.sendPushToUser,
 }));
 
@@ -294,5 +295,35 @@ describe('buildBriefingUserContentRich', () => {
     expect(prompt.indexOf('RISIKO-SIGNALE')).toBeLessThan(prompt.indexOf('Keine Pulse-Metriken'));
     expect(prompt).toContain('[CRITICAL] Ruhepuls seit 7 Tagen +6.0 bpm (rhr_drift_7d)');
     expect(prompt).toContain('Heute trainingsfrei');
+  });
+
+  it('passes next best actions into briefing context', () => {
+    const ctx = {
+      date: '2026-05-01',
+      todayMetrics: null,
+      todayCheckin: null,
+      fitnessLoad: { ctl: 40, atl: 48, tsb: -8 },
+      readiness: { score: 62, label: 'moderate' },
+      recovery: null,
+      activeHealthStates: [],
+      upcomingWorkouts: [],
+      recentActivities: [],
+      nextRace: null,
+      activeRiskSignals: [],
+      nextBestActions: [{
+        id: 'plan:/plan:0',
+        source: 'plan',
+        priority: 'normal',
+        title: 'Plan erzeugen',
+        reason: 'Es gibt aktuell kein geplantes Training.',
+        cta: 'Zum Plan',
+        targetPath: '/plan',
+      }],
+    } as unknown as PulseContext;
+
+    const prompt = buildBriefingUserContentRich(ctx, 'check-in');
+    expect(prompt).toContain('NÄCHSTE AKTIONEN');
+    expect(prompt).toContain('[NORMAL] Plan erzeugen');
+    expect(prompt).toContain('Zum Plan (/plan)');
   });
 });

@@ -456,6 +456,19 @@ export interface PulsePushSettings {
   subscriptions: PulsePushSubscription[];
 }
 
+export type PulseNextBestActionPriority = 'critical' | 'high' | 'normal';
+export type PulseNextBestActionSource = 'risk' | 'checkin' | 'rpe' | 'plan' | 'push' | 'equipment';
+
+export interface PulseNextBestAction {
+  id: string;
+  source: PulseNextBestActionSource;
+  priority: PulseNextBestActionPriority;
+  title: string;
+  reason: string;
+  cta: string;
+  targetPath: string;
+}
+
 export type EquipmentCategory =
   | 'chain'
   | 'tire'
@@ -531,4 +544,5 @@ export interface PulseHomeScreenData {
   streaks: PulseStreaks;
   recovery: PulseRecoveryMetrics | null;
   dataStatus: PulseDataStatus;
+  nextBestActions: PulseNextBestAction[];
 }

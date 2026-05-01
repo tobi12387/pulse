@@ -543,6 +543,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       streaks,
       dailyHistory,
       dataStatus,
+      pulseContext,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -571,6 +572,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since60d)))
         .orderBy(desc(pulseDailyMetrics.date)),
       getPulseDataStatus(userId, today),
+      buildCachedPulseContextFor(userId, today),
     ]);
 
     const { computeRecovery } = await import('../lib/recovery-metrics.js');
@@ -637,6 +639,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       streaks,
       recovery,
       dataStatus,
+      nextBestActions: pulseContext.nextBestActions,
     };
   });
 
@@ -2041,6 +2044,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       weekStart: weekStartStr,
       ...planTracePayload,
     });
+    await invalidateUser(userId);
 
     // Fire-and-forget: sync newly generated workouts to Garmin calendar
     (async () => {
@@ -2747,6 +2751,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       weekStart,
       ...planTracePayload,
     });
+    await invalidateUser(userId);
 
     return { ok: true, workouts, planDecision: finalPlanDecision2, planTrace };
   });
@@ -2895,6 +2900,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
     }).returning();
 
+    await invalidateUser(userId);
+
     return reply.status(201).send({ subscription });
   });
 
@@ -2904,6 +2911,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const userId = req.user.sub;
     await db.delete(pulsePushSubscriptions)
       .where(and(eq(pulsePushSubscriptions.userId, userId), eq(pulsePushSubscriptions.endpoint, parsed.data.endpoint)));
+    await invalidateUser(userId);
     return reply.status(204).send();
   });
 
