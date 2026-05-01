@@ -47,6 +47,24 @@ vi.mock('../lib/whisper.js', () => ({
 }));
 
 vi.mock('../lib/garmin-client.js', () => ({
+  garminApi: {
+    getDailyUserSummary: vi.fn((gc: any, displayName: string, date: string) =>
+      gc.client.get(`https://connectapi.garmin.com/usersummary-service/usersummary/daily/${encodeURIComponent(displayName)}?calendarDate=${date}`)),
+    getActivitySplits: vi.fn((gc: any, activityId: string) =>
+      gc.get(`https://connectapi.garmin.com/activity-service/activity/${activityId}/splits`)),
+    getActivityHrTimeInZones: vi.fn((gc: any, activityId: string) =>
+      gc.get(`https://connectapi.garmin.com/activity-service/activity/${activityId}/hrTimeInZones`)),
+    scheduleWorkout: vi.fn((gc: any, workoutId: string, date: string) =>
+      gc.client.post(`https://connectapi.garmin.com/workout-service/schedule/${workoutId}`, { date })),
+    getWorkout: vi.fn((gc: any, workoutId: string) =>
+      gc.client.get(`https://connectapi.garmin.com/workout-service/workout/${workoutId}`)),
+    deleteWorkout: vi.fn((gc: any, workoutId: string) =>
+      gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${workoutId}`)),
+    deleteWorkoutSchedule: vi.fn((gc: any, scheduleId: string) =>
+      gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${scheduleId}`)),
+    getCalendarMonth: vi.fn((gc: any, year: number, month: number) =>
+      gc.client.get(`https://connectapi.garmin.com/calendar-service/year/${year}/month/${month}`)),
+  },
   getGarminClient: vi.fn().mockResolvedValue({
     addWorkout: garminMocks.addWorkout,
     getActivities: garminMocks.getActivities,

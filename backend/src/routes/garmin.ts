@@ -3,7 +3,7 @@ import { db } from '../lib/db.js';
 import { garminDailyHealth } from '../db/schema.js';
 import { pulseDailyMetrics, pulseSleepSessions, pulseActivities, pulseWeightLog, pulsePlannedWorkouts, pulseUserProfile, pulseNutritionLogs } from '../db/pulse-schema.js';
 import { eq, desc, and, or } from 'drizzle-orm';
-import { getGarminClient } from '../lib/garmin-client.js';
+import { garminApi, getGarminClient } from '../lib/garmin-client.js';
 import { getGarminActivitiesForDate, upsertGarminActivity } from '../lib/garmin-activities.js';
 import { normalizeGarminDailySummary, normalizeGarminSleepData } from '../lib/garmin-recovery.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
@@ -376,9 +376,7 @@ export async function syncGarminDay(
 
   // Daily summary via direct Garmin API — steps, stress, calories, body battery
   try {
-    const summary = await (gc as any).get(
-      `https://connectapi.garmin.com/usersummary-service/usersummary/daily/${displayName}?calendarDate=${dateStr}`,
-    ) as any;
+    const summary = await garminApi.getDailyUserSummary(gc, displayName, dateStr) as any;
     const normalized = normalizeGarminDailySummary(summary);
     steps = normalized.steps;
     stressAvg = normalized.stressAvg;

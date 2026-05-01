@@ -11,9 +11,11 @@ async function handleGarminSync(job: Job<PulseJobData>, app?: FastifyInstance): 
   const { userId, date } = job.data;
   const targetDate = date ?? new Date().toISOString().split('T')[0]!;
   if (app) {
+    // App-backed workers use the canonical direct Garmin sync path.
     await syncGarminDay(userId, new Date(`${targetDate}T12:00:00`), app);
     return;
   }
+  // Fallback for isolated worker tests/legacy sidecar deployments.
   await syncGarminForDate(userId, targetDate);
 }
 

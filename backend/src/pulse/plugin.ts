@@ -76,6 +76,7 @@ import { users } from '../db/schema.js';
 import type { PulseDataStatus } from '@coaching-os/shared/pulse';
 import { buildBriefingSystemPrompt, buildBriefingUserContentRich } from '../jobs/briefing-generation.job.js';
 import { isPushConfigured, normalizePushTopics, sendPushToUser } from '../lib/push.js';
+import { garminApi } from '../lib/garmin-client.js';
 
 const coachMessageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -1646,8 +1647,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const extId = activity.externalId;
 
         const [splitsRes, zonesRes] = await Promise.allSettled([
-          (gc as any).get(`https://connectapi.garmin.com/activity-service/activity/${extId}/splits`),
-          (gc as any).get(`https://connectapi.garmin.com/activity-service/activity/${extId}/hrTimeInZones`),
+          garminApi.getActivitySplits(gc, extId),
+          garminApi.getActivityHrTimeInZones(gc, extId),
         ]);
 
         if (splitsRes.status === 'fulfilled') {
@@ -2083,8 +2084,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
       const garminWorkoutId = String(created.workoutId);
 
-      const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
-      const scheduled = await gc.client.post(scheduleUrl, { date: workout.plannedDate }) as any;
+      const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as any;
       const garminScheduledId = scheduled?.workoutScheduleId != null
         ? String(scheduled.workoutScheduleId)
         : scheduled?.scheduledWorkoutId != null
@@ -2124,7 +2124,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       const year = d.getFullYear();
       const month = d.getMonth(); // 0-indexed — calendar-service uses this format
       try {
-        const cal = await gc.client.get(`https://connectapi.garmin.com/calendar-service/year/${year}/month/${month}`) as any;
+        const cal = await garminApi.getCalendarMonth(gc, year, month) as any;
         const items: any[] = cal?.calendarItems ?? [];
         for (const item of items) {
           if (item.itemType !== 'workout') continue;
@@ -2166,15 +2166,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
     // Repair previously uploaded repeat workouts that Garmin stored with null iteration counts.
     for (const workout of futurePlanned.filter(w => w.garminWorkoutId && workoutHasRepeatSteps(w.steps))) {
       try {
-        const remoteWorkout = await gc.client.get(`https://connectapi.garmin.com/workout-service/workout/${workout.garminWorkoutId}`) as unknown;
+        const remoteWorkout = await garminApi.getWorkout(gc, workout.garminWorkoutId!) as unknown;
         if (!garminWorkoutHasBrokenRepeatIterations(remoteWorkout)) continue;
 
         if (workout.garminScheduledId) {
-          await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${workout.garminScheduledId}`).catch((err: unknown) => {
+          await garminApi.deleteWorkoutSchedule(gc, workout.garminScheduledId).catch((err: unknown) => {
             app.log.warn(`[calendar-sync] Failed to remove broken repeat schedule ${workout.garminScheduledId}: ${err}`);
           });
         }
-        await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${workout.garminWorkoutId}`).catch((err: unknown) => {
+        await garminApi.deleteWorkout(gc, workout.garminWorkoutId!).catch((err: unknown) => {
           app.log.warn(`[calendar-sync] Failed to remove broken repeat workout ${workout.garminWorkoutId}: ${err}`);
         });
         await db.update(pulsePlannedWorkouts)
@@ -2209,8 +2209,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const garminWorkout = buildGarminWorkoutJson(w);
         const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
         const garminWorkoutId = String(created.workoutId);
-        const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
-        const scheduled = await gc.client.post(scheduleUrl, { date: w.plannedDate }) as any;
+        const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, w.plannedDate) as any;
         const garminScheduledId = scheduled?.workoutScheduleId != null
           ? String(scheduled.workoutScheduleId)
           : scheduled?.id != null ? String(scheduled.id) : null;
@@ -2242,7 +2241,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
     for (const item of calendarItems) {
       if (!ourWorkoutIds.has(item.workoutId)) {
         try {
-          await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${item.id}`);
+          await garminApi.deleteWorkoutSchedule(gc, item.id);
           removed++;
           app.log.info(`[calendar-sync] Removed orphan schedule ${item.id} (workout ${item.workoutId}) on ${item.date}`);
         } catch (err) {
@@ -2251,7 +2250,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         // Also delete the workout template so it disappears from the device library
         if (!removedTemplates.has(item.workoutId)) {
           try {
-            await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${item.workoutId}`);
+            await garminApi.deleteWorkout(gc, item.workoutId);
             removedTemplates.add(item.workoutId);
           } catch { /* template may already be gone */ }
         }
@@ -2446,9 +2445,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const gc = await getGarminClient();
         await Promise.allSettled(oldWithGarmin.map(async (w) => {
           if (w.garminScheduledId) {
-            await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${w.garminScheduledId}`);
+            await garminApi.deleteWorkoutSchedule(gc, w.garminScheduledId);
           }
-          await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${w.garminWorkoutId}`);
+          await garminApi.deleteWorkout(gc, w.garminWorkoutId!);
         }));
         app.log.info(`[plan] Cleaned up ${oldWithGarmin.length} old Garmin workouts`);
       } catch (err) {
@@ -2552,8 +2551,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
             const garminWorkout = buildGarminWorkoutJson(w);
             const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
             const garminWorkoutId = String(created.workoutId);
-            const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${garminWorkoutId}`;
-            const scheduled = await gc.client.post(scheduleUrl, { date: w.plannedDate }) as any;
+            const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, w.plannedDate) as any;
             const garminScheduledId = scheduled?.workoutScheduleId != null
               ? String(scheduled.workoutScheduleId)
               : scheduled?.id != null ? String(scheduled.id) : null;
@@ -2580,12 +2578,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
         for (const item of calItems) {
           if (!ourIds.has(item.workoutId)) {
             try {
-              await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${item.id}`);
+              await garminApi.deleteWorkoutSchedule(gc, item.id);
               app.log.info(`[plan-generate] Removed orphan ${item.id} on ${item.date}`);
             } catch { /* non-fatal */ }
             if (!deletedTemplates.has(item.workoutId)) {
               try {
-                await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${item.workoutId}`);
+                await garminApi.deleteWorkout(gc, item.workoutId);
                 deletedTemplates.add(item.workoutId);
               } catch { /* template may already be gone */ }
             }
@@ -3179,9 +3177,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
         const gc = await getGarminClient();
         await Promise.allSettled(oldAvailWithGarmin.map(async (w) => {
           if (w.garminScheduledId) {
-            await gc.client.delete(`https://connectapi.garmin.com/workout-service/schedule/${w.garminScheduledId}`);
+            await garminApi.deleteWorkoutSchedule(gc, w.garminScheduledId);
           }
-          await gc.client.delete(`https://connectapi.garmin.com/workout-service/workout/${w.garminWorkoutId}`);
+          await garminApi.deleteWorkout(gc, w.garminWorkoutId!);
         }));
       } catch { /* non-fatal */ }
     }

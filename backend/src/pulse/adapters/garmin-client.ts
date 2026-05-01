@@ -2,6 +2,9 @@ import { env } from '../../lib/env.js';
 import { db } from '../../lib/db.js';
 import { pulseDailyMetrics, pulseSleepSessions } from '../../db/pulse-schema.js';
 
+// Sidecar fallback for worker contexts that do not receive the Fastify app.
+// Normal local Pulse operation uses `syncGarminDay()` with the server-side
+// single-user Garmin Connect client.
 interface SidecarResponse {
   status: string;
   date: string;
