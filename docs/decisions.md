@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Nach Trust-Welle priorisiert Pulse Garmin-Backfill und Plan-Kalibrierung
+
+- **Decision:** Nach Abschluss von Plan Trace, Garmin Coverage und Coach Action Loop wird `docs/superpowers/plans/2026-05-01-everyday-utility-wave.md` die aktive Roadmap. Reihenfolge: bounded Garmin Backfill, Plan Feedback Calibration, Action Closure & Review, Mobile UI QA.
+- **Why:** Coverage ist jetzt sichtbar, aber noch nicht handlungsfähig; Plan-Traces sind sichtbar, aber noch nicht als Lernhistorie genutzt. Die nächste Welle soll deshalb Datenlücken gezielt schließen und danach Pläne aus realem Feedback besser kalibrieren, statt neue Produktbereiche zu eröffnen.
+- **Alternatives:** Sofort UI-Polish priorisieren (weniger fachlicher Nutzen); unbounded 2026-Garmin-Reload bauen (Rate-Limit-/Fehler-Risiko); neue Feature-Domains starten (widerspricht dem Fokus auf Alltagnutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Coach Action Loop nutzt PulseContext als Actions-Quelle
 
 - **Decision:** Slice 3 fuehrt `nextBestActions` im PulseContext ein und macht daraus die gemeinsame Server-Quelle fuer Home, Coach-Prompt und Briefing-Kontext. Aktionen sind auf maximal drei priorisierte Eintraege begrenzt und decken Risk, Check-in, RPE, Plan, Push-Aktivierung und Equipment ab; der Context-Cache nutzt `context-v2`, damit alte Cache-Payloads ohne Actions nicht wiederverwendet werden.
