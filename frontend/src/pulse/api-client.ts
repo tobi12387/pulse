@@ -5,7 +5,8 @@ import type {
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
-  PulseDataCoverageResponse, PulsePlanTrace, PulsePushSettings, PulsePushTopics,
+  PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse,
+  PulsePlanTrace, PulsePushSettings, PulsePushTopics,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse,
@@ -244,6 +245,8 @@ export const pulseApi = {
       else qs.set('days', String(params.days ?? 30));
       return request(`/data-coverage?${qs.toString()}`);
     },
+    backfill: (data: PulseGarminBackfillRequest): Promise<PulseGarminBackfillResponse> =>
+      request('/garmin/backfill', { method: 'POST', body: JSON.stringify(data) }),
     sync: (): Promise<{ status: string; days?: number; dates?: string[]; activities?: number }> =>
       request('/garmin/sync', { method: 'POST', body: '{}' }),
     syncProfile: (): Promise<{ synced: { vo2max: number | null; maxHrBpm: number | null; lactateThresholdHr: number | null; ftpWatts: number | null } }> =>

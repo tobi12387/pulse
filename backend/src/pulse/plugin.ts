@@ -26,7 +26,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseDataCoverageResponse, PulseFitnessLoad, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -72,6 +72,16 @@ const coachMessageSchema = z.object({
 
 const garminSyncSchema = z.object({
   days: z.number().int().min(1).max(30).optional().default(7),
+});
+
+const GARMIN_BACKFILL_LIMIT_DAYS = 31;
+const GARMIN_BACKFILL_DELAY_MS = 500;
+const garminBackfillDomains = ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'] as const;
+const garminBackfillSchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  domains: z.array(z.enum(garminBackfillDomains)).min(1).max(garminBackfillDomains.length).optional(),
+  dryRun: z.boolean().optional().default(false),
 });
 
 const activityFeedbackSchema = z.object({
@@ -392,6 +402,149 @@ function dateRange(from: string, to: string): string[] {
 
 function missingSyncReason(date: string, today: string): 'not_synced' | 'not_synced_yet' {
   return date === today ? 'not_synced_yet' : 'not_synced';
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function addBackfillReason(reasons: Set<string>, domain: PulseGarminBackfillDomain, reason: string): void {
+  reasons.add(`${domain}:${reason}`);
+}
+
+interface BackfillCoverageRows {
+  dailyByDate: Map<string, {
+    hrvRmssd: number | null;
+    restingHr: number | null;
+    sleepHours: number | null;
+    bodyBatteryMax: number | null;
+    stressAvg: number | null;
+    steps: number | null;
+  }>;
+  sleepByDate: Map<string, {
+    durationH: number | null;
+    deepSleepH: number | null;
+    remSleepH: number | null;
+    lightSleepH: number | null;
+    awakeH: number | null;
+  }>;
+  activitiesByDate: Map<string, { count: number; weatherCount: number }>;
+  weightByDate: Map<string, {
+    bodyFatPct: number | null;
+    muscleMassKg: number | null;
+    bmi: number | null;
+  }>;
+}
+
+async function loadBackfillCoverageRows(userId: string, from: string, to: string): Promise<BackfillCoverageRows> {
+  const [dailyRows, sleepRows, activityRows, weightRows] = await Promise.all([
+    db.select({
+      date: pulseDailyMetrics.date,
+      hrvRmssd: pulseDailyMetrics.hrvRmssd,
+      restingHr: pulseDailyMetrics.restingHr,
+      sleepHours: pulseDailyMetrics.sleepHours,
+      bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+      stressAvg: pulseDailyMetrics.stressAvg,
+      steps: pulseDailyMetrics.steps,
+    }).from(pulseDailyMetrics)
+      .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, from), lte(pulseDailyMetrics.date, to))),
+    db.select({
+      date: pulseSleepSessions.date,
+      durationH: pulseSleepSessions.durationH,
+      deepSleepH: pulseSleepSessions.deepSleepH,
+      remSleepH: pulseSleepSessions.remSleepH,
+      lightSleepH: pulseSleepSessions.lightSleepH,
+      awakeH: pulseSleepSessions.awakeH,
+    }).from(pulseSleepSessions)
+      .where(and(eq(pulseSleepSessions.userId, userId), gte(pulseSleepSessions.date, from), lte(pulseSleepSessions.date, to))),
+    db.select({
+      startTime: pulseActivities.startTime,
+      weather: pulseActivities.weather,
+    }).from(pulseActivities)
+      .where(and(
+        eq(pulseActivities.userId, userId),
+        gte(pulseActivities.startTime, new Date(`${from}T00:00:00.000Z`)),
+        lte(pulseActivities.startTime, new Date(`${to}T23:59:59.999Z`)),
+      )),
+    db.select({
+      date: pulseWeightLog.date,
+      bodyFatPct: pulseWeightLog.bodyFatPct,
+      muscleMassKg: pulseWeightLog.muscleMassKg,
+      bmi: pulseWeightLog.bmi,
+    }).from(pulseWeightLog)
+      .where(and(eq(pulseWeightLog.userId, userId), gte(pulseWeightLog.date, from), lte(pulseWeightLog.date, to))),
+  ]);
+
+  const activitiesByDate = new Map<string, { count: number; weatherCount: number }>();
+  for (const row of activityRows) {
+    const date = toIsoDate(row.startTime);
+    const current = activitiesByDate.get(date) ?? { count: 0, weatherCount: 0 };
+    current.count += 1;
+    if (row.weather != null) current.weatherCount += 1;
+    activitiesByDate.set(date, current);
+  }
+
+  return {
+    dailyByDate: new Map(dailyRows.map(row => [row.date, row])),
+    sleepByDate: new Map(sleepRows.map(row => [row.date, row])),
+    activitiesByDate,
+    weightByDate: new Map(weightRows.map(row => [row.date, row])),
+  };
+}
+
+function backfillReasonsForDate(
+  date: string,
+  today: string,
+  domains: PulseGarminBackfillDomain[],
+  coverage: BackfillCoverageRows,
+): string[] {
+  const daily = coverage.dailyByDate.get(date);
+  const sleepRow = coverage.sleepByDate.get(date);
+  const activity = coverage.activitiesByDate.get(date) ?? { count: 0, weatherCount: 0 };
+  const weight = coverage.weightByDate.get(date);
+  const reasons = new Set<string>();
+  const selected = new Set<PulseGarminBackfillDomain>(domains);
+  const missingDailyFields = daily
+    ? [daily.hrvRmssd, daily.restingHr, daily.sleepHours, daily.bodyBatteryMax, daily.stressAvg, daily.steps]
+      .filter(value => value == null).length
+    : 0;
+  const hasSleep = sleepRow != null || daily?.sleepHours != null;
+  const hasStages = !!sleepRow && [sleepRow.deepSleepH, sleepRow.remSleepH, sleepRow.lightSleepH, sleepRow.awakeH].some(value => value != null);
+  const missingWeatherCount = Math.max(0, activity.count - activity.weatherCount);
+  const missingBodyComposition = !!weight && [weight.bodyFatPct, weight.muscleMassKg, weight.bmi].every(value => value == null);
+
+  if (selected.has('dailyMetrics')) {
+    if (!daily) addBackfillReason(reasons, 'dailyMetrics', missingSyncReason(date, today));
+    else if (missingDailyFields > 0) addBackfillReason(reasons, 'dailyMetrics', 'partial');
+  }
+  if (selected.has('sleep')) {
+    if (!hasSleep && !daily) addBackfillReason(reasons, 'sleep', missingSyncReason(date, today));
+    else if (hasSleep && !hasStages) addBackfillReason(reasons, 'sleep', 'partial');
+  }
+  if (selected.has('activities') && activity.count === 0 && !daily) {
+    addBackfillReason(reasons, 'activities', missingSyncReason(date, today));
+  }
+  if (selected.has('weather') && missingWeatherCount > 0) {
+    addBackfillReason(reasons, 'weather', 'partial');
+  }
+  if (selected.has('weight')) {
+    if (!weight && !daily) addBackfillReason(reasons, 'weight', missingSyncReason(date, today));
+    else if (missingBodyComposition) addBackfillReason(reasons, 'weight', 'partial');
+  }
+
+  return [...reasons];
+}
+
+function backfillDayFromReasons(date: string, reasons: string[]): PulseGarminBackfillResponse['days'][number] {
+  return {
+    date,
+    status: reasons.length > 0 ? 'planned' : 'skipped',
+    dailyMetrics: false,
+    activities: 0,
+    weight: false,
+    reason: reasons.length > 0 ? reasons.join(', ') : 'already_complete_or_not_recorded',
+    error: null,
+  };
 }
 
 // ─── Workout step generation ──────────────────────────────────────────────────
@@ -813,6 +966,97 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
       days: coverageDays.reverse(),
     } satisfies PulseDataCoverageResponse;
+  });
+
+  app.post('/garmin/backfill', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseGarminBackfillResponse | unknown> => {
+    const parsed = garminBackfillSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const { from, to, dryRun } = parsed.data;
+    if (from > to) return reply.status(400).send({ error: 'Startdatum muss vor Enddatum liegen.' });
+    if (from < '2020-01-01') return reply.status(400).send({ error: 'Backfill ist erst ab 2020 erlaubt.' });
+    if (to > today) return reply.status(400).send({ error: 'Backfill darf nicht in der Zukunft liegen.' });
+
+    const domains = (parsed.data.domains ?? [...garminBackfillDomains]) as PulseGarminBackfillDomain[];
+    const dates = dateRange(from, to);
+    if (dates.length > GARMIN_BACKFILL_LIMIT_DAYS) {
+      return reply.status(400).send({ error: `Maximal ${GARMIN_BACKFILL_LIMIT_DAYS} Tage pro Backfill.` });
+    }
+
+    const coverageRows = await loadBackfillCoverageRows(userId, from, to);
+    const plannedDays = dates.map(date => backfillDayFromReasons(
+      date,
+      backfillReasonsForDate(date, today, domains, coverageRows),
+    ));
+
+    const results: PulseGarminBackfillResponse['days'] = [];
+    if (dryRun) {
+      results.push(...plannedDays);
+    } else if (env.NODE_ENV === 'test') {
+      results.push(...plannedDays.map(day => day.status === 'planned'
+        ? { ...day, status: 'synced' as const, dailyMetrics: true, reason: day.reason }
+        : day));
+    } else {
+      const actionable = plannedDays.filter(day => day.status === 'planned');
+      for (let index = 0; index < plannedDays.length; index++) {
+        const day = plannedDays[index]!;
+        if (day.status === 'skipped') {
+          results.push(day);
+          continue;
+        }
+
+        try {
+          const synced = await syncGarminDay(userId, new Date(`${day.date}T00:00:00.000Z`), app);
+          const refreshedRows = await loadBackfillCoverageRows(userId, day.date, day.date);
+          const remainingReasons = backfillReasonsForDate(day.date, today, domains, refreshedRows);
+          const selectedErrors = synced.errors.filter(error => domains.includes(error.domain));
+          const blockingErrors = selectedErrors.filter(error => error.domain === 'dailyMetrics' || error.domain === 'activities');
+          const hasRemainingGaps = remainingReasons.length > 0;
+          const hasSyncErrors = blockingErrors.length > 0;
+          const errorMessage = [
+            hasSyncErrors ? `Garmin-Fehler: ${blockingErrors.map(error => `${error.domain}:${error.message}`).join('; ')}` : null,
+            hasRemainingGaps ? `Weiterhin offen: ${remainingReasons.join(', ')}` : null,
+          ].filter((message): message is string => message != null).join(' | ');
+          results.push({
+            ...day,
+            status: hasRemainingGaps || hasSyncErrors ? 'failed' : 'synced',
+            dailyMetrics: synced.dailyMetrics,
+            activities: synced.activities,
+            weight: synced.weight,
+            reason: hasRemainingGaps ? remainingReasons.join(', ') : day.reason,
+            error: errorMessage || null,
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          app.log.warn(`[garmin-backfill] ${day.date}: ${message}`);
+          results.push({ ...day, status: 'failed', error: message });
+        }
+
+        const syncedSoFar = results.filter(result => result.status === 'synced' || result.status === 'failed').length;
+        if (syncedSoFar < actionable.length) await sleep(GARMIN_BACKFILL_DELAY_MS);
+      }
+      await invalidateUser(userId);
+    }
+
+    const response: PulseGarminBackfillResponse = {
+      dryRun,
+      range: { from, to, days: dates.length },
+      domains,
+      limitDays: GARMIN_BACKFILL_LIMIT_DAYS,
+      summary: {
+        planned: plannedDays.filter(day => day.status === 'planned').length,
+        synced: results.filter(day => day.status === 'synced').length,
+        skipped: results.filter(day => day.status === 'skipped').length,
+        failed: results.filter(day => day.status === 'failed').length,
+        activities: results.reduce((sum, day) => sum + day.activities, 0),
+        weightDays: results.filter(day => day.weight).length,
+      },
+      days: results,
+    };
+
+    return response;
   });
 
   app.get('/risk', { onRequest: [app.authenticate] }, async (req) => {

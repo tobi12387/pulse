@@ -242,9 +242,17 @@ export async function syncGarminDay(
   userId: string,
   date: Date,
   app: FastifyInstance,
-): Promise<{ date: string; dailyMetrics: boolean; activities: number; weight: boolean }> {
+): Promise<{
+  date: string;
+  dailyMetrics: boolean;
+  activities: number;
+  weight: boolean;
+  errors: Array<{ domain: 'dailyMetrics' | 'sleep' | 'activities' | 'weight'; message: string }>;
+}> {
   const gc      = await getGarminClient();
   const dateStr = date.toISOString().split('T')[0]!;
+  const errors: Array<{ domain: 'dailyMetrics' | 'sleep' | 'activities' | 'weight'; message: string }> = [];
+  const messageOf = (err: unknown) => err instanceof Error ? err.message : String(err);
 
   // Get display name once (needed for the usersummary API URL)
   const profile = await (gc as any).getUserProfile() as any;
@@ -271,7 +279,9 @@ export async function syncGarminDay(
     // HRV is at top-level sleep object, not inside dailySleepDTO
     if (sleep?.avgOvernightHrv != null) hrvRmssd = sleep.avgOvernightHrv;
     if (sleep?.hrvStatus)               hrvStatus = String(sleep.hrvStatus).toLowerCase();
-  } catch { /* sleep data may not be available for all dates */ }
+  } catch (err) {
+    errors.push({ domain: 'sleep', message: messageOf(err) });
+  }
 
   let restingHr: number | null      = null;
   let steps: number | null          = null;
@@ -283,7 +293,9 @@ export async function syncGarminDay(
   try {
     const hr = await gc.getHeartRate(date) as any;
     if (hr?.restingHeartRate) restingHr = hr.restingHeartRate;
-  } catch { /* ignore */ }
+  } catch (err) {
+    errors.push({ domain: 'dailyMetrics', message: `heartRate: ${messageOf(err)}` });
+  }
 
   // Daily summary via direct Garmin API — steps, stress, calories, body battery
   try {
@@ -295,7 +307,9 @@ export async function syncGarminDay(
     if (summary?.activeKilocalories != null)           caloriesActive = summary.activeKilocalories;
     if (summary?.minBodyBatteryLevel != null)          bodyBatteryMin = summary.minBodyBatteryLevel;
     if (summary?.bodyBatteryMostRecentValue != null)   bodyBatteryMax = summary.bodyBatteryMostRecentValue;
-  } catch { /* daily summary unavailable */ }
+  } catch (err) {
+    errors.push({ domain: 'dailyMetrics', message: `dailySummary: ${messageOf(err)}` });
+  }
 
   const upsertSet = {
     hrvRmssd, hrvStatus, sleepDurationH, sleepScore,
@@ -377,6 +391,7 @@ export async function syncGarminDay(
       app.log.info(`[garmin-sync] ${dateStr} activities: ${dayActivities.length}`);
     }
   } catch (err) {
+    errors.push({ domain: 'activities', message: messageOf(err) });
     app.log.warn(`[garmin-sync] activity fetch failed for ${dateStr}: ${err}`);
   }
 
@@ -401,8 +416,10 @@ export async function syncGarminDay(
       weightWritten = true;
       app.log.info(`[garmin-sync] ${dateStr} weight: ${weightKg.toFixed(1)}kg`);
     }
-  } catch { /* weight not tracked every day */ }
+  } catch (err) {
+    errors.push({ domain: 'weight', message: messageOf(err) });
+  }
 
   app.log.info(`[garmin-sync] ${dateStr} ✓`);
-  return { date: dateStr, dailyMetrics: true, activities: activitiesWritten, weight: weightWritten };
+  return { date: dateStr, dailyMetrics: true, activities: activitiesWritten, weight: weightWritten, errors };
 }

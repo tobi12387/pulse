@@ -429,6 +429,46 @@ export interface PulseDataCoverageResponse {
   days: PulseDataCoverageDay[];
 }
 
+export type PulseGarminBackfillDomain = 'dailyMetrics' | 'sleep' | 'activities' | 'weather' | 'weight';
+export type PulseGarminBackfillDayStatus = 'planned' | 'synced' | 'skipped' | 'failed';
+
+export interface PulseGarminBackfillDayResult {
+  date: string;
+  status: PulseGarminBackfillDayStatus;
+  dailyMetrics: boolean;
+  activities: number;
+  weight: boolean;
+  reason: string | null;
+  error: string | null;
+}
+
+export interface PulseGarminBackfillRequest {
+  from: string;
+  to: string;
+  domains?: PulseGarminBackfillDomain[];
+  dryRun?: boolean;
+}
+
+export interface PulseGarminBackfillResponse {
+  dryRun: boolean;
+  range: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  domains: PulseGarminBackfillDomain[];
+  limitDays: number;
+  summary: {
+    planned: number;
+    synced: number;
+    skipped: number;
+    failed: number;
+    activities: number;
+    weightDays: number;
+  };
+  days: PulseGarminBackfillDayResult[];
+}
+
 export type PushTopic = 'briefing' | 'checkin_reminder' | 'risk_critical';
 
 export type PulsePushTopics = Record<PushTopic, boolean>;

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Garmin Backfill startet begrenzt und synchron aus Coverage
+
+- **Decision:** Slice 1 der Everyday Utility Wave startet mit einem begrenzten `POST /api/pulse/garmin/backfill` Contract: maximal 31 Tage, Dry-Run-Vorschau, sequentielle Tages-Syncs ueber `syncGarminDay()` und Coverage-basierte Skip-Gründe. Die UI bietet Monats-Chunks in Data an; Queue-/Progress-Persistenz bleibt ein moeglicher Folge-Slice, falls reale 31-Tage-Laeufe zu langsam oder zu wenig beobachtbar sind.
+- **Why:** `syncGarminDay()` ist bereits idempotent und schreibt die Pulse-Domains. Der kleinste sichere Nutzenschritt ist deshalb ein harter, auditierbarer Rahmen um den vorhandenen Tages-Sync statt ein neuer ungetesteter Queue-Pfad.
+- **Alternatives:** Pauschaler 2026-Reload (zu riskant und nicht rate-limit-freundlich); sofort neue Backfill-Queue plus Persistenz (mehr Scope vor erstem Nutzen); nur read-only Coverage behalten (Datenlücken bleiben nicht handlungsfähig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Nach Trust-Welle priorisiert Pulse Garmin-Backfill und Plan-Kalibrierung
 
 - **Decision:** Nach Abschluss von Plan Trace, Garmin Coverage und Coach Action Loop wird `docs/superpowers/plans/2026-05-01-everyday-utility-wave.md` die aktive Roadmap. Reihenfolge: bounded Garmin Backfill, Plan Feedback Calibration, Action Closure & Review, Mobile UI QA.
