@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Real-iPhone-QA wird als Evidence-Record gefuehrt
+
+- **Decision:** Real-device iPhone/VPN/PWA-QA wird nicht nur im Chat bestaetigt, sondern in `docs/qa/2026-05-02-iphone-pwa-real-device.md` als ausfuellbarer Evidence-Record festgehalten. Die bestehende Checkliste verweist auf diesen Record.
+- **Why:** Die WebKit-/Playwright-Gates pruefen Layout und PWA-Basics, ersetzen aber nicht Zertifikat, VPN, Add-to-Home-Screen, Tastaturverhalten und Push-Faehigkeit auf Tobis echtem iPhone. Ein repo-lokaler Record verhindert, dass manuelle Erkenntnisse beim naechsten Agentenwechsel verloren gehen.
+- **Alternatives:** Ergebnis nur im Chat notieren (geht verloren); real-device QA als rein muendliche Freigabe behandeln (nicht nachvollziehbar); sofort native iOS bauen (zu frueh, solange lokale PWA ueber VPN Zielbild bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Push-Journeys referenzieren Action-Decisions
 
 - **Decision:** Briefing- und Check-in-Pushes werden mit offenen `pulse_action_decisions` verbunden, wenn eine critical/high Next-Best-Action existiert. Die Push-URL enthaelt dann `actionId` und `decisionId`; wenn keine passende offene Action existiert, bleibt der Push eine normale Zielroute ohne Action-Parameter oder wird beim Check-in-Reminder uebersprungen.

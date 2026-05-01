@@ -1,6 +1,6 @@
 # Pulse Overnight Next Steps — 2026-05-02 Morning Plan
 
-> Stand: 2026-05-02 after Explicit Coach Preferences (PR #96) and during Push Action Journeys. This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
+> Stand: 2026-05-02 after Push Action Journeys (PR #97) and during Real iPhone/VPN QA recording. This is the ordered execution plan for the next autonomous Pulse sessions until Saturday morning, 2026-05-02. It intentionally favors closed daily-use loops over broad new feature surface.
 
 ## Verified Baseline
 
@@ -8,6 +8,7 @@
 - PR #94 added the durable `pulse_action_decisions` model, pure closure transitions and stale-action suppression; it was merged/deployed to server commit `78b2fa4`.
 - PR #95 added the shared `/api/pulse/actions` contract, Home closure controls and Coach action-state sync; it was merged/deployed to server commit `698280d`.
 - PR #96 added explicit editable Coach Preferences and fed them into Coach context; it was merged/deployed to server commit `071f487`.
+- PR #97 connected check-in and briefing push journeys to durable action decisions; it was merged/deployed to server commit `d05493f`.
 - Server checks after deploy:
   - `/api/pulse/health` returned `{"status":"ok","namespace":"pulse"}`.
   - `https://localhost:5175` returned `HTTP/2 200`.
@@ -30,7 +31,7 @@
 | P1 | Coach memory/preferences are now explicit | PR #96 stores editable time windows, disliked patterns, long days, constraints and communication style | Use them in future Plan/Briefing refinements where helpful |
 | P1 | Real iPhone/VPN QA is not yet captured as evidence | WebKit gate passes locally, but real iPhone add-to-home-screen and VPN certificate behavior remain manual | Run `docs/ai/checklists/iphone-pwa-qa.md` on device and record results |
 | P2 | Insight evidence is visible but not yet route-linked | Insight cards show Datenbasis/Daten fehlen, but evidence items do not open Data/Plan detail routes | Add target routes in a small follow-up if user flow needs drilling into source data |
-| P2 | Push journeys are still separate from action state | Push settings are clear, but repeated pushes are not tied to completed/deferred action records | Implement Push Action Journeys after closure state |
+| P2 | Push journeys now reuse action state | PR #97 adds action-backed push URLs and CI-covered suppression tests | Validate on real iPhone once push is enabled on device |
 | P2 | Canva/Figma companions should be refreshed from observed flows, not from guesses | Existing boards are known, but this session lacked direct browser-use screenshot capture | Update boards after a Browser Use-enabled route walkthrough |
 
 ## Ordered Phases Until Morning
@@ -104,7 +105,7 @@
 
 ### Phase 5 — Push Action Journeys
 
-**Status:** In progress on `codex/push-action-journeys`.
+**Status:** Done via PR #97 and deployed.
 
 **Goal:** Connect push notifications to action records and suppress repeats after completion/defer.
 
@@ -115,9 +116,13 @@
 
 ### Phase 6 — Real iPhone/VPN QA Recording
 
+**Status:** In progress on `codex/iphone-qa-recording`.
+
 **Goal:** Convert the WebKit gate into real device confidence.
 
 **Manual checklist:** `docs/ai/checklists/iphone-pwa-qa.md`
+
+**Evidence record:** `docs/qa/2026-05-02-iphone-pwa-real-device.md`
 
 **Record:**
 - VPN route to `192.168.178.46`;
