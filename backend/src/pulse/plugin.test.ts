@@ -705,6 +705,81 @@ describe('POST /api/pulse/plan/generate', () => {
       weekStart: '2026-05-04',
     });
   });
+
+  it('includes previous-week learning in the persisted trace', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 260,
+      maxHrBpm: 186,
+      weeklyHoursTarget: 8,
+      updatedAt: new Date(),
+    });
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-04-28',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 60,
+      targetTss: 80,
+      status: 'completed',
+      complianceScore: 0.55,
+      description: 'Vorwochenreiz',
+    });
+    await db.insert(pulsePlanGenerations).values({
+      userId,
+      weekStart: '2026-04-27',
+      inputSnapshot: {
+        phase: 'build',
+        mesocycleWeek: 1,
+        weeklyHoursTarget: 8,
+        availableDays: [0, 1, 3, 5],
+        load: { ctl: 35, atl: 32, tsb: 3, date: '2026-04-27' },
+        profile: { ftpWatts: 260, maxHrBpm: 186, lthrBpm: null },
+        goals: [],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        rpeReasons: [],
+        dataWarnings: [],
+        recentSportMix: { bike: { sessions: 2, totalMinutes: 120, totalTss: 120 } },
+      },
+      planDecision: {
+        selectedDays: [0, 1, 3, 5],
+        skippedAvailableDays: [6],
+        targetSessionCount: 4,
+        primaryGoal: 'ftp',
+        reasons: [],
+      },
+      sportMix: { bike: { sessions: 4, totalMinutes: 240, totalTss: 260 } },
+      hardDays: [{ date: '2026-04-28', activityType: 'bike', zone: 4, durationMin: 60 }],
+      generatedSummary: ['Vorwoche'],
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/plan/generate',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { weekStart: '2026-05-04' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const learning = res.json<{
+      planTrace: {
+        inputSnapshot: {
+          learningSnapshot: {
+            previousWeek: { weekStart: string; avgComplianceScore: number | null } | null;
+            learnedFromLastWeek: string[];
+            variationComparedToLastWeek: string[];
+            flags: string[];
+          };
+        };
+      };
+    }>().planTrace.inputSnapshot.learningSnapshot;
+    expect(learning.previousWeek).toMatchObject({ weekStart: '2026-04-27', avgComplianceScore: 0.55 });
+    expect(learning.flags).toContain('low_compliance');
+    expect(learning.learnedFromLastWeek.join(' ')).toContain('Compliance');
+    expect(learning.variationComparedToLastWeek.length).toBeGreaterThan(0);
+  });
 });
 
 describe('POST /api/pulse/plan/workout/:id/detail', () => {

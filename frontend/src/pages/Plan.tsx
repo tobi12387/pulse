@@ -424,6 +424,26 @@ function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout;
   );
 }
 
+function TraceInsightBlock({ title, items, color }: { title: string; items: string[]; color: string }) {
+  if (items.length === 0) return null;
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '9px 10px', background: 'var(--surface)' }}>
+      <div className="label-mono" style={{ fontSize: 9, marginBottom: 7, color }}>{title}</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {items.slice(0, 3).map(item => (
+          <span key={item} style={{
+            fontSize: 10.5, lineHeight: 1.35, color: 'var(--text-2)',
+            border: '1px solid var(--border)', borderRadius: 4,
+            padding: '3px 7px', maxWidth: '100%',
+          }}>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isLoading: boolean }) {
   if (isLoading && !trace) {
     return (
@@ -444,6 +464,7 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
   const goalNames = trace.inputSnapshot.goals.map(g => g.title);
   const riskTitles = trace.inputSnapshot.riskSignals.map(r => r.title);
   const load = trace.inputSnapshot.load;
+  const learning = trace.inputSnapshot.learningSnapshot ?? null;
 
   return (
     <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
@@ -476,6 +497,13 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
           {trace.generatedSummary.map(item => (
             <p key={item} style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5 }}>{item}</p>
           ))}
+        </div>
+      )}
+
+      {learning && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8, marginBottom: 12 }}>
+          <TraceInsightBlock title="Gelernt aus letzter Woche" items={learning.learnedFromLastWeek} color="var(--green)" />
+          <TraceInsightBlock title="Variation" items={learning.variationComparedToLastWeek} color="var(--accent)" />
         </div>
       )}
 

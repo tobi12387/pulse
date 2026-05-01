@@ -39,6 +39,7 @@ import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { decidePlanDays, generateWeekWorkouts, generateScientificWeekPlan, getMesocycleWeek } from './services/plan-engine.js';
+import { buildPlanLearningSnapshot } from './services/plan-learning.js';
 import { buildPlanTrace } from './services/plan-trace.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { getActiveRaces } from './services/race-engine.js';
@@ -2054,7 +2055,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
-    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows] = await Promise.all([
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning] = await Promise.all([
       computeFitnessLoad(userId, weekStartStr),
       db.select({
         id:            pulseActivities.id,
@@ -2101,6 +2102,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
           or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
         )),
       getActiveRiskSignals(userId),
+      buildPlanLearningSnapshot(userId, weekStartStr),
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
@@ -2133,6 +2135,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       goals: planGoals,
       riskSignals,
       recentActivities: recentPlanActivities,
+      planLearning,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -2151,6 +2154,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         recentActivities:   recentPlanActivities,
         goals:              planGoals,
         riskSignals,
+        planLearning,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -2260,6 +2264,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       workouts: traceWorkouts,
     });
     const planTracePayload = buildPlanTrace({
+      weekStart: weekStartStr,
       phase,
       mesocycleWeek,
       weeklyHoursTarget,
@@ -2272,6 +2277,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
       goals: planGoals,
       riskSignals,
+      planLearning,
       healthStates: activeHealthStates.map(s => ({
         type:      s.type,
         severity:  s.severity,
@@ -2777,7 +2783,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       (explicitPhase && explicitPhase !== 'base') ? explicitPhase : derivedPhase;
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
-    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2] = await Promise.all([
+    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2] = await Promise.all([
       computeFitnessLoad(userId, weekStart),
       db.select({
         id:            pulseActivities.id,
@@ -2823,6 +2829,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
           or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
         )),
       getActiveRiskSignals(userId),
+      buildPlanLearningSnapshot(userId, weekStart),
     ]);
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
@@ -2855,6 +2862,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       goals: planGoals2,
       riskSignals: riskSignals2,
       recentActivities: recentPlanActivities2,
+      planLearning: planLearning2,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -2870,6 +2878,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         recentActivities: recentPlanActivities2,
         goals: planGoals2,
         riskSignals: riskSignals2,
+        planLearning: planLearning2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -2967,6 +2976,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       workouts: traceWorkouts2,
     });
     const planTracePayload = buildPlanTrace({
+      weekStart,
       phase,
       mesocycleWeek: mesocycleWeek2,
       weeklyHoursTarget: parsed.data.weeklyHours,
@@ -2979,6 +2989,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
       goals: planGoals2,
       riskSignals: riskSignals2,
+      planLearning: planLearning2,
       healthStates: activeHealthStates2.map(s => ({
         type:      s.type,
         severity:  s.severity,
