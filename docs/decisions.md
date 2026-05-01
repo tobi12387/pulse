@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Visual Density bleibt ein gezielter Label- und Tabstrip-Pass
+
+- **Decision:** UI/UX Slice E begrenzt den Visual-Density-Pass auf klare mobile Hauptnavigation und umbruchfähige Data-/Plan-Tabstrips. Mobile Labels bleiben semantisch gleich zu Desktop (`Insights`, `Settings`), und Tabs werden verdichtet statt abgeschnitten.
+- **Why:** Der Browser-Audit zeigte vor allem abgeschnittene Kernlabels und teilweise sichtbare Tabs. Ein kleiner, testbarer Pass senkt Alltagsreibung ohne ein neues Design-System oder großflächige Karten-/Layout-Refactors zu starten.
+- **Alternatives:** Komplettes visuelles Redesign (zu großer Scope für die Usability-Welle); weitere Abkürzungen wie `Set` behalten (unklar); Tabstrips nur horizontal scrollen lassen (verhindert Clipping nicht im ersten Blick).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Data und Settings erklären Vertrauenszustände vor Aktionen
 
 - **Decision:** UI/UX Slice D strukturiert Data Coverage als `Status → Ursache → Aktion` und trennt in Settings Push-Zustand nach Server, Browser, Geräten und Testfähigkeit. Backfill-, Kalender-, Push- und Health-State-Aktionen bekommen sichtbare Folgezeilen; technische Push-Endpunkte werden maskiert.

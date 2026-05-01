@@ -10,8 +10,9 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Current PRs / Branches
 
-- `codex/ux-slice-d-data-settings`: active branch for UI/UX Slice D, covering Data coverage diagnosis and Settings trust states.
+- `codex/ux-slice-e-density`: active branch for UI/UX Slice E, covering mobile navigation labels and tabstrip density.
 - Recent completed branches:
+- `codex/ux-slice-d-data-settings`: merged and deployed via PR #65.
 - `codex/ux-slice-c-plan-decision`: merged and deployed via PR #64.
 - `codex/ux-slice-b-home-coach`: merged and deployed via PR #63.
 - `codex/ux-slice-a-closeout`: merged and deployed via PR #62.
@@ -49,8 +50,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Merge and deploy UI/UX Slice D: Data/Settings trust.
-- Then implement UI/UX Slice E: visual density pass across navigation, tabstrips and mobile readability.
+- Merge and deploy UI/UX Slice E: visual density pass across navigation, tabstrips and mobile readability.
+- Then run a deep browser UI/UX audit across daily flows on the deployed server.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.
 
 ## Out Of Scope Unless Reversed
