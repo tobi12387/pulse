@@ -14,6 +14,7 @@
     "test:e2e:ui": "playwright test --ui",
     "verify:local": "bash scripts/verify-local.sh",
     "verify:local:e2e": "bash scripts/verify-local.sh --with-e2e",
+    "verify:server": "bash scripts/verify-server.sh",
     "dev:backend": "npm run dev -w backend",
     "dev:frontend": "npm run dev -w frontend"
   },

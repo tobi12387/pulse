@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Deploy-Smoke wird als Repo-Script standardisiert
+
+- **Decision:** Reliability Wave Slice 3 fuehrt `scripts/verify-server.sh` und `npm run verify:server` ein. Der Check validiert Server-Branch, sauberen Worktree, erwarteten Commit, PM2-Prozesse sowie Frontend-, `/api/ping`- und `/api/pulse/health`-Healthchecks.
+- **Why:** Deploys wurden bisher mit mehreren ad-hoc-Kommandos geprueft. Ein einheitlicher Befehl macht nach jedem Deploy sichtbar, ob GitHub-main wirklich auf dem Server laeuft und ob die App ueber die LAN-URL gesund ist.
+- **Alternatives:** Manuelle Curl-/SSH-Folge beibehalten (fehleranfaellig); nur PM2 pruefen (deckt Proxy/API nicht ab); nur HTTP pruefen (deckt falschen Commit nicht ab).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Lokale Tests bekommen einen expliziten Verify-Pfad
 
 - **Decision:** Reliability Wave Slice 2 fuehrt `.env.test.example`, `scripts/verify-local.sh`, `npm run verify:local` und `npm run verify:local:e2e` ein. Der Verify-Pfad prueft zuerst, dass `DATABASE_URL_TEST` separat und erreichbar ist, migriert dann die Testdatenbank und startet Backend-Tests plus Typecheck.
