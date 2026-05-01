@@ -4,9 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
 import type { ActivityAnalytics } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
-import { useActivityFeedback, useNutritionLogs, useDeleteNutritionLog, pulseKeys } from '@/pulse/hooks';
+import {
+  useActivityFeedback,
+  useAssignActivityEquipment,
+  useDeleteNutritionLog,
+  useEquipment,
+  useNutritionLogs,
+  pulseKeys,
+} from '@/pulse/hooks';
 import { NutritionLogModal } from '@/components/NutritionLogModal';
-import { RPE_SORENESS_AREAS, type RpeSorenessArea } from '@coaching-os/shared/pulse';
+import { RpeBar } from '@/components/RpeBar';
+import { rpeColor } from '@/lib/rpe';
+import { RPE_SORENESS_AREAS, type PulseActivityType, type RpeSorenessArea } from '@coaching-os/shared/pulse';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -73,13 +82,6 @@ const SORENESS_LABELS: Record<RpeSorenessArea, string> = {
   foot: 'Fuß',
   general_fatigue: 'Allg. Müdigkeit',
 };
-
-function rpeColor(rpe: number): string {
-  if (rpe <= 3) return 'var(--blue)';
-  if (rpe <= 6) return 'var(--green)';
-  if (rpe <= 8) return 'var(--amber)';
-  return 'var(--rose)';
-}
 
 function HrZonesBar({ zones }: {
   zones: { zone: number; secsInZone: number; zoneLowBoundary: number }[];
@@ -200,37 +202,7 @@ function RpeFeedbackSheet({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4, marginBottom: 7 }}>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(v => {
-                const active = rpe === v;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => setRpe(v)}
-                    style={{
-                      aspectRatio: '1 / 1',
-                      minWidth: 0,
-                      border: `1px solid ${active ? rpeColor(v) : 'var(--border)'}`,
-                      background: active ? rpeColor(v) : 'var(--surface-2)',
-                      color: active ? 'var(--bg)' : 'var(--text-2)',
-                      borderRadius: 5,
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 12,
-                      cursor: 'pointer',
-                    }}
-                    aria-label={`RPE ${v}`}
-                  >
-                    {v}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
-              <span>locker</span>
-              <span>alles geben</span>
-            </div>
-          </div>
+          <RpeBar value={rpe} onChange={setRpe} />
 
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span className="label-mono">Notiz optional</span>
@@ -760,6 +732,110 @@ function FuelingSection({
   );
 }
 
+const ACTIVITY_LABEL: Record<PulseActivityType, string> = {
+  run: 'Laufen',
+  bike: 'Rad',
+  swim: 'Schwimmen',
+  strength: 'Kraft',
+  hike: 'Wandern',
+  other: 'Sonstiges',
+};
+
+const PULSE_ACTIVITY_TYPES: PulseActivityType[] = ['run', 'bike', 'swim', 'strength', 'hike', 'other'];
+
+function asPulseActivityType(value: string): PulseActivityType {
+  return PULSE_ACTIVITY_TYPES.includes(value as PulseActivityType) ? value as PulseActivityType : 'other';
+}
+
+function ActivityEquipmentSection({
+  activity,
+}: {
+  activity: {
+    id: string;
+    activityType: string;
+    distanceM: number | null;
+    equipmentIds: string[];
+  };
+}) {
+  const equipmentQuery = useEquipment();
+  const assign = useAssignActivityEquipment(activity.id);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const activityType = asPulseActivityType(activity.activityType);
+  const assignedIds = activity.equipmentIds ?? [];
+  const equipment = equipmentQuery.data?.equipment ?? [];
+  const defaults = equipmentQuery.data?.defaults ?? [];
+  const matching = equipment.filter(item => !item.retiredAt && !item.parentEquipmentId && item.activityTypes.includes(activityType));
+  const defaultId = defaults.find(row => row.activityType === activityType)?.equipmentId ?? null;
+  const selectedTopLevelId =
+    assignedIds.find(id => matching.some(item => item.id === id))
+    ?? equipment.find(item => assignedIds.includes(item.id) && item.parentEquipmentId)?.parentEquipmentId
+    ?? '';
+  const selectedNames = equipment
+    .filter(item => assignedIds.includes(item.id))
+    .map(item => item.name);
+  const defaultName = equipment.find(item => item.id === defaultId)?.name ?? null;
+
+  async function handleChange(equipmentId: string) {
+    setMessage(null);
+    try {
+      await assign.mutateAsync(equipmentId ? [equipmentId] : []);
+      setMessage({ text: 'Equipment-Zuordnung gespeichert.', ok: true });
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : 'Zuordnung fehlgeschlagen.', ok: false });
+    }
+  }
+
+  return (
+    <div className="card" style={{ padding: '12px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+        <span className="label-mono">Equipment</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {activity.distanceM ? `${(activity.distanceM / 1000).toFixed(1)} km` : ACTIVITY_LABEL[activityType]}
+        </span>
+      </div>
+
+      <select
+        value={selectedTopLevelId}
+        disabled={equipmentQuery.isLoading || assign.isPending || matching.length === 0}
+        onChange={e => void handleChange(e.target.value)}
+        style={{
+          width: '100%',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: '7px 9px',
+          fontSize: 12,
+          color: 'var(--text)',
+          outline: 'none',
+        }}
+      >
+        <option value="">Kein Equipment</option>
+        {matching.map(item => (
+          <option key={item.id} value={item.id}>
+            {item.name}{item.id === defaultId ? ' (Default)' : ''}
+          </option>
+        ))}
+      </select>
+
+      <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+        {selectedNames.length > 0
+          ? `Aktiv: ${selectedNames.join(', ')}.`
+          : defaultName
+            ? `Default für ${ACTIVITY_LABEL[activityType]}: ${defaultName}.`
+            : matching.length === 0
+              ? `Noch kein ${ACTIVITY_LABEL[activityType]}-Equipment in Settings angelegt.`
+              : 'Keine Zuordnung für diese Aktivität.'}
+      </div>
+
+      {message && (
+        <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 10, color: message.ok ? 'var(--green)' : 'var(--rose)' }}>
+          {message.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ActivityDetail() {
@@ -850,6 +926,8 @@ export default function ActivityDetail() {
         {a.normalizedPowerW && <KpiItem label="NP" value={fmt(a.normalizedPowerW)} unit="W" />}
         {a.calories && <KpiItem label="kcal" value={fmt(a.calories, 0)} />}
       </div>
+
+      <ActivityEquipmentSection activity={a} />
 
       {/* Training Effect */}
       {(a.trainingEffectAerobic || a.trainingEffectAnaerobic) && (

@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, useUpdateGoal, useDeleteGoal, useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
+  useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
+import { StrengthLogger } from '@/components/StrengthLogger';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
-import type { PulsePlannedWorkout, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
+import type { PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -437,6 +438,12 @@ function TrainingTab() {
   const workouts   = plan.data?.workouts ?? [];
   const activities = acts.data?.activities ?? [];
   const planDecision = generate.data?.planDecision;
+  const today = isoDateLocal(new Date());
+  const strengthWorkout = workouts.find(w =>
+    w.activityType === 'strength'
+    && w.status !== 'completed'
+    && w.plannedDate >= today,
+  ) ?? null;
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -454,6 +461,8 @@ function TrainingTab() {
         onChangeWeek={d => setWeekOffset(o => o + d)}
         onSelectWorkout={setSelectedWorkout}
       />
+
+      <StrengthLogger key={strengthWorkout?.id ?? 'free'} plannedWorkout={strengthWorkout} />
 
       {/* Availability */}
       <AvailabilityEditor />
@@ -1184,9 +1193,97 @@ function rpeDriftLabel(drift: number | null): string {
   return `${drift > 0 ? '+' : ''}${drift.toFixed(1)} vs. Vormonat · stabil`;
 }
 
+function buildStrengthTrendRows(trends: PulseStrengthTrendPoint[]) {
+  const grouped = new Map<string, PulseStrengthTrendPoint[]>();
+  for (const point of trends) {
+    const list = grouped.get(point.exercise) ?? [];
+    list.push(point);
+    grouped.set(point.exercise, list);
+  }
+
+  return Array.from(grouped.entries())
+    .map(([exercise, points]) => {
+      const sorted = [...points].sort((a, b) => a.date.localeCompare(b.date));
+      const first = sorted[0]?.e1rmKg ?? null;
+      const last = sorted[sorted.length - 1]?.e1rmKg ?? null;
+      const deltaPct = first != null && first > 0 && last != null ? ((last - first) / first) * 100 : null;
+      return { exercise, first, last, deltaPct };
+    })
+    .filter(row => row.last != null)
+    .sort((a, b) => (b.last ?? 0) - (a.last ?? 0))
+    .slice(0, 5);
+}
+
+function StrengthStatsCard({
+  sessions,
+  trends,
+  loading,
+}: {
+  sessions: PulseStrengthSession[];
+  trends: PulseStrengthTrendPoint[];
+  loading: boolean;
+}) {
+  if (loading) return <Skeleton height={88} />;
+
+  const since = new Date();
+  since.setDate(since.getDate() - 28);
+  const sinceDate = isoDateLocal(since);
+  const recentSessions = sessions.filter(session => session.date >= sinceDate);
+  const totalMin = recentSessions.reduce((sum, session) => sum + (session.durationMin ?? 0), 0);
+  const rows = buildStrengthTrendRows(trends);
+
+  if (sessions.length === 0 && rows.length === 0) return null;
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        <span className="label-mono">Strength Volumen</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          letzte 4 Wochen
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: rows.length > 0 ? 12 : 0 }}>
+        {[
+          { label: 'Einheiten', value: String(recentSessions.length), detail: `${sessions.length} in 90d` },
+          { label: 'Volumen', value: `${(totalMin / 60).toFixed(1)}h`, detail: `${totalMin} min` },
+          { label: 'Top Lifts', value: String(rows.length), detail: 'e1RM Verlauf' },
+        ].map(item => (
+          <div key={item.label} style={{ padding: '10px', background: 'var(--surface)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase' }}>
+              {item.label}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--text)', marginTop: 4 }}>
+              {item.value}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', marginTop: 2 }}>
+              {item.detail}
+            </div>
+          </div>
+        ))}
+      </div>
+      {rows.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {rows.map(row => (
+            <div key={row.exercise} style={{ display: 'grid', gridTemplateColumns: '86px 1fr 68px', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-2)' }}>{row.exercise}</span>
+              <div style={{ height: 7, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(100, Math.max(8, ((row.last ?? 0) / Math.max(1, rows[0]?.last ?? 1)) * 100))}%`, background: 'var(--accent)' }} />
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: row.deltaPct != null && row.deltaPct < 0 ? 'var(--amber)' : 'var(--green)', textAlign: 'right' }}>
+                {row.deltaPct == null ? 'neu' : `${row.deltaPct >= 0 ? '+' : ''}${row.deltaPct.toFixed(1)}%`}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatistikTab() {
   const [weeks, setWeeks] = useState(12);
   const { data, isLoading } = useTrainingAnalytics(weeks);
+  const strength = useStrengthSessions(90);
 
   if (isLoading) {
     return (
@@ -1264,6 +1361,12 @@ function StatistikTab() {
           ))}
         </div>
       </div>
+
+      <StrengthStatsCard
+        sessions={strength.data?.sessions ?? []}
+        trends={strength.data?.trends ?? []}
+        loading={strength.isLoading}
+      />
 
       {/* ── TSS Heatmap ── */}
       <div className="card">

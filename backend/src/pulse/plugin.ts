@@ -17,6 +17,7 @@ import {
   pulseNutritionLogs,
   pulseRiskSignals,
   pulsePushSubscriptions,
+  pulseEquipmentActivity,
   DEFAULT_PUSH_TOPICS,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
@@ -860,6 +861,11 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     if (!activity) return reply.status(404).send({ error: 'Not found' });
 
+    const assignedEquipment = await db.select({
+      equipmentId: pulseEquipmentActivity.equipmentId,
+    }).from(pulseEquipmentActivity)
+      .where(eq(pulseEquipmentActivity.activityId, id));
+
     // Use cached rawData if present, else fetch from Garmin
     let laps: any[] = [];
     let hrZones: { zone: number; secsInZone: number; zoneLowBoundary: number }[] = [];
@@ -995,6 +1001,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         ...activity,
         startTime: activity.startTime.toISOString(),
         feedbackLoggedAt: activity.feedbackLoggedAt?.toISOString() ?? null,
+        equipmentIds: assignedEquipment.map(row => row.equipmentId),
       },
       laps,
       hrZones,

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-04-30 — Phase 10 UI bleibt in Plan, Settings und ActivityDetail
+
+- **Decision:** Strength Logging und Equipment Tracking bekommen keine neue Hauptnavigation. Der Strength Logger sitzt im Plan-Training-Tab mit e1RM/Recent-Session-Summary, Equipment-Verwaltung und Defaults sitzen in Settings, und das manuelle Equipment-Override sitzt direkt im ActivityDetail; dafür liefert `GET /pulse/activities/:id` die aktuellen `equipmentIds` mit.
+- **Why:** Strength und Equipment sind Hilfs-Workflows rund um Training und Garmin-Aktivitäten. Eine eigene Seite würde Alltagswege verlängern; die bestehenden Oberflächen haben bereits die richtige Aufgabe: Plan fürs Loggen/Analysieren, Settings für Stammdaten, ActivityDetail für Aktivitätskorrekturen.
+- **Alternatives:** Eigene Equipment-/Strength-Seite bauen (mehr Navigation und Scope); Override ohne aktuelle Zuordnung anzeigen (fachlich unehrlich); nur Settings ohne ActivityDetail-Override bauen (Default-Fehler wären schwer korrigierbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-04-30 — Phase 10 startet als Backend-Fundament vor UI
 
 - **Decision:** Phase 10 wird in reviewbare Slices geschnitten. Der erste Slice liefert additive Strength-/Equipment-Tabellen, Backend-APIs, idempotente Equipment-Mileage-Zuordnung und PulseContext-/Coach-/Briefing-Anbindung; UI-Komponenten folgen separat.
