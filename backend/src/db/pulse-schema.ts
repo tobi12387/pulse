@@ -20,6 +20,31 @@ export interface WorkoutStep {
   targetLabel?: string;
 }
 
+export interface GarminActivityLapCache {
+  index: number;
+  distanceM?: number | null;
+  durationSec?: number | null;
+  avgHr?: number | null;
+  maxHr?: number | null;
+  avgPowerW?: number | null;
+  avgSpeedMs?: number | null;
+  elevationGainM?: number | null;
+}
+
+export interface GarminActivityHrZoneCache {
+  zone: number;
+  secsInZone: number;
+  zoneLowBoundary: number | null;
+}
+
+export interface GarminActivityDetailCache {
+  source: 'garmin' | 'legacy_raw_data';
+  fetchedAt?: string;
+  splits?: unknown;
+  hrTimeInZones?: unknown;
+  rawData?: unknown;
+}
+
 export const DEFAULT_PUSH_TOPICS: PulsePushTopics = {
   briefing: true,
   checkin_reminder: true,
@@ -150,6 +175,10 @@ export const pulseActivities = pgTable('pulse_activities', {
   sorenessAreas:            text('soreness_areas').array(),
   feedbackLoggedAt:         timestamp('feedback_logged_at', { withTimezone: true }),
   rawData:                  jsonb('raw_data'),
+  garminDetailData:         jsonb('garmin_detail_data').$type<GarminActivityDetailCache>(),
+  garminLaps:               jsonb('garmin_laps').$type<GarminActivityLapCache[]>(),
+  garminHrZones:            jsonb('garmin_hr_zones').$type<GarminActivityHrZoneCache[]>(),
+  garminDetailSyncedAt:     timestamp('garmin_detail_synced_at', { withTimezone: true }),
 }, (t) => [
   index('pulse_activities_user_start_idx').on(t.userId, t.startTime),
   uniqueIndex('pulse_activities_external_source_idx').on(t.externalId, t.source),
