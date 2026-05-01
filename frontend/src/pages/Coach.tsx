@@ -448,7 +448,7 @@ export default function Coach() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 8rem)' }}>
+    <div className="pulse-coach-shell" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
       {/* Context strip */}
       <div style={{

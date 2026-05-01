@@ -30,5 +30,11 @@ export default defineConfig({
       name: 'mobile-chromium',
       use: { ...devices['Pixel 7'] },
     },
+    ...(process.env.PULSE_E2E_WEBKIT === 'true'
+      ? [{
+          name: 'iphone-webkit',
+          use: { ...devices['iPhone 15'] },
+        }]
+      : []),
   ],
 });

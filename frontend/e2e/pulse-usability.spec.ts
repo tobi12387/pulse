@@ -465,8 +465,11 @@ test('Settings groups actions by risk and daily maintenance area', async ({ page
   await expect(page.getByRole('heading', { name: 'Verbindung' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Datenpflege' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Benachrichtigungen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'iPhone & PWA' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Health-State' })).toBeVisible();
   await expect(page.getByText('Kalender-Sync und Backfill sind getrennt von Profil- und Push-Aktionen.')).toBeVisible();
+  await expect(page.getByText('Lokaler Zugriff, HTTPS und Browser-Fähigkeiten für iPhone/VPN bleiben sichtbar.')).toBeVisible();
+  await expect(page.getByText('Gerätezugriff')).toBeVisible();
   await expect(page.getByText('Health-State setzt harte Trainingsgrenzen und ist bewusst separat.')).toBeVisible();
 });
 
@@ -480,6 +483,9 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
   await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
   await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');
+  const bottomNavBox = await bottomNav.boundingBox();
+  expect(bottomNavBox).not.toBeNull();
+  expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);
 
   await page.goto('/data');
   const mentalTab = page.getByRole('button', { name: 'Mental' });
@@ -490,4 +496,11 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
 
   await page.goto('/plan');
   await expect(page.getByRole('button', { name: 'Statistik' })).toBeVisible();
+
+  await page.goto('/coach');
+  const coachInput = page.getByPlaceholder('Frage…');
+  await expect(coachInput).toBeVisible();
+  const inputBox = await coachInput.boundingBox();
+  expect(inputBox).not.toBeNull();
+  expect(inputBox!.y + inputBox!.height).toBeLessThanOrEqual(viewport.height);
 });

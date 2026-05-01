@@ -29,6 +29,12 @@
   /* Radius — technical, not friendly */
   --radius: 6px;
 
+  /* Mobile shell */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-topbar-height: 44px;
+  --mobile-bottomnav-height: 56px;
+
   /* Tailwind v4 compat mappings */
   --background: var(--bg);
   --foreground:  var(--text);
@@ -103,6 +109,7 @@
   }
 
   html, body {
+    min-height: 100%;
     background-color: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
@@ -112,6 +119,10 @@
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
+  }
+
+  #root {
+    min-height: 100%;
   }
 
   button {
@@ -182,6 +193,47 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 14px 16px;
+  }
+
+  .pulse-app-shell {
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .pulse-mobile-topbar {
+    height: calc(var(--mobile-topbar-height) + var(--safe-top));
+    padding-top: var(--safe-top);
+  }
+
+  .pulse-mobile-bottom-nav {
+    height: calc(var(--mobile-bottomnav-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .pulse-page-shell {
+    padding-top: calc(var(--mobile-topbar-height) + var(--safe-top) + 16px);
+    padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 12px);
+  }
+
+  .pulse-coach-shell {
+    height: calc(100vh - var(--mobile-topbar-height) - var(--mobile-bottomnav-height) - var(--safe-top) - var(--safe-bottom) - 28px);
+    height: calc(100dvh - var(--mobile-topbar-height) - var(--mobile-bottomnav-height) - var(--safe-top) - var(--safe-bottom) - 28px);
+    min-height: 0;
+  }
+
+  @media (min-width: 768px) {
+    .pulse-page-shell {
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+
+    .pulse-coach-shell {
+      height: calc(100vh - 3rem);
+      height: calc(100dvh - 3rem);
+      min-height: 0;
+    }
   }
 
   /* Delta pills */

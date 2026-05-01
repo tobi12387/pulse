@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Pulse priorisiert lokalen iPhone/PWA-Zugriff und Garmin-Datentiefe vor nativer App
+
+- **Decision:** Die nächste Arbeitsfolge bleibt Web/PWA über den lokalen Server per VPN und erweitert zuerst Garmin-Rohdatenerhalt, Execution Reconciliation, Recovery-Datentiefe und sichtbare Entscheidungs-/Preference-Loops. Build Web Apps wird genutzt, sobald das Plugin als Codex-Tool sichtbar ist; Build iOS Apps bleibt eine spätere Native-Wrapper-Evaluation.
+- **Why:** Der höchste Alltagsnutzen entsteht, wenn die vorhandene Pulse-App auf dem iPhone zuverlässig bedienbar ist und geplante Garmin-Workouts sauber mit Ausführung, Recovery und Coach-Entscheidungen zusammenlaufen. Eine native iOS-App würde aktuell Plattformaufwand erzeugen, bevor der Kernloop vollständig geschlossen ist.
+- **Alternatives:** Sofort native iOS-App bauen (zu früh und mehr Deployment-Oberfläche); öffentliches Hosting/Tunnel einführen (nicht nötig für VPN-Zielbild); weitere breite Features vor Garmin-/Decision-Closure beginnen (erhöht Oberfläche statt Nutzen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Garmin Repeat-Gruppen brauchen Iterations-EndCondition plus Anzahlfeld
 
 - **Decision:** Pulse exportiert Garmin-Repeat-Gruppen mit `numberOfIterations = reps` und zusätzlich `endCondition.conditionTypeKey = iterations` sowie `endConditionValue = reps`. Der Garmin-Payload-Bau liegt als pure Helper-Schicht in `backend/src/pulse/services/garmin-workout.ts`.
