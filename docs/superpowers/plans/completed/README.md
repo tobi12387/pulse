@@ -36,6 +36,7 @@
 | `2026-05-01-everyday-utility-wave.md` | Everyday Utility Wave — Garmin Backfill, Plan Calibration, Action Closure, Mobile Density | PR #48, PR #49, PR #50, PR #51 |
 | `2026-05-01-reliability-wave.md` | Reliability Wave — E2E CI, Local Tests, Deploy Smoke, Bundle Cleanup | PR #54, PR #55, PR #56, PR #57 |
 | `2026-05-01-ui-ux-usability-wave.md` | UI/UX Usability Wave — Insights resilience, daily action, Plan decision, Data/Settings trust, mobile density | PR #61, PR #63, PR #64, PR #65, PR #66 |
+| `2026-05-01-everyday-flow-deepening-wave.md` | Everyday Flow Deepening Wave — Coach daily briefing, UI chrome, Figma integration, plan alternatives, Garmin fallback, Insights/Data/Settings reliability | PR #69, PR #70, PR #71, PR #72, PR #73, PR #74, PR #75, PR #76 |
 
 ## Bekannte veraltete Stellen
 

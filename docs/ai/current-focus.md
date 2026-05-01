@@ -6,12 +6,13 @@ Keep this file short. Update it whenever the active work queue changes.
 
 1. All prior implementation plans through Phase 11, the 2026-04-30 follow-up slices, the Trust Wave, Everyday Utility Wave, Reliability Wave, and UI/UX Usability Wave are merged, deployed, and moved to `completed/`.
 2. Web Push VAPID production settings are configured on `/root/pulse/.env`.
-3. Active implementation wave: `docs/superpowers/plans/2026-05-01-everyday-flow-deepening-wave.md`.
+3. Active implementation wave: `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`.
 
 ## Current PRs / Branches
 
-- `codex/settings-action-grouping`: active branch for Everyday Flow phase 5, visible Settings action groups by risk and daily maintenance area.
+- `codex/everyday-flow-closeout`: active docs branch for moving the completed Everyday Flow wave to history and opening the Daily Intelligence next wave.
 - Recent completed branches:
+- `codex/settings-action-grouping`: merged and deployed via PR #76.
 - `codex/data-backfill-observability`: merged and deployed via PR #75.
 - `codex/insights-reliability`: merged and deployed via PR #74.
 - `codex/plan-descriptions-garmin-sync`: merged and deployed via PR #73.
@@ -59,8 +60,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 ## Next Recommended Work
 
-- Finish, PR, merge and deploy `codex/settings-action-grouping`.
-- Then close out the Everyday Flow Deepening Wave with a browser/UI-UX review and a next-phase proposal.
+- Finish, PR, merge and deploy `codex/everyday-flow-closeout`.
+- Then start `codex/garmin-execution-reconciliation` from `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
 - Ask Tobi to enable Push in Settings on each target browser/device; server VAPID is already present.

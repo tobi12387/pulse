@@ -133,7 +133,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 
 ### 5. Settings Action Grouping
 
-**Status:** in progress via `codex/settings-action-grouping`.
+**Status:** completed, merged and deployed via PR #76 (`codex/settings-action-grouping`, deploy commit `583c33d`).
 
 - Settings wird in sichere Aktionsgruppen gegliedert: Verbindung, Datenpflege, Benachrichtigungen, Profil, Health-State.
 - Gefährlichere oder externe Aktionen bekommen stärkere visuelle Distanz und kurze Konsequenzzeilen.
@@ -141,10 +141,20 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
   - Push-, Kalender-, Backfill- und Health-State-Aktionen sind nicht mehr als gleichwertige Button-Liste wahrnehmbar.
   - Mobile Settings bleibt scanbar.
 
-## Suggested Sequence
+## Completion
 
-1. Finish Settings Action Grouping.
-2. Close out Everyday Flow Deepening Wave with browser/UI-UX review and next-phase proposal.
+Everyday Flow Deepening Wave is implemented, merged and deployed:
+
+1. Coach-Guided Daily Briefing — PR #69.
+2. Core UI Chrome Consistency — PR #70.
+3. Figma UX Integration — PR #71.
+4. Plan Alternatives 2.0 — PR #72.
+5. Plan Descriptions + Garmin Sync Fallback — PR #73.
+6. Insights Reliability & Cause Classification — PR #74.
+7. Data Backfill Observability — PR #75.
+8. Settings Action Grouping — PR #76.
+
+Follow-up work moves to `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`.
 
 ## Current External Checks
 
@@ -152,7 +162,7 @@ The first Figma/FigJam artifact is `Pulse UX Toolchain Loop`. It should become t
 - Canva: `Pulse Everyday Flow UX Board` created as the active UX companion artifact.
 - Figma: `Pulse UX Toolchain Loop` FigJam claim URL created; open/claim it before using it as an editable team file.
 - Figma: `Pulse Plan Alternatives 2.0 States` diagram added to the Pulse UX loop.
-- Server baseline: Data Backfill Observability deployed and verified on `origin/main` commit `c686782`; Settings Garmin calendar sync previously uploaded 3 future workouts with Garmin schedule IDs.
+- Server baseline: Settings Action Grouping deployed and verified on `origin/main` commit `583c33d`; Settings Garmin calendar sync previously uploaded 3 future workouts with Garmin schedule IDs.
 
 ## Open Questions
 

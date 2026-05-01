@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Nächste Welle priorisiert Daily Intelligence vor Feature-Breite
+
+- **Decision:** Nach der Everyday Flow Deepening Wave startet `docs/superpowers/plans/2026-05-01-daily-intelligence-next-wave.md`. Reihenfolge: Garmin Execution Reconciliation, Plan Personalization Loop, Daily Decision Center, Insight Evidence Links, Deep UI/UX Flow Audit.
+- **Why:** Die größten verbleibenden Alltagslücken liegen nicht in neuen Produktbereichen, sondern im geschlossenen Ausführungsloop: Plan auf Garmin bringen, Durchführung erkennen, Feedback lernen, Tagesentscheidung erklären und UI-Flows real prüfen.
+- **Alternatives:** Weitere breite Featurebereiche eröffnen (mehr Oberfläche, weniger Nutzen); sofort Design-Polish ohne Execution-Reconciliation (lässt Garmin/Uhr-Fragen offen); alles in einem großen PR bauen (zu hohes Review- und Deploy-Risiko).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Settings werden als sichtbare Aktionsgruppen geführt
 
 - **Decision:** Settings nutzt sichtbare Gruppen für Profil, Verbindung, Datenpflege, Benachrichtigungen und Health-State. Die Gruppierung ist zunächst reine Informationsarchitektur und verwendet die bestehenden Contracts und Komponenten.
