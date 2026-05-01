@@ -8,6 +8,7 @@ type MockPulseApiOptions = {
   coverage?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
   pushSettings?: unknown;
   onRequest?: (pathname: string, method: string) => void;
 };
@@ -263,6 +264,30 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
+    if (url.pathname.startsWith('/api/pulse/plan/workout/') && request.method() === 'PATCH') {
+      const workoutId = url.pathname.split('/').at(-1) ?? 'workout-1';
+      const body = request.postDataJSON();
+      options.onPlanWorkoutUpdate?.(workoutId, body);
+      return json(route, {
+        workout: {
+          id: workoutId,
+          userId: 'user-1',
+          plannedDate: body.plannedDate ?? today,
+          activityType: body.activityType ?? 'bike',
+          zone: body.zone ?? 2,
+          durationMin: body.durationMin ?? 60,
+          distanceKm: null,
+          targetTss: null,
+          description: body.description ?? null,
+          steps: null,
+          garminWorkoutId: null,
+          status: body.status ?? 'planned',
+          workoutFeedback: null,
+          complianceScore: null,
+          completedActivityId: null,
+        },
+      });
+    }
     if (url.pathname.startsWith('/api/pulse/plan/trace/')) return json(route, { trace: options.planTrace ?? null });
     if (url.pathname === '/api/pulse/push/settings' && options.pushSettings) return json(route, options.pushSettings);
     if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams));

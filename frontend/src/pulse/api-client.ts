@@ -185,7 +185,14 @@ export const pulseApi = {
       request(`/plan/trace/${weekStart}`),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),
-    updateWorkout: (id: string, data: { activityType?: string; zone?: number; durationMin?: number }): Promise<{ workout: PulsePlannedWorkout }> =>
+    updateWorkout: (id: string, data: {
+      activityType?: string;
+      zone?: number;
+      durationMin?: number;
+      plannedDate?: string;
+      status?: 'planned' | 'skipped';
+      description?: string | null;
+    }): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     generateDetail: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}/detail`, { method: 'POST', body: '{}' }),

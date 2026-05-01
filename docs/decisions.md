@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-01 — Plan-Alternativen erweitern Workout-PATCH statt neuen Alternativen-Service
+
+- **Decision:** Plan Alternatives 2.0 nutzt die bestehende Workout-Aktualisierung und erweitert sie um `plannedDate`, `status` und `description`. Die Plan-UI berechnet die ersten semantischen Alternativen deterministisch im Frontend aus Workout, Verfügbarkeit, Zielen und PlanTrace-Kontext.
+- **Why:** Der vorhandene `/plan/today/proposal`-Contract ist ein einzelner Sicherheitsvorschlag für heutige Health-/Readiness-Ausnahmen. Für die alltäglichen Optionen "kürzer", "leichter", "verschieben" und "frei lassen" reicht eine kontrollierte Erweiterung des bestehenden Workout-PATCH aus und vermeidet neue Migrationen oder einen zu frühen Alternativen-Service.
+- **Alternatives:** Neuen `/plan/alternatives`-Endpoint bauen (größerer Backend-Scope); nur lokale UI ohne echte Mutation zeigen (kein Alltagsnutzen); bestehendes Today-Proposal zweckentfremden (zu eng und nur für heute gedacht).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-01 — Figma wird aktiv als Design-System-Ebene eingebunden
 
 - **Decision:** Pulse nutzt Figma/FigJam ab sofort zusätzlich zu Canva und Superpowers. Figma ist die Arbeitsfläche für reusable UI-Sprache, Komponenten, Varianten, Zustände, Layout-Referenzen und perspektivisch Code Connect; Canva bleibt das leichtere Review-/Stakeholder-Board.

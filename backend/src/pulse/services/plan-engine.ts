@@ -70,7 +70,7 @@ const IF_BY_ZONE: Record<number, number> = {
   5: 1.08,
 };
 
-function tssFromWorkout(durationMin: number, zone: number): number {
+export function tssFromWorkout(durationMin: number, zone: number): number {
   const ef = IF_BY_ZONE[zone] ?? 0.70;
   return Math.round((durationMin / 60) * ef * ef * 100);
 }

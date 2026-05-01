@@ -38,7 +38,7 @@ import { buildCachedPulseContextFor, mapPulseContextToCoachContext } from './lib
 import { getCached, invalidateUser, setCached } from './lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
 import { transcribeAudio } from '../lib/whisper.js';
-import { decidePlanDays, generateWeekWorkouts, generateScientificWeekPlan, getMesocycleWeek } from './services/plan-engine.js';
+import { decidePlanDays, generateWeekWorkouts, generateScientificWeekPlan, getMesocycleWeek, tssFromWorkout } from './services/plan-engine.js';
 import { buildPlanLearningSnapshot } from './services/plan-learning.js';
 import { buildPlanTrace } from './services/plan-trace.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
@@ -92,6 +92,12 @@ const activityFeedbackSchema = z.object({
 });
 
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
+const isoDateSchema = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => {
+    const date = new Date(value + 'T00:00:00Z');
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }, { message: 'Ungültiges Datum' });
 const strengthSetSchema = z.object({
   exercise: z.string().trim().min(1).max(80),
   setNumber: z.number().int().min(1).max(20).optional(),
@@ -1725,13 +1731,35 @@ export default async function pulsePlugin(app: FastifyInstance) {
       activityType: z.enum(['run','bike','swim','strength','hike','other']).optional(),
       zone:         z.number().int().min(1).max(5).optional(),
       durationMin:  z.number().int().min(5).max(360).optional(),
+      plannedDate:  isoDateSchema.optional(),
+      status:       z.enum(['planned','skipped']).optional(),
+      description:  z.string().max(1000).nullable().optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+    if (Object.keys(parsed.data).length === 0) return reply.status(400).send({ error: 'Ungültige Eingabe' });
     const userId = req.user.sub;
     const { id } = req.params as { id: string };
+    const changesPrescription =
+      parsed.data.activityType !== undefined ||
+      parsed.data.zone !== undefined ||
+      parsed.data.durationMin !== undefined;
+    let targetTss: number | undefined;
+    if (parsed.data.zone !== undefined || parsed.data.durationMin !== undefined) {
+      const [current] = await db.select({
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+      }).from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
+      if (!current) return reply.status(404).send({ error: 'Not found' });
+      targetTss = tssFromWorkout(parsed.data.durationMin ?? current.durationMin, parsed.data.zone ?? current.zone);
+    }
     const [updated] = await db.update(pulsePlannedWorkouts)
-      .set({ ...parsed.data, steps: null })
+      .set({
+        ...parsed.data,
+        ...(changesPrescription ? { steps: null } : {}),
+        ...(targetTss !== undefined ? { targetTss } : {}),
+      })
       .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)))
       .returning();
     if (!updated) return reply.status(404).send({ error: 'Not found' });
