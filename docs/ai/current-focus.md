@@ -73,6 +73,7 @@ Keep this file short. Update it whenever the active work queue changes.
 67. Shared Pulse Type Split was merged and deployed via PR #148.
 68. Ops And Tooling Cleanup was merged and deployed via PR #149.
 69. Docs Design Handoff Relocation was merged and deployed via PR #150.
+70. Real iPhone/VPN/PWA field evidence was captured from Tobi's device: routes, Coach keyboard, Home Screen launch and Settings readiness passed; local certificate trust remains the only confirmed friction.
 
 ## Current PRs / Branches
 
@@ -199,10 +200,10 @@ Keep this file short. Update it whenever the active work queue changes.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
 - No further broad autonomous feature plan is currently ungated; the remaining feature plans need real-device evidence or preference decisions.
-- Mobile Field Reliability still needs real-device iPhone/VPN/PWA evidence from Tobi's device before UI fixes are implemented.
+- Mobile Field Reliability has real-device iPhone/VPN/PWA evidence; no mobile layout or Coach keyboard fix was exposed. Next manual follow-up is installing/trusting the local Pulse root CA on iPhone if warning-free PWA behavior is required.
 - Fueling & Recovery needs dietary/preference decisions before implementation; Native iOS remains a later evidence gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
-- The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
+- Push activation on iPhone remains a manual gate; the Settings readiness block reports device access ready, but notification permission and test push were not intentionally triggered.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
 - Latest UX companion record: `docs/qa/2026-05-02-ux-companion-refresh.md`.

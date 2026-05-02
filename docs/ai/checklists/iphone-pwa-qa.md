@@ -9,7 +9,9 @@ Record the result in `docs/qa/2026-05-02-iphone-pwa-real-device.md` so the evide
 - iPhone is connected to the VPN that routes the home network.
 - Open `https://192.168.178.46:5175`.
 - Confirm there is no unexpected certificate warning for the address in use.
-- Confirm login succeeds and navigation stays on the local server origin.
+- If an auth gate is shown, confirm login succeeds and navigation stays on the local server origin. The current local Pulse surface may not show a login step.
+
+If Safari reports "Connection is not private", record it as certificate trust friction. Continue only when the certificate is for `192.168.178.46`; for a warning-free PWA flow, install and trust only the server's `frontend/certs/rootCA.pem` on the iPhone. Never move `rootCA-key.pem` or any `*-key.pem` file to the phone.
 
 ## PWA
 
