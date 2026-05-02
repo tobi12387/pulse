@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Settings-Push-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt Push-Benachrichtigungen, Push-Geräteliste, Browser-Permission-Flow und PWA-Readiness nach `frontend/src/features/settings/push/push-components.tsx`.
+- **Why:** Push/PWA ist ein eigenstaendiger Settings-Cluster mit Browser-APIs, Server-Push-Settings und iPhone/VPN-Readiness. `Settings.tsx` bleibt dadurch naeher an der Gruppen-Orchestrierung, waehrend geraetebezogene Logik isoliert test- und reviewbar wird.
+- **Alternatives:** Push und PWA in zwei Module trennen (mehr Imports fuer zusammenhaengende Geraete-UX); Push im Settings-Monolith lassen (Phase 5 blockiert); generische Settings-Primitive zuerst extrahieren (groesserer Vorab-Refactor ohne Nutzerwert).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Data-Recovery-UI bildet ein eigenes Feature-Modul
 
 - **Decision:** Pulse verschiebt Schlaf-, Tagesmetrik-, Recovery-Depth-, Gewichts- und Body-Composition-UI nach `frontend/src/features/data/recovery/recovery-components.tsx`.
