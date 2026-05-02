@@ -32,7 +32,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseSeasonStrategyResponse, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseSeasonStrategyResponse, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -78,6 +78,7 @@ import {
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './services/workout-reconciliation.js';
 import { profileWithProvenance, syncProfileFromGarmin } from './services/profile-sync.js';
 import { buildGarminDataQuality } from './services/garmin-data-quality.js';
+import { buildGarminSignalUsefulness } from './services/garmin-signal-usefulness.js';
 import { readGarminCircuitState } from '../jobs/garmin-sync.job.js';
 import {
   assignEquipmentToActivity,
@@ -1616,6 +1617,99 @@ export default async function pulsePlugin(app: FastifyInstance) {
       weightLogs: weightRows,
       plannedWorkouts: plannedRows,
       circuit,
+    });
+  });
+
+  app.get('/garmin/signal-usefulness', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseGarminSignalUsefulnessResponse | unknown> => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(366).optional().default(30),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const to = today;
+    const from = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), -(parsed.data.days - 1)));
+
+    const [dailyRows, sleepRows, activityRows] = await Promise.all([
+      db.select({
+        date: pulseDailyMetrics.date,
+        hrvRmssd: pulseDailyMetrics.hrvRmssd,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        bodyBatteryCharged: pulseDailyMetrics.bodyBatteryCharged,
+        bodyBatteryDrained: pulseDailyMetrics.bodyBatteryDrained,
+        bodyBatteryAtWake: pulseDailyMetrics.bodyBatteryAtWake,
+        highStressSec: pulseDailyMetrics.highStressSec,
+        mediumStressSec: pulseDailyMetrics.mediumStressSec,
+        lowStressSec: pulseDailyMetrics.lowStressSec,
+        avgWakingRespiration: pulseDailyMetrics.avgWakingRespiration,
+        latestSpo2: pulseDailyMetrics.latestSpo2,
+        syncedAt: pulseDailyMetrics.syncedAt,
+      }).from(pulseDailyMetrics)
+        .where(and(
+          eq(pulseDailyMetrics.userId, userId),
+          eq(pulseDailyMetrics.source, 'garmin'),
+          gte(pulseDailyMetrics.date, from),
+          lte(pulseDailyMetrics.date, to),
+        ))
+        .orderBy(desc(pulseDailyMetrics.date)),
+      db.select({
+        date: pulseSleepSessions.date,
+        sleepNeedMin: pulseSleepSessions.sleepNeedMin,
+        sleepActualMin: pulseSleepSessions.sleepActualMin,
+        avgRespiration: pulseSleepSessions.avgRespiration,
+        bodyBatteryChange: pulseSleepSessions.bodyBatteryChange,
+      }).from(pulseSleepSessions)
+        .where(and(
+          eq(pulseSleepSessions.userId, userId),
+          eq(pulseSleepSessions.source, 'garmin'),
+          gte(pulseSleepSessions.date, from),
+          lte(pulseSleepSessions.date, to),
+        ))
+        .orderBy(desc(pulseSleepSessions.date)),
+      db.select({
+        startTime: pulseActivities.startTime,
+        weather: pulseActivities.weather,
+        garminDetailData: pulseActivities.garminDetailData,
+        garminLaps: pulseActivities.garminLaps,
+        garminHrZones: pulseActivities.garminHrZones,
+      }).from(pulseActivities)
+        .where(and(
+          eq(pulseActivities.userId, userId),
+          eq(pulseActivities.source, 'garmin'),
+          gte(pulseActivities.startTime, new Date(`${from}T00:00:00.000Z`)),
+          lte(pulseActivities.startTime, new Date(`${to}T23:59:59.999Z`)),
+        ))
+        .orderBy(desc(pulseActivities.startTime)),
+    ]);
+
+    return buildGarminSignalUsefulness({
+      range: { from, to, days: dateRange(from, to).length },
+      dailyMetrics: dailyRows.map(row => ({
+        date: row.date,
+        hrvRmssd: row.hrvRmssd,
+        sleepHours: row.sleepHours,
+        bodyBatteryMax: row.bodyBatteryMax,
+        bodyBatteryCharged: row.bodyBatteryCharged,
+        bodyBatteryDrained: row.bodyBatteryDrained,
+        bodyBatteryAtWake: row.bodyBatteryAtWake,
+        highStressSec: row.highStressSec,
+        mediumStressSec: row.mediumStressSec,
+        lowStressSec: row.lowStressSec,
+        avgWakingRespiration: row.avgWakingRespiration,
+        latestSpo2: row.latestSpo2,
+        syncedAt: row.syncedAt?.toISOString() ?? null,
+      })),
+      sleepSessions: sleepRows,
+      activities: activityRows.map(row => ({
+        date: toIsoDate(row.startTime),
+        hasWeather: row.weather != null,
+        hasHrZones: Array.isArray(row.garminHrZones) && row.garminHrZones.length > 0,
+        hasLaps: Array.isArray(row.garminLaps) && row.garminLaps.length > 0,
+        hasDetail: row.garminDetailData != null,
+      })),
+      decisionEvidenceSignals: ['sleep_hrv', 'training_load_execution'],
     });
   });
 

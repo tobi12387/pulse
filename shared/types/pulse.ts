@@ -705,6 +705,44 @@ export type PulseGarminCoverageDomain =
 
 export type PulseGarminCoverageStatus = 'fresh' | 'partial' | 'missing' | 'stale' | 'blocked';
 
+export type PulseGarminSignalUsefulnessStatus = 'used' | 'underused' | 'missing_or_sparse';
+
+export type PulseGarminSignalUseCase =
+  | 'daily_decision'
+  | 'plan_generation'
+  | 'recovery_note'
+  | 'race_readiness'
+  | 'mental_load'
+  | 'data_quality';
+
+export interface PulseGarminSignalUsefulnessItem {
+  signalKey: string;
+  label: string;
+  status: PulseGarminSignalUsefulnessStatus;
+  coverageDays: number;
+  sampleDays: string[];
+  currentConsumers: string[];
+  recommendedNextConsumer: PulseGarminSignalUseCase | null;
+  whyItMatters: string;
+  evidence: string[];
+}
+
+export interface PulseGarminSignalUsefulnessResponse {
+  range: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  summary: {
+    used: number;
+    underused: number;
+    missingOrSparse: number;
+  };
+  items: PulseGarminSignalUsefulnessItem[];
+  topUnderused: PulseGarminSignalUsefulnessItem[];
+  recommendedUseCases: PulseGarminSignalUseCase[];
+}
+
 export interface PulseGarminCoverageRepairAction {
   type: 'backfill' | 'calendar_sync' | 'plan';
   label: string;

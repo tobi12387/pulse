@@ -5,7 +5,7 @@ import type {
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
-  PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse,
+  PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse,
   PulsePlanTrace, PulsePushSettings, PulsePushTopics, PulseRaceCommandResponse, PulseSeasonStrategyResponse, RaceContext,
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
@@ -316,6 +316,8 @@ export const pulseApi = {
     },
     domainCoverage: (days = 30): Promise<PulseGarminCoverageResponse> =>
       request(`/garmin/coverage?days=${encodeURIComponent(String(days))}`),
+    signalUsefulness: (days = 30): Promise<PulseGarminSignalUsefulnessResponse> =>
+      request(`/garmin/signal-usefulness?days=${encodeURIComponent(String(days))}`),
     backfill: (data: PulseGarminBackfillRequest): Promise<PulseGarminBackfillResponse> =>
       request('/garmin/backfill', { method: 'POST', body: JSON.stringify(data) }),
     sync: (): Promise<{ status: string; days?: number; dates?: string[]; activities?: number }> =>
