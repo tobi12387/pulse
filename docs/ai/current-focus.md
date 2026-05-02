@@ -59,13 +59,15 @@ Keep this file short. Update it whenever the active work queue changes.
 53. Backend Activity Route Extraction was merged and deployed via PR #134.
 54. Backend Insight Route Extraction was merged and deployed via PR #135.
 55. Garmin Sync Boundary was merged and deployed via PR #136.
-56. Frontend Plan Utils Split is active on `codex/frontend-plan-utils`.
+56. Frontend Plan Utils Split was merged and deployed via PR #137.
+57. Frontend Plan Training Components Split is active on `codex/frontend-plan-training-components`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-plan-utils` for moving pure Plan date/alternative helpers into `frontend/src/features/plan/plan-utils.ts`.
+- Active branch: `codex/frontend-plan-training-components` for moving Week Strip and Workout Row UI into `frontend/src/features/plan/training/`.
 - Recent completed branches:
+- `codex/frontend-plan-utils`: merged and deployed via PR #137.
 - `codex/garmin-sync-boundary`: merged and deployed via PR #136.
 - `codex/pulse-insight-routes`: merged and deployed via PR #135.
 - `codex/pulse-activity-routes`: merged and deployed via PR #134.

@@ -1,6 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'https://127.0.0.1:5173';
+const certDir = path.resolve(process.cwd(), 'frontend/certs');
+const hasLocalHttps =
+  fs.existsSync(path.join(certDir, '192.168.178.46+2-key.pem')) &&
+  fs.existsSync(path.join(certDir, '192.168.178.46+2.pem'));
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `${hasLocalHttps ? 'https' : 'http'}://127.0.0.1:5173`;
 
 export default defineConfig({
   testDir: './frontend/e2e',

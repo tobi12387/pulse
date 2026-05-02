@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-02 — Playwright folgt optionalem lokalen HTTPS
+
+- **Decision:** Pulse bestimmt die lokale Playwright-Default-URL aus dem Vorhandensein der ungetrackten Vite-Zertifikate: mit Certs `https://127.0.0.1:5173`, ohne Certs `http://127.0.0.1:5173`. `PLAYWRIGHT_BASE_URL` bleibt der explizite Override.
+- **Why:** Seit lokale TLS-Dateien nicht mehr in Git liegen, startet Vite in CI ohne Certs per HTTP. Ein fester HTTPS-Default laesst Browser-Smoke-Tests auf den falschen Webserver-Healthcheck warten und erzeugt CI-Timeouts, obwohl Build und Backend-Tests gruen sind.
+- **Alternatives:** Zertifikate wieder in CI/Git bereitstellen (Secrets-/Runtime-State-Verstoss); Playwright immer auf HTTP setzen (schwaecht lokale LAN-HTTPS-Pruefung); CI-YAML separat mit Override pflegen (zusaetzliche Drift zur Vite-Config).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-02 — Plan-Training-UI bekommt eigene Feature-Komponenten
+
+- **Decision:** Pulse verschiebt Week Strip, Workout Row, Execution Badge und Trainingslabels aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/training/training-components.tsx`.
+- **Why:** `Plan.tsx` bleibt Route-Orchestrierung und kann Training-Daten, Modals und Tab-Zustand weiter zusammenhalten, waehrend die wiederverwendbare Trainingslisten-UI fachlich in der Plan-Feature-Grenze lebt. Der Slice aendert keine API-Vertraege, Mutation-Flows oder sichtbares Verhalten.
+- **Alternatives:** Training-UI im Page-Monolith lassen (Phase 4 bleibt halb erledigt); direkt Strategie- und Goal-Karten mitverschieben (zu grosser PR); Komponenten in `components/` ablegen (zu domain-spezifisch fuer die globale UI-Schicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Plan-Seite trennt reine Plan-Utilities von UI
 
 - **Decision:** Pulse verschiebt reine Datums-, Plan-Alternativen- und Execution-Status-Helfer aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/plan-utils.ts`.
