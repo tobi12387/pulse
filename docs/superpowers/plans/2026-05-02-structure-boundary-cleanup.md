@@ -77,7 +77,7 @@
 - [x] Create `frontend/src/features/data/recovery/` for sleep, metrics and body composition UI.
 - [x] Create `frontend/src/features/settings/push/` for PWA device and push notification cards.
 - [x] Create `frontend/src/features/settings/profile/` for athlete profile and Garmin profile sync UI.
-- [ ] Create `frontend/src/features/settings/coach/` for coach preferences.
+- [x] Create `frontend/src/features/settings/coach/` for coach preferences.
 - [ ] Create `frontend/src/features/settings/health/` for health-state controls.
 - [ ] Keep `frontend/src/pages/Data.tsx` and `frontend/src/pages/Settings.tsx` as route orchestration.
 - [ ] Run `npm run build -w frontend`.

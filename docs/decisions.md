@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Settings-Coach-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt Coach-Praeferenzen, Praeferenzformular, Wochentagsauswahl und Kommunikationsstil-Anzeige nach `frontend/src/features/settings/coach/coach-components.tsx`.
+- **Why:** Coach-Praeferenzen steuern Plan- und Coach-Verhalten direkt und haben eigene Query-/Mutation-Hooks. Die Settings-Route bleibt dadurch auf Gruppenstruktur, Garmin-Verbindung und den noch offenen Health-State-Cluster fokussiert.
+- **Alternatives:** Coach-Praeferenzen im Settings-Monolith lassen (Phase 5 bleibt unvollstaendig); Coach- und Health-State gemeinsam verschieben (groesserer PR mit getrennten Fachgrenzen); generische Settings-Primitive vorher extrahieren (zusaetzlicher Shared-UI-Slice ohne unmittelbaren Boundary-Abschluss).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Settings-Profil-UI bildet ein eigenes Feature-Modul
 
 - **Decision:** Pulse verschiebt Athletenprofil, Profil-Edit-Form, Garmin-Profil-Sync und Profilwert-Provenienz nach `frontend/src/features/settings/profile/profile-components.tsx`.
