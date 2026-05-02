@@ -493,6 +493,65 @@ function CoverageCell({ domain }: { domain: PulseDataCoverageDomain }) {
   );
 }
 
+function CoverageDomainItem({
+  label,
+  domain,
+  pillChildren,
+  cause,
+}: {
+  label: string;
+  domain: PulseDataCoverageDomain;
+  pillChildren?: ReactNode;
+  cause?: string;
+}) {
+  const diagnosis = coverageDiagnosis(domain);
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '9px 10px', background: 'var(--surface-2)', minWidth: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {label}
+        </span>
+        <CoveragePill status={domain.status}>{pillChildren}</CoveragePill>
+      </div>
+      <div style={{ display: 'grid', gap: 3, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+        <span>Status: {diagnosis.status}</span>
+        <span>Ursache: {cause ?? diagnosis.cause}</span>
+        <span>Aktion: {diagnosis.action}</span>
+      </div>
+    </div>
+  );
+}
+
+function CoverageDayCard({ day }: { day: PulseDataCoverageDay }) {
+  const activityDiagnosis = coverageDiagnosis(day.activities);
+  const activityCause = day.activities.count > 0 && day.activities.missingWeatherCount > 0
+    ? `${day.activities.missingWeatherCount} ohne Wetter`
+    : activityDiagnosis.cause;
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{day.date}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Tagesdaten
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+        <CoverageDomainItem label="Metriken" domain={day.dailyMetrics} />
+        <CoverageDomainItem label="Schlaf" domain={day.sleep} />
+        <CoverageDomainItem
+          label="Aktivität"
+          domain={day.activities}
+          pillChildren={day.activities.count > 0 ? `${day.activities.count}x` : undefined}
+          cause={activityCause}
+        />
+        <CoverageDomainItem label="Gewicht" domain={day.weight} />
+      </div>
+    </div>
+  );
+}
+
 export function CoverageTab() {
   const currentYear = new Date().getFullYear();
   const [range, setRange] = useState<'30' | '90' | 'year'>('30');
@@ -663,7 +722,7 @@ export function CoverageTab() {
         {backfillResult && <BackfillResult result={backfillResult} />}
       </div>
 
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+      <div className="card coverage-desktop-table" style={{ padding: 0, overflowX: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px 8px' }}>
           <span className="label-mono">Domain-Abdeckung</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
@@ -703,6 +762,18 @@ export function CoverageTab() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="card coverage-mobile-list" style={{ padding: 0, flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px 8px' }}>
+          <span className="label-mono">Domain-Abdeckung</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+            {shownDays.length} Tage
+          </span>
+        </div>
+        {shownDays.map(day => (
+          <CoverageDayCard key={day.date} day={day} />
+        ))}
       </div>
 
       {!profileReady && (

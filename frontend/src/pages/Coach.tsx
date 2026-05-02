@@ -736,10 +736,14 @@ export default function Coach() {
           })}
           disabled={clearHistory.isPending}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
+            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            cursor: clearHistory.isPending ? 'default' : 'pointer',
+            minHeight: 40,
+            padding: '7px 12px',
             fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: 'var(--text-3)',
             alignSelf: 'flex-start',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           Verlauf löschen

@@ -1,5 +1,58 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { mockPulseApi } from './fixtures/pulse-api';
+
+async function expectNoHorizontalOverflow(page: Page, route: string) {
+  await page.goto(route);
+  await page.waitForLoadState('networkidle');
+  const overflow = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return Array.from(document.body.querySelectorAll('*'))
+      .map((node) => {
+        const element = node as HTMLElement;
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        const text = (element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 48);
+        return {
+          tag: element.tagName,
+          text,
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+          display: style.display,
+          visibility: style.visibility,
+        };
+      })
+      .filter(item =>
+        item.display !== 'none' &&
+        item.visibility !== 'hidden' &&
+        item.width > 0 &&
+        item.height > 0 &&
+        (
+          item.left < -1 ||
+          item.right > viewportWidth + 1 ||
+          item.scrollWidth > item.clientWidth + 1
+        )
+      )
+      .slice(0, 8);
+  });
+  expect(overflow, `${route} has horizontal overflow`).toEqual([]);
+}
+
+async function expectTouchTarget(page: Page, name: string | RegExp, minHeight = 40) {
+  await expectTouchTargetAt(page, name, 0, minHeight);
+}
+
+async function expectTouchTargetAt(page: Page, name: string | RegExp, index: number, minHeight = 40) {
+  const target = page.getByRole('button', { name }).nth(index);
+  await expect(target).toBeVisible();
+  const box = await target.boundingBox();
+  expect(box, `Missing touch target ${String(name)} at index ${index}`).not.toBeNull();
+  expect(box!.height, `${String(name)} at index ${index} should be at least ${minHeight}px tall`).toBeGreaterThanOrEqual(minHeight);
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -1000,7 +1053,8 @@ test('Data coverage explains status, cause and action before backfill', async ({
   await expect(page.getByText('Ursache', { exact: true })).toBeVisible();
   await expect(page.getByText('Aktion', { exact: true })).toBeVisible();
   await expect(page.getByText('Profil unvollständig')).toBeVisible();
-  await expect(page.getByText('Backfill möglich.').first()).toBeVisible();
+  const backfillAction = page.getByText('Backfill möglich.');
+  await expect((page.viewportSize()?.width ?? 999) <= 600 ? backfillAction.last() : backfillAction.first()).toBeVisible();
   await expect(page.getByText('Vorschau verändert nichts; Nachladen schreibt Garmin-Daten für den gewählten Monat in Pulse.')).toBeVisible();
 });
 
@@ -1316,4 +1370,80 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   const inputBox = await coachInput.boundingBox();
   expect(inputBox).not.toBeNull();
   expect(inputBox!.y + inputBox!.height).toBeLessThanOrEqual(viewport.height);
+});
+
+test('Mobile routes avoid unintended horizontal overflow', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile containment check');
+
+  await mockPulseApi(page);
+
+  for (const route of ['/', '/coach', '/data', '/plan', '/insights', '/settings']) {
+    await expectNoHorizontalOverflow(page, route);
+  }
+});
+
+test('Mobile repeated controls have reliable touch targets', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile touch target check');
+
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage, primär über Puls steuern.',
+      },
+    ],
+    healthState: {
+      active: [
+        {
+          id: 'health-1',
+          type: 'fatigue',
+          severity: 'mild',
+          bodyPart: null,
+          notes: 'Leichte Müdigkeit',
+          startDate: '2026-05-01',
+          endDate: null,
+        },
+      ],
+      recent: [],
+    },
+  });
+
+  await page.goto('/data');
+  await expectTouchTarget(page, 'Abdeckung');
+  await expectTouchTarget(page, 'Mental');
+  await expectTouchTarget(page, '30T');
+  await expectTouchTarget(page, '90T');
+
+  await page.goto('/plan');
+  await expectTouchTarget(page, 'Training');
+  await expectTouchTarget(page, 'Statistik');
+  await expectTouchTarget(page, 'Vorherige Woche');
+  await expectTouchTarget(page, 'Nächste Woche');
+  await expectTouchTarget(page, 'Sportart ändern');
+
+  await page.goto('/coach');
+  await expectTouchTarget(page, 'Verlauf löschen');
+
+  await page.goto('/insights');
+  await expectTouchTarget(page, '7T');
+  await expectTouchTarget(page, '30T');
+  await expectTouchTarget(page, '90T');
+
+  await page.goto('/settings');
+  await expectTouchTarget(page, 'Von Garmin');
+  await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(2);
+  await expectTouchTargetAt(page, 'Bearbeiten', 0);
+  await expectTouchTargetAt(page, 'Bearbeiten', 1);
+  await expectTouchTarget(page, 'Abdeckung');
+  await expectTouchTarget(page, 'ERLEDIGT');
+  await expectTouchTarget(page, 'LÖSCHEN');
+  await expectTouchTarget(page, 'Push aktivieren');
 });

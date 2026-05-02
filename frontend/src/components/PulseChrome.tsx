@@ -65,7 +65,8 @@ export function SegmentedControl({ items, active, onChange, compact = false }: S
           aria-pressed={active === item.id}
           style={{
             flex: '0 0 auto',
-            padding: compact ? '4px 8px' : '6px 8px',
+            minHeight: 40,
+            padding: compact ? '7px 10px' : '8px 10px',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: 0,
@@ -77,6 +78,9 @@ export function SegmentedControl({ items, active, onChange, compact = false }: S
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             transition: 'background 0.12s, color 0.12s',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           {item.label}
@@ -104,13 +108,17 @@ export function RangeControl({ value, onChange, options }: RangeControlProps) {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            padding: '4px 10px',
+            minHeight: 40,
+            padding: '8px 12px',
             borderRadius: 4,
             letterSpacing: 0,
             background: value === option.value ? 'var(--surface-2)' : 'transparent',
             color: value === option.value ? 'var(--text)' : 'var(--text-3)',
             border: '1px solid ' + (value === option.value ? 'var(--border)' : 'transparent'),
             cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           {option.label}
@@ -175,13 +183,17 @@ export function MiniButton({ children, onClick, disabled, tone = 'neutral', type
         background: 'none',
         border: `1px solid ${tone === 'neutral' ? 'var(--border)' : colorMix(color, 34)}`,
         borderRadius: 'var(--radius)',
-        padding: '3px 10px',
+        minHeight: 40,
+        padding: '7px 12px',
         fontFamily: 'var(--font-mono)',
         fontSize: 9,
         letterSpacing: 0,
         textTransform: 'uppercase',
         color: disabled ? 'var(--text-3)' : color,
         cursor: disabled ? 'default' : 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {children}

@@ -172,8 +172,9 @@ export function CoachPreferencesCard({ setMessage }: {
             onClick={openForm}
             style={{
               background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
+              minHeight: 40, padding: '7px 12px', fontFamily: 'var(--font-mono)', fontSize: 9,
               letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             Bearbeiten
@@ -215,7 +216,7 @@ export function CoachPreferencesCard({ setMessage }: {
                     aria-pressed={active}
                     onClick={() => toggleLongDay(day.value)}
                     style={{
-                      minHeight: 32,
+                      minHeight: 40,
                       borderRadius: 4,
                       border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                       background: active ? 'rgba(125,211,252,0.12)' : 'var(--surface-2)',
@@ -249,7 +250,7 @@ export function CoachPreferencesCard({ setMessage }: {
               onChange={e => setForm(current => current ? { ...current, communicationStyle: e.target.value as PulseCoachCommunicationStyle } : current)}
               style={{
                 background: 'var(--surface-2)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', padding: '7px 8px',
+                borderRadius: 'var(--radius)', minHeight: 40, padding: '7px 8px',
                 fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)',
                 outline: 'none',
               }}
@@ -266,9 +267,10 @@ export function CoachPreferencesCard({ setMessage }: {
               disabled={updatePreferences.isPending}
               style={{
                 flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
-                borderRadius: 'var(--radius)', padding: '8px',
+                borderRadius: 'var(--radius)', minHeight: 40, padding: '8px',
                 fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
                 textTransform: 'uppercase', color: 'var(--accent)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               {updatePreferences.isPending ? 'Speichern…' : 'Coach speichern'}
@@ -278,9 +280,10 @@ export function CoachPreferencesCard({ setMessage }: {
               onClick={() => setForm(null)}
               style={{
                 background: 'none', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', padding: '8px 14px',
+                borderRadius: 'var(--radius)', minHeight: 40, padding: '8px 14px',
                 fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
                 textTransform: 'uppercase', color: 'var(--text-3)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               Abbrechen

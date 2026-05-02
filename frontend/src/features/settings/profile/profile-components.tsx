@@ -149,8 +149,9 @@ export function AthleteProfileCard({ setMessage }: {
               onClick={openProfile}
               style={{
                 background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                padding: '3px 10px', fontFamily: 'var(--font-mono)', fontSize: 9,
+                minHeight: 40, padding: '7px 12px', fontFamily: 'var(--font-mono)', fontSize: 9,
                 letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               Bearbeiten
@@ -179,7 +180,7 @@ export function AthleteProfileCard({ setMessage }: {
                 onChange={e => setProfileForm(f => f ? { ...f, [key]: e.target.value } : f)}
                 style={{
                   width: 80, background: 'var(--surface-2)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)', padding: '5px 8px',
+                  borderRadius: 'var(--radius)', minHeight: 40, padding: '5px 8px',
                   fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)',
                   outline: 'none', textAlign: 'right',
                 }}
@@ -193,7 +194,7 @@ export function AthleteProfileCard({ setMessage }: {
               onChange={e => setProfileForm(f => f ? { ...f, trainingPhase: e.target.value } : f)}
               style={{
                 background: 'var(--surface-2)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', padding: '5px 8px',
+                borderRadius: 'var(--radius)', minHeight: 40, padding: '5px 8px',
                 fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)',
                 outline: 'none',
               }}
@@ -210,9 +211,10 @@ export function AthleteProfileCard({ setMessage }: {
               disabled={updateProfile.isPending}
               style={{
                 flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
-                borderRadius: 'var(--radius)', padding: '8px',
+                borderRadius: 'var(--radius)', minHeight: 40, padding: '8px',
                 fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
                 textTransform: 'uppercase', color: 'var(--accent)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               {updateProfile.isPending ? 'Speichern…' : 'Speichern'}
@@ -222,9 +224,10 @@ export function AthleteProfileCard({ setMessage }: {
               onClick={() => setProfileForm(null)}
               style={{
                 background: 'none', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', padding: '8px 14px',
+                borderRadius: 'var(--radius)', minHeight: 40, padding: '8px 14px',
                 fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
                 textTransform: 'uppercase', color: 'var(--text-3)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               Abbrechen

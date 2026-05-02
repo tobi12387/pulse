@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Mobile UI nutzt responsive Listen und 40px-Touch-Ziele
+
+- **Decision:** Pulse ersetzt die Data-Domainabdeckung auf Mobile durch eine Karten-/Listenansicht und setzt wiederholte mobile Aktionen route-uebergreifend auf mindestens 40px Zielhoehe; Plan-Workout-Zeilen trennen Oeffnen und `Sportart aendern` semantisch in getrennte Buttons.
+- **Why:** iPhone/PWA ist ein echter Nutzungspfad, und der UI/UX-Audit hatte sowohl horizontales Data-Overflow als auch kleine wiederholte Touch-Ziele bestaetigt. Deterministische Playwright-Checks sichern nun alle Haupt-Routen gegen unbeabsichtigten horizontalen Overflow und pruefen die wichtigsten mobilen Aktionsflaechen.
+- **Alternatives:** Die Tabelle per `overflow-x` scrollbar lassen (bleibt im Alltag sperrig); nur `overflow: hidden` setzen (verdeckt Inhalte statt UX zu loesen); einen breiten mobilen Redesign-Slice starten (zu gross fuer den bestaetigten Fehler).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Dependency-Security-Refresh bleibt stabil statt Drizzle-Kit-RC
 
 - **Decision:** Pulse aktualisiert zuerst sicherheitsrelevante und risikoarme stabile Dependencies; `drizzle-kit` bleibt auf dem stabilen `latest` statt auf `1.0.0-rc.1` zu springen, obwohl dadurch ein dev-only `esbuild`-Audit-Hinweis in der Full-Audit-Ansicht verbleibt.

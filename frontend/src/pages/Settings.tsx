@@ -194,9 +194,13 @@ export default function Settings() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.12em',
+                    minHeight: 40,
                     padding: '4px 8px',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   Abdeckung
@@ -242,10 +246,11 @@ export default function Settings() {
             style={{
               width: '100%',
               background: 'var(--surface-2)', border: '1px solid var(--accent)',
-              borderRadius: 'var(--radius)', padding: '10px',
+              borderRadius: 'var(--radius)', minHeight: 40, padding: '10px',
               fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
               textTransform: 'uppercase', color: 'var(--accent)',
               cursor: syncing ? 'default' : 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
@@ -256,10 +261,11 @@ export default function Settings() {
             style={{
               width: '100%',
               background: 'var(--surface-2)', border: '1px solid var(--text-3)',
-              borderRadius: 'var(--radius)', padding: '10px',
+              borderRadius: 'var(--radius)', minHeight: 40, padding: '10px',
               fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
               textTransform: 'uppercase', color: 'var(--text-2)',
               cursor: syncingCalendar ? 'default' : 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             {syncingCalendar ? '● Kalender sync…' : 'Kalender synchronisieren'}
