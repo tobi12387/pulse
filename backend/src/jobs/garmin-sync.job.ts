@@ -13,11 +13,26 @@ import { pulseDailyMetrics } from '../db/pulse-schema.js';
 import { invalidateUser } from '../pulse/lib/pulse-cache.js';
 import { evaluateAndPersistRiskSignals } from '../pulse/services/risk-engine.js';
 import { syncProfileFromGarmin } from '../pulse/services/profile-sync.js';
+import type { PulseGarminCoverageCircuitState } from '@coaching-os/shared/pulse';
 
 export const CIRCUIT_FAILURES_KEY = 'garmin:circuit:failures';
 export const CIRCUIT_OPEN_KEY     = 'garmin:circuit:open';
 
 const QUEUE_NAME = 'garmin-sync';
+
+export async function readGarminCircuitState(redisClient: Redis): Promise<PulseGarminCoverageCircuitState> {
+  const [open, failuresRaw] = await Promise.all([
+    redisClient.exists(CIRCUIT_OPEN_KEY),
+    redisClient.get(CIRCUIT_FAILURES_KEY),
+  ]);
+  const failures = failuresRaw == null ? 0 : Number(failuresRaw);
+
+  return {
+    status: open ? 'open' : 'ok',
+    failures: Number.isFinite(failures) ? failures : 0,
+    reason: open ? 'Garmin-Sync ist momentan durch den Circuit Breaker blockiert.' : null,
+  };
+}
 
 export async function runWithCircuitBreaker(
   redisClient: Redis,

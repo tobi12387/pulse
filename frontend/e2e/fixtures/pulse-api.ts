@@ -7,6 +7,7 @@ type MockPulseApiOptions = {
   insightErrorKind?: 'server' | 'provider' | 'data_missing';
   home?: Partial<typeof home>;
   coverage?: unknown;
+  garminCoverage?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
   actions?: unknown[];
@@ -69,6 +70,107 @@ const coverageDay = {
     missingFields: [],
   },
 };
+
+function garminCoverageResponse(days = 30) {
+  return {
+    range: { from: today, to: today, days },
+    generatedAt: `${today}T08:00:00.000Z`,
+    circuit: { status: 'ok', failures: 0, reason: null },
+    domains: [
+      {
+        domain: 'activities',
+        label: 'Aktivitäten',
+        status: 'fresh',
+        reason: 'Aktivitäten sind frisch synchronisiert.',
+        lastFreshAt: `${today}T06:00:00.000Z`,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['1 Aktivitäten', '0 ohne Wetter'],
+      },
+      {
+        domain: 'daily_metrics',
+        label: 'Tagesmetriken',
+        status: 'fresh',
+        reason: 'Tagesmetriken sind aktuell und vollständig.',
+        lastFreshAt: `${today}T05:00:00.000Z`,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['30 Tage mit Tagesmetriken'],
+      },
+      {
+        domain: 'sleep',
+        label: 'Schlaf',
+        status: 'fresh',
+        reason: 'Schlafdaten sind aktuell.',
+        lastFreshAt: `${today}T00:00:00.000Z`,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['30 Tage mit Schlaf'],
+      },
+      {
+        domain: 'hrv',
+        label: 'HRV',
+        status: 'fresh',
+        reason: 'HRV ist aktuell nutzbar.',
+        lastFreshAt: `${today}T05:00:00.000Z`,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['30 Tage mit HRV'],
+      },
+      {
+        domain: 'body_composition',
+        label: 'Körperdaten',
+        status: 'fresh',
+        reason: 'Körperzusammensetzung ist aktuell.',
+        lastFreshAt: `${today}T00:00:00.000Z`,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['4 Gewichtseinträge'],
+      },
+      {
+        domain: 'planned_workouts',
+        label: 'Workout-Vorlagen',
+        status: 'fresh',
+        reason: 'Alle zukünftigen Workouts haben Garmin-Vorlagen.',
+        lastFreshAt: null,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['2 zukünftige Workouts'],
+      },
+      {
+        domain: 'calendar',
+        label: 'Garmin-Kalender',
+        status: 'fresh',
+        reason: 'Alle zukünftigen Workouts sind im Garmin-Kalender geplant.',
+        lastFreshAt: null,
+        lastFreshDate: today,
+        missingDays: 0,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['2 zukünftige Workouts'],
+      },
+    ],
+  };
+}
 
 const readiness = {
   date: today,
@@ -281,6 +383,9 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       days: [coverageDay],
     };
   }
+  if (pathname === '/api/pulse/garmin/coverage') {
+    return garminCoverageResponse(Number(searchParams.get('days') ?? 30));
+  }
   if (pathname === '/api/pulse/coach/history') return { messages: [] };
   if (pathname === '/api/pulse/coach/preferences') {
     return {
@@ -463,6 +568,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
+    if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/backfill' && request.method() === 'POST' && options.backfillResult) {
       const body = request.postDataJSON();
       const result = typeof options.backfillResult === 'function' ? options.backfillResult(body) : options.backfillResult;

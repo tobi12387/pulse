@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status 2026-05-02:** Implemented. The endpoint is read-only, Garmin-source filtered and backed by the existing bounded backfill/calendar-sync actions. Local `plugin.test.ts` was blocked by missing Mac-local Postgres/Redis services, while pure backend tests, typecheck and focused browser E2E passed.
+
 **Goal:** Settings and Data should clearly show which Garmin data domains are fresh, missing, partial or repairable.
 
 **Architecture:** Extend the existing coverage/backfill work into a single read-only domain-quality contract from Pulse tables, sync metadata, circuit-breaker state and bounded backfill reasons. Repair actions must be bounded by domain/date and use existing Garmin sync routes; no broad live probing or credential changes by default. Rate limits, provider errors and local service issues should be represented as states instead of silent failures.
@@ -18,7 +20,7 @@
 | Create | `backend/src/pulse/services/garmin-data-quality.test.ts` | Pure/domain tests for freshness and missing reasons |
 | Modify | `shared/types/pulse.ts` | Coverage response and domain status types |
 | Modify | `backend/src/pulse/plugin.ts` | Extend existing coverage/backfill endpoints or add `/api/pulse/garmin/coverage` if a clearer contract is needed |
-| Modify | `backend/src/routes/garmin.ts` | Preserve sync error domain details for coverage |
+| Review | `backend/src/routes/garmin.ts` | Existing `syncGarminDay` domain errors already feed bounded backfill; no code change required |
 | Modify | `backend/src/jobs/garmin-sync.job.ts` | Surface circuit-breaker/rate-limit state for coverage |
 | Modify | `frontend/src/pages/Settings.tsx` | Show sync quality by Garmin domain and safe repair actions |
 | Modify | `frontend/src/pages/Data.tsx` | Show data gaps near affected data sections |
@@ -26,7 +28,7 @@
 
 ## Task 1: Coverage Domain Model
 
-- [ ] **Step 1: Write failing pure tests**
+- [x] **Step 1: Write failing pure tests**
 
   Add `backend/src/pulse/services/garmin-data-quality.test.ts` for:
   - activities fresh within 24h;
@@ -36,7 +38,7 @@
   - provider/rate-limit/circuit-breaker error shown as `blocked`;
   - backfill candidate days are domain-specific, not always "all domains".
 
-- [ ] **Step 2: Implement coverage service types**
+- [x] **Step 2: Implement coverage service types**
 
   Use domains:
 
@@ -55,7 +57,7 @@
 
   The pure function should accept table-derived counts/timestamps and return one row per domain.
 
-- [ ] **Step 3: Verify model**
+- [x] **Step 3: Verify model**
 
   Run:
 
@@ -66,19 +68,19 @@
 
 ## Task 2: API And Sync Error Surface
 
-- [ ] **Step 1: Add shared response types**
+- [x] **Step 1: Add shared response types**
 
   Add `PulseGarminCoverageDomainState` and `PulseGarminCoverageResponse` to `shared/types/pulse.ts`.
 
-- [ ] **Step 2: Add or extend authenticated coverage endpoint**
+- [x] **Step 2: Add or extend authenticated coverage endpoint**
 
   In `backend/src/pulse/plugin.ts`, prefer extending existing data coverage/backfill contracts when possible. Add `GET /api/pulse/garmin/coverage?days=30` only if it reduces frontend ambiguity. Query existing Pulse tables only; do not call Garmin live from a GET.
 
-- [ ] **Step 3: Preserve bounded sync and circuit errors**
+- [x] **Step 3: Preserve bounded sync and circuit errors**
 
   If `syncGarminDay` already returns domain errors, map them into coverage states. If not, minimally normalize its result so the coverage endpoint can show `blocked` with a safe message. Include Redis circuit-breaker state from `garmin-sync.job.ts` when available.
 
-- [ ] **Step 4: Verify backend**
+- [x] **Step 4: Verify backend**
 
   Run:
 
@@ -89,11 +91,11 @@
 
 ## Task 3: Settings/Data UI
 
-- [ ] **Step 1: Add client hook**
+- [x] **Step 1: Add client hook**
 
   Add `pulseApi.garmin.coverage()` and `useGarminCoverage()` using the existing client/hook pattern.
 
-- [ ] **Step 2: Render domain cards in Settings**
+- [x] **Step 2: Render domain cards in Settings**
 
   In `frontend/src/pages/Settings.tsx`, add a compact Garmin coverage section:
   - domain label;
@@ -102,15 +104,15 @@
   - missing reason;
   - safe repair CTA only for bounded domains.
 
-- [ ] **Step 3: Add Data-page gap hints**
+- [x] **Step 3: Add Data-page gap hints**
 
   In `frontend/src/pages/Data.tsx`, show relevant missing/partial state near Sleep, Mental and body composition areas without duplicating the full Settings panel.
 
-- [ ] **Step 4: Add E2E coverage**
+- [x] **Step 4: Add E2E coverage**
 
   Extend fixtures and add browser tests for fresh, stale and blocked domain states.
 
-- [ ] **Step 5: Verify frontend**
+- [x] **Step 5: Verify frontend**
 
   Run:
 

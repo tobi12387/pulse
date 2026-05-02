@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Garmin-Datenqualität ist ein read-only Domain-Contract
+
+- **Decision:** Pulse fuehrt `GET /api/pulse/garmin/coverage` als read-only Domainqualitaet ein. Der Contract liest nur Pulse-Tabellen mit Garmin-Quelle plus Redis-Circuit-State, zeigt `fresh | partial | missing | stale | blocked` pro Garmin-Domain und verweist Reparaturen auf bestehende bounded Backfill- oder Kalender-Sync-Flows.
+- **Why:** Tobi soll in Settings/Data sehen, welchen Garmin-Daten er trauen kann, ohne Logs zu lesen oder unbounded Live-Probes auszulösen. Garmin-Ausfaelle, Rate-Limits und lokale Serviceprobleme muessen als sichtbare Zustände erscheinen, nicht als stilles Weglassen.
+- **Alternatives:** Bestehende `/data-coverage` weiter ueberladen (zu tagezentriert und nicht Garmin-spezifisch); GET direkt gegen Garmin ausfuehren (Rate-Limit-/Credential-Risiko); automatische Reparatur beim Anzeigen starten (nicht auditierbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Mental Fitness Companion ist sichtbare Tages-Guidance
 
 - **Decision:** Pulse berechnet gefuehrte Daily-Check-in-Fragen deterministisch im `PulseContext` und stellt sie ueber `GET /api/pulse/checkin/guidance` bereit. Mentale Support-Aktionen laufen als `source: mental` durch das bestehende Next-Best-Action- und Closure-Modell; es gibt keine neue versteckte Mental-Health-Memory-Tabelle.
