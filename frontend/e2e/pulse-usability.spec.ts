@@ -473,6 +473,120 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await expect(page.getByText('Umfang: 8 h')).toBeVisible();
 });
 
+test('Plan shows race command with readiness evidence', async ({ page }) => {
+  await mockPulseApi(page, {
+    raceCommand: {
+      race: {
+        goalId: 'race-1',
+        title: '70.3 Kraichgau',
+        date: '2026-05-12',
+        daysUntil: 10,
+        phase: 'taper',
+        discipline: 'triathlon_70_3',
+        distanceKm: 113,
+        targetTimeSec: 18_900,
+        priority: 'A',
+        predictedTimeSec: 19_080,
+        predictionConfidence: 'medium',
+        location: 'Kraichgau',
+        notes: 'A-Rennen',
+      },
+      phase: {
+        key: 'taper',
+        label: 'Taper',
+        daysUntil: 10,
+        description: 'Taper: Fitness halten, Müdigkeit abbauen.',
+      },
+      readinessStatus: 'watch',
+      readinessLabel: 'Beobachten',
+      nextKeyWorkout: {
+        id: 'key-1',
+        plannedDate: '2026-05-05',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 75,
+        targetTss: 82,
+        description: 'Race-pace Intervalle',
+        reason: 'Nächster Schlüsselreiz vor dem Rennen.',
+      },
+      recoveryBoundary: {
+        label: 'Taper-Grenze',
+        detail: 'Keine zusätzliche harte Einheit ohne klaren Planbezug.',
+        severity: 'caution',
+      },
+      riskImpact: {
+        status: 'watch',
+        label: 'Beobachten',
+        reasons: ['TSB niedrig'],
+      },
+      evidence: ['CTL 52.4', 'ATL 64.5', 'TSB -12.1', 'Risiken 1', 'Health-States 0'],
+    },
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('Race Command')).toBeVisible();
+  await expect(page.getByText('70.3 Kraichgau')).toBeVisible();
+  await expect(page.getByText('Taper').first()).toBeVisible();
+  await expect(page.getByText('Schlüsselreiz', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Z4 · 75 min · TSS 82/)).toBeVisible();
+  await expect(page.getByText('Taper-Grenze')).toBeVisible();
+  await expect(page.getByText('CTL 52.4')).toBeVisible();
+  await expect(page.getByText('TSB -12.1')).toBeVisible();
+});
+
+test('Plan preserves race goal metadata when editing', async ({ page }) => {
+  let updateBody: Record<string, unknown> | null = null;
+  await mockPulseApi(page, {
+    goals: [
+      {
+        id: 'goal-race-1',
+        userId: 'user-1',
+        title: '70.3 Kraichgau',
+        description: 'Aero-Setup testen',
+        targetDate: '2026-05-12',
+        status: 'active',
+        progress: 0.4,
+        metrics: {},
+        category: 'race',
+        raceDiscipline: 'triathlon_70_3',
+        raceDistanceKm: 113,
+        raceTargetTimeSec: 18_900,
+        racePriority: 'B',
+        raceLocation: 'Kraichgau',
+        raceNotes: 'Aero-Setup testen',
+        createdAt: '2026-05-01T08:00:00.000Z',
+        updatedAt: '2026-05-01T08:00:00.000Z',
+      },
+    ],
+    onGoalUpdate: (_id, body) => {
+      updateBody = body as Record<string, unknown>;
+    },
+  });
+
+  await page.goto('/plan');
+  await page.getByRole('button', { name: 'Ziele' }).click();
+  await page.getByRole('button', { name: 'Bearbeiten' }).click();
+
+  await expect(page.locator('select').first()).toHaveValue('half');
+  await expect(page.locator('input[placeholder="5:15:00 oder 45:00"]')).toHaveValue('5:15:00');
+  await expect(page.locator('input[placeholder="z.B. Frankfurt am Main"]')).toHaveValue('Kraichgau');
+  await expect(page.locator('input[placeholder="Logistik, Pacing-Plan…"]')).toHaveValue('Aero-Setup testen');
+
+  await page.getByRole('button', { name: 'Speichern' }).click();
+
+  await expect.poll(() => updateBody).not.toBeNull();
+  expect(updateBody).toMatchObject({
+    category: 'race',
+    raceDiscipline: 'triathlon_70_3',
+    raceDistanceKm: 113,
+    raceTargetTimeSec: 18_900,
+    racePriority: 'B',
+    raceLocation: 'Kraichgau',
+    raceNotes: 'Aero-Setup testen',
+  });
+});
+
 test('Plan shows Garmin execution states and match explanations', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

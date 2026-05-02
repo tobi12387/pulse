@@ -32,7 +32,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -56,6 +56,7 @@ import {
 import { buildTrainingExecutionReview } from './services/training-execution-review.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { getActiveRaces } from './services/race-engine.js';
+import { buildRaceCommandSummary } from './services/race-command.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { listMentalThemes } from './services/mental-themes.js';
@@ -3123,6 +3124,67 @@ export default async function pulsePlugin(app: FastifyInstance) {
     const fitnessLoad = await getFitnessLoadCached(userId, today);
     const races = await getActiveRaces(userId, today, { ctl: fitnessLoad.ctl });
     return { races };
+  });
+
+  app.get('/race-command', { onRequest: [app.authenticate] }, async (req): Promise<PulseRaceCommandResponse> => {
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const fitnessLoad = await getFitnessLoadCached(userId, today);
+    const races = await getActiveRaces(userId, today, { ctl: fitnessLoad.ctl });
+    if (races.length === 0) return { command: null };
+
+    const futureTo = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), 180));
+    const [riskSignals, healthStates, plannedWorkouts] = await Promise.all([
+      getActiveRiskSignals(userId),
+      db.select({
+        type: pulseHealthState.type,
+        severity: pulseHealthState.severity,
+        startDate: pulseHealthState.startDate,
+        notes: pulseHealthState.notes,
+      }).from(pulseHealthState)
+        .where(and(
+          eq(pulseHealthState.userId, userId),
+          isNull(pulseHealthState.resolvedAt),
+          lte(pulseHealthState.startDate, today),
+          or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
+        ))
+        .orderBy(desc(pulseHealthState.startDate)),
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        targetTss: pulsePlannedWorkouts.targetTss,
+        description: pulsePlannedWorkouts.description,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.status, 'planned'),
+          gte(pulsePlannedWorkouts.plannedDate, today),
+          lte(pulsePlannedWorkouts.plannedDate, futureTo),
+        ))
+        .orderBy(pulsePlannedWorkouts.plannedDate),
+    ]);
+
+    return {
+      command: buildRaceCommandSummary({
+        today,
+        races,
+        fitnessLoad: {
+          ctl: fitnessLoad.ctl,
+          atl: fitnessLoad.atl,
+          tsb: fitnessLoad.tsb,
+        },
+        plannedWorkouts,
+        healthStates,
+        riskSignals: riskSignals.map(signal => ({
+          severity: signal.severity,
+          title: signal.title,
+          recommendation: signal.recommendation,
+        })),
+      }),
+    };
   });
 
   // ─── Health states (Phase 6) ──────────────────────────────────────────────────

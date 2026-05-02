@@ -30,7 +30,7 @@ Race goals already store discipline, distance, target time, priority, location a
 
 ## Task 1: Pure Race Command Summary
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
   Add `backend/src/pulse/services/race-command.test.ts` covering:
   - A-race in taper phase highlights next key workout and recovery boundary;
@@ -38,7 +38,7 @@ Race goals already store discipline, distance, target time, priority, location a
   - missing race returns `null` summary so Plan stays uncluttered;
   - CTL/TSB values appear as evidence, not static copy.
 
-- [ ] **Step 2: Implement pure summary**
+- [x] **Step 2: Implement pure summary**
 
   Create a pure function `buildRaceCommandSummary(input)` returning:
   - `race`;
@@ -49,7 +49,7 @@ Race goals already store discipline, distance, target time, priority, location a
   - `riskImpact`;
   - `evidence`.
 
-- [ ] **Step 3: Verify pure summary**
+- [x] **Step 3: Verify pure summary**
 
   Run:
 
@@ -60,19 +60,19 @@ Race goals already store discipline, distance, target time, priority, location a
 
 ## Task 2: API Integration
 
-- [ ] **Step 1: Add shared types**
+- [x] **Step 1: Add shared types**
 
   Add `PulseRaceCommandResponse` and related item types to `shared/types/pulse.ts`.
 
-- [ ] **Step 2: Add authenticated endpoint**
+- [x] **Step 2: Add authenticated endpoint**
 
   In `backend/src/pulse/plugin.ts`, add `GET /api/pulse/race-command`. Fetch active race, fitness load, risk signals, health states and current/future planned workouts. Return `{ command: null }` when no active race exists.
 
-- [ ] **Step 3: Preserve race goal editing fields**
+- [x] **Step 3: Preserve race goal editing fields**
 
   Add regression coverage that editing an existing race goal preserves discipline, distance, target time, priority, location and race notes. Fix Plan goal editing only if the test shows drift.
 
-- [ ] **Step 4: Verify route**
+- [x] **Step 4: Verify route**
 
   Run:
 
@@ -83,11 +83,11 @@ Race goals already store discipline, distance, target time, priority, location a
 
 ## Task 3: Plan UI Integration
 
-- [ ] **Step 1: Add API client and hook**
+- [x] **Step 1: Add API client and hook**
 
   Add `pulseApi.raceCommand.get()` and `useRaceCommand()` following existing hooks.
 
-- [ ] **Step 2: Add Plan section**
+- [x] **Step 2: Add Plan section**
 
   In `frontend/src/pages/Plan.tsx`, add a compact "Race Command" band near goals/trace:
   - race title and date;
@@ -96,11 +96,11 @@ Race goals already store discipline, distance, target time, priority, location a
   - recovery boundary;
   - risk impact with evidence.
 
-- [ ] **Step 3: Add E2E coverage**
+- [x] **Step 3: Add E2E coverage**
 
   Extend `frontend/e2e/fixtures/pulse-api.ts` with a race command response and test visibility on desktop/mobile.
 
-- [ ] **Step 4: Verify frontend**
+- [x] **Step 4: Verify frontend**
 
   Run:
 
@@ -116,3 +116,10 @@ Race goals already store discipline, distance, target time, priority, location a
 - Race readiness uses CTL/TSB/recovery evidence.
 - Existing race goal fields remain editable and preserved.
 - No native iOS or public hosting scope is introduced.
+
+## Completion Notes
+
+- Implemented on `codex/goal-race-command`.
+- Verified pure service tests and shared/backend/frontend typecheck locally.
+- Verified Plan/Race/readiness E2E coverage on desktop and mobile Chromium.
+- `src/pulse/plugin.test.ts` could not run locally because Mac-local Postgres `5433` and Redis `6380` were not running; CI remains the authoritative route-suite gate.

@@ -33,14 +33,16 @@ Keep this file short. Update it whenever the active work queue changes.
 27. Local Ops Autopilot was merged and deployed via PR #105.
 28. Adaptive Training Intelligence v2 was merged and deployed via PR #106.
 29. Mental Fitness Companion was merged and deployed via PR #108.
-30. Garmin Data Quality Control Center is implemented on branch `codex/garmin-data-quality` and should be merged/deployed next.
-31. Active implementation wave after Garmin Data Quality: Goal/Race Command Center is the next autonomous implementation candidate unless a production regression appears first.
+30. Garmin Data Quality Control Center was merged and deployed via PR #111.
+31. Goal/Race Command Center is implemented on branch `codex/goal-race-command` and should be merged/deployed next.
+32. Future direction plans for Daily Outcome Learning Loop and Season Strategy Planner are drafted as active follow-up candidates.
 
 ## Current PRs / Branches
 
-- Open PRs: Garmin Data Quality Control Center pending creation from `codex/garmin-data-quality`.
-- Active branch: `codex/garmin-data-quality`.
+- Open PRs: Goal/Race Command Center pending creation from `codex/goal-race-command`.
+- Active branch: `codex/goal-race-command`.
 - Recent completed branches:
+- `codex/garmin-data-quality`: merged and deployed via PR #111.
 - `codex/mental-fitness-companion`: merged and deployed via PR #108.
 - `codex/adaptive-training-v2`: merged and deployed via PR #106.
 - `codex/local-ops-autopilot`: merged and deployed via PR #105.
@@ -118,8 +120,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
-- Merge/deploy Garmin Data Quality Control Center, then continue with Goal/Race Command Center unless a production regression appears first.
-- Future implementation plans remain for Goal/Race Command Center under `docs/superpowers/plans/`.
+- Merge/deploy Goal/Race Command Center unless a production regression appears first.
+- After Goal/Race Command Center, the next autonomous implementation candidates are Daily Outcome Learning Loop and Season Strategy Planner. Mobile Field Reliability remains active but its real-device iPhone/PWA evidence is still a manual gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
 - The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.

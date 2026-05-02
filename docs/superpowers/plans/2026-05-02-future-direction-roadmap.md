@@ -1,6 +1,6 @@
 # Pulse Future Direction Roadmap
 
-> Stand: 2026-05-02 after Adaptive Training v2 and Mental Fitness Companion implementation. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
+> Stand: 2026-05-02 after Garmin Data Quality and Goal/Race Command Center implementation. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
 
 ## Product North Star
 
@@ -19,10 +19,11 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | `2026-05-02-garmin-data-quality-control-center.md` |
-| 3 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | `2026-05-02-goal-race-command-center.md` |
-| 4 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; this remains a real-device manual gate | `2026-05-02-mobile-field-reliability-wave.md` |
+| 2 | Daily Outcome Learning Loop | Close the loop between recommendations, user decisions, Garmin execution and next-day guidance | `2026-05-02-daily-outcome-learning-loop.md` |
+| 3 | Season Strategy Planner | Stop weekly plans from feeling repetitive by making the 8-16 week intent and free-day rationale visible | `2026-05-02-season-strategy-planner.md` |
+| 4 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences should be confirmed before implementation | Planning candidate below |
+| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -32,55 +33,55 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Local Ops Autopilot | `npm run pulse:status` separates Mac-local Docker/Postgres/Redis blockers from server deploy mirror health and documents the local ops flow. | `completed/2026-05-02-local-ops-autopilot.md`, PR #105 |
 | Adaptive Training Intelligence v2 | Plan generation now uses deterministic execution review for matched, missed, replaced, RPE/recovery and deliberate rest-day rationale. | `completed/2026-05-02-adaptive-training-intelligence-v2.md`, PR #106 |
 | Mental Fitness Companion | Guided Daily Check-in questions now come from deterministic PulseContext guidance; mental support actions use the existing closure model. | `completed/2026-05-02-mental-fitness-companion.md`, PR #108 |
+| Garmin Data Quality Control Center | Settings/Data now show Garmin domain quality, freshness, repairability and blocked provider states. | `completed/2026-05-02-garmin-data-quality-control-center.md`, PR #111 |
+| Goal/Race Command Center | Plan now shows race phase, readiness, next key workout, recovery boundary and risk impact from existing evidence. | `completed/2026-05-02-goal-race-command-center.md`, active PR pending |
 
 ## Next Plan Summaries
 
-### Garmin Data Quality Control Center
+### Daily Outcome Learning Loop
 
-Implementation plan: [`2026-05-02-garmin-data-quality-control-center.md`](2026-05-02-garmin-data-quality-control-center.md)
+Implementation plan: [`2026-05-02-daily-outcome-learning-loop.md`](2026-05-02-daily-outcome-learning-loop.md)
 
-**Goal:** Settings/Data should explain whether Pulse has the Garmin data needed for trustworthy decisions.
-
-**Scope:**
-- sync freshness by domain: activities, daily metrics, sleep, HRV, body composition, workouts/calendar;
-- missing-data reasons: provider unavailable, not synced yet, no Garmin value, rate limited, local service issue;
-- explicit repair actions for safe domains;
-- no broad live probing by default.
-
-**Likely files:**
-- `backend/src/routes/garmin.ts`
-- `backend/src/jobs/garmin-sync.job.ts`
-- `backend/src/pulse/plugin.ts`
-- `frontend/src/pages/Settings.tsx`
-- `frontend/src/pages/Data.tsx`
-
-**Acceptance:**
-- Tobi can tell which Garmin domains are fresh without reading logs;
-- repair actions are bounded by date/domain;
-- rate limiting is visible as a state, not a silent failure.
-
-### Goal / Race Command Center
-
-Implementation plan: [`2026-05-02-goal-race-command-center.md`](2026-05-02-goal-race-command-center.md)
-
-**Goal:** Goals, race dates, constraints and readiness should converge into one preparation view.
+**Goal:** Pulse should learn from yesterday's recommendations and real outcomes so daily actions become less repetitive and more useful over time.
 
 **Scope:**
-- race/goal summary with current phase, risk, readiness and next key workout;
-- taper and comeback logic from existing health-state and recovery signals;
-- plan trace highlights for race-impacting changes;
-- no new standalone dashboard unless Plan cannot carry the workflow.
-
-**Likely files:**
-- `frontend/src/pages/Plan.tsx`
-- `backend/src/pulse/services/race-forecast.ts`
-- `backend/src/pulse/services/plan-engine.ts`
-- `backend/src/pulse/services/adapt-engine.ts`
+- deterministic outcome correlation across action decisions, check-ins, planned workouts and matched Garmin activities;
+- Home/Coach visibility for "what Pulse learned";
+- no hidden LLM memory and no new persistence table in v1.
 
 **Acceptance:**
-- the next key workout and the next recovery boundary are obvious;
-- health-state changes explain their race-plan impact;
-- race readiness uses existing CTL/TSB/recovery data, not static copy.
+- completed, dismissed and superseded actions lead to different visible outcomes;
+- Coach and Home can explain why advice changed or stopped repeating;
+- stale repeated advice becomes inspectable instead of mysterious.
+
+### Season Strategy Planner
+
+Implementation plan: [`2026-05-02-season-strategy-planner.md`](2026-05-02-season-strategy-planner.md)
+
+**Goal:** Goals and races should create an 8-16 week strategy that guides weekly plans and intentional free days.
+
+**Scope:**
+- season blocks for build, peak, taper, deload and maintenance;
+- guardrails for max hard days, target session count and free-day rationale;
+- Plan UI "Saisonlinie" plus Plan Trace evidence;
+- weekly plan generation consumes guardrails without overriding health/risk constraints.
+
+**Acceptance:**
+- available days are not automatically filled with training;
+- repeated weekly structures are either intentional and explained or changed by evidence;
+- the user can see why the current week fits the season.
+
+### Fueling & Recovery Companion
+
+**Goal:** Turn planned workouts and completed activities into practical fueling, sleep and recovery support.
+
+**Scope candidate:**
+- pre-workout carbohydrate/hydration guidance from duration, intensity and weather when available;
+- during-workout fueling reminders for long sessions;
+- post-workout recovery note tied to sleep debt, HRV, soreness and nutrition logs;
+- race-day fueling checklist after Season Strategy exists.
+
+**Decision needed before implementation:** dietary constraints, preferred products and how opinionated Pulse should be with calories/carbs/sodium.
 
 ### Native iOS Evaluation Gate
 

@@ -363,6 +363,23 @@ export type RaceDiscipline =
   | 'duathlon' | 'other';
 
 export type RacePriority = 'A' | 'B' | 'C';
+export type RacePhase = 'base' | 'build' | 'peak' | 'taper' | 'race_week' | 'race_day' | 'past';
+
+export interface RaceContext {
+  goalId: string;
+  title: string;
+  date: string;
+  daysUntil: number;
+  phase: RacePhase;
+  discipline: string | null;
+  distanceKm: number | null;
+  targetTimeSec: number | null;
+  priority: RacePriority;
+  predictedTimeSec: number | null;
+  predictionConfidence: 'low' | 'medium' | 'high' | null;
+  location: string | null;
+  notes: string | null;
+}
 
 export interface PulseGoal {
   id: string;
@@ -383,6 +400,48 @@ export interface PulseGoal {
   raceNotes: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type PulseRaceCommandReadinessStatus = 'ready' | 'watch' | 'compromised';
+export type PulseRaceCommandRiskStatus = 'clear' | 'watch' | 'blocked';
+
+export interface PulseRaceCommandWorkout {
+  id: string;
+  plannedDate: string;
+  activityType: string;
+  zone: number;
+  durationMin: number;
+  targetTss: number | null;
+  description: string | null;
+  reason: string;
+}
+
+export interface PulseRaceCommandSummary {
+  race: RaceContext;
+  phase: {
+    key: RacePhase;
+    label: string;
+    daysUntil: number;
+    description: string;
+  };
+  readinessStatus: PulseRaceCommandReadinessStatus;
+  readinessLabel: string;
+  nextKeyWorkout: PulseRaceCommandWorkout | null;
+  recoveryBoundary: {
+    label: string;
+    detail: string;
+    severity: 'normal' | 'caution' | 'hard_stop';
+  };
+  riskImpact: {
+    status: PulseRaceCommandRiskStatus;
+    label: string;
+    reasons: string[];
+  };
+  evidence: string[];
+}
+
+export interface PulseRaceCommandResponse {
+  command: PulseRaceCommandSummary | null;
 }
 
 export interface WeekAvailability {

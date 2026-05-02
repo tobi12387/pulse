@@ -6,7 +6,7 @@ import type {
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
   PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse,
-  PulsePlanTrace, PulsePushSettings, PulsePushTopics,
+  PulsePlanTrace, PulsePushSettings, PulsePushTopics, PulseRaceCommandResponse, RaceContext,
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
@@ -283,6 +283,11 @@ export const pulseApi = {
       request('/races'),
   },
 
+  raceCommand: {
+    get: (): Promise<PulseRaceCommandResponse> =>
+      request('/race-command'),
+  },
+
   review: {
     latest: (): Promise<PulseWeeklyReview | null> =>
       request('/review/latest'),
@@ -519,23 +524,4 @@ export interface ActivityAnalytics {
     avgEf: number | null;
     avgDecouplingPct: number | null;
   } | null;
-}
-
-// ─── Phase 7: Race types ─────────────────────────────────────────────────────
-export type RacePhase = 'base' | 'build' | 'peak' | 'taper' | 'race_week' | 'race_day' | 'past';
-
-export interface RaceContext {
-  goalId: string;
-  title: string;
-  date: string;
-  daysUntil: number;
-  phase: RacePhase;
-  discipline: string | null;
-  distanceKm: number | null;
-  targetTimeSec: number | null;
-  priority: 'A' | 'B' | 'C';
-  predictedTimeSec: number | null;
-  predictionConfidence: 'low' | 'medium' | 'high' | null;
-  location: string | null;
-  notes: string | null;
 }

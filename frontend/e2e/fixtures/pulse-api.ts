@@ -10,12 +10,15 @@ type MockPulseApiOptions = {
   garminCoverage?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  raceCommand?: unknown;
+  goals?: unknown[];
   actions?: unknown[];
   suppressedActions?: unknown[];
   recentDecisions?: unknown[];
   coachPreferences?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
+  onGoalUpdate?: (goalId: string, body: unknown) => void;
   onActionPatch?: (decisionId: string, body: unknown) => void;
   onCoachPreferencesPatch?: (body: unknown) => void;
   pushSettings?: unknown;
@@ -320,6 +323,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
   if (pathname === '/api/pulse/plan/today/proposal') return { proposal: null };
   if (pathname === '/api/pulse/races') return { races: [] };
+  if (pathname === '/api/pulse/race-command') return { command: null };
   if (pathname === '/api/pulse/sleep') {
     return {
       sessions: [
@@ -575,6 +579,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, result);
     }
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
+    if (url.pathname === '/api/pulse/race-command' && 'raceCommand' in options) {
+      return json(route, { command: options.raceCommand ?? null });
+    }
     if (url.pathname.startsWith('/api/pulse/plan/workout/') && request.method() === 'PATCH') {
       const workoutId = url.pathname.split('/').at(-1) ?? 'workout-1';
       const body = request.postDataJSON();
@@ -605,6 +612,33 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname.startsWith('/api/pulse/plan/trace/')) return json(route, { trace: options.planTrace ?? null });
+    if (url.pathname === '/api/pulse/goals' && request.method() === 'GET') {
+      return json(route, { goals: options.goals ?? [] });
+    }
+    if (url.pathname.startsWith('/api/pulse/goals/') && request.method() === 'PATCH') {
+      const goalId = url.pathname.split('/').at(-1) ?? 'goal-1';
+      const body = request.postDataJSON();
+      options.onGoalUpdate?.(goalId, body);
+      return json(route, {
+        id: goalId,
+        userId: 'user-1',
+        title: body.title ?? 'Ziel',
+        description: body.description ?? null,
+        targetDate: body.targetDate ?? null,
+        status: body.status ?? 'active',
+        progress: body.progress ?? 0,
+        metrics: body.metrics ?? {},
+        category: body.category ?? null,
+        raceDiscipline: body.raceDiscipline ?? null,
+        raceDistanceKm: body.raceDistanceKm ?? null,
+        raceTargetTimeSec: body.raceTargetTimeSec ?? null,
+        racePriority: body.racePriority ?? null,
+        raceLocation: body.raceLocation ?? null,
+        raceNotes: body.raceNotes ?? null,
+        createdAt: `${today}T08:00:00.000Z`,
+        updatedAt: `${today}T08:00:00.000Z`,
+      });
+    }
     if (url.pathname === '/api/pulse/push/settings' && options.pushSettings) return json(route, options.pushSettings);
     if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams));
     if (url.pathname === '/api/auth/me') return json(route, { id: 'user-1', name: 'Tobi', email: 'tobi@example.test' });
