@@ -36,6 +36,7 @@
 - [x] Create `backend/src/pulse/routes/checkin-routes.ts` for `/checkin`, `/checkin/voice`, `/checkin/today`, `/checkin/guidance`, `/checkin/history`, `/mental/themes`, and `/mental/load-overlay`.
 - [ ] Create `backend/src/pulse/routes/training-routes.ts` for plan, workout, strength, equipment, race, season, review, nutrition and training analytics endpoints.
   - [x] Move activity equipment assignment, strength sessions, equipment CRUD, retire and defaults into `training-routes.ts`.
+  - [x] Move workout step generation, HR targets and deterministic fallback into `backend/src/pulse/services/workout-steps.ts`.
   - [ ] Move plan/workout, goals/race/season, review, nutrition and training analytics endpoints into follow-up training slices.
 - [ ] Create `backend/src/pulse/routes/garmin-routes.ts` for Pulse-scoped Garmin coverage, backfill, calendar sync, signal usefulness, profile sync and sync endpoints.
 - [ ] Create `backend/src/pulse/routes/push-routes.ts` for push settings, subscribe, topics, quiet hours and test push.
