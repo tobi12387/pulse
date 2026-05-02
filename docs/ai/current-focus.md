@@ -72,13 +72,14 @@ Keep this file short. Update it whenever the active work queue changes.
 66. Frontend Settings Health Components Split was merged and deployed via PR #147.
 67. Shared Pulse Type Split was merged and deployed via PR #148.
 68. Ops And Tooling Cleanup was merged and deployed via PR #149.
-69. Docs Design Handoff Relocation is active on `codex/docs-design-reference-relocation`.
+69. Docs Design Handoff Relocation was merged and deployed via PR #150.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/docs-design-reference-relocation` for moving the historical design handoff reference under `docs/design/handoff/`.
+- Active branch: none; the next broad implementation choices are gated by real-device evidence or Tobi preferences.
 - Recent completed branches:
+- `codex/docs-design-reference-relocation`: merged and deployed via PR #150.
 - `codex/ops-tooling-cleanup`: merged and deployed via PR #149.
 - `codex/shared-pulse-type-split`: merged and deployed via PR #148.
 - `codex/frontend-settings-health-components`: merged and deployed via PR #147.
@@ -195,7 +196,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
-- Next autonomous engineering work can be the staged Structure Boundary Cleanup, starting with `backend/src/pulse/plugin.ts` route extraction.
+- Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
 - No further broad autonomous feature plan is currently ungated; the remaining feature plans need real-device evidence or preference decisions.
 - Mobile Field Reliability still needs real-device iPhone/VPN/PWA evidence from Tobi's device before UI fixes are implemented.
