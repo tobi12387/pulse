@@ -50,7 +50,7 @@
 | `2026-05-02-garmin-data-quality-control-center.md` | Garmin Data Quality — domain freshness, gaps, repairability and blocked provider state | PR #111 |
 | `2026-05-02-goal-race-command-center.md` | Goal/Race Command Center — race phase, readiness, key workout, recovery boundary and evidence in Plan | PR #112 |
 | `2026-05-02-daily-outcome-learning-loop.md` | Daily Outcome Learning Loop — deterministic learning signal from action decisions, check-ins and Garmin execution in Home/Coach | PR #113 |
-| `2026-05-02-season-strategy-planner.md` | Season Strategy Planner — deterministic season line and weekly plan guardrails for target sessions, hard days, deloads and intentional free days | active PR pending |
+| `2026-05-02-season-strategy-planner.md` | Season Strategy Planner — deterministic season line and weekly plan guardrails for target sessions, hard days, deloads and intentional free days | PR #114 |
 
 ## Bekannte veraltete Stellen
 
