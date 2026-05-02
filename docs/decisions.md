@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Web Push bekommt eine eigene Routen-Boundary
+
+- **Decision:** Pulse verschiebt `/push/settings`, `/push/subscribe`, `/push/topics`, `/push/quiet-hours` und `/push/test` nach `backend/src/pulse/routes/push-routes.ts`.
+- **Why:** Push-Settings, Subscription-Upsert/Delete, Topic-Preferences, Quiet Hours und VAPID-Test teilen Push-Konfiguration und Subscription-State, aber keine Activity-, Insight- oder Garmin-Logik. Ein eigener Router reduziert `plugin.ts` weiter und macht die spaetere Push-/PWA-Iteration reviewbarer.
+- **Alternatives:** Push im Plugin lassen (Restmonolith bleibt groesser); Push mit Garmin/Sync mischen (falsche Betriebsgrenze); Push direkt mit Activity/Insights zusammen extrahieren (zu grosser naechster Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Garmin- und Daten-Sync-Routen bilden eine Sync-Boundary
 
 - **Decision:** Pulse verschiebt `/sync/status`, `/data-coverage`, `/garmin/coverage`, `/garmin/signal-usefulness`, `/garmin/backfill`, `/garmin/calendar/sync`, `/garmin/sync-profile` und `/garmin/sync` nach `backend/src/pulse/routes/garmin-routes.ts`.
