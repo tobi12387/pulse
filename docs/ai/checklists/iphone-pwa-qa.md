@@ -41,3 +41,31 @@ Record the result in `docs/qa/2026-05-02-iphone-pwa-real-device.md` so the evide
 - Temporarily disconnect VPN or network.
 - Reopen Pulse from the Home Screen.
 - Confirm the offline fallback explains that the local server or VPN is unavailable.
+
+## Local Operations Reference
+
+- GitHub `main` is the source of truth.
+- `/root/pulse` on `192.168.178.46` is a deploy mirror only; do not edit or commit there.
+- Frontend URL: `https://192.168.178.46:5175`.
+- Backend health: `http://localhost:3000/api/pulse/health` on the server.
+- PM2 processes: `pulse` and `pulse-frontend`.
+- Mac-local Postgres/Redis tests require Docker Desktop and the dev services; when Docker is unavailable, call this out and rely on CI/server DB checks.
+
+## Quick Verification Commands
+
+Run these from the Mac workspace unless noted otherwise:
+
+```bash
+npm run services:status
+npm run typecheck
+npm run test:e2e -- --grep "Mobile navigation|Coach|Settings|PWA"
+```
+
+Run these against the deployed server:
+
+```bash
+ssh root@192.168.178.46 "curl -s http://localhost:3000/api/pulse/health"
+ssh root@192.168.178.46 "curl -skI https://localhost:5175"
+ssh root@192.168.178.46 "pm2 status"
+ssh root@192.168.178.46 "cd /root/pulse && git rev-parse --short HEAD"
+```

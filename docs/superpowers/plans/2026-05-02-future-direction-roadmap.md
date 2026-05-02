@@ -1,6 +1,6 @@
 # Pulse Future Direction Roadmap
 
-> Stand: 2026-05-02 after PR #100. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure and UX waves into a prioritized product direction.
+> Stand: 2026-05-02 after PR #102. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
 
 ## Product North Star
 
@@ -20,13 +20,18 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
 | 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Daily Loop Explainability | Closure exists; now Tobi needs to see why actions are shown or hidden | `2026-05-02-daily-loop-explainability-wave.md` |
-| 3 | Adaptive Training Intelligence v2 | Use execution divergence, RPE, recovery depth and preferences to improve future weeks | Plan seed below |
-| 4 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | Plan seed below |
-| 5 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | Plan seed below |
-| 6 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | Plan seed below |
-| 7 | Local Ops Autopilot | Reduce repeated Postgres/Redis/Docker/server-preview failures with stronger checks | Plan seed below |
-| 8 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 2 | Adaptive Training Intelligence v2 | Use execution divergence, RPE, recovery depth and preferences to improve future weeks | Plan seed below |
+| 3 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | Plan seed below |
+| 4 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | Plan seed below |
+| 5 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | Plan seed below |
+| 6 | Local Ops Autopilot | Reduce repeated Postgres/Redis/Docker/server-preview failures with stronger checks | Plan seed below |
+| 7 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+
+## Recently Completed Directional Waves
+
+| Wave | Outcome | Reference |
+|---|---|---|
+| Daily Loop Explainability | Home/Coach share visible action history, suppressed reasons are explainable, Insight evidence links to sources, and daily check-ins are date-scoped. | `completed/2026-05-02-daily-loop-explainability-wave.md`, PR #102 |
 
 ## Next Plan Seeds
 

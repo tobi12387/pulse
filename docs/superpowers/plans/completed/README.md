@@ -43,6 +43,7 @@
 | `2026-05-01-decision-closure-coach-memory-wave.md` | Decision Closure & Coach Memory — action decisions, Home/Coach closure, preferences, push journeys | PR #94, PR #95, PR #96, PR #97 |
 | `2026-05-01-pulse-app-potential-audit.md` | Potential and gap audit after Garmin repeat sync | Planning audit closed by PR #79-#100 |
 | `2026-05-02-overnight-next-steps.md` | Overnight sequence closeout and morning gates | PR #94-#100 |
+| `2026-05-02-daily-loop-explainability-wave.md` | Daily Loop Explainability — visible action history, suppressed reasons, evidence links, briefing guard | PR #102 |
 
 ## Bekannte veraltete Stellen
 
