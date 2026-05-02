@@ -28,14 +28,20 @@ Keep this file short. Update it whenever the active work queue changes.
 22. Canva/Figma UX companion refresh was merged and deployed via PR #99.
 23. Future Direction Roadmap reset was merged and deployed via PR #101.
 24. Daily Loop Explainability was merged and deployed via PR #102.
-25. Active implementation branch: none.
-26. Active implementation wave: Mobile Field Reliability manual gates. Daily Loop Explainability has been archived under `docs/superpowers/plans/completed/`.
+25. Mobile Field Reliability runbook/manual-gate cleanup was merged and deployed via PR #103.
+26. Future wave implementation plans were merged and deployed via PR #104.
+27. Local Ops Autopilot was merged and deployed via PR #105.
+28. Active implementation branch: `codex/adaptive-training-v2`.
+29. Active implementation wave: Adaptive Training Intelligence v2 is implemented and archived in this branch; PR/merge/deploy are pending.
 
 ## Current PRs / Branches
 
 - Open PRs: none.
-- Active branch: none.
+- Active branch: `codex/adaptive-training-v2`.
 - Recent completed branches:
+- `codex/local-ops-autopilot`: merged and deployed via PR #105.
+- `codex/future-wave-plans`: merged and deployed via PR #104.
+- `codex/mobile-ops-runbook`: merged and deployed via PR #103.
 - `codex/daily-loop-explainability`: merged and deployed via PR #102.
 - `codex/autonomous-future-plans`: merged and deployed via PR #101.
 - `codex/ux-companion-refresh`: merged and deployed via PR #99.
@@ -108,7 +114,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
-- Future implementation plans now exist for Adaptive Training Intelligence v2, Mental Fitness Companion, Garmin Data Quality Control Center, Goal/Race Command Center and Local Ops Autopilot under `docs/superpowers/plans/`.
+- Adaptive Training Intelligence v2 is implemented on `codex/adaptive-training-v2`; after merge/deploy, continue with Mental Fitness Companion unless a production regression appears first.
+- Future implementation plans remain for Mental Fitness Companion, Garmin Data Quality Control Center and Goal/Race Command Center under `docs/superpowers/plans/`.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
 - The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.

@@ -1,6 +1,6 @@
 import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
-import type { PulsePlanLearningSnapshot } from '@coaching-os/shared/pulse';
+import type { PulsePlanLearningSnapshot, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -119,6 +119,24 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
 
 function hasLearningFlag(learning: PulsePlanLearningSnapshot | null | undefined, flag: PulsePlanLearningSnapshot['flags'][number]): boolean {
   return learning?.flags.includes(flag) ?? false;
+}
+
+function hasExecutionSignal(review: PulseTrainingExecutionReview | null | undefined, signal: PulseTrainingExecutionReview['signals'][number]): boolean {
+  return review?.signals.includes(signal) ?? false;
+}
+
+function executionReviewNeedsRecoveryProtection(review: PulseTrainingExecutionReview | null | undefined): boolean {
+  return hasExecutionSignal(review, 'protect_recovery') || hasExecutionSignal(review, 'reduce_next_intensity');
+}
+
+function hardDayAvoidanceOffsets(
+  learning: PulsePlanLearningSnapshot | null | undefined,
+  review: PulseTrainingExecutionReview | null | undefined,
+): Set<number> {
+  return new Set([
+    ...previousHardDayOffsets(learning),
+    ...(review?.recommendedHardDayAvoidance ?? []),
+  ]);
 }
 
 function dayOffsetFromWeekStart(weekStart: string, date: string): number | null {
@@ -408,6 +426,7 @@ export function decidePlanDays(params: {
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
+  executionReview?: PulseTrainingExecutionReview | null | undefined;
 }): PlanDayDecision {
   const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
   const goal = primaryGoal(params.goals);
@@ -463,6 +482,13 @@ export function decidePlanDays(params: {
     reasons.push('Lernsignal: Sportmix der letzten Wochen war gleich; leichte Einheiten werden bewusst rotiert, ohne die Dichte zu erhöhen.');
   }
 
+  if (executionReviewNeedsRecoveryProtection(params.executionReview)) {
+    target -= 1;
+    reasons.push('Ausführung: Vorwochenbelastung spricht für mehr Erholung; deshalb eine Einheit weniger und harte Reize vorsichtiger platzieren.');
+  } else if (hasExecutionSignal(params.executionReview, 'maintain_structure')) {
+    reasons.push('Ausführung stabil: ähnliche Struktur ist bewusst gewählt, nicht ein Fallback.');
+  }
+
   const criticalRisk = (params.riskSignals ?? []).find(r => r.severity === 'critical');
   const warnRisks = (params.riskSignals ?? []).filter(r => r.severity === 'warn');
   if (criticalRisk) {
@@ -508,6 +534,7 @@ function buildPolarizedWorkouts(params: {
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
+  executionReview?: PulseTrainingExecutionReview | null | undefined;
 }): WeekWorkout[] {
   const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, goals, riskSignals = [] } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
@@ -520,10 +547,11 @@ function buildPolarizedWorkouts(params: {
 
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
   const hasBlockingRisk = riskSignals.some(r => r.severity === 'critical' || r.ruleId === 'rhr_drift_7d' || r.ruleId === 'hrv_trend_decline' || r.ruleId === 'sleep_debt_5d');
-  const hardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
+  const executionBlocksHard = executionReviewNeedsRecoveryProtection(params.executionReview);
+  const hardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || executionBlocksHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
     ? 0
     : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
-  const hardDays = selectHardDays(sorted, hardCount, previousHardDayOffsets(params.planLearning));
+  const hardDays = selectHardDays(sorted, hardCount, hardDayAvoidanceOffsets(params.planLearning, params.executionReview));
 
   const startDate = new Date(weekStart + 'T00:00:00Z');
   const workouts: WeekWorkout[] = [];
@@ -659,6 +687,7 @@ function withHrFirstDescriptions(
     lthrBpm?: number | undefined;
     goals: GoalLite[];
     rpeSafety: RpePlanSafety;
+    executionReview?: PulseTrainingExecutionReview | null | undefined;
   },
 ): WeekWorkout[] {
   const profile = goalWorkoutProfile(ctx.goals, ctx.phase);
@@ -667,6 +696,11 @@ function withHrFirstDescriptions(
     const goalPrefix = profile.label.endsWith('-Standard') ? '' : `${profile.label}: `;
     const safety = ctx.rpeSafety.blockHard
       ? ' Subjektive Ermüdung zuletzt hoch: sauber aerob bleiben, keine Zusatzreize.'
+      : '';
+    const executionNote = executionReviewNeedsRecoveryProtection(ctx.executionReview)
+      ? ' Ausführung der Vorwoche: Erholung schützen, Umfang und harte Reize konservativ halten.'
+      : hasExecutionSignal(ctx.executionReview, 'maintain_structure')
+      ? ' Ausführung stabil: ähnliche Struktur ist bewusst gewählt.'
       : '';
     const purpose = w.zone >= 4
       ? 'Qualitätsreiz mit klaren Erholungsphasen'
@@ -677,7 +711,7 @@ function withHrFirstDescriptions(
       : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
     return {
       ...w,
-      description: `${goalPrefix}${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${safety}`,
+      description: `${goalPrefix}${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${safety}${executionNote}`,
     };
   });
 }
@@ -798,6 +832,7 @@ async function enrichDescriptions(
     recentActivities?: RecentPlanActivity[] | undefined;
     rpeSafety?: RpePlanSafety | undefined;
     planLearning?: PulsePlanLearningSnapshot | null | undefined;
+    executionReview?: PulseTrainingExecutionReview | null | undefined;
     healthStates?: ActiveHealthState[] | undefined;
     lthrBpm?: number | undefined;
     races?: Array<{
@@ -876,6 +911,13 @@ async function enrichDescriptions(
       ].slice(0, 6).join('\n')
     : null;
 
+  const executionStr = ctx.executionReview
+    ? [
+        ...ctx.executionReview.learnedFromLastWeek.map(item => `- Ausführung: ${item}`),
+        ...ctx.executionReview.variationComparedToLastWeek.map(item => `- Anpassung: ${item}`),
+      ].slice(0, 6).join('\n')
+    : null;
+
   const racesStr = (ctx.races ?? []).length > 0
     ? (ctx.races ?? []).slice(0, 3).map(r => {
         const dist = r.distanceKm ? ` ${r.distanceKm}km` : '';
@@ -896,6 +938,7 @@ TRAININGSHISTORIE (letzte 6 Wochen):
   ${historyStr || 'keine Daten'}
 ${feedbackStr ? `\nWORKOUT-FEEDBACK (letzte Einheiten):\n${feedbackStr}\n` : ''}${healthStr ? `\nGESUNDHEITSSTATUS (HARTE Constraints — diese Daten sind verbindlich):\n${healthStr}\nRegeln: bei illness/severe = Ruhetag; illness/moderate = max Z1 30min; illness/mild = max Z2 60min; injury/* = passende Sportart vermeiden; fatigue = nur Z1–Z2.\n` : ''}${racesStr ? `\nRACES (Plan periodisiert dorthin):\n${racesStr}\nPriorities: A = Saisonhöhepunkt mit 2w Taper; B = wichtig mit 1w Taper; C = Mitnahme ohne Taper. In Race-Week (≤6d): Volumen halbieren, Intensität erhalten, Race-Pace-Workout 3-5d vor Race, Tag -1 = kurzer Aktivierungslauf 15-25min mit kurzen Z3-Pickups.\n` : ''}
 ${learningStr ? `\nPLAN-LERNEN (Vorwochenfeedback, verbindlich für Tonalität und Zusatzreize):\n${learningStr}\n` : ''}
+${executionStr ? `\nAUSFÜHRUNGS-REVIEW (deterministische Anpassung, verbindlich):\n${executionStr}\n` : ''}
 ${rpeStr ? `\nRPE-SIGNATUR (subjektive Belastung, verbindlich für Zusatzreize):\n${rpeStr}\n${ctx.rpeSafety?.summary ? `Safety-Auswertung: ${ctx.rpeSafety.summary}\n` : ''}` : ''}
 DIESE WOCHE: ${workouts.length} Einheiten | Ziel-TSS ${totalTss} | ${easyPct}% extensiv (polarisiertes Modell 80/20)
 ${workoutList}
@@ -946,6 +989,7 @@ export interface ScientificPlanInput {
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   planLearning?: PulsePlanLearningSnapshot | null;
+  executionReview?: PulseTrainingExecutionReview | null;
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -987,6 +1031,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
     planLearning: input.planLearning,
+    executionReview: input.executionReview,
   });
 
   const rawWorkouts = buildPolarizedWorkouts({
@@ -1001,6 +1046,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
     planLearning: input.planLearning,
+    executionReview: input.executionReview,
   });
 
   // HARD constraints: filter/cap workouts based on active health states
@@ -1016,6 +1062,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     lthrBpm: input.lthrBpm,
     goals: input.goals,
     rpeSafety,
+    executionReview: input.executionReview,
   });
 
   if (workouts.length === 0) return [];
@@ -1041,6 +1088,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
       recentActivities: input.recentActivities,
       rpeSafety,
       planLearning: input.planLearning,
+      executionReview: input.executionReview,
     });
   } catch (err) {
     // Keep deterministic HR-first descriptions if LLM enrichment fails.

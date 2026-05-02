@@ -732,6 +732,8 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
   const riskTitles = trace.inputSnapshot.riskSignals.map(r => r.title);
   const load = trace.inputSnapshot.load;
   const learning = trace.inputSnapshot.learningSnapshot ?? null;
+  const adaptation = trace.adaptation ?? trace.inputSnapshot.adaptation ?? null;
+  const restDayRationale = trace.restDayRationale ?? trace.inputSnapshot.restDayRationale ?? [];
 
   return (
     <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
@@ -771,6 +773,22 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8, marginBottom: 12 }}>
           <TraceInsightBlock title="Gelernt aus letzter Woche" items={learning.learnedFromLastWeek} color="var(--green)" />
           <TraceInsightBlock title="Variation" items={learning.variationComparedToLastWeek} color="var(--accent)" />
+        </div>
+      )}
+
+      {(adaptation || restDayRationale.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8, marginBottom: 12 }}>
+          {adaptation && (
+            <>
+              <TraceInsightBlock title="Gelernt aus Ausführung" items={adaptation.learnedFromExecution} color="var(--green)" />
+              <TraceInsightBlock title="Warum ähnlich/anders" items={adaptation.variationRationale} color="var(--accent)" />
+            </>
+          )}
+          <TraceInsightBlock
+            title="Freie Tage bewusst"
+            items={restDayRationale.map(item => `${item.date}: ${item.reason}`)}
+            color="var(--amber)"
+          />
         </div>
       )}
 

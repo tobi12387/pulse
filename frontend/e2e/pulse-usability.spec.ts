@@ -670,6 +670,66 @@ test('Plan alternatives avoid stale trace context for next-week workouts', async
   await expect(page.getByText('Verfügbarkeit offen')).toBeVisible();
 });
 
+test('Plan trace shows execution rationale and deliberate free days', async ({ page }) => {
+  await mockPulseApi(page, {
+    planTrace: {
+      id: 'trace-1',
+      userId: 'user-1',
+      weekStart: '2026-05-04',
+      createdAt: '2026-05-04T06:00:00.000Z',
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 40.1, tsb: 6.2, date: '2026-05-04' },
+        phase: 'build',
+        mesocycleWeek: 2,
+        weeklyHoursTarget: 8,
+        availableDays: [0, 1, 2, 3],
+        profile: { ftpWatts: 260, maxHrBpm: 185, lthrBpm: 170 },
+        goals: [{ title: 'FTP Aufbau', category: 'ftp', targetDate: null, raceDiscipline: null, raceDistanceKm: null, racePriority: null }],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        rpeReasons: [],
+        dataWarnings: [],
+        recentSportMix: { bike: { sessions: 2, totalMinutes: 120, totalTss: 110 } },
+        learningSnapshot: null,
+        adaptation: {
+          learnedFromExecution: ['Ausführung stabil: 2/2 Einheiten abgeglichen.'],
+          variationRationale: ['Planstruktur bleibt bewusst ähnlich.'],
+          signals: ['matched', 'maintain_structure'],
+        },
+        restDayRationale: [
+          { date: '2026-05-07', reason: 'Bewusster freier Tag: stabile Ausführung und gute Erholung.' },
+        ],
+      },
+      adaptation: {
+        learnedFromExecution: ['Ausführung stabil: 2/2 Einheiten abgeglichen.'],
+        variationRationale: ['Planstruktur bleibt bewusst ähnlich.'],
+        signals: ['matched', 'maintain_structure'],
+      },
+      restDayRationale: [
+        { date: '2026-05-07', reason: 'Bewusster freier Tag: stabile Ausführung und gute Erholung.' },
+      ],
+      sportMix: { bike: { sessions: 2, totalMinutes: 110, totalTss: 120 } },
+      generatedSummary: ['Ausführung: Ausführung stabil: 2/2 Einheiten abgeglichen.'],
+      hardDays: [{ date: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 50 }],
+      planDecision: {
+        selectedDays: [0, 2],
+        skippedAvailableDays: [1, 3],
+        targetSessionCount: 2,
+        primaryGoal: 'ftp',
+        reasons: ['Ausführung stabil: ähnliche Struktur ist bewusst gewählt.'],
+      },
+    },
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('Gelernt aus Ausführung')).toBeVisible();
+  await expect(page.getByText('Warum ähnlich/anders')).toBeVisible();
+  await expect(page.getByText('Freie Tage bewusst')).toBeVisible();
+  await expect(page.getByText(/2026-05-07: Bewusster freier Tag/)).toBeVisible();
+});
+
 test('Data coverage explains status, cause and action before backfill', async ({ page }) => {
   await mockPulseApi(page, {
     coverage: {

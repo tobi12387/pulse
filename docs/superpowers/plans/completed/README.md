@@ -44,6 +44,8 @@
 | `2026-05-01-pulse-app-potential-audit.md` | Potential and gap audit after Garmin repeat sync | Planning audit closed by PR #79-#100 |
 | `2026-05-02-overnight-next-steps.md` | Overnight sequence closeout and morning gates | PR #94-#100 |
 | `2026-05-02-daily-loop-explainability-wave.md` | Daily Loop Explainability — visible action history, suppressed reasons, evidence links, briefing guard | PR #102 |
+| `2026-05-02-local-ops-autopilot.md` | Local Ops Autopilot — separated local Docker/Postgres/Redis status from server mirror health | PR #105 |
+| `2026-05-02-adaptive-training-intelligence-v2.md` | Adaptive Training Intelligence v2 — deterministic execution review, plan adaptation trace, deliberate rest days | `codex/adaptive-training-v2` |
 
 ## Bekannte veraltete Stellen
 

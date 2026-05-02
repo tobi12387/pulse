@@ -1,6 +1,13 @@
-import type { PulseFitnessLoad, PulsePlanDecision, PulsePlanLearningSnapshot, PulsePlanTrace } from '@coaching-os/shared/pulse';
+import type {
+  PulseFitnessLoad,
+  PulsePlanDecision,
+  PulsePlanLearningSnapshot,
+  PulsePlanTrace,
+  PulseTrainingExecutionReview,
+} from '@coaching-os/shared/pulse';
 
 type SportMix = Record<string, PulsePlanTrace['sportMix'][string]>;
+type RestDayRationale = PulseTrainingExecutionReview['restDayRationale'];
 
 export interface PlanTraceWorkout {
   plannedDate: string;
@@ -61,6 +68,7 @@ export interface BuildPlanTraceInput {
   healthStates: PlanTraceHealthState[];
   recentActivities: PlanTraceRecentActivity[];
   planLearning?: PulsePlanLearningSnapshot | null;
+  executionReview?: PulseTrainingExecutionReview | null;
   planDecision: PulsePlanDecision;
   workouts: PlanTraceWorkout[];
 }
@@ -71,6 +79,8 @@ export interface PlanTracePayload {
   sportMix: PulsePlanTrace['sportMix'];
   hardDays: PulsePlanTrace['hardDays'];
   generatedSummary: string[];
+  adaptation?: PulsePlanTrace['adaptation'];
+  restDayRationale?: PulsePlanTrace['restDayRationale'];
 }
 
 function addSportMixEntry(mix: SportMix, activityType: string, durationMin: number, targetTss: number): void {
@@ -95,6 +105,8 @@ function summarizeTrace(
   sportMix: SportMix,
   hardDays: PulsePlanTrace['hardDays'],
   learningSnapshot: PulsePlanLearningSnapshot | null,
+  adaptation: PulsePlanTrace['adaptation'],
+  restDayRationale: PulsePlanTrace['restDayRationale'],
 ): string[] {
   const summary: string[] = [];
   const goal = input.goals[0] ?? null;
@@ -137,6 +149,15 @@ function summarizeTrace(
   if (learningSnapshot?.variationComparedToLastWeek[0]) {
     summary.push(`Variation: ${learningSnapshot.variationComparedToLastWeek[0]}`);
   }
+  if (adaptation?.learnedFromExecution[0]) {
+    summary.push(`Ausführung: ${adaptation.learnedFromExecution[0]}`);
+  }
+  if (adaptation?.variationRationale[0]) {
+    summary.push(`Anpassung: ${adaptation.variationRationale[0]}`);
+  }
+  if ((restDayRationale ?? []).length > 0) {
+    summary.push(`${restDayRationale!.length} freie Tag(e) bewusst begründet.`);
+  }
 
   return summary;
 }
@@ -147,6 +168,28 @@ function dayOffsetFromWeekStart(weekStart: string, date: string): number | null 
   if (!Number.isFinite(start) || !Number.isFinite(current)) return null;
   const offset = Math.round((current - start) / 86_400_000);
   return offset >= 0 && offset <= 6 ? offset : null;
+}
+
+function dateFromWeekOffset(weekStart: string, dayOffset: number): string {
+  const date = new Date(`${weekStart}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + dayOffset);
+  return date.toISOString().split('T')[0]!;
+}
+
+function deriveRestDayRationale(input: BuildPlanTraceInput): RestDayRationale {
+  const explicit = input.executionReview?.restDayRationale ?? [];
+  if (explicit.length > 0) return explicit;
+  if (input.planDecision.skippedAvailableDays.length === 0) return [];
+
+  const signals = input.executionReview?.signals ?? [];
+  const reason = signals.includes('protect_recovery') || signals.includes('reduce_next_intensity')
+    ? 'Bewusster freier Tag: Ausführungsdaten und Erholung sprechen gegen zusätzlichen Trainingsstress.'
+    : signals.includes('maintain_structure') || input.executionReview?.intents.includes('stable')
+    ? 'Bewusster freier Tag: stabile Ausführung erlaubt ähnliche Struktur statt Zusatzumfang.'
+    : 'Bewusster freier Tag: Plan füllt nicht alle verfügbaren Tage, damit Erholung und Alltag Platz behalten.';
+
+  return input.planDecision.skippedAvailableDays
+    .map(day => ({ date: dateFromWeekOffset(input.weekStart, day), reason }));
 }
 
 function summarizePlanVariation(params: {
@@ -239,6 +282,14 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
   }
   if (input.recentActivities.length === 0) dataWarnings.push('Keine Aktivitätshistorie der letzten 42 Tage.');
   if (recentRpe.length === 0) dataWarnings.push('Keine RPE-Bewertungen in den jüngsten Aktivitäten.');
+  const adaptation: PulsePlanTrace['adaptation'] = input.executionReview
+    ? {
+        learnedFromExecution: input.executionReview.learnedFromLastWeek,
+        variationRationale: input.executionReview.variationComparedToLastWeek,
+        signals: input.executionReview.signals,
+      }
+    : null;
+  const restDayRationale = deriveRestDayRationale(input);
   const profileSnapshot = input.profile.provenance
     ? {
         ftpWatts: input.profile.ftpWatts,
@@ -268,10 +319,14 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
       dataWarnings,
       recentSportMix,
       learningSnapshot,
+      adaptation,
+      restDayRationale,
     },
     planDecision: input.planDecision,
     sportMix,
     hardDays,
-    generatedSummary: summarizeTrace(input, sportMix, hardDays, learningSnapshot),
+    generatedSummary: summarizeTrace(input, sportMix, hardDays, learningSnapshot, adaptation, restDayRationale),
+    adaptation,
+    restDayRationale,
   };
 }
