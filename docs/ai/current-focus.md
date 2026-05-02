@@ -40,11 +40,13 @@ Keep this file short. Update it whenever the active work queue changes.
 34. Future direction plan pack was merged and deployed via PR #115.
 35. Garmin Signal Usefulness was merged and deployed via PR #116.
 36. Daily Decision Quality Loop was merged and deployed via PR #117.
+37. Deploy Cert Guard is active on `codex/deploy-cert-guard` so the structure cleanup can later remove tracked cert files without losing HTTPS on `:5175`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/daily-quality-status-closeout` for docs-only status cleanup.
+- Open Codex PRs: #119 `codex/project-structure-audit` draft.
+- Active branch: `codex/deploy-cert-guard` for deploy-script certificate provisioning before PR #119.
 - Recent completed branches:
 - `codex/daily-decision-quality`: merged and deployed via PR #117.
 - `codex/garmin-signal-usefulness`: merged and deployed via PR #116.
