@@ -18,6 +18,26 @@
 
 ---
 
+## 2026-05-02 — Tägliche Check-in-Actions sind datumsscharf
+
+- **Decision:** Action-Closure-Memory darf tägliche Check-in-Empfehlungen nur für denselben `openedAt`-/Check-in-Tag wiederverwenden oder ausblenden; `/api/pulse/actions?includeHistory=true` zeigt gelöste Entscheidungen nur aus den letzten 14 Tagen.
+- **Why:** Ein erledigter Check-in von gestern darf den heutigen Daily Loop nicht stumm schalten. Gleichzeitig soll die UI nur frische, erklärende Historie anzeigen, nicht eine lange Aufgabenchronik.
+- **Alternatives:** Check-ins dauerhaft per Titel/Route matchen (führt zu fehlenden heutigen Check-ins); separate History-Tabelle (unnötig); unbegrenzte Historie im UI (zu viel Rauschen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
+## 2026-05-02 — Daily Loop Explainability nutzt bestehende Action- und Evidence-Daten
+
+- **Decision:** Daily Loop Explainability wird ohne neue Persistenz umgesetzt: `/api/pulse/actions?includeHistory=true` liefert sichtbare Aktionen, ausgeblendete Aktionen mit Grund und aktuelle Entscheidungsverläufe aus `pulse_action_decisions`; Insight-Evidence bekommt optionale Zielrouten zu Data, Plan, Insights oder Activity-Details. Coach und Briefing erhalten die sichtbare Action-Historie als Kontext, dürfen sie aber nicht als offene Aufgabe neu formulieren.
+- **Why:** Das Closure-Modell existiert bereits und ist die auditierbare Quelle für erledigte, verschobene oder ersetzte Empfehlungen. Neue Tabellen oder verstecktes Coach-Memory würden denselben Loop duplizieren und das Wiederholungsproblem wieder schwerer nachvollziehbar machen.
+- **Alternatives:** Neue History-Tabelle (unnötige Doppelhaltung); nur Frontend-History anzeigen (nicht für Coach/Push/Briefing nutzbar); alles im LLM-Prompt merken (nicht sichtbar und nicht testbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Abgeschlossene aktive Planwellen werden archiviert
 
 - **Decision:** Die May-1/May-2-Planwellen, deren Code- und Docs-Slices bereits per PR #79-#100 umgesetzt und deployed wurden, werden nach `docs/superpowers/plans/completed/` verschoben. Aktive neue Arbeit startet mit `2026-05-02-future-direction-roadmap.md`, `2026-05-02-daily-loop-explainability-wave.md` und `2026-05-02-mobile-field-reliability-wave.md`.

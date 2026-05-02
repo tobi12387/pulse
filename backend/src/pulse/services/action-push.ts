@@ -2,6 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 import type { PulseActionState, PulseNextBestAction } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { pulseActionDecisions } from '../../db/pulse-schema.js';
+import { actionDateMatchesDecision } from './decision-closure.js';
 
 export type ActionDecisionRow = typeof pulseActionDecisions.$inferSelect;
 
@@ -29,9 +30,32 @@ export function actionStateFromDecision(action: PulseNextBestAction, row: Action
 }
 
 export function matchesActionDecision(action: PulseNextBestAction, row: ActionDecisionRow): boolean {
+  if (!actionDateMatchesDecision(action, {
+    kind: row.kind,
+    source: row.source,
+    createdAt: row.createdAt,
+    rawContext: row.rawContext,
+  })) {
+    return false;
+  }
+
   if (row.sourceId === action.id) return true;
   if (row.kind !== action.source) return false;
   return row.targetRoute === action.targetPath || row.title === action.title;
+}
+
+export function selectRecentResolvedActionDecisions(
+  rows: ActionDecisionRow[],
+  today: string,
+  limit = 10,
+): ActionDecisionRow[] {
+  const cutoff = new Date(`${today}T00:00:00.000Z`);
+  cutoff.setUTCDate(cutoff.getUTCDate() - 13);
+
+  return rows
+    .filter(row => row.status !== 'open')
+    .filter(row => (row.resolvedAt ?? row.createdAt).getTime() >= cutoff.getTime())
+    .slice(0, limit);
 }
 
 export async function listActionDecisionRows(userId: string): Promise<ActionDecisionRow[]> {

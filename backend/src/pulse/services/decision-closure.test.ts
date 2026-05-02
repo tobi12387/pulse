@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PulseNextBestAction } from '@coaching-os/shared/pulse';
 import {
   deriveDecisionStatus,
+  getActionSuppression,
   shouldSuppressAction,
   type ActionDecisionRecord,
 } from './decision-closure.js';
@@ -133,5 +134,34 @@ describe('shouldSuppressAction', () => {
       today: '2026-05-01',
       checkinDates: [],
     })).toBe(false);
+  });
+
+  it('explains Garmin-matched workout suppression', () => {
+    expect(getActionSuppression(action({
+      id: 'plan:/plan:0',
+      source: 'plan',
+      title: 'Z2-Rad fahren',
+      targetPath: '/plan',
+    }), [
+      openDecision({
+        id: 'decision-workout',
+        sourceId: 'plan:/plan:0',
+        kind: 'plan',
+        source: 'next_best_action',
+        title: 'Z2-Rad fahren',
+        targetRoute: '/plan',
+        status: 'completed',
+        resolvedAt: '2026-05-01T18:00:00.000Z',
+        resolutionReason: 'Garmin-Aktivität activity-42 wurde dem geplanten Workout zugeordnet.',
+      }),
+    ], {
+      today: '2026-05-01',
+      checkinDates: [],
+    })).toMatchObject({
+      decisionId: 'decision-workout',
+      status: 'completed',
+      reason: 'resolved_by_activity',
+      resolvedAt: '2026-05-01T18:00:00.000Z',
+    });
   });
 });

@@ -9,7 +9,7 @@ import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseActionState, PulseNextBestAction } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -198,6 +198,22 @@ function priorityLabel(priority: PulseNextBestAction['priority']): string {
   if (priority === 'critical') return 'KRITISCH';
   if (priority === 'high') return 'WICHTIG';
   return 'NÄCHSTES';
+}
+
+function actionDecisionStatusLabel(status: PulseRecentActionDecision['status']): string {
+  if (status === 'completed') return 'Erledigt';
+  if (status === 'deferred') return 'Verschoben';
+  if (status === 'dismissed') return 'Verworfen';
+  if (status === 'superseded') return 'Ersetzt';
+  return 'Offen';
+}
+
+function suppressedReasonLabel(reason: PulseSuppressedActionState['suppressedReason']): string {
+  if (reason === 'already_completed_today') return 'Heute schon erledigt';
+  if (reason === 'deferred') return 'Bewusst verschoben';
+  if (reason === 'dismissed') return 'Bewusst verworfen';
+  if (reason === 'resolved_by_activity') return 'Durch Garmin erledigt';
+  return 'Nicht mehr aktuell';
 }
 
 function NextBestActionsCard({
@@ -437,11 +453,73 @@ function ActionClosureCard({
   );
 }
 
+function DailyLoopHistoryCard({
+  recentDecisions,
+  suppressed,
+  onNavigate,
+}: {
+  recentDecisions: PulseRecentActionDecision[];
+  suppressed: PulseSuppressedActionState[];
+  onNavigate: (path: string) => void;
+}) {
+  const latest = recentDecisions[0] ?? null;
+  const hidden = suppressed[0] ?? null;
+  if (!latest && !hidden) return null;
+
+  return (
+    <div style={{ padding: '12px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
+          ZULETZT IM LOOP
+        </span>
+        {hidden && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)' }}>
+            {suppressedReasonLabel(hidden.suppressedReason)}
+          </span>
+        )}
+      </div>
+      {latest && (
+        <button
+          type="button"
+          onClick={() => latest.targetRoute && onNavigate(latest.targetRoute)}
+          disabled={!latest.targetRoute}
+          style={{
+            width: '100%',
+            padding: '9px 10px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 5,
+            textAlign: 'left',
+            cursor: latest.targetRoute ? 'pointer' : 'default',
+          }}
+        >
+          <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--green)', letterSpacing: '.1em' }}>
+            {actionDecisionStatusLabel(latest.status)}
+          </span>
+          <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text)', fontWeight: 600, marginTop: 3 }}>
+            {latest.title}
+          </span>
+          {latest.resolutionReason && (
+            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, marginTop: 3 }}>
+              {latest.resolutionReason}
+            </span>
+          )}
+        </button>
+      )}
+      {!latest && hidden && (
+        <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          {hidden.title} ist ausgeblendet: {suppressedReasonLabel(hidden.suppressedReason)}.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const { data, isLoading, error } = usePulseHome();
-  const actionsQuery = usePulseActions();
+  const actionsQuery = usePulseActions({ includeHistory: true });
   const updateAction = useUpdatePulseAction();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
@@ -476,6 +554,8 @@ export default function Home() {
   const nw = data.nextWorkout;
   const dailyDecision = deriveDailyDecision(data);
   const actionStates = actionsQuery.data?.actions ?? [];
+  const suppressedActions = actionsQuery.data?.suppressed ?? [];
+  const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const primaryAction = actionStates[0] ?? null;
   const followUpActions = primaryAction ? actionStates.slice(1) : data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
@@ -573,6 +653,12 @@ export default function Home() {
           })}
         />
       )}
+
+      <DailyLoopHistoryCard
+        recentDecisions={recentDecisions}
+        suppressed={suppressedActions}
+        onNavigate={navigate}
+      />
 
       <NextBestActionsCard actions={followUpActions} onNavigate={navigate} />
 

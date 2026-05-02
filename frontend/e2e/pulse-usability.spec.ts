@@ -44,6 +44,8 @@ test('Insights show evidence links for opened analysis cards', async ({ page }) 
   await expect(page.getByText('Trainingsdaten')).toBeVisible();
   await expect(page.getByText('4 Aktivitäten')).toBeVisible();
   await expect(page.getByText('30 Tage')).toBeVisible();
+  await page.getByRole('button', { name: /Trainingsdaten: Plan öffnen/ }).click();
+  await expect(page).toHaveURL('/plan');
   await expect(page.getByText('OpenRouter')).toHaveCount(0);
 });
 
@@ -131,13 +133,43 @@ test('Home closes a daily action and Coach shows the shared closed state', async
     resolvedAt: null,
     resolutionReason: null,
   }];
+  const recentDecisions: unknown[] = [];
+  const suppressedActions: unknown[] = [];
   let patched: { id: string; body: unknown } | null = null;
 
   await mockPulseApi(page, {
     actions,
+    recentDecisions,
+    suppressedActions,
     onActionPatch: (id, body) => {
       patched = { id, body };
       actions.length = 0;
+      recentDecisions.unshift({
+        decisionId: id,
+        source: 'next_best_action',
+        kind: 'checkin',
+        title: 'Check-in eintragen',
+        status: 'completed',
+        targetRoute: '/coach',
+        createdAt: '2026-05-01T07:00:00.000Z',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Heute erledigt.',
+      });
+      suppressedActions.unshift({
+        id: 'checkin:/coach:0',
+        decisionId: id,
+        source: 'checkin',
+        priority: 'high',
+        title: 'Check-in eintragen',
+        reason: 'Heute fehlt dein subjektives Signal; Coach, Readiness und Briefing bleiben dadurch vorsichtiger.',
+        cta: 'Zum Coach',
+        targetPath: '/coach',
+        suppressedReason: 'already_completed_today',
+        suppressedUntil: null,
+        status: 'completed',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Heute erledigt.',
+      });
     },
   });
 
@@ -147,11 +179,13 @@ test('Home closes a daily action and Coach shows the shared closed state', async
 
   await page.getByRole('button', { name: 'Erledigt' }).click();
   await expect.poll(() => patched).toEqual({ id: 'decision-1', body: { status: 'completed', reason: 'In Home erledigt.' } });
-  await expect(page.getByText('Check-in eintragen')).toHaveCount(0);
+  await expect(page.getByText('ZULETZT IM LOOP')).toBeVisible();
+  await expect(page.getByText('Heute erledigt.')).toBeVisible();
 
   await page.goto('/coach');
   await expect(page.getByText('TAGESAKTION', { exact: true })).toBeVisible();
   await expect(page.getByText('Keine offene Tagesaktion')).toBeVisible();
+  await expect(page.getByText('Zuletzt berücksichtigt: Check-in eintragen')).toBeVisible();
 });
 
 test('Home and Coach share one daily decision with boundary alternative and done criteria', async ({ page }) => {

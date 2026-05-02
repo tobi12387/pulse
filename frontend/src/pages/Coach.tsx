@@ -13,7 +13,7 @@ import {
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
 type MicState = 'idle' | 'recording' | 'processing';
 
@@ -277,12 +277,16 @@ function QuickPrompts({
 function DailyBriefingGuide({
   home,
   actions,
+  recentDecisions,
+  suppressed,
   briefing,
   briefingLoading,
   onPrompt,
 }: {
   home: ReturnType<typeof usePulseHome>['data'];
   actions: PulseActionState[];
+  recentDecisions: PulseRecentActionDecision[];
+  suppressed: PulseSuppressedActionState[];
   briefing: string | undefined;
   briefingLoading: boolean;
   onPrompt: (prompt: string) => void;
@@ -365,6 +369,16 @@ function DailyBriefingGuide({
         ) : (
           <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
             Keine offene Tagesaktion
+            {recentDecisions[0] && (
+              <span style={{ display: 'block', marginTop: 4, color: 'var(--text-3)' }}>
+                Zuletzt berücksichtigt: {recentDecisions[0].title}
+              </span>
+            )}
+            {!recentDecisions[0] && suppressed[0] && (
+              <span style={{ display: 'block', marginTop: 4, color: 'var(--text-3)' }}>
+                Ausgeblendet: {suppressed[0].title}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -380,7 +394,7 @@ export default function Coach() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: home } = usePulseHome();
-  const { data: actionsData } = usePulseActions();
+  const { data: actionsData } = usePulseActions({ includeHistory: true });
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const m = home?.todayMetrics;
 
@@ -489,6 +503,8 @@ export default function Coach() {
           <DailyBriefingGuide
             home={home}
             actions={actionsData?.actions ?? []}
+            recentDecisions={actionsData?.recentDecisions ?? []}
+            suppressed={actionsData?.suppressed ?? []}
             briefing={briefingData?.briefing}
             briefingLoading={briefingLoading}
             onPrompt={setInput}

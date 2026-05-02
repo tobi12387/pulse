@@ -18,6 +18,8 @@ export interface InsightEvidenceItem {
   value: string;
   window: string;
   status: InsightEvidenceStatus;
+  targetRoute?: '/data' | '/plan' | '/insights' | `/activities/${number}`;
+  targetLabel?: string;
 }
 
 export interface InsightMissingDataItem {
@@ -62,8 +64,22 @@ function numTrend(values: (number | null)[]): number | null {
   return Math.round((b - a) * 10) / 10;
 }
 
-function evidenceItem(label: string, value: string, window: string, status: InsightEvidenceStatus = 'available'): InsightEvidenceItem {
-  return { label, value, window, status };
+function evidenceItem(
+  label: string,
+  value: string,
+  window: string,
+  status: InsightEvidenceStatus = 'available',
+  targetRoute?: InsightEvidenceItem['targetRoute'],
+  targetLabel?: string,
+): InsightEvidenceItem {
+  return {
+    label,
+    value,
+    window,
+    status,
+    ...(targetRoute ? { targetRoute } : {}),
+    ...(targetLabel ? { targetLabel } : {}),
+  };
 }
 
 function countLabel(count: number, singular: string, plural: string): string {
@@ -95,8 +111,8 @@ async function sleepContext(userId: string, since: string, days: number): Promis
     daysWithData: w.length,
   };
   const evidence = [
-    evidenceItem('Schlafdauer', countLabel(w.length, 'Nacht', 'Nächte'), `${days} Tage`, dataStatus(w.length, Math.min(7, days))),
-    ...(stats.avgScore != null ? [evidenceItem('Schlafscore', `Ø ${stats.avgScore}`, `${days} Tage`, dataStatus(w.filter(r => r.sleepScore != null).length, Math.min(7, days)))] : []),
+    evidenceItem('Schlafdauer', countLabel(w.length, 'Nacht', 'Nächte'), `${days} Tage`, dataStatus(w.length, Math.min(7, days)), '/data', 'Data öffnen'),
+    ...(stats.avgScore != null ? [evidenceItem('Schlafscore', `Ø ${stats.avgScore}`, `${days} Tage`, dataStatus(w.filter(r => r.sleepScore != null).length, Math.min(7, days)), '/data', 'Data öffnen')] : []),
   ];
   const missingData = w.length === 0
     ? [{ label: 'Schlafdaten', reason: 'Keine Schlafdauer im gewählten Zeitraum.' }]
@@ -134,8 +150,8 @@ async function hrvContext(userId: string, since: string, days: number): Promise<
   };
   const restingHrDays = rows.filter(r => r.restingHr != null).length;
   const evidence = [
-    evidenceItem('HRV RMSSD', countLabel(w.length, 'Tag', 'Tage'), `${days} Tage`, dataStatus(w.length, Math.min(7, days))),
-    ...(restingHrDays > 0 ? [evidenceItem('Ruhepuls', countLabel(restingHrDays, 'Tag', 'Tage'), `${days} Tage`, dataStatus(restingHrDays, Math.min(7, days)))] : []),
+    evidenceItem('HRV RMSSD', countLabel(w.length, 'Tag', 'Tage'), `${days} Tage`, dataStatus(w.length, Math.min(7, days)), '/data', 'Data öffnen'),
+    ...(restingHrDays > 0 ? [evidenceItem('Ruhepuls', countLabel(restingHrDays, 'Tag', 'Tage'), `${days} Tage`, dataStatus(restingHrDays, Math.min(7, days)), '/data', 'Data öffnen')] : []),
   ];
   const missingData = w.length === 0
     ? [{ label: 'HRV-Daten', reason: 'Keine HRV-Werte im gewählten Zeitraum.' }]
@@ -165,9 +181,9 @@ async function loadContext(userId: string, since: string, days: number): Promise
   const ftp = profileRows[0]?.ftpWatts ?? null;
   const stats = { ctl: Math.round(load.ctl), atl: Math.round(load.atl), tsb: Math.round(load.tsb), ftpWatts: ftp, activitiesCount: activities.length };
   const evidence = [
-    evidenceItem('Fitness Load', `CTL ${stats.ctl} / ATL ${stats.atl} / TSB ${stats.tsb}`, 'heute', 'available'),
-    evidenceItem('Aktivitäten', countLabel(activities.length, 'Aktivität', 'Aktivitäten'), `${days} Tage`, dataStatus(activities.length, 3)),
-    ...(ftp ? [evidenceItem('Profil-FTP', `${ftp} W`, 'Profil', 'available')] : []),
+    evidenceItem('Fitness Load', `CTL ${stats.ctl} / ATL ${stats.atl} / TSB ${stats.tsb}`, 'heute', 'available', '/plan', 'Plan öffnen'),
+    evidenceItem('Aktivitäten', countLabel(activities.length, 'Aktivität', 'Aktivitäten'), `${days} Tage`, dataStatus(activities.length, 3), '/data', 'Data öffnen'),
+    ...(ftp ? [evidenceItem('Profil-FTP', `${ftp} W`, 'Profil', 'available', '/plan', 'Plan öffnen')] : []),
   ];
   const missingData = activities.length === 0
     ? [{ label: 'Aktivitäten', reason: 'Keine Garmin-Aktivitäten im gewählten Zeitraum.' }]
@@ -199,9 +215,9 @@ async function weightContext(userId: string): Promise<InsightContext | null> {
     daysTracked: rows.length,
   };
   const evidence = [
-    evidenceItem('Gewichtsverlauf', countLabel(rows.length, 'Eintrag', 'Einträge'), '90 Tage', dataStatus(rows.length, 3)),
-    ...(stats.avgBodyFatPct != null ? [evidenceItem('Körperfett', `Ø ${stats.avgBodyFatPct}%`, '90 Tage', 'available' as const)] : []),
-    ...(stats.avgMuscleMassKg != null ? [evidenceItem('Muskelmasse', `Ø ${stats.avgMuscleMassKg} kg`, '90 Tage', 'available' as const)] : []),
+    evidenceItem('Gewichtsverlauf', countLabel(rows.length, 'Eintrag', 'Einträge'), '90 Tage', dataStatus(rows.length, 3), '/data', 'Data öffnen'),
+    ...(stats.avgBodyFatPct != null ? [evidenceItem('Körperfett', `Ø ${stats.avgBodyFatPct}%`, '90 Tage', 'available' as const, '/data', 'Data öffnen')] : []),
+    ...(stats.avgMuscleMassKg != null ? [evidenceItem('Muskelmasse', `Ø ${stats.avgMuscleMassKg} kg`, '90 Tage', 'available' as const, '/data', 'Data öffnen')] : []),
   ];
   const lines = rows.slice(-10).map(r =>
     `${r.date}: ${r.weightKg?.toFixed(1)}kg${r.bodyFatPct ? ` KF=${r.bodyFatPct.toFixed(1)}%` : ''}${r.muscleMassKg ? ` Muskel=${r.muscleMassKg.toFixed(1)}kg` : ''}`
@@ -247,15 +263,17 @@ async function mentalContext(userId: string, since: string, days: number, today:
     lowTsbCheckins: overlay.stats.lowTsbCheckins,
   };
   const evidence = [
-    evidenceItem('Mental-Check-ins', countLabel(rows.length, 'Eintrag', 'Einträge'), `${days} Tage`, dataStatus(rows.length, 3)),
+    evidenceItem('Mental-Check-ins', countLabel(rows.length, 'Eintrag', 'Einträge'), `${days} Tage`, dataStatus(rows.length, 3), '/data', 'Data öffnen'),
     ...(topThemes.length > 0
-      ? [evidenceItem('Theme-Historie', countLabel(topThemes.length, 'Theme', 'Themes'), `${days} Tage`, 'available' as const)]
+      ? [evidenceItem('Theme-Historie', countLabel(topThemes.length, 'Theme', 'Themes'), `${days} Tage`, 'available' as const, '/data', 'Data öffnen')]
       : []),
     evidenceItem(
       'Mental/TSB-Overlay',
       stats.moodTsbCorrelation != null ? `r=${stats.moodTsbCorrelation}` : countLabel(overlay.stats.checkins, 'Check-in', 'Check-ins'),
       `${overlay.days} Tage`,
       stats.moodTsbCorrelation != null ? 'available' : dataStatus(overlay.stats.checkins, 3),
+      '/insights',
+      'Insights öffnen',
     ),
   ];
   const lines = rows.slice(-14).map(r =>

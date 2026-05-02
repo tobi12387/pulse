@@ -15,13 +15,13 @@ import {
 import { isPushConfigured } from '../../lib/push.js';
 import { computeRecovery } from '../../lib/recovery-metrics.js';
 import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
-import { rankNextBestActions } from '../services/next-best-actions.js';
+import { rankNextBestActionVisibility } from '../services/next-best-actions.js';
 import type { ActionDecisionRecord } from '../services/decision-closure.js';
 import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { listEquipment, listStrengthSessions } from '../services/strength-equipment.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
-import type { PulseCoachPreferences, PulseFitnessLoad, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal } from '@coaching-os/shared/pulse';
+import type { PulseCoachPreferences, PulseFitnessLoad, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { getCached, setCached } from './pulse-cache.js';
 
 export type PulseDailyMetricsRow = typeof pulseDailyMetrics.$inferSelect;
@@ -87,6 +87,7 @@ export interface PulseContext {
     activeSubscriptions: number;
   };
   nextBestActions: PulseNextBestAction[];
+  suppressedNextBestActions: PulseSuppressedActionState[];
   recentStrengthSessions: Array<{
     date: string;
     sessionId: string;
@@ -335,7 +336,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     targetRoute: row.targetRoute,
     rawContext: row.rawContext,
   }));
-  const nextBestActions = rankNextBestActions({
+  const actionVisibility = rankNextBestActionVisibility({
     today: date,
     todayCheckin: todayCheckin ?? null,
     activeRiskSignals,
@@ -345,6 +346,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     equipmentDueForReplacement,
     actionDecisions,
   });
+  const nextBestActions = actionVisibility.visible;
 
   return {
     userId,
@@ -373,6 +375,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     activeRiskSignals,
     push,
     nextBestActions,
+    suppressedNextBestActions: actionVisibility.suppressed,
     recentStrengthSessions,
     equipmentDueForReplacement,
   };
@@ -389,6 +392,7 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
     coachPreferences: ctx.coachPreferences ?? null,
     push: ctx.push ?? { configured: false, activeSubscriptions: 0 },
     nextBestActions: ctx.nextBestActions ?? [],
+    suppressedNextBestActions: ctx.suppressedNextBestActions ?? [],
     recentStrengthSessions: ctx.recentStrengthSessions ?? [],
     equipmentDueForReplacement: ctx.equipmentDueForReplacement ?? [],
     recentActivities: ctx.recentActivities.map(a => ({ ...a, startTime: new Date(a.startTime) })),
@@ -458,6 +462,7 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
     latestWeight: ctx.latestWeight,
     activeRiskSignals: ctx.activeRiskSignals,
     nextBestActions: ctx.nextBestActions,
+    suppressedNextBestActions: ctx.suppressedNextBestActions,
     recentStrengthSessions: ctx.recentStrengthSessions,
     equipmentDueForReplacement: ctx.equipmentDueForReplacement,
     recovery: ctx.recovery ? {

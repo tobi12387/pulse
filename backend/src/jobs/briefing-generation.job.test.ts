@@ -411,4 +411,41 @@ describe('buildBriefingUserContentRich', () => {
     expect(prompt).toContain('keine dringenden Sofortaktionen');
     expect(prompt).not.toContain('[NORMAL] Plan erzeugen');
   });
+
+  it('passes hidden action history without reopening completed actions', () => {
+    const ctx = {
+      date: '2026-05-01',
+      todayMetrics: null,
+      todayCheckin: null,
+      fitnessLoad: { ctl: 40, atl: 48, tsb: -8 },
+      readiness: { score: 62, label: 'moderate' },
+      recovery: null,
+      activeHealthStates: [],
+      upcomingWorkouts: [],
+      recentActivities: [],
+      nextRace: null,
+      activeRiskSignals: [],
+      nextBestActions: [],
+      suppressedNextBestActions: [{
+        id: 'checkin:/coach:0',
+        decisionId: 'decision-1',
+        source: 'checkin',
+        priority: 'high',
+        title: 'Check-in eintragen',
+        reason: 'Heute fehlt dein subjektives Signal.',
+        cta: 'Zum Coach',
+        targetPath: '/coach',
+        suppressedReason: 'already_completed_today',
+        suppressedUntil: null,
+        status: 'completed',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Check-in für 2026-05-01 wurde gespeichert.',
+      }],
+    } as unknown as PulseContext;
+
+    const prompt = buildBriefingUserContentRich(ctx, 'check-in');
+    expect(prompt).toContain('ACTION-HISTORIE');
+    expect(prompt).toContain('Check-in eintragen ausgeblendet (already_completed_today)');
+    expect(prompt).toContain('nicht erneut als offene Aufgabe');
+  });
 });

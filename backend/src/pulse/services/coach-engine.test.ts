@@ -167,6 +167,42 @@ describe('buildRichSystemPrompt', () => {
     expect(prompt).toContain('Zum Coach (/coach)');
   });
 
+  it('includes visible hidden-action history without reopening it', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-05-01',
+      readiness: { score: 68, label: 'mäßig' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 50, tsb: -6 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      suppressedNextBestActions: [{
+        id: 'checkin:/coach:0',
+        decisionId: 'decision-1',
+        source: 'checkin',
+        priority: 'high',
+        title: 'Check-in eintragen',
+        reason: 'Heute fehlt dein subjektives Signal.',
+        cta: 'Zum Coach',
+        targetPath: '/coach',
+        suppressedReason: 'already_completed_today',
+        suppressedUntil: null,
+        status: 'completed',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Check-in für 2026-05-01 wurde gespeichert.',
+      }],
+    });
+
+    expect(prompt).toContain('== SICHTBARE ACTION-HISTORIE ==');
+    expect(prompt).toContain('Ausgeblendet: Check-in eintragen (already_completed_today)');
+    expect(prompt).toContain('nicht erneut als offene Aufgabe');
+  });
+
   it('includes visible coach preferences without inferring hidden traits', async () => {
     const { buildRichSystemPrompt } = await import('./coach-engine.js');
     const prompt = buildRichSystemPrompt({

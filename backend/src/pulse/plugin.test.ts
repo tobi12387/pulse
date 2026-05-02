@@ -255,6 +255,47 @@ describe('Pulse action closure', () => {
     expect(homeRes.json<{ nextBestActions: Array<{ source: string }> }>().nextBestActions)
       .not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
   });
+
+  it('returns hidden action reasons and recent decisions when history is requested', async () => {
+    const actionRes = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/actions',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const action = actionRes.json<{ actions: Array<{ decisionId: string; source: string }> }>().actions
+      .find(candidate => candidate.source === 'checkin')!;
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/actions/${action.decisionId}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { status: 'completed', reason: 'Heute erledigt.' },
+    });
+
+    const historyRes = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/actions?includeHistory=true',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(historyRes.statusCode).toBe(200);
+    const body = historyRes.json<{
+      actions: Array<{ source: string }>;
+      suppressed: Array<{ source: string; suppressedReason: string; decisionId: string | null }>;
+      recentDecisions: Array<{ decisionId: string; status: string; resolutionReason: string | null }>;
+    }>();
+    expect(body.actions).not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
+    expect(body.suppressed).toContainEqual(expect.objectContaining({
+      source: 'checkin',
+      suppressedReason: 'already_completed_today',
+      decisionId: action.decisionId,
+    }));
+    expect(body.recentDecisions).toContainEqual(expect.objectContaining({
+      decisionId: action.decisionId,
+      status: 'completed',
+      resolutionReason: 'Heute erledigt.',
+    }));
+  });
 });
 
 describe('Coach preferences', () => {

@@ -31,7 +31,7 @@ import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionState, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -61,6 +61,8 @@ import {
   actionStateFromDecision,
   ensureActionDecisionForAction,
   listActionDecisionRows,
+  selectRecentResolvedActionDecisions,
+  type ActionDecisionRow,
 } from './services/action-push.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './services/workout-reconciliation.js';
 import { profileWithProvenance, syncProfileFromGarmin } from './services/profile-sync.js';
@@ -842,7 +844,21 @@ Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur
   }
 }
 
-async function listCurrentActionStates(userId: string, date: string): Promise<PulseActionState[]> {
+function recentDecisionFromRow(row: ActionDecisionRow): PulseRecentActionDecision {
+  return {
+    decisionId: row.id,
+    source: row.source,
+    kind: row.kind,
+    title: row.title,
+    status: row.status as PulseRecentActionDecision['status'],
+    targetRoute: row.targetRoute,
+    createdAt: row.createdAt.toISOString(),
+    resolvedAt: row.resolvedAt?.toISOString() ?? null,
+    resolutionReason: row.resolutionReason ?? null,
+  };
+}
+
+async function listCurrentActionStates(userId: string, date: string, includeHistory = false): Promise<PulseActionsResponse> {
   const context = await buildPulseContextFor(userId, date);
   const existingRows = await listActionDecisionRows(userId);
   const states: PulseActionState[] = [];
@@ -853,7 +869,15 @@ async function listCurrentActionStates(userId: string, date: string): Promise<Pu
     states.push(actionStateFromDecision(action, decision));
   }
 
-  return states;
+  if (!includeHistory) {
+    return { actions: states };
+  }
+
+  return {
+    actions: states,
+    suppressed: context.suppressedNextBestActions,
+    recentDecisions: selectRecentResolvedActionDecisions(existingRows, date).map(recentDecisionFromRow),
+  };
 }
 
 type CoachPreferencesRow = typeof pulseCoachPreferences.$inferSelect;
@@ -1075,10 +1099,11 @@ export default async function pulsePlugin(app: FastifyInstance) {
     return getPulseDataStatus(req.user.sub, today);
   });
 
-  app.get('/actions', { onRequest: [app.authenticate] }, async (req): Promise<{ actions: PulseActionState[] }> => {
+  app.get('/actions', { onRequest: [app.authenticate] }, async (req): Promise<PulseActionsResponse> => {
     const today = new Date().toISOString().split('T')[0]!;
-    const actions = await listCurrentActionStates(req.user.sub, today);
-    return { actions };
+    const query = z.object({ includeHistory: z.string().optional() }).safeParse(req.query);
+    const includeHistory = query.success && query.data.includeHistory === 'true';
+    return listCurrentActionStates(req.user.sub, today, includeHistory);
   });
 
   app.patch('/actions/:id', { onRequest: [app.authenticate] }, async (req, reply) => {

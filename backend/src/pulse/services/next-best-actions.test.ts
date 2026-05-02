@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rankNextBestActions, type NextBestActionsInput } from './next-best-actions.js';
+import { rankNextBestActions, rankNextBestActionVisibility, type NextBestActionsInput } from './next-best-actions.js';
 
 function baseInput(overrides: Partial<NextBestActionsInput> = {}): NextBestActionsInput {
   return {
@@ -101,10 +101,93 @@ describe('rankNextBestActions', () => {
         resolvedAt: '2026-05-01T08:00:00.000Z',
         resolutionReason: 'Check-in gespeichert.',
         targetRoute: '/coach',
-        rawContext: {},
+        rawContext: { openedAt: '2026-05-01' },
       }],
     }));
 
     expect(actions).not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
+  });
+
+  it('explains why completed check-in actions are hidden', () => {
+    const visibility = rankNextBestActionVisibility(baseInput({
+      todayCheckin: null,
+      actionDecisions: [{
+        id: 'decision-1',
+        userId: 'user-1',
+        source: 'next_best_action',
+        sourceId: 'checkin:/coach:0',
+        kind: 'checkin',
+        title: 'Check-in eintragen',
+        status: 'completed',
+        createdAt: '2026-05-01T07:00:00.000Z',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Check-in gespeichert.',
+        targetRoute: '/coach',
+        rawContext: { openedAt: '2026-05-01' },
+      }],
+    }));
+
+    expect(visibility.visible).not.toContainEqual(expect.objectContaining({ source: 'checkin' }));
+    expect(visibility.suppressed).toContainEqual(expect.objectContaining({
+      source: 'checkin',
+      suppressedReason: 'already_completed_today',
+      decisionId: 'decision-1',
+      status: 'completed',
+    }));
+  });
+
+  it('explains deferred actions without hiding unrelated visible actions', () => {
+    const visibility = rankNextBestActionVisibility(baseInput({
+      upcomingWorkouts: [],
+      push: { configured: true, activeSubscriptions: 0 },
+      actionDecisions: [{
+        id: 'decision-plan',
+        userId: 'user-1',
+        source: 'next_best_action',
+        sourceId: 'plan:/plan:0',
+        kind: 'plan',
+        title: 'Plan erzeugen',
+        status: 'deferred',
+        createdAt: '2026-05-01T07:00:00.000Z',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Heute Abend erneut ansehen.',
+        targetRoute: '/plan',
+        rawContext: {},
+      }],
+    }));
+
+    expect(visibility.suppressed).toContainEqual(expect.objectContaining({
+      source: 'plan',
+      suppressedReason: 'deferred',
+      suppressedUntil: '2026-05-01T08:00:00.000Z',
+    }));
+    expect(visibility.visible).toContainEqual(expect.objectContaining({ source: 'push' }));
+  });
+
+  it('does not hide today’s check-in because yesterday was completed', () => {
+    const visibility = rankNextBestActionVisibility(baseInput({
+      today: '2026-05-02',
+      todayCheckin: null,
+      actionDecisions: [{
+        id: 'decision-yesterday',
+        userId: 'user-1',
+        source: 'next_best_action',
+        sourceId: 'checkin:/coach:0',
+        kind: 'checkin',
+        title: 'Check-in eintragen',
+        status: 'completed',
+        createdAt: '2026-05-01T07:00:00.000Z',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Check-in für 2026-05-01 wurde gespeichert.',
+        targetRoute: '/coach',
+        rawContext: { openedAt: '2026-05-01' },
+      }],
+    }));
+
+    expect(visibility.visible).toContainEqual(expect.objectContaining({ source: 'checkin' }));
+    expect(visibility.suppressed).not.toContainEqual(expect.objectContaining({
+      decisionId: 'decision-yesterday',
+      source: 'checkin',
+    }));
   });
 });

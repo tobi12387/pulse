@@ -1,5 +1,5 @@
 import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
-import type { PulseCoachPreferences, PulseNextBestAction, PulseRiskSignal } from '@coaching-os/shared/pulse';
+import type { PulseCoachPreferences, PulseNextBestAction, PulseRiskSignal, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
 // ─── Rich context ─────────────────────────────────────────────────────────────
 
@@ -46,6 +46,7 @@ export interface CoachFullContext {
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   activeRiskSignals?: PulseRiskSignal[];
   nextBestActions?: PulseNextBestAction[];
+  suppressedNextBestActions?: PulseSuppressedActionState[];
   coachPreferences?: PulseCoachPreferences | null;
   recentStrengthSessions?: Array<{
     date: string;
@@ -178,6 +179,15 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       if (action.evidence?.length) s += `\nEvidence: ${action.evidence.join(' | ')}`;
     });
     s += '\nWenn Tobi fragt, was als Nächstes ansteht, priorisiere diese Liste. Bei fachfremden Fragen nur critical/high Actions erwähnen oder wenn sie direkt zur Frage passen.';
+  }
+
+  if (ctx.suppressedNextBestActions && ctx.suppressedNextBestActions.length > 0) {
+    s += '\n\n== SICHTBARE ACTION-HISTORIE ==';
+    ctx.suppressedNextBestActions.slice(0, 3).forEach(action => {
+      s += `\nAusgeblendet: ${action.title} (${action.suppressedReason})`;
+      if (action.resolutionReason) s += `\nGrund: ${action.resolutionReason}`;
+    });
+    s += '\nDiese Einträge sind bereits erledigt, verschoben oder nicht mehr aktuell; nicht erneut als offene Aufgabe formulieren.';
   }
 
   if (hasVisibleCoachPreferences(ctx.coachPreferences)) {
