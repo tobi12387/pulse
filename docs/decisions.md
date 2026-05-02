@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Dependency-Security-Refresh bleibt stabil statt Drizzle-Kit-RC
+
+- **Decision:** Pulse aktualisiert zuerst sicherheitsrelevante und risikoarme stabile Dependencies; `drizzle-kit` bleibt auf dem stabilen `latest` statt auf `1.0.0-rc.1` zu springen, obwohl dadurch ein dev-only `esbuild`-Audit-Hinweis in der Full-Audit-Ansicht verbleibt.
+- **Why:** `@fastify/jwt`/`fast-jwt` und `bullmq`/`uuid` betreffen Runtime-/Produktionsrisiko und wurden aktualisiert. Der verbleibende Hinweis liegt in `drizzle-kit` ueber `@esbuild-kit/core-utils` und betrifft eine Dev-Tooling-Abhaengigkeit; `npm audit --omit=dev` ist sauber. Ein RC-Wechsel bei DB-Migrationstooling waere riskanter als der moderate dev-only Hinweis.
+- **Alternatives:** `npm audit fix --force` nutzen (schlaegt eine falsche/alte `drizzle-kit`-Richtung vor); npm-Override fuer den transitiven `esbuild`-Pfad erzwingen (macht den Installationsbaum invalid); `drizzle-kit@1.0.0-rc.1` einfuehren (groesserer DB-Tooling-Major/RC-Wechsel ohne akuten Runtime-Nutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — UI/UX-Reibungsschluss hat Prioritaet vor neuen Feature-Wellen
 
 - **Decision:** Die naechste Pulse-Arbeitsrichtung priorisiert evidenzbasierten UI/UX-Reibungsschluss vor neuen Produktdomaenen wie Fueling/Recovery oder Native-iOS-Evaluation.
