@@ -5,7 +5,7 @@ import type {
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
-  PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse,
+  PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse,
   PulsePlanTrace, PulsePushSettings, PulsePushTopics, PulseRaceCommandResponse, RaceContext,
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
@@ -129,6 +129,11 @@ export const pulseApi = {
       };
     }> =>
       request(`/actions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  },
+
+  outcomes: {
+    daily: (days = 14): Promise<PulseDailyOutcomeLearningResponse> =>
+      request(`/outcomes/daily?days=${encodeURIComponent(String(days))}`),
   },
 
   push: {

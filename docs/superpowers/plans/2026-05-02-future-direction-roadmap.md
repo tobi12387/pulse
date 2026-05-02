@@ -1,6 +1,6 @@
 # Pulse Future Direction Roadmap
 
-> Stand: 2026-05-02 after Garmin Data Quality and Goal/Race Command Center implementation. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
+> Stand: 2026-05-02 after Garmin Data Quality, Goal/Race Command Center and Daily Outcome Learning Loop implementation. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
 
 ## Product North Star
 
@@ -20,10 +20,9 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
 | 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; this remains a real-device manual gate | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Daily Outcome Learning Loop | Close the loop between recommendations, user decisions, Garmin execution and next-day guidance | `2026-05-02-daily-outcome-learning-loop.md` |
-| 3 | Season Strategy Planner | Stop weekly plans from feeling repetitive by making the 8-16 week intent and free-day rationale visible | `2026-05-02-season-strategy-planner.md` |
-| 4 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences should be confirmed before implementation | Planning candidate below |
-| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 2 | Season Strategy Planner | Stop weekly plans from feeling repetitive by making the 8-16 week intent and free-day rationale visible | `2026-05-02-season-strategy-planner.md` |
+| 3 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences should be confirmed before implementation | Planning candidate below |
+| 4 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -34,25 +33,10 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Adaptive Training Intelligence v2 | Plan generation now uses deterministic execution review for matched, missed, replaced, RPE/recovery and deliberate rest-day rationale. | `completed/2026-05-02-adaptive-training-intelligence-v2.md`, PR #106 |
 | Mental Fitness Companion | Guided Daily Check-in questions now come from deterministic PulseContext guidance; mental support actions use the existing closure model. | `completed/2026-05-02-mental-fitness-companion.md`, PR #108 |
 | Garmin Data Quality Control Center | Settings/Data now show Garmin domain quality, freshness, repairability and blocked provider states. | `completed/2026-05-02-garmin-data-quality-control-center.md`, PR #111 |
-| Goal/Race Command Center | Plan now shows race phase, readiness, next key workout, recovery boundary and risk impact from existing evidence. | `completed/2026-05-02-goal-race-command-center.md`, active PR pending |
+| Goal/Race Command Center | Plan now shows race phase, readiness, next key workout, recovery boundary and risk impact from existing evidence. | `completed/2026-05-02-goal-race-command-center.md`, PR #112 |
+| Daily Outcome Learning Loop | Home/Coach now show a deterministic learning signal from action decisions, check-ins and Garmin execution without hidden LLM memory. | `completed/2026-05-02-daily-outcome-learning-loop.md`, active PR pending |
 
 ## Next Plan Summaries
-
-### Daily Outcome Learning Loop
-
-Implementation plan: [`2026-05-02-daily-outcome-learning-loop.md`](2026-05-02-daily-outcome-learning-loop.md)
-
-**Goal:** Pulse should learn from yesterday's recommendations and real outcomes so daily actions become less repetitive and more useful over time.
-
-**Scope:**
-- deterministic outcome correlation across action decisions, check-ins, planned workouts and matched Garmin activities;
-- Home/Coach visibility for "what Pulse learned";
-- no hidden LLM memory and no new persistence table in v1.
-
-**Acceptance:**
-- completed, dismissed and superseded actions lead to different visible outcomes;
-- Coach and Home can explain why advice changed or stopped repeating;
-- stale repeated advice becomes inspectable instead of mysterious.
 
 ### Season Strategy Planner
 

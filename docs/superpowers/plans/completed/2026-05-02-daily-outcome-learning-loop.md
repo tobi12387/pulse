@@ -31,7 +31,7 @@ Action Closure already knows whether a recommendation was completed, deferred or
 
 ## Task 1: Pure Outcome Correlation
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
   Add tests in `backend/src/pulse/services/daily-outcome-learning.test.ts` covering:
   - completed check-in action followed by same-day check-in becomes `reinforced`;
@@ -39,7 +39,7 @@ Action Closure already knows whether a recommendation was completed, deferred or
   - repeated deferred action over three days becomes `stale_pattern`;
   - missing follow-up data becomes `insufficient_evidence`.
 
-- [ ] **Step 2: Implement pure service**
+- [x] **Step 2: Implement pure service**
 
   Create `buildDailyOutcomeLearning(input)` returning:
   - `date`;
@@ -49,7 +49,7 @@ Action Closure already knows whether a recommendation was completed, deferred or
   - `evidence`;
   - `suggestedAdjustment` for Coach/Briefing wording.
 
-- [ ] **Step 3: Verify pure service**
+- [x] **Step 3: Verify pure service**
 
   ```bash
   npm test -w backend -- --run src/pulse/services/daily-outcome-learning.test.ts
@@ -58,15 +58,15 @@ Action Closure already knows whether a recommendation was completed, deferred or
 
 ## Task 2: API Contract
 
-- [ ] **Step 1: Add shared types**
+- [x] **Step 1: Add shared types**
 
   Add `PulseDailyOutcomeLearningItem` and `PulseDailyOutcomeLearningResponse` to `shared/types/pulse.ts`.
 
-- [ ] **Step 2: Add authenticated endpoint**
+- [x] **Step 2: Add authenticated endpoint**
 
   Add `GET /api/pulse/outcomes/daily?days=14` in `backend/src/pulse/plugin.ts`. Fetch recent action decisions, planned workouts, completed activities and check-ins for the authenticated user, then return a newest-first list.
 
-- [ ] **Step 3: Verify route integration**
+- [x] **Step 3: Verify route integration**
 
   ```bash
   npm test -w backend -- --run src/pulse/services/daily-outcome-learning.test.ts src/pulse/plugin.test.ts
@@ -75,23 +75,23 @@ Action Closure already knows whether a recommendation was completed, deferred or
 
 ## Task 3: Daily UI Integration
 
-- [ ] **Step 1: Add client and hook**
+- [x] **Step 1: Add client and hook**
 
   Add `pulseApi.outcomes.daily(days)` and `useDailyOutcomeLearning(days = 7)`.
 
-- [ ] **Step 2: Show Home learning signal**
+- [x] **Step 2: Show Home learning signal**
 
   In `frontend/src/pages/Home.tsx`, add a compact "Gelernt aus gestern" row near the daily action. Hide the block when the API returns no items.
 
-- [ ] **Step 3: Show Coach context signal**
+- [x] **Step 3: Show Coach context signal**
 
   In `frontend/src/pages/Coach.tsx`, show the newest outcome above suggested starter questions so repeated advice has a visible reason or correction.
 
-- [ ] **Step 4: Add browser coverage**
+- [x] **Step 4: Add browser coverage**
 
   Extend `frontend/e2e/fixtures/pulse-api.ts` and `frontend/e2e/pulse-usability.spec.ts` to verify the signal on Home and Coach for desktop and mobile.
 
-- [ ] **Step 5: Verify frontend**
+- [x] **Step 5: Verify frontend**
 
   ```bash
   npm run typecheck
@@ -104,3 +104,10 @@ Action Closure already knows whether a recommendation was completed, deferred or
 - Completed, dismissed and superseded actions lead to different visible outcomes.
 - Coach and Home stop presenting stale repeated advice without provenance.
 - No hidden LLM memory and no new persistence table are introduced in v1.
+
+## Completion Notes
+
+- Implemented as read-only deterministic service `buildDailyOutcomeLearning` with no new migration/table and no hidden LLM memory.
+- Added `GET /api/pulse/outcomes/daily?days=14`, `pulseApi.outcomes.daily(days)` and `useDailyOutcomeLearning`.
+- Home shows a compact `GELERNT AUS GESTERN` card near the daily loop; Coach shows the same context before quick prompts and prepares, but does not auto-send, the follow-up.
+- Verified with focused backend tests, full typecheck/build and focused desktop/mobile Playwright coverage.

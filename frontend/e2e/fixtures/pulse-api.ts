@@ -11,6 +11,7 @@ type MockPulseApiOptions = {
   planTrace?: unknown;
   planWorkouts?: unknown[];
   raceCommand?: unknown;
+  dailyOutcomes?: unknown[];
   goals?: unknown[];
   actions?: unknown[];
   suppressedActions?: unknown[];
@@ -320,6 +321,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/checkin/guidance') return checkinGuidance;
   if (pathname === '/api/pulse/checkin/history') return { checkins: [] };
   if (pathname === '/api/pulse/risk') return { signals: [] };
+  if (pathname === '/api/pulse/outcomes/daily') return { items: [] };
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
   if (pathname === '/api/pulse/plan/today/proposal') return { proposal: null };
   if (pathname === '/api/pulse/races') return { races: [] };
@@ -527,6 +529,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
         response.recentDecisions = options.recentDecisions ?? [];
       }
       return json(route, response);
+    }
+    if (url.pathname === '/api/pulse/outcomes/daily' && options.dailyOutcomes) {
+      return json(route, { items: options.dailyOutcomes });
     }
     if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
       const decisionId = url.pathname.split('/').at(-1) ?? 'decision-1';

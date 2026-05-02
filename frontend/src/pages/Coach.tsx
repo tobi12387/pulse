@@ -7,6 +7,7 @@ import {
   useCoachHistory,
   useCoachSend,
   useCheckinGuidance,
+  useDailyOutcomeLearning,
   usePulseBriefing,
   usePulseActions,
   usePulseHome,
@@ -14,7 +15,7 @@ import {
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseActionState, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
 type MicState = 'idle' | 'recording' | 'processing';
 
@@ -276,11 +277,58 @@ function QuickPrompts({
   );
 }
 
+function DailyOutcomeContext({ outcome, onPrompt }: {
+  outcome: PulseDailyOutcomeLearningItem | null;
+  onPrompt: (prompt: string) => void;
+}) {
+  if (!outcome) return null;
+
+  return (
+    <div className="card" style={{ padding: '12px 14px', borderColor: 'rgba(94,230,207,0.18)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 7 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          GELERNT AUS GESTERN
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          {outcome.date}
+        </span>
+      </div>
+      <div style={{ fontSize: 12.5, color: 'var(--text)', lineHeight: 1.45, fontWeight: 600 }}>
+        {outcome.title}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, marginTop: 5 }}>
+        {outcome.suggestedAdjustment}
+      </div>
+      <button
+        type="button"
+        onClick={() => onPrompt(`Was lernen wir aus gestern? ${outcome.reason} Anpassung: ${outcome.suggestedAdjustment}`)}
+        style={{
+          width: '100%',
+          marginTop: 8,
+          padding: '8px 9px',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 5,
+          color: 'var(--accent)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        Im Coach aufgreifen
+      </button>
+    </div>
+  );
+}
+
 function DailyBriefingGuide({
   home,
   actions,
   recentDecisions,
   suppressed,
+  outcome,
   briefing,
   briefingLoading,
   onPrompt,
@@ -289,6 +337,7 @@ function DailyBriefingGuide({
   actions: PulseActionState[];
   recentDecisions: PulseRecentActionDecision[];
   suppressed: PulseSuppressedActionState[];
+  outcome: PulseDailyOutcomeLearningItem | null;
   briefing: string | undefined;
   briefingLoading: boolean;
   onPrompt: (prompt: string) => void;
@@ -337,6 +386,8 @@ function DailyBriefingGuide({
           onPrompt={() => onPrompt(dailyDecision.prompt)}
         />
       )}
+
+      <DailyOutcomeContext outcome={outcome} onPrompt={onPrompt} />
 
       <div className="card" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
@@ -397,6 +448,7 @@ export default function Coach() {
 
   const { data: home } = usePulseHome();
   const { data: actionsData } = usePulseActions({ includeHistory: true });
+  const { data: outcomeData } = useDailyOutcomeLearning(7);
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const { data: checkinGuidance } = useCheckinGuidance();
   const m = home?.todayMetrics;
@@ -408,8 +460,16 @@ export default function Coach() {
   const hasMessages = (historyData?.messages.length ?? 0) > 0;
   const nextWorkout = home?.nextWorkout;
   const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
+  const latestOutcome = outcomeData?.items[0] ?? null;
   const guidedQuestionPrompts = checkinGuidance?.questions.map(question => question.label) ?? [];
   const quickPromptGroups: PromptGroup[] = [
+    ...(latestOutcome
+      ? [{
+          title: 'Aus gestern gelernt',
+          hint: latestOutcome.suggestedAdjustment,
+          prompts: [`Was ändern wir heute, weil gestern "${latestOutcome.actionTitle}" ${latestOutcome.actionStatus === 'completed' ? 'erledigt' : 'anders entschieden'} wurde?`],
+        }]
+      : []),
     ...(guidedQuestionPrompts.length > 0
       ? [{
           title: 'Heute geführt',
@@ -516,6 +576,7 @@ export default function Coach() {
             actions={actionsData?.actions ?? []}
             recentDecisions={actionsData?.recentDecisions ?? []}
             suppressed={actionsData?.suppressed ?? []}
+            outcome={latestOutcome}
             briefing={briefingData?.briefing}
             briefingLoading={briefingLoading}
             onPrompt={setInput}

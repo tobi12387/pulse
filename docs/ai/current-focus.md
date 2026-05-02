@@ -34,14 +34,16 @@ Keep this file short. Update it whenever the active work queue changes.
 28. Adaptive Training Intelligence v2 was merged and deployed via PR #106.
 29. Mental Fitness Companion was merged and deployed via PR #108.
 30. Garmin Data Quality Control Center was merged and deployed via PR #111.
-31. Goal/Race Command Center is implemented on branch `codex/goal-race-command` and should be merged/deployed next.
-32. Future direction plans for Daily Outcome Learning Loop and Season Strategy Planner are drafted as active follow-up candidates.
+31. Goal/Race Command Center was merged and deployed via PR #112.
+32. Daily Outcome Learning Loop is implemented on branch `codex/daily-outcome-learning` and should be merged/deployed next.
+33. Season Strategy Planner remains the next autonomous implementation candidate after Daily Outcome Learning.
 
 ## Current PRs / Branches
 
-- Open PRs: Goal/Race Command Center pending creation from `codex/goal-race-command`.
-- Active branch: `codex/goal-race-command`.
+- Open PRs: Daily Outcome Learning Loop pending creation from `codex/daily-outcome-learning`.
+- Active branch: `codex/daily-outcome-learning`.
 - Recent completed branches:
+- `codex/goal-race-command`: merged and deployed via PR #112.
 - `codex/garmin-data-quality`: merged and deployed via PR #111.
 - `codex/mental-fitness-companion`: merged and deployed via PR #108.
 - `codex/adaptive-training-v2`: merged and deployed via PR #106.
