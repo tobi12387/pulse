@@ -1598,14 +1598,83 @@ test('Settings separates push server, browser and device state', async ({ page }
 
   await page.goto('/settings');
 
-  await expect(page.getByText('BROWSER BLOCKIERT')).toBeVisible();
-  await expect(page.getByText('Server ist bereit, aber dieser Browser erlaubt keine neuen Push-Abos.')).toBeVisible();
-  await expect(page.getByText('bereit').first()).toBeVisible();
-  await expect(page.getByText('denied')).toBeVisible();
-  await expect(page.getByText('1 aktiv')).toBeVisible();
-  await expect(page.getByText('Test sendet an alle aktiven registrierten Geräte.')).toHaveCount(0);
-  await expect(page.getByText('push.example.test · Endpunkt gespeichert')).toBeVisible();
-  await expect(page.getByText('very/long/secret')).toHaveCount(0);
+  const pushSection = page.locator('[data-settings-section="push"]');
+  await expect(pushSection.getByText('BROWSER BLOCKIERT')).toBeVisible();
+  await expect(pushSection.getByText('Server ist bereit, aber dieser Browser erlaubt keine neuen Push-Abos.')).toBeVisible();
+  await expect(pushSection.getByText('bereit').first()).toBeVisible();
+  await expect(pushSection.getByText('denied')).toBeVisible();
+  await expect(pushSection.getByText('1 aktiv')).toBeVisible();
+  await expect(pushSection.getByText('Test sendet an alle aktiven registrierten Geräte.')).toHaveCount(0);
+  await expect(pushSection.getByText('push.example.test · Endpunkt gespeichert')).toBeVisible();
+  await expect(pushSection.getByText('very/long/secret')).toHaveCount(0);
+});
+
+test('Settings diagnostics matrix is visible first and routes to support sections', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/settings');
+  const matrix = page.getByTestId('settings-diagnostics-matrix');
+  await expect(matrix).toBeVisible();
+  await expect(matrix).toContainText('DIAGNOSE');
+  await expect(matrix).toContainText('Zugriff');
+  await expect(matrix).toContainText('Zertifikat');
+
+  const matrixBox = await matrix.boundingBox();
+  const profileBox = await page.getByRole('heading', { name: 'Profil', exact: true }).boundingBox();
+  expect(matrixBox).not.toBeNull();
+  expect(profileBox).not.toBeNull();
+  expect(matrixBox!.y).toBeLessThan(profileBox!.y);
+
+  await matrix.getByRole('button', { name: 'Gerät', exact: true }).click();
+  await expect(page).toHaveURL('/settings?section=device');
+  await expect(page.getByRole('heading', { name: 'iPhone & PWA' })).toBeVisible();
+});
+
+test('Settings diagnostics matrix separates denied push and blocked Garmin states', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window.Notification, 'permission', { get: () => 'denied' });
+  });
+
+  await mockPulseApi(page, {
+    pushSettings: {
+      configured: true,
+      publicKey: 'test-vapid-key',
+      topics: {
+        briefing: true,
+        checkin_reminder: true,
+        risk_critical: true,
+      },
+      quietHours: { start: '21:00', end: '07:00' },
+      subscriptions: [],
+    },
+    garminCoverage: {
+      range: { from: '2026-04-02', to: '2026-05-01', days: 30 },
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      circuit: { status: 'open', failures: 3, reason: 'Garmin rate limit' },
+      domains: [{
+        domain: 'daily_metrics',
+        label: 'Tagesmetriken',
+        status: 'blocked',
+        reason: 'Garmin blockiert weitere Requests.',
+        lastFreshAt: null,
+        lastFreshDate: '2026-04-29',
+        missingDays: 2,
+        partialDays: 0,
+        repairableDays: 0,
+        repairAction: null,
+        evidence: ['Circuit offen'],
+      }],
+    },
+  });
+
+  await page.goto('/settings');
+  const matrix = page.getByTestId('settings-diagnostics-matrix');
+  await expect(matrix).toContainText('Push');
+  await expect(matrix).toContainText('Browser blockiert');
+  await expect(matrix).toContainText('Garmin');
+  await expect(matrix).toContainText('Blockiert');
+  await expect(matrix).toContainText('Zertifikat');
+  await expect(matrix).toContainText('manuell');
 });
 
 test('Settings groups actions by risk and daily maintenance area', async ({ page }) => {

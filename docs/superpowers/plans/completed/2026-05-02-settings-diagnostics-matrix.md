@@ -28,35 +28,43 @@ The real iPhone test confirmed that Pulse is reachable over VPN and can launch f
 
 ## Task 1: Add Settings Section Routing
 
-- [ ] Support `?section=device|push|garmin|profile|coach|health|equipment`.
-- [ ] Scroll or focus the requested section after route load.
-- [ ] Add compact section shortcuts near the top on mobile.
+- [x] Support `?section=device|push|garmin|profile|coach|health|equipment`.
+- [x] Scroll or focus the requested section after route load.
+- [x] Add compact section shortcuts near the top on mobile.
 
 ## Task 2: Add A Device Access Summary
 
-- [ ] Show current URL/reachability context in plain language.
-- [ ] Show whether the app appears to run as browser tab or installed PWA.
-- [ ] Show service worker readiness.
-- [ ] Show push support, permission and subscription state as separate rows.
-- [ ] Show certificate trust as a manual/local-network note; do not claim automatic iOS trust detection.
+- [x] Show current URL/reachability context in plain language.
+- [x] Show whether the app appears to run as browser tab or installed PWA.
+- [x] Show service worker readiness.
+- [x] Show push support, permission and subscription state as separate rows.
+- [x] Show certificate trust as a manual/local-network note; do not claim automatic iOS trust detection.
 
 ## Task 3: Clarify Push States
 
-- [ ] Split ambiguous "not enabled" into explicit states: unsupported browser, denied permission, service worker unavailable, server config missing, ready but inactive, subscribed.
-- [ ] Keep the test-push action disabled or explanatory when prerequisites are missing.
-- [ ] Add a user-visible recovery path for denied permission or missing PWA mode.
+- [x] Split ambiguous "not enabled" into explicit states: unsupported browser, denied permission, service worker unavailable, server config missing, ready but inactive, subscribed.
+- [x] Keep the test-push action disabled or explanatory when prerequisites are missing.
+- [x] Add a user-visible recovery path for denied permission or missing PWA mode.
 
 ## Task 4: Tie Garmin Readiness Into The Same Matrix
 
-- [ ] Add a Garmin row that links directly to coverage/backfill status.
-- [ ] Ensure stale/blocked provider state is summarized without duplicating the full Data page.
-- [ ] Link to `/data?tab=coverage` once URL-backed tabs exist.
+- [x] Add a Garmin row that links directly to coverage/backfill status.
+- [x] Ensure stale/blocked provider state is summarized without duplicating the full Data page.
+- [x] Link to `/data?tab=coverage` once URL-backed tabs exist.
 
 ## Verification
 
-- [ ] `npm run typecheck`
-- [ ] `npm run test:e2e -- --grep "Settings|PWA|Push|Garmin"`
-- [ ] Manual iPhone Settings pass after deployment if certificate/push states are changed.
+- [x] `npm run typecheck`
+- [x] `npm run test:e2e -- --grep "Settings|PWA|Push|Garmin"`
+- [x] Manual iPhone Settings pass after deployment if certificate/push states are changed.
+
+## QA Evidence
+
+- RED: new Settings diagnostics matrix E2E cases failed before implementation because no top-level matrix existed.
+- GREEN: `npm run typecheck` passed.
+- GREEN: `npm run test:e2e -- --grep "Settings diagnostics matrix"` passed with 4 tests.
+- GREEN: `npm run test:e2e -- --grep "Settings|PWA|Push|Garmin"` passed with 32 tests.
+- Real iPhone certificate trust remains a manual field gate; this slice labels it honestly instead of claiming automatic iOS trust detection.
 
 ## Acceptance
 

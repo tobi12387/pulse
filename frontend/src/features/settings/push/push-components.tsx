@@ -134,10 +134,13 @@ export function PwaDeviceCard() {
         <Row label="Netz">
           <Val>{status.localNetwork ? 'lokal/VPN' : 'extern'}</Val>
         </Row>
+        <Row label="Zertifikat">
+          <Val>{status.secure ? 'manuell prüfen' : 'nicht sicher'}</Val>
+        </Row>
       </div>
 
       <p style={{ margin: '12px 0 0', fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
-        Für iPhone per VPN bleibt der lokale Server die Quelle. Wenn Safari warnt, muss der verwendete Host zur lokalen HTTPS-Konfiguration passen.
+        Für iPhone per VPN bleibt der lokale Server die Quelle. Wenn Safari warnt, muss der verwendete Host zur lokalen HTTPS-Konfiguration passen; Pulse kann iOS-Zertifikatsvertrauen nicht automatisch erkennen.
       </p>
     </div>
   );
@@ -158,6 +161,7 @@ export function PushNotificationsCard({ setMessage }: {
     staleTime: 5_000,
   });
 
+  const device = pwaReadiness();
   const supported = isPushSupported();
   const data = settings.data;
   const topics = data?.topics ?? { briefing: true, checkin_reminder: true, risk_critical: true };
@@ -169,6 +173,13 @@ export function PushNotificationsCard({ setMessage }: {
         label: 'Server nicht bereit',
         color: 'var(--amber)',
         detail: 'VAPID-Schlüssel fehlen auf dem Server; neue Geräte können keine Push-Abos anlegen.',
+      };
+    }
+    if (!device.serviceWorker) {
+      return {
+        label: 'Service Worker fehlt',
+        color: 'var(--amber)',
+        detail: 'Der Browser meldet keine Service-Worker-Basis. Push kann hier nicht aktiviert werden.',
       };
     }
     if (!supported) {
@@ -284,13 +295,13 @@ export function PushNotificationsCard({ setMessage }: {
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <button
           onClick={() => void handleEnable()}
-          disabled={!supported || !data?.configured || permissionState === 'denied' || subscribe.isPending}
+          disabled={!supported || !device.serviceWorker || !data?.configured || permissionState === 'denied' || subscribe.isPending}
           style={{
             flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
             borderRadius: 'var(--radius)', minHeight: 40, padding: '8px 12px',
             fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: supported && data?.configured && permissionState !== 'denied' ? 'var(--accent)' : 'var(--text-3)',
-            cursor: supported && data?.configured && permissionState !== 'denied' ? 'pointer' : 'default',
+            textTransform: 'uppercase', color: supported && device.serviceWorker && data?.configured && permissionState !== 'denied' ? 'var(--accent)' : 'var(--text-3)',
+            cursor: supported && device.serviceWorker && data?.configured && permissionState !== 'denied' ? 'pointer' : 'default',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
@@ -315,6 +326,9 @@ export function PushNotificationsCard({ setMessage }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
         <Row label="Server">
           <Val>{data?.configured ? 'bereit' : 'nicht bereit'}</Val>
+        </Row>
+        <Row label="Service Worker">
+          <Val>{device.serviceWorker ? 'bereit' : 'nicht verfügbar'}</Val>
         </Row>
         <Row label="Browser">
           <Val>{permissionState}</Val>

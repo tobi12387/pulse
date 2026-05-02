@@ -15,7 +15,9 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 
 ## PWA
 
-- Open Settings and check the iPhone/PWA readiness block.
+- Open Settings and check the top diagnostics matrix first: Zugriff, PWA, Service Worker, Push, Garmin and Zertifikat.
+- Use the diagnostics shortcuts to jump to Device, Push and Garmin sections.
+- Check the iPhone/PWA readiness block.
 - Add Pulse to the Home Screen from Safari.
 - Launch Pulse from the Home Screen.
 - Confirm standalone mode is shown in Settings.
@@ -34,7 +36,7 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 
 ## Push
 
-- Check Settings shows whether Web Push is supported on this browser/device.
+- Check the Settings diagnostics matrix and Push section show separate server, service worker, browser permission and device-subscription states.
 - Activate Push only when intentionally testing notifications.
 - Send a test push only after the device is registered.
 

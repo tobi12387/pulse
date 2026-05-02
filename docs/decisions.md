@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Settings startet mit einer Diagnosematrix
+
+- **Decision:** Pulse zeigt in Settings vor Profil/Coach eine Diagnosematrix fuer Zugriff, PWA-Modus, Service Worker, Push, Garmin und Zertifikat sowie direkte Sprungziele zu Device, Push, Garmin, Profil und Health.
+- **Why:** iPhone/VPN/PWA ist ein echter Alltagszugang, und die bisher wichtigsten Supportfragen lagen zu tief in Settings verteilt. Die Matrix macht blockierte Push-Erlaubnis, Service-Worker-Fehlen, Garmin-Blockaden und manuelle Zertifikatsgrenzen sichtbar, ohne iOS-Zertifikatvertrauen technisch vorzutaeuschen.
+- **Alternatives:** Nur die bestehenden Device-/Push-Karten verbessern (weiterhin zu tief auf Mobile); Zertifikatvertrauen automatisch anzeigen (Browser/iOS liefert Pulse kein verlaessliches Signal); Garmin-Details aus Data duplizieren (zu viel Detail statt Support-Zusammenfassung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Feedback Recovery bleibt lokal und inline
 
 - **Decision:** Pulse nutzt fuer UI-Fehlerzustaende ein kleines `InlineFeedback`-Primitive und lokale Recovery pro Karte/Aktion statt einer globalen Toast- oder Route-Fehlerschicht.
