@@ -32,7 +32,7 @@
 
 - [x] Create `backend/src/pulse/routes/health-routes.ts` for `/health`, `/readiness`, `/load`, `/health-state`, `/metrics`, `/weight`, and `/profile`.
 - [x] Create `backend/src/pulse/routes/daily-loop-routes.ts` for `/home`, `/actions`, `/outcomes/daily`, `/decisions/quality`, `/briefing`, `/risk`.
-- [ ] Create `backend/src/pulse/routes/coach-routes.ts` for `/coach`, `/coach/history`, and `/coach/preferences`.
+- [x] Create `backend/src/pulse/routes/coach-routes.ts` for `/coach`, `/coach/history`, and `/coach/preferences`.
 - [ ] Create `backend/src/pulse/routes/checkin-routes.ts` for `/checkin`, `/checkin/voice`, `/checkin/today`, `/checkin/guidance`, `/checkin/history`, `/mental/themes`, and `/mental/load-overlay`.
 - [ ] Create `backend/src/pulse/routes/training-routes.ts` for plan, workout, strength, equipment, race, season, review, nutrition and training analytics endpoints.
 - [ ] Create `backend/src/pulse/routes/garmin-routes.ts` for Pulse-scoped Garmin coverage, backfill, calendar sync, signal usefulness, profile sync and sync endpoints.

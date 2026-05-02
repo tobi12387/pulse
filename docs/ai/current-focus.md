@@ -44,13 +44,15 @@ Keep this file short. Update it whenever the active work queue changes.
 38. Deploy Cert Guard was merged and deployed via PR #120 so the structure cleanup can remove tracked cert files without losing HTTPS on `:5175`.
 39. Project Structure Audit was merged and deployed via PR #119.
 40. Backend Health Route Extraction was merged and deployed via PR #121.
-41. Backend Daily Loop Route Extraction is active on `codex/pulse-daily-loop-routes`.
+41. Backend Daily Loop Route Extraction was merged and deployed via PR #122.
+42. Backend Coach Route Extraction is active on `codex/pulse-coach-routes`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/pulse-daily-loop-routes` for the second backend route-boundary slice.
+- Active branch: `codex/pulse-coach-routes` for the Coach route-boundary slice.
 - Recent completed branches:
+- `codex/pulse-daily-loop-routes`: merged and deployed via PR #122.
 - `codex/pulse-health-route-extraction`: merged and deployed via PR #121.
 - `codex/project-structure-audit`: merged and deployed via PR #119.
 - `codex/deploy-cert-guard`: merged and deployed via PR #120.

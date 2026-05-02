@@ -30,7 +30,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse, PulseGuidedCheckinResponse, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseSeasonStrategyResponse, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
+import type { PulseActivityType as SharedPulseActivityType, PulseDataCoverageResponse, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse, PulseGuidedCheckinResponse, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseSeasonStrategyResponse, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad } from './services/load-engine.js';
 import {
@@ -54,7 +54,8 @@ import { buildTrainingExecutionReview } from './services/training-execution-revi
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { getActiveRaces } from './services/race-engine.js';
 import { buildRaceCommandSummary } from './services/race-command.js';
-import { getFitnessLoadCached, getPulseDataStatus, loadDailyDecisionQuality } from './services/daily-loop.js';
+import { getFitnessLoadCached, getPulseDataStatus } from './services/daily-loop.js';
+import { normalizeCoachMessages, serializeCoachPreferences } from './services/coach.js';
 import { buildSeasonStrategy } from './services/season-strategy.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
@@ -87,12 +88,9 @@ import {
 import { syncGarminDay } from '../routes/garmin.js';
 import { isPushConfigured, normalizePushTopics, sendPushToUser } from '../lib/push.js';
 import { garminApi } from '../lib/garmin-client.js';
+import { registerPulseCoachRoutes } from './routes/coach-routes.js';
 import { registerPulseDailyLoopRoutes } from './routes/daily-loop-routes.js';
 import { registerPulseHealthRoutes } from './routes/health-routes.js';
-
-const coachMessageSchema = z.object({
-  message: z.string().min(1).max(2000),
-});
 
 const garminSyncSchema = z.object({
   days: z.number().int().min(1).max(30).optional().default(7),
@@ -188,14 +186,6 @@ const activityFeedbackSchema = z.object({
   rpeNote: z.string().trim().max(500).nullable().optional(),
   sorenessAreas: z.array(z.enum(RPE_SORENESS_AREAS)).max(8).nullable().optional(),
 });
-
-const coachPreferencesPatchSchema = z.object({
-  timeWindows: z.string().trim().max(500).optional(),
-  dislikedWorkoutPatterns: z.array(z.string().trim().min(1).max(120)).max(10).optional(),
-  preferredLongDays: z.array(z.number().int().min(0).max(6)).max(7).optional(),
-  injurySensitiveConstraints: z.array(z.string().trim().min(1).max(160)).max(10).optional(),
-  communicationStyle: z.enum(['direct', 'gentle', 'data_first']).optional(),
-}).strict().refine(value => Object.keys(value).length > 0, { message: 'Mindestens ein Feld erforderlich' });
 
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
 const isoDateSchema = z.string()
@@ -311,17 +301,6 @@ function classifyInsightFailure(error: unknown): {
       action: 'Deine Daten bleiben sichtbar. Versuche es gleich erneut oder wechsle auf einen anderen Zeitraum.',
     },
   };
-}
-
-function normalizeCoachMessages(messages: unknown): PulseCoachMessage[] {
-  if (!Array.isArray(messages)) return [];
-  return messages.filter((m): m is PulseCoachMessage => (
-    typeof m === 'object' &&
-    m !== null &&
-    ((m as PulseCoachMessage).role === 'user' || (m as PulseCoachMessage).role === 'assistant') &&
-    typeof (m as PulseCoachMessage).content === 'string' &&
-    typeof (m as PulseCoachMessage).timestamp === 'string'
-  ));
 }
 
 async function getPlannedZoneByActivityId(userId: string, activityIds: string[]): Promise<Map<string, number>> {
@@ -821,29 +800,6 @@ Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur
   }
 }
 
-type CoachPreferencesRow = typeof pulseCoachPreferences.$inferSelect;
-
-const DEFAULT_COACH_PREFERENCES: PulseCoachPreferences = {
-  timeWindows: '',
-  dislikedWorkoutPatterns: [],
-  preferredLongDays: [],
-  injurySensitiveConstraints: [],
-  communicationStyle: 'data_first',
-  updatedAt: null,
-};
-
-function serializeCoachPreferences(row: CoachPreferencesRow | null | undefined): PulseCoachPreferences {
-  if (!row) return DEFAULT_COACH_PREFERENCES;
-  return {
-    timeWindows: row.timeWindows,
-    dislikedWorkoutPatterns: row.dislikedWorkoutPatterns,
-    preferredLongDays: row.preferredLongDays,
-    injurySensitiveConstraints: row.injurySensitiveConstraints,
-    communicationStyle: row.communicationStyle as PulseCoachCommunicationStyle,
-    updatedAt: row.updatedAt?.toISOString() ?? null,
-  };
-}
-
 // ─── Plugin ───────────────────────────────────────────────────────────────────
 
 export default async function pulsePlugin(app: FastifyInstance) {
@@ -855,6 +811,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
   await registerPulseHealthRoutes(app);
   await registerPulseDailyLoopRoutes(app);
+  await registerPulseCoachRoutes(app);
 
   app.get('/sync/status', { onRequest: [app.authenticate] }, async (req) => {
     const today = new Date().toISOString().split('T')[0]!;
@@ -1333,99 +1290,6 @@ export default async function pulsePlugin(app: FastifyInstance) {
     };
 
     return response;
-  });
-
-  app.get('/coach/preferences', { onRequest: [app.authenticate] }, async (req): Promise<{ preferences: PulseCoachPreferences }> => {
-    const [row] = await db.select().from(pulseCoachPreferences)
-      .where(eq(pulseCoachPreferences.userId, req.user.sub))
-      .limit(1);
-    return { preferences: serializeCoachPreferences(row) };
-  });
-
-  app.patch('/coach/preferences', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const parsed = coachPreferencesPatchSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
-
-    const userId = req.user.sub;
-    const now = new Date();
-    const updates: Partial<typeof pulseCoachPreferences.$inferInsert> = { updatedAt: now };
-
-    if (parsed.data.timeWindows !== undefined) updates.timeWindows = parsed.data.timeWindows;
-    if (parsed.data.dislikedWorkoutPatterns !== undefined) {
-      updates.dislikedWorkoutPatterns = [...new Set(parsed.data.dislikedWorkoutPatterns)];
-    }
-    if (parsed.data.preferredLongDays !== undefined) {
-      updates.preferredLongDays = [...new Set(parsed.data.preferredLongDays)].sort((a, b) => a - b);
-    }
-    if (parsed.data.injurySensitiveConstraints !== undefined) {
-      updates.injurySensitiveConstraints = [...new Set(parsed.data.injurySensitiveConstraints)];
-    }
-    if (parsed.data.communicationStyle !== undefined) updates.communicationStyle = parsed.data.communicationStyle;
-
-    const [row] = await db.insert(pulseCoachPreferences)
-      .values({ userId, ...updates } as typeof pulseCoachPreferences.$inferInsert)
-      .onConflictDoUpdate({
-        target: pulseCoachPreferences.userId,
-        set: updates,
-      })
-      .returning();
-
-    await invalidateUser(userId);
-    return { preferences: serializeCoachPreferences(row) };
-  });
-
-  app.post('/coach', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const parsed = coachMessageSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Nachricht' });
-
-    const userId = req.user.sub;
-    const today  = new Date().toISOString().split('T')[0]!;
-
-    const [[existingSession], pulseContext, dailyDecisionQuality] = await Promise.all([
-      db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })
-        .from(pulseCoachSessions)
-        .where(eq(pulseCoachSessions.userId, userId))
-        .orderBy(desc(pulseCoachSessions.lastMessageAt))
-        .limit(1),
-      buildCachedPulseContextFor(userId, today),
-      loadDailyDecisionQuality(userId, 14).catch(() => null),
-    ]);
-
-    const coachCtx = mapPulseContextToCoachContext(pulseContext);
-    coachCtx.dailyDecisionQuality = dailyDecisionQuality;
-    const systemPrompt = buildRichSystemPrompt(coachCtx);
-    const history = normalizeCoachMessages(existingSession?.messages);
-
-    const replyText = await getCoachReplyRich(parsed.data.message, systemPrompt, history);
-
-    const userMsg: PulseCoachMessage = { role: 'user',      content: parsed.data.message, timestamp: new Date().toISOString() };
-    const botMsg:  PulseCoachMessage = { role: 'assistant', content: replyText,            timestamp: new Date().toISOString() };
-
-    if (existingSession) {
-      const updated = [...history.slice(-20), userMsg, botMsg];
-      await db.update(pulseCoachSessions)
-        .set({ messages: updated, lastMessageAt: new Date() })
-        .where(eq(pulseCoachSessions.id, existingSession.id));
-    } else {
-      await db.insert(pulseCoachSessions).values({ userId, messages: [userMsg, botMsg] });
-    }
-
-    return { reply: replyText };
-  });
-
-  app.get('/coach/history', { onRequest: [app.authenticate] }, async (req) => {
-    const [session] = await db.select({ messages: pulseCoachSessions.messages })
-      .from(pulseCoachSessions)
-      .where(eq(pulseCoachSessions.userId, req.user.sub))
-      .orderBy(desc(pulseCoachSessions.lastMessageAt))
-      .limit(1);
-
-    return { messages: normalizeCoachMessages(session?.messages) };
-  });
-
-  app.delete('/coach/history', { onRequest: [app.authenticate] }, async (req, reply) => {
-    await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, req.user.sub));
-    return reply.status(204).send();
   });
 
   app.post('/checkin', { onRequest: [app.authenticate] }, async (req, reply) => {
