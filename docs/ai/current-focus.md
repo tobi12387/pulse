@@ -74,6 +74,7 @@ Keep this file short. Update it whenever the active work queue changes.
 68. Ops And Tooling Cleanup was merged and deployed via PR #149.
 69. Docs Design Handoff Relocation was merged and deployed via PR #150.
 70. Real iPhone/VPN/PWA field evidence was captured from Tobi's device: routes, Coach keyboard, Home Screen launch and Settings readiness passed; local certificate trust remains the only confirmed friction.
+71. UI/UX deep audit follow-up is now the active priority: the next work should close mobile containment/touch, daily-loop continuity, feedback resilience, Settings diagnostics and current Canva/Figma/WebKit evidence before new product domains.
 
 ## Current PRs / Branches
 
@@ -196,10 +197,12 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
+- UI/UX Deep Friction Closure is now the next priority. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md` and `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md`.
+- Recommended implementation order: mobile touch/containment, daily-loop route priority, feedback resilience, Settings diagnostics matrix, UX evidence toolchain refresh.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
-- No further broad autonomous feature plan is currently ungated; the remaining feature plans need real-device evidence or preference decisions.
+- No further broad autonomous feature plan outside the UI/UX plan pack is currently ungated; Fueling/Recovery still needs preference decisions.
 - Mobile Field Reliability has real-device iPhone/VPN/PWA evidence; no mobile layout or Coach keyboard fix was exposed. Next manual follow-up is installing/trusting the local Pulse root CA on iPhone if warning-free PWA behavior is required.
 - Fueling & Recovery needs dietary/preference decisions before implementation; Native iOS remains a later evidence gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
