@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Health-Routen sind der erste Backend-Boundary-Slice
+
+- **Decision:** Pulse extrahiert `/health`, `/readiness`, `/load`, `/health-state`, `/metrics`, `/weight` und `/profile` zuerst nach `backend/src/pulse/routes/health-routes.ts`; `backend/src/pulse/plugin.ts` registriert dieses Modul vor den restlichen bestehenden Routen.
+- **Why:** Diese Endpoints haben klare Auth- und Datenzugriffsgrenzen, sind stark im Alltag sichtbar und entlasten den Router-Monolithen ohne neue Persistenz, URL-Aenderungen oder UI-Verhalten.
+- **Alternatives:** Den kompletten Backend-Router in einem PR splitten (zu konflikt- und regressionsanfaellig); zuerst Training/Garmin extrahieren (mehr Seiteneffekte); nur Hilfsfunktionen verschieben (reduziert den eigentlichen Merge-Hotspot kaum).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Deploy-Script provisioniert lokale Frontend-Zertifikate
 
 - **Decision:** `scripts/deploy.sh` sichert vor dem Fast-Forward-Pull nur server-lokales Root-CA-Material und stellt nach dem Pull fehlende `frontend/certs`-Leaf-Zertifikate mit `openssl` wieder her. Getrackte Leaf-Keys werden nicht wiederhergestellt; lokale Zertifikate bleiben Runtime-State ausserhalb von Git.
