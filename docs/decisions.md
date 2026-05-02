@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Plan-Strategie-UI bekommt eine eigene Feature-Grenze
+
+- **Decision:** Pulse verschiebt Plan Trace, Race Command, Season Strategy und ihre kleinen Fact-/Insight-Helfer aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/strategy/strategy-components.tsx`.
+- **Why:** Diese Karten erklaeren Trainingsstrategie, Ziel-/Race-Kontext und Plan-Evidenz und bilden eine fachliche UI-Grenze neben Training und Goals. `Plan.tsx` bleibt fuer Route-State, Daten-Fetching, Mutationen und Tab-Orchestrierung verantwortlich.
+- **Alternatives:** Strategie-Karten im Page-Monolith lassen (Phase 4 reduziert den groessten UI-Hotspot kaum); Karten in globale Components verschieben (zu domain-spezifisch); direkt Goals und Strategy in einem PR verschieben (groesserer Review- und Merge-Risiko-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Playwright folgt optionalem lokalen HTTPS
 
 - **Decision:** Pulse bestimmt die lokale Playwright-Default-URL aus dem Vorhandensein der ungetrackten Vite-Zertifikate: mit Certs `https://127.0.0.1:5173`, ohne Certs `http://127.0.0.1:5173`. `PLAYWRIGHT_BASE_URL` bleibt der explizite Override.
