@@ -3,7 +3,8 @@ set -euo pipefail
 
 HOST="${PULSE_HOST:-root@192.168.178.46}"
 APP_PATH="${PULSE_PATH:-/root/pulse}"
-URL="${PULSE_URL:-https://192.168.178.46}"
+URL="${PULSE_URL:-https://192.168.178.46:5175}"
+HEALTH_PATH="${PULSE_HEALTH_PATH:-/api/pulse/health}"
 
 usage() {
   cat <<USAGE
@@ -34,24 +35,26 @@ server_status() {
 }
 
 health() {
-  ssh_pulse "echo '--- server local ---' && curl -sk https://127.0.0.1/api/ping && echo"
+  ssh_pulse "echo '--- server local backend ---' && curl -s http://127.0.0.1:3000$HEALTH_PATH && echo"
   echo "--- lan ---"
-  curl -sk "$URL/api/ping"
+  curl -sk "$URL$HEALTH_PATH"
   echo
 }
 
 deploy() {
   ssh_pulse "cd '$APP_PATH' && \
     bash scripts/deploy.sh && \
-    curl -sk https://127.0.0.1/api/ping"
+    curl -s http://127.0.0.1:3000$HEALTH_PATH"
   echo
-  curl -sk "$URL/api/ping"
+  curl -sk "$URL$HEALTH_PATH"
   echo
 }
 
 logs() {
   ssh_pulse "echo '--- pm2 pulse error ---' && tail -120 /root/.pm2/logs/pulse-error.log 2>/dev/null || true; \
     echo '--- pm2 pulse out ---' && tail -80 /root/.pm2/logs/pulse-out.log 2>/dev/null || true; \
+    echo '--- pm2 pulse-frontend error ---' && tail -120 /root/.pm2/logs/pulse-frontend-error.log 2>/dev/null || true; \
+    echo '--- pm2 pulse-frontend out ---' && tail -80 /root/.pm2/logs/pulse-frontend-out.log 2>/dev/null || true; \
     echo '--- nginx error ---' && tail -80 /var/log/nginx/error.log 2>/dev/null || true"
 }
 

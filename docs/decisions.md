@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Pulse Ops nutzt die aktive LAN-/PM2-Topologie
+
+- **Decision:** Pulse Ops zeigt auf `https://192.168.178.46:5175` und `/api/pulse/health`, `pm2.config.js` verwaltet `pulse` plus `pulse-frontend`, `scripts/deploy.sh` startet/laedt beide Prozesse aus der PM2-Config, und das Root-Package heisst `pulse`.
+- **Why:** Die App laeuft im Alltag als lokale Web/PWA ueber Vite Preview auf Port 5175 mit Backend-Proxy, nicht mehr als reine Backend-/Nginx-443-Oberflaeche. Der alte Root-Name `coaching-os-v2` war nur noch historisch und fuehrte in Ops-Ausgaben und Tests zu falscher mentaler Zuordnung.
+- **Alternatives:** Nur die Pulse-Ops-URL korrigieren (PM2-Drift bleibt); den alten Package-Namen behalten (weniger Lockfile-Churn, aber weiter falsches Projektlabel); `./pulse/*`-Exports oder Native-iOS-Ops einbauen (nicht Teil des aktuellen Struktur-/Ops-Slices).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Shared Pulse Types nutzen Domain-Dateien mit Kompatibilitaets-Barrel
 
 - **Decision:** Pulse splittet `shared/types/pulse.ts` in `shared/types/pulse/{activity,daily-loop,garmin,mental,plan,profile,push,index}.ts` und behaelt `shared/types/pulse.ts` als Barrel fuer `@coaching-os/shared/pulse`.

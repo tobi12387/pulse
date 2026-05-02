@@ -1,6 +1,6 @@
 ---
 name: pulse-ops
-description: Use when operating the Pulse project on its production-like home server: checking SSH status, syncing GitHub, deploying /root/pulse, running builds/tests, inspecting PM2/Nginx/logs, or validating https://192.168.178.46 healthchecks.
+description: Use when operating the Pulse project on its production-like home server: checking SSH status, syncing GitHub, deploying /root/pulse, running builds/tests, inspecting PM2/Nginx/logs, or validating https://192.168.178.46:5175 healthchecks.
 ---
 
 # Pulse Ops
@@ -11,9 +11,9 @@ description: Use when operating the Pulse project on its production-like home se
 - Local workspace: `/Users/tobi/Documents/New project`
 - Server SSH: `root@192.168.178.46`
 - Server project path: `/root/pulse`
-- PM2 app: `pulse`
-- Public LAN URL: `https://192.168.178.46`
-- Healthcheck: `/api/ping`
+- PM2 apps: `pulse` (backend) and `pulse-frontend` (Vite preview on `:5175`)
+- Public LAN URL: `https://192.168.178.46:5175`
+- Healthcheck: `/api/pulse/health`
 - Default branch: `main`
 
 ## Operating principles
@@ -52,12 +52,10 @@ PULSE_HOST=root@192.168.178.46 PULSE_PATH=/root/pulse plugins/pulse-ops/scripts/
 1. Check local and server status.
 2. Confirm the server has no uncommitted tracked changes.
 3. On the server: `git fetch origin main && git pull --ff-only origin main`.
-4. Run `npm ci` only when dependencies changed or `node_modules` is missing.
-5. Run `npm run build`.
-6. Run `npm test` unless the user explicitly requests a fast deploy.
-7. Run `pm2 startOrReload pm2.config.js && pm2 save`.
-8. Run `nginx -t`.
-9. Check `https://127.0.0.1/api/ping` on the server and `https://192.168.178.46/api/ping` from the local machine.
+4. Prefer the canonical deploy script: `bash scripts/deploy.sh`.
+5. The script runs `npm ci`, shared/backend/frontend builds, migrations, and PM2 start/reload for both processes.
+6. Run `nginx -t` only when Nginx config changed.
+7. Check `http://127.0.0.1:3000/api/pulse/health` on the server and `https://192.168.178.46:5175/api/pulse/health` from the local machine.
 
 ## Nginx expectations
 
@@ -70,18 +68,20 @@ Only one enabled site should normally exist:
 Expected behavior:
 
 - Port `80` redirects to HTTPS.
-- Port `443` proxies to `http://127.0.0.1:3000`.
+- Port `443` may proxy backend traffic for legacy checks.
+- The active local web/PWA surface is Vite preview on `https://192.168.178.46:5175`.
 - TLS uses the local certificates in `/root/pulse/frontend/certs`.
 
 ## PM2 expectations
 
-Only the backend process should normally be running:
+Both Pulse processes should normally be running:
 
 ```text
 pulse
+pulse-frontend
 ```
 
-The old `pulse-ui` preview process is not needed because Fastify serves `frontend/dist` and Nginx proxies to Fastify.
+The old `pulse-ui` preview process is not needed. `pulse-frontend` serves the built frontend through Vite preview and proxies `/api` to the backend.
 
 ## Diagnostics
 
@@ -94,4 +94,4 @@ plugins/pulse-ops/scripts/pulse_ops.sh logs
 plugins/pulse-ops/scripts/pulse_ops.sh nginx
 ```
 
-If the healthcheck passes on `127.0.0.1` but fails on `192.168.178.46`, suspect LAN/firewall/TLS routing. If PM2 is online but `/api/ping` fails, inspect `pulse-error.log` first.
+If the backend healthcheck passes on `127.0.0.1:3000` but fails on `192.168.178.46:5175`, suspect Vite preview, LAN/firewall, VPN or TLS routing. If PM2 is online but `/api/pulse/health` fails, inspect `pulse-error.log` and `pulse-frontend-error.log` first.
