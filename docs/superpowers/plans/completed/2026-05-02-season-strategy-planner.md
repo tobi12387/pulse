@@ -32,7 +32,7 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
 
 ## Task 1: Pure Season Strategy
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
   Add `backend/src/pulse/services/season-strategy.test.ts` covering:
   - A-race 10 weeks away yields build, peak, taper and race-week blocks;
@@ -40,7 +40,7 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
   - availability with six open days still produces intentional free days;
   - no active race falls back to maintenance strategy.
 
-- [ ] **Step 2: Implement pure service**
+- [x] **Step 2: Implement pure service**
 
   Create `buildSeasonStrategy(input)` returning:
   - `horizonWeeks`;
@@ -50,7 +50,7 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
   - `guardrails` with max hard days, target sessions, deload and free-day rationale;
   - `evidence`.
 
-- [ ] **Step 3: Verify pure service**
+- [x] **Step 3: Verify pure service**
 
   ```bash
   npm test -w backend -- --run src/pulse/services/season-strategy.test.ts
@@ -59,19 +59,19 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
 
 ## Task 2: API and Plan Generation Guardrails
 
-- [ ] **Step 1: Add shared contract**
+- [x] **Step 1: Add shared contract**
 
   Add `PulseSeasonStrategy`, `PulseSeasonStrategyGuardrails` and `PulseSeasonStrategyResponse` to `shared/types/pulse.ts`.
 
-- [ ] **Step 2: Add endpoint**
+- [x] **Step 2: Add endpoint**
 
   Add `GET /api/pulse/season-strategy` in `backend/src/pulse/plugin.ts`. Reuse active races, goals, fitness load, availability and coach preferences. Return a maintenance strategy when no race exists.
 
-- [ ] **Step 3: Feed guardrails into weekly plan generation**
+- [x] **Step 3: Feed guardrails into weekly plan generation**
 
   In `backend/src/pulse/services/plan-engine.ts`, use the strategy guardrails to cap hard days, avoid filling every available day and record deliberate free-day rationale. Preserve existing health-state and risk constraints as stronger rules.
 
-- [ ] **Step 4: Verify backend**
+- [x] **Step 4: Verify backend**
 
   ```bash
   npm test -w backend -- --run src/pulse/services/season-strategy.test.ts src/pulse/services/plan-engine.test.ts src/pulse/plugin.test.ts
@@ -80,11 +80,11 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
 
 ## Task 3: Plan UI Integration
 
-- [ ] **Step 1: Add client and hook**
+- [x] **Step 1: Add client and hook**
 
   Add `pulseApi.seasonStrategy.get()` and `useSeasonStrategy()`.
 
-- [ ] **Step 2: Add Plan season line**
+- [x] **Step 2: Add Plan season line**
 
   In `frontend/src/pages/Plan.tsx`, render a compact "Saisonlinie" near Race Command:
   - current block;
@@ -93,11 +93,11 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
   - why available days may stay free;
   - evidence chips.
 
-- [ ] **Step 3: Add E2E coverage**
+- [x] **Step 3: Add E2E coverage**
 
   Extend fixture and tests so desktop and mobile Plan show the season line, and a six-day availability mock still surfaces intentional free-day rationale.
 
-- [ ] **Step 4: Verify frontend**
+- [x] **Step 4: Verify frontend**
 
   ```bash
   npm run typecheck
@@ -110,3 +110,10 @@ Race Command explains the current race phase and next key workout. Adaptive Trai
 - Available days are not automatically treated as required training days.
 - Deload, taper and free-day decisions are visible before LLM narration.
 - The feature remains inside Plan and does not introduce a separate dashboard.
+
+## Completion Notes
+
+- Implemented deterministic `buildSeasonStrategy()` with race, maintenance, consolidation, taper and free-day guardrails.
+- Added `GET /api/pulse/season-strategy`, Plan Trace input snapshots and weekly Plan Engine guardrail consumption.
+- Added the Plan "Saisonlinie" card with current block, next boundary, hard-day cap, free-day rationale and evidence chips.
+- Verification: `npm test -w backend -- --run src/pulse/services/season-strategy.test.ts src/pulse/services/plan-engine.test.ts`, `npm run typecheck`, `npm run test:e2e -- --grep "Saison|Season|Plan|free"`, `npm run check:migrations`, `git diff --check`.

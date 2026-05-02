@@ -32,7 +32,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseSeasonStrategyResponse, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -58,6 +58,7 @@ import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-eng
 import { getActiveRaces } from './services/race-engine.js';
 import { buildRaceCommandSummary } from './services/race-command.js';
 import { buildDailyOutcomeLearning, type DailyOutcomeLearningActionDecision } from './services/daily-outcome-learning.js';
+import { buildSeasonStrategy } from './services/season-strategy.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { listMentalThemes } from './services/mental-themes.js';
@@ -406,6 +407,14 @@ function shiftIsoDate(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().split('T')[0]!;
+}
+
+function currentWeekStartIso(now = new Date()): string {
+  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = weekStart.getUTCDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  weekStart.setUTCDate(weekStart.getUTCDate() + mondayOffset);
+  return weekStart.toISOString().split('T')[0]!;
 }
 
 function normalizeSorenessAreas(areas: string[] | null): RpeSorenessArea[] | null {
@@ -2827,6 +2836,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
+    const [coachPrefsRow] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
     const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
     const recentPlanActivities = recentActs.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -2847,6 +2857,25 @@ export default async function pulsePlugin(app: FastifyInstance) {
       title: r.title,
       recommendation: r.recommendation,
     }));
+    const coachPreferences = serializeCoachPreferences(coachPrefsRow ?? null);
+    const seasonStrategy = buildSeasonStrategy({
+      today,
+      weekStart: weekStartStr,
+      races: activeRaces,
+      goals: planGoals.map(goal => ({
+        id: null,
+        title: goal.title,
+        category: goal.category,
+        targetDate: goal.targetDate,
+        racePriority: goal.racePriority,
+      })),
+      fitnessLoad,
+      availability: { availableDays, weeklyHours: weeklyHoursTarget },
+      coachPreferences: {
+        preferredLongDays: coachPreferences.preferredLongDays,
+        dislikedWorkoutPatterns: coachPreferences.dislikedWorkoutPatterns,
+      },
+    });
     const executionReview = buildExecutionReviewForPreviousWeek({
       currentWeekStart: weekStartStr,
       previousWorkouts: previousWorkoutRows,
@@ -2874,6 +2903,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       recentActivities: recentPlanActivities,
       planLearning: planLearningWithExecution,
       executionReview,
+      seasonStrategy,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -2894,6 +2924,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         riskSignals,
         planLearning:        planLearningWithExecution,
         executionReview,
+        seasonStrategy,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -3036,6 +3067,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       recentActivities: recentPlanActivities,
       planDecision: finalPlanDecision,
       workouts: traceWorkouts,
+      seasonStrategy,
     });
     const planTrace = await persistPlanTrace(app, {
       userId,
@@ -3279,6 +3311,62 @@ export default async function pulsePlugin(app: FastifyInstance) {
           title: signal.title,
           recommendation: signal.recommendation,
         })),
+      }),
+    };
+  });
+
+  app.get('/season-strategy', { onRequest: [app.authenticate] }, async (req): Promise<PulseSeasonStrategyResponse> => {
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const weekStart = currentWeekStartIso();
+    const fitnessLoad = await getFitnessLoadCached(userId, today);
+
+    const [races, goals, weekAvail, profile, prefsRow] = await Promise.all([
+      getActiveRaces(userId, today, { ctl: fitnessLoad.ctl }),
+      db.select({
+        id: pulseGoals.id,
+        title: pulseGoals.title,
+        category: pulseGoals.category,
+        targetDate: pulseGoals.targetDate,
+        racePriority: pulseGoals.racePriority,
+      }).from(pulseGoals)
+        .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
+        .limit(8),
+      db.select().from(pulseWeekAvailability)
+        .where(and(eq(pulseWeekAvailability.userId, userId), eq(pulseWeekAvailability.weekStart, weekStart)))
+        .limit(1),
+      db.select().from(pulseUserProfile)
+        .where(eq(pulseUserProfile.userId, userId))
+        .limit(1),
+      db.select().from(pulseCoachPreferences)
+        .where(eq(pulseCoachPreferences.userId, userId))
+        .limit(1),
+    ]);
+
+    const preferences = serializeCoachPreferences(prefsRow[0] ?? null);
+    const availability = {
+      availableDays: (weekAvail[0]?.availableDays as number[] | null) ?? [0, 2, 4, 5],
+      weeklyHours: weekAvail[0]?.weeklyHours ?? profile[0]?.weeklyHoursTarget ?? 8,
+    };
+
+    return {
+      strategy: buildSeasonStrategy({
+        today,
+        weekStart,
+        races,
+        goals: goals.map(goal => ({
+          id: goal.id,
+          title: goal.title,
+          category: goal.category,
+          targetDate: goal.targetDate,
+          racePriority: normalizeRacePriority(goal.racePriority),
+        })),
+        fitnessLoad,
+        availability,
+        coachPreferences: {
+          preferredLongDays: preferences.preferredLongDays,
+          dislikedWorkoutPatterns: preferences.dislikedWorkoutPatterns,
+        },
       }),
     };
   });
@@ -3667,6 +3755,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
     ]);
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
+    const [coachPrefsRow2] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
     const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
     const recentPlanActivities2 = recentActs2.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -3687,6 +3776,25 @@ export default async function pulsePlugin(app: FastifyInstance) {
       title: r.title,
       recommendation: r.recommendation,
     }));
+    const coachPreferences2 = serializeCoachPreferences(coachPrefsRow2 ?? null);
+    const seasonStrategy2 = buildSeasonStrategy({
+      today,
+      weekStart,
+      races: activeRaces2,
+      goals: planGoals2.map(goal => ({
+        id: null,
+        title: goal.title,
+        category: goal.category,
+        targetDate: goal.targetDate,
+        racePriority: goal.racePriority,
+      })),
+      fitnessLoad,
+      availability: { availableDays: parsed.data.availableDays, weeklyHours: parsed.data.weeklyHours },
+      coachPreferences: {
+        preferredLongDays: coachPreferences2.preferredLongDays,
+        dislikedWorkoutPatterns: coachPreferences2.dislikedWorkoutPatterns,
+      },
+    });
     const executionReview2 = buildExecutionReviewForPreviousWeek({
       currentWeekStart: weekStart,
       previousWorkouts: previousWorkoutRows2,
@@ -3714,6 +3822,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       recentActivities: recentPlanActivities2,
       planLearning: planLearningWithExecution2,
       executionReview: executionReview2,
+      seasonStrategy: seasonStrategy2,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -3731,6 +3840,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         riskSignals: riskSignals2,
         planLearning: planLearningWithExecution2,
         executionReview: executionReview2,
+        seasonStrategy: seasonStrategy2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -3869,6 +3979,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       recentActivities: recentPlanActivities2,
       planDecision: finalPlanDecision2,
       workouts: traceWorkouts2,
+      seasonStrategy: seasonStrategy2,
     });
     const planTrace = await persistPlanTrace(app, {
       userId,

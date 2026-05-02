@@ -273,6 +273,7 @@ export interface PulsePlanTrace {
     learningSnapshot?: PulsePlanLearningSnapshot | null;
     adaptation?: PulsePlanTraceAdaptation | null;
     restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
+    seasonStrategy?: PulseSeasonStrategy | null;
   };
   planDecision: PulsePlanDecision;
   sportMix: Record<string, PulsePlanSportMixEntry>;
@@ -464,6 +465,51 @@ export interface PulseDailyOutcomeLearningItem {
 
 export interface PulseDailyOutcomeLearningResponse {
   items: PulseDailyOutcomeLearningItem[];
+}
+
+export type PulseSeasonStrategyBlockKind =
+  | 'base'
+  | 'build'
+  | 'peak'
+  | 'taper'
+  | 'race_week'
+  | 'maintenance'
+  | 'consolidation';
+
+export interface PulseSeasonStrategyBlock {
+  kind: PulseSeasonStrategyBlockKind;
+  label: string;
+  startWeek: string;
+  endWeek: string;
+  focus: string;
+}
+
+export interface PulseSeasonStrategyGuardrails {
+  targetSessions: number;
+  maxHardDays: number;
+  deload: boolean;
+  freeDayRationale: string;
+  rationale: string[];
+  nextBoundary: { label: string; date: string } | null;
+}
+
+export interface PulseSeasonStrategy {
+  horizonWeeks: number;
+  primaryGoal: {
+    id: string | null;
+    title: string;
+    category: string | null;
+    targetDate: string | null;
+    priority: RacePriority | null;
+  } | null;
+  currentBlock: PulseSeasonStrategyBlock;
+  upcomingBlocks: PulseSeasonStrategyBlock[];
+  guardrails: PulseSeasonStrategyGuardrails;
+  evidence: string[];
+}
+
+export interface PulseSeasonStrategyResponse {
+  strategy: PulseSeasonStrategy;
 }
 
 export interface WeekAvailability {

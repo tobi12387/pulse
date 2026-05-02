@@ -11,6 +11,7 @@ type MockPulseApiOptions = {
   planTrace?: unknown;
   planWorkouts?: unknown[];
   raceCommand?: unknown;
+  seasonStrategy?: unknown;
   dailyOutcomes?: unknown[];
   goals?: unknown[];
   actions?: unknown[];
@@ -326,6 +327,25 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/plan/today/proposal') return { proposal: null };
   if (pathname === '/api/pulse/races') return { races: [] };
   if (pathname === '/api/pulse/race-command') return { command: null };
+  if (pathname === '/api/pulse/season-strategy') {
+    return {
+      strategy: {
+        horizonWeeks: 12,
+        primaryGoal: { id: 'race-1', title: '70.3 Kraichgau', category: 'race', targetDate: '2026-07-11', priority: 'A' },
+        currentBlock: { kind: 'build', label: 'Build', startWeek: today, endWeek: '2026-06-01', focus: 'Spezifitaet aufbauen, aber freie Tage schuetzen.' },
+        upcomingBlocks: [],
+        guardrails: {
+          targetSessions: 4,
+          maxHardDays: 1,
+          deload: false,
+          freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt geschuetzt.',
+          rationale: ['Verfuegbarkeit ist groesser als sinnvolle Trainingsdichte.'],
+          nextBoundary: { label: 'Taper', date: '2026-06-29' },
+        },
+        evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfuegbare Tage'],
+      },
+    };
+  }
   if (pathname === '/api/pulse/sleep') {
     return {
       sessions: [
@@ -586,6 +606,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
     if (url.pathname === '/api/pulse/race-command' && 'raceCommand' in options) {
       return json(route, { command: options.raceCommand ?? null });
+    }
+    if (url.pathname === '/api/pulse/season-strategy' && 'seasonStrategy' in options) {
+      return json(route, { strategy: options.seasonStrategy });
     }
     if (url.pathname.startsWith('/api/pulse/plan/workout/') && request.method() === 'PATCH') {
       const workoutId = url.pathname.split('/').at(-1) ?? 'workout-1';
