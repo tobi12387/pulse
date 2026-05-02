@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Plan-Ziel-UI wird als Goals-Feature isoliert
+
+- **Decision:** Pulse verschiebt Goal-Formular, Goal-Edit-Form, Goal-Card und Goal-spezifische Payload-/Race-Helfer nach `frontend/src/features/plan/goals/goal-components.tsx`.
+- **Why:** Zielanlage, Race-Metadaten, Statuswechsel und Loeschen teilen eigene Mutationen und UI-Zustaende, waehrend `ZieleTab` nur noch den Tab-Zustand und die Goal-Liste orchestriert. Damit verliert `Plan.tsx` den groessten verbleibenden formularlastigen Subblock, ohne Goal-API oder sichtbares Verhalten zu aendern.
+- **Alternatives:** Goal-Logik im Page-Monolith lassen (Phase 4 bleibt unvollstaendig); nur Cards verschieben und Forms behalten (Mutation-/Payload-Logik bleibt verteilt); Goals in globale Components legen (zu domain-spezifisch).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Plan-Strategie-UI bekommt eine eigene Feature-Grenze
 
 - **Decision:** Pulse verschiebt Plan Trace, Race Command, Season Strategy und ihre kleinen Fact-/Insight-Helfer aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/strategy/strategy-components.tsx`.
