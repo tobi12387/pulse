@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { MiniButton } from '@/components/PulseChrome';
 import {
   useCreateHealthState,
@@ -31,21 +32,46 @@ export function HealthStateCard() {
 
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<HealthStateForm>(DEFAULT_HEALTH_FORM);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
 
   const active = data?.active ?? [];
   const recent = (data?.recent ?? []).filter(s => s.resolvedAt != null).slice(0, 5);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    await create.mutateAsync({
-      type: form.type,
-      severity: form.severity,
-      durationDays: form.durationDays,
-      ...(form.bodyPart ? { bodyPart: form.bodyPart } : {}),
-      ...(form.notes ? { notes: form.notes } : {}),
-    });
-    setAdding(false);
-    setForm(DEFAULT_HEALTH_FORM);
+    setCreateError(null);
+    try {
+      await create.mutateAsync({
+        type: form.type,
+        severity: form.severity,
+        durationDays: form.durationDays,
+        ...(form.bodyPart ? { bodyPart: form.bodyPart } : {}),
+        ...(form.notes ? { notes: form.notes } : {}),
+      });
+      setAdding(false);
+      setForm(DEFAULT_HEALTH_FORM);
+    } catch (err) {
+      setCreateError(errorMessage(err, 'Der Gesundheits-Status konnte nicht gespeichert werden.'));
+    }
+  }
+
+  async function resolveState(id: string) {
+    setRowError(null);
+    try {
+      await resolve.mutateAsync(id);
+    } catch (err) {
+      setRowError({ id, message: errorMessage(err, 'Der Status konnte nicht erledigt werden.') });
+    }
+  }
+
+  async function deleteState(id: string) {
+    setRowError(null);
+    try {
+      await remove.mutateAsync(id);
+    } catch (err) {
+      setRowError({ id, message: errorMessage(err, 'Der Status konnte nicht gelöscht werden.') });
+    }
   }
 
   return (
@@ -127,6 +153,12 @@ export function HealthStateCard() {
               Abbrechen
             </button>
           </div>
+          {createError && (
+            <InlineFeedback
+              title="Gesundheits-Status nicht gespeichert"
+              message={createError}
+            />
+          )}
         </form>
       )}
 
@@ -154,7 +186,7 @@ export function HealthStateCard() {
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 <button
                   type="button"
-                  onClick={() => resolve.mutate(s.id)}
+                  onClick={() => { void resolveState(s.id); }}
                   disabled={resolve.isPending}
                   style={{ minHeight: 40, background: 'none', border: '1px solid var(--green)', borderRadius: 3, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--green)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 >
@@ -162,13 +194,21 @@ export function HealthStateCard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => remove.mutate(s.id)}
+                  onClick={() => { void deleteState(s.id); }}
                   disabled={remove.isPending}
                   style={{ minHeight: 40, background: 'none', border: '1px solid var(--text-3)', borderRadius: 3, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--text-3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   LÖSCHEN
                 </button>
               </div>
+              {rowError?.id === s.id && (
+                <div style={{ flexBasis: '100%' }}>
+                  <InlineFeedback
+                    title="Gesundheits-Status nicht aktualisiert"
+                    message={rowError.message}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

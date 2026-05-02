@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useDataCoverage, useGarminBackfill, useGarminCoverage, useGarminSignalUsefulness } from '@/pulse/hooks';
 import { Skeleton } from '@/components/Skeleton';
 import { GarminQualityList } from '@/components/GarminQualityList';
+import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { RangeControl } from '@/components/PulseChrome';
 import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse, PulseGarminCoverageDomain, PulseGarminSignalUsefulnessResponse } from '@coaching-os/shared/pulse';
 
@@ -564,7 +565,17 @@ export function CoverageTab() {
   const backfill = useGarminBackfill();
 
   if (coverage.isLoading) return <Loading rows={3} />;
-  if (coverage.error) return <Empty msg={coverage.error.message} />;
+  if (coverage.error) {
+    return (
+      <InlineFeedback
+        title="Abdeckung nicht geladen"
+        message={errorMessage(coverage.error, 'Die Datenabdeckung konnte nicht geladen werden.')}
+        actionLabel="Erneut laden"
+        actionPending={coverage.isFetching}
+        onAction={() => { void coverage.refetch(); }}
+      />
+    );
+  }
 
   const data = coverage.data;
   if (!data) return <Empty msg="Keine Abdeckungsdaten." />;
@@ -585,15 +596,19 @@ export function CoverageTab() {
 
   async function runBackfill(dryRun: boolean) {
     if (!backfillFrom || !backfillTo) return;
-    const result = await backfill.mutateAsync({
-      from: backfillFrom,
-      to: backfillTo,
-      dryRun,
-      domains: ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'],
-    });
-    setBackfillResult(result);
-    setLastBackfill(rememberBackfillResult(result));
-    if (!dryRun) void coverage.refetch();
+    try {
+      const result = await backfill.mutateAsync({
+        from: backfillFrom,
+        to: backfillTo,
+        dryRun,
+        domains: ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'],
+      });
+      setBackfillResult(result);
+      setLastBackfill(rememberBackfillResult(result));
+      if (!dryRun) void coverage.refetch();
+    } catch {
+      // The mutation state renders the inline recovery action below.
+    }
   }
 
   return (
@@ -634,10 +649,32 @@ export function CoverageTab() {
         </div>
       )}
 
+      {garminCoverage.error && (
+        <InlineFeedback
+          title="Garmin-Domainqualität nicht geladen"
+          message={errorMessage(garminCoverage.error, 'Die Garmin-Domainqualität konnte nicht geladen werden.')}
+          tone="warning"
+          actionLabel="Erneut laden"
+          actionPending={garminCoverage.isFetching}
+          onAction={() => { void garminCoverage.refetch(); }}
+        />
+      )}
+
       <GarminSignalUsefulnessPanel
         data={signalUsefulness.data}
         isLoading={signalUsefulness.isLoading}
       />
+
+      {signalUsefulness.error && (
+        <InlineFeedback
+          title="Garmin-Signalnutzen nicht geladen"
+          message={errorMessage(signalUsefulness.error, 'Die Signalbewertung konnte nicht geladen werden.')}
+          tone="warning"
+          actionLabel="Erneut laden"
+          actionPending={signalUsefulness.isFetching}
+          onAction={() => { void signalUsefulness.refetch(); }}
+        />
+      )}
 
       <CoverageDiagnosisPanel data={data} shownDays={shownDays} candidateCount={candidateCount} />
 
@@ -715,8 +752,14 @@ export function CoverageTab() {
         </div>
         {lastBackfill && <LastBackfillCard last={lastBackfill} />}
         {backfill.error && (
-          <div style={{ marginTop: 8, fontSize: 11, color: 'var(--rose)' }}>
-            {backfill.error.message}
+          <div style={{ marginTop: 8 }}>
+            <InlineFeedback
+              title="Garmin Backfill fehlgeschlagen"
+              message={errorMessage(backfill.error, 'Der Backfill konnte nicht gestartet werden.')}
+              actionLabel="Erneut versuchen"
+              actionPending={backfill.isPending}
+              onAction={() => { void runBackfill(false); }}
+            />
           </div>
         )}
         {backfillResult && <BackfillResult result={backfillResult} />}

@@ -8,6 +8,7 @@ import { AdjustTodayCard } from '@/components/AdjustTodayCard';
 import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
+import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
@@ -623,7 +624,7 @@ function DailyLoopHistoryCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { data, isLoading, error } = usePulseHome();
+  const { data, isLoading, error, refetch: refetchHome } = usePulseHome();
   const actionsQuery = usePulseActions({ includeHistory: true });
   const outcomesQuery = useDailyOutcomeLearning(7);
   const qualityQuery = useDailyDecisionQuality(14);
@@ -635,7 +636,7 @@ export default function Home() {
   const garminSync = useGarminSync();
   const navigate = useNavigate();
 
-  if (isLoading || readinessQuery.isLoading || loadQuery.isLoading) {
+  if (isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '14px 0' }}>
         <div style={{ height: 20, width: '40%', background: 'var(--surface-2)', borderRadius: 3 }} />
@@ -647,17 +648,22 @@ export default function Home() {
     );
   }
 
-  if (error || readinessQuery.error || loadQuery.error || !data || !readinessQuery.data || !loadQuery.data) {
+  if (error || !data) {
     return (
-      <div style={{ color: 'var(--rose)', fontFamily: 'var(--font-mono)', fontSize: 11, textAlign: 'center', padding: '32px 0' }}>
-        {error?.message ?? readinessQuery.error?.message ?? loadQuery.error?.message ?? 'Keine Daten'}
+      <div style={{ padding: '32px 0' }}>
+        <InlineFeedback
+          title="Home konnte nicht geladen werden"
+          message={errorMessage(error, 'Keine Home-Daten verfügbar.')}
+          actionLabel="Home erneut laden"
+          onAction={() => { void refetchHome(); }}
+        />
       </div>
     );
   }
 
   const m  = data.todayMetrics;
-  const readiness = readinessQuery.data;
-  const fl = loadQuery.data;
+  const readiness = readinessQuery.data ?? data.readiness;
+  const fl = loadQuery.data ?? data.fitnessLoad;
   const nw = data.nextWorkout;
   const dailyDecision = deriveDailyDecision(data);
   const actionStates = actionsQuery.data?.actions ?? [];
@@ -694,6 +700,28 @@ export default function Home() {
       {/* ── Health State Banner (active illness/injury/fatigue) ── */}
       <HealthStateBanner />
       <RiskWatchBanner />
+
+      {readinessQuery.error && (
+        <InlineFeedback
+          title="Readiness separat nicht erreichbar"
+          message={`Pulse nutzt den letzten Home-Stand weiter. ${errorMessage(readinessQuery.error, 'Readiness konnte nicht geladen werden.')}`}
+          tone="warning"
+          actionLabel="Readiness erneut laden"
+          actionPending={readinessQuery.isFetching}
+          onAction={() => { void readinessQuery.refetch(); }}
+        />
+      )}
+
+      {loadQuery.error && (
+        <InlineFeedback
+          title="Trainingslast separat nicht erreichbar"
+          message={`Pulse nutzt den letzten Home-Stand weiter. ${errorMessage(loadQuery.error, 'Trainingslast konnte nicht geladen werden.')}`}
+          tone="warning"
+          actionLabel="Last erneut laden"
+          actionPending={loadQuery.isFetching}
+          onAction={() => { void loadQuery.refetch(); }}
+        />
+      )}
 
       {showDataStatus && (
         <div style={{
@@ -740,6 +768,16 @@ export default function Home() {
             {garminSync.isPending ? 'SYNC...' : 'SYNC'}
           </button>
         </div>
+      )}
+
+      {garminSync.error && (
+        <InlineFeedback
+          title="Garmin-Sync nicht gestartet"
+          message={errorMessage(garminSync.error, 'Der Garmin-Sync konnte nicht gestartet werden.')}
+          actionLabel="Sync erneut starten"
+          actionPending={garminSync.isPending}
+          onAction={() => garminSync.mutate()}
+        />
       )}
 
       {dailyDecision && (

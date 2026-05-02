@@ -679,6 +679,176 @@ test('Today adjustment keep decision survives refetch for the same proposal', as
   await expect(page.getByText('Heute anpassen?')).toHaveCount(0);
 });
 
+test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {
+  let readinessCalls = 0;
+  await mockPulseApi(page, {
+    failEndpoints: {
+      'GET /api/pulse/readiness': {
+        error: 'Readiness momentan nicht erreichbar.',
+        status: 503,
+      },
+    },
+    onRequest: (pathname) => {
+      if (pathname === '/api/pulse/readiness') readinessCalls += 1;
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('Guten')).toBeVisible();
+  await expect(page.getByText('Heute ist kein Training geplant.')).toBeVisible();
+  await expect(page.getByText('Readiness separat nicht erreichbar')).toBeVisible();
+  await page.getByRole('button', { name: 'Readiness erneut laden' }).click();
+  await expect.poll(() => readinessCalls).toBeGreaterThan(1);
+});
+
+test('Coach send failure preserves the draft and can retry', async ({ page }) => {
+  let coachPosts = 0;
+  await mockPulseApi(page, {
+    failEndpoints: {
+      'POST /api/pulse/coach': {
+        error: 'KI-Provider gerade nicht verfügbar.',
+        status: 503,
+        times: 1,
+      },
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachPosts += 1;
+    },
+  });
+
+  await page.goto('/coach?focus=daily');
+  await page.getByPlaceholder('Frage…').fill('Was ist heute der sinnvollste nächste Schritt?');
+  await page.getByRole('button', { name: '→' }).click();
+
+  await expect(page.getByText('Nachricht nicht gesendet')).toBeVisible();
+  await expect(page.getByText('KI-Provider gerade nicht verfügbar.')).toBeVisible();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Was ist heute der sinnvollste nächste Schritt?');
+  await page.getByRole('button', { name: 'Erneut senden' }).click();
+  await expect.poll(() => coachPosts).toBe(2);
+  await expect(page.getByText('Nachricht nicht gesendet')).toHaveCount(0);
+});
+
+test('Plan alternative failure keeps the workout visible and offers retry', async ({ page }) => {
+  let updates = 0;
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage.',
+      },
+    ],
+    failEndpoints: {
+      'PATCH /api/pulse/plan/workout/workout-1': {
+        error: 'Planänderung konnte nicht gespeichert werden.',
+        status: 500,
+        times: 1,
+      },
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/plan/workout/workout-1' && method === 'PATCH') updates += 1;
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await expect(page.getByText('Radfahren · Zone 2')).toBeVisible();
+  await page.getByRole('button', { name: /Kürzer/ }).click();
+  await expect(page.getByText('Änderung nicht gespeichert')).toBeVisible();
+  await expect(page.getByText('Planänderung konnte nicht gespeichert werden.')).toBeVisible();
+  await expect(page.getByText('Radfahren · Zone 2')).toBeVisible();
+  await page.getByRole('button', { name: 'Erneut versuchen' }).click();
+  await expect.poll(() => updates).toBe(2);
+  await expect(page.getByText('Änderung nicht gespeichert')).toHaveCount(0);
+});
+
+test('Plan generation failure keeps the config open with retry', async ({ page }) => {
+  await mockPulseApi(page, {
+    failEndpoints: {
+      'POST /api/pulse/plan/generate': {
+        error: 'Plan-Engine momentan nicht erreichbar.',
+        status: 503,
+      },
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('button', { name: '+ Plan generieren' }).click();
+  await page.getByRole('button', { name: 'Plan erstellen' }).click();
+
+  await expect(page.getByText('Plan nicht erstellt')).toBeVisible();
+  await expect(page.getByText('Plan-Engine momentan nicht erreichbar.')).toBeVisible();
+  await expect(page.getByText('Erstellt einen wissenschaftlich fundierten Wochenplan')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
+});
+
+test('Settings health-state save failure keeps the form open with an inline retry hint', async ({ page }) => {
+  await mockPulseApi(page, {
+    failEndpoints: {
+      'POST /api/pulse/health-state': {
+        error: 'Health-State konnte nicht gespeichert werden.',
+        status: 500,
+      },
+    },
+  });
+
+  await page.goto('/settings?section=health');
+  await page.getByRole('button', { name: '+ Hinzufügen' }).click();
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByText('Gesundheits-Status nicht gespeichert')).toBeVisible();
+  await expect(page.getByText('Health-State konnte nicht gespeichert werden.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Speichern' })).toBeVisible();
+});
+
+test('Data Garmin backfill failure shows local recovery', async ({ page }) => {
+  await mockPulseApi(page, {
+    coverage: {
+      range: { from: '2026-05-01', to: '2026-05-01', days: 1, year: null },
+      summary: {
+        dailyMetricsDays: 0,
+        sleepDays: 1,
+        activityDays: 0,
+        activities: 0,
+        weatherActivities: 0,
+        weightDays: 1,
+        completeDays: 0,
+      },
+      profile: {
+        updatedAt: '2026-05-01T05:00:00.000Z',
+        ftpWatts: 250,
+        maxHrBpm: 185,
+        lthrBpm: 172,
+        vo2max: 52,
+        missing: [],
+      },
+      issues: [],
+      days: [{
+        date: '2026-05-01',
+        dailyMetrics: { status: 'missing', reason: 'not_synced', syncedAt: null, missingFields: ['hrvRmssd'] },
+        sleep: { status: 'present', reason: 'present', durationH: 7.4, hasStages: true, missingFields: [] },
+        activities: { status: 'missing', reason: 'not_recorded', count: 0, weatherCount: 0, missingWeatherCount: 0, missingFields: [] },
+        weight: { status: 'present', reason: 'present', hasBodyComposition: true, missingFields: [] },
+      }],
+    },
+    failEndpoints: {
+      'POST /api/pulse/garmin/backfill': {
+        error: 'Garmin Backfill konnte nicht gestartet werden.',
+        status: 503,
+      },
+    },
+  });
+
+  await page.goto('/data?tab=coverage');
+  await page.getByRole('button', { name: 'Nachladen' }).click();
+  await expect(page.getByText('Garmin Backfill fehlgeschlagen')).toBeVisible();
+  await expect(page.getByText('Garmin Backfill konnte nicht gestartet werden.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
+});
+
 test('Plan prioritizes the next training decision before tools', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

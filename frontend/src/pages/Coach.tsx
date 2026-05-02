@@ -15,6 +15,7 @@ import {
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
+import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
@@ -208,6 +209,11 @@ type PromptGroup = {
   title: string;
   hint: string;
   prompts: string[];
+};
+
+type FailedSend = {
+  message: string;
+  error: string;
 };
 
 function QuickPrompts({
@@ -552,6 +558,7 @@ export default function Coach() {
   const [micState, setMicState]   = useState<MicState>('idle');
   const [voiceCard, setVoiceCard] = useState<VoiceCard | null>(null);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [failedSend, setFailedSend] = useState<FailedSend | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: home } = usePulseHome();
@@ -628,11 +635,32 @@ export default function Coach() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [lastMessageTimestamp, voiceCard]);
 
-  function handleSend() {
-    const msg = input.trim();
+  function sendCoachMessage(message: string) {
+    const msg = message.trim();
     if (!msg || sendMessage.isPending) return;
     setInput('');
-    sendMessage.mutate(msg);
+    setFailedSend(null);
+    sendMessage.mutate(msg, {
+      onSuccess: () => {
+        setFailedSend(null);
+      },
+      onError: (err) => {
+        setInput(msg);
+        setFailedSend({
+          message: msg,
+          error: errorMessage(err, 'Der Coach konnte die Nachricht nicht senden.'),
+        });
+      },
+    });
+  }
+
+  function handleSend() {
+    sendCoachMessage(input);
+  }
+
+  function retryFailedSend() {
+    if (!failedSend) return;
+    sendCoachMessage(failedSend.message);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -729,6 +757,16 @@ export default function Coach() {
               {voiceError}
             </span>
           </div>
+        )}
+
+        {failedSend && (
+          <InlineFeedback
+            title="Nachricht nicht gesendet"
+            message={failedSend.error}
+            actionLabel="Erneut senden"
+            actionPending={sendMessage.isPending}
+            onAction={retryFailedSend}
+          />
         )}
 
         {sendMessage.isPending && (
