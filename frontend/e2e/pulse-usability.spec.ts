@@ -1677,6 +1677,26 @@ test('Settings diagnostics matrix separates denied push and blocked Garmin state
   await expect(matrix).toContainText('manuell');
 });
 
+test('Settings PWA diagnostics reflect standalone iPhone context', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'iphone-webkit', 'bounded iPhone WebKit PWA slice');
+
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      get: () => true,
+    });
+  });
+
+  await mockPulseApi(page);
+  await page.goto('/settings');
+
+  const matrix = page.getByTestId('settings-diagnostics-matrix');
+  await expect(matrix).toContainText('PWA');
+  await expect(matrix).toContainText('Installiert');
+  await expect(matrix).toContainText('Service Worker');
+  await expect(matrix).toContainText('Zertifikat');
+});
+
 test('Settings groups actions by risk and daily maintenance area', async ({ page }) => {
   await mockPulseApi(page);
 

@@ -37,8 +37,8 @@ The strongest evidence points to five improvement themes:
 | P1 | `AdjustTodayCard` dismissal looks local and fragile. | Static audit found the hide selector attached to the button itself, so the proposal can reappear after refetch instead of becoming a durable daily decision. | `2026-05-02-feedback-resilience-ux.md` |
 | P2 | Plan first viewport does not prioritize the next useful training action on iPhone. | On the current test date, Plan repeats the Home day-off decision first; the next workout decision sits lower in the scroll. This reinforces the user's concern that planning can feel repetitive rather than context-aware. | `2026-05-02-daily-loop-route-priority-ux.md` |
 | P2 | Settings hides high-value device/PWA/push state too far down the page. | The iPhone first viewport starts with profile/coach settings; push and device access state appear much later, despite current field friction being certificate/PWA related. | `2026-05-02-settings-diagnostics-matrix.md` |
-| P2 | Canva/Figma evidence is stale relative to the deployed app. | The repo notes the Canva board is stale/unsaved, while FigJam is useful for loop diagrams but not yet refreshed with current route screenshots and state notes. | `2026-05-02-ux-evidence-toolchain-refresh.md` |
-| P2 | WebKit/PWA automated coverage is optional and thin. | The WebKit project is gated behind `PULSE_E2E_WEBKIT=true`; current mobile tests cover labels/bounds more than standalone/offline/settings state transitions. | `2026-05-02-ux-evidence-toolchain-refresh.md` |
+| P2 | Canva/Figma evidence is stale relative to the deployed app. | Follow-up completed: route evidence pack exists, FigJam has the current evidence loop, and Canva is explicitly marked stale/approval-gated. | `completed/2026-05-02-ux-evidence-toolchain-refresh.md` |
+| P2 | WebKit/PWA automated coverage is optional and thin. | Follow-up completed: `iphone-webkit` remains optional and has a bounded Settings/PWA diagnostics regression slice plus route evidence command. | `completed/2026-05-02-ux-evidence-toolchain-refresh.md` |
 | P3 | Desktop data-dense routes leave useful width unused. | Desktop screenshots show a narrow centered content column on Plan/Data/Insights even where scanning, comparison and route-level evidence would benefit from wider layouts. | Later slice after P1/P2 |
 | P3 | Interaction language and iconography are inconsistent. | Examples include `SYNC`, `OUT`, `x`, arrow glyphs, German action labels and mixed icon conventions. | Later polish after flow fixes |
 
@@ -87,6 +87,6 @@ The strongest evidence points to five improvement themes:
 2. `2026-05-02-daily-loop-route-priority-ux.md`
 3. `2026-05-02-feedback-resilience-ux.md`
 4. `2026-05-02-settings-diagnostics-matrix.md`
-5. `2026-05-02-ux-evidence-toolchain-refresh.md`
+5. `completed/2026-05-02-ux-evidence-toolchain-refresh.md`
 
 Do not start a broad visual redesign first. The evidence says Pulse needs less route friction, clearer daily priority and stronger recovery states before it needs a new look.

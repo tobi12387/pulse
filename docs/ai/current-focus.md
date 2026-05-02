@@ -79,13 +79,15 @@ Keep this file short. Update it whenever the active work queue changes.
 73. Mobile Touch And Containment was merged and deployed via PR #155.
 74. Daily Loop Route Priority was merged and deployed via PR #156.
 75. Feedback Resilience was merged and deployed via PR #157.
-76. Settings Diagnostics Matrix is the current UI/UX implementation slice; after it lands, continue with `2026-05-02-ux-evidence-toolchain-refresh.md`.
+76. Settings Diagnostics Matrix was merged and deployed via PR #158.
+77. UX Evidence Toolchain Refresh is the current UI/UX implementation slice; after it lands, the UI/UX Deep Friction Closure plan pack is complete.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/settings-diagnostics-matrix` implements UI/UX roadmap rank 4 before UX Evidence Toolchain Refresh.
+- Active branch: `codex/ux-evidence-toolchain-refresh` implements UI/UX roadmap rank 5.
 - Recent completed branches:
+- `codex/settings-diagnostics-matrix`: merged and deployed via PR #158.
 - `codex/feedback-resilience-ux`: merged and deployed via PR #157.
 - `codex/daily-loop-route-priority-ux`: merged and deployed via PR #156.
 - `codex/mobile-touch-containment-ux`: merged and deployed via PR #155.
@@ -207,9 +209,8 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
-- UI/UX Deep Friction Closure is now the next priority. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md` and `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md`.
-- Finish `codex/settings-diagnostics-matrix` first, then start `docs/superpowers/plans/2026-05-02-ux-evidence-toolchain-refresh.md`.
-- Recommended implementation order: UX evidence toolchain refresh.
+- UI/UX Deep Friction Closure is in its final evidence-toolchain slice. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md`, `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md` and `docs/qa/route-evidence-pack.md`.
+- Recommended implementation order: finish UX Evidence Toolchain Refresh, then reassess future product direction from `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
@@ -218,7 +219,7 @@ Keep this file short. Update it whenever the active work queue changes.
 - Fueling & Recovery needs dietary/preference decisions before implementation; Native iOS remains a later evidence gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
 - Push activation on iPhone remains a manual gate; the Settings readiness block reports device access ready, but notification permission and test push were not intentionally triggered.
-- Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
+- Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/XbRDL4VinTJIaO8) as a visual companion for route screenshots, interaction notes and acceptance review. Current status: stale text inspected; edits require explicit Canva preview approval.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
 - Latest UX companion record: `docs/qa/2026-05-02-ux-companion-refresh.md`.
 - Use Build Web Apps for PWA/mobile QA if the plugin becomes visible in Codex tools. Use Build iOS Apps only for a later native-wrapper evaluation; current scope remains local web/PWA over VPN.
