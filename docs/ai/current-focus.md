@@ -75,11 +75,12 @@ Keep this file short. Update it whenever the active work queue changes.
 69. Docs Design Handoff Relocation was merged and deployed via PR #150.
 70. Real iPhone/VPN/PWA field evidence was captured from Tobi's device: routes, Coach keyboard, Home Screen launch and Settings readiness passed; local certificate trust remains the only confirmed friction.
 71. UI/UX deep audit follow-up is now the active priority: the next work should close mobile containment/touch, daily-loop continuity, feedback resilience, Settings diagnostics and current Canva/Figma/WebKit evidence before new product domains.
+72. Dependency security refresh is the immediate maintenance pre-step before UI/UX implementation: update runtime/security packages first, keep risky major migrations separate, then continue with Mobile Touch And Containment.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: none; the next broad implementation choices are gated by real-device evidence or Tobi preferences.
+- Active branch: `codex/dependency-security-refresh` prepares the dependency/security refresh before UI/UX implementation.
 - Recent completed branches:
 - `codex/docs-design-reference-relocation`: merged and deployed via PR #150.
 - `codex/ops-tooling-cleanup`: merged and deployed via PR #149.
@@ -198,6 +199,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - UI/UX Deep Friction Closure is now the next priority. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md` and `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md`.
+- Finish `codex/dependency-security-refresh` first, then start `docs/superpowers/plans/2026-05-02-mobile-touch-and-containment-ux.md`.
 - Recommended implementation order: mobile touch/containment, daily-loop route priority, feedback resilience, Settings diagnostics matrix, UX evidence toolchain refresh.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
