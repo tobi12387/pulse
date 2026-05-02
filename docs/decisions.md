@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Coach-Routen teilen Chat und Preference-Helfer
+
+- **Decision:** Pulse extrahiert `/coach`, `/coach/history` und `/coach/preferences` nach `backend/src/pulse/routes/coach-routes.ts`; gemeinsam genutzte `normalizeCoachMessages`- und `serializeCoachPreferences`-Logik liegt in `backend/src/pulse/services/coach.ts`.
+- **Why:** Coach-Endpunkte sind ein klarer Boundary-Slice, aber Voice-Check-in und Plan-/Race-/Season-Kontexte brauchen dieselben Message- und Preference-Helfer weiter. Ein kleiner Service reduziert Duplikate, ohne Endpoint-Pfade, Speicherformat oder Coach-Kontext zu veraendern.
+- **Alternatives:** Helper direkt in `coach-routes.ts` kopieren (bricht andere Nutzer der Logik); Coach-Preferences im Monolithen lassen (Boundary bleibt unvollstaendig); alles in einem grossen Backend-PR extrahieren (zu konfliktanfaellig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Daily-Loop-Routen teilen Route und Service-Logik
 
 - **Decision:** Pulse extrahiert `/home`, `/actions`, `/outcomes/daily`, `/decisions/quality`, `/risk` inklusive Snooze/Resolve und `/briefing` nach `backend/src/pulse/routes/daily-loop-routes.ts`; gemeinsam genutzte Action-/Decision-Quality-/Status-Helfer liegen in `backend/src/pulse/services/daily-loop.ts`.
