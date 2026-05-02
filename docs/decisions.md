@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Data-Mental-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt gefuehrten Daily Check-in, Mental-Tags, `ThemeTimeline`-Einbettung und Mental-Trend-Chart nach `frontend/src/features/data/mental/mental-components.tsx`.
+- **Why:** Mental Fitness ist fachlich ein eigener Data-Cluster mit Check-in-Mutationen, Guidance-Fragen und Verlaufsvisualisierung. `Data.tsx` bleibt dadurch staerker Route-/Tab-Orchestrierung und die naechsten Recovery-/Settings-Splits koennen kleiner bleiben.
+- **Alternatives:** Mental im Page-Monolith lassen (Phase 5 bleibt nur teilweise erledigt); `ThemeTimeline` separat in `components/` orchestrieren (zerreisst den Mental-Flow); Check-in-Form und Trend getrennt verschieben (kleiner, aber mehr Import-/State-Reibung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Coverage-Report-Ignore ist root-geankert
 
 - **Decision:** Pulse ignoriert Coverage-Report-Artefakte nur noch ueber `/coverage/` statt jedes Verzeichnis namens `coverage/`.
