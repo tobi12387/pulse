@@ -63,13 +63,15 @@ Keep this file short. Update it whenever the active work queue changes.
 57. Frontend Plan Training Components Split was merged and deployed via PR #138.
 58. Frontend Plan Strategy Components Split was merged and deployed via PR #139.
 59. Frontend Plan Goal Components Split was merged and deployed via PR #140.
-60. Frontend Data Coverage Components Split is active on `codex/frontend-data-coverage-components`.
+60. Frontend Data Coverage Components Split was merged and deployed via PR #141.
+61. Frontend Data Mental Components Split is active on `codex/frontend-data-mental-components`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-data-coverage-components` for moving Garmin coverage, backfill and signal usefulness UI into `frontend/src/features/data/coverage/`.
+- Active branch: `codex/frontend-data-mental-components` for moving mental check-in and mental trend UI into `frontend/src/features/data/mental/`.
 - Recent completed branches:
+- `codex/frontend-data-coverage-components`: merged and deployed via PR #141.
 - `codex/frontend-plan-goal-components`: merged and deployed via PR #140.
 - `codex/frontend-plan-strategy-components`: merged and deployed via PR #139.
 - `codex/frontend-plan-training-components`: merged and deployed via PR #138.

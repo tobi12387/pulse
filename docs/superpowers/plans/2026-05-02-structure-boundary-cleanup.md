@@ -73,7 +73,7 @@
 ## Phase 5: Frontend Data And Settings Split
 
 - [x] Create `frontend/src/features/data/coverage/` for Garmin coverage, backfill and signal usefulness UI now embedded in `Data.tsx`.
-- [ ] Create `frontend/src/features/data/mental/` for mental check-in and mental trend UI.
+- [x] Create `frontend/src/features/data/mental/` for mental check-in and mental trend UI.
 - [ ] Create `frontend/src/features/data/recovery/` for sleep, metrics and body composition UI.
 - [ ] Create `frontend/src/features/settings/push/` for PWA device and push notification cards.
 - [ ] Create `frontend/src/features/settings/profile/` for athlete profile and Garmin profile sync UI.
