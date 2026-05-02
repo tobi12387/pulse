@@ -67,13 +67,15 @@ Keep this file short. Update it whenever the active work queue changes.
 61. Frontend Data Mental Components Split was merged and deployed via PR #142.
 62. Frontend Data Recovery Components Split was merged and deployed via PR #143.
 63. Frontend Settings Push Components Split was merged and deployed via PR #144.
-64. Frontend Settings Profile Components Split is active on `codex/frontend-settings-profile-components`.
+64. Frontend Settings Profile Components Split was merged and deployed via PR #145.
+65. Frontend Settings Coach Components Split is active on `codex/frontend-settings-coach-components`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-settings-profile-components` for moving athlete profile and Garmin profile sync UI into `frontend/src/features/settings/profile/`.
+- Active branch: `codex/frontend-settings-coach-components` for moving coach preferences UI into `frontend/src/features/settings/coach/`.
 - Recent completed branches:
+- `codex/frontend-settings-profile-components`: merged and deployed via PR #145.
 - `codex/frontend-settings-push-components`: merged and deployed via PR #144.
 - `codex/frontend-data-recovery-components`: merged and deployed via PR #143.
 - `codex/frontend-data-mental-components`: merged and deployed via PR #142.
