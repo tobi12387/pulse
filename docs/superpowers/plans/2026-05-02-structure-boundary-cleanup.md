@@ -64,7 +64,7 @@
 
 - [x] Create `frontend/src/features/plan/` and move pure date/plan helpers from `frontend/src/pages/Plan.tsx` into `frontend/src/features/plan/plan-utils.ts`.
 - [x] Move Week strip and workout-row UI into `frontend/src/features/plan/training/`.
-- [ ] Move plan trace, race command and season strategy cards into `frontend/src/features/plan/strategy/`.
+- [x] Move plan trace, race command and season strategy cards into `frontend/src/features/plan/strategy/`.
 - [ ] Move goal forms and cards into `frontend/src/features/plan/goals/`.
 - [ ] Keep `frontend/src/pages/Plan.tsx` as route orchestration.
 - [ ] Run `npm run build -w frontend`.
