@@ -24,7 +24,8 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 
 ## Automated WebKit Gate
 
-- Optional command: `PULSE_E2E_WEBKIT=true npm run test:e2e -- --project=iphone-webkit --grep "PWA|service workers|Mobile navigation|renders"`.
+- Optional command: `PULSE_E2E_WEBKIT=true npm run test:e2e -- --project=iphone-webkit --grep "PWA|service workers|Mobile navigation|Settings PWA diagnostics|renders"`.
+- Optional screenshot pack: `npm run qa:ux-evidence:iphone`.
 - If Playwright reports a missing WebKit executable, install it with `npx playwright install webkit` before treating this gate as a product failure.
 
 ## Layout

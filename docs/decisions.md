@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — UI/UX Evidence nutzt ignorierte Route-Packs plus Companion Boards
+
+- **Decision:** Pulse erzeugt UI/UX-Screenshot-Evidence ueber einen explizit aktivierten Playwright-Route-Pack unter `test-results/route-evidence/` und haelt Canva/FigJam als visuelle Companion-Artefakte, nicht als Quelle fuer Akzeptanz oder Architektur.
+- **Why:** Screenshots muessen reproduzierbar sein, sollen aber keine grossen PNGs ins Repo bringen. Das Manifest dokumentiert Commit, Datum, Route, URL, Viewport und Overflow-Summary; Markdown bleibt die dauerhafte Quelle fuer Befunde und Abnahme.
+- **Alternatives:** Screenshots direkt committen (Repo-Churn und Binaries); normale Smoke-Tests immer Screenshots schreiben lassen (zu viel Nebenwirkung); Canva/FigJam als verbindliche Quelle behandeln (zu leicht stale und nicht PR-reviewbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Settings startet mit einer Diagnosematrix
 
 - **Decision:** Pulse zeigt in Settings vor Profil/Coach eine Diagnosematrix fuer Zugriff, PWA-Modus, Service Worker, Push, Garmin und Zertifikat sowie direkte Sprungziele zu Device, Push, Garmin, Profil und Health.
