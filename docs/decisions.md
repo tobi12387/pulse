@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Training-Routen werden in Sub-Slices extrahiert
+
+- **Decision:** Pulse extrahiert den Training-Bereich gestaffelt: zuerst Activity-Equipment-Zuordnung, Strength Sessions und Equipment-Verwaltung nach `backend/src/pulse/routes/training-routes.ts`; Plan-/Workout-/Goal-/Race-/Season-/Review-/Nutrition-/Analytics-Endpunkte folgen in separaten PRs.
+- **Why:** Der komplette Training-Block enthaelt Plan-Generierung, Garmin-Sync, Race/Season-Strategie, Nutrition und Analytics mit vielen geteilten Helfern. Ein einzelner PR waere schwer zu reviewen und regressionsanfaellig; der Strength/Equipment-Slice ist fachlich geschlossen und hat klare Service-Grenzen.
+- **Alternatives:** Alles auf einmal verschieben (zu gross und konflikttraechtig); nur neue Datei anlegen ohne Routen zu bewegen (kein echter Boundary-Gewinn); Strength/Equipment in eigene Route statt `training-routes.ts` legen (mehr Module als aktuell noetig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Check-in- und Mental-Routen bilden einen Tagesreflexions-Slice
 
 - **Decision:** Pulse extrahiert `/checkin`, `/checkin/voice`, `/checkin/today`, `/checkin/guidance`, `/checkin/history`, `/mental/themes` und `/mental/load-overlay` nach `backend/src/pulse/routes/checkin-routes.ts`.
