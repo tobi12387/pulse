@@ -39,7 +39,8 @@
   - [x] Move workout step generation, HR targets and deterministic fallback into `backend/src/pulse/services/workout-steps.ts`.
   - [x] Move plan route helpers, trace mapping and execution-review adaptation into `backend/src/pulse/services/plan-route-helpers.ts`.
   - [x] Move plan/workout, plan generation, plan trace, today adjustment and week availability endpoints into `training-routes.ts`.
-  - [ ] Move goals/race/season, review, nutrition and training analytics endpoints into follow-up training slices.
+  - [x] Move goals, race command and season strategy endpoints into `training-routes.ts`.
+  - [ ] Move review, nutrition and training analytics endpoints into follow-up training slices.
 - [ ] Create `backend/src/pulse/routes/garmin-routes.ts` for Pulse-scoped Garmin coverage, backfill, calendar sync, signal usefulness, profile sync and sync endpoints.
 - [ ] Create `backend/src/pulse/routes/push-routes.ts` for push settings, subscribe, topics, quiet hours and test push.
 - [ ] Keep `backend/src/pulse/plugin.ts` as a thin Fastify plugin that registers the route modules.

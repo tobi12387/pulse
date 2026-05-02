@@ -6,15 +6,11 @@ import {
   pulseDailyMetrics,
   pulseMentalCheckins,
   pulseActivities,
-  pulseCoachPreferences,
   pulsePlannedWorkouts,
   pulseSleepSessions,
-  pulseGoals,
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeightLog,
-  pulseWeekAvailability,
-  pulseHealthState,
   pulseNutritionLogs,
   pulsePushSubscriptions,
   pulseEquipmentActivity,
@@ -26,16 +22,9 @@ import {
 import { eq, desc, and, gte, lte, isNull, or, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseDataCoverageResponse, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse, PulseRaceCommandResponse, PulseSeasonStrategyResponse, PulsePushTopics } from '@coaching-os/shared/pulse';
-import { computeFitnessLoad } from './services/load-engine.js';
-import { buildPulseContextFor } from './lib/pulse-context.js';
+import type { PulseDataCoverageResponse, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { invalidateUser } from './lib/pulse-cache.js';
-import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from './services/risk-engine.js';
-import { getActiveRaces } from './services/race-engine.js';
-import { buildRaceCommandSummary } from './services/race-command.js';
-import { getFitnessLoadCached, getPulseDataStatus } from './services/daily-loop.js';
-import { serializeCoachPreferences } from './services/coach.js';
-import { buildSeasonStrategy } from './services/season-strategy.js';
+import { getPulseDataStatus } from './services/daily-loop.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import {
@@ -46,10 +35,6 @@ import {
 import { profileWithProvenance, syncProfileFromGarmin } from './services/profile-sync.js';
 import { buildGarminDataQuality } from './services/garmin-data-quality.js';
 import { buildGarminSignalUsefulness } from './services/garmin-signal-usefulness.js';
-import {
-  currentWeekStartIso,
-  normalizeRacePriority,
-} from './services/plan-route-helpers.js';
 import { buildWorkoutSteps } from './services/workout-steps.js';
 import { fetchGarminCalendarWorkouts } from './services/garmin-calendar-workouts.js';
 import { readGarminCircuitState } from '../jobs/garmin-sync.job.js';
@@ -1221,221 +1206,6 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }
 
     return { uploaded, repaired, removed, errors: errors.length > 0 ? errors : undefined };
-  });
-
-  // ─── Goals ────────────────────────────────────────────────────────────────────
-  app.get('/goals', { onRequest: [app.authenticate] }, async (req) => {
-    const userId = req.user.sub;
-    const goals = await db.select()
-      .from(pulseGoals)
-      .where(eq(pulseGoals.userId, userId))
-      .orderBy(desc(pulseGoals.createdAt));
-    return { goals };
-  });
-
-  app.post('/goals', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const schema = z.object({
-      title:       z.string().min(1).max(255),
-      description: z.string().max(1000).optional(),
-      targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-      category:    z.string().max(30).optional(),
-      metrics:     z.record(z.unknown()).optional(),
-      raceDiscipline:    z.enum(['run','bike','swim','triathlon_sprint','triathlon_olympic','triathlon_70_3','triathlon_140_6','duathlon','other']).optional(),
-      raceDistanceKm:    z.number().min(0.1).max(500).optional(),
-      raceTargetTimeSec: z.number().int().min(60).max(86400).optional(),
-      racePriority:      z.enum(['A','B','C']).optional(),
-      raceLocation:      z.string().max(255).optional(),
-      raceNotes:         z.string().max(1000).optional(),
-    });
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
-
-    const userId = req.user.sub;
-    const [goal] = await db.insert(pulseGoals).values({
-      userId,
-      title:             parsed.data.title,
-      description:       parsed.data.description ?? null,
-      targetDate:        parsed.data.targetDate  ?? null,
-      category:          parsed.data.category    ?? null,
-      metrics:           parsed.data.metrics     ?? {},
-      raceDiscipline:    parsed.data.raceDiscipline    ?? null,
-      raceDistanceKm:    parsed.data.raceDistanceKm    ?? null,
-      raceTargetTimeSec: parsed.data.raceTargetTimeSec ?? null,
-      racePriority:      parsed.data.racePriority      ?? (parsed.data.category === 'race' ? 'A' : null),
-      raceLocation:      parsed.data.raceLocation      ?? null,
-      raceNotes:         parsed.data.raceNotes         ?? null,
-    }).returning();
-
-    return reply.status(201).send(goal);
-  });
-
-  app.patch('/goals/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const schema = z.object({
-      status:      z.enum(['active', 'completed', 'paused', 'abandoned']).optional(),
-      progress:    z.number().min(0).max(1).optional(),
-      title:       z.string().min(1).max(255).optional(),
-      description: z.string().max(1000).optional().nullable(),
-      targetDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-      category:    z.string().max(30).optional().nullable(),
-      metrics:     z.record(z.unknown()).optional(),
-      raceDiscipline:    z.enum(['run','bike','swim','triathlon_sprint','triathlon_olympic','triathlon_70_3','triathlon_140_6','duathlon','other']).optional().nullable(),
-      raceDistanceKm:    z.number().min(0.1).max(500).optional().nullable(),
-      raceTargetTimeSec: z.number().int().min(60).max(86400).optional().nullable(),
-      racePriority:      z.enum(['A','B','C']).optional().nullable(),
-      raceLocation:      z.string().max(255).optional().nullable(),
-      raceNotes:         z.string().max(1000).optional().nullable(),
-    });
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
-
-    const userId = req.user.sub;
-    const { id } = req.params as { id: string };
-
-    const [updated] = await db.update(pulseGoals)
-      .set({ ...parsed.data, updatedAt: new Date() })
-      .where(and(eq(pulseGoals.id, id), eq(pulseGoals.userId, userId)))
-      .returning();
-
-    if (!updated) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
-    return updated;
-  });
-
-  app.delete('/goals/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const userId = req.user.sub;
-    const { id } = req.params as { id: string };
-
-    const [deleted] = await db.delete(pulseGoals)
-      .where(and(eq(pulseGoals.id, id), eq(pulseGoals.userId, userId)))
-      .returning({ id: pulseGoals.id });
-
-    if (!deleted) return reply.status(404).send({ error: 'Ziel nicht gefunden' });
-    return reply.status(204).send();
-  });
-
-  // ─── Race list with prognosis (Phase 7) ───────────────────────────────────────
-  app.get('/races', { onRequest: [app.authenticate] }, async (req) => {
-    const userId = req.user.sub;
-    const today = new Date().toISOString().split('T')[0]!;
-    const fitnessLoad = await getFitnessLoadCached(userId, today);
-    const races = await getActiveRaces(userId, today, { ctl: fitnessLoad.ctl });
-    return { races };
-  });
-
-  app.get('/race-command', { onRequest: [app.authenticate] }, async (req): Promise<PulseRaceCommandResponse> => {
-    const userId = req.user.sub;
-    const today = toIsoDate(new Date());
-    const fitnessLoad = await getFitnessLoadCached(userId, today);
-    const races = await getActiveRaces(userId, today, { ctl: fitnessLoad.ctl });
-    if (races.length === 0) return { command: null };
-
-    const futureTo = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), 180));
-    const [riskSignals, healthStates, plannedWorkouts] = await Promise.all([
-      getActiveRiskSignals(userId),
-      db.select({
-        type: pulseHealthState.type,
-        severity: pulseHealthState.severity,
-        startDate: pulseHealthState.startDate,
-        notes: pulseHealthState.notes,
-      }).from(pulseHealthState)
-        .where(and(
-          eq(pulseHealthState.userId, userId),
-          isNull(pulseHealthState.resolvedAt),
-          lte(pulseHealthState.startDate, today),
-          or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
-        ))
-        .orderBy(desc(pulseHealthState.startDate)),
-      db.select({
-        id: pulsePlannedWorkouts.id,
-        plannedDate: pulsePlannedWorkouts.plannedDate,
-        activityType: pulsePlannedWorkouts.activityType,
-        zone: pulsePlannedWorkouts.zone,
-        durationMin: pulsePlannedWorkouts.durationMin,
-        targetTss: pulsePlannedWorkouts.targetTss,
-        description: pulsePlannedWorkouts.description,
-      }).from(pulsePlannedWorkouts)
-        .where(and(
-          eq(pulsePlannedWorkouts.userId, userId),
-          eq(pulsePlannedWorkouts.status, 'planned'),
-          gte(pulsePlannedWorkouts.plannedDate, today),
-          lte(pulsePlannedWorkouts.plannedDate, futureTo),
-        ))
-        .orderBy(pulsePlannedWorkouts.plannedDate),
-    ]);
-
-    return {
-      command: buildRaceCommandSummary({
-        today,
-        races,
-        fitnessLoad: {
-          ctl: fitnessLoad.ctl,
-          atl: fitnessLoad.atl,
-          tsb: fitnessLoad.tsb,
-        },
-        plannedWorkouts,
-        healthStates,
-        riskSignals: riskSignals.map(signal => ({
-          severity: signal.severity,
-          title: signal.title,
-          recommendation: signal.recommendation,
-        })),
-      }),
-    };
-  });
-
-  app.get('/season-strategy', { onRequest: [app.authenticate] }, async (req): Promise<PulseSeasonStrategyResponse> => {
-    const userId = req.user.sub;
-    const today = toIsoDate(new Date());
-    const weekStart = currentWeekStartIso();
-    const fitnessLoad = await getFitnessLoadCached(userId, today);
-
-    const [races, goals, weekAvail, profile, prefsRow] = await Promise.all([
-      getActiveRaces(userId, today, { ctl: fitnessLoad.ctl }),
-      db.select({
-        id: pulseGoals.id,
-        title: pulseGoals.title,
-        category: pulseGoals.category,
-        targetDate: pulseGoals.targetDate,
-        racePriority: pulseGoals.racePriority,
-      }).from(pulseGoals)
-        .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
-        .limit(8),
-      db.select().from(pulseWeekAvailability)
-        .where(and(eq(pulseWeekAvailability.userId, userId), eq(pulseWeekAvailability.weekStart, weekStart)))
-        .limit(1),
-      db.select().from(pulseUserProfile)
-        .where(eq(pulseUserProfile.userId, userId))
-        .limit(1),
-      db.select().from(pulseCoachPreferences)
-        .where(eq(pulseCoachPreferences.userId, userId))
-        .limit(1),
-    ]);
-
-    const preferences = serializeCoachPreferences(prefsRow[0] ?? null);
-    const availability = {
-      availableDays: (weekAvail[0]?.availableDays as number[] | null) ?? [0, 2, 4, 5],
-      weeklyHours: weekAvail[0]?.weeklyHours ?? profile[0]?.weeklyHoursTarget ?? 8,
-    };
-
-    return {
-      strategy: buildSeasonStrategy({
-        today,
-        weekStart,
-        races,
-        goals: goals.map(goal => ({
-          id: goal.id,
-          title: goal.title,
-          category: goal.category,
-          targetDate: goal.targetDate,
-          racePriority: normalizeRacePriority(goal.racePriority),
-        })),
-        fitnessLoad,
-        availability,
-        coachPreferences: {
-          preferredLongDays: preferences.preferredLongDays,
-          dislikedWorkoutPatterns: preferences.dislikedWorkoutPatterns,
-        },
-      }),
-    };
   });
 
   // ─── Nutrition logs (Phase 9) ────────────────────────────────────────────────

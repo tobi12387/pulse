@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Strategy-Routen bleiben Teil der Training-Boundary
+
+- **Decision:** Pulse verschiebt Goals, Race-Liste, Race Command und Season Strategy nach `backend/src/pulse/routes/training-routes.ts`.
+- **Why:** Ziele, Rennen und Season Strategy steuern die Trainingsplanung direkt und teilen Fitness-Load-, Risk-, Availability- und Coach-Preference-Kontext mit den Plan-Routen. Als eigener Slice reduziert die Verschiebung den Plugin-Monolithen, ohne Nutrition, Review oder Analytics in denselben PR zu ziehen.
+- **Alternatives:** Strategy-Routen im Plugin lassen (Training-Boundary bleibt fachlich unvollstaendig); Nutrition/Review/Analytics direkt mitverschieben (zu grosser, schwerer reviewbarer Slice); eigene `strategy-routes.ts` anlegen (zusaetzliche Modulgrenze ohne aktuellen Nutzen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Plan-/Workout-Routen gehoeren zum Training-Router
 
 - **Decision:** Pulse verschiebt `/plan`, `/plan/workout/:id`, Workout-Detail-/Garmin-Sync, Plan-Generierung, Plan-Trace, Today-Adjustment und Week-Availability nach `backend/src/pulse/routes/training-routes.ts`; der Garmin-Kalender-Leser liegt als gemeinsam nutzbarer Service in `backend/src/pulse/services/garmin-calendar-workouts.ts`.
