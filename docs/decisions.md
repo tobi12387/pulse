@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Garmin-Tages-Sync lebt in der Pulse-Service-Boundary
+
+- **Decision:** Pulse verschiebt `syncGarminDay` nach `backend/src/pulse/services/garmin-sync-day.ts` und das Activity-Workout-Matching inklusive Feedback-Erzeugung nach `backend/src/pulse/services/workout-execution-sync.ts`. Die Legacy-Route `/api/garmin` bleibt kompatibel und re-exportiert den Tages-Sync vorerst.
+- **Why:** Tagesimport, Backfill, Queue-Worker und manuelle Pulse-Syncs nutzen dieselbe Garmin-Orchestrierung. Ein Pulse-Service verhindert, dass Jobs und Skripte weiterhin von einer Fastify-Route als Service-Container abhaengen, und trennt Activity-Ausfuehrungslogik von Garmin-Transport.
+- **Alternatives:** `syncGarminDay` in `backend/src/routes/garmin.ts` belassen (Route bleibt Service-Monolith); nur Imports umbiegen ohne Matching zu extrahieren (weiterhin vermischte Verantwortlichkeiten); Legacy-Route sofort entfernen (bricht `/api/garmin/*`-Kompatibilitaet).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Pulse-Plugin ist eine duenne Routen-Huelle
 
 - **Decision:** Pulse verschiebt `/insights` und `/correlations` nach `backend/src/pulse/routes/insight-routes.ts`; `backend/src/pulse/plugin.ts` behaelt nur den JSON-Parser und die Registrierung der Pulse-Routenmodule.

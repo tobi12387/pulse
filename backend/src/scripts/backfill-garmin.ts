@@ -4,7 +4,7 @@
  */
 import { db } from '../lib/db.js';
 import { pulseDailyMetrics } from '../db/pulse-schema.js';
-import { syncGarminDay } from '../routes/garmin.js';
+import { syncGarminDay } from '../pulse/services/garmin-sync-day.js';
 import { inArray } from 'drizzle-orm';
 
 const USER_ID = process.env['PULSE_USER_ID'] ?? '00000000-0000-0000-0000-000000000001';

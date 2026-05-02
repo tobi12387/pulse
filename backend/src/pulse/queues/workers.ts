@@ -5,7 +5,7 @@ import { pulseQueues } from './queues.js';
 import type { PulseJobData } from './queues.js';
 import { syncGarminForDate } from '../adapters/garmin-client.js';
 import { generateWeeklyReview } from '../services/review-engine.js';
-import { syncGarminDay } from '../../routes/garmin.js';
+import { syncGarminDay } from '../services/garmin-sync-day.js';
 
 async function handleGarminSync(job: Job<PulseJobData>, app?: FastifyInstance): Promise<void> {
   const { userId, date } = job.data;

@@ -52,12 +52,13 @@
 
 ## Phase 3: Garmin Sync Boundary
 
-- [ ] Move day-sync orchestration out of `backend/src/routes/garmin.ts` into `backend/src/pulse/services/garmin-sync-day.ts`.
-- [ ] Move activity-to-workout matching helpers into `backend/src/pulse/services/workout-execution-sync.ts`.
-- [ ] Keep `/api/garmin` routes backwards-compatible.
-- [ ] Update `backend/src/jobs/garmin-sync.job.ts`, `backend/src/scripts/backfill-garmin.ts`, and Pulse backfill routes to call the service layer.
-- [ ] Run Garmin-focused tests: `npm test -w backend -- --run src/lib/garmin-activities.test.ts src/lib/garmin-recovery.test.ts src/routes/garmin.test.ts src/pulse/services/workout-reconciliation.test.ts`.
-- [ ] Run `npm run typecheck`.
+- [x] Move day-sync orchestration out of `backend/src/routes/garmin.ts` into `backend/src/pulse/services/garmin-sync-day.ts`.
+- [x] Move activity-to-workout matching helpers into `backend/src/pulse/services/workout-execution-sync.ts`.
+- [x] Keep `/api/garmin` routes backwards-compatible.
+- [x] Update `backend/src/jobs/garmin-sync.job.ts`, `backend/src/scripts/backfill-garmin.ts`, Pulse queue workers and Pulse backfill/sync routes to call the service layer.
+- [x] Run Garmin-focused tests: `npm test -w backend -- --run src/lib/garmin-activities.test.ts src/lib/garmin-recovery.test.ts src/routes/garmin.test.ts src/pulse/services/workout-reconciliation.test.ts`.
+  - Local limitation 2026-05-02: `backend/src/routes/garmin.test.ts` does not exist. Redis-backed `src/jobs/garmin-sync.job.test.ts` hangs without Redis `6380`; DB-backed `src/lib/garmin-activities.test.ts` fails with Postgres `5433` unavailable. Redis-free focused tests passed: `src/lib/garmin-recovery.test.ts`, `src/pulse/services/workout-reconciliation.test.ts`, `src/pulse/queues/workers.test.ts` (9 tests).
+- [x] Run `npm run typecheck`.
 
 ## Phase 4: Frontend Plan Page Split
 

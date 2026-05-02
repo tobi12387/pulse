@@ -21,7 +21,7 @@ import {
   pulseWeightLog,
 } from '../../db/pulse-schema.js';
 import { readGarminCircuitState } from '../../jobs/garmin-sync.job.js';
-import { syncGarminDay } from '../../routes/garmin.js';
+import { syncGarminDay } from '../services/garmin-sync-day.js';
 import { invalidateUser } from '../lib/pulse-cache.js';
 import { getPulseDataStatus } from '../services/daily-loop.js';
 import { buildGarminDataQuality } from '../services/garmin-data-quality.js';
