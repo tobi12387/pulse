@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Training Analytics schliesst die Training-Boundary
+
+- **Decision:** Pulse verschiebt `GET /api/pulse/training-analytics` nach `backend/src/pulse/routes/training-routes.ts` und schliesst damit den Training-Routen-Slice aus Plan, Workout, Strength, Equipment, Goals, Race, Season, Review, Nutrition und Analytics ab.
+- **Why:** Training Analytics bewertet TSS, Zonen, VO2max und RPE gegen geplante Workouts und Athletenprofil. Diese Daten gehoeren fachlich zur Training-Boundary; der getrennte PR reduziert den Restmonolithen, ohne Garmin- oder Push-Routen mitzuziehen.
+- **Alternatives:** Analytics im Plugin lassen (Training-Boundary bleibt unvollstaendig); separaten Analytics-Router anlegen (zusaetzliche Grenze fuer einen Training-spezifischen Endpoint); Garmin/Push direkt mitverschieben (zu grosser Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Review- und Nutrition-Routen folgen der Training-Boundary
 
 - **Decision:** Pulse verschiebt `/nutrition`, `/nutrition/:id`, `/review/latest` und `/review/generate` nach `backend/src/pulse/routes/training-routes.ts`.
