@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Feedback Recovery bleibt lokal und inline
+
+- **Decision:** Pulse nutzt fuer UI-Fehlerzustaende ein kleines `InlineFeedback`-Primitive und lokale Recovery pro Karte/Aktion statt einer globalen Toast- oder Route-Fehlerschicht.
+- **Why:** Die haeufigsten Alltagsfehler betreffen einzelne Queries oder Mutations: Readiness/Load auf Home, Coach-Senden, Plan-Alternativen/-Generierung, Availability, Health-State und Garmin Backfill. Lokale Hinweise erhalten den restlichen Tagesfluss, bewahren Entwuerfe/Edits und geben direkt am betroffenen Kontext eine Retry-Aktion.
+- **Alternatives:** Route-weite Fehleransicht beibehalten (zu fragil im Alltag); globale Toasts einfuehren (wichtige Recovery verschwindet ausserhalb des Kontextes); jede Karte mit eigenem Styling loesen (inkonsistent und mehr Wartung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Daily Loop nutzt URL-State und lokale Today-Adjust-Schliessung
 
 - **Decision:** Pulse macht Data-/Plan-Tabs und Settings-Sektionen per Query-Parameter adressierbar, haelt den Daily-Coach-Kontext auch bei bestehender Chat-Historie sichtbar, priorisiert im Plan die naechste Trainingsentscheidung vor duplizierter Tagesentscheidung und speichert `Beibehalten` fuer Today-Adjust lokal per Proposal-Signatur.

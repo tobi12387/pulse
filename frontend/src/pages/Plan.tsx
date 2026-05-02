@@ -11,6 +11,7 @@ import { StrengthLogger } from '@/components/StrengthLogger';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
+import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import {
   buildPlanAlternative,
@@ -73,6 +74,7 @@ function NextTrainingDecisionCard({
   onOpen: (workout: PlannedWorkout) => void;
 }) {
   const update = useUpdateWorkout();
+  const [alternativeError, setAlternativeError] = useState<{ id: PlanAlternativeId; message: string } | null>(null);
   const today = isoDateLocal(new Date());
 
   if (!nextWorkout) {
@@ -129,13 +131,21 @@ function NextTrainingDecisionCard({
     },
   ];
 
-  function applyAlternative(id: PlanAlternativeId) {
+  async function applyAlternative(id: PlanAlternativeId) {
     const workout = nextWorkout;
     if (!workout) return;
-    void update.mutateAsync({
-      id: workout.id,
-      data: buildPlanAlternative(workout, id, availableDays),
-    });
+    setAlternativeError(null);
+    try {
+      await update.mutateAsync({
+        id: workout.id,
+        data: buildPlanAlternative(workout, id, availableDays),
+      });
+    } catch (err) {
+      setAlternativeError({
+        id,
+        message: errorMessage(err, 'Die Planänderung konnte nicht gespeichert werden.'),
+      });
+    }
   }
 
   return (
@@ -207,7 +217,7 @@ function NextTrainingDecisionCard({
           <button
             key={option.id}
             type="button"
-            onClick={() => applyAlternative(option.id)}
+            onClick={() => { void applyAlternative(option.id); }}
             disabled={update.isPending}
             style={{
               minHeight: 58,
@@ -229,6 +239,17 @@ function NextTrainingDecisionCard({
           </button>
         ))}
       </div>
+      {alternativeError && (
+        <div style={{ marginBottom: 10 }}>
+          <InlineFeedback
+            title="Änderung nicht gespeichert"
+            message={alternativeError.message}
+            actionLabel="Erneut versuchen"
+            actionPending={update.isPending}
+            onAction={() => { void applyAlternative(alternativeError.id); }}
+          />
+        </div>
+      )}
       <button
         type="button"
         onClick={() => onOpen(nextWorkout)}
@@ -262,6 +283,7 @@ function AvailabilityEditor() {
   const weeks = data?.weeks ?? [];
   const [open, setOpen] = useState(false);
   const [local, setLocal] = useState<Record<string, { availableDays: number[]; weeklyHours: number; notes: string }>>({});
+  const [saveError, setSaveError] = useState<{ weekStart: string; message: string } | null>(null);
 
   function getWeek(weekStart: string) {
     if (local[weekStart]) return local[weekStart]!;
@@ -279,8 +301,16 @@ function AvailabilityEditor() {
 
   async function handleSave(weekStart: string) {
     const cur = getWeek(weekStart);
-    await save.mutateAsync({ weekStart, data: { availableDays: cur.availableDays, weeklyHours: cur.weeklyHours, notes: cur.notes || undefined } });
-    setLocal(l => { const n = { ...l }; delete n[weekStart]; return n; });
+    setSaveError(null);
+    try {
+      await save.mutateAsync({ weekStart, data: { availableDays: cur.availableDays, weeklyHours: cur.weeklyHours, notes: cur.notes || undefined } });
+      setLocal(l => { const n = { ...l }; delete n[weekStart]; return n; });
+    } catch (err) {
+      setSaveError({
+        weekStart,
+        message: errorMessage(err, 'Die Verfügbarkeit konnte nicht gespeichert werden.'),
+      });
+    }
   }
 
   const mondayStrs = getMondays();
@@ -373,6 +403,17 @@ function AvailabilityEditor() {
               </div>
             );
           })}
+          {saveError && (
+            <div style={{ padding: '0 12px 12px' }}>
+              <InlineFeedback
+                title="Verfügbarkeit nicht gespeichert"
+                message={saveError.message}
+                actionLabel="Erneut versuchen"
+                actionPending={save.isPending}
+                onAction={() => { void handleSave(saveError.weekStart); }}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -394,6 +435,7 @@ function TrainingTab() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const selectedWeekDate = getMonday(new Date());
   selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
@@ -433,8 +475,13 @@ function TrainingTab() {
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
-    await generate.mutateAsync();
-    setShowConfig(false);
+    setGenerateError(null);
+    try {
+      await generate.mutateAsync();
+      setShowConfig(false);
+    } catch (err) {
+      setGenerateError(errorMessage(err, 'Der Trainingsplan konnte nicht erstellt werden.'));
+    }
   }
 
   return (
@@ -522,6 +569,17 @@ function TrainingTab() {
           }}>
             {generate.isPending ? '● Generiere…' : 'Plan erstellen'}
           </button>
+          {generateError && (
+            <div style={{ marginTop: 10 }}>
+              <InlineFeedback
+                title="Plan nicht erstellt"
+                message={generateError}
+                actionLabel="Erneut versuchen"
+                actionPending={generate.isPending}
+                onAction={() => { void handleGenerate({ preventDefault: () => {} } as React.FormEvent); }}
+              />
+            </div>
+          )}
         </div>
       )}
 

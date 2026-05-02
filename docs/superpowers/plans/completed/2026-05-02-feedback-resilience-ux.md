@@ -29,36 +29,43 @@ The audit found that Home can collapse to a route-level error if a critical quer
 
 ## Task 1: Define The Feedback Pattern
 
-- [ ] Identify repeated mutation states: idle, pending, success, error, retryable error, non-retryable blocked state.
-- [ ] Decide whether a small shared component is warranted or route-local patterns are clearer.
-- [ ] Keep success copy quiet and brief; avoid toast-only feedback for important actions.
+- [x] Identify repeated mutation states: idle, pending, success, error, retryable error, non-retryable blocked state.
+- [x] Decide whether a small shared component is warranted or route-local patterns are clearer.
+- [x] Keep success copy quiet and brief; avoid toast-only feedback for important actions.
 
 ## Task 2: Degrade Home Per Card
 
-- [ ] Keep still-available daily cards visible when one Home query fails.
-- [ ] Show stale data timestamps where cached data is used.
-- [ ] Give each failed card a local retry action.
-- [ ] Add E2E coverage for one failed Home endpoint while the route remains usable.
+- [x] Keep still-available daily cards visible when one Home query fails.
+- [x] Show stale data context where cached/Home data is used.
+- [x] Give each failed card a local retry action.
+- [x] Add E2E coverage for one failed Home endpoint while the route remains usable.
 
 ## Task 3: Add Mutation Recovery To Daily Actions
 
-- [ ] Coach send: preserve draft/user message and offer retry when sending fails.
-- [ ] Plan alternatives/generation: show why the request failed and keep previous plan visible.
-- [ ] Availability save: preserve edits and show retry.
-- [ ] Health-state save/complete: show inline error and do not pretend the state changed.
-- [ ] Garmin sync/backfill: separate queued/running/blocked/failed outcomes visibly.
+- [x] Coach send: preserve draft/user message and offer retry when sending fails.
+- [x] Plan alternatives/generation: show why the request failed and keep previous plan visible.
+- [x] Availability save: preserve edits and show retry.
+- [x] Health-state save/complete: show inline error and do not pretend the state changed.
+- [x] Garmin sync/backfill: separate queued/running/blocked/failed outcomes visibly.
 
 ## Task 4: Make Runtime Errors Human-Readable
 
-- [ ] Update the app error boundary to show a calm user-facing message first.
-- [ ] Keep stack/details behind a development-only or expandable detail area.
-- [ ] Ensure production UI does not expose raw stack traces as the primary experience.
+- [x] Update the app error boundary to show a calm user-facing message first.
+- [x] Keep stack/details behind a development-only or expandable detail area.
+- [x] Ensure production UI does not expose raw stack traces as the primary experience.
 
 ## Verification
 
-- [ ] `npm run typecheck`
-- [ ] `npm run test:e2e -- --grep "error|retry|Coach|Plan|Settings|Garmin|Home"`
-- [ ] Manual route pass with API failure mocks where deterministic Playwright mocks are not enough.
+- [x] `npm run typecheck`
+- [x] `npm run test:e2e -- --grep "error|retry|Coach|Plan|Settings|Garmin|Home"`
+- [x] Manual route pass with API failure mocks where deterministic Playwright mocks are not enough.
+
+## QA Evidence
+
+- RED: new failure-state E2E cases failed before implementation for Home readiness degradation, Coach send retry, Plan alternative retry, Plan generation retry, Health-State save error and Garmin Backfill failure.
+- GREEN: `npm run typecheck` passed.
+- GREEN: `npm run test:e2e -- --grep "error|retry|Coach|Plan|Settings|Garmin|Home"` passed with 82 tests.
+- Additional focused check: `npm run test:e2e -- --grep "Data Garmin backfill failure shows local recovery"` passed after removing the unhandled rejection path.
 
 ## Acceptance
 

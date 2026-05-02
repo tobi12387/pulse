@@ -5,6 +5,14 @@ const today = '2026-05-01';
 type MockPulseApiOptions = {
   insightError?: boolean;
   insightErrorKind?: 'server' | 'provider' | 'data_missing';
+  failEndpoints?: Record<string, {
+    error: string;
+    status?: number;
+    code?: string;
+    retryable?: boolean;
+    action?: string;
+    times?: number;
+  }>;
   home?: Partial<typeof home>;
   coverage?: unknown;
   garminCoverage?: unknown;
@@ -562,6 +570,8 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
 }
 
 export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}) {
+  const failureCounts = new Map<string, number>();
+
   await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -569,6 +579,21 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (!url.pathname.startsWith('/api/')) return route.continue();
     options.onRequest?.(url.pathname, request.method());
     if (request.method() === 'OPTIONS') return json(route, {});
+    const failKey = `${request.method()} ${url.pathname}`;
+    const failure = options.failEndpoints?.[failKey] ?? options.failEndpoints?.[url.pathname];
+    if (failure) {
+      const seen = failureCounts.get(failKey) ?? 0;
+      const limit = failure.times ?? Number.POSITIVE_INFINITY;
+      if (seen < limit) {
+        failureCounts.set(failKey, seen + 1);
+        return json(route, {
+          error: failure.error,
+          code: failure.code ?? 'mock_failure',
+          retryable: failure.retryable ?? true,
+          action: failure.action ?? null,
+        }, failure.status ?? 500);
+      }
+    }
     if (url.pathname === '/api/pulse/insights' && options.insightErrorKind === 'provider') {
       return json(route, {
         error: 'KI-Provider gerade nicht verfügbar.',
