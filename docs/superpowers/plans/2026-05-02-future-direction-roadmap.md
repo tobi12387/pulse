@@ -36,7 +36,7 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Daily Outcome Learning Loop | Home/Coach now show a deterministic learning signal from action decisions, check-ins and Garmin execution without hidden LLM memory. | `completed/2026-05-02-daily-outcome-learning-loop.md`, PR #113 |
 | Season Strategy Planner | Plan now shows a deterministic 8-16 week season line and weekly generation uses target-session, hard-day, deload and free-day guardrails. | `completed/2026-05-02-season-strategy-planner.md`, PR #114 |
 | Garmin Signal Usefulness Wave | Data now shows which Garmin signals are already used, underused or missing/sparse, without live Garmin probing from UI routes. | `completed/2026-05-02-garmin-signal-usefulness-wave.md`, PR #116 |
-| Daily Decision Quality Loop | Home, Coach and Insights now show whether recent recommendations helped, repeated usefully, became stale or need a strategy change. | `completed/2026-05-02-daily-decision-quality-loop.md`, active PR pending |
+| Daily Decision Quality Loop | Home, Coach and Insights now show whether recent recommendations helped, repeated usefully, became stale or need a strategy change. | `completed/2026-05-02-daily-decision-quality-loop.md`, PR #117 |
 
 ## Next Plan Summaries
 
