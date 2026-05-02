@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Review- und Nutrition-Routen folgen der Training-Boundary
+
+- **Decision:** Pulse verschiebt `/nutrition`, `/nutrition/:id`, `/review/latest` und `/review/generate` nach `backend/src/pulse/routes/training-routes.ts`.
+- **Why:** Nutrition-Logs und Weekly Review bewerten bzw. ergaenzen Trainingseinheiten und gehoeren damit zur Training-Boundary, waehrend Push, Garmin und allgemeine Insights noch eigene Slices bleiben. Der kleine Move reduziert `plugin.ts`, ohne die komplexere Training-Analytics-Auswertung in denselben PR zu ziehen.
+- **Alternatives:** Nutrition und Review im Plugin lassen (Training-Boundary bleibt unvollstaendig); Training Analytics direkt mitverschieben (groesserer Query-/Helper-Slice); separaten Nutrition-Router anlegen (mehr Modulgrenzen als aktuell noetig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Strategy-Routen bleiben Teil der Training-Boundary
 
 - **Decision:** Pulse verschiebt Goals, Race-Liste, Race Command und Season Strategy nach `backend/src/pulse/routes/training-routes.ts`.
