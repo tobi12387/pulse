@@ -65,8 +65,8 @@ Latest local evidence generated in this slice:
 ## Recommended Next Companion Updates
 
 1. Update Canva board status block:
-   - Current deployed commit before this toolchain slice: `df77cdb`.
-   - Completed UI/UX closure: PR #154 through PR #158.
+   - Current deployed commit after this toolchain slice: `1196450`.
+   - Completed UI/UX closure: PR #154 through PR #159.
    - Manual gate: iPhone certificate trust remains real-device only.
 2. Add a Canva route checklist row for:
    - Home daily decision and feedback recovery.

@@ -80,13 +80,14 @@ Keep this file short. Update it whenever the active work queue changes.
 74. Daily Loop Route Priority was merged and deployed via PR #156.
 75. Feedback Resilience was merged and deployed via PR #157.
 76. Settings Diagnostics Matrix was merged and deployed via PR #158.
-77. UX Evidence Toolchain Refresh is the current UI/UX implementation slice; after it lands, the UI/UX Deep Friction Closure plan pack is complete.
+77. UX Evidence Toolchain Refresh was merged and deployed via PR #159. The UI/UX Deep Friction Closure plan pack is complete.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/ux-evidence-toolchain-refresh` implements UI/UX roadmap rank 5.
+- Active branch: none; latest Codex branch was `codex/ux-evidence-toolchain-refresh`, merged and deployed via PR #159.
 - Recent completed branches:
+- `codex/ux-evidence-toolchain-refresh`: merged and deployed via PR #159.
 - `codex/settings-diagnostics-matrix`: merged and deployed via PR #158.
 - `codex/feedback-resilience-ux`: merged and deployed via PR #157.
 - `codex/daily-loop-route-priority-ux`: merged and deployed via PR #156.
@@ -209,8 +210,8 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
-- UI/UX Deep Friction Closure is in its final evidence-toolchain slice. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md`, `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md` and `docs/qa/route-evidence-pack.md`.
-- Recommended implementation order: finish UX Evidence Toolchain Refresh, then reassess future product direction from `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
+- UI/UX Deep Friction Closure is complete. Future UI/UX work should start by regenerating route evidence via `docs/qa/route-evidence-pack.md`, then compare against `docs/qa/2026-05-02-ui-ux-deep-audit.md`.
+- Recommended implementation order: reassess future product direction from `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`; do not start Fueling/Recovery until Tobi provides preferences.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
