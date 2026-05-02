@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Settings-Profil-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt Athletenprofil, Profil-Edit-Form, Garmin-Profil-Sync und Profilwert-Provenienz nach `frontend/src/features/settings/profile/profile-components.tsx`.
+- **Why:** Profilwerte sind Plan-/Coach-Kontext und haben eigene Mutationen sowie Garmin-Provenienzlogik. Der Settings-Route bleiben damit nur Gruppenstruktur, Garmin-Verbindungsstatus und die noch offenen Coach-/Health-Cluster.
+- **Alternatives:** Profil im Settings-Monolith lassen (Phase 5 bleibt zu grob); Profil-Sync im Parent halten und nur die Anzeige verschieben (State/Mutation bliebe verteilt); generische Row/Pill-Helfer vorher extrahieren (groesserer Shared-UI-Slice ohne direkten Feature-Fortschritt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Settings-Push-UI bildet ein eigenes Feature-Modul
 
 - **Decision:** Pulse verschiebt Push-Benachrichtigungen, Push-Geräteliste, Browser-Permission-Flow und PWA-Readiness nach `frontend/src/features/settings/push/push-components.tsx`.
