@@ -195,9 +195,9 @@ Do not delete `design-handoff/`; it is explicitly marked historical and still pr
 
 ## Ops And Tooling Findings
 
-- `plugins/pulse-ops` still points some health checks to `https://192.168.178.46` and `/api/ping`; current frontend URL is `https://192.168.178.46:5175` and Pulse health is `/api/pulse/health`.
-- `pm2.config.js` describes only the backend `pulse` process, while the server currently also uses `pulse-frontend`.
-- Root `package.json` is still named `coaching-os-v2`; runtime impact is low, but naming no longer matches Pulse.
+- Resolved in the structure cleanup follow-up: `plugins/pulse-ops` now targets `https://192.168.178.46:5175` and `/api/pulse/health`.
+- Resolved in the structure cleanup follow-up: `pm2.config.js` now manages both `pulse` and `pulse-frontend`.
+- Resolved in the structure cleanup follow-up: root `package.json` is named `pulse`.
 
 These are not safe one-line deletions. They should be handled as a follow-up ops/tooling cleanup so diagnostics and PM2 bootstrap do not drift.
 

@@ -70,13 +70,15 @@ Keep this file short. Update it whenever the active work queue changes.
 64. Frontend Settings Profile Components Split was merged and deployed via PR #145.
 65. Frontend Settings Coach Components Split was merged and deployed via PR #146.
 66. Frontend Settings Health Components Split was merged and deployed via PR #147.
-67. Shared Pulse Type Split is active on `codex/shared-pulse-type-split`.
+67. Shared Pulse Type Split was merged and deployed via PR #148.
+68. Ops And Tooling Cleanup is active on `codex/ops-tooling-cleanup`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/shared-pulse-type-split` for splitting `shared/types/pulse.ts` into domain files while preserving `@coaching-os/shared/pulse`.
+- Active branch: `codex/ops-tooling-cleanup` for Pulse Ops health URLs, PM2 process management and root package naming.
 - Recent completed branches:
+- `codex/shared-pulse-type-split`: merged and deployed via PR #148.
 - `codex/frontend-settings-health-components`: merged and deployed via PR #147.
 - `codex/frontend-settings-coach-components`: merged and deployed via PR #146.
 - `codex/frontend-settings-profile-components`: merged and deployed via PR #145.

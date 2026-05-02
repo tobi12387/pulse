@@ -1,5 +1,5 @@
 {
-  "name": "coaching-os-v2",
+  "name": "pulse",
   "version": "0.1.0",
   "private": true,
   "workspaces": ["shared", "backend", "frontend"],

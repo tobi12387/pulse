@@ -93,11 +93,12 @@
 
 ## Phase 7: Ops And Tooling Cleanup
 
-- [ ] Update `plugins/pulse-ops` to use `https://192.168.178.46:5175` and `/api/pulse/health`.
-- [ ] Update `pm2.config.js` to document or manage both `pulse` and `pulse-frontend`.
-- [ ] Decide whether root `package.json` should be renamed from `coaching-os-v2` to `pulse`; if yes, update lockfile and docs in one PR.
-- [ ] Run `npm run pulse:status`.
-- [ ] Run `npm run verify:server`.
+- [x] Update `plugins/pulse-ops` to use `https://192.168.178.46:5175` and `/api/pulse/health`.
+- [x] Update `pm2.config.js` to document or manage both `pulse` and `pulse-frontend`.
+- [x] Decide whether root `package.json` should be renamed from `coaching-os-v2` to `pulse`; if yes, update lockfile and docs in one PR.
+- [x] Run `npm run pulse:status`.
+  - 2026-05-02: server mirror passed; local services remain unavailable because Docker Desktop is not running locally.
+- [x] Run `npm run verify:server`.
 
 ## Phase 8: Optional Docs Relocation
 

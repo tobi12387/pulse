@@ -164,14 +164,10 @@ npm run build -w frontend
 echo "==> database migrations"
 npm run db:migrate -w backend
 
-echo "==> pm2 restart $PM2_PROC"
-pm2 restart "$PM2_PROC" --update-env
+echo "==> pm2 start/reload $PM2_PROC"
+pm2 startOrReload pm2.config.js --only "$PM2_PROC"
 
-if pm2 describe "$PM2_FRONTEND_PROC" >/dev/null 2>&1; then
-  echo "==> pm2 restart $PM2_FRONTEND_PROC"
-  pm2 restart "$PM2_FRONTEND_PROC" --update-env
-else
-  echo "==> pm2 process $PM2_FRONTEND_PROC not found; skipping frontend restart"
-fi
+echo "==> pm2 start/reload $PM2_FRONTEND_PROC"
+pm2 startOrReload pm2.config.js --only "$PM2_FRONTEND_PROC"
 
 echo "==> deploy done: $(git -C "$REPO_DIR" rev-parse --short HEAD)"
