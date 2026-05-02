@@ -287,10 +287,11 @@ export function PushNotificationsCard({ setMessage }: {
           disabled={!supported || !data?.configured || permissionState === 'denied' || subscribe.isPending}
           style={{
             flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
-            borderRadius: 'var(--radius)', padding: '9px',
+            borderRadius: 'var(--radius)', minHeight: 40, padding: '8px 12px',
             fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: supported && data?.configured && permissionState !== 'denied' ? 'var(--accent)' : 'var(--text-3)',
             cursor: supported && data?.configured && permissionState !== 'denied' ? 'pointer' : 'default',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           {subscribe.isPending ? 'Aktiviere…' : 'Push aktivieren'}
@@ -300,10 +301,11 @@ export function PushNotificationsCard({ setMessage }: {
           disabled={!data?.configured || activeSubscriptions.length === 0 || sendTest.isPending}
           style={{
             background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-            padding: '9px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
+            minHeight: 40, padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
             letterSpacing: '0.12em', textTransform: 'uppercase',
             color: data?.configured && activeSubscriptions.length > 0 ? 'var(--text-2)' : 'var(--text-3)',
             cursor: data?.configured && activeSubscriptions.length > 0 ? 'pointer' : 'default',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           Test
@@ -324,7 +326,7 @@ export function PushNotificationsCard({ setMessage }: {
           <Val>{data?.configured && activeSubscriptions.length > 0 ? 'möglich' : 'nicht möglich'}</Val>
         </Row>
         {(Object.keys(PUSH_TOPIC_LABELS) as PushTopic[]).map(topic => (
-          <label key={topic} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <label key={topic} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, minHeight: 40 }}>
             <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{PUSH_TOPIC_LABELS[topic].label}</span>
               <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{PUSH_TOPIC_LABELS[topic].hint}</span>
@@ -346,7 +348,7 @@ export function PushNotificationsCard({ setMessage }: {
           type="time"
           defaultValue={data?.quietHours.start ?? '22:00'}
           onBlur={e => data && updateQuietHours.mutate({ start: e.target.value, end: data.quietHours.end })}
-          style={{ width: 92, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '5px 6px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}
+          style={{ width: 92, minHeight: 40, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '7px 8px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}
         />
         <span style={{ fontSize: 11, color: 'var(--text-3)' }}>bis</span>
         <input
@@ -354,7 +356,7 @@ export function PushNotificationsCard({ setMessage }: {
           type="time"
           defaultValue={data?.quietHours.end ?? '06:30'}
           onBlur={e => data && updateQuietHours.mutate({ start: data.quietHours.start, end: e.target.value })}
-          style={{ width: 92, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '5px 6px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}
+          style={{ width: 92, minHeight: 40, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '7px 8px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}
         />
       </div>
 
@@ -366,7 +368,13 @@ export function PushNotificationsCard({ setMessage }: {
           type="button"
           onClick={() => void handleDisableCurrent()}
           disabled={unsubscribe.isPending}
-          style={{ background: 'none', border: 'none', color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}
+          style={{
+            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            minHeight: 40, padding: '7px 10px', color: 'var(--text-3)', fontFamily: 'var(--font-mono)',
+            fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
+            cursor: unsubscribe.isPending ? 'default' : 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          }}
         >
           Dieses Gerät aus
         </button>
@@ -394,7 +402,12 @@ export function PushNotificationsCard({ setMessage }: {
               <button
                 onClick={() => void handleRemoveDevice(sub.endpoint)}
                 disabled={unsubscribe.isPending}
-                style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}
+                style={{
+                  background: 'none', border: '1px solid var(--border)', borderRadius: 3,
+                  minWidth: 40, minHeight: 40, color: 'var(--text-3)', fontFamily: 'var(--font-mono)',
+                  fontSize: 11, cursor: unsubscribe.isPending ? 'default' : 'pointer', flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}
               >
                 ×
               </button>

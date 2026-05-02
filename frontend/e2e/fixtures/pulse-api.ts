@@ -26,6 +26,7 @@ type MockPulseApiOptions = {
   onActionPatch?: (decisionId: string, body: unknown) => void;
   onCoachPreferencesPatch?: (body: unknown) => void;
   pushSettings?: unknown;
+  healthState?: unknown;
   checkinToday?: unknown;
   checkinGuidance?: unknown;
   metrics?: unknown[];
@@ -651,6 +652,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
+    if (url.pathname === '/api/pulse/health-state' && 'healthState' in options) return json(route, options.healthState);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);

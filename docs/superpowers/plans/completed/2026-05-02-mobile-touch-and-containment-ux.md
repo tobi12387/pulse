@@ -30,31 +30,38 @@ The 2026-05-02 audit found one confirmed horizontal overflow on iPhone: the Data
 
 ## Task 1: Lock The Current Mobile Failure
 
-- [ ] Add a Playwright helper that checks `document.documentElement.scrollWidth <= clientWidth + 1` for iPhone-sized routes.
-- [ ] Run it against `/`, `/coach`, `/data`, `/plan`, `/insights`, `/settings`.
-- [ ] Keep the `/data` failure visible before the table fix.
+- [x] Add a Playwright helper that checks `document.documentElement.scrollWidth <= clientWidth + 1` for iPhone-sized routes.
+- [x] Run it against `/`, `/coach`, `/data`, `/plan`, `/insights`, `/settings`.
+- [x] Keep the `/data` failure visible before the table fix.
 
 ## Task 2: Replace The Mobile Coverage Table
 
-- [ ] Keep the desktop `Domain-Abdeckung` table for wide screens.
-- [ ] Add a mobile card/list layout that shows the same domains (`Metriken`, `Schlaf`, `Aktivitaet`, `Gewicht`) without `minWidth: 520`.
-- [ ] Preserve status, cause and action copy.
-- [ ] Confirm `/data` no longer has unintended horizontal overflow on iPhone width.
+- [x] Keep the desktop `Domain-Abdeckung` table for wide screens.
+- [x] Add a mobile card/list layout that shows the same domains (`Metriken`, `Schlaf`, `Aktivitaet`, `Gewicht`) without `minWidth: 520`.
+- [x] Preserve status, cause and action copy.
+- [x] Confirm `/data` no longer has unintended horizontal overflow on iPhone width.
 
 ## Task 3: Normalize Mobile Touch Targets
 
-- [ ] Establish a route-level rule: primary mobile actions should be at least `40px` high; compact segmented controls should be visually compact but sit inside a reliable touch row.
-- [ ] Update Coach `Verlauf loeschen` from tiny text button to a real action target with clear destructive copy/state.
-- [ ] Update Data/Plan/Insights tab and range buttons so repeated tapping is comfortable.
-- [ ] Update Plan arrows and small per-row actions so they are button semantics with accessible names.
-- [ ] Update Settings edit/open/push actions and checkbox rows so the whole row or label is clickable where appropriate.
+- [x] Establish a route-level rule: primary mobile actions should be at least `40px` high; compact segmented controls should be visually compact but sit inside a reliable touch row.
+- [x] Update Coach `Verlauf loeschen` from tiny text button to a real action target with clear destructive copy/state.
+- [x] Update Data/Plan/Insights tab and range buttons so repeated tapping is comfortable.
+- [x] Update Plan arrows and small per-row actions so they are button semantics with accessible names.
+- [x] Update Settings edit/open/push actions and checkbox rows so the whole row or label is clickable where appropriate.
 
 ## Task 4: Verify
 
-- [ ] Run `npm run typecheck`.
-- [ ] Run `npm run test:e2e -- --grep "Mobile navigation|Data|Plan|Coach|Settings|Insights"`.
-- [ ] Capture iPhone screenshots for `/data`, `/plan`, `/settings` after the patch.
-- [ ] Record any remaining intentional horizontal scroll explicitly in the QA note; otherwise it should be zero.
+- [x] Run `npm run typecheck`.
+- [x] Run `npm run test:e2e -- --grep "Mobile navigation|Data|Plan|Coach|Settings|Insights"`.
+- [x] Capture iPhone screenshots for `/data`, `/plan`, `/settings` after the patch.
+- [x] Record any remaining intentional horizontal scroll explicitly in the QA note; otherwise it should be zero.
+
+## QA Evidence
+
+- `npm run typecheck` passed on 2026-05-02.
+- `npm run test:e2e -- --grep "Mobile navigation|Data|Plan|Coach|Settings|Insights"` passed with 75 passed and 1 skipped on 2026-05-02.
+- iPhone screenshots were captured at `/private/tmp/pulse-mobile-touch-containment/data.png`, `/private/tmp/pulse-mobile-touch-containment/plan.png`, and `/private/tmp/pulse-mobile-touch-containment/settings.png`.
+- No intentional horizontal scroll remains for the checked mobile routes.
 
 ## Acceptance
 

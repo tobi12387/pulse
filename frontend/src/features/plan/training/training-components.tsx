@@ -68,18 +68,20 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={() => onChangeWeek(-1)} style={{
+        <button type="button" aria-label="Vorherige Woche" onClick={() => onChangeWeek(-1)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', padding: '2px 6px',
+          fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)', padding: '0 10px',
+          minWidth: 40, minHeight: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>←</button>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           {monday.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} –{' '}
           {new Date(monday.getTime() + 6 * 86400000).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
           {weekOffset === 0 ? '  · diese Woche' : weekOffset === 1 ? '  · nächste Woche' : weekOffset === -1 ? '  · letzte Woche' : ''}
         </span>
-        <button onClick={() => onChangeWeek(1)} style={{
+        <button type="button" aria-label="Nächste Woche" onClick={() => onChangeWeek(1)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', padding: '2px 6px',
+          fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)', padding: '0 10px',
+          minWidth: 40, minHeight: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>→</button>
       </div>
 
@@ -94,15 +96,23 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
           const zoneColor = zone > 0 ? (ZONE_COLOR[zone] ?? 'var(--text-3)') : 'transparent';
 
           return (
-            <div key={date}
+            <button key={date}
+              type="button"
+              disabled={!workout}
+              aria-label={workout ? `${DAY_SHORT[dayIdx]} ${dayNum}: ${ACTIVITY_LABEL[workout.activityType] ?? workout.activityType} öffnen` : `${DAY_SHORT[dayIdx]} ${dayNum}: kein Training`}
               onClick={() => workout && onSelectWorkout(workout)}
               style={{
+                appearance: 'none',
+                textAlign: 'left',
+                width: '100%',
                 padding: '10px 10px 12px',
                 background: isToday ? 'var(--surface-2)' : 'var(--surface)',
                 border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 5,
                 opacity: isPast && !isToday ? 0.65 : 1,
                 cursor: workout ? 'pointer' : 'default',
+                color: 'inherit',
+                font: 'inherit',
               }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
@@ -130,7 +140,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
                   {isDone ? <span style={{ color: 'var(--green)' }}>✓ </span> : ''}Z{zone} · {workout.durationMin}'
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -152,16 +162,23 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
       borderTop: i > 0 ? '1px solid var(--border)' : undefined,
       opacity: w.status === 'skipped' ? 0.45 : 1,
     }}>
-      <div
-        onClick={() => !switching && onOpen()}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 14px', cursor: switching ? 'default' : 'pointer',
-        }}
-        onMouseEnter={e => { if (!switching) e.currentTarget.style.background = 'var(--surface-2)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{
+        display: 'flex', alignItems: 'stretch', justifyContent: 'space-between',
+      }}>
+        <button
+          type="button"
+          tabIndex={switching ? -1 : 0}
+          aria-disabled={switching}
+          aria-label={`${w.plannedDate} ${ACTIVITY_LABEL[w.activityType] ?? w.activityType} öffnen`}
+          onClick={() => { if (!switching) onOpen(); }}
+          style={{
+            flex: '1 1 auto', minWidth: 0, textAlign: 'left',
+            padding: '10px 0 10px 14px', cursor: switching ? 'default' : 'pointer',
+            background: 'transparent', border: 0, color: 'inherit',
+          }}
+          onMouseEnter={e => { if (!switching) e.currentTarget.style.background = 'var(--surface-2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{w.plannedDate}</span>
             <span style={{
@@ -174,20 +191,26 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>
-            <button
-              onClick={e => { e.stopPropagation(); setSwitching(v => !v); }}
-              style={{
-                fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '.08em',
-                padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 2,
-                background: 'transparent', color: 'var(--text-3)', cursor: 'pointer',
-              }}
-            >Sportart ändern</button>
           </div>
           {w.description && !switching && (
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
           )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
+        </button>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+          marginLeft: 8, padding: '10px 14px 10px 0',
+        }}>
+            <button
+              type="button"
+              aria-expanded={switching}
+              onClick={() => setSwitching(v => !v)}
+              style={{
+                fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '.08em',
+                minHeight: 40, padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 3,
+                background: 'transparent', color: 'var(--text-3)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >Sportart ändern</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
             {w.durationMin}m{w.distanceKm ? ` · ${w.distanceKm.toFixed(1)}km` : ''}
           </span>
@@ -203,9 +226,10 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           {ACTIVITY_TYPES.map(t => (
             <button key={t} onClick={() => handleTypeChange(t)} disabled={update.isPending} style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase',
-              padding: '4px 10px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
+              minHeight: 40, padding: '8px 12px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: 3, background: t === w.activityType ? translucent('var(--accent)', 9) : 'transparent',
               color: t === w.activityType ? 'var(--accent)' : 'var(--text-2)', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}>{ACTIVITY_LABEL[t]}</button>
           ))}
         </div>

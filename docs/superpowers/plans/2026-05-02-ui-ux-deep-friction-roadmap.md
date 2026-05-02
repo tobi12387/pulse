@@ -29,7 +29,7 @@
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mobile Touch And Containment | It contains the only confirmed browser overflow and the most obvious repeated-use touch friction. | `2026-05-02-mobile-touch-and-containment-ux.md` |
+| 1 | Mobile Touch And Containment | Completed: it contained the only confirmed browser overflow and the most obvious repeated-use touch friction. | `completed/2026-05-02-mobile-touch-and-containment-ux.md` |
 | 2 | Daily Loop Route Priority | It addresses the core product promise: one useful daily decision across Home, Coach and Plan. | `2026-05-02-daily-loop-route-priority-ux.md` |
 | 3 | Feedback Resilience | It prevents one failed query or mutation from making the whole app feel unreliable. | `2026-05-02-feedback-resilience-ux.md` |
 | 4 | Settings Diagnostics Matrix | It turns current iPhone/PWA/certificate/push friction into a supportable Settings experience. | `2026-05-02-settings-diagnostics-matrix.md` |

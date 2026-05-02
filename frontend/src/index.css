@@ -223,6 +223,14 @@
     min-height: 0;
   }
 
+  .coverage-mobile-list {
+    display: none;
+  }
+
+  .coverage-desktop-table {
+    display: block;
+  }
+
   @media (min-width: 768px) {
     .pulse-page-shell {
       padding-top: 1.5rem;
@@ -233,6 +241,16 @@
       height: calc(100vh - 3rem);
       height: calc(100dvh - 3rem);
       min-height: 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .coverage-mobile-list {
+      display: flex;
+    }
+
+    .coverage-desktop-table {
+      display: none;
     }
   }
 

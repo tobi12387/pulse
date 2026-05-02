@@ -74,14 +74,17 @@ Keep this file short. Update it whenever the active work queue changes.
 68. Ops And Tooling Cleanup was merged and deployed via PR #149.
 69. Docs Design Handoff Relocation was merged and deployed via PR #150.
 70. Real iPhone/VPN/PWA field evidence was captured from Tobi's device: routes, Coach keyboard, Home Screen launch and Settings readiness passed; local certificate trust remains the only confirmed friction.
-71. UI/UX deep audit follow-up is now the active priority: the next work should close mobile containment/touch, daily-loop continuity, feedback resilience, Settings diagnostics and current Canva/Figma/WebKit evidence before new product domains.
-72. Dependency security refresh is the immediate maintenance pre-step before UI/UX implementation: update runtime/security packages first, keep risky major migrations separate, then continue with Mobile Touch And Containment.
+71. UI/UX deep audit follow-up is now the active priority: close mobile containment/touch, daily-loop continuity, feedback resilience, Settings diagnostics and current Canva/Figma/WebKit evidence before new product domains.
+72. Dependency security refresh was merged and deployed via PR #154; production runtime audit is clean, with only the documented dev-only Drizzle/esbuild advisory left on stable tooling.
+73. Mobile Touch And Containment is the current UI/UX implementation slice; after it lands, continue with `2026-05-02-daily-loop-route-priority-ux.md`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/dependency-security-refresh` prepares the dependency/security refresh before UI/UX implementation.
+- Active branch: `codex/mobile-touch-containment-ux` implements UI/UX roadmap rank 1 before Daily Loop Route Priority.
 - Recent completed branches:
+- `codex/dependency-security-refresh`: merged and deployed via PR #154.
+- `codex/ui-ux-friction-plans`: merged via PR #153.
 - `codex/docs-design-reference-relocation`: merged and deployed via PR #150.
 - `codex/ops-tooling-cleanup`: merged and deployed via PR #149.
 - `codex/shared-pulse-type-split`: merged and deployed via PR #148.
