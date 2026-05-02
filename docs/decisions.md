@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Plan-Seite trennt reine Plan-Utilities von UI
+
+- **Decision:** Pulse verschiebt reine Datums-, Plan-Alternativen- und Execution-Status-Helfer aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/plan-utils.ts`.
+- **Why:** `Plan.tsx` bleibt als Route weiterhin funktionsgleich, aber die erste Frontend-Plan-Split-Grenze reduziert Seitengröße und macht spätere Training-, Strategie- und Goal-Komponenten-Extraktionen risikoärmer. Der Slice bewegt nur pure Helpers, keine UI-Komponenten oder API-Verträge.
+- **Alternatives:** Sofort alle Plan-Komponenten verschieben (zu großer PR); Utilities im Page-Monolith lassen (Phase 4 startet nicht sauber); Helper nach `pulse/` legen (fachlich Feature-spezifisch statt API-Client-Logik).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Garmin-Tages-Sync lebt in der Pulse-Service-Boundary
 
 - **Decision:** Pulse verschiebt `syncGarminDay` nach `backend/src/pulse/services/garmin-sync-day.ts` und das Activity-Workout-Matching inklusive Feedback-Erzeugung nach `backend/src/pulse/services/workout-execution-sync.ts`. Die Legacy-Route `/api/garmin` bleibt kompatibel und re-exportiert den Tages-Sync vorerst.

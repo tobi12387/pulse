@@ -58,13 +58,15 @@ Keep this file short. Update it whenever the active work queue changes.
 52. Backend Push Route Extraction was merged and deployed via PR #133.
 53. Backend Activity Route Extraction was merged and deployed via PR #134.
 54. Backend Insight Route Extraction was merged and deployed via PR #135.
-55. Garmin Sync Boundary is active on `codex/garmin-sync-boundary`.
+55. Garmin Sync Boundary was merged and deployed via PR #136.
+56. Frontend Plan Utils Split is active on `codex/frontend-plan-utils`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/garmin-sync-boundary` for moving Garmin day sync orchestration and activity execution matching into Pulse services.
+- Active branch: `codex/frontend-plan-utils` for moving pure Plan date/alternative helpers into `frontend/src/features/plan/plan-utils.ts`.
 - Recent completed branches:
+- `codex/garmin-sync-boundary`: merged and deployed via PR #136.
 - `codex/pulse-insight-routes`: merged and deployed via PR #135.
 - `codex/pulse-activity-routes`: merged and deployed via PR #134.
 - `codex/pulse-push-routes`: merged and deployed via PR #133.
