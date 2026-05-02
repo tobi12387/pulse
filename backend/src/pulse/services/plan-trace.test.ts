@@ -85,4 +85,49 @@ describe('buildPlanTrace', () => {
     expect(trace.generatedSummary.join(' ')).toContain('Angepasst');
     expect(trace.generatedSummary.join(' ')).toContain('fatigue');
   });
+
+  it('carries execution-review adaptation and deliberate rest-day rationale into trace output', () => {
+    const trace = buildPlanTrace({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      mesocycleWeek: 2,
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3],
+      load: { ctl: 42, atl: 40, tsb: 5, date: '2026-05-04' },
+      profile: { ftpWatts: 260, maxHrBpm: 185, lthrBpm: 170 },
+      goals: [{ title: 'FTP Aufbau', category: 'ftp', targetDate: null, raceDiscipline: null, raceDistanceKm: null, racePriority: null }],
+      riskSignals: [],
+      healthStates: [],
+      recentActivities: [],
+      planLearning: null,
+      executionReview: {
+        signals: ['matched', 'maintain_structure'],
+        learnedFromLastWeek: ['Ausführung stabil: 2/2 Einheiten abgeglichen.'],
+        variationComparedToLastWeek: ['Planstruktur bleibt bewusst ähnlich.'],
+        restDayRationale: [
+          { date: '2026-05-07', reason: 'Bewusster freier Tag: stabile Ausführung und gute Erholung.' },
+        ],
+        recommendedHardDayAvoidance: [],
+        intents: ['stable'],
+      },
+      planDecision: {
+        selectedDays: [0, 2],
+        skippedAvailableDays: [1, 3],
+        targetSessionCount: 2,
+        primaryGoal: 'ftp',
+        reasons: ['FTP-Ziel: wenige, gezielte Reize statt viele Fülltage.'],
+      },
+      workouts: [
+        { plannedDate: '2026-05-04', activityType: 'bike', zone: 2, durationMin: 60, targetTss: 40 },
+        { plannedDate: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 50, targetTss: 80 },
+      ],
+    } as Parameters<typeof buildPlanTrace>[0] & { executionReview: unknown });
+
+    expect(trace.adaptation?.learnedFromExecution[0]).toContain('Ausführung stabil');
+    expect(trace.adaptation?.variationRationale[0]).toContain('ähnlich');
+    expect(trace.restDayRationale).toEqual([
+      { date: '2026-05-07', reason: 'Bewusster freier Tag: stabile Ausführung und gute Erholung.' },
+    ]);
+    expect(trace.generatedSummary.join(' ')).toContain('Ausführung');
+  });
 });

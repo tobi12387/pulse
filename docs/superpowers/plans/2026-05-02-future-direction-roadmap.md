@@ -1,6 +1,6 @@
 # Pulse Future Direction Roadmap
 
-> Stand: 2026-05-02 after PR #102. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
+> Stand: 2026-05-02 after PR #105 and the Adaptive Training v2 implementation branch. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
 
 ## Product North Star
 
@@ -20,45 +20,20 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
 | 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Adaptive Training Intelligence v2 | Use execution divergence, RPE, recovery depth and preferences to improve future weeks | `2026-05-02-adaptive-training-intelligence-v2.md` |
-| 3 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | `2026-05-02-mental-fitness-companion.md` |
-| 4 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | `2026-05-02-garmin-data-quality-control-center.md` |
-| 5 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | `2026-05-02-goal-race-command-center.md` |
-| 6 | Local Ops Autopilot | Reduce repeated Postgres/Redis/Docker/server-preview failures with stronger checks | `2026-05-02-local-ops-autopilot.md` |
-| 7 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 2 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | `2026-05-02-mental-fitness-companion.md` |
+| 3 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | `2026-05-02-garmin-data-quality-control-center.md` |
+| 4 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | `2026-05-02-goal-race-command-center.md` |
+| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
 | Wave | Outcome | Reference |
 |---|---|---|
 | Daily Loop Explainability | Home/Coach share visible action history, suppressed reasons are explainable, Insight evidence links to sources, and daily check-ins are date-scoped. | `completed/2026-05-02-daily-loop-explainability-wave.md`, PR #102 |
+| Local Ops Autopilot | `npm run pulse:status` separates Mac-local Docker/Postgres/Redis blockers from server deploy mirror health and documents the local ops flow. | `completed/2026-05-02-local-ops-autopilot.md`, PR #105 |
+| Adaptive Training Intelligence v2 | Plan generation now uses deterministic execution review for matched, missed, replaced, RPE/recovery and deliberate rest-day rationale. | `completed/2026-05-02-adaptive-training-intelligence-v2.md`, implementation branch `codex/adaptive-training-v2` |
 
 ## Next Plan Summaries
-
-### Adaptive Training Intelligence v2
-
-Implementation plan: [`2026-05-02-adaptive-training-intelligence-v2.md`](2026-05-02-adaptive-training-intelligence-v2.md)
-
-**Goal:** Plan generation should learn from what actually happened, not only from what was scheduled.
-
-**Scope:**
-- compare planned vs executed duration, sport type, intensity and missed days;
-- use RPE and recovery-depth signals to decide whether to repeat, reduce, rotate or rest;
-- explain free days as deliberate decisions;
-- keep deterministic plan trace before involving LLM narration.
-
-**Likely files:**
-- `backend/src/pulse/services/plan-engine.ts`
-- `backend/src/pulse/services/adapt-engine.ts`
-- `backend/src/pulse/services/workout-reconciliation.ts`
-- `backend/src/pulse/lib/pulse-context.ts`
-- `frontend/src/pages/Plan.tsx`
-- `frontend/e2e/pulse-usability.spec.ts`
-
-**Acceptance:**
-- repeated weekly plans explain what changed or why stability is intentional;
-- a missed/replaced workout changes the next plan only when the data supports it;
-- free days are visible training decisions, not empty slots.
 
 ### Mental Fitness Companion
 
@@ -132,30 +107,6 @@ Implementation plan: [`2026-05-02-goal-race-command-center.md`](2026-05-02-goal-
 - the next key workout and the next recovery boundary are obvious;
 - health-state changes explain their race-plan impact;
 - race readiness uses existing CTL/TSB/recovery data, not static copy.
-
-### Local Ops Autopilot
-
-Implementation plan: [`2026-05-02-local-ops-autopilot.md`](2026-05-02-local-ops-autopilot.md)
-
-**Goal:** Stop repeating the same local service and preview failures across AI sessions.
-
-**Scope:**
-- one status command that checks Mac services, server health, frontend reachability and PM2 state;
-- clearer output when Docker/Postgres/Redis are unavailable locally;
-- CI/server checks remain authoritative for DB-bound behavior when local services are absent;
-- no direct server edits.
-
-**Likely files:**
-- `scripts/dev-services.sh`
-- `package.json`
-- `scripts/deploy-smoke.sh`
-- `docs/ai/current-focus.md`
-- `docs/ai/checklists/`
-
-**Acceptance:**
-- the first five minutes of a session identify local-vs-server-vs-CI blockers;
-- test failures mention the missing service instead of looking like app regressions;
-- agents do not propose deleting the Mac checkout or working directly on the server.
 
 ### Native iOS Evaluation Gate
 

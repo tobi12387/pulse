@@ -1244,7 +1244,12 @@ describe('POST /api/pulse/plan/generate', () => {
             learnedFromLastWeek: string[];
             variationComparedToLastWeek: string[];
             flags: string[];
+            executionReview?: {
+              signals: string[];
+              learnedFromLastWeek: string[];
+            } | null;
           };
+          adaptation?: { learnedFromExecution: string[]; signals?: string[] } | null;
         };
       };
     }>().planTrace.inputSnapshot.learningSnapshot;
@@ -1252,6 +1257,8 @@ describe('POST /api/pulse/plan/generate', () => {
     expect(learning.flags).toContain('low_compliance');
     expect(learning.learnedFromLastWeek.join(' ')).toContain('Compliance');
     expect(learning.variationComparedToLastWeek.length).toBeGreaterThan(0);
+    expect(learning.executionReview?.signals).toContain('matched');
+    expect(learning.executionReview?.learnedFromLastWeek.join(' ')).toContain('abgeglichen');
   });
 });
 

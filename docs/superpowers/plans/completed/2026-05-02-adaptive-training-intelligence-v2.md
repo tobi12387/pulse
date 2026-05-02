@@ -31,7 +31,7 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
 ## Task 1: Pure Execution Divergence Model
 
-- [ ] **Step 1: Write failing tests for plan-vs-execution divergence**
+- [x] **Step 1: Write failing tests for plan-vs-execution divergence**
 
   Add `backend/src/pulse/services/training-execution-review.test.ts` with cases for:
   - completed workout within tolerance -> `matched`;
@@ -48,7 +48,7 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
   Expected: fail because `training-execution-review.ts` does not exist.
 
-- [ ] **Step 2: Implement the pure service**
+- [x] **Step 2: Implement the pure service**
 
   Create `backend/src/pulse/services/training-execution-review.ts` with exported types:
 
@@ -73,7 +73,7 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
   Keep it pure: input arrays in, summary out, no DB and no LLM.
 
-- [ ] **Step 3: Verify the pure service**
+- [x] **Step 3: Verify the pure service**
 
   Run:
 
@@ -84,21 +84,21 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
 ## Task 2: Feed Adaptation Into Plan Generation
 
-- [ ] **Step 1: Write failing plan-engine tests**
+- [x] **Step 1: Write failing plan-engine tests**
 
   Extend `backend/src/pulse/services/plan-engine.test.ts` to prove:
   - a missed hard workout reduces or relocates the next hard day when recovery is not strong;
   - a completed stable week may intentionally keep a similar structure and says why;
   - deliberate rest days are represented in generated summary.
 
-- [ ] **Step 2: Wire execution review into learning, `generateWeekWorkouts` and trace**
+- [x] **Step 2: Wire execution review into learning, `generateWeekWorkouts` and trace**
 
   Add optional execution review to the existing plan input path and `PulsePlanLearningSnapshot`. Use it to:
   - avoid hard-day offsets returned by `recommendedHardDayAvoidance`;
   - append adaptation lines to `generatedSummary`;
   - add rest-day rationale to the plan trace.
 
-- [ ] **Step 3: Fetch required context in `/api/pulse/plan/generate`**
+- [x] **Step 3: Fetch required context in `/api/pulse/plan/generate`**
 
   In `backend/src/pulse/plugin.ts`, gather:
   - previous week planned workouts;
@@ -108,11 +108,11 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
   Pass the pure `TrainingExecutionReview` into plan learning, plan generation and plan trace.
 
-- [ ] **Step 4: Protect historical execution evidence during regeneration**
+- [x] **Step 4: Protect historical execution evidence during regeneration**
 
   In `backend/src/pulse/plugin.ts`, review the regeneration path that deletes future `status = planned` rows from `weekStart` forward. Preserve past same-week planned rows that are needed to derive missed/replaced evidence before deleting or replacing future work.
 
-- [ ] **Step 5: Verify backend behavior**
+- [x] **Step 5: Verify backend behavior**
 
   Run:
 
@@ -125,11 +125,11 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
 ## Task 3: Make Rest Days And Stability Visible
 
-- [ ] **Step 1: Extend shared trace types**
+- [x] **Step 1: Extend shared trace types**
 
   Add optional `adaptation` and `restDayRationale` fields to `PulsePlanTrace` in `shared/types/pulse.ts`. Keep fields optional for old traces.
 
-- [ ] **Step 2: Add Plan UI rationale**
+- [x] **Step 2: Add Plan UI rationale**
 
   In `frontend/src/pages/Plan.tsx`, add a compact section in `PlanTraceCard`:
   - "Gelernt aus Ausführung";
@@ -138,11 +138,11 @@ Current planning already uses weekly availability, goals, risk signals, health s
 
   Keep it inside the existing Plan trace area, not as a new dashboard.
 
-- [ ] **Step 3: Add E2E coverage**
+- [x] **Step 3: Add E2E coverage**
 
   Extend `frontend/e2e/fixtures/pulse-api.ts` with adaptation trace fields and add a Playwright assertion in `frontend/e2e/pulse-usability.spec.ts` that the rationale is visible and does not overflow on mobile.
 
-- [ ] **Step 4: Verify frontend**
+- [x] **Step 4: Verify frontend**
 
   Run:
 
@@ -157,3 +157,13 @@ Current planning already uses weekly availability, goals, risk signals, health s
 - Missed/replaced workouts influence the next week only when recovery/RPE/load supports the change.
 - Free days are visible training decisions with rationale.
 - Existing Garmin sync and workout scheduling behavior remains unchanged unless the generated plan itself changes.
+
+## Implementation Notes
+
+- Implemented in branch `codex/adaptive-training-v2`.
+- Execution review is pure and deterministic in `training-execution-review.ts`; it reuses the existing reconciliation scorer and adds no table.
+- `/api/pulse/plan/generate` and availability regeneration fetch previous-week planned workouts before deleting future planned rows, then pass the review into day selection, plan generation and trace persistence.
+- Same-week historical evidence is preserved by replacing only planned rows from today onward when the requested week has already started; preserved rows stay in the returned trace, plan decision and response.
+- Stable-week rationale is reachable in real generation by passing previous-week availability and current load-derived recovery into the execution review.
+- Garmin orphan cleanup uses the same replacement cutoff so mid-week regeneration does not touch preserved past same-week schedules.
+- Verification completed: focused backend service tests, `npm run typecheck`, and focused Playwright Plan rationale tests on desktop/mobile. `plugin.test.ts` remains a local Docker/Postgres/Redis-gated suite; local services were blocked because Docker Desktop is not running.

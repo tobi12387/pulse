@@ -362,6 +362,57 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts).toHaveLength(4);
   });
 
+  it('relocates hard days and reduces density when execution review shows a missed hard session plus weak recovery', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      executionReview: {
+        signals: ['missed', 'protect_recovery'],
+        learnedFromLastWeek: ['Eine harte Einheit wurde verpasst.'],
+        variationComparedToLastWeek: ['Harten Reiz nicht am gleichen Wochentag wiederholen.'],
+        restDayRationale: [],
+        recommendedHardDayAvoidance: [1],
+        intents: ['repeat', 'rest'],
+      },
+    } as Parameters<typeof generateScientificWeekPlan>[0] & { executionReview: unknown });
+
+    const hardDates = workouts.filter(w => w.zone >= 4).map(w => w.plannedDate);
+    expect(workouts).toHaveLength(3);
+    expect(hardDates).not.toContain('2026-05-05');
+    expect(workouts.map(w => w.description).join(' ')).toContain('Ausführung');
+  });
+
+  it('keeps stable execution weeks dense enough while explaining the stability', () => {
+    const decision = decidePlanDays({
+      availableDays: [0, 1, 2, 3, 5],
+      weeklyHoursTarget: 8,
+      tsb: 8,
+      phase: 'build',
+      mesocycleWeek: 2,
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      executionReview: {
+        signals: ['matched', 'maintain_structure'],
+        learnedFromLastWeek: ['Alle geplanten Einheiten wurden abgeglichen.'],
+        variationComparedToLastWeek: ['Planstruktur bleibt bewusst ähnlich.'],
+        restDayRationale: [{ date: '2026-05-08', reason: 'Bewusster freier Tag.' }],
+        recommendedHardDayAvoidance: [],
+        intents: ['stable'],
+      },
+    } as Parameters<typeof decidePlanDays>[0] & { executionReview: unknown });
+
+    expect(decision.selectedDays).toHaveLength(4);
+    expect(decision.reasons.join(' ')).toContain('Ausführung stabil');
+  });
+
   it('keeps HR-first descriptions when LLM enrichment returns no items', async () => {
     const workouts = await generateScientificWeekPlan({
       weekStart: '2026-05-04',

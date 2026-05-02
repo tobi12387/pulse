@@ -193,6 +193,32 @@ export interface PulsePlanLearningSnapshot {
   learnedFromLastWeek: string[];
   variationComparedToLastWeek: string[];
   flags: PulsePlanLearningFlag[];
+  executionReview?: PulseTrainingExecutionReview | null;
+}
+
+export type PulseTrainingExecutionReviewSignal =
+  | 'matched'
+  | 'missed'
+  | 'replaced'
+  | 'reduce_next_intensity'
+  | 'maintain_structure'
+  | 'protect_recovery';
+
+export type PulseTrainingExecutionReviewIntent = 'repeat' | 'reduce' | 'rotate' | 'rest' | 'stable';
+
+export interface PulseTrainingExecutionReview {
+  signals: PulseTrainingExecutionReviewSignal[];
+  learnedFromLastWeek: string[];
+  variationComparedToLastWeek: string[];
+  restDayRationale: Array<{ date: string; reason: string }>;
+  recommendedHardDayAvoidance: number[];
+  intents: PulseTrainingExecutionReviewIntent[];
+}
+
+export interface PulsePlanTraceAdaptation {
+  learnedFromExecution: string[];
+  variationRationale: string[];
+  signals?: PulseTrainingExecutionReviewSignal[];
 }
 
 export type PulseProfileMetricKey = 'ftpWatts' | 'maxHrBpm' | 'lthrBpm' | 'vo2max';
@@ -245,11 +271,15 @@ export interface PulsePlanTrace {
     dataWarnings: string[];
     recentSportMix: Record<string, PulsePlanSportMixEntry>;
     learningSnapshot?: PulsePlanLearningSnapshot | null;
+    adaptation?: PulsePlanTraceAdaptation | null;
+    restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
   };
   planDecision: PulsePlanDecision;
   sportMix: Record<string, PulsePlanSportMixEntry>;
   hardDays: Array<{ date: string; activityType: string; zone: number; durationMin: number }>;
   generatedSummary: string[];
+  adaptation?: PulsePlanTraceAdaptation | null;
+  restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
 }
 
 export interface PulseMentalCheckin {

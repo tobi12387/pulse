@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Adaptive Training nutzt deterministisches Execution Review
+
+- **Decision:** Adaptive Training Intelligence v2 fuehrt ein reines `TrainingExecutionReview` ein, das geplante Workouts gegen ausgefuehrte Aktivitaeten, RPE, Soreness und verpasste/ersetzte Einheiten bewertet und diese Signale in Plan-Engine, Plan-Trace und Plan-UI durchreicht, ohne eine neue Persistenztabelle anzulegen.
+- **Why:** Wiederholt wirkende Plaene sollen sichtbar entweder bewusst stabil oder datenbasiert angepasst sein. Die Anpassungsentscheidung muss vor LLM-Narration testbar und im Trace inspizierbar bleiben; alte Traces bleiben durch optionale JSON-Felder kompatibel.
+- **Alternatives:** Anpassung nur im LLM-Prompt formulieren (nicht deterministisch/testbar); neue Plan-Memory-Tabelle einfuehren (der bestehende Trace reicht); vergangene geplante Einheiten beim Regenerieren loeschen (vernichtet Missed/Replaced-Evidenz).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Pulse Status trennt lokale Services vom Server-Mirror
 
 - **Decision:** Local Ops Autopilot fuehrt `npm run pulse:status` als unabhaengige Triage ein: lokale Docker/Postgres/Redis-Checks laufen getrennt vom Server-Deploy-Mirror-Check, und beide Statuswerte werden im Output sichtbar.

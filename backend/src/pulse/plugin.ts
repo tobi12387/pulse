@@ -27,11 +27,11 @@ import {
   type GarminActivityLapCache,
   type WorkoutStep,
 } from '../db/pulse-schema.js';
-import { eq, desc, and, gte, lte, isNull, or, sql, inArray } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-orm';
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -46,6 +46,13 @@ import { transcribeAudio } from '../lib/whisper.js';
 import { decidePlanDays, generateWeekWorkouts, generateScientificWeekPlan, getMesocycleWeek, tssFromWorkout } from './services/plan-engine.js';
 import { buildPlanLearningSnapshot } from './services/plan-learning.js';
 import { buildPlanTrace } from './services/plan-trace.js';
+import {
+  deriveExecutionReviewAvailability,
+  determinePlanReplacementCutoff,
+  mergeRegeneratedWorkoutsForTrace,
+  recoveryFromFitnessLoad,
+} from './services/plan-regeneration.js';
+import { buildTrainingExecutionReview } from './services/training-execution-review.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { getActiveRaces } from './services/race-engine.js';
 import { generateWeeklyReview } from './services/review-engine.js';
@@ -369,7 +376,85 @@ type TraceWorkout = {
   adjustedReason?: string | null;
 };
 
+type ExecutionWorkoutRow = {
+  id: string;
+  plannedDate: string;
+  activityType: SharedPulseActivityType;
+  zone: number;
+  durationMin: number;
+  status: string;
+  completedActivityId: string | null;
+  complianceScore: number | null;
+};
+
+type ExecutionActivityRow = {
+  id: string;
+  startTime: Date;
+  activityType: SharedPulseActivityType;
+  durationSec: number | null;
+  tss: number | null;
+  rpe: number | null;
+  sorenessAreas: string[] | null;
+};
+
+function shiftIsoDate(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split('T')[0]!;
+}
+
+function normalizeSorenessAreas(areas: string[] | null): RpeSorenessArea[] | null {
+  if (!areas || areas.length === 0) return null;
+  const allowed = new Set<string>(RPE_SORENESS_AREAS);
+  const normalized = areas.filter((area): area is RpeSorenessArea => allowed.has(area));
+  return normalized.length > 0 ? normalized : null;
+}
+
+function buildExecutionReviewForPreviousWeek(params: {
+  currentWeekStart: string;
+  previousWorkouts: ExecutionWorkoutRow[];
+  activities: ExecutionActivityRow[];
+  availableDays: number[];
+  recovery: ReturnType<typeof recoveryFromFitnessLoad>;
+  today: string;
+}): PulseTrainingExecutionReview | null {
+  if (params.previousWorkouts.length === 0) return null;
+  const previousWeekStart = shiftIsoDate(params.currentWeekStart, -7);
+  const previousActivities = params.activities.filter(activity => {
+    const date = activity.startTime.toISOString().split('T')[0]!;
+    return date >= previousWeekStart && date < params.currentWeekStart;
+  });
+
+  return buildTrainingExecutionReview({
+    weekStart: previousWeekStart,
+    plannedWorkouts: params.previousWorkouts.map(workout => ({
+      id: workout.id,
+      plannedDate: workout.plannedDate,
+      activityType: workout.activityType,
+      zone: workout.zone,
+      durationMin: workout.durationMin,
+      status: workout.status,
+      completedActivityId: workout.completedActivityId,
+      complianceScore: workout.complianceScore,
+    })),
+    activities: previousActivities.map(activity => ({
+      id: activity.id,
+      startTime: activity.startTime,
+      activityType: activity.activityType,
+      durationSec: activity.durationSec,
+      tss: activity.tss,
+      rpe: activity.rpe,
+      sorenessAreas: normalizeSorenessAreas(activity.sorenessAreas),
+    })),
+    availableDays: params.availableDays,
+    recovery: params.recovery,
+    today: params.today,
+  });
+}
+
 function mapPlanTrace(row: PlanTraceRow): PulsePlanTrace {
+  const adaptation = row.inputSnapshot.adaptation ?? null;
+  const restDayRationale = row.inputSnapshot.restDayRationale ?? [];
   return {
     id: row.id,
     userId: row.userId,
@@ -380,6 +465,8 @@ function mapPlanTrace(row: PlanTraceRow): PulsePlanTrace {
     sportMix: row.sportMix,
     hardDays: row.hardDays,
     generatedSummary: row.generatedSummary ?? [],
+    adaptation,
+    restDayRationale,
   };
 }
 
@@ -2450,7 +2537,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
-    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning] = await Promise.all([
+    const previousWeekStart = shiftIsoDate(weekStartStr, -7);
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows] = await Promise.all([
       computeFitnessLoad(userId, weekStartStr),
       db.select({
         id:            pulseActivities.id,
@@ -2459,6 +2547,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         durationSec:  pulseActivities.durationSec,
         tss:          pulseActivities.tss,
         rpe:          pulseActivities.rpe,
+        sorenessAreas: pulseActivities.sorenessAreas,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime))
@@ -2498,6 +2587,22 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
       getActiveRiskSignals(userId),
       buildPlanLearningSnapshot(userId, weekStartStr),
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        status: pulsePlannedWorkouts.status,
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        complianceScore: pulsePlannedWorkouts.complianceScore,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, previousWeekStart),
+          lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        )),
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
@@ -2520,6 +2625,21 @@ export default async function pulsePlugin(app: FastifyInstance) {
       title: r.title,
       recommendation: r.recommendation,
     }));
+    const executionReview = buildExecutionReviewForPreviousWeek({
+      currentWeekStart: weekStartStr,
+      previousWorkouts: previousWorkoutRows,
+      activities: recentActs,
+      availableDays: deriveExecutionReviewAvailability({
+        weekStart: previousWeekStart,
+        plannedWorkouts: previousWorkoutRows,
+        skippedAvailableDays: planLearning.previousWeek?.skippedAvailableDays ?? [],
+      }),
+      recovery: recoveryFromFitnessLoad(fitnessLoad),
+      today,
+    });
+    const planLearningWithExecution = executionReview
+      ? { ...planLearning, executionReview }
+      : planLearning;
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
     const planDecision = decidePlanDays({
       availableDays,
@@ -2530,7 +2650,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
       goals: planGoals,
       riskSignals,
       recentActivities: recentPlanActivities,
-      planLearning,
+      planLearning: planLearningWithExecution,
+      executionReview,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -2549,7 +2670,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
         recentActivities:   recentPlanActivities,
         goals:              planGoals,
         riskSignals,
-        planLearning,
+        planLearning:        planLearningWithExecution,
+        executionReview,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -2581,6 +2703,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
       app.log.warn(`[plan] Scientific plan failed, using templates: ${err}`);
       generated = generateWeekWorkouts({ weekStart: weekStartStr, phase, weeklyHoursTarget, availableDays: planDecision.selectedDays });
     }
+    const replacementCutoff = determinePlanReplacementCutoff(weekStartStr, today);
+    const generatedForInsert = generated.filter(w => w.plannedDate >= replacementCutoff);
+    const preservedWorkoutRows = replacementCutoff > weekStartStr
+      ? await db.select().from(pulsePlannedWorkouts).where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, weekStartStr),
+          lt(pulsePlannedWorkouts.plannedDate, replacementCutoff),
+        ))
+      : [];
 
     // Clean up old Garmin workouts before deleting from DB (prevents duplicates)
     const oldWorkouts = await db.select({
@@ -2588,7 +2719,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       garminScheduledId: pulsePlannedWorkouts.garminScheduledId,
     }).from(pulsePlannedWorkouts).where(and(
       eq(pulsePlannedWorkouts.userId, userId),
-      gte(pulsePlannedWorkouts.plannedDate, weekStartStr),
+      gte(pulsePlannedWorkouts.plannedDate, replacementCutoff),
       eq(pulsePlannedWorkouts.status, 'planned'),
     ));
 
@@ -2612,24 +2743,26 @@ export default async function pulsePlugin(app: FastifyInstance) {
     await db.delete(pulsePlannedWorkouts).where(
       and(
         eq(pulsePlannedWorkouts.userId, userId),
-        gte(pulsePlannedWorkouts.plannedDate, weekStartStr),
+        gte(pulsePlannedWorkouts.plannedDate, replacementCutoff),
         eq(pulsePlannedWorkouts.status, 'planned'),
       ),
     );
 
-    const inserted = await db.insert(pulsePlannedWorkouts).values(
-      generated.map((w) => ({
-        userId,
-        plannedDate:  w.plannedDate,
-        activityType: w.activityType,
-        zone:         w.zone,
-        durationMin:  w.durationMin,
-        targetTss:    w.targetTss,
-        description:  w.description,
-        adjustedReason: w.adjustedReason ?? null,
-        adjustedAt:   w.adjustedReason ? new Date() : null,
-      })),
-    ).returning();
+    const inserted = generatedForInsert.length > 0
+      ? await db.insert(pulsePlannedWorkouts).values(
+          generatedForInsert.map((w) => ({
+            userId,
+            plannedDate:  w.plannedDate,
+            activityType: w.activityType,
+            zone:         w.zone,
+            durationMin:  w.durationMin,
+            targetTss:    w.targetTss,
+            description:  w.description,
+            adjustedReason: w.adjustedReason ?? null,
+            adjustedAt:   w.adjustedReason ? new Date() : null,
+          })),
+        ).returning()
+      : [];
 
     // Generate structured steps for all workouts in parallel (best-effort)
     const withSteps = await Promise.all(
@@ -2647,14 +2780,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }),
     );
 
-    const traceWorkouts = withSteps.map(w => ({
-      plannedDate:  w.plannedDate,
-      activityType: w.activityType,
-      zone:         w.zone,
-      durationMin:  w.durationMin,
-      targetTss:    w.targetTss ?? null,
-      adjustedReason: w.adjustedReason ?? null,
-    }));
+    const traceWorkouts = mergeRegeneratedWorkoutsForTrace(preservedWorkoutRows, withSteps);
     const finalPlanDecision = reconcilePlanDecisionWithWorkouts({
       decision: planDecision,
       weekStart: weekStartStr,
@@ -2676,7 +2802,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
       goals: planGoals,
       riskSignals,
-      planLearning,
+      planLearning: planLearningWithExecution,
+      executionReview,
       healthStates: activeHealthStates.map(s => ({
         type:      s.type,
         severity:  s.severity,
@@ -2700,7 +2827,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       try {
         const { getGarminClient } = await import('../lib/garmin-client.js');
         const gc = await getGarminClient();
-        const today = weekStartStr;
+        const syncCutoff = replacementCutoff;
 
         // Upload new workouts to Garmin
         for (const w of withSteps.filter(ww => !ww.garminWorkoutId)) {
@@ -2728,9 +2855,9 @@ export default async function pulsePlugin(app: FastifyInstance) {
         // Remove orphaned calendar entries not in current plan
         const allFuture = await db.select({ garminWorkoutId: pulsePlannedWorkouts.garminWorkoutId })
           .from(pulsePlannedWorkouts)
-          .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, today)));
+          .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, syncCutoff)));
         const ourIds = new Set(allFuture.map(w => w.garminWorkoutId).filter((id): id is string => id != null));
-        const calItems = await fetchGarminCalendarWorkouts(gc, today);
+        const calItems = await fetchGarminCalendarWorkouts(gc, syncCutoff);
         const deletedTemplates = new Set<string>();
         for (const item of calItems) {
           if (!ourIds.has(item.workoutId)) {
@@ -2751,7 +2878,11 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }
     })();
 
-    return reply.status(201).send({ workouts: withSteps, planDecision: finalPlanDecision, planTrace });
+    return reply.status(201).send({
+      workouts: [...preservedWorkoutRows, ...withSteps].sort((a, b) => a.plannedDate.localeCompare(b.plannedDate)),
+      planDecision: finalPlanDecision,
+      planTrace,
+    });
   });
 
   app.get('/plan/trace/:weekStart', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -3186,7 +3317,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
       (explicitPhase && explicitPhase !== 'base') ? explicitPhase : derivedPhase;
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
-    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2] = await Promise.all([
+    const previousWeekStart2 = shiftIsoDate(weekStart, -7);
+    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2] = await Promise.all([
       computeFitnessLoad(userId, weekStart),
       db.select({
         id:            pulseActivities.id,
@@ -3195,6 +3327,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
         durationSec:  pulseActivities.durationSec,
         tss:          pulseActivities.tss,
         rpe:          pulseActivities.rpe,
+        sorenessAreas: pulseActivities.sorenessAreas,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime)).limit(80),
@@ -3233,6 +3366,22 @@ export default async function pulsePlugin(app: FastifyInstance) {
         )),
       getActiveRiskSignals(userId),
       buildPlanLearningSnapshot(userId, weekStart),
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        status: pulsePlannedWorkouts.status,
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        complianceScore: pulsePlannedWorkouts.complianceScore,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, previousWeekStart2),
+          lt(pulsePlannedWorkouts.plannedDate, weekStart),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        )),
     ]);
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
@@ -3255,6 +3404,21 @@ export default async function pulsePlugin(app: FastifyInstance) {
       title: r.title,
       recommendation: r.recommendation,
     }));
+    const executionReview2 = buildExecutionReviewForPreviousWeek({
+      currentWeekStart: weekStart,
+      previousWorkouts: previousWorkoutRows2,
+      activities: recentActs2,
+      availableDays: deriveExecutionReviewAvailability({
+        weekStart: previousWeekStart2,
+        plannedWorkouts: previousWorkoutRows2,
+        skippedAvailableDays: planLearning2.previousWeek?.skippedAvailableDays ?? [],
+      }),
+      recovery: recoveryFromFitnessLoad(fitnessLoad),
+      today,
+    });
+    const planLearningWithExecution2 = executionReview2
+      ? { ...planLearning2, executionReview: executionReview2 }
+      : planLearning2;
     const mesocycleWeek2 = getMesocycleWeek(weekStart);
     const planDecision2 = decidePlanDays({
       availableDays: parsed.data.availableDays,
@@ -3265,7 +3429,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
       goals: planGoals2,
       riskSignals: riskSignals2,
       recentActivities: recentPlanActivities2,
-      planLearning: planLearning2,
+      planLearning: planLearningWithExecution2,
+      executionReview: executionReview2,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -3281,7 +3446,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
         recentActivities: recentPlanActivities2,
         goals: planGoals2,
         riskSignals: riskSignals2,
-        planLearning: planLearning2,
+        planLearning: planLearningWithExecution2,
+        executionReview: executionReview2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -3317,6 +3483,15 @@ export default async function pulsePlugin(app: FastifyInstance) {
         availableDays: planDecision2.selectedDays,
       });
     }
+    const replacementCutoff2 = determinePlanReplacementCutoff(weekStart, today);
+    const generatedForInsert2 = generated.filter(w => w.plannedDate >= replacementCutoff2);
+    const preservedWorkoutRows2 = replacementCutoff2 > weekStart
+      ? await db.select().from(pulsePlannedWorkouts).where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, weekStart),
+          lt(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
+        ))
+      : [];
 
     // Clean up old Garmin workouts before deleting (prevents duplicates)
     const oldAvailWorkouts = await db.select({
@@ -3324,7 +3499,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       garminScheduledId: pulsePlannedWorkouts.garminScheduledId,
     }).from(pulsePlannedWorkouts).where(and(
       eq(pulsePlannedWorkouts.userId, userId),
-      gte(pulsePlannedWorkouts.plannedDate, weekStart),
+      gte(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
       eq(pulsePlannedWorkouts.status, 'planned'),
     ));
     const oldAvailWithGarmin = oldAvailWorkouts.filter(w => w.garminWorkoutId);
@@ -3343,23 +3518,25 @@ export default async function pulsePlugin(app: FastifyInstance) {
 
     await db.delete(pulsePlannedWorkouts).where(and(
       eq(pulsePlannedWorkouts.userId, userId),
-      gte(pulsePlannedWorkouts.plannedDate, weekStart),
+      gte(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
       eq(pulsePlannedWorkouts.status, 'planned'),
     ));
 
-    const inserted2 = await db.insert(pulsePlannedWorkouts).values(
-      generated.map(w => ({
-        userId,
-        plannedDate: w.plannedDate,
-        activityType: w.activityType,
-        zone: w.zone,
-        durationMin: w.durationMin,
-        targetTss: w.targetTss,
-        description: w.description,
-        adjustedReason: w.adjustedReason ?? null,
-        adjustedAt: w.adjustedReason ? new Date() : null,
-      })),
-    ).returning();
+    const inserted2 = generatedForInsert2.length > 0
+      ? await db.insert(pulsePlannedWorkouts).values(
+          generatedForInsert2.map(w => ({
+            userId,
+            plannedDate: w.plannedDate,
+            activityType: w.activityType,
+            zone: w.zone,
+            durationMin: w.durationMin,
+            targetTss: w.targetTss,
+            description: w.description,
+            adjustedReason: w.adjustedReason ?? null,
+            adjustedAt: w.adjustedReason ? new Date() : null,
+          })),
+        ).returning()
+      : [];
 
     const workouts = await Promise.all(
       inserted2.map(async (w) => {
@@ -3375,14 +3552,7 @@ export default async function pulsePlugin(app: FastifyInstance) {
       }),
     );
 
-    const traceWorkouts2 = workouts.map(w => ({
-      plannedDate:  w.plannedDate,
-      activityType: w.activityType,
-      zone:         w.zone,
-      durationMin:  w.durationMin,
-      targetTss:    w.targetTss ?? null,
-      adjustedReason: w.adjustedReason ?? null,
-    }));
+    const traceWorkouts2 = mergeRegeneratedWorkoutsForTrace(preservedWorkoutRows2, workouts);
     const finalPlanDecision2 = reconcilePlanDecisionWithWorkouts({
       decision: planDecision2,
       weekStart,
@@ -3404,7 +3574,8 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
       goals: planGoals2,
       riskSignals: riskSignals2,
-      planLearning: planLearning2,
+      planLearning: planLearningWithExecution2,
+      executionReview: executionReview2,
       healthStates: activeHealthStates2.map(s => ({
         type:      s.type,
         severity:  s.severity,
@@ -3423,7 +3594,12 @@ export default async function pulsePlugin(app: FastifyInstance) {
     });
     await invalidateUser(userId);
 
-    return { ok: true, workouts, planDecision: finalPlanDecision2, planTrace };
+    return {
+      ok: true,
+      workouts: [...preservedWorkoutRows2, ...workouts].sort((a, b) => a.plannedDate.localeCompare(b.plannedDate)),
+      planDecision: finalPlanDecision2,
+      planTrace,
+    };
   });
 
   // ─── Weekly review ────────────────────────────────────────────────────────────
