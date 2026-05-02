@@ -31,7 +31,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -1775,6 +1775,14 @@ export default async function pulsePlugin(app: FastifyInstance) {
       .from(pulseMentalCheckins)
       .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today)));
     return { checkin: checkin ?? null };
+  });
+
+  // GET /api/pulse/checkin/guidance
+  app.get('/checkin/guidance', { onRequest: [app.authenticate] }, async (req): Promise<PulseGuidedCheckinResponse> => {
+    const userId = req.user.sub;
+    const today  = new Date().toISOString().split('T')[0]!;
+    const context = await buildCachedPulseContextFor(userId, today);
+    return context.guidedCheckin;
   });
 
   // GET /api/pulse/checkin/history?days=30

@@ -235,6 +235,52 @@ describe('buildRichSystemPrompt', () => {
     expect(prompt).toContain('Kommunikation: datenorientiert');
     expect(prompt).not.toContain('Persönlichkeitsprofil');
   });
+
+  it('includes guided mental-fitness questions and keeps future workouts out of today framing', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-05-01',
+      readiness: { score: 64, label: 'moderat' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 48, tsb: -4 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [{
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        description: 'Aerobe Grundlage.',
+      }],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      guidedCheckin: {
+        date: '2026-05-01',
+        questions: [{
+          id: 'rest-boundary',
+          label: 'Welche Grenze macht diesen freien Tag wirklich erholsam?',
+          rationale: 'Heute ist ein freier Tag; die Frage schützt Erholung und Alltag vor heimlichem Zusatzstress.',
+          answerMode: 'short_text',
+        }],
+        action: {
+          id: 'mental-boundary',
+          label: 'Eine Grenze für heute setzen',
+          rationale: 'Stress ist hoch und Motivation niedrig.',
+          targetRoute: '/coach',
+          closureKind: 'boundary',
+        },
+      },
+    });
+
+    expect(prompt).toContain('== MENTAL-FITNESS CHECK-IN ==');
+    expect(prompt).toContain('Welche Grenze macht diesen freien Tag wirklich erholsam?');
+    expect(prompt).toContain('Heute geplantes Training: keines');
+    expect(prompt).toContain('Zukünftige Workouts nicht als heutige Aufgabe formulieren');
+    expect(prompt).toContain('keine Diagnosen');
+    expect(prompt).toContain('Selbstverletzung');
+  });
 });
 
 describe('getCoachReplyRich', () => {

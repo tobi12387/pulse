@@ -19,6 +19,7 @@ type MockPulseApiOptions = {
   onCoachPreferencesPatch?: (body: unknown) => void;
   pushSettings?: unknown;
   checkinToday?: unknown;
+  checkinGuidance?: unknown;
   metrics?: unknown[];
   sleepSessions?: unknown[];
   onRequest?: (pathname: string, method: string) => void;
@@ -132,6 +133,25 @@ const home = {
   nextBestActions: [],
 };
 
+const checkinGuidance = {
+  date: today,
+  questions: [
+    {
+      id: 'rest-boundary',
+      label: 'Welche Grenze macht diesen freien Tag wirklich erholsam?',
+      rationale: 'Heute ist ein freier Tag; die Frage schützt Erholung und Alltag vor heimlichem Zusatzstress.',
+      answerMode: 'short_text',
+    },
+    {
+      id: 'mental-load',
+      label: 'Was zieht heute mentale Energie?',
+      rationale: 'Basisfrage für den Daily Check-in: sichtbar machen, was gerade Aufmerksamkeit bindet.',
+      answerMode: 'short_text',
+    },
+  ],
+  action: null,
+};
+
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
     status,
@@ -192,6 +212,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
     return { briefing: 'Heute solide trainieren, aber hartes Volumen dosieren.', date: today, cached: true };
   }
   if (pathname === '/api/pulse/checkin/today') return { checkin: { id: 'checkin-1', date: today } };
+  if (pathname === '/api/pulse/checkin/guidance') return checkinGuidance;
   if (pathname === '/api/pulse/checkin/history') return { checkins: [] };
   if (pathname === '/api/pulse/risk') return { signals: [] };
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
@@ -438,6 +459,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
+    if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);

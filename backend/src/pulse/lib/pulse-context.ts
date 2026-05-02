@@ -15,13 +15,14 @@ import {
 import { isPushConfigured } from '../../lib/push.js';
 import { computeRecovery } from '../../lib/recovery-metrics.js';
 import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
+import { selectMentalCompanionGuidance } from '../services/mental-companion.js';
 import { rankNextBestActionVisibility } from '../services/next-best-actions.js';
 import type { ActionDecisionRecord } from '../services/decision-closure.js';
 import { getActiveRaces, type RaceContext } from '../services/race-engine.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { listEquipment, listStrengthSessions } from '../services/strength-equipment.js';
 import type { CoachFullContext } from '../services/coach-engine.js';
-import type { PulseCoachPreferences, PulseFitnessLoad, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseCoachPreferences, PulseFitnessLoad, PulseGuidedCheckinResponse, PulseNextBestAction, PulseReadiness, PulseRecoveryMetrics, PulseRiskSignal, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { getCached, setCached } from './pulse-cache.js';
 
 export type PulseDailyMetricsRow = typeof pulseDailyMetrics.$inferSelect;
@@ -78,6 +79,7 @@ export interface PulseContext {
     energy: number;
     stress: number;
     motivation: number;
+    themes: string[] | null;
   }>;
   latestWeight: { weightKg: number; date: string; trend30d: number | null } | null;
   nextRace: RaceContext | null;
@@ -86,6 +88,7 @@ export interface PulseContext {
     configured: boolean;
     activeSubscriptions: number;
   };
+  guidedCheckin: PulseGuidedCheckinResponse;
   nextBestActions: PulseNextBestAction[];
   suppressedNextBestActions: PulseSuppressedActionState[];
   recentStrengthSessions: Array<{
@@ -123,6 +126,29 @@ function weightTrend30d(rows: Array<{ date: string; weightKg: number }>): PulseC
     : null;
 
   return { weightKg: latest.weightKg, date: latest.date, trend30d };
+}
+
+function recentMentalThemes(rows: PulseContext['checkins14d']): Array<{ theme: string; count: number; lastSeen: string }> {
+  const byTheme = new Map<string, { theme: string; count: number; lastSeen: string }>();
+
+  for (const row of rows) {
+    for (const rawTheme of row.themes ?? []) {
+      const theme = rawTheme.trim();
+      if (!theme) continue;
+      const key = theme.toLowerCase();
+      const current = byTheme.get(key);
+      if (!current) {
+        byTheme.set(key, { theme, count: 1, lastSeen: row.date });
+        continue;
+      }
+      current.count += 1;
+      if (row.date > current.lastSeen) current.lastSeen = row.date;
+    }
+  }
+
+  return [...byTheme.values()]
+    .filter(theme => theme.count >= 2)
+    .sort((a, b) => b.count - a.count || b.lastSeen.localeCompare(a.lastSeen) || a.theme.localeCompare(b.theme));
 }
 
 export async function buildPulseContextFor(userId: string, date: string): Promise<PulseContext> {
@@ -214,6 +240,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
       energy: pulseMentalCheckins.energy,
       stress: pulseMentalCheckins.stress,
       motivation: pulseMentalCheckins.motivation,
+      themes: pulseMentalCheckins.themes,
     }).from(pulseMentalCheckins)
       .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since14)))
       .orderBy(pulseMentalCheckins.date),
@@ -318,6 +345,27 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     configured: isPushConfigured(),
     activeSubscriptions: Number(pushSubscriptionCount?.activeSubscriptions ?? 0),
   };
+  const guidedCore = selectMentalCompanionGuidance({
+    today: date,
+    todayWorkout: upcomingWorkouts.find(workout => workout.plannedDate === date) ?? null,
+    nextWorkout: upcomingWorkouts[0] ?? null,
+    readinessScore: readiness.score,
+    stressAvg: todayMetrics?.stressAvg ?? null,
+    recentThemes: recentMentalThemes(checkins14d),
+    recentCheckins: checkins14d.map(checkin => ({
+      date: checkin.date,
+      mood: checkin.mood,
+      energy: checkin.energy,
+      stress: checkin.stress,
+      motivation: checkin.motivation,
+      themes: checkin.themes,
+    })),
+  });
+  const guidedCheckin: PulseGuidedCheckinResponse = {
+    date,
+    questions: guidedCore.questions,
+    action: guidedCore.action,
+  };
   const actionDecisionRows = await db.select().from(pulseActionDecisions)
     .where(eq(pulseActionDecisions.userId, userId))
     .orderBy(desc(pulseActionDecisions.createdAt))
@@ -344,6 +392,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     upcomingWorkouts,
     push,
     equipmentDueForReplacement,
+    guidedCheckin,
     actionDecisions,
   });
   const nextBestActions = actionVisibility.visible;
@@ -374,6 +423,7 @@ export async function buildPulseContextFor(userId: string, date: string): Promis
     nextRace: races[0] ?? null,
     activeRiskSignals,
     push,
+    guidedCheckin,
     nextBestActions,
     suppressedNextBestActions: actionVisibility.suppressed,
     recentStrengthSessions,
@@ -391,6 +441,7 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
     activeRiskSignals: ctx.activeRiskSignals ?? [],
     coachPreferences: ctx.coachPreferences ?? null,
     push: ctx.push ?? { configured: false, activeSubscriptions: 0 },
+    guidedCheckin: ctx.guidedCheckin ?? { date: ctx.date, questions: [], action: null },
     nextBestActions: ctx.nextBestActions ?? [],
     suppressedNextBestActions: ctx.suppressedNextBestActions ?? [],
     recentStrengthSessions: ctx.recentStrengthSessions ?? [],
@@ -400,11 +451,11 @@ function revivePulseContext(ctx: CachedPulseContext): PulseContext {
 }
 
 export async function buildCachedPulseContextFor(userId: string, date: string): Promise<PulseContext> {
-  const cached = await getCached<CachedPulseContext>('context-v2', userId, date);
+  const cached = await getCached<CachedPulseContext>('context-v3', userId, date);
   if (cached) return revivePulseContext(cached);
 
   const ctx = await buildPulseContextFor(userId, date);
-  await setCached('context-v2', userId, date, ctx);
+  await setCached('context-v3', userId, date, ctx);
   return ctx;
 }
 
@@ -463,6 +514,7 @@ export function mapPulseContextToCoachContext(ctx: PulseContext): CoachFullConte
     activeRiskSignals: ctx.activeRiskSignals,
     nextBestActions: ctx.nextBestActions,
     suppressedNextBestActions: ctx.suppressedNextBestActions,
+    guidedCheckin: ctx.guidedCheckin,
     recentStrengthSessions: ctx.recentStrengthSessions,
     equipmentDueForReplacement: ctx.equipmentDueForReplacement,
     recovery: ctx.recovery ? {

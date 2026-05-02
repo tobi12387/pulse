@@ -32,13 +32,13 @@ Keep this file short. Update it whenever the active work queue changes.
 26. Future wave implementation plans were merged and deployed via PR #104.
 27. Local Ops Autopilot was merged and deployed via PR #105.
 28. Adaptive Training Intelligence v2 was merged and deployed via PR #106.
-29. Active implementation branch: none.
-30. Active implementation wave: Mental Fitness Companion is the next autonomous implementation candidate unless a production regression appears first.
+29. Active implementation branch: `codex/mental-fitness-companion`.
+30. Active implementation wave: Mental Fitness Companion is implemented in the current branch and ready for PR/CI review; Garmin Data Quality Control Center is the next autonomous implementation candidate unless a production regression appears first.
 
 ## Current PRs / Branches
 
 - Open PRs: none.
-- Active branch: none.
+- Active branch: `codex/mental-fitness-companion`.
 - Recent completed branches:
 - `codex/adaptive-training-v2`: merged and deployed via PR #106.
 - `codex/local-ops-autopilot`: merged and deployed via PR #105.
@@ -117,7 +117,7 @@ Keep this file short. Update it whenever the active work queue changes.
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
 - Continue with Mental Fitness Companion unless a production regression appears first.
-- Future implementation plans remain for Mental Fitness Companion, Garmin Data Quality Control Center and Goal/Race Command Center under `docs/superpowers/plans/`.
+- Future implementation plans remain for Garmin Data Quality Control Center and Goal/Race Command Center under `docs/superpowers/plans/`.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
 - The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.

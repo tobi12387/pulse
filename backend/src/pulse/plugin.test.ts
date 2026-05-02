@@ -105,6 +105,12 @@ function dateDaysAgo(days: number): string {
   return date.toISOString().split('T')[0]!;
 }
 
+function dateDaysFrom(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0]!;
+}
+
 beforeAll(async () => {
   app = await buildApp();
   await db.delete(users).where(eq(users.email, 'pulse-test@coaching.os'));
@@ -610,6 +616,76 @@ describe('POST /api/pulse/checkin/voice', () => {
     });
     const messages = history.json<{ messages: Array<{ role: string; content: string }> }>().messages;
     expect(messages.at(-1)).toMatchObject({ role: 'assistant', content: 'Frische Coach-Antwort nach Check-in.' });
+  });
+});
+
+describe('GET /api/pulse/checkin/guidance', () => {
+  it('returns rest-day guided questions without treating a future workout as today', async () => {
+    const today = dateDaysAgo(0);
+    const future = dateDaysFrom(3);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: future,
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 80,
+      description: 'Aerobe Grundlage.',
+      status: 'planned',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/checkin/guidance',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      date: string;
+      questions: Array<{ id: string; label: string; rationale: string }>;
+      action: unknown | null;
+    }>();
+    expect(body.date).toBe(today);
+    expect(body.questions.map(question => question.id)).toEqual(expect.arrayContaining(['rest-boundary', 'mental-load']));
+    const text = body.questions.map(question => `${question.label} ${question.rationale}`).join(' ');
+    expect(text).toContain('freier Tag');
+    expect(text).not.toContain(future);
+  });
+
+  it('surfaces mental support through the existing action closure endpoint', async () => {
+    const today = dateDaysAgo(0);
+    await db.insert(pulseDailyMetrics).values({
+      userId,
+      date: today,
+      stressAvg: 82,
+      source: 'test',
+    });
+    await db.insert(pulseMentalCheckins).values({
+      userId,
+      date: dateDaysAgo(1),
+      mood: 4,
+      energy: 4,
+      stress: 8,
+      motivation: 3,
+      notes: 'Viel Arbeit.',
+      themes: ['arbeit'],
+      source: 'manual',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/actions',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ actions: Array<{ source: string; title: string; targetPath: string; resolvedBy: string }> }>();
+    expect(body.actions).toContainEqual(expect.objectContaining({
+      source: 'mental',
+      title: 'Eine Grenze für heute setzen',
+      targetPath: '/coach',
+      resolvedBy: 'Mentale Support-Aktion abschließen, verschieben oder bewusst verwerfen.',
+    }));
   });
 });
 

@@ -323,6 +323,27 @@ export interface PulseMentalThemesResponse {
   totalCheckins: number;
 }
 
+export interface PulseGuidedCheckinQuestion {
+  id: string;
+  label: string;
+  rationale: string;
+  answerMode: 'scale' | 'short_text' | 'choice';
+}
+
+export interface PulseGuidedMentalAction {
+  id: string;
+  label: string;
+  rationale: string;
+  targetRoute: '/coach' | '/data' | '/plan';
+  closureKind: 'reflection' | 'boundary' | 'recovery' | 'movement' | 'support';
+}
+
+export interface PulseGuidedCheckinResponse {
+  date: string;
+  questions: PulseGuidedCheckinQuestion[];
+  action: PulseGuidedMentalAction | null;
+}
+
 export interface PulseWeightEntry {
   id: string;
   date: string;
@@ -612,7 +633,7 @@ export interface PulsePushSettings {
 }
 
 export type PulseNextBestActionPriority = 'critical' | 'high' | 'normal';
-export type PulseNextBestActionSource = 'risk' | 'checkin' | 'rpe' | 'plan' | 'push' | 'equipment';
+export type PulseNextBestActionSource = 'risk' | 'checkin' | 'rpe' | 'plan' | 'push' | 'equipment' | 'mental';
 
 export interface PulseNextBestAction {
   id: string;

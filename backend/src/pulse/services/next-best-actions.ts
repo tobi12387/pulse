@@ -1,4 +1,10 @@
-import type { PulseNextBestAction, PulseNextBestActionPriority, PulseNextBestActionSource, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type {
+  PulseGuidedCheckinResponse,
+  PulseNextBestAction,
+  PulseNextBestActionPriority,
+  PulseNextBestActionSource,
+  PulseSuppressedActionState,
+} from '@coaching-os/shared/pulse';
 import { getActionSuppression, type ActionDecisionRecord } from './decision-closure.js';
 
 export interface NextBestActionsInput {
@@ -34,6 +40,7 @@ export interface NextBestActionsInput {
     category: string;
     pctConsumed: number;
   }>;
+  guidedCheckin?: PulseGuidedCheckinResponse | null;
   actionDecisions?: ActionDecisionRecord[];
 }
 
@@ -196,6 +203,25 @@ export function rankNextBestActionVisibility(input: NextBestActionsInput): Actio
         openedAt: input.today,
         resolvedBy: 'Equipment ersetzen oder Limit anpassen.',
         evidence: [dueEquipment.category, `${dueEquipment.pctConsumed.toFixed(0)}% verbraucht`],
+      },
+    );
+  }
+
+  if (input.guidedCheckin?.action) {
+    const mentalAction = input.guidedCheckin.action;
+    const primaryQuestionId = input.guidedCheckin.questions[0]?.id ?? 'guided-checkin';
+    addAction(
+      actions,
+      'mental',
+      'normal',
+      mentalAction.label,
+      mentalAction.rationale,
+      'Im Coach öffnen',
+      mentalAction.targetRoute,
+      {
+        openedAt: input.guidedCheckin.date,
+        resolvedBy: 'Mentale Support-Aktion abschließen, verschieben oder bewusst verwerfen.',
+        evidence: [mentalAction.closureKind, primaryQuestionId],
       },
     );
   }
