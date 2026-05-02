@@ -95,7 +95,7 @@ The iPhone/PWA baseline is implemented: safe-area layout, app-start service work
   - record browser/PWA mode and permission result;
   - do not claim iOS push works if the browser APIs do not confirm it.
 
-- [ ] **Step 2: Add a visible failure reason if needed**
+- [ ] **Step 2: Add a visible failure reason when field evidence exposes ambiguity**
 
   If the Settings panel only says "not enabled" but the real reason is unsupported browser, denied permission or missing service worker readiness, split the label into:
   - `nicht unterstützt`;

@@ -108,6 +108,7 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
+- Future implementation plans now exist for Adaptive Training Intelligence v2, Mental Fitness Companion, Garmin Data Quality Control Center, Goal/Race Command Center and Local Ops Autopilot under `docs/superpowers/plans/`.
 - The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.
