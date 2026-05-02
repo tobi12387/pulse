@@ -60,6 +60,14 @@ set +a
 
 export NODE_ENV="${NODE_ENV:-test}"
 
+echo "==> local verification preflight"
+echo "env file: $ENV_FILE"
+echo "start services: $START_SERVICES"
+echo "Docker Desktop required when start services is true; run npm run services:up after starting Docker Desktop."
+if [[ "$START_SERVICES" != "true" ]]; then
+  echo "no-services mode: DATABASE_URL_TEST and REDIS_URL must already be reachable."
+fi
+
 if [[ "$START_SERVICES" == "true" ]]; then
   echo "==> local test services"
   bash scripts/dev-services.sh up

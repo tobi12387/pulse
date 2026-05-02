@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Pulse Status trennt lokale Services vom Server-Mirror
+
+- **Decision:** Local Ops Autopilot fuehrt `npm run pulse:status` als unabhaengige Triage ein: lokale Docker/Postgres/Redis-Checks laufen getrennt vom Server-Deploy-Mirror-Check, und beide Statuswerte werden im Output sichtbar.
+- **Why:** Das wiederkehrende Problem war nicht, dass Pulse deployed defekt war, sondern dass Mac-lokale Testservices fehlten. Ein kombinierter Statuspfad verhindert, dass fehlendes Docker die Servergesundheit verdeckt oder dass Agenten lokale Servicefehler als App-Regression interpretieren.
+- **Alternatives:** `services:status && verify:server` (bricht bei fehlendem Docker zu frueh ab); DB-Tests still ueberspringen (falsche Sicherheit); direkt auf dem Server entwickeln (verboten).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Future Waves werden als aktive Plan-Dokumente vorimplementiert
 
 - **Decision:** Die Roadmap-Seeds fuer Adaptive Training Intelligence v2, Mental Fitness Companion, Garmin Data Quality Control Center, Goal/Race Command Center und Local Ops Autopilot werden als aktive Plan-Dokumente konkretisiert, ohne sie direkt in einer Sammel-PR zu implementieren.

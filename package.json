@@ -20,6 +20,7 @@
     "verify:local:no-services": "bash scripts/verify-local.sh --no-services",
     "verify:local:e2e": "bash scripts/verify-local.sh --with-e2e",
     "verify:server": "bash scripts/verify-server.sh",
+    "pulse:status": "bash scripts/pulse-status.sh",
     "dev:backend": "npm run dev -w backend",
     "dev:frontend": "npm run dev -w frontend"
   },
