@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Future Waves werden als aktive Plan-Dokumente vorimplementiert
+
+- **Decision:** Die Roadmap-Seeds fuer Adaptive Training Intelligence v2, Mental Fitness Companion, Garmin Data Quality Control Center, Goal/Race Command Center und Local Ops Autopilot werden als aktive Plan-Dokumente konkretisiert, ohne sie direkt in einer Sammel-PR zu implementieren.
+- **Why:** Die Wellen beruehren unterschiedliche Subsysteme und sollen in kleinen PRs mit TDD/CI/Deploy umgesetzt werden. Konkrete Plan-Dateien reduzieren Tokenverbrauch und verhindern, dass neue Sessions die gleichen Architekturfragen erneut aufrollen.
+- **Alternatives:** Alles sofort in einem grossen Feature-Branch implementieren (zu grosses Risiko); Seeds nur in der Roadmap lassen (zu unkonkret fuer autonome Agenten); Mobile/iPhone-Gates simulieren (falsche Evidenz).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Mobile Field Reliability bleibt ein echtes Device-Gate
 
 - **Decision:** Nach PR #102 werden nur die autonomen Runbook- und Backlog-Aufgaben der Mobile Field Reliability Wave umgesetzt; iPhone/VPN, Add-to-Home-Screen und Push-Aktivierung bleiben manuelle Gates auf Tobis Gerät.

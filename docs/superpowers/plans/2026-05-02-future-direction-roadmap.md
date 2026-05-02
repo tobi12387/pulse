@@ -20,11 +20,11 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
 | 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Adaptive Training Intelligence v2 | Use execution divergence, RPE, recovery depth and preferences to improve future weeks | Plan seed below |
-| 3 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | Plan seed below |
-| 4 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | Plan seed below |
-| 5 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | Plan seed below |
-| 6 | Local Ops Autopilot | Reduce repeated Postgres/Redis/Docker/server-preview failures with stronger checks | Plan seed below |
+| 2 | Adaptive Training Intelligence v2 | Use execution divergence, RPE, recovery depth and preferences to improve future weeks | `2026-05-02-adaptive-training-intelligence-v2.md` |
+| 3 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | `2026-05-02-mental-fitness-companion.md` |
+| 4 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | `2026-05-02-garmin-data-quality-control-center.md` |
+| 5 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | `2026-05-02-goal-race-command-center.md` |
+| 6 | Local Ops Autopilot | Reduce repeated Postgres/Redis/Docker/server-preview failures with stronger checks | `2026-05-02-local-ops-autopilot.md` |
 | 7 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
@@ -33,9 +33,11 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 |---|---|---|
 | Daily Loop Explainability | Home/Coach share visible action history, suppressed reasons are explainable, Insight evidence links to sources, and daily check-ins are date-scoped. | `completed/2026-05-02-daily-loop-explainability-wave.md`, PR #102 |
 
-## Next Plan Seeds
+## Next Plan Summaries
 
 ### Adaptive Training Intelligence v2
+
+Implementation plan: [`2026-05-02-adaptive-training-intelligence-v2.md`](2026-05-02-adaptive-training-intelligence-v2.md)
 
 **Goal:** Plan generation should learn from what actually happened, not only from what was scheduled.
 
@@ -59,6 +61,8 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 - free days are visible training decisions, not empty slots.
 
 ### Mental Fitness Companion
+
+Implementation plan: [`2026-05-02-mental-fitness-companion.md`](2026-05-02-mental-fitness-companion.md)
 
 **Goal:** The guided Daily Check-in should become a practical mental-fitness loop without becoming clinical or intrusive.
 
@@ -84,6 +88,8 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 ### Garmin Data Quality Control Center
 
+Implementation plan: [`2026-05-02-garmin-data-quality-control-center.md`](2026-05-02-garmin-data-quality-control-center.md)
+
 **Goal:** Settings/Data should explain whether Pulse has the Garmin data needed for trustworthy decisions.
 
 **Scope:**
@@ -106,6 +112,8 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 ### Goal / Race Command Center
 
+Implementation plan: [`2026-05-02-goal-race-command-center.md`](2026-05-02-goal-race-command-center.md)
+
 **Goal:** Goals, race dates, constraints and readiness should converge into one preparation view.
 
 **Scope:**
@@ -126,6 +134,8 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 - race readiness uses existing CTL/TSB/recovery data, not static copy.
 
 ### Local Ops Autopilot
+
+Implementation plan: [`2026-05-02-local-ops-autopilot.md`](2026-05-02-local-ops-autopilot.md)
 
 **Goal:** Stop repeating the same local service and preview failures across AI sessions.
 
