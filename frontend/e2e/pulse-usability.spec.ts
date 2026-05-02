@@ -563,6 +563,122 @@ test('Coach daily briefing guides the first conversation without auto-send', asy
   expect(coachSends).toBe(0);
 });
 
+test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    home: {
+      nextWorkout: {
+        id: 'workout-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage, primär über Puls steuern.',
+      },
+    },
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage, primär über Puls steuern.',
+      },
+    ],
+    coachHistory: [
+      {
+        role: 'assistant',
+        content: 'Gestern haben wir den freien Tag bewusst geschlossen.',
+        timestamp: '2026-05-01T18:00:00.000Z',
+      },
+    ],
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('Heute ist kein Training geplant.')).toBeVisible();
+  await page.getByRole('button', { name: 'Coach fragen' }).click();
+  await expect(page).toHaveURL('/coach?focus=daily');
+  await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Welche Grenze macht diesen freien Tag wirklich erholsam?' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
+  expect(coachSends).toBe(0);
+
+  await page.goto('/plan?tab=training');
+  const nextDecisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
+  const restDayBox = await page.getByText('Heute ist kein Training geplant.').boundingBox();
+  expect(nextDecisionBox).not.toBeNull();
+  expect(restDayBox).not.toBeNull();
+  expect(nextDecisionBox!.y).toBeLessThan(restDayBox!.y);
+
+  await page.getByRole('button', { name: 'Metriken prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=metrics');
+  await expect(page.getByRole('button', { name: 'Metriken' })).toHaveAttribute('aria-pressed', 'true');
+
+  await page.goBack();
+  await expect(page).toHaveURL('/plan?tab=training');
+  await expect(page.getByRole('button', { name: 'Training', exact: true })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/data?tab=mental');
+  await expect(page.getByRole('button', { name: 'Mental' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Gewicht' }).click();
+  await expect(page).toHaveURL('/data?tab=weight');
+
+  await page.goto('/plan?tab=goals');
+  await expect(page.getByRole('button', { name: 'Ziele' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Statistik' }).click();
+  await expect(page).toHaveURL('/plan?tab=stats');
+
+  await page.goto('/settings?section=push');
+  const pushHeading = page.getByRole('heading', { name: 'Benachrichtigungen' });
+  await expect(pushHeading).toBeVisible();
+  const box = await pushHeading.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeLessThan(260);
+});
+
+test('Today adjustment keep decision survives refetch for the same proposal', async ({ page }) => {
+  await mockPulseApi(page, {
+    todayProposal: {
+      proposal: {
+        workoutId: '11111111-1111-4111-8111-111111111111',
+        date: '2026-05-01',
+        reason: 'low_readiness',
+        readinessScore: 51,
+        rationale: 'Readiness ist niedrig; der Reiz bleibt möglich, aber kontrollierter.',
+        original: { activityType: 'run', zone: 4, durationMin: 70 },
+        proposed: {
+          activityType: 'run',
+          zone: 2,
+          durationMin: 45,
+          description: 'Locker laufen, keine Intensität erzwingen.',
+        },
+      },
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('Heute anpassen?')).toBeVisible();
+  await page.getByRole('button', { name: 'Beibehalten' }).click();
+  await expect(page.getByText('Heute anpassen?')).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.getByText('Heute anpassen?')).toHaveCount(0);
+});
+
 test('Plan prioritizes the next training decision before tools', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

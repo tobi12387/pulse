@@ -377,6 +377,8 @@ function DailyBriefingGuide({
   quality,
   briefing,
   briefingLoading,
+  compact = false,
+  primaryQuestion,
   onPrompt,
 }: {
   home: ReturnType<typeof usePulseHome>['data'];
@@ -387,11 +389,22 @@ function DailyBriefingGuide({
   quality: PulseDailyDecisionQualityResponse | null;
   briefing: string | undefined;
   briefingLoading: boolean;
+  compact?: boolean;
+  primaryQuestion?: { label: string; rationale: string } | null;
   onPrompt: (prompt: string) => void;
 }) {
   const readiness = home?.readiness;
   const metrics = home?.todayMetrics;
   const dailyDecision = deriveDailyDecision(home);
+  const nextWorkout = home?.nextWorkout;
+  const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
+  const trainingLine = todayWorkout
+    ? `${todayWorkout.activityType} · Z${todayWorkout.zone} · ${todayWorkout.durationMin} min`
+    : nextWorkout
+      ? 'Nächstes Training bleibt im Plan'
+      : 'Heute bewusst frei';
+  const mentalCue = primaryQuestion?.rationale
+    ?? 'Mentale Last wird als Alltagssignal einbezogen, nicht als Diagnose.';
 
   return (
     <div style={{ alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -416,10 +429,56 @@ function DailyBriefingGuide({
               {metrics?.sleepHours != null ? `Schlaf ${metrics.sleepHours.toFixed(1)}h` : 'Metriken werden berücksichtigt'}
             </span>
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Training
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+              {trainingLine}
+            </span>
+            <span style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
+              Pulse nutzt freie Tage bewusst, wenn Erholung oder Alltag wichtiger sind.
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Mental
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+              {primaryQuestion ? 'Geführte Frage bereit' : 'Mentale Lage kurz prüfen'}
+            </span>
+            <span style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
+              {mentalCue}
+            </span>
+          </div>
         </div>
-        {briefingLoading ? (
+        {primaryQuestion && (
+          <button
+            type="button"
+            onClick={() => onPrompt(primaryQuestion.label)}
+            style={{
+              width: '100%',
+              marginTop: 10,
+              minHeight: 40,
+              padding: '8px 10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: 0,
+              textAlign: 'left',
+              textTransform: 'uppercase',
+            }}
+          >
+            {primaryQuestion.label}
+          </button>
+        )}
+        {!compact && briefingLoading ? (
           <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '10px 0 0' }}>Briefing wird geladen…</p>
-        ) : briefing ? (
+        ) : !compact && briefing ? (
           <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '10px 0 0' }}>
             {briefing}
           </p>
@@ -430,14 +489,15 @@ function DailyBriefingGuide({
         <DailyDecisionCard
           decision={dailyDecision}
           labelCase="title"
+          density={compact ? 'compact' : 'default'}
           onPrompt={() => onPrompt(dailyDecision.prompt)}
         />
       )}
 
-      <DailyOutcomeContext outcome={outcome} onPrompt={onPrompt} />
-      <DailyDecisionQualityContext quality={quality} onPrompt={onPrompt} />
+      {!compact && <DailyOutcomeContext outcome={outcome} onPrompt={onPrompt} />}
+      {!compact && <DailyDecisionQualityContext quality={quality} onPrompt={onPrompt} />}
 
-      <div className="card" style={{ padding: '12px 14px' }}>
+      {!compact && <div className="card" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             TAGESAKTION
@@ -482,7 +542,7 @@ function DailyBriefingGuide({
             )}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -511,7 +571,6 @@ export default function Coach() {
   const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
   const latestOutcome = outcomeData?.items[0] ?? null;
   const decisionQuality = qualityData ?? null;
-  const guidedQuestionPrompts = checkinGuidance?.questions.map(question => question.label) ?? [];
   const quickPromptGroups: PromptGroup[] = [
     ...(decisionQuality
       ? [{
@@ -525,13 +584,6 @@ export default function Coach() {
           title: 'Aus gestern gelernt',
           hint: latestOutcome.suggestedAdjustment,
           prompts: [`Was ändern wir heute, weil gestern "${latestOutcome.actionTitle}" ${latestOutcome.actionStatus === 'completed' ? 'erledigt' : 'anders entschieden'} wurde?`],
-        }]
-      : []),
-    ...(guidedQuestionPrompts.length > 0
-      ? [{
-          title: 'Heute geführt',
-          hint: checkinGuidance?.questions[0]?.rationale ?? 'Fragen passend zu Training, Erholung und mentaler Last.',
-          prompts: guidedQuestionPrompts,
         }]
       : []),
     {
@@ -628,7 +680,7 @@ export default function Coach() {
         {isLoading && (
           <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>Lade…</p>
         )}
-        {!isLoading && !hasMessages && !voiceCard && (
+        {!isLoading && !voiceCard && (
           <DailyBriefingGuide
             home={home}
             actions={actionsData?.actions ?? []}
@@ -638,6 +690,8 @@ export default function Coach() {
             quality={decisionQuality}
             briefing={briefingData?.briefing}
             briefingLoading={briefingLoading}
+            compact={hasMessages}
+            primaryQuestion={checkinGuidance?.questions[0] ?? null}
             onPrompt={setInput}
           />
         )}

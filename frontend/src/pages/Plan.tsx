@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
@@ -62,12 +62,14 @@ function NextTrainingDecisionCard({
   availableDays,
   activeGoalsCount,
   planTrace,
+  onNavigate,
   onOpen,
 }: {
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
   activeGoalsCount: number;
   planTrace: PulsePlanTrace | null;
+  onNavigate: (path: string) => void;
   onOpen: (workout: PlannedWorkout) => void;
 }) {
   const update = useUpdateWorkout();
@@ -169,6 +171,34 @@ function NextTrainingDecisionCard({
           }}>
             {chip}
           </span>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 12 }}>
+        {[
+          ['Metriken prüfen', '/data?tab=metrics'],
+          ['Mental prüfen', '/data?tab=mental'],
+          ['Ziele prüfen', '/plan?tab=goals'],
+        ].map(([label, path]) => (
+          <button
+            key={path}
+            type="button"
+            onClick={() => onNavigate(path)}
+            style={{
+              minHeight: 40,
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              color: 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: 0,
+              padding: '7px 10px',
+              textTransform: 'uppercase',
+            }}
+          >
+            {label}
+          </button>
         ))}
       </div>
       <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>ALTERNATIVEN</div>
@@ -410,21 +440,23 @@ function TrainingTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {dailyDecision && (
-        <DailyDecisionCard
-          decision={dailyDecision}
-          labelCase="upper"
-          onActivate={() => navigate(dailyDecision.targetPath)}
-        />
-      )}
-
       <NextTrainingDecisionCard
         nextWorkout={nextDecisionWorkout}
         availableDays={decisionAvailableDays}
         activeGoalsCount={activeGoals.length}
         planTrace={decisionPlanTrace}
+        onNavigate={navigate}
         onOpen={setSelectedWorkout}
       />
+
+      {dailyDecision && (
+        <DailyDecisionCard
+          decision={dailyDecision}
+          labelCase="upper"
+          density="compact"
+          onActivate={() => navigate(dailyDecision.targetPath)}
+        />
+      )}
 
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}
@@ -1147,15 +1179,43 @@ const TABS = [
   { id: 'statistik', label: 'Statistik' },
 ];
 
+const TAB_QUERY: Record<Tab, string> = {
+  training: 'training',
+  ziele: 'goals',
+  review: 'review',
+  statistik: 'stats',
+};
+
+const QUERY_TAB: Record<string, Tab> = {
+  training: 'training',
+  goals: 'ziele',
+  ziele: 'ziele',
+  review: 'review',
+  stats: 'statistik',
+  statistik: 'statistik',
+};
+
+function tabFromQuery(value: string | null): Tab {
+  return value ? QUERY_TAB[value] ?? 'training' : 'training';
+}
+
 export default function Plan() {
-  const [tab, setTab] = useState<Tab>('training');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = tabFromQuery(searchParams.get('tab'));
+
+  function setTab(tabId: string) {
+    const nextTab = tabId as Tab;
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', TAB_QUERY[nextTab]);
+    setSearchParams(next);
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
         eyebrow="PLAN"
         title="Training, Ziele & Statistik"
-        action={<SegmentedControl items={TABS} active={tab} onChange={id => setTab(id as Tab)} />}
+        action={<SegmentedControl items={TABS} active={tab} onChange={setTab} />}
       />
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}

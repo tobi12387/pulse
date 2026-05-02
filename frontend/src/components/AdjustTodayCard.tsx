@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useTodayProposal, useAcceptTodayAdjustment } from '@/pulse/hooks';
 import type { AdjustProposal } from '@/pulse/api-client';
 
@@ -23,12 +24,50 @@ function workoutLine(w: { activityType: string; zone: number; durationMin: numbe
   return `${SPORT_LABEL[w.activityType] ?? w.activityType} · Z${w.zone} · ${w.durationMin}min`;
 }
 
+const DISMISSED_ADJUSTMENT_KEY = 'pulse-today-adjust-dismissed-signature';
+
+function proposalSignature(p: AdjustProposal): string {
+  return [
+    p.date,
+    p.workoutId,
+    p.reason,
+    p.readinessScore,
+    p.original.activityType,
+    p.original.zone,
+    p.original.durationMin,
+    p.proposed.activityType,
+    p.proposed.zone,
+    p.proposed.durationMin,
+    p.proposed.description ?? '',
+  ].join('|');
+}
+
 export function AdjustTodayCard() {
   const { data, isLoading } = useTodayProposal();
   const accept = useAcceptTodayAdjustment();
+  const proposal = data?.proposal ?? null;
+  const signature = useMemo(() => proposal ? proposalSignature(proposal) : null, [proposal]);
+  const [dismissedSignature, setDismissedSignature] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(DISMISSED_ADJUSTMENT_KEY);
+    } catch {
+      return null;
+    }
+  });
 
-  if (isLoading || !data?.proposal) return null;
-  const p = data.proposal;
+  if (isLoading || !proposal || !signature) return null;
+  const p = proposal;
+  const currentSignature = signature;
+  if (dismissedSignature === currentSignature) return null;
+
+  function keepCurrentPlan() {
+    try {
+      localStorage.setItem(DISMISSED_ADJUSTMENT_KEY, currentSignature);
+    } catch {
+      // Local persistence is best-effort; state still holds for this session.
+    }
+    setDismissedSignature(currentSignature);
+  }
 
   return (
     <div className="card" style={{
@@ -112,12 +151,7 @@ export function AdjustTodayCard() {
           </button>
           <button
             disabled={accept.isPending}
-            onClick={() => {
-              // Just dismiss visually — refresh on next refetchInterval
-              const el = document.querySelector('[data-adjust-card]') as HTMLElement | null;
-              if (el) el.style.display = 'none';
-            }}
-            data-adjust-card
+            onClick={keepCurrentPlan}
             style={{
               flex: 1, padding: '8px 12px',
               background: 'transparent', color: 'var(--text-2)',

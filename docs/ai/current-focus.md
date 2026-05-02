@@ -76,13 +76,15 @@ Keep this file short. Update it whenever the active work queue changes.
 70. Real iPhone/VPN/PWA field evidence was captured from Tobi's device: routes, Coach keyboard, Home Screen launch and Settings readiness passed; local certificate trust remains the only confirmed friction.
 71. UI/UX deep audit follow-up is now the active priority: close mobile containment/touch, daily-loop continuity, feedback resilience, Settings diagnostics and current Canva/Figma/WebKit evidence before new product domains.
 72. Dependency security refresh was merged and deployed via PR #154; production runtime audit is clean, with only the documented dev-only Drizzle/esbuild advisory left on stable tooling.
-73. Mobile Touch And Containment is the current UI/UX implementation slice; after it lands, continue with `2026-05-02-daily-loop-route-priority-ux.md`.
+73. Mobile Touch And Containment was merged and deployed via PR #155.
+74. Daily Loop Route Priority is the current UI/UX implementation slice; after it lands, continue with `2026-05-02-feedback-resilience-ux.md`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/mobile-touch-containment-ux` implements UI/UX roadmap rank 1 before Daily Loop Route Priority.
+- Active branch: `codex/daily-loop-route-priority-ux` implements UI/UX roadmap rank 2 before Feedback Resilience.
 - Recent completed branches:
+- `codex/mobile-touch-containment-ux`: merged and deployed via PR #155.
 - `codex/dependency-security-refresh`: merged and deployed via PR #154.
 - `codex/ui-ux-friction-plans`: merged via PR #153.
 - `codex/docs-design-reference-relocation`: merged and deployed via PR #150.
@@ -202,8 +204,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - UI/UX Deep Friction Closure is now the next priority. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md` and `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md`.
-- Finish `codex/dependency-security-refresh` first, then start `docs/superpowers/plans/2026-05-02-mobile-touch-and-containment-ux.md`.
-- Recommended implementation order: mobile touch/containment, daily-loop route priority, feedback resilience, Settings diagnostics matrix, UX evidence toolchain refresh.
+- Finish `codex/daily-loop-route-priority-ux` first, then start `docs/superpowers/plans/2026-05-02-feedback-resilience-ux.md`.
+- Recommended implementation order: feedback resilience, Settings diagnostics matrix, UX evidence toolchain refresh.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.

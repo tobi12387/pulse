@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   pulseKeys,
   useDataCoverage,
@@ -36,6 +36,14 @@ interface GarminBackfillSnapshot {
 }
 
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
+type SettingsSection = 'profile' | 'coach' | 'garmin' | 'equipment' | 'push' | 'device' | 'health';
+const SETTINGS_SECTIONS = new Set<SettingsSection>(['profile', 'coach', 'garmin', 'equipment', 'push', 'device', 'health']);
+
+function settingsSectionFromQuery(value: string | null): SettingsSection | null {
+  if (value === 'connection') return 'garmin';
+  if (value === 'pwa') return 'device';
+  return value && SETTINGS_SECTIONS.has(value as SettingsSection) ? value as SettingsSection : null;
+}
 
 function loadLastBackfillSnapshot(): GarminBackfillSnapshot | null {
   try {
@@ -64,6 +72,7 @@ export default function Settings() {
   const [lastBackfill] = useState<GarminBackfillSnapshot | null>(() => loadLastBackfillSnapshot());
   const [syncing, setSyncing] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const { data: garminStatus, refetch } = useQuery<GarminStatus>({
     queryKey: ['garmin-status'],
@@ -74,6 +83,14 @@ export default function Settings() {
   const qc = useQueryClient();
   const { data: coverage30 } = useDataCoverage({ days: 30 });
   const { data: garminCoverage } = useGarminCoverage(30);
+  const activeSection = settingsSectionFromQuery(searchParams.get('section'));
+
+  useEffect(() => {
+    if (!activeSection) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById(`settings-section-${activeSection}`)?.scrollIntoView({ block: 'start' });
+    });
+  }, [activeSection]);
 
   async function handleSync() {
     setSyncing(true);
@@ -133,6 +150,8 @@ export default function Settings() {
       )}
 
       <SettingsGroup
+        sectionId="profile"
+        active={activeSection === 'profile'}
         title="Profil"
         description="Trainingszonen, Wochenziel und Phase steuern Plan- und Coach-Kontext."
       >
@@ -140,6 +159,8 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        sectionId="coach"
+        active={activeSection === 'coach'}
         title="Coach"
         description="Explizite Präferenzen steuern Ton, Zeitfenster und Trainingsmuster ohne versteckte Annahmen."
       >
@@ -147,6 +168,8 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        sectionId="garmin"
+        active={activeSection === 'garmin'}
         title="Verbindung"
         description="Kalender-Sync und Backfill sind getrennt von Profil- und Push-Aktionen."
       >
@@ -185,7 +208,7 @@ export default function Settings() {
               <Row label="Backfill">
                 <button
                   type="button"
-                  onClick={() => navigate('/data')}
+                  onClick={() => navigate('/data?tab=coverage')}
                   style={{
                     background: 'var(--surface-2)',
                     border: '1px solid var(--border)',
@@ -278,6 +301,8 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        sectionId="equipment"
+        active={activeSection === 'equipment'}
         title="Datenpflege"
         description="Equipment, Abdeckung und Wartung bleiben bei wiederholten Alltagsaufgaben zusammen."
       >
@@ -285,6 +310,8 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        sectionId="push"
+        active={activeSection === 'push'}
         title="Benachrichtigungen"
         description="Push-Regeln betreffen Geräte und Erlaubnisse, nicht Garmin-Daten."
       >
@@ -292,6 +319,8 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        sectionId="device"
+        active={activeSection === 'device'}
         title="iPhone & PWA"
         description="Lokaler Zugriff, HTTPS und Browser-Fähigkeiten für iPhone/VPN bleiben sichtbar."
       >
@@ -299,6 +328,8 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup
+        sectionId="health"
+        active={activeSection === 'health'}
         title="Health-State"
         description="Health-State setzt harte Trainingsgrenzen und ist bewusst separat."
       >
@@ -308,13 +339,27 @@ export default function Settings() {
   );
 }
 
-function SettingsGroup({ title, description, children }: {
+function SettingsGroup({ sectionId, active = false, title, description, children }: {
+  sectionId: SettingsSection;
+  active?: boolean;
   title: string;
   description: string;
   children: React.ReactNode;
 }) {
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <section
+      id={`settings-section-${sectionId}`}
+      data-settings-section={sectionId}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        scrollMarginTop: 88,
+        outline: active ? '1px solid rgba(94,230,207,0.32)' : 'none',
+        outlineOffset: 8,
+        borderRadius: 6,
+      }}
+    >
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <h2 style={{
           margin: 0,
