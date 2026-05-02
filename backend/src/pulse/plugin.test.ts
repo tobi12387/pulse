@@ -346,6 +346,49 @@ describe('Daily outcome learning', () => {
   });
 });
 
+describe('Daily decision quality', () => {
+  it('returns a read-only quality signal from closed actions, outcomes and Garmin metrics', async () => {
+    const yesterday = dateDaysAgo(1);
+    const today = dateDaysAgo(0);
+    await db.insert(pulseActionDecisions).values({
+      userId,
+      source: 'next_best_action',
+      sourceId: 'checkin',
+      kind: 'checkin',
+      title: 'Check-in eintragen',
+      status: 'completed',
+      targetRoute: '/data',
+      createdAt: new Date(`${yesterday}T07:00:00.000Z`),
+      resolvedAt: new Date(`${yesterday}T08:00:00.000Z`),
+      resolutionReason: 'Erledigt.',
+    });
+    await db.insert(pulseMentalCheckins).values([
+      { userId, date: yesterday, mood: 7, energy: 6, stress: 4, motivation: 8, source: 'text' },
+      { userId, date: today, mood: 7, energy: 7, stress: 3, motivation: 8, source: 'text' },
+    ]);
+    await db.insert(pulseDailyMetrics).values([
+      { userId, date: yesterday, sleepHours: 7.3, hrvStatus: 'normal', bodyBatteryMax: 68, bodyBatteryAtWake: 55, stressAvg: 36 },
+      { userId, date: today, sleepHours: 7.5, hrvStatus: 'normal', bodyBatteryMax: 73, bodyBatteryAtWake: 60, stressAvg: 32 },
+    ]);
+
+    const beforeRows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/decisions/quality?days=7',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const afterRows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ status: string; qualityScore: number; bestEvidence: string[]; suggestedAdjustment: string }>();
+    expect(body.status).toBe('helpful');
+    expect(body.qualityScore).toBeGreaterThanOrEqual(70);
+    expect(body.bestEvidence.join(' ')).toContain('bestätigt');
+    expect(body.suggestedAdjustment).toContain('beibehalten');
+    expect(afterRows).toHaveLength(beforeRows.length);
+  });
+});
+
 describe('Coach preferences', () => {
   it('returns defaults and persists explicit visible preferences', async () => {
     const defaults = await app.inject({

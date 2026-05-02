@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
 import type { LucideIcon } from 'lucide-react';
+import type { PulseDailyDecisionQualityResponse } from '@coaching-os/shared/pulse';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 type EvidenceStatus = 'available' | 'limited' | 'missing';
@@ -30,6 +31,14 @@ const DOMAINS: { key: Domain; label: string; icon: LucideIcon; color: string }[]
 
 const DAYS_OPTIONS = [7, 30, 90];
 const RANGE_OPTIONS = DAYS_OPTIONS.map(d => ({ value: d, label: `${d}T` }));
+
+function decisionQualityColor(status: PulseDailyDecisionQualityResponse['status']): string {
+  if (status === 'helpful') return 'var(--green)';
+  if (status === 'watch') return 'var(--blue)';
+  if (status === 'stale') return 'var(--amber)';
+  if (status === 'needs_strategy_change') return 'var(--rose)';
+  return 'var(--text-3)';
+}
 
 function insightErrorState(error: unknown): { title: string; message: string; retryable: boolean } {
   if (error instanceof PulseApiError) {
@@ -133,6 +142,63 @@ function EvidenceList({ evidence, missingData }: { evidence?: EvidenceItem[]; mi
         </section>
       )}
     </div>
+  );
+}
+
+function DecisionQualityEvidenceCard({ quality }: { quality: PulseDailyDecisionQualityResponse | null | undefined }) {
+  if (!quality) return null;
+  const color = decisionQualityColor(quality.status);
+
+  return (
+    <section
+      className="card"
+      data-testid="insights-decision-quality-card"
+      aria-label="Entscheidungsqualität"
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Entscheidungsqualität
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
+          {quality.statusLabel} · {quality.qualityScore}/100
+        </span>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+        {quality.suggestedAdjustment}
+      </p>
+      {quality.bestEvidence.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 6 }}>
+          {quality.bestEvidence.slice(0, 4).map(item => (
+            <div key={item} style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+              <p style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.45, margin: 0 }}>
+                {item}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+      {quality.repeatedThemes.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+          {quality.repeatedThemes.slice(0, 4).map(theme => (
+            <span
+              key={`${theme.theme}-${theme.count}`}
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: theme.status === 'stale' ? 'var(--amber)' : 'var(--text-3)',
+                padding: '3px 6px',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                background: 'var(--surface-2)',
+              }}
+            >
+              {theme.theme} · {theme.count}x
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -276,6 +342,7 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
 
 export default function Insights() {
   const [days, setDays] = useState(30);
+  const { data: decisionQuality } = useDailyDecisionQuality(14);
 
   return (
     <div className="flex flex-col gap-3">
@@ -287,6 +354,7 @@ export default function Insights() {
       />
 
       <MentalLoadOverlay />
+      <DecisionQualityEvidenceCard quality={decisionQuality} />
 
       {/* Domain cards */}
       {DOMAINS.map(d => (

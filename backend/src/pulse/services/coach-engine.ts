@@ -1,6 +1,7 @@
 import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
 import type {
   PulseCoachPreferences,
+  PulseDailyDecisionQualityResponse,
   PulseGuidedCheckinResponse,
   PulseNextBestAction,
   PulseRiskSignal,
@@ -54,6 +55,7 @@ export interface CoachFullContext {
   nextBestActions?: PulseNextBestAction[];
   suppressedNextBestActions?: PulseSuppressedActionState[];
   coachPreferences?: PulseCoachPreferences | null;
+  dailyDecisionQuality?: PulseDailyDecisionQualityResponse | null;
   guidedCheckin?: PulseGuidedCheckinResponse | null;
   recentStrengthSessions?: Array<{
     date: string;
@@ -217,6 +219,20 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       if (action.resolutionReason) s += `\nGrund: ${action.resolutionReason}`;
     });
     s += '\nDiese Einträge sind bereits erledigt, verschoben oder nicht mehr aktuell; nicht erneut als offene Aufgabe formulieren.';
+  }
+
+  if (ctx.dailyDecisionQuality) {
+    const q = ctx.dailyDecisionQuality;
+    s += `\n\n== ENTSCHEIDUNGSQUALITÄT (${q.range.days} Tage) ==`;
+    s += `\nStatus: ${q.statusLabel} (${q.qualityScore}/100)`;
+    if (q.repeatedThemes.length > 0) {
+      s += `\nWiederholte Themen: ${q.repeatedThemes.slice(0, 3).map(theme => `${theme.theme} ${theme.count}x/${theme.status}`).join('; ')}`;
+    }
+    if (q.bestEvidence.length > 0) {
+      s += `\nEvidenz: ${q.bestEvidence.slice(0, 3).join(' | ')}`;
+    }
+    s += `\nAnpassung: ${q.suggestedAdjustment}`;
+    s += '\nNutze diesen Abschnitt nur als sichtbaren Qualitätsstatus, nicht als verstecktes Memory.';
   }
 
   if (hasVisibleCoachPreferences(ctx.coachPreferences)) {

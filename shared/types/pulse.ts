@@ -467,6 +467,50 @@ export interface PulseDailyOutcomeLearningResponse {
   items: PulseDailyOutcomeLearningItem[];
 }
 
+export type PulseDailyDecisionQualityStatus =
+  | 'helpful'
+  | 'watch'
+  | 'stale'
+  | 'needs_strategy_change'
+  | 'insufficient_evidence';
+
+export type PulseDailyDecisionQualityThemeStatus =
+  | 'useful_repetition'
+  | 'watch'
+  | 'stale';
+
+export interface PulseDailyDecisionQualityTheme {
+  theme: string;
+  count: number;
+  lastSeen: string | null;
+  status: PulseDailyDecisionQualityThemeStatus;
+  evidence: string[];
+}
+
+export interface PulseDailyDecisionQualityEvidence {
+  label: string;
+  detail: string;
+  source: 'action_decision' | 'outcome_learning' | 'checkin' | 'garmin' | 'plan_trace';
+  tone: 'positive' | 'neutral' | 'negative' | 'missing';
+  date: string | null;
+  targetRoute?: '/data' | '/plan' | '/coach' | '/insights';
+}
+
+export interface PulseDailyDecisionQualityResponse {
+  range: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  qualityScore: number;
+  status: PulseDailyDecisionQualityStatus;
+  statusLabel: string;
+  repeatedThemes: PulseDailyDecisionQualityTheme[];
+  bestEvidence: string[];
+  evidence: PulseDailyDecisionQualityEvidence[];
+  suggestedAdjustment: string;
+}
+
 export type PulseSeasonStrategyBlockKind =
   | 'base'
   | 'build'

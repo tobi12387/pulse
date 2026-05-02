@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Daily Decision Quality bleibt read-only und sichtbar
+
+- **Decision:** Pulse fuehrt `GET /api/pulse/decisions/quality` als read-only Qualitaetslayer ein. Der Layer bewertet Action Decisions, Outcome Learning, Check-ins, Garmin-Ausfuehrung, Tagesmetriken und Plan-Traces deterministisch und zeigt den Status kompakt in Home, Coach und Insights.
+- **Why:** Tobi soll erkennen, ob Empfehlungen wirklich geholfen haben, sinnvoll wiederholt werden, stale geworden sind oder eine Strategieaenderung brauchen. Der Coach darf diese Qualitaet zitieren, aber nicht als verstecktes Memory erfinden; fehlende Garmin-/Check-in-Daten bleiben als niedrige Evidenzqualitaet sichtbar.
+- **Alternatives:** Neues persistiertes Quality-Memory (zu frueh und doppelt zu bestehenden Decisions/Outcomes); LLM-only Bewertung im Coach (nicht auditierbar); eigenes Dashboard (mehr Navigation statt besserer Tagesloop).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Garmin Signal Usefulness priorisiert Daily Decision als ersten Consumer
 
 - **Decision:** `GET /api/pulse/garmin/signal-usefulness` bleibt read-only und nutzt nur Pulse-Tabellen sowie gecachte Garmin-Detailfelder. Die erste Anschlussrichtung ist Daily Decision Quality: Body-Battery-Tiefe, Stressdauer, Respiration und SpO2 werden zuerst als Entscheidungs-/Evidenzqualitaet bewertet; HR-Zonen/Laps folgen danach fuer Plan-Generierung.

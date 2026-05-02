@@ -30,6 +30,7 @@ export const pulseKeys = {
   briefing:     ['pulse', 'briefing'] as const,
   actions:      ['pulse', 'actions'] as const,
   dailyOutcomes: (days: number) => ['pulse', 'outcomes', 'daily', days] as const,
+  decisionQuality: (days: number) => ['pulse', 'decisions', 'quality', days] as const,
   risk:         ['pulse', 'risk'] as const,
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
   correlations:      (days: number)  => ['pulse', 'correlations', days] as const,
@@ -64,6 +65,7 @@ function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
   void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
   void qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
+  void qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.home });
   void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
 }
@@ -97,6 +99,15 @@ export function useDailyOutcomeLearning(days = 7) {
   });
 }
 
+export function useDailyDecisionQuality(days = 14) {
+  return useQuery({
+    queryKey: pulseKeys.decisionQuality(days),
+    queryFn: () => pulseApi.decisions.quality(days),
+    staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
+  });
+}
+
 export function useUpdatePulseAction() {
   const qc = useQueryClient();
   return useMutation({
@@ -105,6 +116,7 @@ export function useUpdatePulseAction() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.actions });
       void qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
       invalidatePulseContextQueries(qc);
     },
   });
@@ -359,6 +371,7 @@ export function usePulseCheckin() {
       qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
       qc.invalidateQueries({ queryKey: pulseKeys.checkinGuidance });
       qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'load-overlay'] });
