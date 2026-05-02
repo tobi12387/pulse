@@ -662,7 +662,7 @@ describe('GET /api/pulse/checkin/guidance', () => {
     });
     await db.insert(pulseMentalCheckins).values({
       userId,
-      date: dateDaysAgo(1),
+      date: today,
       mood: 4,
       energy: 4,
       stress: 8,
