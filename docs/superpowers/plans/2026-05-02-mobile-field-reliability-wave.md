@@ -27,19 +27,19 @@ The iPhone/PWA baseline is implemented: safe-area layout, app-start service work
 
 ## Task 1: Real iPhone Evidence Capture
 
-- [ ] **Step 1: Run the real-device checklist**
+- [x] **Step 1: Run the real-device checklist**
 
   On Tobi's iPhone, with VPN active:
   - open `https://192.168.178.46:5175`;
   - confirm certificate behavior;
-  - log in;
+  - if an auth gate appears, log in;
   - open Home, Coach, Plan, Insights, Settings;
   - add to Home Screen;
   - reopen from the Home Screen icon;
   - test Coach keyboard visibility;
   - open Settings and record PWA/push support state.
 
-- [ ] **Step 2: Fill the evidence record**
+- [x] **Step 2: Fill the evidence record**
 
   Update `docs/qa/2026-05-02-iphone-pwa-real-device.md` with:
   - device model and iOS version if known;
@@ -50,16 +50,18 @@ The iPhone/PWA baseline is implemented: safe-area layout, app-start service work
   - push support and actual enablement status;
   - exact frictions observed.
 
-- [ ] **Step 3: Commit evidence only**
+- [x] **Step 3: Commit evidence and checklist alignment**
 
   ```bash
-  git add docs/qa/2026-05-02-iphone-pwa-real-device.md
+  git add docs/qa/2026-05-02-iphone-pwa-real-device.md docs/ai/checklists/iphone-pwa-qa.md docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md
   git commit -m "docs: record iphone pwa field evidence"
   ```
 
 ## Task 2: Diagnostics Follow-Up From Real Device
 
-- [ ] **Step 1: Convert each real-device friction into one deterministic check**
+- [x] **Step 1: Convert each real-device friction into one deterministic check**
+
+  2026-05-02 field result: no layout, keyboard, route or Settings-readiness issue surfaced that needs a deterministic browser regression test. The only real friction is local certificate trust on iOS, which is an operations/certificate-installation follow-up rather than a UI patch.
 
   If the iPhone exposes a layout or browser issue, add a Playwright test before changing UI. Examples:
   - bottom nav hidden behind home indicator -> mobile layout test;

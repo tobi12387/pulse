@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Echter iPhone-Test bestaetigt PWA/VPN als aktuellen Pfad
+
+- **Decision:** Pulse bleibt nach dem echten iPhone/VPN/PWA-Feldtest beim lokalen Web/PWA-Modell; es wird kein Native-iOS-Scope aus dieser Evidenz abgeleitet.
+- **Why:** Tobi konnte Pulse auf dem iPhone ueber VPN erreichen, zum Home-Bildschirm hinzufuegen, aus dem Home-Screen-Icon starten und Home, Coach, Plan, Insights sowie Settings nutzen. Coach-Eingabe inklusive Antwort funktionierte; die einzige bestaetigte Reibung ist die lokale Zertifikatsvertrauenskette.
+- **Alternatives:** Sofort Native iOS bauen (nicht durch Feld-Evidenz begruendet); public tunnel/cloud hosting einfuehren (widerspricht lokalem Servermodell); UI-Fixes ohne beobachtete iPhone-Friktion bauen (kein belegter Bedarf).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Historisches Design-Handoff liegt unter docs/design
 
 - **Decision:** Die historische Variante-B-Designreferenz liegt unter `docs/design/handoff/` statt als Root-Ordner.
