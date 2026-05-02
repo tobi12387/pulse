@@ -9,9 +9,7 @@ import {
   pulsePlannedWorkouts,
   pulseSleepSessions,
   pulseUserProfile,
-  pulseWeeklyReviews,
   pulseWeightLog,
-  pulseNutritionLogs,
   pulsePushSubscriptions,
   pulseEquipmentActivity,
   DEFAULT_PUSH_TOPICS,
@@ -25,7 +23,6 @@ import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
 import type { PulseDataCoverageResponse, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse, PulsePushTopics } from '@coaching-os/shared/pulse';
 import { invalidateUser } from './lib/pulse-cache.js';
 import { getPulseDataStatus } from './services/daily-loop.js';
-import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import {
   buildGarminWorkoutJson,
@@ -1206,109 +1203,6 @@ export default async function pulsePlugin(app: FastifyInstance) {
     }
 
     return { uploaded, repaired, removed, errors: errors.length > 0 ? errors : undefined };
-  });
-
-  // ─── Nutrition logs (Phase 9) ────────────────────────────────────────────────
-  app.get('/nutrition', { onRequest: [app.authenticate] }, async (req) => {
-    const userId = req.user.sub;
-    const q = req.query as { from?: string; to?: string; workoutId?: string; activityId?: string; days?: string };
-    const conds = [eq(pulseNutritionLogs.userId, userId)];
-
-    if (q.workoutId) conds.push(eq(pulseNutritionLogs.workoutId, q.workoutId));
-    if (q.activityId) conds.push(eq(pulseNutritionLogs.activityId, q.activityId));
-    if (q.from && /^\d{4}-\d{2}-\d{2}$/.test(q.from)) conds.push(gte(pulseNutritionLogs.date, q.from));
-    if (q.to   && /^\d{4}-\d{2}-\d{2}$/.test(q.to))   conds.push(lte(pulseNutritionLogs.date, q.to));
-    if (!q.from && !q.workoutId && !q.activityId) {
-      const days = Math.min(Math.max(parseInt(q.days ?? '14', 10), 1), 365);
-      const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0]!;
-      conds.push(gte(pulseNutritionLogs.date, since));
-    }
-
-    const logs = await db.select().from(pulseNutritionLogs)
-      .where(and(...conds))
-      .orderBy(desc(pulseNutritionLogs.date), desc(pulseNutritionLogs.createdAt));
-    return { logs };
-  });
-
-  app.post('/nutrition', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const schema = z.object({
-      date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-      context:     z.enum(['pre','during','post','daily']).optional(),
-      workoutId:   z.string().uuid().optional(),
-      activityId:  z.string().uuid().optional(),
-      mealType:    z.string().max(30).optional(),
-      description: z.string().max(500).optional(),
-      calories:    z.number().int().min(0).max(20000).optional(),
-      proteinG:    z.number().min(0).max(2000).optional(),
-      carbsG:      z.number().min(0).max(2000).optional(),
-      fatG:        z.number().min(0).max(1000).optional(),
-      gelsCount:   z.number().int().min(0).max(50).optional(),
-      drinksMl:    z.number().int().min(0).max(20000).optional(),
-      sodiumMg:    z.number().int().min(0).max(50000).optional(),
-      notes:       z.string().max(1000).optional(),
-    });
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
-
-    const userId = req.user.sub;
-    const date = parsed.data.date ?? new Date().toISOString().split('T')[0]!;
-
-    // Auto-derive carbs from gels if explicit carbs not provided (1 gel ≈ 25g)
-    let carbsG = parsed.data.carbsG;
-    if (carbsG == null && parsed.data.gelsCount != null && parsed.data.gelsCount > 0) {
-      carbsG = parsed.data.gelsCount * 25;
-    }
-
-    const [log] = await db.insert(pulseNutritionLogs).values({
-      userId, date,
-      context:     parsed.data.context     ?? null,
-      workoutId:   parsed.data.workoutId   ?? null,
-      activityId:  parsed.data.activityId  ?? null,
-      mealType:    parsed.data.mealType    ?? null,
-      description: parsed.data.description ?? null,
-      calories:    parsed.data.calories    ?? null,
-      proteinG:    parsed.data.proteinG    ?? null,
-      carbsG:      carbsG                  ?? null,
-      fatG:        parsed.data.fatG        ?? null,
-      gelsCount:   parsed.data.gelsCount   ?? null,
-      drinksMl:    parsed.data.drinksMl    ?? null,
-      sodiumMg:    parsed.data.sodiumMg    ?? null,
-      notes:       parsed.data.notes       ?? null,
-    }).returning();
-
-    return reply.status(201).send(log);
-  });
-
-  app.delete('/nutrition/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const userId = req.user.sub;
-    const { id } = req.params as { id: string };
-    const [deleted] = await db.delete(pulseNutritionLogs)
-      .where(and(eq(pulseNutritionLogs.id, id), eq(pulseNutritionLogs.userId, userId)))
-      .returning({ id: pulseNutritionLogs.id });
-    if (!deleted) return reply.status(404).send({ error: 'Nicht gefunden' });
-    return reply.status(204).send();
-  });
-
-  // ─── Weekly review ────────────────────────────────────────────────────────────
-  app.get('/review/latest', { onRequest: [app.authenticate] }, async (req) => {
-    const userId = req.user.sub;
-    const [review] = await db.select()
-      .from(pulseWeeklyReviews)
-      .where(eq(pulseWeeklyReviews.userId, userId))
-      .orderBy(desc(pulseWeeklyReviews.weekStart))
-      .limit(1);
-    return review ?? null;
-  });
-
-  app.post('/review/generate', { onRequest: [app.authenticate] }, async (req) => {
-    const userId = req.user.sub;
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const lastMonday = new Date(now);
-    lastMonday.setDate(now.getDate() + mondayOffset - 7);
-    const weekStartStr = lastMonday.toISOString().split('T')[0]!;
-    return generateWeeklyReview(userId, weekStartStr);
   });
 
   // ─── Web Push settings + subscriptions ─────────────────────────────────────

@@ -51,13 +51,15 @@ Keep this file short. Update it whenever the active work queue changes.
 45. Backend Workout Step Service Extraction was merged and deployed via PR #126.
 46. Backend Plan Route Helper Extraction was merged and deployed via PR #127.
 47. Backend Plan/Workout Route Extraction was merged and deployed via PR #128.
-48. Backend Strategy Route Extraction is active on `codex/pulse-strategy-routes`.
+48. Backend Strategy Route Extraction was merged and deployed via PR #129.
+49. Backend Review/Nutrition Route Extraction is active on `codex/pulse-review-nutrition-routes`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/pulse-strategy-routes` for moving goals/race/season strategy routes out of `backend/src/pulse/plugin.ts`.
+- Active branch: `codex/pulse-review-nutrition-routes` for moving review and nutrition routes out of `backend/src/pulse/plugin.ts`.
 - Recent completed branches:
+- `codex/pulse-strategy-routes`: merged and deployed via PR #129.
 - `codex/pulse-plan-routes`: merged and deployed via PR #128.
 - `codex/pulse-plan-route-helpers`: merged and deployed via PR #127.
 - `codex/pulse-workout-steps-service`: merged and deployed via PR #126.
