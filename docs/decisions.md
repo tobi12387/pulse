@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Activity-Detail bleibt eine Activity-Boundary
+
+- **Decision:** Pulse verschiebt `/sleep`, `/activities`, `/activities/:id` und `/activities/:id/feedback` nach `backend/src/pulse/routes/activity-routes.ts`.
+- **Why:** Activity-Detail laedt zwar Garmin-Laps und HR-Zonen nach, ist aber fachlich eine Aktivitaetsansicht mit Equipment-Zuordnung, Analytics und RPE-Feedback. Der Router trennt Activity-Read/Feedback sauber von Garmin-Sync, Training-Planung und Push.
+- **Alternatives:** Activity-Detail in den Garmin-Router legen (vermengt Geraete-Sync mit Activity-UI); im Plugin lassen (verhindert thin plugin); zusammen mit Insights extrahieren (unnoetig grosser Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Web Push bekommt eine eigene Routen-Boundary
 
 - **Decision:** Pulse verschiebt `/push/settings`, `/push/subscribe`, `/push/topics`, `/push/quiet-hours` und `/push/test` nach `backend/src/pulse/routes/push-routes.ts`.
