@@ -3,7 +3,7 @@ import type { Redis } from 'ioredis';
 import { redis } from '../lib/redis.js';
 import { createQueue, createWorker } from '../lib/queue.js';
 import type { Queue, Worker } from 'bullmq';
-import { syncGarminDay } from '../routes/garmin.js';
+import { syncGarminDay } from '../pulse/services/garmin-sync-day.js';
 import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';

@@ -57,13 +57,15 @@ Keep this file short. Update it whenever the active work queue changes.
 51. Backend Garmin Route Extraction was merged and deployed via PR #132.
 52. Backend Push Route Extraction was merged and deployed via PR #133.
 53. Backend Activity Route Extraction was merged and deployed via PR #134.
-54. Backend Insight Route Extraction is active on `codex/pulse-insight-routes`.
+54. Backend Insight Route Extraction was merged and deployed via PR #135.
+55. Garmin Sync Boundary is active on `codex/garmin-sync-boundary`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/pulse-insight-routes` for moving insights and correlations out of `backend/src/pulse/plugin.ts`.
+- Active branch: `codex/garmin-sync-boundary` for moving Garmin day sync orchestration and activity execution matching into Pulse services.
 - Recent completed branches:
+- `codex/pulse-insight-routes`: merged and deployed via PR #135.
 - `codex/pulse-activity-routes`: merged and deployed via PR #134.
 - `codex/pulse-push-routes`: merged and deployed via PR #133.
 - `codex/pulse-garmin-routes`: merged and deployed via PR #132.
