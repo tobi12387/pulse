@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Daily-Loop-Routen teilen Route und Service-Logik
+
+- **Decision:** Pulse extrahiert `/home`, `/actions`, `/outcomes/daily`, `/decisions/quality`, `/risk` inklusive Snooze/Resolve und `/briefing` nach `backend/src/pulse/routes/daily-loop-routes.ts`; gemeinsam genutzte Action-/Decision-Quality-/Status-Helfer liegen in `backend/src/pulse/services/daily-loop.ts`.
+- **Why:** Daily-Loop-Endpunkte sind der zentrale Alltagsfluss und verursachen im Router besonders viel Kontextladung. Ein separater Routen-Slice reduziert Merge-Konflikte, waehrend Coach weiter dieselbe `loadDailyDecisionQuality`-Logik nutzt.
+- **Alternatives:** Routenlogik direkt aus `plugin.ts` importieren (Zyklusrisiko); Decision-Quality fuer Coach duplizieren (Inkonsistenzrisiko); Risk-Snooze/Resolve im Monolithen lassen (geteilte Risk-Grenze waere wieder verstreut).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Health-Routen sind der erste Backend-Boundary-Slice
 
 - **Decision:** Pulse extrahiert `/health`, `/readiness`, `/load`, `/health-state`, `/metrics`, `/weight` und `/profile` zuerst nach `backend/src/pulse/routes/health-routes.ts`; `backend/src/pulse/plugin.ts` registriert dieses Modul vor den restlichen bestehenden Routen.
