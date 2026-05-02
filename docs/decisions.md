@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Pulse-Plugin ist eine duenne Routen-Huelle
+
+- **Decision:** Pulse verschiebt `/insights` und `/correlations` nach `backend/src/pulse/routes/insight-routes.ts`; `backend/src/pulse/plugin.ts` behaelt nur den JSON-Parser und die Registrierung der Pulse-Routenmodule.
+- **Why:** Insights und Korrelationen teilen die Analyse-/Metric-Boundary, nicht Health-, Activity-, Garmin- oder Training-Sync. Ein duennes Plugin reduziert Merge-Konflikte, macht neue Routen reviewbarer und beendet Phase 2 der Backend-Route-Extraktion ohne Endpoint-Verhalten zu aendern.
+- **Alternatives:** Insight-Routen im Plugin lassen (Restmonolith bleibt bestehen); Korrelationen in Health verschieben (vermischt Rohmetriken mit Analyse-UI); Insight und Garmin-Signalbewertung zusammenlegen (falsche fachliche Grenze).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Activity-Detail bleibt eine Activity-Boundary
 
 - **Decision:** Pulse verschiebt `/sleep`, `/activities`, `/activities/:id` und `/activities/:id/feedback` nach `backend/src/pulse/routes/activity-routes.ts`.
