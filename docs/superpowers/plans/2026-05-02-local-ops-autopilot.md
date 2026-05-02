@@ -25,14 +25,14 @@
 
 ## Task 1: Status Command Contract
 
-- [ ] **Step 1: Write failing script tests**
+- [x] **Step 1: Write failing script tests**
 
   Extend `scripts/dev-services.test.mjs` or add `scripts/verify-server.test.mjs` to assert:
   - Docker missing message includes "Install/start Docker Desktop";
   - `verify-server.sh` documents backend health, frontend status, PM2 and commit checks;
   - a single npm script named `pulse:status` exists if added.
 
-- [ ] **Step 2: Add independent status command**
+- [x] **Step 2: Add independent status command**
 
   Create `scripts/pulse-status.sh` and add this package script:
 
@@ -42,7 +42,7 @@
 
   The script should run local Docker/Postgres/Redis status and server checks as independent sections so missing Docker does not hide server health.
 
-- [ ] **Step 3: Verify script tests**
+- [x] **Step 3: Verify script tests**
 
   Run:
 
@@ -53,18 +53,18 @@
 
 ## Task 2: Local Failure Clarity
 
-- [ ] **Step 1: Improve `verify-local.sh` preflight output**
+- [x] **Step 1: Improve `verify-local.sh` preflight output**
 
   Before DB connection checks, print:
   - which env file was loaded;
   - whether services are expected to be started;
   - what to run when Docker is missing.
 
-- [ ] **Step 2: Keep DB-bound behavior strict**
+- [x] **Step 2: Keep DB-bound behavior strict**
 
   Do not skip migrations/tests silently. If services are unavailable, fail early with the exact command to run or the reason CI/server must be used.
 
-- [ ] **Step 3: Verify local service path**
+- [x] **Step 3: Verify local service path**
 
   Run:
 
@@ -77,11 +77,11 @@
 
 ## Task 3: Server Verification Discoverability
 
-- [ ] **Step 1: Add docs references**
+- [x] **Step 1: Add docs references**
 
   Update `docs/ai/checklists/iphone-pwa-qa.md` and `docs/ai/current-focus.md` to point agents to the chosen one-command status path.
 
-- [ ] **Step 2: Verify deployed status**
+- [x] **Step 2: Verify deployed status**
 
   Run:
 
@@ -92,7 +92,7 @@
 
   Expected: server commit equals local HEAD, PM2 processes online, frontend 200, `/api/ping` ok and `/api/pulse/health` ok.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
   Stage explicit files only and commit with:
 
@@ -106,3 +106,10 @@
 - Server health and commit alignment can be checked with one documented command.
 - CI/server checks stay authoritative for DB-bound tests when local services are down.
 - No direct development on `/root/pulse` is introduced.
+
+## Implementation Notes
+
+- `node --test scripts/dev-services.test.mjs` passed with six script-contract tests.
+- `npm run pulse:status` correctly reported `local_status=1` because Docker Desktop is not running and still completed the server section with `server_status=0`.
+- `npm run services:status` remains strict and fails clearly when Docker Desktop is unavailable.
+- `npm run verify:local:no-services` remains strict and fails before DB-bound tests when `DATABASE_URL_TEST` is unreachable.

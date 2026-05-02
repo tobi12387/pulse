@@ -56,6 +56,7 @@ Record the result in `docs/qa/2026-05-02-iphone-pwa-real-device.md` so the evide
 Run these from the Mac workspace unless noted otherwise:
 
 ```bash
+npm run pulse:status
 npm run services:status
 npm run typecheck
 npm run test:e2e -- --grep "Mobile navigation|Coach|Settings|PWA"
@@ -69,3 +70,5 @@ ssh root@192.168.178.46 "curl -skI https://localhost:5175"
 ssh root@192.168.178.46 "pm2 status"
 ssh root@192.168.178.46 "cd /root/pulse && git rev-parse --short HEAD"
 ```
+
+`npm run pulse:status` intentionally reports local Mac services and the server deploy mirror as separate sections. If Docker Desktop is not running, the local section may fail while the server section still proves deployed Pulse is healthy.
