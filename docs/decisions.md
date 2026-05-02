@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Plan-Training-UI bekommt eigene Feature-Komponenten
+
+- **Decision:** Pulse verschiebt Week Strip, Workout Row, Execution Badge und Trainingslabels aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/training/training-components.tsx`.
+- **Why:** `Plan.tsx` bleibt Route-Orchestrierung und kann Training-Daten, Modals und Tab-Zustand weiter zusammenhalten, waehrend die wiederverwendbare Trainingslisten-UI fachlich in der Plan-Feature-Grenze lebt. Der Slice aendert keine API-Vertraege, Mutation-Flows oder sichtbares Verhalten.
+- **Alternatives:** Training-UI im Page-Monolith lassen (Phase 4 bleibt halb erledigt); direkt Strategie- und Goal-Karten mitverschieben (zu grosser PR); Komponenten in `components/` ablegen (zu domain-spezifisch fuer die globale UI-Schicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Plan-Seite trennt reine Plan-Utilities von UI
 
 - **Decision:** Pulse verschiebt reine Datums-, Plan-Alternativen- und Execution-Status-Helfer aus `frontend/src/pages/Plan.tsx` nach `frontend/src/features/plan/plan-utils.ts`.
