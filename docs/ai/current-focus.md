@@ -39,13 +39,14 @@ Keep this file short. Update it whenever the active work queue changes.
 33. Season Strategy Planner was merged and deployed via PR #114.
 34. Future direction plan pack was merged and deployed via PR #115.
 35. Garmin Signal Usefulness was merged and deployed via PR #116.
-36. Daily Decision Quality Loop is implemented on branch `codex/daily-decision-quality` and should be merged/deployed next.
+36. Daily Decision Quality Loop was merged and deployed via PR #117.
 
 ## Current PRs / Branches
 
-- Open PRs: Daily Decision Quality pending creation from `codex/daily-decision-quality`.
-- Active branch: `codex/daily-decision-quality`.
+- Open PRs: none known from Codex.
+- Active branch: `codex/daily-quality-status-closeout` for docs-only status cleanup.
 - Recent completed branches:
+- `codex/daily-decision-quality`: merged and deployed via PR #117.
 - `codex/garmin-signal-usefulness`: merged and deployed via PR #116.
 - `codex/future-direction-plans`: merged and deployed via PR #115.
 - `codex/season-strategy`: merged and deployed via PR #114.
@@ -128,9 +129,8 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
-- Merge/deploy Daily Decision Quality unless a production regression appears first.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
-- No further broad autonomous feature plan is currently ungated after Daily Decision Quality; the remaining active implementation plans need real-device evidence or preference decisions.
+- No further broad autonomous feature plan is currently ungated; the remaining active implementation plans need real-device evidence or preference decisions.
 - Mobile Field Reliability still needs real-device iPhone/VPN/PWA evidence from Tobi's device before UI fixes are implemented.
 - Fueling & Recovery needs dietary/preference decisions before implementation; Native iOS remains a later evidence gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
