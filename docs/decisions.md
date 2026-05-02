@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-02 — Coverage-Report-Ignore ist root-geankert
+
+- **Decision:** Pulse ignoriert Coverage-Report-Artefakte nur noch ueber `/coverage/` statt jedes Verzeichnis namens `coverage/`.
+- **Why:** Phase 5 legt echten Feature-Code unter `frontend/src/features/data/coverage/` ab. Das bisherige globale Pattern wuerde diesen Code unbeabsichtigt ignorieren, waehrend Root-Coverage-Reports weiterhin aus Git bleiben.
+- **Alternatives:** Feature-Ordner anders nennen (weicht vom Plan und der fachlichen Sprache ab); Datei mit `git add -f` erzwingen (versteckt das strukturelle Ignore-Problem); Coverage-Reports nicht mehr ignorieren (falsch).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-02 — Data-Coverage-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt Data-Coverage, Garmin-Domainqualitaet, Signal-Usefulness, Backfill-UI und den Garmin-Domain-Hinweis nach `frontend/src/features/data/coverage/coverage-components.tsx`.
+- **Why:** Diese UI teilt Garmin-Abdeckungsdaten, Backfill-Memory, Diagnose-Logik und Datenqualitaets-Hinweise ueber mehrere Data-Tabs. `Data.tsx` behaelt Tab-Orchestrierung sowie Schlaf-, Metrik-, Gewicht- und Mental-Bereiche, waehrend Coverage/Backfill als eigener fachlicher Cluster reviewbar wird.
+- **Alternatives:** Coverage im Data-Monolith lassen (Phase 5 startet nicht); nur `CoverageTab` verschieben und `GarminDomainHint` behalten (Qualitaetslogik bliebe verteilt); globale Components verwenden (zu daten-/Garmin-spezifisch).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Plan-Ziel-UI wird als Goals-Feature isoliert
 
 - **Decision:** Pulse verschiebt Goal-Formular, Goal-Edit-Form, Goal-Card und Goal-spezifische Payload-/Race-Helfer nach `frontend/src/features/plan/goals/goal-components.tsx`.
