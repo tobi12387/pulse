@@ -75,7 +75,7 @@
 - [x] Create `frontend/src/features/data/coverage/` for Garmin coverage, backfill and signal usefulness UI now embedded in `Data.tsx`.
 - [x] Create `frontend/src/features/data/mental/` for mental check-in and mental trend UI.
 - [x] Create `frontend/src/features/data/recovery/` for sleep, metrics and body composition UI.
-- [ ] Create `frontend/src/features/settings/push/` for PWA device and push notification cards.
+- [x] Create `frontend/src/features/settings/push/` for PWA device and push notification cards.
 - [ ] Create `frontend/src/features/settings/profile/` for athlete profile and Garmin profile sync UI.
 - [ ] Create `frontend/src/features/settings/coach/` for coach preferences.
 - [ ] Create `frontend/src/features/settings/health/` for health-state controls.

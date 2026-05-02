@@ -65,13 +65,15 @@ Keep this file short. Update it whenever the active work queue changes.
 59. Frontend Plan Goal Components Split was merged and deployed via PR #140.
 60. Frontend Data Coverage Components Split was merged and deployed via PR #141.
 61. Frontend Data Mental Components Split was merged and deployed via PR #142.
-62. Frontend Data Recovery Components Split is active on `codex/frontend-data-recovery-components`.
+62. Frontend Data Recovery Components Split was merged and deployed via PR #143.
+63. Frontend Settings Push Components Split is active on `codex/frontend-settings-push-components`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-data-recovery-components` for moving sleep, metrics and body composition UI into `frontend/src/features/data/recovery/`.
+- Active branch: `codex/frontend-settings-push-components` for moving push notification and PWA device UI into `frontend/src/features/settings/push/`.
 - Recent completed branches:
+- `codex/frontend-data-recovery-components`: merged and deployed via PR #143.
 - `codex/frontend-data-mental-components`: merged and deployed via PR #142.
 - `codex/frontend-data-coverage-components`: merged and deployed via PR #141.
 - `codex/frontend-plan-goal-components`: merged and deployed via PR #140.
