@@ -188,6 +188,34 @@ test('Home closes a daily action and Coach shows the shared closed state', async
   await expect(page.getByText('Zuletzt berücksichtigt: Check-in eintragen')).toBeVisible();
 });
 
+test('Home and Coach show what Pulse learned from yesterday', async ({ page }) => {
+  const dailyOutcomes = [{
+    date: '2026-04-30',
+    actionId: 'decision-1',
+    actionTitle: 'Check-in eintragen',
+    actionStatus: 'completed',
+    status: 'reinforced',
+    title: 'Empfehlung wurde durch Daten bestätigt',
+    reason: 'Der Check-in wurde abgeschlossen und passt zu den Tagesdaten.',
+    evidence: ['Check-in am selben Tag vorhanden', 'Stimmung 7/10, Energie 6/10'],
+    suggestedAdjustment: 'Check-in Kontext weiter nutzen und die nächste Frage konkreter machen.',
+  }];
+
+  await mockPulseApi(page, { dailyOutcomes });
+
+  await page.goto('/');
+  await expect(page.getByText('GELERNT AUS GESTERN')).toBeVisible();
+  await expect(page.getByText('Bestätigt', { exact: true })).toBeVisible();
+  await expect(page.getByText('Check-in Kontext weiter nutzen und die nächste Frage konkreter machen.')).toBeVisible();
+  await expect(page.getByText('Check-in am selben Tag vorhanden')).toBeVisible();
+
+  await page.goto('/coach');
+  await expect(page.getByText('GELERNT AUS GESTERN')).toBeVisible();
+  await expect(page.getByText('Aus gestern gelernt')).toBeVisible();
+  await page.getByRole('button', { name: 'Im Coach aufgreifen' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Was lernen wir aus gestern/);
+});
+
 test('Home and Coach share one daily decision with boundary alternative and done criteria', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

@@ -304,6 +304,48 @@ describe('Pulse action closure', () => {
   });
 });
 
+describe('Daily outcome learning', () => {
+  it('returns deterministic learning items from closed actions and follow-up data', async () => {
+    const yesterday = dateDaysAgo(1);
+    await db.insert(pulseActionDecisions).values({
+      userId,
+      source: 'next_best_action',
+      sourceId: 'checkin',
+      kind: 'checkin',
+      title: 'Check-in eintragen',
+      status: 'completed',
+      targetRoute: '/data',
+      createdAt: new Date(`${yesterday}T07:00:00.000Z`),
+      resolvedAt: new Date(`${yesterday}T08:00:00.000Z`),
+      resolutionReason: 'Erledigt.',
+    });
+    await db.insert(pulseMentalCheckins).values({
+      userId,
+      date: yesterday,
+      mood: 7,
+      energy: 6,
+      stress: 4,
+      motivation: 8,
+      source: 'text',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/outcomes/daily?days=7',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ items: Array<{ date: string; status: string; actionTitle: string; evidence: string[] }> }>();
+    expect(body.items[0]).toMatchObject({
+      date: yesterday,
+      status: 'reinforced',
+      actionTitle: 'Check-in eintragen',
+    });
+    expect(body.items[0]!.evidence).toContain('Check-in am selben Tag vorhanden');
+  });
+});
+
 describe('Coach preferences', () => {
   it('returns defaults and persists explicit visible preferences', async () => {
     const defaults = await app.inject({

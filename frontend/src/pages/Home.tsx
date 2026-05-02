@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFitnessLoad, usePulseActions, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -9,7 +9,7 @@ import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseActionState, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -214,6 +214,64 @@ function suppressedReasonLabel(reason: PulseSuppressedActionState['suppressedRea
   if (reason === 'dismissed') return 'Bewusst verworfen';
   if (reason === 'resolved_by_activity') return 'Durch Garmin erledigt';
   return 'Nicht mehr aktuell';
+}
+
+function outcomeStatusLabel(status: PulseDailyOutcomeLearningItem['status']): string {
+  if (status === 'reinforced') return 'Bestätigt';
+  if (status === 'superseded_by_data') return 'Durch Daten ersetzt';
+  if (status === 'stale_pattern') return 'Muster erkannt';
+  return 'Noch offen';
+}
+
+function outcomeStatusColor(status: PulseDailyOutcomeLearningItem['status']): string {
+  if (status === 'reinforced') return 'var(--green)';
+  if (status === 'superseded_by_data') return 'var(--blue)';
+  if (status === 'stale_pattern') return 'var(--amber)';
+  return 'var(--text-3)';
+}
+
+function DailyOutcomeLearningCard({ outcome }: { outcome: PulseDailyOutcomeLearningItem | null }) {
+  if (!outcome) return null;
+  const color = outcomeStatusColor(outcome.status);
+
+  return (
+    <div style={{ padding: '12px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
+          GELERNT AUS GESTERN
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
+          {outcomeStatusLabel(outcome.status)}
+        </span>
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+        {outcome.title}
+      </div>
+      <div style={{ marginTop: 5, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.5, overflowWrap: 'anywhere' }}>
+        {outcome.suggestedAdjustment}
+      </div>
+      {outcome.evidence.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+          {outcome.evidence.slice(0, 3).map(item => (
+            <span
+              key={item}
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--text-3)',
+                padding: '3px 6px',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                background: 'var(--surface-2)',
+              }}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function NextBestActionsCard({
@@ -520,6 +578,7 @@ function DailyLoopHistoryCard({
 export default function Home() {
   const { data, isLoading, error } = usePulseHome();
   const actionsQuery = usePulseActions({ includeHistory: true });
+  const outcomesQuery = useDailyOutcomeLearning(7);
   const updateAction = useUpdatePulseAction();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
@@ -556,6 +615,7 @@ export default function Home() {
   const actionStates = actionsQuery.data?.actions ?? [];
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
+  const latestOutcome = outcomesQuery.data?.items[0] ?? null;
   const primaryAction = actionStates[0] ?? null;
   const followUpActions = primaryAction ? actionStates.slice(1) : data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
@@ -659,6 +719,8 @@ export default function Home() {
         suppressed={suppressedActions}
         onNavigate={navigate}
       />
+
+      <DailyOutcomeLearningCard outcome={latestOutcome} />
 
       <NextBestActionsCard actions={followUpActions} onNavigate={navigate} />
 

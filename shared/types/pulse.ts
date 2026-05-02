@@ -444,6 +444,28 @@ export interface PulseRaceCommandResponse {
   command: PulseRaceCommandSummary | null;
 }
 
+export type PulseDailyOutcomeLearningStatus =
+  | 'reinforced'
+  | 'superseded_by_data'
+  | 'stale_pattern'
+  | 'insufficient_evidence';
+
+export interface PulseDailyOutcomeLearningItem {
+  date: string;
+  actionId: string;
+  actionTitle: string;
+  actionStatus: PulseActionDecisionStatus;
+  status: PulseDailyOutcomeLearningStatus;
+  title: string;
+  reason: string;
+  evidence: string[];
+  suggestedAdjustment: string;
+}
+
+export interface PulseDailyOutcomeLearningResponse {
+  items: PulseDailyOutcomeLearningItem[];
+}
+
 export interface WeekAvailability {
   weekStart: string;
   availableDays: number[];

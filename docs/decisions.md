@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Outcome Learning bleibt read-only und deterministisch
+
+- **Decision:** Pulse fuehrt `GET /api/pulse/outcomes/daily` als read-only Daily-Outcome-Layer ein. Der Layer korreliert bestehende Action Decisions, Daily Check-ins, geplante Workouts, Garmin-Aktivitaeten und Tagesmetriken und zeigt das Ergebnis kompakt in Home und Coach.
+- **Why:** Empfehlungen sollen nicht nur geschlossen werden, sondern sichtbar aus echten Folge-Daten lernen. Die erste Version muss nachvollziehbar, testbar und ohne neue Persistenz bleiben, damit wiederholte Ratschlaege als bestaetigt, ersetzt, stale oder unklar erklaert werden koennen.
+- **Alternatives:** Neues LLM-Memory einfuehren (nicht auditierbar); neue Outcome-Tabelle bauen (v1 braucht keine Persistenz); Outcome nur im Coach-Text verstecken (nicht sichtbar genug fuer den Tagesflow).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Nach Race Command kommen Outcome-Lernen und Saisonstrategie
 
 - **Decision:** Nach Goal/Race Command Center priorisiert Pulse zwei autonome Produktwellen: Daily Outcome Learning Loop vor Season Strategy Planner. Mobile Field Reliability bleibt aktiv, aber echte iPhone-/Push-Evidenz ist ein manueller Gate; Fueling & Recovery wird erst geplant, wenn Ernaehrungspraeferenzen geklaert sind.

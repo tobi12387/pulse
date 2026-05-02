@@ -32,7 +32,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandResponse, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -57,6 +57,7 @@ import { buildTrainingExecutionReview } from './services/training-execution-revi
 import { proposeTodayAdjustment, deriveCurrentPhase } from './services/adapt-engine.js';
 import { getActiveRaces } from './services/race-engine.js';
 import { buildRaceCommandSummary } from './services/race-command.js';
+import { buildDailyOutcomeLearning, type DailyOutcomeLearningActionDecision } from './services/daily-outcome-learning.js';
 import { generateWeeklyReview } from './services/review-engine.js';
 import { generateDeepInsight, type InsightDomain } from './services/insight-engine.js';
 import { listMentalThemes } from './services/mental-themes.js';
@@ -1221,6 +1222,101 @@ export default async function pulsePlugin(app: FastifyInstance) {
         resolvedAt: updated.resolvedAt?.toISOString() ?? null,
         resolutionReason: updated.resolutionReason ?? null,
       },
+    };
+  });
+
+  app.get('/outcomes/daily', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseDailyOutcomeLearningResponse | unknown> => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(30).optional().default(14),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const sinceDate = addDateDays(new Date(`${today}T00:00:00.000Z`), -parsed.data.days);
+    const since = toIsoDate(sinceDate);
+
+    const [actionRows, checkins, plannedWorkouts, activities, dailyMetrics] = await Promise.all([
+      db.select({
+        id: pulseActionDecisions.id,
+        source: pulseActionDecisions.source,
+        sourceId: pulseActionDecisions.sourceId,
+        kind: pulseActionDecisions.kind,
+        title: pulseActionDecisions.title,
+        status: pulseActionDecisions.status,
+        targetRoute: pulseActionDecisions.targetRoute,
+        createdAt: pulseActionDecisions.createdAt,
+        resolvedAt: pulseActionDecisions.resolvedAt,
+        resolutionReason: pulseActionDecisions.resolutionReason,
+      }).from(pulseActionDecisions)
+        .where(and(
+          eq(pulseActionDecisions.userId, userId),
+          or(gte(pulseActionDecisions.createdAt, sinceDate), gte(pulseActionDecisions.resolvedAt, sinceDate)),
+        ))
+        .orderBy(desc(pulseActionDecisions.createdAt))
+        .limit(200),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since))),
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        status: pulsePlannedWorkouts.status,
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        executionStatus: pulsePlannedWorkouts.executionStatus,
+      }).from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, since))),
+      db.select({
+        id: pulseActivities.id,
+        source: pulseActivities.source,
+        startTime: pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, sinceDate)))
+        .orderBy(desc(pulseActivities.startTime)),
+      db.select({
+        date: pulseDailyMetrics.date,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        hrvStatus: pulseDailyMetrics.hrvStatus,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since))),
+    ]);
+
+    return {
+      items: buildDailyOutcomeLearning({
+        today,
+        days: parsed.data.days,
+        actionDecisions: actionRows.map((row): DailyOutcomeLearningActionDecision => ({
+          ...row,
+          status: row.status as DailyOutcomeLearningActionDecision['status'],
+          createdAt: row.createdAt.toISOString(),
+          resolvedAt: row.resolvedAt?.toISOString() ?? null,
+        })),
+        checkins,
+        plannedWorkouts: plannedWorkouts.map(row => ({
+          ...row,
+          executionStatus: row.executionStatus ?? null,
+        })),
+        activities: activities.map(row => ({
+          ...row,
+          startTime: row.startTime.toISOString(),
+        })),
+        dailyMetrics: dailyMetrics.map(row => ({
+          ...row,
+          hrvStatus: row.hrvStatus ?? null,
+        })),
+      }),
     };
   });
 
