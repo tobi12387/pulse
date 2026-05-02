@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Plan-/Workout-Routen gehoeren zum Training-Router
+
+- **Decision:** Pulse verschiebt `/plan`, `/plan/workout/:id`, Workout-Detail-/Garmin-Sync, Plan-Generierung, Plan-Trace, Today-Adjustment und Week-Availability nach `backend/src/pulse/routes/training-routes.ts`; der Garmin-Kalender-Leser liegt als gemeinsam nutzbarer Service in `backend/src/pulse/services/garmin-calendar-workouts.ts`.
+- **Why:** Diese Endpunkte bilden den Kern des Trainingsplans und verursachen den groessten Restblock in `plugin.ts`. Der gemeinsame Garmin-Kalender-Service verhindert, dass `plan/generate` und `/garmin/calendar/sync` denselben Calendar-Month-Code duplizieren.
+- **Alternatives:** Nur die kleinen Workout-Routen verschieben (laesst die Plan-Generation als groessten Monolithen zurueck); `/garmin/calendar/sync` mitverschieben (vermischt Garmin-Boundary mit Training-Boundary); Kalender-Helfer duplizieren (Garmin-Cleanup-Drift).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Plan-Routen-Helfer ziehen vor dem Route-Move in einen Service
 
 - **Decision:** Pulse verschiebt Plan-Route-Helfer fuer Planned-Zone-Lookup, Race-Priority-Normalisierung, ISO-Wochenlogik, Execution-Review-Anpassung, Plan-Trace-Mapping und Plan-Decision-Reconciliation nach `backend/src/pulse/services/plan-route-helpers.ts`.
