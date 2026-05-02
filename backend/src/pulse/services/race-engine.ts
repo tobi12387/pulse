@@ -4,26 +4,11 @@ import { db } from '../../lib/db.js';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { pulseGoals, pulseActivities } from '../../db/pulse-schema.js';
 import { computeFitnessLoad } from './load-engine.js';
+import type { RaceContext, RacePhase, RacePriority } from '@coaching-os/shared/pulse';
 
-export type RacePhase = 'base' | 'build' | 'peak' | 'taper' | 'race_week' | 'race_day' | 'past';
+export type { RaceContext, RacePhase } from '@coaching-os/shared/pulse';
 
-export interface RaceContext {
-  goalId: string;
-  title: string;
-  date: string;
-  daysUntil: number;
-  phase: RacePhase;
-  discipline: string | null;
-  distanceKm: number | null;
-  targetTimeSec: number | null;
-  priority: 'A' | 'B' | 'C';
-  predictedTimeSec: number | null;
-  predictionConfidence: 'low' | 'medium' | 'high' | null;
-  location: string | null;
-  notes: string | null;
-}
-
-export function deriveRacePhase(daysUntil: number, priority: 'A'|'B'|'C'): RacePhase {
+export function deriveRacePhase(daysUntil: number, priority: RacePriority): RacePhase {
   if (daysUntil < 0) return 'past';
   if (daysUntil === 0) return 'race_day';
   if (daysUntil <= 6) return 'race_week';
@@ -176,7 +161,7 @@ export async function getActiveRaces(
     const daysUntil = Math.round(
       (new Date(r.targetDate + 'T00:00:00Z').getTime() - new Date(today + 'T00:00:00Z').getTime()) / 86_400_000
     );
-    const priority = (r.racePriority ?? 'A') as 'A'|'B'|'C';
+    const priority = (r.racePriority ?? 'A') as RacePriority;
     const phase = deriveRacePhase(daysUntil, priority);
 
     // Skip races that ended >7 days ago to avoid clutter

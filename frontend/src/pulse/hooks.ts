@@ -36,6 +36,7 @@ export const pulseKeys = {
   healthState:      ['pulse', 'health-state'] as const,
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
+  raceCommand:      ['pulse', 'race-command'] as const,
   syncStatus:       ['pulse', 'sync-status'] as const,
   dataCoverage:     (scope: string) => ['pulse', 'data-coverage', scope] as const,
   garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
@@ -57,6 +58,7 @@ export function invalidatePulseContextQueries(qc: QueryClient): void {
 function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: pulseKeys.plan });
   void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'trace'] });
+  void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
   void qc.invalidateQueries({ queryKey: pulseKeys.home });
   void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
 }
@@ -160,6 +162,7 @@ export function useSnoozeRiskSignal() {
     mutationFn: ({ id, hours = 24 }: { id: string; hours?: number }) => pulseApi.risk.snooze(id, hours),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.risk });
+      void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       invalidatePulseContextQueries(qc);
     },
   });
@@ -171,6 +174,7 @@ export function useResolveRiskSignal() {
     mutationFn: (id: string) => pulseApi.risk.resolve(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.risk });
+      void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       invalidatePulseContextQueries(qc);
     },
   });
@@ -353,6 +357,7 @@ export function useCreateGoal() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.goals });
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
+      void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -367,6 +372,7 @@ export function useUpdateGoal() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.goals });
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
+      void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -380,6 +386,7 @@ export function useDeleteGoal() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pulseKeys.goals });
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
+      void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -730,6 +737,7 @@ export function useCreateHealthState() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
       qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -743,6 +751,7 @@ export function useResolveHealthState() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
       qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -756,6 +765,7 @@ export function useDeleteHealthState() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
       qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -787,6 +797,14 @@ export function useRaces() {
     queryKey: pulseKeys.races,
     queryFn: pulseApi.races.list,
     staleTime: 10 * 60_000,
+  });
+}
+
+export function useRaceCommand() {
+  return useQuery({
+    queryKey: pulseKeys.raceCommand,
+    queryFn: pulseApi.raceCommand.get,
+    staleTime: 5 * 60_000,
   });
 }
 

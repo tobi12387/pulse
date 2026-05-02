@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-02 — Nach Race Command kommen Outcome-Lernen und Saisonstrategie
+
+- **Decision:** Nach Goal/Race Command Center priorisiert Pulse zwei autonome Produktwellen: Daily Outcome Learning Loop vor Season Strategy Planner. Mobile Field Reliability bleibt aktiv, aber echte iPhone-/Push-Evidenz ist ein manueller Gate; Fueling & Recovery wird erst geplant, wenn Ernaehrungspraeferenzen geklaert sind.
+- **Why:** Die groesste Alltagsluecke ist jetzt, dass Pulse Empfehlungen zwar schliessen kann, aber noch nicht sichtbar aus deren Ergebnis lernt. Danach braucht der Wochenplan eine Saisonlinie, damit verfuegbare Tage nicht automatisch als Trainingspflicht gelesen werden und wiederkehrende Struktur erklaert wird.
+- **Alternatives:** Direkt Fueling bauen (braucht persoenliche Praeferenzen); native iOS vor PWA-Feldbeweis starten (zu frueh); weitere Dashboards bauen (mehr Oberflaeche, weniger Loop-Qualitaet).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-02 — Race Command bleibt ein Plan-integrierter Readiness-Contract
+
+- **Decision:** Pulse fuehrt `GET /api/pulse/race-command` als read-only Race-Preparation-Contract ein und zeigt ihn kompakt im Plan-Trainingstab. Die Berechnung nutzt bestehende Race-Ziele, Fitness-Load, geplante Workouts, Health-States und Risk-Signals; es gibt keine neue Persistenztabelle und kein eigenes Race-Dashboard.
+- **Why:** Tobi braucht vor Rennen eine klare Antwort, welcher Phase der Plan folgt, welcher Schluesselreiz als naechstes zaehlt und welche Erholungsgrenze aktuell gilt. Diese Sicht gehoert direkt dorthin, wo Planentscheidungen und Workout-Aenderungen passieren, und muss mit CTL/ATL/TSB sowie Risk-/Health-Evidenz belegbar sein.
+- **Alternatives:** Race Command als eigene Route bauen (mehr Navigation fuer denselben Entscheidungsflow); Readiness nur im LLM/Briefing formulieren (nicht deterministic/testbar); neue Race-Readiness-Tabelle einfuehren (dupliziert vorhandene Datenquellen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Garmin-Datenqualität ist ein read-only Domain-Contract
 
 - **Decision:** Pulse fuehrt `GET /api/pulse/garmin/coverage` als read-only Domainqualitaet ein. Der Contract liest nur Pulse-Tabellen mit Garmin-Quelle plus Redis-Circuit-State, zeigt `fresh | partial | missing | stale | blocked` pro Garmin-Domain und verweist Reparaturen auf bestehende bounded Backfill- oder Kalender-Sync-Flows.

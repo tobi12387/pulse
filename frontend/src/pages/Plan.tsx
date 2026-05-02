@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, useUpdateGoal, useDeleteGoal, useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, usePulseHome,
+  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, usePulseHome, useRaceCommand,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -12,7 +12,7 @@ import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline } from '@coaching-os/shared/pulse';
+import type { PulseGoal, PulsePlanTrace, PulsePlannedWorkout, PulseRaceCommandSummary, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline, RacePriority } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -863,6 +863,135 @@ function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isL
   );
 }
 
+const RACE_COMMAND_READINESS_COLOR: Record<PulseRaceCommandSummary['readinessStatus'], string> = {
+  ready: 'var(--green)',
+  watch: 'var(--amber)',
+  compromised: 'var(--rose)',
+};
+
+const RACE_COMMAND_RISK_COLOR: Record<PulseRaceCommandSummary['riskImpact']['status'], string> = {
+  clear: 'var(--green)',
+  watch: 'var(--amber)',
+  blocked: 'var(--rose)',
+};
+
+const RACE_COMMAND_BOUNDARY_COLOR: Record<PulseRaceCommandSummary['recoveryBoundary']['severity'], string> = {
+  normal: 'var(--green)',
+  caution: 'var(--amber)',
+  hard_stop: 'var(--rose)',
+};
+
+function formatPlanDate(date: string): string {
+  return new Date(date + 'T12:00:00').toLocaleDateString('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  });
+}
+
+function RaceCommandFact({ label, value, detail, color }: { label: string; value: string; detail?: string | null; color: string }) {
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '9px 10px', background: 'var(--surface)' }}>
+      <div className="label-mono" style={{ fontSize: 9, color, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>{value}</div>
+      {detail && (
+        <p style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45, margin: '4px 0 0' }}>
+          {detail}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RaceCommandCard({ command, isLoading }: { command: PulseRaceCommandSummary | null; isLoading: boolean }) {
+  if (isLoading && !command) {
+    return (
+      <div className="card" style={{ borderColor: 'rgba(244,63,94,0.16)' }}>
+        <Skeleton height={10} width="28%" />
+        <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+          <Skeleton height={50} />
+          <Skeleton height={50} />
+          <Skeleton height={50} />
+        </div>
+      </div>
+    );
+  }
+  if (!command) return null;
+
+  const readinessColor = RACE_COMMAND_READINESS_COLOR[command.readinessStatus];
+  const riskColor = RACE_COMMAND_RISK_COLOR[command.riskImpact.status];
+  const boundaryColor = RACE_COMMAND_BOUNDARY_COLOR[command.recoveryBoundary.severity];
+  const keyWorkout = command.nextKeyWorkout;
+  const raceMeta = [
+    command.race.date,
+    `${command.phase.daysUntil} Tage`,
+    command.race.priority + '-Race',
+    command.race.location,
+  ].filter(Boolean).join(' · ');
+
+  return (
+    <div className="card" style={{ borderColor: translucent(readinessColor, 24) }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+        <span className="label-mono" style={{ color: 'var(--rose)' }}>Race Command</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: readinessColor }}>
+          {command.readinessLabel}
+        </span>
+      </div>
+
+      <div style={{ marginBottom: 10 }}>
+        <h2 style={{ fontSize: 17, color: 'var(--text)', margin: '0 0 4px', fontWeight: 600 }}>
+          {command.race.title}
+        </h2>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {raceMeta}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 8, marginBottom: 10 }}>
+        <RaceCommandFact
+          label="Phase"
+          value={command.phase.label}
+          detail={command.phase.description}
+          color="var(--accent)"
+        />
+        <RaceCommandFact
+          label="Schlüsselreiz"
+          value={keyWorkout ? `${formatPlanDate(keyWorkout.plannedDate)} · ${ACTIVITY_LABEL[keyWorkout.activityType] ?? keyWorkout.activityType}` : 'Kein Schlüsselreiz offen'}
+          detail={keyWorkout ? `Z${keyWorkout.zone} · ${keyWorkout.durationMin} min${keyWorkout.targetTss ? ` · TSS ${keyWorkout.targetTss}` : ''} · ${keyWorkout.reason}` : 'Der aktuelle Plan erzwingt bis zum Rennen keinen zusätzlichen harten Reiz.'}
+          color="var(--amber)"
+        />
+        <RaceCommandFact
+          label={command.recoveryBoundary.label}
+          value={command.recoveryBoundary.severity === 'hard_stop' ? 'Stop' : command.recoveryBoundary.severity === 'caution' ? 'Vorsicht' : 'Normal'}
+          detail={command.recoveryBoundary.detail}
+          color={boundaryColor}
+        />
+        <RaceCommandFact
+          label="Risiko"
+          value={command.riskImpact.label}
+          detail={command.riskImpact.reasons.slice(0, 2).join(' · ')}
+          color={riskColor}
+        />
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {command.evidence.map(item => (
+          <span key={item} style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: '3px 7px',
+          }}>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -870,6 +999,7 @@ function TrainingTab() {
   const plan      = usePulsePlan();
   const home      = usePulseHome();
   const goals     = usePulseGoals();
+  const raceCommand = useRaceCommand();
   const availability = useWeekAvailability();
   const generate  = useGeneratePlan();
   const navigate  = useNavigate();
@@ -936,6 +1066,11 @@ function TrainingTab() {
         activeGoalsCount={activeGoals.length}
         planTrace={decisionPlanTrace}
         onOpen={setSelectedWorkout}
+      />
+
+      <RaceCommandCard
+        command={raceCommand.data?.command ?? null}
+        isLoading={raceCommand.isLoading}
       />
 
       {/* WeekStrip */}
@@ -1163,16 +1298,21 @@ const CATEGORY_COLOR: Record<GoalCategory, string> = {
 type GoalFields = {
   category: GoalCategory; targetDate: string;
   raceType?: string; targetKg?: string; targetFtp?: string; targetVo2max?: string; targetHours?: string; notes?: string;
-  racePriority?: 'A'|'B'|'C';
+  racePriority?: RacePriority;
   raceTargetTime?: string;     // H:MM:SS or MM:SS
   raceLocation?: string;
 };
+
+type EditableGoal = Pick<PulseGoal,
+  'id' | 'title' | 'description' | 'targetDate' | 'status' | 'progress' | 'category' | 'metrics'
+  | 'raceDiscipline' | 'raceDistanceKm' | 'raceTargetTimeSec' | 'racePriority' | 'raceLocation' | 'raceNotes'
+>;
 
 function buildGoalPayload(fields: GoalFields): {
   title: string; description?: string; targetDate?: string;
   category: GoalCategory; metrics: Record<string, unknown>;
   raceDiscipline?: RaceDiscipline; raceDistanceKm?: number; raceTargetTimeSec?: number;
-  racePriority?: 'A'|'B'|'C'; raceLocation?: string; raceNotes?: string;
+  racePriority?: RacePriority; raceLocation?: string; raceNotes?: string;
 } {
   const { category, targetDate } = fields;
   const metrics: Record<string, unknown> = {};
@@ -1209,6 +1349,28 @@ function buildGoalPayload(fields: GoalFields): {
   }
 
   return { title, description, targetDate: targetDate || undefined, category, metrics };
+}
+
+function formatSecToHms(sec: number | null | undefined): string | undefined {
+  if (sec == null || !Number.isFinite(sec)) return undefined;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function raceTypeForGoal(goal: Pick<EditableGoal, 'metrics' | 'raceDiscipline' | 'raceDistanceKm'>): string {
+  const metricRaceType = typeof goal.metrics?.raceType === 'string' ? goal.metrics.raceType : null;
+  if (metricRaceType && RACE_TYPES.some(race => race.id === metricRaceType)) return metricRaceType;
+
+  const match = RACE_TYPES.find(race => {
+    if (race.discipline !== goal.raceDiscipline) return false;
+    if (race.distanceKm == null || goal.raceDistanceKm == null) return race.distanceKm == null && goal.raceDistanceKm == null;
+    return Math.abs(race.distanceKm - goal.raceDistanceKm) < 0.25;
+  });
+
+  return match?.id ?? 'custom';
 }
 
 const inputStyle = {
@@ -1341,14 +1503,17 @@ function GoalForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function goalToFields(g: { category: string | null; metrics: Record<string, unknown>; targetDate: string | null; description: string | null }): GoalFields {
+function goalToFields(g: EditableGoal): GoalFields {
   const cat = (g.category ?? 'race') as GoalCategory;
   const m = g.metrics ?? {};
   return {
     category: cat,
     targetDate: g.targetDate ?? '',
-    raceType:     cat === 'race'   ? String(m.raceType ?? 'ironman') : undefined,
-    notes:        cat === 'race'   ? (g.description ?? undefined)    : undefined,
+    raceType:     cat === 'race'   ? raceTypeForGoal(g) : undefined,
+    notes:        cat === 'race'   ? (g.raceNotes ?? g.description ?? undefined) : undefined,
+    racePriority: cat === 'race'   ? (g.racePriority ?? 'A') : undefined,
+    raceTargetTime: cat === 'race' ? formatSecToHms(g.raceTargetTimeSec) : undefined,
+    raceLocation: cat === 'race'   ? (g.raceLocation ?? undefined) : undefined,
     targetKg:     cat === 'weight' ? String(m.targetKg ?? '')        : undefined,
     targetFtp:    cat === 'ftp'    ? String(m.targetFtp ?? '')       : undefined,
     targetVo2max: cat === 'vo2max' ? String(m.targetVo2max ?? '')    : undefined,
@@ -1356,7 +1521,7 @@ function goalToFields(g: { category: string | null; metrics: Record<string, unkn
   };
 }
 
-function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string | null; metrics: Record<string, unknown>; targetDate: string | null; description: string | null; status: string }; onDone: () => void }) {
+function GoalEditForm({ goal, onDone }: { goal: EditableGoal; onDone: () => void }) {
   const update = useUpdateGoal();
   const init = goalToFields(goal);
   const [category, setCategory] = useState<GoalCategory>(init.category);
@@ -1396,8 +1561,31 @@ function GoalEditForm({ goal, onDone }: { goal: { id: string; category: string |
               {RACE_TYPES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
           </div>
-          <div><div style={{ ...labelStyle, marginBottom: 4 }}>Notiz (Zielzeit, Ort…)</div>
-            <input type="text" value={fields.notes ?? ''} onChange={e => set('notes', e.target.value)} style={inputStyle} />
+          <div>
+            <div style={{ ...labelStyle, marginBottom: 6 }}>Priorität</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['A','B','C'] as const).map(p => {
+                const desc = p === 'A' ? 'Saisonhöhepunkt · 2w Taper' : p === 'B' ? 'wichtig · 1w Taper' : 'Mitnahme · kein Taper';
+                const active = (fields.racePriority ?? 'A') === p;
+                return (
+                  <button key={p} type="button" onClick={() => setFields(f => ({ ...f, racePriority: p }))} title={desc} style={{
+                    flex: 1, padding: '6px', border: `1px solid ${active ? 'var(--rose)' : 'var(--border)'}`,
+                    borderRadius: 4, background: active ? 'rgba(239,68,68,0.12)' : 'var(--surface)',
+                    color: active ? 'var(--rose)' : 'var(--text-2)',
+                    fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em', cursor: 'pointer',
+                  }}>{p}</button>
+                );
+              })}
+            </div>
+          </div>
+          <div><div style={{ ...labelStyle, marginBottom: 4 }}>Zielzeit (h:mm:ss, optional)</div>
+            <input type="text" value={fields.raceTargetTime ?? ''} onChange={e => set('raceTargetTime', e.target.value)} placeholder="5:15:00 oder 45:00" style={inputStyle} />
+          </div>
+          <div><div style={{ ...labelStyle, marginBottom: 4 }}>Ort (optional)</div>
+            <input type="text" value={fields.raceLocation ?? ''} onChange={e => set('raceLocation', e.target.value)} placeholder="z.B. Frankfurt am Main" style={inputStyle} />
+          </div>
+          <div><div style={{ ...labelStyle, marginBottom: 4 }}>Notiz</div>
+            <input type="text" value={fields.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="Logistik, Pacing-Plan…" style={inputStyle} />
           </div>
         </>)}
         {category === 'weight' && <div><div style={{ ...labelStyle, marginBottom: 4 }}>Zielgewicht (kg)</div><input type="number" min={30} max={200} step={0.1} required value={fields.targetKg ?? ''} onChange={e => set('targetKg', e.target.value)} style={inputStyle} /></div>}
@@ -1447,7 +1635,7 @@ const actionBtn: React.CSSProperties = {
   background: 'transparent', color: 'var(--text-3)',
 };
 
-function GoalCard({ g }: { g: { id: string; title: string; description: string | null; targetDate: string | null; status: string; progress: number; category: string | null; metrics: Record<string, unknown> } }) {
+function GoalCard({ g }: { g: EditableGoal }) {
   const deleteGoal = useDeleteGoal();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);

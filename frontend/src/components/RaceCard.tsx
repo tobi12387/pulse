@@ -1,5 +1,5 @@
 import { useRaces } from '@/pulse/hooks';
-import type { RaceContext } from '@/pulse/api-client';
+import type { RaceContext } from '@coaching-os/shared/pulse';
 
 const PHASE_LABEL: Record<RaceContext['phase'], string> = {
   base:       'BASE',

@@ -46,6 +46,9 @@
 | `2026-05-02-daily-loop-explainability-wave.md` | Daily Loop Explainability — visible action history, suppressed reasons, evidence links, briefing guard | PR #102 |
 | `2026-05-02-local-ops-autopilot.md` | Local Ops Autopilot — separated local Docker/Postgres/Redis status from server mirror health | PR #105 |
 | `2026-05-02-adaptive-training-intelligence-v2.md` | Adaptive Training Intelligence v2 — deterministic execution review, plan adaptation trace, deliberate rest days | PR #106 |
+| `2026-05-02-mental-fitness-companion.md` | Mental Fitness Companion — guided check-in questions and visible mental support actions | PR #108 |
+| `2026-05-02-garmin-data-quality-control-center.md` | Garmin Data Quality — domain freshness, gaps, repairability and blocked provider state | PR #111 |
+| `2026-05-02-goal-race-command-center.md` | Goal/Race Command Center — race phase, readiness, key workout, recovery boundary and evidence in Plan | active PR pending |
 
 ## Bekannte veraltete Stellen
 
