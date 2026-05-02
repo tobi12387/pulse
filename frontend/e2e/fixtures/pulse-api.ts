@@ -19,7 +19,9 @@ type MockPulseApiOptions = {
   actions?: unknown[];
   suppressedActions?: unknown[];
   recentDecisions?: unknown[];
+  coachHistory?: unknown[];
   coachPreferences?: unknown;
+  todayProposal?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
   onGoalUpdate?: (goalId: string, body: unknown) => void;
@@ -624,6 +626,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
         },
       });
     }
+    if (url.pathname === '/api/pulse/coach/history' && options.coachHistory) {
+      return json(route, { messages: options.coachHistory });
+    }
     if (url.pathname === '/api/pulse/coach/preferences' && request.method() === 'GET') {
       return json(route, {
         preferences: options.coachPreferences ?? {
@@ -653,6 +658,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
     if (url.pathname === '/api/pulse/health-state' && 'healthState' in options) return json(route, options.healthState);
+    if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);

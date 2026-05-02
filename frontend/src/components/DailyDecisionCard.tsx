@@ -1,6 +1,7 @@
 import type { DailyDecision } from '@/pulse/daily-decision';
 
 type LabelCase = 'upper' | 'title';
+type Density = 'default' | 'compact';
 
 function priorityColor(priority: DailyDecision['priority']): string {
   if (priority === 'critical') return 'var(--rose)';
@@ -15,21 +16,24 @@ function label(text: string, labelCase: LabelCase): string {
 export function DailyDecisionCard({
   decision,
   labelCase = 'upper',
+  density = 'default',
   onActivate,
   onPrompt,
 }: {
   decision: DailyDecision;
   labelCase?: LabelCase;
+  density?: Density;
   onActivate?: () => void;
   onPrompt?: () => void;
 }) {
   const color = priorityColor(decision.priority);
   const isButton = Boolean(onActivate);
   const Wrapper = isButton ? 'button' : 'div';
+  const compact = density === 'compact';
 
   return (
-    <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+    <div style={{ padding: compact ? '10px 12px' : '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: compact ? 7 : 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em' }}>
           {label('Tagesentscheidung', labelCase)}
         </span>
@@ -52,34 +56,36 @@ export function DailyDecisionCard({
           font: 'inherit',
         }}
       >
-        <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 7px', fontWeight: 600, lineHeight: 1.3 }}>
+        <h2 style={{ fontSize: compact ? 14 : 16, color: 'var(--text)', margin: '0 0 7px', fontWeight: 600, lineHeight: 1.3 }}>
           {decision.title}
         </h2>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 4 }}>
           {label('Warum', labelCase)}
         </div>
-        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: '0 0 12px' }}>
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: compact ? '0' : '0 0 12px' }}>
           {decision.reason}
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
-          {[
-            ['Grenze', decision.boundary],
-            ['Alternative', decision.alternative],
-            ['Abschluss', decision.completionCriterion],
-          ].map(([key, value]) => (
-            <div key={key} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none' }}>
-                {label(key, labelCase)}
+        {!compact && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
+            {[
+              ['Grenze', decision.boundary],
+              ['Alternative', decision.alternative],
+              ['Abschluss', decision.completionCriterion],
+            ].map(([key, value]) => (
+              <div key={key} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none' }}>
+                  {label(key, labelCase)}
+                </div>
+                <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+                  {value}
+                </div>
               </div>
-              <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
-                {value}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Wrapper>
 
-      {decision.evidence.length > 0 && (
+      {!compact && decision.evidence.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {decision.evidence.slice(0, 4).map(item => (
             <span key={item} style={{

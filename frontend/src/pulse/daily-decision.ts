@@ -68,7 +68,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       : 'Check-in abschließen und einen klaren Erholungsanker für heute setzen.');
   const alternative = alternativeFor(home, action);
   const cta = action?.cta ?? (todayWorkout ? 'Plan prüfen' : 'Coach fragen');
-  const targetPath = action?.targetPath ?? (todayWorkout ? '/plan' : '/coach');
+  const targetPath = action?.targetPath ?? (todayWorkout ? '/plan?tab=training' : '/coach?focus=daily');
   const evidence = [
     `Readiness ${home.readiness.score}/100`,
     `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,

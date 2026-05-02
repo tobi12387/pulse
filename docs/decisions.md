@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Daily Loop nutzt URL-State und lokale Today-Adjust-Schliessung
+
+- **Decision:** Pulse macht Data-/Plan-Tabs und Settings-Sektionen per Query-Parameter adressierbar, haelt den Daily-Coach-Kontext auch bei bestehender Chat-Historie sichtbar, priorisiert im Plan die naechste Trainingsentscheidung vor duplizierter Tagesentscheidung und speichert `Beibehalten` fuer Today-Adjust lokal per Proposal-Signatur.
+- **Why:** Home, Coach und Plan sollen als ein zusammenhaengender Tagesloop funktionieren: Uebersicht, gefuehrte Reflexion, Trainingsentscheidung und Evidenzlinks muessen ohne erneutes Suchen erreichbar bleiben. Die lokale Proposal-Signatur verhindert, dass ein bewusst abgelehnter Tagesvorschlag nach Refetch/Reload sofort wieder auftaucht, solange sich der Vorschlag nicht materiell aendert.
+- **Alternatives:** Tab-/Section-State nur im React-State belassen (Links verlieren Kontext); den Coach-Tageskontext nur im leeren Chat zeigen (Daily Guidance verschwindet im Alltag); Today-Adjust per DOM-Ausblenden schliessen (Refetch bringt den Vorschlag zurueck); sofort einen serverseitigen Dismiss-Endpunkt bauen (groesserer Backend-Vertrag fuer einen UI-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Mobile UI nutzt responsive Listen und 40px-Touch-Ziele
 
 - **Decision:** Pulse ersetzt die Data-Domainabdeckung auf Mobile durch eine Karten-/Listenansicht und setzt wiederholte mobile Aktionen route-uebergreifend auf mindestens 40px Zielhoehe; Plan-Workout-Zeilen trennen Oeffnen und `Sportart aendern` semantisch in getrennte Buttons.

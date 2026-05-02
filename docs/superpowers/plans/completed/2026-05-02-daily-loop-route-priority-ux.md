@@ -29,43 +29,50 @@ The audit found that Plan can repeat the Home day-off decision before showing th
 
 ## Task 1: Add A Continuous Daily Journey Test
 
-- [ ] Create an E2E scenario that starts at Home, opens Coach with today's context, submits or selects a guided question, moves to Plan for the next training decision, then follows an evidence link to Data or Insights.
-- [ ] Assert no prompt is auto-sent before user intent.
-- [ ] Assert returning to Home/Plan preserves the visible outcome or decision state.
+- [x] Create an E2E scenario that starts at Home, opens Coach with today's context, submits or selects a guided question, moves to Plan for the next training decision, then follows an evidence link to Data or Insights.
+- [x] Assert no prompt is auto-sent before user intent.
+- [x] Assert returning to Home/Plan preserves the visible outcome or decision state.
 
 ## Task 2: Make Tabs And Sections Addressable
 
-- [ ] Add URL-backed tab state for `/data?tab=coverage|sleep|metrics|weight|mental`.
-- [ ] Add URL-backed tab state for `/plan?tab=training|goals|review|stats`.
-- [ ] Add URL-backed Settings sections such as `/settings?section=device|push|garmin|profile|coach|health|equipment`.
-- [ ] Preserve existing defaults when no query parameter is present.
-- [ ] Use these links from Coach/Home/Insights instead of top-level-only route links where possible.
+- [x] Add URL-backed tab state for `/data?tab=coverage|sleep|metrics|weight|mental`.
+- [x] Add URL-backed tab state for `/plan?tab=training|goals|review|stats`.
+- [x] Add URL-backed Settings sections such as `/settings?section=device|push|garmin|profile|coach|health|equipment`.
+- [x] Preserve existing defaults when no query parameter is present.
+- [x] Use these links from Coach/Home/Insights instead of top-level-only route links where possible.
 
 ## Task 3: Keep Coach Daily Guidance Persistent
 
-- [ ] Move the daily briefing/guided question panel out of the empty state.
-- [ ] Keep it compact when chat history exists.
-- [ ] Include today's date, training availability, recovery/mental cue and one primary guided question.
-- [ ] Make mental fitness prompts visible without implying clinical diagnosis.
+- [x] Move the daily briefing/guided question panel out of the empty state.
+- [x] Keep it compact when chat history exists.
+- [x] Include today's date, training availability, recovery/mental cue and one primary guided question.
+- [x] Make mental fitness prompts visible without implying clinical diagnosis.
 
 ## Task 4: Reprioritize Plan First Viewport
 
-- [ ] On days without training, show the rest-day rationale compactly and bring the next meaningful training decision into the first viewport.
-- [ ] Make it clear when Pulse intentionally does not use every available day.
-- [ ] Show the Garmin/mental/goal signals that explain why the next session is placed, moved, shortened or skipped.
-- [ ] Keep override/alternative actions close to the decision.
+- [x] On days without training, show the rest-day rationale compactly and bring the next meaningful training decision into the first viewport.
+- [x] Make it clear when Pulse intentionally does not use every available day.
+- [x] Show the Garmin/mental/goal signals that explain why the next session is placed, moved, shortened or skipped.
+- [x] Keep override/alternative actions close to the decision.
 
 ## Task 5: Make Today's Adjustment Durable
 
-- [ ] Audit `AdjustTodayCard` and the existing action closure model.
-- [ ] Connect `Beibehalten`/dismiss behavior to durable state for the current day.
-- [ ] Ensure refetches do not resurrect a dismissed proposal unless underlying data changes materially.
+- [x] Audit `AdjustTodayCard` and the existing action closure model.
+- [x] Connect `Beibehalten`/dismiss behavior to durable state for the current day.
+- [x] Ensure refetches do not resurrect a dismissed proposal unless underlying data changes materially.
 
 ## Verification
 
-- [ ] `npm run typecheck`
-- [ ] `npm run test:e2e -- --grep "Daily|Coach|Plan|Data|Settings"`
-- [ ] Manual iPhone screenshot pass for Home, Coach and Plan first viewports
+- [x] `npm run typecheck`
+- [x] `npm run test:e2e -- --grep "Daily|Coach|Plan|Data|Settings"`
+- [x] Manual iPhone screenshot pass for Home, Coach and Plan first viewports
+
+## QA Evidence
+
+- RED: the new daily-loop, URL-state and today-adjust E2E cases failed before implementation.
+- GREEN: `npm run typecheck` passed.
+- GREEN: `npm run test:e2e -- --grep "Daily|Coach|Plan|Data|Settings"` passed with 68 tests.
+- Manual mobile screenshots: `/private/tmp/pulse-daily-loop-route-priority/home.png`, `/private/tmp/pulse-daily-loop-route-priority/coach.png`, `/private/tmp/pulse-daily-loop-route-priority/plan.png`.
 
 ## Acceptance
 
