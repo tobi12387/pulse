@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Plan-Routen-Helfer ziehen vor dem Route-Move in einen Service
+
+- **Decision:** Pulse verschiebt Plan-Route-Helfer fuer Planned-Zone-Lookup, Race-Priority-Normalisierung, ISO-Wochenlogik, Execution-Review-Anpassung, Plan-Trace-Mapping und Plan-Decision-Reconciliation nach `backend/src/pulse/services/plan-route-helpers.ts`.
+- **Why:** Die verbleibenden Plan-/Workout-Routen sind der groesste Backend-Block. Vor dem eigentlichen Route-Move muessen die wiederverwendeten Helfer aus `plugin.ts`, damit der naechste PR weniger Seiteneffekte und weniger Import-Churn hat.
+- **Alternatives:** Alle Helper direkt in `training-routes.ts` verschieben (zu grosser naechster PR); Helper duplizieren (Trace-/Decision-Drift); Route-Move ohne Vorbereitung (schwerer zu reviewen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Workout-Step-Generierung ist ein Training-Service
 
 - **Decision:** Pulse verschiebt Workout-Step-Generierung, HR-Zielbereiche und deterministische Fallback-Steps aus `backend/src/pulse/plugin.ts` nach `backend/src/pulse/services/workout-steps.ts`.
