@@ -19,7 +19,7 @@ Keep this file short. Update it whenever the active work queue changes.
 13. Daily Briefing future-workout correction and stronger guided Mental Check-in was merged and deployed via PR #88.
 14. Local Test Services Hardening was merged and deployed via PR #90.
 15. Insight Evidence Links was merged and deployed via PR #92.
-16. Deep UI/UX Flow Audit baseline and overnight sequencing are documented in `docs/superpowers/plans/2026-05-02-overnight-next-steps.md`.
+16. Deep UI/UX Flow Audit baseline and overnight sequencing are documented in `docs/superpowers/plans/completed/2026-05-02-overnight-next-steps.md`.
 17. Decision Closure Model was merged and deployed via PR #94.
 18. Home/Coach Closure Flow was merged and deployed via PR #95.
 19. Explicit Coach Preferences was merged and deployed via PR #96.
@@ -40,14 +40,17 @@ Keep this file short. Update it whenever the active work queue changes.
 34. Future direction plan pack was merged and deployed via PR #115.
 35. Garmin Signal Usefulness was merged and deployed via PR #116.
 36. Daily Decision Quality Loop was merged and deployed via PR #117.
-37. Deploy Cert Guard is active on `codex/deploy-cert-guard` so the structure cleanup can later remove tracked cert files without losing HTTPS on `:5175`.
+37. Daily Quality status closeout was merged and deployed via PR #118.
+38. Deploy Cert Guard was merged and deployed via PR #120 so the structure cleanup can remove tracked cert files without losing HTTPS on `:5175`.
+39. Project Structure Audit is active on `codex/project-structure-audit`.
 
 ## Current PRs / Branches
 
-- Open PRs: none known from Codex.
-- Open Codex PRs: #119 `codex/project-structure-audit` draft.
-- Active branch: `codex/deploy-cert-guard` for deploy-script certificate provisioning before PR #119.
+- Open PRs: #119 `codex/project-structure-audit` draft.
+- Active branch: `codex/project-structure-audit` for repository structure audit and low-risk cleanup.
 - Recent completed branches:
+- `codex/deploy-cert-guard`: merged and deployed via PR #120.
+- `codex/daily-quality-status-closeout`: merged and deployed via PR #118.
 - `codex/daily-decision-quality`: merged and deployed via PR #117.
 - `codex/garmin-signal-usefulness`: merged and deployed via PR #116.
 - `codex/future-direction-plans`: merged and deployed via PR #115.
@@ -131,8 +134,10 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
+- Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
+- Next autonomous engineering work can be the staged Structure Boundary Cleanup, starting with `backend/src/pulse/plugin.ts` route extraction.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
-- No further broad autonomous feature plan is currently ungated; the remaining active implementation plans need real-device evidence or preference decisions.
+- No further broad autonomous feature plan is currently ungated; the remaining feature plans need real-device evidence or preference decisions.
 - Mobile Field Reliability still needs real-device iPhone/VPN/PWA evidence from Tobi's device before UI fixes are implemented.
 - Fueling & Recovery needs dietary/preference decisions before implementation; Native iOS remains a later evidence gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.

@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# Pulse Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Pulse uses React 19, Vite, TanStack Query and Tailwind CSS v4.
 
-Currently, two official plugins are available:
+## Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `src/pages/` contains route-level screens: Home, Coach, Data, Plan, Insights, Settings and Activity Detail.
+- `src/components/` contains reusable UI and domain cards that are shared across routes.
+- `src/components/ui/` contains small primitive components and variant helpers.
+- `src/pulse/` contains Pulse API wrappers, query keys and TanStack Query hooks.
+- `src/lib/` contains browser-side utilities such as push, service-worker and threshold helpers.
+- `e2e/` contains Playwright smoke and usability tests with API fixtures.
+- `public/` contains PWA assets: manifest, service worker and icons.
 
-## React Compiler
+## Local Commands
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Run frontend commands through the workspace root unless you only need this package:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev:frontend
+npm run build -w frontend
+npm run test:e2e
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The production server serves the built frontend from `frontend/dist`; that directory is generated and ignored.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Local HTTPS Certificates
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Local certificate material under `frontend/certs/` is intentionally ignored and must not be committed. The server and each Mac checkout should provision its own certificate/key pair for the LAN hostname or IP.
+
+Expected local paths for HTTPS dev/preview:
+
+- `frontend/certs/192.168.178.46+2-key.pem`
+- `frontend/certs/192.168.178.46+2.pem`
+
+If those files are missing, Vite falls back to HTTP for local dev/build compatibility. The deployed iPhone/PWA flow still expects the server to provide HTTPS on `https://192.168.178.46:5175`.
+
+## Refactor Notes
+
+Keep route pages usable during refactors. When a route grows, extract feature components under `src/features/<domain>/` or a focused shared component under `src/components/`, then keep `src/pages/<Route>.tsx` as orchestration only.

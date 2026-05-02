@@ -26,6 +26,18 @@
 - **Decided by:** Codex.
 - **Status:** active.
 
+---
+
+## 2026-05-02 — Struktur-Refactors werden in Boundary-Slices umgesetzt
+
+- **Decision:** Pulse behandelt die Repo-Aufraeumung als gestaffelten Boundary-Refactor: zuerst `backend/src/pulse/plugin.ts` in route modules extrahieren, danach grosse Frontend-Pages in `frontend/src/features/*` zerlegen, danach `shared/types/pulse.ts` mit Kompatibilitaets-Barrel splitten. Lokale TLS-Zertifikate und private Keys bleiben ausserhalb von Git.
+- **Why:** Die groessten Strukturkosten entstehen durch Monolith-Dateien, Secrets-Hygiene und Merge-Konflikte, nicht durch zu viele Ordner. Kleine, kompatible Slices erhalten Endpoint-, UI- und Shared-Type-Vertraege und lassen CI/E2E nach jedem Schritt als Sicherheitsnetz laufen.
+- **Alternatives:** Alles in einer grossen Umstrukturierung verschieben (zu riskant); nur lokale Artefakte loeschen (hilft nicht gegen die echten Hotspots); Services jetzt in Subordner verschieben (viel Import-Churn, bevor der Router-Monolith geloest ist).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Daily Decision Quality bleibt read-only und sichtbar
 
 - **Decision:** Pulse fuehrt `GET /api/pulse/decisions/quality` als read-only Qualitaetslayer ein. Der Layer bewertet Action Decisions, Outcome Learning, Check-ins, Garmin-Ausfuehrung, Tagesmetriken und Plan-Traces deterministisch und zeigt den Status kompakt in Home, Coach und Insights.

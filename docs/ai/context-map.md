@@ -11,6 +11,7 @@ Use this map to load the smallest useful context for a task.
 | Roadmap | `docs/superpowers/plans/2026-04-28-roadmap.md` |
 | Decisions | `docs/decisions.md` newest entries first |
 | Concrete feature | Matching file in `docs/superpowers/plans/` |
+| Structure refactors | `docs/ai/project-structure-audit.md`, `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` |
 
 ## Backend
 
