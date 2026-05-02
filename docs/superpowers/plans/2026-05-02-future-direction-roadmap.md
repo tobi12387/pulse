@@ -1,6 +1,6 @@
 # Pulse Future Direction Roadmap
 
-> Stand: 2026-05-02 after Garmin Data Quality, Goal/Race Command Center, Daily Outcome Learning Loop and Season Strategy Planner implementation. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
+> Stand: 2026-05-02 after Garmin Data Quality, Goal/Race Command Center, Daily Outcome Learning Loop and Season Strategy Planner implementation/deploy, plus the next future-plan pack. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
 
 ## Product North Star
 
@@ -20,8 +20,10 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
 | 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; this remains a real-device manual gate | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences should be confirmed before implementation | Planning candidate below |
-| 3 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 2 | Garmin Signal Usefulness Wave | Decide which already-collected Garmin signals should influence daily decisions before adding more sync scope | `2026-05-02-garmin-signal-usefulness-wave.md` |
+| 3 | Daily Decision Quality Loop | Measure whether recommendations helped, repeated usefully or became stale | `2026-05-02-daily-decision-quality-loop.md` |
+| 4 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
+| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -34,7 +36,7 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Garmin Data Quality Control Center | Settings/Data now show Garmin domain quality, freshness, repairability and blocked provider states. | `completed/2026-05-02-garmin-data-quality-control-center.md`, PR #111 |
 | Goal/Race Command Center | Plan now shows race phase, readiness, next key workout, recovery boundary and risk impact from existing evidence. | `completed/2026-05-02-goal-race-command-center.md`, PR #112 |
 | Daily Outcome Learning Loop | Home/Coach now show a deterministic learning signal from action decisions, check-ins and Garmin execution without hidden LLM memory. | `completed/2026-05-02-daily-outcome-learning-loop.md`, PR #113 |
-| Season Strategy Planner | Plan now shows a deterministic 8-16 week season line and weekly generation uses target-session, hard-day, deload and free-day guardrails. | `completed/2026-05-02-season-strategy-planner.md`, active PR pending |
+| Season Strategy Planner | Plan now shows a deterministic 8-16 week season line and weekly generation uses target-session, hard-day, deload and free-day guardrails. | `completed/2026-05-02-season-strategy-planner.md`, PR #114 |
 
 ## Next Plan Summaries
 
@@ -54,7 +56,41 @@ Implementation plan: [`2026-05-02-mobile-field-reliability-wave.md`](2026-05-02-
 - any real issue has a reproducible regression check;
 - the local-server/VPN model remains the default until evidence says otherwise.
 
+### Garmin Signal Usefulness Wave
+
+Implementation plan: [`2026-05-02-garmin-signal-usefulness-wave.md`](2026-05-02-garmin-signal-usefulness-wave.md)
+
+**Goal:** Turn existing Garmin preservation and coverage work into a ranked list of useful signals for daily decisions.
+
+**Scope:**
+- classify signals as already used, underused or missing/sparse;
+- avoid live Garmin probing from UI routes;
+- rank underused signals by daily value for Plan, Coach, Recovery, Race Command and Insights.
+
+**Acceptance:**
+- Tobi can see which Garmin data Pulse has but does not yet use well;
+- the next Garmin integration target is evidence-based;
+- broad "load everything" work is avoided.
+
+### Daily Decision Quality Loop
+
+Implementation plan: [`2026-05-02-daily-decision-quality-loop.md`](2026-05-02-daily-decision-quality-loop.md)
+
+**Goal:** Make the daily recommendation loop self-auditing.
+
+**Scope:**
+- score recent recommendations as helpful, watch, stale, needs strategy change or insufficient evidence;
+- use action decisions, outcomes, check-ins, plan traces and Garmin execution;
+- show a compact signal in Home/Coach/Insights without a new dashboard.
+
+**Acceptance:**
+- useful repetition is separated from stale repetition;
+- Coach can cite quality evidence without hidden memory;
+- missing data is treated as low evidence quality, not silent success.
+
 ### Fueling & Recovery Companion
+
+Implementation plan: [`2026-05-02-fueling-recovery-companion.md`](2026-05-02-fueling-recovery-companion.md)
 
 **Goal:** Turn planned workouts and completed activities into practical fueling, sleep and recovery support.
 

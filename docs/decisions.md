@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Naechste Richtung priorisiert Signalnutzen vor weiterer Breite
+
+- **Decision:** Nach Season Strategy priorisiert Pulse drei Zukunftswellen: Garmin Signal Usefulness vor Daily Decision Quality Loop, Fueling & Recovery nur nach expliziten Ernaehrungs-/Produktpraeferenzen. Mobile Field Reliability bleibt ein echtes iPhone-Gate; Native iOS bleibt ein spaeteres Evidence-Gate.
+- **Why:** Der groesste Nutzen entsteht jetzt nicht aus mehr Rohdaten oder mehr Seiten, sondern daraus, vorhandene Garmin- und Outcome-Signale sichtbar in bessere Tagesentscheidungen zu uebersetzen. Fueling kann sehr praktisch werden, braucht aber persoenliche Grenzen, damit Pulse nicht zu generisch oder zu bevormundend wird.
+- **Alternatives:** Direkt Fueling implementieren (braucht Praeferenzen); weitere Garmin-Syncs ohne Usefulness-Ranking bauen (mehr Daten, unklarer Nutzen); Native iOS vor PWA-Feldbeweis starten (zu viel Plattformaufwand ohne Evidenz).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Season Strategy ist Plan-Guardrail statt neues Dashboard
 
 - **Decision:** Pulse fuehrt `GET /api/pulse/season-strategy` als read-only Saisonstrategie ein, zeigt sie kompakt im Plan und nutzt ihre Guardrails in der Wochenplan-Generierung. Es gibt keine neue Route, keine neue Persistenztabelle und keine native-iOS- oder Public-Hosting-Ausweitung.
