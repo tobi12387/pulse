@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, useCheckinToday,
   useDataCoverage, useGarminBackfill, usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
-  useCheckinGuidance, useGarminCoverage,
+  useCheckinGuidance, useGarminCoverage, useGarminSignalUsefulness,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -16,6 +16,7 @@ import type {
   PulseDataCoverageResponse,
   PulseGarminBackfillResponse,
   PulseGarminCoverageDomain,
+  PulseGarminSignalUsefulnessResponse,
   PulseSleepSession,
 } from '@coaching-os/shared/pulse';
 
@@ -103,6 +104,86 @@ function CoverageMetric({ label, value, sub }: { label: string; value: string; s
       <span className="label-mono">{label}</span>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--text)', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+const SIGNAL_STATUS_LABEL: Record<PulseGarminSignalUsefulnessResponse['items'][number]['status'], { label: string; color: string }> = {
+  used: { label: 'GENUTZT', color: 'var(--green)' },
+  underused: { label: 'UNTERGENUTZT', color: 'var(--amber)' },
+  missing_or_sparse: { label: 'LUECKE', color: 'var(--text-3)' },
+};
+
+const SIGNAL_USE_CASE_LABEL: Record<NonNullable<PulseGarminSignalUsefulnessResponse['items'][number]['recommendedNextConsumer']>, string> = {
+  daily_decision: 'Daily Decision',
+  plan_generation: 'Plan-Generierung',
+  recovery_note: 'Recovery-Notiz',
+  race_readiness: 'Race Readiness',
+  mental_load: 'Mental Load',
+  data_quality: 'Data Quality',
+};
+
+function GarminSignalUsefulnessPanel({ data, isLoading }: {
+  data: PulseGarminSignalUsefulnessResponse | undefined;
+  isLoading: boolean;
+}) {
+  if (isLoading && !data) {
+    return (
+      <div className="card" data-testid="garmin-signal-usefulness-panel">
+        <Skeleton height={10} width="28%" />
+        <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+          <Skeleton height={40} />
+          <Skeleton height={40} />
+        </div>
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  const rows = data.topUnderused.length > 0
+    ? data.topUnderused
+    : data.items.filter(signal => signal.status !== 'used').slice(0, 3);
+
+  return (
+    <div className="card" data-testid="garmin-signal-usefulness-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 8 }}>
+        <span className="label-mono">Garmin Signalnutzen</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {data.summary.used} genutzt · {data.summary.underused} offen
+        </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8 }}>
+        {rows.map(signal => {
+          const status = SIGNAL_STATUS_LABEL[signal.status];
+          return (
+            <div
+              key={signal.signalKey}
+              data-testid={`garmin-signal-${signal.signalKey}`}
+              style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '9px 10px', background: 'var(--surface-2)' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 5 }}>
+                <strong style={{ fontSize: 12, color: 'var(--text)' }}>{signal.label}</strong>
+                <span style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  color: status.color,
+                  border: `1px solid ${status.color}`,
+                  borderRadius: 4,
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {status.label}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>{signal.whyItMatters}</div>
+              <div style={{ marginTop: 6, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                {signal.coverageDays} Tage · {signal.recommendedNextConsumer ? SIGNAL_USE_CASE_LABEL[signal.recommendedNextConsumer] : 'kein naechster Consumer'}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -442,6 +523,7 @@ function CoverageTab() {
   const [lastBackfill, setLastBackfill] = useState<BackfillMemory | null>(() => loadLastBackfillResult());
   const coverage = useDataCoverage(range === 'year' ? { year: currentYear } : { days: Number(range) });
   const garminCoverage = useGarminCoverage(range === 'year' ? 366 : Number(range));
+  const signalUsefulness = useGarminSignalUsefulness(range === 'year' ? 366 : Number(range));
   const backfill = useGarminBackfill();
 
   if (coverage.isLoading) return <Loading rows={3} />;
@@ -514,6 +596,11 @@ function CoverageTab() {
           <GarminQualityList domains={garminCoverage.data.domains} />
         </div>
       )}
+
+      <GarminSignalUsefulnessPanel
+        data={signalUsefulness.data}
+        isLoading={signalUsefulness.isLoading}
+      />
 
       <CoverageDiagnosisPanel data={data} shownDays={shownDays} candidateCount={candidateCount} />
 

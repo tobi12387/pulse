@@ -1025,6 +1025,49 @@ test('Data shows Garmin domain quality and affected-tab hints', async ({ page })
   await expect(page.getByTestId('garmin-quality-hint')).toContainText('ALT');
 });
 
+test('Data shows Garmin signal usefulness priorities', async ({ page }) => {
+  await mockPulseApi(page, {
+    garminSignalUsefulness: {
+      range: { from: '2026-04-02', to: '2026-05-01', days: 30 },
+      summary: { used: 2, underused: 3, missingOrSparse: 1 },
+      topUnderused: [
+        {
+          signalKey: 'body_battery_depth',
+          label: 'Body Battery Tiefe',
+          status: 'underused',
+          coverageDays: 21,
+          sampleDays: ['2026-05-01'],
+          currentConsumers: ['Data'],
+          recommendedNextConsumer: 'daily_decision',
+          whyItMatters: 'Charge und Drain zeigen, ob Erholung wirklich aufgebaut wurde.',
+          evidence: ['Aufwachen 68%'],
+        },
+        {
+          signalKey: 'activity_hr_zones_laps',
+          label: 'HR-Zonen + Laps',
+          status: 'underused',
+          coverageDays: 8,
+          sampleDays: ['2026-05-01'],
+          currentConsumers: ['Activity Detail'],
+          recommendedNextConsumer: 'plan_generation',
+          whyItMatters: 'HR-Zonen und Laps zeigen Ausfuehrungsqualitaet.',
+          evidence: ['8 Tage mit Detailcache'],
+        },
+      ],
+      recommendedUseCases: ['daily_decision', 'plan_generation'],
+      items: [],
+    },
+  });
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Abdeckung' }).click();
+
+  await expect(page.getByTestId('garmin-signal-usefulness-panel')).toContainText('Garmin Signalnutzen');
+  await expect(page.getByTestId('garmin-signal-body_battery_depth')).toContainText('UNTERGENUTZT');
+  await expect(page.getByTestId('garmin-signal-body_battery_depth')).toContainText('Daily Decision');
+  await expect(page.getByTestId('garmin-signal-activity_hr_zones_laps')).toContainText('Plan-Generierung');
+});
+
 test('Settings surfaces blocked Garmin provider state with bounded actions', async ({ page }) => {
   await mockPulseApi(page, {
     garminCoverage: {

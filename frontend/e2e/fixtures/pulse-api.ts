@@ -8,6 +8,7 @@ type MockPulseApiOptions = {
   home?: Partial<typeof home>;
   coverage?: unknown;
   garminCoverage?: unknown;
+  garminSignalUsefulness?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
   raceCommand?: unknown;
@@ -412,6 +413,38 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/garmin/coverage') {
     return garminCoverageResponse(Number(searchParams.get('days') ?? 30));
   }
+  if (pathname === '/api/pulse/garmin/signal-usefulness') {
+    return {
+      range: { from: '2026-04-02', to: today, days: Number(searchParams.get('days') ?? 30) },
+      summary: { used: 2, underused: 4, missingOrSparse: 2 },
+      topUnderused: [
+        {
+          signalKey: 'body_battery_depth',
+          label: 'Body Battery Tiefe',
+          status: 'underused',
+          coverageDays: 18,
+          sampleDays: [today],
+          currentConsumers: ['Data', 'Recovery Depth'],
+          recommendedNextConsumer: 'daily_decision',
+          whyItMatters: 'Charge, Drain und Wert beim Aufwachen zeigen, ob Erholung wirklich aufgebaut wurde.',
+          evidence: ['Aufwachen 68%', 'Charge 42', 'Drain 44'],
+        },
+        {
+          signalKey: 'activity_hr_zones_laps',
+          label: 'HR-Zonen + Laps',
+          status: 'underused',
+          coverageDays: 9,
+          sampleDays: [today],
+          currentConsumers: ['Activity Detail'],
+          recommendedNextConsumer: 'plan_generation',
+          whyItMatters: 'HR-Zonen und Laps zeigen Ausfuehrungsqualitaet.',
+          evidence: ['9 Tage mit Detailcache'],
+        },
+      ],
+      recommendedUseCases: ['daily_decision', 'plan_generation'],
+      items: [],
+    };
+  }
   if (pathname === '/api/pulse/coach/history') return { messages: [] };
   if (pathname === '/api/pulse/coach/preferences') {
     return {
@@ -598,6 +631,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
+    if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
     if (url.pathname === '/api/pulse/garmin/backfill' && request.method() === 'POST' && options.backfillResult) {
       const body = request.postDataJSON();
       const result = typeof options.backfillResult === 'function' ? options.backfillResult(body) : options.backfillResult;

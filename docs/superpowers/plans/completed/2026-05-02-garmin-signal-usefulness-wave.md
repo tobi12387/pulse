@@ -31,7 +31,7 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
 
 ## Task 1: Signal Inventory Contract
 
-- [ ] **Step 1: Write service tests**
+- [x] **Step 1: Write service tests**
 
   Cover:
   - Body Battery, stress duration, respiration and SpO2 are ranked as underused when present in metrics but absent from daily decision evidence.
@@ -39,7 +39,7 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
   - Missing domains become `missing_or_sparse`, not errors.
   - The service accepts rows/payload summaries and never calls Garmin.
 
-- [ ] **Step 2: Implement pure service**
+- [x] **Step 2: Implement pure service**
 
   Return signal groups:
   - `alreadyUsed`: sleep, HRV, CTL/ATL/TSB, planned/completed workouts, check-ins;
@@ -47,7 +47,7 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
   - `missingOrSparse`: domains below coverage thresholds;
   - `recommendedUseCases`: daily decision, plan generation, recovery note, race readiness, mental load context.
 
-- [ ] **Step 3: Verify service**
+- [x] **Step 3: Verify service**
 
   ```bash
   npm test -w backend -- --run src/pulse/services/garmin-signal-usefulness.test.ts
@@ -56,7 +56,7 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
 
 ## Task 2: API and Data UI
 
-- [ ] **Step 1: Add shared response types**
+- [x] **Step 1: Add shared response types**
 
   Add compact item types with:
   - `signalKey`;
@@ -67,18 +67,18 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
   - `recommendedNextConsumer`;
   - `whyItMatters`.
 
-- [ ] **Step 2: Add endpoint**
+- [x] **Step 2: Add endpoint**
 
   Add `GET /api/pulse/garmin/signal-usefulness?days=30`. It should read Pulse tables only and reuse existing coverage helpers where possible.
 
-- [ ] **Step 3: Add UI**
+- [x] **Step 3: Add UI**
 
   In Data, show:
   - top 3 underused signals;
   - which Pulse flow would benefit;
   - whether data is already present or needs repair/backfill.
 
-- [ ] **Step 4: Verify browser behavior**
+- [x] **Step 4: Verify browser behavior**
 
   ```bash
   npm run typecheck
@@ -87,11 +87,11 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
 
 ## Task 3: Roadmap Feedback Loop
 
-- [ ] **Step 1: Update future roadmap**
+- [x] **Step 1: Update future roadmap**
 
   After implementation, move this plan to `completed/` and update `2026-05-02-future-direction-roadmap.md` with the next highest-value signal integration.
 
-- [ ] **Step 2: Add decision entry**
+- [x] **Step 2: Add decision entry**
 
   Persist whether the first integration target is Daily Decision, Plan Generation, Recovery Note or Race Readiness.
 
@@ -101,3 +101,10 @@ Pulse already stores and uses many Garmin-derived values: daily metrics, HRV, sl
 - No page load performs live Garmin API probing.
 - Underused signals are ranked by daily value, not by raw data novelty.
 - The next Garmin implementation can start from evidence instead of another broad API audit.
+
+## Completion Notes
+
+- Added pure `buildGarminSignalUsefulness()` ranking for used, underused and missing/sparse Garmin signals.
+- Added `GET /api/pulse/garmin/signal-usefulness` using only Pulse tables and cached activity detail fields.
+- Added Data "Garmin Signalnutzen" panel with top underused signals and next-consumer labels.
+- Verification: service tests, `npm run typecheck`, focused Playwright Data/Garmin tests. Local plugin integration test is covered by CI because Mac-local Postgres/Redis were not running.

@@ -42,6 +42,7 @@ export const pulseKeys = {
   syncStatus:       ['pulse', 'sync-status'] as const,
   dataCoverage:     (scope: string) => ['pulse', 'data-coverage', scope] as const,
   garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
+  garminSignalUsefulness: (days: number) => ['pulse', 'garmin-signal-usefulness', days] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
   strengthSessions: (days: number, exercise: string | null) =>
     ['pulse', 'strength', 'sessions', days, exercise] as const,
@@ -445,6 +446,14 @@ export function useGarminCoverage(days = 30) {
   });
 }
 
+export function useGarminSignalUsefulness(days = 30) {
+  return useQuery({
+    queryKey: pulseKeys.garminSignalUsefulness(days),
+    queryFn: () => pulseApi.garmin.signalUsefulness(days),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useGarminBackfill() {
   const qc = useQueryClient();
   return useMutation({
@@ -452,6 +461,7 @@ export function useGarminBackfill() {
     onSuccess: (_data, variables) => {
       if (!variables.dryRun) {
         void qc.invalidateQueries({ queryKey: pulseKeys.all });
+        void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-signal-usefulness'] });
       }
     },
   });

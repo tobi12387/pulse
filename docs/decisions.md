@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Garmin Signal Usefulness priorisiert Daily Decision als ersten Consumer
+
+- **Decision:** `GET /api/pulse/garmin/signal-usefulness` bleibt read-only und nutzt nur Pulse-Tabellen sowie gecachte Garmin-Detailfelder. Die erste Anschlussrichtung ist Daily Decision Quality: Body-Battery-Tiefe, Stressdauer, Respiration und SpO2 werden zuerst als Entscheidungs-/Evidenzqualitaet bewertet; HR-Zonen/Laps folgen danach fuer Plan-Generierung.
+- **Why:** Tobi braucht hoehere Alltagsqualitaet aus vorhandenen Daten, nicht mehr Live-Probing oder weitere Rohdatenlisten. Daily Decision Quality ist der direkteste Ort, um untergenutzte Garmin-Signale gegen Empfehlungserfolg, Staleness und Strategieaenderungen zu testen.
+- **Alternatives:** Direkt neue Garmin-Sync-Domains bauen (mehr Daten ohne priorisierten Nutzen); HR-Zonen/Laps sofort in Plan-Generierung gewichten (wertvoll, aber erst nach Tagesloop-Qualitaet); alle Signale in Insights visualisieren (mehr Dashboard, weniger Entscheidung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Naechste Richtung priorisiert Signalnutzen vor weiterer Breite
 
 - **Decision:** Nach Season Strategy priorisiert Pulse drei Zukunftswellen: Garmin Signal Usefulness vor Daily Decision Quality Loop, Fueling & Recovery nur nach expliziten Ernaehrungs-/Produktpraeferenzen. Mobile Field Reliability bleibt ein echtes iPhone-Gate; Native iOS bleibt ein spaeteres Evidence-Gate.

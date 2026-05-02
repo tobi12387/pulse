@@ -983,6 +983,58 @@ describe('GET /api/pulse/data-coverage', () => {
   });
 });
 
+describe('GET /api/pulse/garmin/signal-usefulness', () => {
+  it('reports already-present Garmin signals that are not yet decision consumers', async () => {
+    const yesterday = dateDaysAgo(1);
+    await db.insert(pulseDailyMetrics).values({
+      userId,
+      date: yesterday,
+      hrvRmssd: 42,
+      sleepHours: 7.2,
+      bodyBatteryMax: 86,
+      bodyBatteryCharged: 48,
+      bodyBatteryDrained: 61,
+      bodyBatteryAtWake: 74,
+      highStressSec: 3600,
+      mediumStressSec: 7200,
+      avgWakingRespiration: 13.2,
+      latestSpo2: 97,
+      source: 'garmin',
+      syncedAt: new Date(),
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'run',
+      durationSec: 2400,
+      weather: { tempC: 12 },
+      garminHrZones: [{ zone: 2, secsInZone: 1800, zoneLowBoundary: 130 }],
+      garminLaps: [{ index: 1, durationSec: 1200, avgHr: 142 }],
+      garminDetailData: { source: 'garmin', fetchedAt: `${yesterday}T10:00:00.000Z` },
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/signal-usefulness?days=2',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      summary: { underused: number; used: number };
+      topUnderused: Array<{ signalKey: string; status: string }>;
+      items: Array<{ signalKey: string; status: string; recommendedNextConsumer: string | null }>;
+    }>();
+    expect(body.summary.used).toBeGreaterThan(0);
+    expect(body.summary.underused).toBeGreaterThan(0);
+    expect(body.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ signalKey: 'body_battery_depth', status: 'underused', recommendedNextConsumer: 'daily_decision' }),
+      expect.objectContaining({ signalKey: 'activity_hr_zones_laps', status: 'underused', recommendedNextConsumer: 'plan_generation' }),
+    ]));
+    expect(body.topUnderused.length).toBeLessThanOrEqual(3);
+  });
+});
+
 describe('POST /api/pulse/garmin/backfill', () => {
   it('previews bounded backfill days without calling Garmin', async () => {
     const from = dateDaysAgo(3);
