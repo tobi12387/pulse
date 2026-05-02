@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useCreateGoal, useUpdateGoal, useDeleteGoal, useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, usePulseHome, useRaceCommand,
+  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, usePulseHome, useRaceCommand, useSeasonStrategy,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -12,7 +12,7 @@ import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseGoal, PulsePlanTrace, PulsePlannedWorkout, PulseRaceCommandSummary, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline, RacePriority } from '@coaching-os/shared/pulse';
+import type { PulseGoal, PulsePlanTrace, PulsePlannedWorkout, PulseRaceCommandSummary, PulseSeasonStrategy, PulseStrengthSession, PulseStrengthTrendPoint, GoalCategory, RaceDiscipline, RacePriority } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -992,6 +992,84 @@ function RaceCommandCard({ command, isLoading }: { command: PulseRaceCommandSumm
   );
 }
 
+function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSeasonStrategy | null; isLoading: boolean }) {
+  if (isLoading && !strategy) {
+    return (
+      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.16)' }}>
+        <Skeleton height={10} width="26%" />
+        <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+          <Skeleton height={48} />
+          <Skeleton height={48} />
+          <Skeleton height={48} />
+        </div>
+      </div>
+    );
+  }
+  if (!strategy) return null;
+
+  const guardrails = strategy.guardrails;
+  const nextBoundary = guardrails.nextBoundary
+    ? `${guardrails.nextBoundary.label} ab ${formatPlanDate(guardrails.nextBoundary.date)}`
+    : 'Keine harte Boundary im Horizont';
+
+  return (
+    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>Saisonlinie</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {strategy.horizonWeeks} Wochen
+        </span>
+      </div>
+
+      <div style={{ marginBottom: 10 }}>
+        <h2 style={{ fontSize: 15, color: 'var(--text)', margin: '0 0 4px', fontWeight: 600 }}>
+          {strategy.currentBlock.label}
+          {strategy.primaryGoal ? ` · ${strategy.primaryGoal.title}` : ''}
+        </h2>
+        <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
+          {strategy.currentBlock.focus}
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
+        <RaceCommandFact
+          label="Zielwoche"
+          value={`${guardrails.targetSessions} Einheiten`}
+          detail={guardrails.freeDayRationale}
+          color="var(--accent)"
+        />
+        <RaceCommandFact
+          label="Harte Tage"
+          value={`max. ${guardrails.maxHardDays}`}
+          detail={guardrails.deload ? 'Deload/Konsolidierung aktiv.' : 'Health- und Risk-Regeln bleiben staerker.'}
+          color={guardrails.deload ? 'var(--amber)' : 'var(--green)'}
+        />
+        <RaceCommandFact
+          label="Naechste Grenze"
+          value={nextBoundary}
+          detail={guardrails.rationale.slice(0, 2).join(' ')}
+          color="var(--blue)"
+        />
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {strategy.evidence.map(item => (
+          <span key={item} style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: '3px 7px',
+          }}>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -1000,6 +1078,7 @@ function TrainingTab() {
   const home      = usePulseHome();
   const goals     = usePulseGoals();
   const raceCommand = useRaceCommand();
+  const seasonStrategy = useSeasonStrategy();
   const availability = useWeekAvailability();
   const generate  = useGeneratePlan();
   const navigate  = useNavigate();
@@ -1071,6 +1150,11 @@ function TrainingTab() {
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}
         isLoading={raceCommand.isLoading}
+      />
+
+      <SeasonStrategyCard
+        strategy={seasonStrategy.data?.strategy ?? planTrace?.inputSnapshot.seasonStrategy ?? null}
+        isLoading={seasonStrategy.isLoading}
       />
 
       {/* WeekStrip */}

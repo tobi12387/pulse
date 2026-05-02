@@ -6,7 +6,7 @@ import type {
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
   PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse,
-  PulsePlanTrace, PulsePushSettings, PulsePushTopics, PulseRaceCommandResponse, RaceContext,
+  PulsePlanTrace, PulsePushSettings, PulsePushTopics, PulseRaceCommandResponse, PulseSeasonStrategyResponse, RaceContext,
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
@@ -291,6 +291,11 @@ export const pulseApi = {
   raceCommand: {
     get: (): Promise<PulseRaceCommandResponse> =>
       request('/race-command'),
+  },
+
+  seasonStrategy: {
+    get: (): Promise<PulseSeasonStrategyResponse> =>
+      request('/season-strategy'),
   },
 
   review: {

@@ -38,6 +38,7 @@ export const pulseKeys = {
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
   raceCommand:      ['pulse', 'race-command'] as const,
+  seasonStrategy:   ['pulse', 'season-strategy'] as const,
   syncStatus:       ['pulse', 'sync-status'] as const,
   dataCoverage:     (scope: string) => ['pulse', 'data-coverage', scope] as const,
   garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
@@ -60,6 +61,7 @@ function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: pulseKeys.plan });
   void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'trace'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
+  void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
   void qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.home });
   void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
@@ -371,6 +373,7 @@ export function useCreateGoal() {
       void qc.invalidateQueries({ queryKey: pulseKeys.goals });
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
       void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
+      void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -386,6 +389,7 @@ export function useUpdateGoal() {
       void qc.invalidateQueries({ queryKey: pulseKeys.goals });
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
       void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
+      void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -400,6 +404,7 @@ export function useDeleteGoal() {
       void qc.invalidateQueries({ queryKey: pulseKeys.goals });
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
       void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
+      void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -818,6 +823,14 @@ export function useRaceCommand() {
     queryKey: pulseKeys.raceCommand,
     queryFn: pulseApi.raceCommand.get,
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useSeasonStrategy() {
+  return useQuery({
+    queryKey: pulseKeys.seasonStrategy,
+    queryFn: pulseApi.seasonStrategy.get,
+    staleTime: 10 * 60_000,
   });
 }
 

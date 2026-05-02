@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateScientificWeekPlan, generateWeekWorkouts, adaptIntensityForReadiness, decidePlanDays } from './plan-engine.js';
-import type { PulsePlanLearningSnapshot, PulsePlanLearningWeek } from '@coaching-os/shared/pulse';
+import type { PulsePlanLearningSnapshot, PulsePlanLearningWeek, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
 
 vi.mock('../../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('[]'),
@@ -29,6 +29,25 @@ function planLearning(overrides: Partial<PulsePlanLearningWeek> = {}, flags: Pul
     learnedFromLastWeek: ['Vorwoche stabil.'],
     variationComparedToLastWeek: [],
     flags,
+  };
+}
+
+function seasonStrategy(overrides: Partial<PulseSeasonStrategy['guardrails']> = {}): PulseSeasonStrategy {
+  return {
+    horizonWeeks: 12,
+    primaryGoal: { id: 'race-1', title: '70.3', category: 'race', targetDate: '2026-07-11', priority: 'A' },
+    currentBlock: { kind: 'build', label: 'Build', startWeek: '2026-05-04', endWeek: '2026-06-01', focus: 'Build' },
+    upcomingBlocks: [],
+    guardrails: {
+      targetSessions: 3,
+      maxHardDays: 1,
+      deload: false,
+      freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage.',
+      rationale: ['Saisonlinie begrenzt Dichte.'],
+      nextBoundary: { label: 'Taper', date: '2026-06-29' },
+      ...overrides,
+    },
+    evidence: [],
   };
 }
 
@@ -411,6 +430,26 @@ describe('generateScientificWeekPlan', () => {
 
     expect(decision.selectedDays).toHaveLength(4);
     expect(decision.reasons.join(' ')).toContain('Ausführung stabil');
+  });
+
+  it('uses season guardrails to cap session density and hard days', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'build',
+      weeklyHoursTarget: 10,
+      availableDays: [0, 1, 2, 3, 4, 5],
+      ctl: 42,
+      atl: 38,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: '70.3', targetDate: '2026-07-11', category: 'race', racePriority: 'A', raceDiscipline: 'triathlon_70_3' }],
+      seasonStrategy: seasonStrategy({ targetSessions: 3, maxHardDays: 1 }),
+    });
+
+    expect(workouts).toHaveLength(3);
+    expect(workouts.filter(workout => workout.zone >= 4)).toHaveLength(1);
   });
 
   it('keeps HR-first descriptions when LLM enrichment returns no items', async () => {

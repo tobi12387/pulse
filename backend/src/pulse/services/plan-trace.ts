@@ -3,6 +3,7 @@ import type {
   PulsePlanDecision,
   PulsePlanLearningSnapshot,
   PulsePlanTrace,
+  PulseSeasonStrategy,
   PulseTrainingExecutionReview,
 } from '@coaching-os/shared/pulse';
 
@@ -69,6 +70,7 @@ export interface BuildPlanTraceInput {
   recentActivities: PlanTraceRecentActivity[];
   planLearning?: PulsePlanLearningSnapshot | null;
   executionReview?: PulseTrainingExecutionReview | null;
+  seasonStrategy?: PulseSeasonStrategy | null;
   planDecision: PulsePlanDecision;
   workouts: PlanTraceWorkout[];
 }
@@ -321,6 +323,7 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
       learningSnapshot,
       adaptation,
       restDayRationale,
+      seasonStrategy: input.seasonStrategy ?? null,
     },
     planDecision: input.planDecision,
     sportMix,

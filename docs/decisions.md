@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Season Strategy ist Plan-Guardrail statt neues Dashboard
+
+- **Decision:** Pulse fuehrt `GET /api/pulse/season-strategy` als read-only Saisonstrategie ein, zeigt sie kompakt im Plan und nutzt ihre Guardrails in der Wochenplan-Generierung. Es gibt keine neue Route, keine neue Persistenztabelle und keine native-iOS- oder Public-Hosting-Ausweitung.
+- **Why:** Die wiederholten Wochenplaene wirkten zu gleichfoermig, weil der 8-16-Wochen-Kontext zwischen Race Command und Wochenplan fehlte. Eine deterministische Saisonlinie erklaert Taper, Deload, Hard-Day-Caps und absichtlich freie Tage, bevor LLM-Narration daraus Text macht.
+- **Alternatives:** Eigenes Strategie-Dashboard (mehr Navigation statt bessere Planentscheidung); LLM-only Saisonplanung (nicht testbar und schwer zu tracen); persistierte Saisonstrategie-Tabelle (v1 kann aus vorhandenen Zielen, RaceContext, Load und Verfuegbarkeit berechnet werden).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Outcome Learning bleibt read-only und deterministisch
 
 - **Decision:** Pulse fuehrt `GET /api/pulse/outcomes/daily` als read-only Daily-Outcome-Layer ein. Der Layer korreliert bestehende Action Decisions, Daily Check-ins, geplante Workouts, Garmin-Aktivitaeten und Tagesmetriken und zeigt das Ergebnis kompakt in Home und Coach.

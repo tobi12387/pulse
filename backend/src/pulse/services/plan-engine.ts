@@ -1,6 +1,6 @@
 import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
-import type { PulsePlanLearningSnapshot, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
+import type { PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -427,6 +427,7 @@ export function decidePlanDays(params: {
   recentActivities?: RecentPlanActivity[];
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
+  seasonStrategy?: PulseSeasonStrategy | null | undefined;
 }): PlanDayDecision {
   const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
   const goal = primaryGoal(params.goals);
@@ -499,6 +500,16 @@ export function decidePlanDays(params: {
     reasons.push(`Risk-Watch Warnsignal: ein zusätzlicher verfügbarer Tag bleibt frei.`);
   }
 
+  if (params.seasonStrategy) {
+    const guardrails = params.seasonStrategy.guardrails;
+    target = Math.min(target, guardrails.targetSessions);
+    reasons.push(`Saisonlinie: ${guardrails.freeDayRationale}`);
+    if (guardrails.deload) {
+      target = Math.min(target, Math.max(2, guardrails.targetSessions));
+      reasons.push('Saisonlinie: Konsolidierungs-/Deload-Woche begrenzt die Trainingsdichte.');
+    }
+  }
+
   const minSessions = available.length <= 1 ? available.length : 2;
   target = Math.min(available.length, Math.max(minSessions, target));
 
@@ -535,6 +546,7 @@ function buildPolarizedWorkouts(params: {
   recentActivities?: RecentPlanActivity[];
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
+  seasonStrategy?: PulseSeasonStrategy | null | undefined;
 }): WeekWorkout[] {
   const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, goals, riskSignals = [] } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
@@ -548,9 +560,10 @@ function buildPolarizedWorkouts(params: {
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
   const hasBlockingRisk = riskSignals.some(r => r.severity === 'critical' || r.ruleId === 'rhr_drift_7d' || r.ruleId === 'hrv_trend_decline' || r.ruleId === 'sleep_debt_5d');
   const executionBlocksHard = executionReviewNeedsRecoveryProtection(params.executionReview);
-  const hardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || executionBlocksHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
+  const baseHardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || executionBlocksHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
     ? 0
     : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
+  const hardCount = Math.min(baseHardCount, params.seasonStrategy?.guardrails.maxHardDays ?? baseHardCount);
   const hardDays = selectHardDays(sorted, hardCount, hardDayAvoidanceOffsets(params.planLearning, params.executionReview));
 
   const startDate = new Date(weekStart + 'T00:00:00Z');
@@ -990,6 +1003,7 @@ export interface ScientificPlanInput {
   riskSignals?: RiskSignalLite[];
   planLearning?: PulsePlanLearningSnapshot | null;
   executionReview?: PulseTrainingExecutionReview | null;
+  seasonStrategy?: PulseSeasonStrategy | null;
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -1032,6 +1046,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     recentActivities: input.recentActivities,
     planLearning: input.planLearning,
     executionReview: input.executionReview,
+    seasonStrategy: input.seasonStrategy,
   });
 
   const rawWorkouts = buildPolarizedWorkouts({
@@ -1047,6 +1062,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     recentActivities: input.recentActivities,
     planLearning: input.planLearning,
     executionReview: input.executionReview,
+    seasonStrategy: input.seasonStrategy,
   });
 
   // HARD constraints: filter/cap workouts based on active health states

@@ -554,13 +554,49 @@ test('Plan shows race command with readiness evidence', async ({ page }) => {
   await page.goto('/plan');
 
   await expect(page.getByText('Race Command')).toBeVisible();
-  await expect(page.getByText('70.3 Kraichgau')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '70.3 Kraichgau', exact: true })).toBeVisible();
   await expect(page.getByText('Taper').first()).toBeVisible();
   await expect(page.getByText('Schlüsselreiz', { exact: true })).toBeVisible();
   await expect(page.getByText(/Z4 · 75 min · TSS 82/)).toBeVisible();
   await expect(page.getByText('Taper-Grenze')).toBeVisible();
   await expect(page.getByText('CTL 52.4')).toBeVisible();
   await expect(page.getByText('TSB -12.1')).toBeVisible();
+});
+
+test('Plan shows season strategy guardrails and intentional free-day rationale', async ({ page }) => {
+  await mockPulseApi(page, {
+    seasonStrategy: {
+      horizonWeeks: 12,
+      primaryGoal: { id: 'race-1', title: '70.3 Kraichgau', category: 'race', targetDate: '2026-07-11', priority: 'A' },
+      currentBlock: {
+        kind: 'build',
+        label: 'Build',
+        startWeek: '2026-05-04',
+        endWeek: '2026-06-01',
+        focus: 'Spezifische Belastbarkeit aufbauen, ohne jeden freien Tag zu fuellen.',
+      },
+      upcomingBlocks: [],
+      guardrails: {
+        targetSessions: 4,
+        maxHardDays: 1,
+        deload: false,
+        freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt fuer Erholung, Alltag und bessere Ausfuehrung geschuetzt.',
+        rationale: ['Sechs Tage sind verfuegbar, aber nur vier sind sinnvoll.'],
+        nextBoundary: { label: 'Taper', date: '2026-06-29' },
+      },
+      evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfuegbare Tage'],
+    },
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('Saisonlinie')).toBeVisible();
+  await expect(page.getByText('Build · 70.3 Kraichgau')).toBeVisible();
+  await expect(page.getByText('4 Einheiten')).toBeVisible();
+  await expect(page.getByText('max. 1')).toBeVisible();
+  await expect(page.getByText(/Pulse nutzt nicht alle verfügbaren Tage/)).toBeVisible();
+  await expect(page.getByText(/Taper ab .*29\.06/)).toBeVisible();
+  await expect(page.getByText('6 verfuegbare Tage')).toBeVisible();
 });
 
 test('Plan preserves race goal metadata when editing', async ({ page }) => {

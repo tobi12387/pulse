@@ -35,14 +35,15 @@ Keep this file short. Update it whenever the active work queue changes.
 29. Mental Fitness Companion was merged and deployed via PR #108.
 30. Garmin Data Quality Control Center was merged and deployed via PR #111.
 31. Goal/Race Command Center was merged and deployed via PR #112.
-32. Daily Outcome Learning Loop is implemented on branch `codex/daily-outcome-learning` and should be merged/deployed next.
-33. Season Strategy Planner remains the next autonomous implementation candidate after Daily Outcome Learning.
+32. Daily Outcome Learning Loop was merged and deployed via PR #113.
+33. Season Strategy Planner is implemented on branch `codex/season-strategy` and should be merged/deployed next.
 
 ## Current PRs / Branches
 
-- Open PRs: Daily Outcome Learning Loop pending creation from `codex/daily-outcome-learning`.
-- Active branch: `codex/daily-outcome-learning`.
+- Open PRs: Season Strategy Planner pending creation from `codex/season-strategy`.
+- Active branch: `codex/season-strategy`.
 - Recent completed branches:
+- `codex/daily-outcome-learning`: merged and deployed via PR #113.
 - `codex/goal-race-command`: merged and deployed via PR #112.
 - `codex/garmin-data-quality`: merged and deployed via PR #111.
 - `codex/mental-fitness-companion`: merged and deployed via PR #108.
@@ -121,9 +122,9 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
+- Merge/deploy Season Strategy Planner unless a production regression appears first.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
-- Merge/deploy Goal/Race Command Center unless a production regression appears first.
-- After Goal/Race Command Center, the next autonomous implementation candidates are Daily Outcome Learning Loop and Season Strategy Planner. Mobile Field Reliability remains active but its real-device iPhone/PWA evidence is still a manual gate.
+- After Season Strategy, no remaining active implementation plan is fully autonomous: Mobile Field Reliability needs real-device evidence, Fueling & Recovery needs dietary/preference decisions, and Native iOS remains a later evidence gate.
 - Use `npm run pulse:status` for first-pass ops triage; it separates Mac-local Docker/Postgres/Redis status from the server deploy mirror health.
 - The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
