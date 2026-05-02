@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Mobile Field Reliability bleibt ein echtes Device-Gate
+
+- **Decision:** Nach PR #102 werden nur die autonomen Runbook- und Backlog-Aufgaben der Mobile Field Reliability Wave umgesetzt; iPhone/VPN, Add-to-Home-Screen und Push-Aktivierung bleiben manuelle Gates auf Tobis Gerät.
+- **Why:** Browser-E2E und Server-Healthchecks koennen lokale Erreichbarkeit absichern, aber nicht das reale iOS-Zertifikat-, VPN-, Standalone- und Push-Verhalten auf dem Zielgeraet beweisen.
+- **Alternatives:** Realgeraete-Ergebnis simulieren (falsche Sicherheit); native iOS sofort starten (zu frueh ohne PWA-Evidenz); lokale Serverstrategie durch Tunnel ersetzen (nicht entschieden).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Tägliche Check-in-Actions sind datumsscharf
 
 - **Decision:** Action-Closure-Memory darf tägliche Check-in-Empfehlungen nur für denselben `openedAt`-/Check-in-Tag wiederverwenden oder ausblenden; `/api/pulse/actions?includeHistory=true` zeigt gelöste Entscheidungen nur aus den letzten 14 Tagen.

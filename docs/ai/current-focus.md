@@ -26,14 +26,18 @@ Keep this file short. Update it whenever the active work queue changes.
 20. Push Action Journeys was merged and deployed via PR #97.
 21. Real iPhone/VPN QA evidence recording was merged and deployed via PR #98.
 22. Canva/Figma UX companion refresh was merged and deployed via PR #99.
-23. Active implementation branch: none.
-24. Active implementation wave: Future Direction / manual field gates. The completed May 1/2 plan docs have been archived under `docs/superpowers/plans/completed/`; active work now starts from `2026-05-02-future-direction-roadmap.md`.
+23. Future Direction Roadmap reset was merged and deployed via PR #101.
+24. Daily Loop Explainability was merged and deployed via PR #102.
+25. Active implementation branch: none.
+26. Active implementation wave: Mobile Field Reliability manual gates. Daily Loop Explainability has been archived under `docs/superpowers/plans/completed/`.
 
 ## Current PRs / Branches
 
 - Open PRs: none.
 - Active branch: none.
 - Recent completed branches:
+- `codex/daily-loop-explainability`: merged and deployed via PR #102.
+- `codex/autonomous-future-plans`: merged and deployed via PR #101.
 - `codex/ux-companion-refresh`: merged and deployed via PR #99.
 - `codex/iphone-qa-recording`: merged and deployed via PR #98.
 - `codex/push-action-journeys`: merged and deployed via PR #97.
@@ -103,7 +107,7 @@ Keep this file short. Update it whenever the active work queue changes.
 ## Next Recommended Work
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
-- Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-daily-loop-explainability-wave.md` and `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md`.
+- Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
 - The real iPhone/VPN/PWA field run is still a manual gate for Tobi's device; record evidence in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
 - Maintain the Canva UX board (`Pulse Everyday Flow UX Board`: https://www.canva.com/d/TGL3ff3MAzXgLkE) as a visual companion for route screenshots, interaction notes and acceptance review.
 - Maintain the Figma/FigJam UX loop (`Pulse UX Toolchain Loop`: https://www.figma.com/board/pk4iHWfci7iv9ot5y76j6Z?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=bdcae154-00da-4adb-8a63-e66bbdf25a32) for reusable component states and design-system decisions.

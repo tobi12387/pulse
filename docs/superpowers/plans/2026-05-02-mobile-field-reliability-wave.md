@@ -114,7 +114,7 @@ The iPhone/PWA baseline is implemented: safe-area layout, app-start service work
 
 ## Task 4: Local Operations Runbook
 
-- [ ] **Step 1: Document the known-good local operating model**
+- [x] **Step 1: Document the known-good local operating model**
 
   Update `docs/ai/checklists/iphone-pwa-qa.md` with a short operations section that records:
   - GitHub `main` is source of truth;
@@ -124,7 +124,7 @@ The iPhone/PWA baseline is implemented: safe-area layout, app-start service work
   - PM2 processes are `pulse` and `pulse-frontend`;
   - Docker/Postgres/Redis limitations on the Mac must be called out when local DB tests cannot run.
 
-- [ ] **Step 2: Add a quick verification command section**
+- [x] **Step 2: Add a quick verification command section**
 
   Include commands for:
   - deployed health;
@@ -132,7 +132,7 @@ The iPhone/PWA baseline is implemented: safe-area layout, app-start service work
   - PM2 status;
   - E2E smoke.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
   ```bash
   npm run typecheck

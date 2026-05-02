@@ -11,12 +11,26 @@
 - Pulse URL: `https://192.168.178.46:5175`
 - Server commit under test:
 
+To capture the deployed commit before the manual run:
+
+```bash
+ssh root@192.168.178.46 "cd /root/pulse && git rev-parse --short HEAD"
+```
+
 ## Preconditions
 
 - [ ] iPhone routes the home network through VPN.
 - [ ] Pulse server health is green: `GET /api/pulse/health`.
 - [ ] Frontend returns `HTTP/2 200`.
 - [ ] Do not trigger Garmin calendar sync during this QA unless explicitly repairing workouts.
+
+Server precheck commands:
+
+```bash
+ssh root@192.168.178.46 "curl -s http://localhost:3000/api/pulse/health"
+ssh root@192.168.178.46 "curl -skI https://localhost:5175"
+ssh root@192.168.178.46 "pm2 status"
+```
 
 ## Results
 
