@@ -5,6 +5,7 @@ import {
   pulseKeys,
   useDataCoverage,
   useGarminCoverage,
+  usePushSettings,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
@@ -15,6 +16,7 @@ import { CoachPreferencesCard } from '@/features/settings/coach/coach-components
 import { HealthStateCard } from '@/features/settings/health/health-components';
 import { AthleteProfileCard } from '@/features/settings/profile/profile-components';
 import { PushNotificationsCard, PwaDeviceCard } from '@/features/settings/push/push-components';
+import { getPushPermissionState, isPushSupported, type PushPermissionState } from '@/lib/push-client';
 import type { PulseGarminCoverageRepairAction } from '@coaching-os/shared/pulse';
 
 interface GarminStatus {
@@ -43,6 +45,27 @@ function settingsSectionFromQuery(value: string | null): SettingsSection | null 
   if (value === 'connection') return 'garmin';
   if (value === 'pwa') return 'device';
   return value && SETTINGS_SECTIONS.has(value as SettingsSection) ? value as SettingsSection : null;
+}
+
+function browserDeviceStatus() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return {
+      origin: 'Browser',
+      secure: false,
+      standalone: false,
+      serviceWorker: false,
+      localNetwork: false,
+    };
+  }
+
+  return {
+    origin: window.location.origin,
+    secure: window.isSecureContext,
+    standalone: window.matchMedia?.('(display-mode: standalone)').matches
+      || (navigator as Navigator & { standalone?: boolean }).standalone === true,
+    serviceWorker: Boolean(navigator.serviceWorker && typeof navigator.serviceWorker.register === 'function'),
+    localNetwork: /^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(window.location.hostname),
+  };
 }
 
 function loadLastBackfillSnapshot(): GarminBackfillSnapshot | null {
@@ -83,6 +106,12 @@ export default function Settings() {
   const qc = useQueryClient();
   const { data: coverage30 } = useDataCoverage({ days: 30 });
   const { data: garminCoverage } = useGarminCoverage(30);
+  const pushSettings = usePushSettings();
+  const { data: pushPermission } = useQuery({
+    queryKey: ['push-permission'],
+    queryFn: getPushPermissionState,
+    staleTime: 5_000,
+  });
   const activeSection = settingsSectionFromQuery(searchParams.get('section'));
 
   useEffect(() => {
@@ -134,6 +163,17 @@ export default function Settings() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" />
+
+      <SettingsDiagnosticsMatrix
+        garminStatus={garminStatus ?? null}
+        garminBlocked={garminCoverage?.domains.some(domain => domain.status === 'blocked') ?? false}
+        garminPartial={garminCoverage?.domains.some(domain => domain.status !== 'fresh') ?? false}
+        garminCoverageDays={coverage30 ? `${coverage30.summary.dailyMetricsDays}/${coverage30.range.days}` : null}
+        pushConfigured={pushSettings.data?.configured ?? false}
+        pushPermission={pushPermission ?? null}
+        pushSubscriptions={pushSettings.data?.subscriptions.filter(sub => sub.enabled).length ?? 0}
+        onNavigate={path => navigate(path)}
+      />
 
       {message && (
         <div className="card" style={{
@@ -336,6 +376,248 @@ export default function Settings() {
         <HealthStateCard />
       </SettingsGroup>
     </div>
+  );
+}
+
+function SettingsDiagnosticsMatrix({
+  garminStatus,
+  garminBlocked,
+  garminPartial,
+  garminCoverageDays,
+  pushConfigured,
+  pushPermission,
+  pushSubscriptions,
+  onNavigate,
+}: {
+  garminStatus: GarminStatus | null;
+  garminBlocked: boolean;
+  garminPartial: boolean;
+  garminCoverageDays: string | null;
+  pushConfigured: boolean;
+  pushPermission: PushPermissionState | null;
+  pushSubscriptions: number;
+  onNavigate: (path: string) => void;
+}) {
+  const device = browserDeviceStatus();
+  const pushSupported = isPushSupported();
+  const pushLabel = !pushConfigured
+    ? 'Server nicht bereit'
+    : !pushSupported
+      ? 'Browser nicht unterstützt'
+      : pushPermission === 'denied'
+        ? 'Browser blockiert'
+        : pushSubscriptions > 0
+          ? 'Aktiv'
+          : pushPermission === 'granted'
+            ? 'Bereit'
+            : 'Erlaubnis offen';
+  const pushColor = pushSubscriptions > 0
+    ? 'var(--green)'
+    : pushConfigured && pushSupported && pushPermission !== 'denied'
+      ? 'var(--accent)'
+      : 'var(--amber)';
+  const garminLabel = garminBlocked
+    ? 'Blockiert'
+    : garminStatus?.syncStatus === 'stale'
+      ? 'Veraltet'
+      : garminPartial
+        ? 'Teilweise'
+        : garminStatus?.connected === false
+          ? 'Nicht verbunden'
+          : 'Bereit';
+  const garminColor = garminBlocked
+    ? 'var(--rose)'
+    : garminLabel === 'Bereit'
+      ? 'var(--green)'
+      : 'var(--amber)';
+  const certificateLabel = device.secure ? 'manuell prüfen' : 'nicht sicher';
+
+  const rows = [
+    {
+      key: 'access',
+      label: 'Zugriff',
+      value: device.localNetwork ? 'lokal/VPN' : 'extern',
+      color: device.secure ? 'var(--green)' : 'var(--amber)',
+      detail: device.secure
+        ? `${device.origin} ist als sicherer Kontext erreichbar.`
+        : `${device.origin} läuft nicht als sicherer Kontext.`,
+      action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+    },
+    {
+      key: 'pwa',
+      label: 'PWA',
+      value: device.standalone ? 'Installiert' : 'Browser',
+      color: device.standalone ? 'var(--green)' : 'var(--text-3)',
+      detail: device.standalone ? 'Pulse läuft im Home-Screen-Modus.' : 'Aktuell als Browser-Tab geöffnet.',
+      action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+    },
+    {
+      key: 'worker',
+      label: 'Service Worker',
+      value: device.serviceWorker ? 'Bereit' : 'Nicht verfügbar',
+      color: device.serviceWorker ? 'var(--green)' : 'var(--amber)',
+      detail: device.serviceWorker ? 'Offline-/PWA-Grundlage ist im Browser vorhanden.' : 'Dieser Browser meldet keine Service-Worker-Unterstützung.',
+      action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+    },
+    {
+      key: 'push',
+      label: 'Push',
+      value: pushLabel,
+      color: pushColor,
+      detail: pushPermission === 'denied'
+        ? 'Erlaubnis ist im Browser blockiert; ändere sie in den Browser-/iOS-Einstellungen.'
+        : pushSubscriptions > 0
+          ? `${pushSubscriptions} Gerät(e) aktiv.`
+          : 'Aktivierung passiert bewusst pro Browser/Gerät.',
+      action: { label: 'Push öffnen', path: '/settings?section=push' },
+    },
+    {
+      key: 'garmin',
+      label: 'Garmin',
+      value: garminLabel,
+      color: garminColor,
+      detail: garminBlocked
+        ? 'Garmin ist momentan begrenzt; prüfe Abdeckung und Backfill.'
+        : garminCoverageDays
+          ? `Tagesmetriken 30T: ${garminCoverageDays}.`
+          : 'Garmin-Status wird geladen.',
+      action: { label: 'Garmin öffnen', path: '/settings?section=garmin' },
+      secondaryAction: { label: 'Abdeckung', path: '/data?tab=coverage' },
+    },
+    {
+      key: 'cert',
+      label: 'Zertifikat',
+      value: certificateLabel,
+      color: device.secure ? 'var(--amber)' : 'var(--rose)',
+      detail: 'Pulse kann iOS-Zertifikatsvertrauen nicht automatisch erkennen; Safari zeigt Warnungen selbst.',
+      action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+    },
+  ];
+
+  const shortcuts: Array<{ label: string; path: string }> = [
+    { label: 'Gerät', path: '/settings?section=device' },
+    { label: 'Push', path: '/settings?section=push' },
+    { label: 'Garmin', path: '/settings?section=garmin' },
+    { label: 'Profil', path: '/settings?section=profile' },
+    { label: 'Health', path: '/settings?section=health' },
+  ];
+
+  return (
+    <section
+      className="card"
+      data-testid="settings-diagnostics-matrix"
+      style={{ display: 'flex', flexDirection: 'column', gap: 12, borderColor: 'rgba(94,230,207,0.22)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <div>
+          <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 4 }}>
+            DIAGNOSE
+          </div>
+          <h2 style={{ margin: 0, fontSize: 16, color: 'var(--text)', fontWeight: 600 }}>
+            Zugriff, PWA, Push & Garmin
+          </h2>
+        </div>
+        <Pill color={device.secure && device.serviceWorker ? 'var(--green)' : 'var(--amber)'}>
+          {device.secure && device.serviceWorker ? 'BEREIT' : 'PRÜFEN'}
+        </Pill>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {shortcuts.map(shortcut => (
+          <button
+            key={shortcut.path}
+            type="button"
+            onClick={() => onNavigate(shortcut.path)}
+            style={{
+              minHeight: 40,
+              padding: '7px 10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              color: 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+            }}
+          >
+            {shortcut.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
+        {rows.map(row => (
+          <div
+            key={row.key}
+            style={{
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              padding: '10px 11px',
+              background: 'var(--surface-2)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 7,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{row.label}</span>
+              <Pill color={row.color}>{row.value}</Pill>
+            </div>
+            <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+              {row.detail}
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto' }}>
+              <button
+                type="button"
+                onClick={() => onNavigate(row.action.path)}
+                style={{
+                  minHeight: 40,
+                  padding: '6px 9px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  color: 'var(--text-2)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: 0,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {row.action.label}
+              </button>
+              {row.secondaryAction && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate(row.secondaryAction.path)}
+                  style={{
+                    minHeight: 40,
+                    padding: '6px 9px',
+                    background: 'transparent',
+                    border: '1px solid rgba(94,230,207,0.3)',
+                    borderRadius: 4,
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: 0,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {row.secondaryAction.label}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.5 }}>
+        Zertifikatvertrauen bleibt ein manueller iOS-/Browser-Schritt: Pulse zeigt den lokalen HTTPS-Kontext, aber nicht, ob Safari die lokale CA dauerhaft vertraut.
+      </p>
+    </section>
   );
 }
 

@@ -78,13 +78,15 @@ Keep this file short. Update it whenever the active work queue changes.
 72. Dependency security refresh was merged and deployed via PR #154; production runtime audit is clean, with only the documented dev-only Drizzle/esbuild advisory left on stable tooling.
 73. Mobile Touch And Containment was merged and deployed via PR #155.
 74. Daily Loop Route Priority was merged and deployed via PR #156.
-75. Feedback Resilience is the current UI/UX implementation slice; after it lands, continue with `2026-05-02-settings-diagnostics-matrix.md`.
+75. Feedback Resilience was merged and deployed via PR #157.
+76. Settings Diagnostics Matrix is the current UI/UX implementation slice; after it lands, continue with `2026-05-02-ux-evidence-toolchain-refresh.md`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/feedback-resilience-ux` implements UI/UX roadmap rank 3 before Settings Diagnostics Matrix.
+- Active branch: `codex/settings-diagnostics-matrix` implements UI/UX roadmap rank 4 before UX Evidence Toolchain Refresh.
 - Recent completed branches:
+- `codex/feedback-resilience-ux`: merged and deployed via PR #157.
 - `codex/daily-loop-route-priority-ux`: merged and deployed via PR #156.
 - `codex/mobile-touch-containment-ux`: merged and deployed via PR #155.
 - `codex/dependency-security-refresh`: merged and deployed via PR #154.
@@ -206,8 +208,8 @@ Keep this file short. Update it whenever the active work queue changes.
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the active orientation document.
 - UI/UX Deep Friction Closure is now the next priority. Start from `docs/qa/2026-05-02-ui-ux-deep-audit.md` and `docs/superpowers/plans/2026-05-02-ui-ux-deep-friction-roadmap.md`.
-- Finish `codex/feedback-resilience-ux` first, then start `docs/superpowers/plans/2026-05-02-settings-diagnostics-matrix.md`.
-- Recommended implementation order: Settings diagnostics matrix, UX evidence toolchain refresh.
+- Finish `codex/settings-diagnostics-matrix` first, then start `docs/superpowers/plans/2026-05-02-ux-evidence-toolchain-refresh.md`.
+- Recommended implementation order: UX evidence toolchain refresh.
 - Use `docs/ai/project-structure-audit.md` and `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` before broad refactors.
 - Structure Boundary Cleanup through Phase 8 is complete and deployed.
 - Implement autonomous follow-up work from `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md` only where it does not require Tobi's real iPhone or push permission decisions.
