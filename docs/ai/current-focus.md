@@ -54,13 +54,15 @@ Keep this file short. Update it whenever the active work queue changes.
 48. Backend Strategy Route Extraction was merged and deployed via PR #129.
 49. Backend Review/Nutrition Route Extraction was merged and deployed via PR #130.
 50. Backend Training Analytics Route Extraction was merged and deployed via PR #131.
-51. Backend Garmin Route Extraction is active on `codex/pulse-garmin-routes`.
+51. Backend Garmin Route Extraction was merged and deployed via PR #132.
+52. Backend Push Route Extraction is active on `codex/pulse-push-routes`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/pulse-garmin-routes` for moving Pulse Garmin/data sync routes out of `backend/src/pulse/plugin.ts`.
+- Active branch: `codex/pulse-push-routes` for moving Web Push routes out of `backend/src/pulse/plugin.ts`.
 - Recent completed branches:
+- `codex/pulse-garmin-routes`: merged and deployed via PR #132.
 - `codex/pulse-training-analytics-routes`: merged and deployed via PR #131.
 - `codex/pulse-review-nutrition-routes`: merged and deployed via PR #130.
 - `codex/pulse-strategy-routes`: merged and deployed via PR #129.

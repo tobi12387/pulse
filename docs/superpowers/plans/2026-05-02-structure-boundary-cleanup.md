@@ -43,7 +43,7 @@
   - [x] Move review and nutrition endpoints into `training-routes.ts`.
   - [x] Move training analytics endpoint into `training-routes.ts`.
 - [x] Create `backend/src/pulse/routes/garmin-routes.ts` for Pulse-scoped sync status, data coverage, Garmin coverage, backfill, calendar sync, signal usefulness, profile sync and sync endpoints.
-- [ ] Create `backend/src/pulse/routes/push-routes.ts` for push settings, subscribe, topics, quiet hours and test push.
+- [x] Create `backend/src/pulse/routes/push-routes.ts` for push settings, subscribe, topics, quiet hours and test push.
 - [ ] Keep `backend/src/pulse/plugin.ts` as a thin Fastify plugin that registers the route modules.
 - [x] Run `npm test -w backend -- --run src/pulse/plugin.test.ts` where local services are available; otherwise rely on CI and note the local service limitation.
   - Local limitation 2026-05-02: attempted twice; Postgres `5433`/Redis `6380` unavailable because Docker Desktop is not running locally.
