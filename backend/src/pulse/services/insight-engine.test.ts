@@ -252,6 +252,7 @@ describe('generateDeepInsight mental domain', () => {
         value: '3 Einträge',
         window: '90 Tage',
         status: 'available',
+        targetRoute: '/data',
       }),
       expect.objectContaining({
         label: 'Theme-Historie',
@@ -264,6 +265,7 @@ describe('generateDeepInsight mental domain', () => {
         value: 'r=-0.4',
         window: '90 Tage',
         status: 'available',
+        targetRoute: '/insights',
       }),
     ]));
     expect(result.missingData).toEqual([]);

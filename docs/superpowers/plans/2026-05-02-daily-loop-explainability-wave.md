@@ -32,7 +32,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
 ## Task 1: Action Visibility Contract
 
-- [ ] **Step 1: Write backend tests for hidden reasons**
+- [x] **Step 1: Write backend tests for hidden reasons**
 
   Add tests in `backend/src/pulse/services/next-best-actions.test.ts` proving:
   - a completed check-in action is suppressed with reason `already_completed_today`;
@@ -48,7 +48,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
   npm test -- --run src/pulse/services/next-best-actions.test.ts
   ```
 
-- [ ] **Step 2: Extend the pure service output**
+- [x] **Step 2: Extend the pure service output**
 
   Add a small exported type next to the existing next-best-action type:
 
@@ -71,7 +71,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
   Keep the existing action list behavior compatible by returning `visible` to old callers.
 
-- [ ] **Step 3: Add `/api/pulse/actions` history mode**
+- [x] **Step 3: Add `/api/pulse/actions` history mode**
 
   Extend `GET /api/pulse/actions?includeHistory=true` so it returns:
   - `actions`: current visible actions;
@@ -80,7 +80,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
   The default response without `includeHistory=true` remains compatible.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
   ```bash
   npm run typecheck
@@ -93,11 +93,11 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
 ## Task 2: Home And Coach Action History
 
-- [ ] **Step 1: Add frontend contract tests or E2E fixtures**
+- [x] **Step 1: Add frontend contract tests or E2E fixtures**
 
   Extend `frontend/e2e/fixtures/pulse-api.ts` with one visible action, one completed action and one deferred action. The fixture should include the same `decisionId` shape already used by Home and Coach.
 
-- [ ] **Step 2: Add compact Home state**
+- [x] **Step 2: Add compact Home state**
 
   Home should show:
   - the primary action as it does today;
@@ -106,7 +106,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
   Avoid a large timeline. This is a trust aid, not a new task manager.
 
-- [ ] **Step 3: Add Coach context strip**
+- [x] **Step 3: Add Coach context strip**
 
   Coach should show the same latest action state before the input area:
   - `Erledigt`, `Verschoben`, `Verworfen` or `Keine offene Aktion`;
@@ -114,7 +114,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
   The Coach must not auto-send a message.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
   ```bash
   npm run typecheck
@@ -125,7 +125,7 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
 ## Task 3: Insight Evidence Source Links
 
-- [ ] **Step 1: Add evidence target types**
+- [x] **Step 1: Add evidence target types**
 
   Extend the shared insight evidence item with:
 
@@ -140,15 +140,15 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
   - Activity-specific evidence with an activity id -> `/activities/:id`;
   - Mental check-ins and themes -> `/data`.
 
-- [ ] **Step 2: Update insight engine evidence builders**
+- [x] **Step 2: Update insight engine evidence builders**
 
   Add route targets inside `backend/src/pulse/services/insight-engine.ts` where the source domain is unambiguous. If a source cannot be routed confidently, leave `targetRoute` unset.
 
-- [ ] **Step 3: Render source links safely**
+- [x] **Step 3: Render source links safely**
 
   In `frontend/src/pages/Insights.tsx`, render evidence items with a route link only when `targetRoute` is present. Preserve current labels and do not expose raw provider payloads.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
   ```bash
   npm run typecheck
@@ -163,18 +163,18 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 
 ## Task 4: Daily Briefing Regression Guard
 
-- [ ] **Step 1: Add tests for today-only prompts**
+- [x] **Step 1: Add tests for today-only prompts**
 
   Extend `backend/src/jobs/briefing-generation.job.test.ts` and `backend/src/pulse/services/coach-engine.test.ts` so rest-day output cannot ask whether Tobi wants to do a workout planned for a future date.
 
-- [ ] **Step 2: Include action history in prompt context**
+- [x] **Step 2: Include action history in prompt context**
 
   Feed the compact action-history summary from Task 1 into briefing and coach context. Keep it factual:
   - latest completed/deferred/dismissed action;
   - no future workout as today's decision;
   - no hidden psychological inference.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
   ```bash
   npm run typecheck
@@ -192,3 +192,10 @@ The Garmin execution, plan personalization, daily decision, insight evidence and
 - Insights can deep-link to Data/Plan/Activity source routes when the route is unambiguous.
 - Rest days never frame a future workout as today's training decision.
 - No hidden memory, Telegram, data export or habit tracker is introduced.
+
+## Implementation Notes
+
+- Local verification passed for `npm run typecheck`, focused pure backend tests and focused Playwright E2E.
+- Daily check-in action decisions are date-scoped so yesterday's completed check-in cannot hide today's missing check-in.
+- `/api/pulse/actions?includeHistory=true` limits recent resolved decisions to the last 14 days.
+- DB-bound tests in `backend/src/pulse/plugin.test.ts` and `backend/src/jobs/briefing-generation.job.test.ts` require local Postgres/Redis on ports 5433/6380. On the Mac workspace they were blocked because Docker Desktop is not running; CI remains the DB-bound verification gate.

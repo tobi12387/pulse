@@ -70,10 +70,10 @@ export function usePulseHome() {
   });
 }
 
-export function usePulseActions() {
+export function usePulseActions(options: { includeHistory?: boolean } = {}) {
   return useQuery({
-    queryKey: pulseKeys.actions,
-    queryFn: pulseApi.actions.list,
+    queryKey: options.includeHistory ? [...pulseKeys.actions, 'history'] : pulseKeys.actions,
+    queryFn: () => pulseApi.actions.list(options),
     staleTime: 60_000,
     refetchInterval: 5 * 60_000,
   });

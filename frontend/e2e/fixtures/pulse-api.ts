@@ -10,6 +10,8 @@ type MockPulseApiOptions = {
   planTrace?: unknown;
   planWorkouts?: unknown[];
   actions?: unknown[];
+  suppressedActions?: unknown[];
+  recentDecisions?: unknown[];
   coachPreferences?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
@@ -302,8 +304,8 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       date: today,
       cached: true,
       evidence: [
-        { label: 'Trainingsdaten', value: '4 Aktivitäten', window: '30 Tage', status: 'available' },
-        { label: 'Readiness', value: '78/100', window: 'Heute', status: 'available' },
+        { label: 'Trainingsdaten', value: '4 Aktivitäten', window: '30 Tage', status: 'available', targetRoute: '/plan', targetLabel: 'Plan öffnen' },
+        { label: 'Readiness', value: '78/100', window: 'Heute', status: 'available', targetRoute: '/data', targetLabel: 'Data öffnen' },
       ],
       missingData: [],
     };
@@ -387,7 +389,14 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/home') return json(route, { ...home, ...options.home });
     if (url.pathname === '/api/pulse/actions' && request.method() === 'GET') {
-      return json(route, { actions: options.actions ?? [] });
+      const response: { actions: unknown[]; suppressed?: unknown[]; recentDecisions?: unknown[] } = {
+        actions: options.actions ?? [],
+      };
+      if (url.searchParams.get('includeHistory') === 'true') {
+        response.suppressed = options.suppressedActions ?? [];
+        response.recentDecisions = options.recentDecisions ?? [];
+      }
+      return json(route, response);
     }
     if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
       const decisionId = url.pathname.split('/').at(-1) ?? 'decision-1';

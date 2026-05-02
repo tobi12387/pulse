@@ -10,7 +10,7 @@ import type {
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
-  PulseMentalLoadOverlayResponse, PulseActionState, PulseCoachPreferences,
+  PulseMentalLoadOverlayResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -118,8 +118,8 @@ export const pulseApi = {
   },
 
   actions: {
-    list: (): Promise<{ actions: PulseActionState[] }> =>
-      request('/actions'),
+    list: (options: { includeHistory?: boolean } = {}): Promise<PulseActionsResponse> =>
+      request(options.includeHistory ? '/actions?includeHistory=true' : '/actions'),
     update: (id: string, data: { status: 'completed' | 'deferred' | 'dismissed'; reason?: string }): Promise<{
       decision: {
         id: string;
@@ -350,7 +350,7 @@ export const pulseApi = {
     get: (domain: string, days = 30, refresh = false): Promise<{
       domain: string; analysis: string; stats: Record<string, number | string | null>;
       date: string; cached: boolean; status?: 'ok' | 'data_missing'; action?: string | null; retryable?: boolean;
-      evidence?: Array<{ label: string; value: string; window: string; status: 'available' | 'limited' | 'missing' }>;
+      evidence?: Array<{ label: string; value: string; window: string; status: 'available' | 'limited' | 'missing'; targetRoute?: '/data' | '/plan' | '/insights' | `/activities/${number}`; targetLabel?: string }>;
       missingData?: Array<{ label: string; reason: string; action?: string }>;
     }> => request(`/insights?domain=${domain}&days=${days}&refresh=${refresh}`),
   },

@@ -1,4 +1,4 @@
-import type { PulseNextBestAction } from '@coaching-os/shared/pulse';
+import type { PulseNextBestAction, PulseSuppressedActionReason } from '@coaching-os/shared/pulse';
 
 export type ActionDecisionStatus = 'open' | 'completed' | 'deferred' | 'dismissed' | 'superseded';
 export type ActionDecisionKind = 'checkin' | 'workout' | 'rpe' | 'risk' | 'plan' | 'push' | 'equipment' | 'manual';
@@ -81,6 +81,34 @@ function isCheckinDecision(decision: ActionDecisionRecord): boolean {
   return decision.kind === 'checkin' || decision.source === 'checkin';
 }
 
+function isoDate(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value !== 'string' || value.length < 10) return null;
+  return value.slice(0, 10);
+}
+
+export function actionDateMatchesDecision(
+  action: Pick<PulseNextBestAction, 'source' | 'openedAt'>,
+  decision: {
+    kind: string;
+    source: string;
+    createdAt: string | Date;
+    rawContext: ActionDecisionRawContext | null;
+  },
+): boolean {
+  if (action.source !== 'checkin' && decision.kind !== 'checkin' && decision.source !== 'checkin') {
+    return true;
+  }
+
+  const rawContext = decision.rawContext ?? {};
+  const actionDate = isoDate(action.openedAt);
+  const decisionDate = isoDate(rawContext['checkinDate'])
+    ?? isoDate(rawContext['openedAt'])
+    ?? isoDate(decision.createdAt);
+
+  return !actionDate || !decisionDate || actionDate === decisionDate;
+}
+
 function isWorkoutDecision(decision: ActionDecisionRecord): boolean {
   return decision.kind === 'workout' || decision.source === 'planned_workout';
 }
@@ -147,7 +175,32 @@ export function deriveDecisionStatus(
   };
 }
 
-function actionMatchesDecision(action: PulseNextBestAction, decision: ActionDecisionRecord): boolean {
+export interface ActionSuppression {
+  decisionId: string | null;
+  status: ActionDecisionStatus | 'auto_suppressed';
+  reason: PulseSuppressedActionReason;
+  suppressedUntil: string | null;
+  resolvedAt: string | null;
+  resolutionReason: string | null;
+}
+
+function suppressionReasonFor(
+  action: PulseNextBestAction,
+  decision: ActionDecisionRecord,
+  derived: DerivedDecisionStatus,
+): PulseSuppressedActionReason {
+  if (derived.status === 'deferred') return 'deferred';
+  if (derived.status === 'dismissed') return 'dismissed';
+  if (derived.resolutionReason?.includes('Garmin-Aktivität')) return 'resolved_by_activity';
+  if (isCheckinDecision(decision) || action.source === 'checkin') return 'already_completed_today';
+  return 'stale';
+}
+
+export function actionMatchesDecision(action: PulseNextBestAction, decision: ActionDecisionRecord): boolean {
+  if (!actionDateMatchesDecision(action, decision)) {
+    return false;
+  }
+
   const rawContext = decision.rawContext ?? {};
   if (decision.sourceId === action.id || rawContext.actionId === action.id) {
     return true;
@@ -161,20 +214,46 @@ function actionMatchesDecision(action: PulseNextBestAction, decision: ActionDeci
   return decision.targetRoute === action.targetPath || decision.title === action.title;
 }
 
+export function getActionSuppression(
+  action: PulseNextBestAction,
+  decisions: ActionDecisionRecord[] = [],
+  signals: DecisionClosureSignals = {},
+): ActionSuppression | null {
+  if (action.source === 'checkin' && signals.today && signals.checkinDates?.includes(signals.today)) {
+    return {
+      decisionId: null,
+      status: 'auto_suppressed',
+      reason: 'already_completed_today',
+      suppressedUntil: null,
+      resolvedAt: signals.now ?? null,
+      resolutionReason: `Check-in für ${signals.today} wurde gespeichert.`,
+    };
+  }
+
+  const decision = decisions.find(candidate => actionMatchesDecision(action, candidate));
+  if (!decision) {
+    return null;
+  }
+
+  const derived = deriveDecisionStatus(decision, { signals });
+  if (!SUPPRESSED_STATUSES.has(derived.status)) {
+    return null;
+  }
+
+  return {
+    decisionId: decision.id,
+    status: derived.status,
+    reason: suppressionReasonFor(action, decision, derived),
+    suppressedUntil: derived.status === 'deferred' ? derived.resolvedAt : null,
+    resolvedAt: derived.resolvedAt,
+    resolutionReason: derived.resolutionReason,
+  };
+}
+
 export function shouldSuppressAction(
   action: PulseNextBestAction,
   decisions: ActionDecisionRecord[] = [],
   signals: DecisionClosureSignals = {},
 ): boolean {
-  if (action.source === 'checkin' && signals.today && signals.checkinDates?.includes(signals.today)) {
-    return true;
-  }
-
-  const decision = decisions.find(candidate => actionMatchesDecision(action, candidate));
-  if (!decision) {
-    return false;
-  }
-
-  const derived = deriveDecisionStatus(decision, { signals });
-  return SUPPRESSED_STATUSES.has(derived.status);
+  return getActionSuppression(action, decisions, signals) != null;
 }

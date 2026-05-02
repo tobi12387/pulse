@@ -1,5 +1,5 @@
-import type { PulseNextBestAction, PulseNextBestActionPriority, PulseNextBestActionSource } from '@coaching-os/shared/pulse';
-import { shouldSuppressAction, type ActionDecisionRecord } from './decision-closure.js';
+import type { PulseNextBestAction, PulseNextBestActionPriority, PulseNextBestActionSource, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import { getActionSuppression, type ActionDecisionRecord } from './decision-closure.js';
 
 export interface NextBestActionsInput {
   today: string;
@@ -43,6 +43,11 @@ const PRIORITY_WEIGHT: Record<PulseNextBestActionPriority, number> = {
   normal: 1,
 };
 
+export interface ActionVisibilitySummary {
+  visible: PulseNextBestAction[];
+  suppressed: PulseSuppressedActionState[];
+}
+
 function addAction(
   actions: PulseNextBestAction[],
   source: PulseNextBestActionSource,
@@ -77,6 +82,10 @@ function hoursSince(startTime: Date, today: string): number {
 }
 
 export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestAction[] {
+  return rankNextBestActionVisibility(input).visible;
+}
+
+export function rankNextBestActionVisibility(input: NextBestActionsInput): ActionVisibilitySummary {
   const actions: PulseNextBestAction[] = [];
 
   const criticalRisk = input.activeRiskSignals.find(signal => signal.severity === 'critical') ?? null;
@@ -191,11 +200,32 @@ export function rankNextBestActions(input: NextBestActionsInput): PulseNextBestA
     );
   }
 
-  return actions
-    .sort((a, b) => PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority])
-    .filter(action => !shouldSuppressAction(action, input.actionDecisions ?? [], {
+  const visible: PulseNextBestAction[] = [];
+  const suppressed: PulseSuppressedActionState[] = [];
+  const signals = {
       today: input.today,
       checkinDates: input.todayCheckin ? [input.today] : [],
-    }))
-    .slice(0, 3);
+    };
+
+  for (const action of actions.sort((a, b) => PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority])) {
+    const suppression = getActionSuppression(action, input.actionDecisions ?? [], signals);
+    if (suppression) {
+      suppressed.push({
+        ...action,
+        decisionId: suppression.decisionId,
+        status: suppression.status,
+        suppressedReason: suppression.reason,
+        suppressedUntil: suppression.suppressedUntil,
+        resolvedAt: suppression.resolvedAt,
+        resolutionReason: suppression.resolutionReason,
+      });
+      continue;
+    }
+    visible.push(action);
+  }
+
+  return {
+    visible: visible.slice(0, 3),
+    suppressed: suppressed.slice(0, 6),
+  };
 }

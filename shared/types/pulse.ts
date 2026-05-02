@@ -598,12 +598,45 @@ export interface PulseNextBestAction {
 }
 
 export type PulseActionDecisionStatus = 'open' | 'completed' | 'deferred' | 'dismissed' | 'superseded';
+export type PulseSuppressedActionReason =
+  | 'already_completed_today'
+  | 'deferred'
+  | 'dismissed'
+  | 'resolved_by_activity'
+  | 'stale';
 
 export interface PulseActionState extends PulseNextBestAction {
   decisionId: string;
   status: PulseActionDecisionStatus;
   resolvedAt: string | null;
   resolutionReason: string | null;
+}
+
+export interface PulseSuppressedActionState extends PulseNextBestAction {
+  decisionId: string | null;
+  status: PulseActionDecisionStatus | 'auto_suppressed';
+  suppressedReason: PulseSuppressedActionReason;
+  suppressedUntil: string | null;
+  resolvedAt: string | null;
+  resolutionReason: string | null;
+}
+
+export interface PulseRecentActionDecision {
+  decisionId: string;
+  source: string;
+  kind: string;
+  title: string;
+  status: PulseActionDecisionStatus;
+  targetRoute: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolutionReason: string | null;
+}
+
+export interface PulseActionsResponse {
+  actions: PulseActionState[];
+  suppressed?: PulseSuppressedActionState[];
+  recentDecisions?: PulseRecentActionDecision[];
 }
 
 export type PulseCoachCommunicationStyle = 'direct' | 'gentle' | 'data_first';

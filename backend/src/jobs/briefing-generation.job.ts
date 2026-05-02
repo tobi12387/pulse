@@ -64,6 +64,10 @@ export function buildBriefingUserContentRich(
   const actionsPart = briefingActions.length > 0
     ? `NÄCHSTE AKTIONEN:\n${briefingActions.map(action => `- [${action.priority.toUpperCase()}] ${action.title}: ${action.reason} Erledigt durch: ${action.resolvedBy ?? action.cta} → ${action.cta} (${action.targetPath})`).join('\n')}`
     : 'NÄCHSTE AKTIONEN: keine dringenden Sofortaktionen; normale Nudges bleiben auf Home.';
+  const suppressedActions = ctx.suppressedNextBestActions ?? [];
+  const actionHistoryPart = suppressedActions.length > 0
+    ? `ACTION-HISTORIE:\n${suppressedActions.slice(0, 3).map(action => `- ${action.title} ausgeblendet (${action.suppressedReason})${action.resolutionReason ? `: ${action.resolutionReason}` : ''}`).join('\n')}`
+    : 'ACTION-HISTORIE: keine abgeschlossenen oder ausgeblendeten Tagesaktionen im aktuellen Kontext.';
 
   const metricsPart = m
     ? `Pulse-Daten (${ctx.date}): Schlaf ${m.sleepHours ?? '–'}h (Score: ${m.sleepScore ?? '–'}), HRV ${m.hrvRmssd ?? '–'}ms (${m.hrvStatus ?? '–'}), Ruhepuls ${m.restingHr ?? '–'} bpm, Body Battery ${m.bodyBatteryMax ?? '–'}, Stress ${m.stressAvg ?? '–'}, Schritte ${m.steps ?? '–'}.`
@@ -119,7 +123,7 @@ export function buildBriefingUserContentRich(
     ? `Nächstes Rennen/Ziel: ${ctx.nextRace.title} am ${ctx.nextRace.date} (${ctx.nextRace.daysUntil} Tage).`
     : 'Kein aktives Rennen hinterlegt.';
 
-  return `${riskPart}\n${actionsPart}\n${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${strengthPart}\n${equipmentPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn heute kein Training geplant ist, geht es um Erholung, Check-in, mentale Lage und Tagesgrenze; formuliere keine heutige Trainingsausführung aus einem zukünftigen Workout. Wenn eine nächste Aktion critical/high ist, ein aktiver Health-State existiert, RPE auf aerobe Müdigkeit hindeutet, Equipment ersetzt werden sollte oder ein Risk-Signal warn/critical ist, muss das konkret in der Empfehlung berücksichtigt werden.`;
+  return `${riskPart}\n${actionsPart}\n${actionHistoryPart}\n${metricsPart}\n${checkinPart}\n${loadPart}\n${recoveryPart}\n${strengthPart}\n${equipmentPart}\n${healthPart}\n${workoutPart}\n${rpePart}\n${racePart}\n\nErstelle das Briefing in 3-5 Sätzen. Wenn heute kein Training geplant ist, geht es um Erholung, Check-in, mentale Lage und Tagesgrenze; formuliere keine heutige Trainingsausführung aus einem zukünftigen Workout. Wenn eine nächste Aktion critical/high ist, ein aktiver Health-State existiert, RPE auf aerobe Müdigkeit hindeutet, Equipment ersetzt werden sollte oder ein Risk-Signal warn/critical ist, muss das konkret in der Empfehlung berücksichtigt werden. Bereits erledigte oder ausgeblendete Actions aus der Action-Historie dürfen nicht erneut als offene Aufgabe formuliert werden.`;
 }
 
 export async function processBriefingJob(

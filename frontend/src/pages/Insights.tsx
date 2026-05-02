@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
@@ -8,7 +9,14 @@ import type { LucideIcon } from 'lucide-react';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 type EvidenceStatus = 'available' | 'limited' | 'missing';
-type EvidenceItem = { label: string; value: string; window: string; status: EvidenceStatus };
+type EvidenceItem = {
+  label: string;
+  value: string;
+  window: string;
+  status: EvidenceStatus;
+  targetRoute?: '/data' | '/plan' | '/insights' | `/activities/${number}`;
+  targetLabel?: string;
+};
 type MissingDataItem = { label: string; reason: string; action?: string };
 
 const DOMAINS: { key: Domain; label: string; icon: LucideIcon; color: string }[] = [
@@ -54,6 +62,7 @@ function statusLabel(status: EvidenceStatus): string {
 }
 
 function EvidenceList({ evidence, missingData }: { evidence?: EvidenceItem[]; missingData?: MissingDataItem[] }) {
+  const navigate = useNavigate();
   const hasEvidence = Boolean(evidence?.length);
   const hasMissing = Boolean(missingData?.length);
 
@@ -67,8 +76,24 @@ function EvidenceList({ evidence, missingData }: { evidence?: EvidenceItem[]; mi
             Datenbasis
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
-            {evidence!.map(item => (
-              <div key={`${item.label}-${item.window}-${item.value}`} style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+            {evidence!.map(item => {
+              const isLinked = Boolean(item.targetRoute);
+              const Wrapper = isLinked ? 'button' : 'div';
+              return (
+              <Wrapper
+                key={`${item.label}-${item.window}-${item.value}`}
+                type={isLinked ? 'button' : undefined}
+                onClick={isLinked ? () => navigate(item.targetRoute!) : undefined}
+                aria-label={isLinked ? `${item.label}: ${item.targetLabel ?? 'Quelle öffnen'}` : undefined}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '7px 8px',
+                  background: 'var(--surface-2)',
+                  textAlign: 'left',
+                  cursor: isLinked ? 'pointer' : 'default',
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{item.label}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: item.status === 'available' ? 'var(--green)' : item.status === 'limited' ? 'var(--amber)' : 'var(--rose)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -76,9 +101,11 @@ function EvidenceList({ evidence, missingData }: { evidence?: EvidenceItem[]; mi
                   </span>
                 </div>
                 <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '4px 0 0' }}>{item.value}</p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', margin: '3px 0 0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{item.window}</p>
-              </div>
-            ))}
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', margin: '3px 0 0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {item.targetRoute ? `${item.window} · ${item.targetLabel ?? 'Quelle öffnen'}` : item.window}
+                </p>
+              </Wrapper>
+            );})}
           </div>
         </section>
       )}
