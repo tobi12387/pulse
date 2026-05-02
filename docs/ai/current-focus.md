@@ -47,13 +47,15 @@ Keep this file short. Update it whenever the active work queue changes.
 41. Backend Daily Loop Route Extraction was merged and deployed via PR #122.
 42. Backend Coach Route Extraction was merged and deployed via PR #123.
 43. Backend Check-in Route Extraction was merged and deployed via PR #124.
-44. Backend Training Strength/Equipment Route Extraction is active on `codex/pulse-training-routes`.
+44. Backend Training Strength/Equipment Route Extraction was merged and deployed via PR #125.
+45. Backend Workout Step Service Extraction is active on `codex/pulse-workout-steps-service`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/pulse-training-routes` for the Strength/Equipment sub-slice of Training route extraction.
+- Active branch: `codex/pulse-workout-steps-service` for the workout-step helper extraction before moving plan/workout routes.
 - Recent completed branches:
+- `codex/pulse-training-routes`: merged and deployed via PR #125.
 - `codex/pulse-checkin-routes`: merged and deployed via PR #124.
 - `codex/pulse-coach-routes`: merged and deployed via PR #123.
 - `codex/pulse-daily-loop-routes`: merged and deployed via PR #122.

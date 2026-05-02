@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Workout-Step-Generierung ist ein Training-Service
+
+- **Decision:** Pulse verschiebt Workout-Step-Generierung, HR-Zielbereiche und deterministische Fallback-Steps aus `backend/src/pulse/plugin.ts` nach `backend/src/pulse/services/workout-steps.ts`.
+- **Why:** Plan- und Garmin-Workout-Routen brauchen dieselbe Step-Logik, inklusive LLM-Aufruf ueber `backend/src/lib/llm.ts`. Ein eigener Service reduziert den Router-Monolithen und verhindert, dass die spaetere Plan-Routen-Extraktion einen grossen Helferblock mitzieht.
+- **Alternatives:** Helper route-local in `plugin.ts` lassen (weiterer Hotspot); in `training-routes.ts` duplizieren (LLM-/Fallback-Drift); LLM-Aufruf direkt in Routen verschieben (verletzt die bestehende zentrale LLM-Schicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Training-Routen werden in Sub-Slices extrahiert
 
 - **Decision:** Pulse extrahiert den Training-Bereich gestaffelt: zuerst Activity-Equipment-Zuordnung, Strength Sessions und Equipment-Verwaltung nach `backend/src/pulse/routes/training-routes.ts`; Plan-/Workout-/Goal-/Race-/Season-/Review-/Nutrition-/Analytics-Endpunkte folgen in separaten PRs.
