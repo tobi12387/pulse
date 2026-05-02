@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Data-Recovery-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt Schlaf-, Tagesmetrik-, Recovery-Depth-, Gewichts- und Body-Composition-UI nach `frontend/src/features/data/recovery/recovery-components.tsx`.
+- **Why:** Diese Tabs teilen Garmin-Koerperdaten, Bereichsfilter, Sparkline-Visualisierung und den Garmin-Domain-Hinweis. `Data.tsx` ist danach eine kleine Route mit Tab-Orchestrierung und die fachlichen Data-Cluster Coverage, Mental und Recovery liegen getrennt.
+- **Alternatives:** Schlaf, Metriken und Gewicht in drei separaten PRs verschieben (kleiner, aber mehr Zwischenzustand und Import-Reibung); Recovery-Depth bei Metriken lassen und Gewicht separat behandeln (Plan-Phase bleibt unscharf); globale Components verwenden (zu domain-spezifisch).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Data-Mental-UI bildet ein eigenes Feature-Modul
 
 - **Decision:** Pulse verschiebt gefuehrten Daily Check-in, Mental-Tags, `ThemeTimeline`-Einbettung und Mental-Trend-Chart nach `frontend/src/features/data/mental/mental-components.tsx`.

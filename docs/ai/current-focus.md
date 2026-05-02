@@ -64,13 +64,15 @@ Keep this file short. Update it whenever the active work queue changes.
 58. Frontend Plan Strategy Components Split was merged and deployed via PR #139.
 59. Frontend Plan Goal Components Split was merged and deployed via PR #140.
 60. Frontend Data Coverage Components Split was merged and deployed via PR #141.
-61. Frontend Data Mental Components Split is active on `codex/frontend-data-mental-components`.
+61. Frontend Data Mental Components Split was merged and deployed via PR #142.
+62. Frontend Data Recovery Components Split is active on `codex/frontend-data-recovery-components`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-data-mental-components` for moving mental check-in and mental trend UI into `frontend/src/features/data/mental/`.
+- Active branch: `codex/frontend-data-recovery-components` for moving sleep, metrics and body composition UI into `frontend/src/features/data/recovery/`.
 - Recent completed branches:
+- `codex/frontend-data-mental-components`: merged and deployed via PR #142.
 - `codex/frontend-data-coverage-components`: merged and deployed via PR #141.
 - `codex/frontend-plan-goal-components`: merged and deployed via PR #140.
 - `codex/frontend-plan-strategy-components`: merged and deployed via PR #139.
