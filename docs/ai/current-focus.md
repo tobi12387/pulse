@@ -42,13 +42,15 @@ Keep this file short. Update it whenever the active work queue changes.
 36. Daily Decision Quality Loop was merged and deployed via PR #117.
 37. Daily Quality status closeout was merged and deployed via PR #118.
 38. Deploy Cert Guard was merged and deployed via PR #120 so the structure cleanup can remove tracked cert files without losing HTTPS on `:5175`.
-39. Project Structure Audit is active on `codex/project-structure-audit`.
+39. Project Structure Audit was merged and deployed via PR #119.
+40. Backend Health Route Extraction is active on `codex/pulse-health-route-extraction`.
 
 ## Current PRs / Branches
 
-- Open PRs: #119 `codex/project-structure-audit` draft.
-- Active branch: `codex/project-structure-audit` for repository structure audit and low-risk cleanup.
+- Open PRs: none known from Codex.
+- Active branch: `codex/pulse-health-route-extraction` for the first backend route-boundary slice.
 - Recent completed branches:
+- `codex/project-structure-audit`: merged and deployed via PR #119.
 - `codex/deploy-cert-guard`: merged and deployed via PR #120.
 - `codex/daily-quality-status-closeout`: merged and deployed via PR #118.
 - `codex/daily-decision-quality`: merged and deployed via PR #117.

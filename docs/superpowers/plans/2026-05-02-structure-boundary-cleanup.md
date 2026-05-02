@@ -26,11 +26,11 @@
 - [x] Replace the generic Vite `frontend/README.md` with a Pulse-specific guide.
 - [x] Remove tracked local TLS certificate material from `frontend/certs/`.
 - [x] Make Vite HTTPS certificate loading optional so builds do not require local secrets.
-- [ ] Rotate/provision new untracked LAN cert/key material on the server before deploying if HTTPS on `:5175` must stay active. Treat the old Git-tracked key as exposed.
+- [x] Rotate/provision new untracked LAN cert/key material on the server before deploying if HTTPS on `:5175` must stay active. Treat the old Git-tracked key as exposed.
 
 ## Phase 2: Backend Pulse Route Extraction
 
-- [ ] Create `backend/src/pulse/routes/health-routes.ts` for `/health`, `/readiness`, `/load`, `/health-state`, `/metrics`, `/weight`, and `/profile`.
+- [x] Create `backend/src/pulse/routes/health-routes.ts` for `/health`, `/readiness`, `/load`, `/health-state`, `/metrics`, `/weight`, and `/profile`.
 - [ ] Create `backend/src/pulse/routes/daily-loop-routes.ts` for `/home`, `/actions`, `/outcomes/daily`, `/decisions/quality`, `/briefing`, `/risk`.
 - [ ] Create `backend/src/pulse/routes/coach-routes.ts` for `/coach`, `/coach/history`, and `/coach/preferences`.
 - [ ] Create `backend/src/pulse/routes/checkin-routes.ts` for `/checkin`, `/checkin/voice`, `/checkin/today`, `/checkin/guidance`, `/checkin/history`, `/mental/themes`, and `/mental/load-overlay`.
@@ -38,8 +38,9 @@
 - [ ] Create `backend/src/pulse/routes/garmin-routes.ts` for Pulse-scoped Garmin coverage, backfill, calendar sync, signal usefulness, profile sync and sync endpoints.
 - [ ] Create `backend/src/pulse/routes/push-routes.ts` for push settings, subscribe, topics, quiet hours and test push.
 - [ ] Keep `backend/src/pulse/plugin.ts` as a thin Fastify plugin that registers the route modules.
-- [ ] Run `npm test -w backend -- --run src/pulse/plugin.test.ts` where local services are available; otherwise rely on CI and note the local service limitation.
-- [ ] Run `npm run typecheck`.
+- [x] Run `npm test -w backend -- --run src/pulse/plugin.test.ts` where local services are available; otherwise rely on CI and note the local service limitation.
+  - Local limitation 2026-05-02: attempted twice; Postgres `5433`/Redis `6380` unavailable because Docker Desktop is not running locally.
+- [x] Run `npm run typecheck`.
 
 ## Phase 3: Garmin Sync Boundary
 
