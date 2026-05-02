@@ -37,6 +37,12 @@
 | `2026-05-01-reliability-wave.md` | Reliability Wave — E2E CI, Local Tests, Deploy Smoke, Bundle Cleanup | PR #54, PR #55, PR #56, PR #57 |
 | `2026-05-01-ui-ux-usability-wave.md` | UI/UX Usability Wave — Insights resilience, daily action, Plan decision, Data/Settings trust, mobile density | PR #61, PR #63, PR #64, PR #65, PR #66 |
 | `2026-05-01-everyday-flow-deepening-wave.md` | Everyday Flow Deepening Wave — Coach daily briefing, UI chrome, Figma integration, plan alternatives, Garmin fallback, Insights/Data/Settings reliability | PR #69, PR #70, PR #71, PR #72, PR #73, PR #74, PR #75, PR #76 |
+| `2026-05-01-daily-intelligence-next-wave.md` | Daily Intelligence — execution reconciliation, personalization, daily decision, insight evidence, UI/UX audit | PR #81, PR #86, PR #87, PR #92, PR #99 |
+| `2026-05-01-garmin-data-enrichment-wave.md` | Garmin Enrichment — raw preservation, execution reconciliation, recovery depth, profile provenance, sync cleanup | PR #80, PR #81, PR #82, PR #83, PR #84 |
+| `2026-05-01-iphone-pwa-readiness.md` | iPhone/PWA Readiness — safe-area, service worker, diagnostics, WebKit/manual QA gate | PR #79, PR #98 |
+| `2026-05-01-decision-closure-coach-memory-wave.md` | Decision Closure & Coach Memory — action decisions, Home/Coach closure, preferences, push journeys | PR #94, PR #95, PR #96, PR #97 |
+| `2026-05-01-pulse-app-potential-audit.md` | Potential and gap audit after Garmin repeat sync | Planning audit closed by PR #79-#100 |
+| `2026-05-02-overnight-next-steps.md` | Overnight sequence closeout and morning gates | PR #94-#100 |
 
 ## Bekannte veraltete Stellen
 

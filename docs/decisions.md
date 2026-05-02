@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Abgeschlossene aktive Planwellen werden archiviert
+
+- **Decision:** Die May-1/May-2-Planwellen, deren Code- und Docs-Slices bereits per PR #79-#100 umgesetzt und deployed wurden, werden nach `docs/superpowers/plans/completed/` verschoben. Aktive neue Arbeit startet mit `2026-05-02-future-direction-roadmap.md`, `2026-05-02-daily-loop-explainability-wave.md` und `2026-05-02-mobile-field-reliability-wave.md`.
+- **Why:** `docs/superpowers/plans/` ist laut AGENTS.md das aktive Backlog. Bereits erledigte Pläne dort zu lassen führt dazu, dass Agenten alte Arbeit erneut implementieren oder die falsche Reihenfolge ableiten.
+- **Alternatives:** Alte Pläne aktiv liegen lassen (verwirrt Backlog und Token-Kontext); erledigte Pläne löschen (verliert historische Begründung); nur `current-focus` korrigieren (die Source-of-Truth-Regel für Planstatus bleibt gebrochen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — FigJam ist Loop-Diagramm, Canva bleibt Screenshot-/Review-Board
 
 - **Decision:** Der aktuelle Pulse Daily Loop wird in FigJam als Architektur-/Ablaufdiagramm gepflegt; Canva bleibt das visuelle UX-Review-Board fuer Screenshots, Route-Notizen und Vorher/Nachher-Reviews. Canva-Edits werden erst nach Preview-Freigabe gespeichert, weil der Canva-Connector dies fuer Design-Commits verlangt.
