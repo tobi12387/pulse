@@ -6,14 +6,15 @@ import {
   useHealthStates, useCreateHealthState, useResolveHealthState, useDeleteHealthState,
   usePushSettings, usePushSubscribe, usePushUnsubscribe, useUpdatePushTopics,
   useUpdatePushQuietHours, useSendTestPush, useDataCoverage,
-  useCoachPreferences, useUpdateCoachPreferences,
+  useCoachPreferences, useUpdateCoachPreferences, useGarminCoverage,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { api } from '@/api/client';
 import { getPushPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push-client';
 import { EquipmentList } from '@/components/EquipmentList';
+import { GarminQualityList, GarminQualityPill } from '@/components/GarminQualityList';
 import { MiniButton, PageHeader } from '@/components/PulseChrome';
-import type { PulseCoachCommunicationStyle, PulseCoachPreferences, PulseProfileMetricProvenance, PushTopic } from '@coaching-os/shared/pulse';
+import type { PulseCoachCommunicationStyle, PulseCoachPreferences, PulseGarminCoverageRepairAction, PulseProfileMetricProvenance, PushTopic } from '@coaching-os/shared/pulse';
 
 interface GarminStatus {
   connected: boolean;
@@ -73,6 +74,7 @@ export default function Settings() {
   const qc = useQueryClient();
   const { data: profile } = usePulseProfile();
   const { data: coverage30 } = useDataCoverage({ days: 30 });
+  const { data: garminCoverage } = useGarminCoverage(30);
   const updateProfile = useUpdateProfile();
 
   const [profileForm, setProfileForm] = useState<{
@@ -111,12 +113,17 @@ export default function Settings() {
     try {
       await api.garmin.sync();
       await refetch();
+      await qc.invalidateQueries({ queryKey: ['pulse', 'garmin-coverage'] });
       setMessage({ text: 'Sync erfolgreich.', ok: true });
     } catch (err) {
       setMessage({ text: err instanceof Error ? err.message : 'Sync fehlgeschlagen.', ok: false });
     } finally {
       setSyncing(false);
     }
+  }
+
+  function openGarminRepair(action: PulseGarminCoverageRepairAction) {
+    navigate(action.route.startsWith('/data') ? '/data' : action.route);
   }
 
   async function handleSyncProfile() {
@@ -376,6 +383,23 @@ export default function Settings() {
                     : 'Noch keiner'}
                 </span>
               </Row>
+            </>
+          )}
+          {garminCoverage && (
+            <>
+              <Row label="Domainqualität">
+                <GarminQualityPill status={garminCoverage.domains.some(domain => domain.status === 'blocked')
+                  ? 'blocked'
+                  : garminCoverage.domains.some(domain => domain.status !== 'fresh')
+                    ? 'partial'
+                    : 'fresh'}
+                />
+              </Row>
+              <GarminQualityList
+                domains={garminCoverage.domains}
+                showActions
+                onRepairAction={openGarminRepair}
+              />
             </>
           )}
         </div>

@@ -784,6 +784,114 @@ test('Data coverage explains status, cause and action before backfill', async ({
   await expect(page.getByText('Vorschau verändert nichts; Nachladen schreibt Garmin-Daten für den gewählten Monat in Pulse.')).toBeVisible();
 });
 
+test('Data shows Garmin domain quality and affected-tab hints', async ({ page }) => {
+  await mockPulseApi(page, {
+    garminCoverage: {
+      range: { from: '2026-04-02', to: '2026-05-01', days: 30 },
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      circuit: { status: 'ok', failures: 0, reason: null },
+      domains: [
+        {
+          domain: 'activities',
+          label: 'Aktivitäten',
+          status: 'fresh',
+          reason: 'Aktivitäten sind frisch synchronisiert.',
+          lastFreshAt: '2026-05-01T06:00:00.000Z',
+          lastFreshDate: '2026-05-01',
+          missingDays: 0,
+          partialDays: 0,
+          repairableDays: 0,
+          repairAction: null,
+          evidence: ['1 Aktivitäten'],
+        },
+        {
+          domain: 'sleep',
+          label: 'Schlaf',
+          status: 'partial',
+          reason: 'Schlaf ist vorhanden, aber Detailstufen fehlen.',
+          lastFreshAt: '2026-05-01T00:00:00.000Z',
+          lastFreshDate: '2026-05-01',
+          missingDays: 0,
+          partialDays: 2,
+          repairableDays: 2,
+          repairAction: { type: 'backfill', label: 'Schlaf nachladen', route: '/data?tab=abdeckung', domains: ['sleep'], candidateDays: ['2026-04-30', '2026-05-01'] },
+          evidence: ['2 Tage mit Schlafphasen'],
+        },
+        {
+          domain: 'body_composition',
+          label: 'Körperdaten',
+          status: 'stale',
+          reason: 'Gewicht ist vorhanden, aber Körperzusammensetzung fehlt oder ist alt.',
+          lastFreshAt: null,
+          lastFreshDate: '2026-05-01',
+          missingDays: 0,
+          partialDays: 1,
+          repairableDays: 1,
+          repairAction: { type: 'backfill', label: 'Körperdaten nachladen', route: '/data?tab=abdeckung', domains: ['weight'], candidateDays: ['2026-05-01'] },
+          evidence: ['1 Gewichtseinträge'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Abdeckung' }).click();
+
+  await expect(page.getByTestId('garmin-quality-panel')).toContainText('Garmin Domainqualität');
+  await expect(page.getByTestId('garmin-quality-sleep')).toContainText('TEIL');
+  await expect(page.getByTestId('garmin-quality-body_composition')).toContainText('ALT');
+  await expect(page.getByTestId('garmin-quality-body_composition')).toContainText('Körperzusammensetzung fehlt');
+
+  await page.getByRole('button', { name: 'Gewicht' }).click();
+  await expect(page.getByTestId('garmin-quality-hint')).toContainText('Körperdaten');
+  await expect(page.getByTestId('garmin-quality-hint')).toContainText('ALT');
+});
+
+test('Settings surfaces blocked Garmin provider state with bounded actions', async ({ page }) => {
+  await mockPulseApi(page, {
+    garminCoverage: {
+      range: { from: '2026-04-02', to: '2026-05-01', days: 30 },
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      circuit: { status: 'open', failures: 3, reason: 'Garmin rate limit' },
+      domains: [
+        {
+          domain: 'daily_metrics',
+          label: 'Tagesmetriken',
+          status: 'blocked',
+          reason: 'Garmin rate limit',
+          lastFreshAt: '2026-04-30T05:00:00.000Z',
+          lastFreshDate: '2026-04-30',
+          missingDays: 1,
+          partialDays: 0,
+          repairableDays: 0,
+          repairAction: null,
+          evidence: ['Circuit Breaker offen'],
+        },
+        {
+          domain: 'calendar',
+          label: 'Garmin-Kalender',
+          status: 'partial',
+          reason: 'Einige zukünftige Workouts sind noch nicht im Garmin-Kalender geplant.',
+          lastFreshAt: null,
+          lastFreshDate: null,
+          missingDays: 1,
+          partialDays: 0,
+          repairableDays: 1,
+          repairAction: { type: 'calendar_sync', label: 'Garmin-Kalender synchronisieren', route: '/settings', candidateDays: ['2026-05-04'] },
+          evidence: ['1 ohne Garmin-Termin'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/settings');
+
+  await expect(page.getByText('Domainqualität')).toBeVisible();
+  await expect(page.getByTestId('garmin-quality-daily_metrics')).toContainText('BLOCKIERT');
+  await expect(page.getByTestId('garmin-quality-daily_metrics')).toContainText('Garmin rate limit');
+  await expect(page.getByTestId('garmin-quality-calendar')).toContainText('Öffnen');
+});
+
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
   const coverage = {
     range: { from: '2026-05-01', to: '2026-05-02', days: 2, year: null },

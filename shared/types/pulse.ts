@@ -566,6 +566,57 @@ export interface PulseDataCoverageResponse {
 }
 
 export type PulseGarminBackfillDomain = 'dailyMetrics' | 'sleep' | 'activities' | 'weather' | 'weight';
+
+export type PulseGarminCoverageDomain =
+  | 'activities'
+  | 'daily_metrics'
+  | 'sleep'
+  | 'hrv'
+  | 'body_composition'
+  | 'planned_workouts'
+  | 'calendar';
+
+export type PulseGarminCoverageStatus = 'fresh' | 'partial' | 'missing' | 'stale' | 'blocked';
+
+export interface PulseGarminCoverageRepairAction {
+  type: 'backfill' | 'calendar_sync' | 'plan';
+  label: string;
+  route: string;
+  domains?: PulseGarminBackfillDomain[];
+  candidateDays?: string[];
+}
+
+export interface PulseGarminCoverageCircuitState {
+  status: 'ok' | 'open' | 'unknown';
+  failures: number | null;
+  reason: string | null;
+}
+
+export interface PulseGarminCoverageDomainState {
+  domain: PulseGarminCoverageDomain;
+  label: string;
+  status: PulseGarminCoverageStatus;
+  reason: string;
+  lastFreshAt: string | null;
+  lastFreshDate: string | null;
+  missingDays: number;
+  partialDays: number;
+  repairableDays: number;
+  repairAction: PulseGarminCoverageRepairAction | null;
+  evidence: string[];
+}
+
+export interface PulseGarminCoverageResponse {
+  range: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  generatedAt: string;
+  circuit: PulseGarminCoverageCircuitState;
+  domains: PulseGarminCoverageDomainState[];
+}
+
 export type PulseGarminBackfillDayStatus = 'planned' | 'synced' | 'skipped' | 'failed';
 
 export interface PulseGarminBackfillDayResult {

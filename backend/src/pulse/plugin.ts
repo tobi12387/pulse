@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../lib/db.js';
+import { redis } from '../lib/redis.js';
 import {
   pulseDailyMetrics,
   pulseMentalCheckins,
@@ -31,7 +32,7 @@ import { eq, desc, and, gte, lte, lt, isNull, or, sql, inArray } from 'drizzle-o
 import { env } from '../lib/env.js';
 import { llmComplete, SMART_MODEL } from '../lib/llm.js';
 import { RPE_SORENESS_AREAS } from '@coaching-os/shared/pulse';
-import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
+import type { PulseActionsResponse, PulseActionState, PulseActivityType as SharedPulseActivityType, PulseCoachCommunicationStyle, PulseCoachPreferences, PulseDataCoverageResponse, PulseFitnessLoad, PulseGarminBackfillDomain, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGuidedCheckinResponse, PulseHomeScreenData, PulseCoachMessage, PulsePlanDecision, PulsePlanTrace, PulseReadiness, PulseTrainingExecutionReview, RpeSorenessArea, PulsePushTopics, PulseRecentActionDecision } from '@coaching-os/shared/pulse';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import { computeFitnessLoad, computeReadinessScore } from './services/load-engine.js';
 import { getPrognosis } from './services/prognosis-engine.js';
@@ -73,6 +74,8 @@ import {
 } from './services/action-push.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './services/workout-reconciliation.js';
 import { profileWithProvenance, syncProfileFromGarmin } from './services/profile-sync.js';
+import { buildGarminDataQuality } from './services/garmin-data-quality.js';
+import { readGarminCircuitState } from '../jobs/garmin-sync.job.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -1394,6 +1397,120 @@ export default async function pulsePlugin(app: FastifyInstance) {
       },
       days: coverageDays.reverse(),
     } satisfies PulseDataCoverageResponse;
+  });
+
+  app.get('/garmin/coverage', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseGarminCoverageResponse | unknown> => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(366).optional().default(30),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const now = new Date();
+    const today = toIsoDate(now);
+    const to = today;
+    const from = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), -(parsed.data.days - 1)));
+    const futureTo = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), parsed.data.days));
+
+    const [
+      dailyRows,
+      sleepRows,
+      activityRows,
+      weightRows,
+      plannedRows,
+      circuit,
+    ] = await Promise.all([
+      db.select({
+        date: pulseDailyMetrics.date,
+        hrvRmssd: pulseDailyMetrics.hrvRmssd,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg,
+        steps: pulseDailyMetrics.steps,
+        syncedAt: pulseDailyMetrics.syncedAt,
+      }).from(pulseDailyMetrics)
+        .where(and(
+          eq(pulseDailyMetrics.userId, userId),
+          eq(pulseDailyMetrics.source, 'garmin'),
+          gte(pulseDailyMetrics.date, from),
+          lte(pulseDailyMetrics.date, to),
+        )),
+      db.select({
+        date: pulseSleepSessions.date,
+        durationH: pulseSleepSessions.durationH,
+        deepSleepH: pulseSleepSessions.deepSleepH,
+        remSleepH: pulseSleepSessions.remSleepH,
+        lightSleepH: pulseSleepSessions.lightSleepH,
+        awakeH: pulseSleepSessions.awakeH,
+      }).from(pulseSleepSessions)
+        .where(and(
+          eq(pulseSleepSessions.userId, userId),
+          eq(pulseSleepSessions.source, 'garmin'),
+          gte(pulseSleepSessions.date, from),
+          lte(pulseSleepSessions.date, to),
+        )),
+      db.select({
+        startTime: pulseActivities.startTime,
+        weather: pulseActivities.weather,
+      }).from(pulseActivities)
+        .where(and(
+          eq(pulseActivities.userId, userId),
+          eq(pulseActivities.source, 'garmin'),
+          gte(pulseActivities.startTime, new Date(`${from}T00:00:00.000Z`)),
+          lte(pulseActivities.startTime, new Date(`${to}T23:59:59.999Z`)),
+        )),
+      db.select({
+        date: pulseWeightLog.date,
+        bodyFatPct: pulseWeightLog.bodyFatPct,
+        muscleMassKg: pulseWeightLog.muscleMassKg,
+        bmi: pulseWeightLog.bmi,
+      }).from(pulseWeightLog)
+        .where(and(
+          eq(pulseWeightLog.userId, userId),
+          eq(pulseWeightLog.source, 'garmin'),
+          gte(pulseWeightLog.date, from),
+          lte(pulseWeightLog.date, to),
+        )),
+      db.select({
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        garminWorkoutId: pulsePlannedWorkouts.garminWorkoutId,
+        garminScheduledId: pulsePlannedWorkouts.garminScheduledId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.status, 'planned'),
+          gte(pulsePlannedWorkouts.plannedDate, today),
+          lte(pulsePlannedWorkouts.plannedDate, futureTo),
+        )),
+      readGarminCircuitState(redis).catch(() => ({
+        status: 'unknown' as const,
+        failures: null,
+        reason: 'Redis/Circuit-Breaker-Status ist lokal nicht verfügbar.',
+      })),
+    ]);
+
+    return buildGarminDataQuality({
+      today,
+      now: now.toISOString(),
+      range: { from, to, days: dateRange(from, to).length },
+      dailyMetrics: dailyRows.map(row => ({
+        date: row.date,
+        syncedAt: row.syncedAt?.toISOString() ?? null,
+        hrvRmssd: row.hrvRmssd,
+        sleepHours: row.sleepHours,
+        bodyBatteryMax: row.bodyBatteryMax,
+        stressAvg: row.stressAvg,
+        steps: row.steps,
+      })),
+      sleepSessions: sleepRows,
+      activities: activityRows.map(row => ({
+        startTime: row.startTime.toISOString(),
+        weather: row.weather,
+      })),
+      weightLogs: weightRows,
+      plannedWorkouts: plannedRows,
+      circuit,
+    });
   });
 
   app.post('/garmin/backfill', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseGarminBackfillResponse | unknown> => {

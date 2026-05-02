@@ -38,6 +38,7 @@ export const pulseKeys = {
   races:            ['pulse', 'races'] as const,
   syncStatus:       ['pulse', 'sync-status'] as const,
   dataCoverage:     (scope: string) => ['pulse', 'data-coverage', scope] as const,
+  garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
   strengthSessions: (days: number, exercise: string | null) =>
     ['pulse', 'strength', 'sessions', days, exercise] as const,
@@ -411,6 +412,14 @@ export function useDataCoverage(params: { days?: number; year?: number } = { day
   });
 }
 
+export function useGarminCoverage(days = 30) {
+  return useQuery({
+    queryKey: pulseKeys.garminCoverage(days),
+    queryFn: () => pulseApi.garmin.domainCoverage(days),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useGarminBackfill() {
   const qc = useQueryClient();
   return useMutation({
@@ -427,7 +436,10 @@ export function useGarminCalendarSync() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: pulseApi.garmin.calendarSync,
-    onSuccess: () => invalidatePulsePlanContextQueries(qc),
+    onSuccess: () => {
+      invalidatePulsePlanContextQueries(qc);
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-coverage'] });
+    },
   });
 }
 

@@ -2,14 +2,22 @@ import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, useCheckinToday,
   useDataCoverage, useGarminBackfill, usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
-  useCheckinGuidance,
+  useCheckinGuidance, useGarminCoverage,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { BodyCompChart } from '@/components/BodyCompChart';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
+import { GarminQualityList } from '@/components/GarminQualityList';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
-import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse, PulseSleepSession } from '@coaching-os/shared/pulse';
+import type {
+  PulseDataCoverageDay,
+  PulseDataCoverageDomain,
+  PulseDataCoverageResponse,
+  PulseGarminBackfillResponse,
+  PulseGarminCoverageDomain,
+  PulseSleepSession,
+} from '@coaching-os/shared/pulse';
 
 type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
@@ -95,6 +103,22 @@ function CoverageMetric({ label, value, sub }: { label: string; value: string; s
       <span className="label-mono">{label}</span>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--text)', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function GarminDomainHint({ domains }: { domains: PulseGarminCoverageDomain[] }) {
+  const { data } = useGarminCoverage(30);
+  const rows = data?.domains.filter(domain => domains.includes(domain.domain) && domain.status !== 'fresh') ?? [];
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="card" data-testid="garmin-quality-hint" style={{ borderColor: 'rgba(245,158,11,0.28)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 4 }}>
+        <span className="label-mono" style={{ color: 'var(--amber)' }}>Garmin Datenqualität</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>30T</span>
+      </div>
+      <GarminQualityList domains={rows} limit={3} />
     </div>
   );
 }
@@ -417,6 +441,7 @@ function CoverageTab() {
   const [backfillResult, setBackfillResult] = useState<PulseGarminBackfillResponse | null>(null);
   const [lastBackfill, setLastBackfill] = useState<BackfillMemory | null>(() => loadLastBackfillResult());
   const coverage = useDataCoverage(range === 'year' ? { year: currentYear } : { days: Number(range) });
+  const garminCoverage = useGarminCoverage(range === 'year' ? 366 : Number(range));
   const backfill = useGarminBackfill();
 
   if (coverage.isLoading) return <Loading rows={3} />;
@@ -477,6 +502,18 @@ function CoverageTab() {
         <CoverageMetric label="Gewicht" value={`${data.summary.weightDays}/${data.range.days}`} />
         <CoverageMetric label="Profil" value={profileReady ? 'OK' : `${data.profile.missing.length} fehlt`} sub={data.profile.updatedAt ? new Date(data.profile.updatedAt).toLocaleDateString('de-DE') : undefined} />
       </div>
+
+      {garminCoverage.data && (
+        <div className="card" data-testid="garmin-quality-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 8 }}>
+            <span className="label-mono">Garmin Domainqualität</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+              {garminCoverage.data.domains.filter(domain => domain.status === 'fresh').length}/{garminCoverage.data.domains.length} frisch
+            </span>
+          </div>
+          <GarminQualityList domains={garminCoverage.data.domains} />
+        </div>
+      )}
 
       <CoverageDiagnosisPanel data={data} shownDays={shownDays} candidateCount={candidateCount} />
 
@@ -697,6 +734,8 @@ function SchlafTab() {
         </div>
       </div>
 
+      <GarminDomainHint domains={['sleep']} />
+
       {/* Per-night rows */}
       {sessions.map((s) => (
         <div key={s.date} className="card" style={{ padding: '10px 14px' }}>
@@ -841,6 +880,8 @@ function MetrikenTab() {
         <RangePicker value={days} onChange={setDays} options={RANGE_OPTS} />
       </div>
 
+      <GarminDomainHint domains={['daily_metrics', 'hrv']} />
+
       <RecoveryDepthCard metrics={rows} sessions={sleepData?.sessions ?? []} />
       <MetricCard label="HRV (ms)"         values={rows.map(r => r.hrvRmssd)}      labels={labels} latest={last?.hrvRmssd ?? null}      color="var(--accent)" />
       <MetricCard label="Ruhepuls (bpm)"   values={rows.map(r => r.restingHr)}     labels={labels} latest={last?.restingHr ?? null}     color="var(--rose)" />
@@ -957,6 +998,8 @@ function GewichtTab() {
         </form>
         {inputError && <p style={{ fontSize: 11, color: 'var(--rose)', marginTop: 6 }}>{inputError}</p>}
       </div>
+
+      <GarminDomainHint domains={['body_composition']} />
 
       {/* KPI cards */}
       {latest && (
@@ -1150,6 +1193,8 @@ function MentalTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <GarminDomainHint domains={['daily_metrics', 'hrv', 'sleep']} />
+
       {/* Check-in form */}
       {alreadyDone || submitted ? (
         <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
