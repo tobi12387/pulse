@@ -24,5 +24,5 @@ build/
 /garmin-test.mjs
 
 # Local certificate material
-frontend/certs/*-key.pem
-frontend/certs/*.p12
+frontend/certs/*
+!frontend/certs/README.md
