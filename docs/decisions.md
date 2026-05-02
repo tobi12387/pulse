@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Check-in- und Mental-Routen bilden einen Tagesreflexions-Slice
+
+- **Decision:** Pulse extrahiert `/checkin`, `/checkin/voice`, `/checkin/today`, `/checkin/guidance`, `/checkin/history`, `/mental/themes` und `/mental/load-overlay` nach `backend/src/pulse/routes/checkin-routes.ts`.
+- **Why:** Gefuehrter Check-in, Voice-Check-in und Mental-Overlays gehoeren fachlich zum gleichen Tagesreflexions-Flow. Die Extraktion entlastet `plugin.ts`, haelt die bestehenden URL- und Response-Vertraege stabil und laesst `pulseMentalCheckins` im Plugin nur dort, wo Insights es weiter braucht.
+- **Alternatives:** Mental-Endpoints separat splitten (zu kleiner Slice mit denselben Tabellen); Voice-Check-in beim Coach-Slice belassen (vermengt Chat und Check-in-Persistenz); Helper duplizieren (LLM-/PulseContext-Logik driftet).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Coach-Routen teilen Chat und Preference-Helfer
 
 - **Decision:** Pulse extrahiert `/coach`, `/coach/history` und `/coach/preferences` nach `backend/src/pulse/routes/coach-routes.ts`; gemeinsam genutzte `normalizeCoachMessages`- und `serializeCoachPreferences`-Logik liegt in `backend/src/pulse/services/coach.ts`.

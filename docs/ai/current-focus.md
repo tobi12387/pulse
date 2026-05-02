@@ -45,13 +45,15 @@ Keep this file short. Update it whenever the active work queue changes.
 39. Project Structure Audit was merged and deployed via PR #119.
 40. Backend Health Route Extraction was merged and deployed via PR #121.
 41. Backend Daily Loop Route Extraction was merged and deployed via PR #122.
-42. Backend Coach Route Extraction is active on `codex/pulse-coach-routes`.
+42. Backend Coach Route Extraction was merged and deployed via PR #123.
+43. Backend Check-in Route Extraction is active on `codex/pulse-checkin-routes`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/pulse-coach-routes` for the Coach route-boundary slice.
+- Active branch: `codex/pulse-checkin-routes` for the Check-in/Mental route-boundary slice.
 - Recent completed branches:
+- `codex/pulse-coach-routes`: merged and deployed via PR #123.
 - `codex/pulse-daily-loop-routes`: merged and deployed via PR #122.
 - `codex/pulse-health-route-extraction`: merged and deployed via PR #121.
 - `codex/project-structure-audit`: merged and deployed via PR #119.
