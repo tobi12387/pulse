@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Garmin- und Daten-Sync-Routen bilden eine Sync-Boundary
+
+- **Decision:** Pulse verschiebt `/sync/status`, `/data-coverage`, `/garmin/coverage`, `/garmin/signal-usefulness`, `/garmin/backfill`, `/garmin/calendar/sync`, `/garmin/sync-profile` und `/garmin/sync` nach `backend/src/pulse/routes/garmin-routes.ts`.
+- **Why:** Diese Endpunkte teilen Garmin-/Datenabdeckungsstatus, Backfill-Logik, Kalender-Sync und Profil-Sync. Ein gemeinsamer Sync-Router entfernt die UTC-Date- und Coverage-Helfer aus dem Plugin-Monolithen, ohne Activity-Detail oder Plan-Workout-Sync fachlich zu vermischen.
+- **Alternatives:** Nur `/garmin/*` verschieben (laesst `/data-coverage` und `/sync/status` als Rest-Sync-Logik im Plugin); Activity-Detail ebenfalls verschieben (besser spaeter als Activity-Boundary); Plan-Workout-Garmin-Sync aus `training-routes.ts` herausloesen (groesserer Training/Garmin-Cross-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Training Analytics schliesst die Training-Boundary
 
 - **Decision:** Pulse verschiebt `GET /api/pulse/training-analytics` nach `backend/src/pulse/routes/training-routes.ts` und schliesst damit den Training-Routen-Slice aus Plan, Workout, Strength, Equipment, Goals, Race, Season, Review, Nutrition und Analytics ab.
