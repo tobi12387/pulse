@@ -6,6 +6,7 @@ const script = readFileSync(new URL('./dev-services.sh', import.meta.url), 'utf8
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const verifyLocalScript = readFileSync(new URL('./verify-local.sh', import.meta.url), 'utf8');
 const pulseStatusScript = readFileSync(new URL('./pulse-status.sh', import.meta.url), 'utf8');
+const deployScript = readFileSync(new URL('./deploy.sh', import.meta.url), 'utf8');
 
 test('dev-services script manages local Postgres and Redis through docker compose', () => {
   assert.match(script, /Usage: scripts\/dev-services\.sh/);
@@ -44,4 +45,16 @@ test('verify-local prints local service remediation before DB checks', () => {
   assert.match(verifyLocalScript, /start services:/);
   assert.match(verifyLocalScript, /npm run services:up/);
   assert.match(verifyLocalScript, /Docker Desktop/);
+});
+
+test('deploy preserves HTTPS by provisioning frontend certs after git pull', () => {
+  assert.match(deployScript, /ensure_frontend_tls_certs/);
+  assert.match(deployScript, /FRONTEND_CERT_DIR/);
+  assert.match(deployScript, /192\.168\.178\.46\+2-key\.pem/);
+  assert.match(deployScript, /openssl/);
+  assert.match(deployScript, /backup_frontend_tls_ca/);
+  assert.match(deployScript, /generate_frontend_leaf_cert/);
+  assert.match(deployScript, /Pulse Local Root CA/);
+  assert.match(deployScript, /git pull --ff-only origin "\$BRANCH"/);
+  assert.match(deployScript, /ensure_frontend_tls_certs/);
 });

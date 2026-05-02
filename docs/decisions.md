@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-02 — Deploy-Script provisioniert lokale Frontend-Zertifikate
+
+- **Decision:** `scripts/deploy.sh` sichert vor dem Fast-Forward-Pull nur server-lokales Root-CA-Material und stellt nach dem Pull fehlende `frontend/certs`-Leaf-Zertifikate mit `openssl` wieder her. Getrackte Leaf-Keys werden nicht wiederhergestellt; lokale Zertifikate bleiben Runtime-State ausserhalb von Git.
+- **Why:** Der naechste Cleanup entfernt versehentlich getrackte TLS-Dateien. Ohne Deploy-Guard wuerde der erste Deploy nach diesem Merge den Vite-Frontend-Prozess ohne HTTPS-Zertifikat neu starten und `https://192.168.178.46:5175` brechen.
+- **Alternatives:** Zertifikate weiter tracken (Secrets-Verstoss); PR #119 manuell mit Sonder-Deploy ausrollen (nicht wiederholbar); Vite still auf HTTP fallen lassen (bricht iPhone/PWA-Erwartung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-02 — Daily Decision Quality bleibt read-only und sichtbar
 
 - **Decision:** Pulse fuehrt `GET /api/pulse/decisions/quality` als read-only Qualitaetslayer ein. Der Layer bewertet Action Decisions, Outcome Learning, Check-ins, Garmin-Ausfuehrung, Tagesmetriken und Plan-Traces deterministisch und zeigt den Status kompakt in Home, Coach und Insights.
