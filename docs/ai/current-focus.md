@@ -71,13 +71,15 @@ Keep this file short. Update it whenever the active work queue changes.
 65. Frontend Settings Coach Components Split was merged and deployed via PR #146.
 66. Frontend Settings Health Components Split was merged and deployed via PR #147.
 67. Shared Pulse Type Split was merged and deployed via PR #148.
-68. Ops And Tooling Cleanup is active on `codex/ops-tooling-cleanup`.
+68. Ops And Tooling Cleanup was merged and deployed via PR #149.
+69. Docs Design Handoff Relocation is active on `codex/docs-design-reference-relocation`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/ops-tooling-cleanup` for Pulse Ops health URLs, PM2 process management and root package naming.
+- Active branch: `codex/docs-design-reference-relocation` for moving the historical design handoff reference under `docs/design/handoff/`.
 - Recent completed branches:
+- `codex/ops-tooling-cleanup`: merged and deployed via PR #149.
 - `codex/shared-pulse-type-split`: merged and deployed via PR #148.
 - `codex/frontend-settings-health-components`: merged and deployed via PR #147.
 - `codex/frontend-settings-coach-components`: merged and deployed via PR #146.

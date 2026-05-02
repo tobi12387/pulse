@@ -189,9 +189,9 @@ The docs split is mostly sound:
 - `docs/superpowers/plans/` is the active plan backlog.
 - `docs/superpowers/plans/completed/` is the historical archive.
 - `docs/qa/` contains evidence records.
-- `design-handoff/` is historical visual reference.
+- `docs/design/handoff/` is historical visual reference.
 
-Do not delete `design-handoff/`; it is explicitly marked historical and still preserves the cockpit design reference. Moving it under `docs/design/` would be cleaner, but it would require link updates and should be a small docs-only PR.
+Do not delete `docs/design/handoff/`; it is explicitly marked historical and still preserves the cockpit design reference.
 
 ## Ops And Tooling Findings
 
@@ -207,7 +207,6 @@ These are not safe one-line deletions. They should be handled as a follow-up ops
 2. Frontend route-page feature extraction.
 3. Shared Pulse type split with compatibility barrel.
 4. Ops/tooling cleanup for Pulse Ops plugin, `pm2.config.js` and package naming.
-5. Optional docs/design-handoff relocation.
-6. Optional service subfolder grouping after imports stabilize.
+5. Optional service subfolder grouping after imports stabilize.
 
 Avoid a big-bang restructure. The risk is not the folder names; the risk is changing endpoint contracts, cache invalidation and tests while moving too much at once.

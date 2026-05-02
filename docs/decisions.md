@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Historisches Design-Handoff liegt unter docs/design
+
+- **Decision:** Die historische Variante-B-Designreferenz liegt unter `docs/design/handoff/` statt als Root-Ordner.
+- **Why:** Das Handoff ist keine aktive App- oder Build-Oberflaeche mehr, bleibt aber als visuelle Referenz wertvoll. Unter `docs/design/` ist es klar als Dokumentation eingeordnet und stoert die Repo-Root-Navigation nicht.
+- **Alternatives:** Den Ordner im Root belassen (weiterer historischer Root-Eintrag); loeschen (zu hoher Wissensverlust fuer UI/UX-Vergleiche); in aktive Figma/Canva-Artefakte umwandeln (anderer Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Pulse Ops nutzt die aktive LAN-/PM2-Topologie
 
 - **Decision:** Pulse Ops zeigt auf `https://192.168.178.46:5175` und `/api/pulse/health`, `pm2.config.js` verwaltet `pulse` plus `pulse-frontend`, `scripts/deploy.sh` startet/laedt beide Prozesse aus der PM2-Config, und das Root-Package heisst `pulse`.

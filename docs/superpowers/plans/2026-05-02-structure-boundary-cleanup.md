@@ -102,10 +102,10 @@
 
 ## Phase 8: Optional Docs Relocation
 
-- [ ] Move `design-handoff/` to `docs/design/handoff/` only in a docs-only PR.
-- [ ] Update all links from `design-handoff/...` to `docs/design/handoff/...`.
-- [ ] Keep the historical warning at the top of the README and HANDOFF docs.
-- [ ] Run `rg "design-handoff"` and confirm no stale links remain.
+- [x] Move the historical design handoff bundle to `docs/design/handoff/` only in a docs-only PR.
+- [x] Update all links to `docs/design/handoff/...`.
+- [x] Keep the historical warning at the top of the README and HANDOFF docs.
+- [x] Run the stale root-path search and confirm no matches remain.
 
 ## Acceptance
 

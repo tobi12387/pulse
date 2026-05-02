@@ -3,7 +3,7 @@
 > **⚠ HISTORISCHES DOKUMENT (Stand 2026-04-29).**
 > Dieses Handoff war für eine *frühere* Pulse-Iteration auf **Next.js + Supabase**
 > geschrieben. Der aktuelle Pulse-Stack ist **React 19 + Vite + Fastify + Postgres**
-> (siehe [../AGENTS.md](../AGENTS.md)).
+> (siehe [../../../AGENTS.md](../../../AGENTS.md)).
 >
 > Die **visuellen Tokens, Layout-Prinzipien und Farb-/Typo-Werte** in diesem
 > Dokument sind weiterhin verbindlich — sie wurden 1:1 ins aktuelle Pulse-Frontend
