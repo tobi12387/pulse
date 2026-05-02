@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — UI/UX-Reibungsschluss hat Prioritaet vor neuen Feature-Wellen
+
+- **Decision:** Die naechste Pulse-Arbeitsrichtung priorisiert evidenzbasierten UI/UX-Reibungsschluss vor neuen Produktdomaenen wie Fueling/Recovery oder Native-iOS-Evaluation.
+- **Why:** Tobi hat UI/UX als aktuell wichtiger priorisiert. Der 2026-05-02 Deep Audit bestaetigt, dass die App funktional breit ist, aber noch konkrete Alltagsreibungen hat: mobile Touch-/Overflow-Probleme, fragmentierte Home/Coach/Plan-Journeys, grobe Fehlerzustaende, zu tief versteckte Settings-Diagnostik und stale Canva/Figma-Evidenz.
+- **Alternatives:** Direkt Fueling/Recovery bauen (fachlich interessant, aber praferenz-gated und nicht die aktuelle Prioritaet); Native iOS starten (nicht durch PWA-Feldevidenz begruendet); abgeschlossene UX-Wellen erneut bauen (explizit verboten).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Echter iPhone-Test bestaetigt PWA/VPN als aktuellen Pfad
 
 - **Decision:** Pulse bleibt nach dem echten iPhone/VPN/PWA-Feldtest beim lokalen Web/PWA-Modell; es wird kein Native-iOS-Scope aus dieser Evidenz abgeleitet.

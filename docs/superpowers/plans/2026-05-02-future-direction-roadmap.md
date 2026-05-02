@@ -19,9 +19,10 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; this remains a real-device manual gate | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
-| 3 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 1 | UI/UX Deep Friction Closure | Tobi explicitly prioritized UI/UX over new feature scope, and the 2026-05-02 audit found concrete daily-flow, mobile, Settings and feedback gaps in the deployed app | `2026-05-02-ui-ux-deep-friction-roadmap.md` |
+| 2 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
+| 3 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
+| 4 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -39,6 +40,25 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Daily Decision Quality Loop | Home, Coach and Insights now show whether recent recommendations helped, repeated usefully, became stale or need a strategy change. | `completed/2026-05-02-daily-decision-quality-loop.md`, PR #117 |
 
 ## Next Plan Summaries
+
+### UI/UX Deep Friction Closure
+
+Implementation roadmap: [`2026-05-02-ui-ux-deep-friction-roadmap.md`](2026-05-02-ui-ux-deep-friction-roadmap.md)
+
+**Goal:** Make the current deployed app easier to use every day before adding more feature surface.
+
+**Scope:**
+- close mobile touch and containment issues, including the confirmed Data overflow;
+- make Home, Coach and Plan feel like one daily loop with addressable tabs/sections;
+- add local feedback and retry states for daily actions;
+- bring Settings device/PWA/push diagnostics to the top;
+- refresh Canva/Figma/WebKit evidence for the current app.
+
+**Acceptance:**
+- mobile screenshots show no unintended horizontal overflow;
+- a continuous Home -> Coach -> Plan -> evidence journey is testable;
+- Settings can deep-link to device/push/Garmin support sections;
+- visual companion artifacts are current or explicitly marked stale.
 
 ### Mobile Field Reliability
 
