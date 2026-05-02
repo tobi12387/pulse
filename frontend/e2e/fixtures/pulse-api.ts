@@ -14,6 +14,7 @@ type MockPulseApiOptions = {
   raceCommand?: unknown;
   seasonStrategy?: unknown;
   dailyOutcomes?: unknown[];
+  decisionQuality?: unknown;
   goals?: unknown[];
   actions?: unknown[];
   suppressedActions?: unknown[];
@@ -324,6 +325,26 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   if (pathname === '/api/pulse/checkin/history') return { checkins: [] };
   if (pathname === '/api/pulse/risk') return { signals: [] };
   if (pathname === '/api/pulse/outcomes/daily') return { items: [] };
+  if (pathname === '/api/pulse/decisions/quality') {
+    const days = Number(searchParams.get('days') ?? 14);
+    return {
+      range: { from: '2026-04-18', to: today, days },
+      qualityScore: 82,
+      status: 'helpful',
+      statusLabel: 'Hilfreich',
+      repeatedThemes: [],
+      bestEvidence: ['Outcome bestätigt: Tages-Loop wurde durch Folge-Daten bestätigt'],
+      evidence: [{
+        label: 'Outcome bestätigt',
+        detail: 'Tages-Loop wurde durch Folge-Daten bestätigt',
+        source: 'outcome_learning',
+        tone: 'positive',
+        date: '2026-04-30',
+        targetRoute: '/data',
+      }],
+      suggestedAdjustment: 'Diesen Entscheidungstyp beibehalten und weiter mit aktueller Evidenz begründen.',
+    };
+  }
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
   if (pathname === '/api/pulse/plan/today/proposal') return { proposal: null };
   if (pathname === '/api/pulse/races') return { races: [] };
@@ -585,6 +606,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/outcomes/daily' && options.dailyOutcomes) {
       return json(route, { items: options.dailyOutcomes });
+    }
+    if (url.pathname === '/api/pulse/decisions/quality' && options.decisionQuality) {
+      return json(route, options.decisionQuality);
     }
     if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
       const decisionId = url.pathname.split('/').at(-1) ?? 'decision-1';

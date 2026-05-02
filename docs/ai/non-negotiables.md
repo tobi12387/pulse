@@ -31,7 +31,8 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 
 - The previous sequence (Bundle A/B/C, RPE, Risk Watch, Web Push, Phase 10/11, Trust Wave, Everyday Utility Wave, Reliability Wave, UI/UX Usability Wave, Everyday Flow Deepening Wave) is implemented and belongs to `docs/superpowers/plans/completed/`.
 - Current active plan family: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`, plus Mobile Field Reliability.
-- Next implementation order: real iPhone/PWA field evidence and Mobile Field Reliability fixes if evidence reveals any; otherwise Daily Decision Quality Loop after Garmin Signal Usefulness is merged.
+- Next implementation order: merge/deploy Daily Decision Quality, then real iPhone/PWA field evidence and Mobile Field Reliability fixes if evidence reveals any.
+- After Daily Decision Quality, remaining active feature plans are gated by Tobi/device evidence or preference decisions.
 - Fueling & Recovery remains preference-gated. Native iOS remains evidence-gated.
 - Future waves have active implementation plans in `docs/superpowers/plans/`; do not re-plan from scratch unless `docs/decisions.md` reverses this ordering.
 - Local iPhone access stays web/PWA over VPN for now. Native iOS wrapper work is only a later evaluation unless Tobi explicitly changes scope.

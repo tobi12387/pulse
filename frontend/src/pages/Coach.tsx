@@ -7,6 +7,7 @@ import {
   useCoachHistory,
   useCoachSend,
   useCheckinGuidance,
+  useDailyDecisionQuality,
   useDailyOutcomeLearning,
   usePulseBriefing,
   usePulseActions,
@@ -15,7 +16,7 @@ import {
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
 type MicState = 'idle' | 'recording' | 'processing';
 
@@ -323,12 +324,57 @@ function DailyOutcomeContext({ outcome, onPrompt }: {
   );
 }
 
+function DailyDecisionQualityContext({ quality, onPrompt }: {
+  quality: PulseDailyDecisionQualityResponse | null;
+  onPrompt: (prompt: string) => void;
+}) {
+  if (!quality) return null;
+  const color = quality.status === 'helpful'
+    ? 'var(--green)'
+    : quality.status === 'needs_strategy_change'
+    ? 'var(--rose)'
+    : quality.status === 'stale'
+    ? 'var(--amber)'
+    : 'var(--accent)';
+
+  return (
+    <button
+      type="button"
+      data-testid="coach-decision-quality-chip"
+      onClick={() => onPrompt(`Wie ändern wir den heutigen Plan aufgrund der Entscheidungsqualität? Status: ${quality.statusLabel}, Score ${quality.qualityScore}/100. Evidenz: ${quality.bestEvidence.slice(0, 2).join(' | ')}. Anpassung: ${quality.suggestedAdjustment}`)}
+      style={{
+        width: '100%',
+        padding: '9px 10px',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
+        borderRadius: 5,
+        color: 'var(--text)',
+        textAlign: 'left',
+        cursor: 'pointer',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Entscheidungsqualität
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
+          {quality.statusLabel} · {quality.qualityScore}/100
+        </span>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, marginTop: 4 }}>
+        {quality.bestEvidence[0] ?? quality.suggestedAdjustment}
+      </div>
+    </button>
+  );
+}
+
 function DailyBriefingGuide({
   home,
   actions,
   recentDecisions,
   suppressed,
   outcome,
+  quality,
   briefing,
   briefingLoading,
   onPrompt,
@@ -338,6 +384,7 @@ function DailyBriefingGuide({
   recentDecisions: PulseRecentActionDecision[];
   suppressed: PulseSuppressedActionState[];
   outcome: PulseDailyOutcomeLearningItem | null;
+  quality: PulseDailyDecisionQualityResponse | null;
   briefing: string | undefined;
   briefingLoading: boolean;
   onPrompt: (prompt: string) => void;
@@ -388,6 +435,7 @@ function DailyBriefingGuide({
       )}
 
       <DailyOutcomeContext outcome={outcome} onPrompt={onPrompt} />
+      <DailyDecisionQualityContext quality={quality} onPrompt={onPrompt} />
 
       <div className="card" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
@@ -449,6 +497,7 @@ export default function Coach() {
   const { data: home } = usePulseHome();
   const { data: actionsData } = usePulseActions({ includeHistory: true });
   const { data: outcomeData } = useDailyOutcomeLearning(7);
+  const { data: qualityData } = useDailyDecisionQuality(14);
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const { data: checkinGuidance } = useCheckinGuidance();
   const m = home?.todayMetrics;
@@ -461,8 +510,16 @@ export default function Coach() {
   const nextWorkout = home?.nextWorkout;
   const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
   const latestOutcome = outcomeData?.items[0] ?? null;
+  const decisionQuality = qualityData ?? null;
   const guidedQuestionPrompts = checkinGuidance?.questions.map(question => question.label) ?? [];
   const quickPromptGroups: PromptGroup[] = [
+    ...(decisionQuality
+      ? [{
+          title: 'Entscheidungsqualität',
+          hint: `${decisionQuality.statusLabel} · ${decisionQuality.qualityScore}/100`,
+          prompts: [`Was bedeutet die Entscheidungsqualität "${decisionQuality.statusLabel}" konkret für heute?`],
+        }]
+      : []),
     ...(latestOutcome
       ? [{
           title: 'Aus gestern gelernt',
@@ -553,6 +610,7 @@ export default function Coach() {
           ['HRV',    m?.hrvRmssd   != null ? `${m.hrvRmssd.toFixed(0)} ms` : '–'],
           ['Bat.',   m?.bodyBatteryMax != null ? `${m.bodyBatteryMax}%` : '–'],
           ['Steps',  m?.steps != null ? `${(m.steps / 1000).toFixed(1)}k` : '–'],
+          ['Qual.',  decisionQuality ? `${decisionQuality.qualityScore}/100` : '–'],
         ].map(([label, val]) => (
           <div key={label} style={{ flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--text-3)', textTransform: 'uppercase' }}>
@@ -577,6 +635,7 @@ export default function Coach() {
             recentDecisions={actionsData?.recentDecisions ?? []}
             suppressed={actionsData?.suppressed ?? []}
             outcome={latestOutcome}
+            quality={decisionQuality}
             briefing={briefingData?.briefing}
             briefingLoading={briefingLoading}
             onPrompt={setInput}

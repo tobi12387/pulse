@@ -216,6 +216,48 @@ test('Home and Coach show what Pulse learned from yesterday', async ({ page }) =
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Was lernen wir aus gestern/);
 });
 
+test('Home, Coach and Insights show the daily decision quality signal', async ({ page }) => {
+  const decisionQuality = {
+    range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+    qualityScore: 44,
+    status: 'stale',
+    statusLabel: 'Wiederholung prüfen',
+    repeatedThemes: [{
+      theme: 'Mobilität 10 Minuten',
+      count: 3,
+      lastSeen: '2026-05-01',
+      status: 'stale',
+      evidence: ['3x wiederholt ohne Abschluss-/Outcome-Evidenz'],
+    }],
+    bestEvidence: ['Stale Outcome: Mobilität 10 Minuten: 3x verschoben'],
+    evidence: [{
+      label: 'Stale Outcome',
+      detail: 'Mobilität 10 Minuten: 3x verschoben',
+      source: 'outcome_learning',
+      tone: 'negative',
+      date: '2026-05-01',
+      targetRoute: '/coach',
+    }],
+    suggestedAdjustment: 'Wiederkehrende Empfehlung kleiner, anders getaktet oder vorerst unterdrückt anbieten.',
+  };
+
+  await mockPulseApi(page, { decisionQuality });
+
+  await page.goto('/');
+  await expect(page.getByTestId('daily-decision-quality-strip')).toContainText('ENTSCHEIDUNGSQUALITÄT');
+  await expect(page.getByTestId('daily-decision-quality-strip')).toContainText('WIEDERHOLUNG PRÜFEN');
+  await expect(page.getByText('Wiederkehrende Empfehlung kleiner, anders getaktet')).toBeVisible();
+
+  await page.goto('/coach');
+  await expect(page.getByTestId('coach-decision-quality-chip')).toContainText('Entscheidungsqualität');
+  await page.getByTestId('coach-decision-quality-chip').click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Wiederholung prüfen/);
+
+  await page.goto('/insights');
+  await expect(page.getByTestId('insights-decision-quality-card')).toContainText('Entscheidungsqualität');
+  await expect(page.getByTestId('insights-decision-quality-card')).toContainText('Mobilität 10 Minuten');
+});
+
 test('Home and Coach share one daily decision with boundary alternative and done criteria', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

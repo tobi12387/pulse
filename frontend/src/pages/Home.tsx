@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -9,7 +9,7 @@ import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -228,6 +228,53 @@ function outcomeStatusColor(status: PulseDailyOutcomeLearningItem['status']): st
   if (status === 'superseded_by_data') return 'var(--blue)';
   if (status === 'stale_pattern') return 'var(--amber)';
   return 'var(--text-3)';
+}
+
+function decisionQualityColor(status: PulseDailyDecisionQualityResponse['status']): string {
+  if (status === 'helpful') return 'var(--green)';
+  if (status === 'watch') return 'var(--blue)';
+  if (status === 'stale') return 'var(--amber)';
+  if (status === 'needs_strategy_change') return 'var(--rose)';
+  return 'var(--text-3)';
+}
+
+function DailyDecisionQualityStrip({ quality }: { quality: PulseDailyDecisionQualityResponse | null }) {
+  if (!quality) return null;
+  const color = decisionQualityColor(quality.status);
+  const evidence = quality.bestEvidence[0] ?? 'Noch zu wenig Folge-Daten für eine belastbare Bewertung.';
+  const showAdjustment = quality.status === 'stale' || quality.status === 'needs_strategy_change' || quality.status === 'insufficient_evidence';
+
+  return (
+    <div
+      data-testid="daily-decision-quality-strip"
+      style={{
+        padding: '10px 12px',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 6,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 5,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
+          ENTSCHEIDUNGSQUALITÄT
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
+          {quality.statusLabel.toUpperCase()} · {quality.qualityScore}/100
+        </span>
+      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+        {evidence}
+      </div>
+      {showAdjustment && (
+        <div style={{ fontSize: 11.5, color, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+          {quality.suggestedAdjustment}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DailyOutcomeLearningCard({ outcome }: { outcome: PulseDailyOutcomeLearningItem | null }) {
@@ -579,6 +626,7 @@ export default function Home() {
   const { data, isLoading, error } = usePulseHome();
   const actionsQuery = usePulseActions({ includeHistory: true });
   const outcomesQuery = useDailyOutcomeLearning(7);
+  const qualityQuery = useDailyDecisionQuality(14);
   const updateAction = useUpdatePulseAction();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
@@ -616,6 +664,7 @@ export default function Home() {
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
+  const dailyDecisionQuality = qualityQuery.data ?? null;
   const primaryAction = actionStates[0] ?? null;
   const followUpActions = primaryAction ? actionStates.slice(1) : data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
@@ -700,6 +749,8 @@ export default function Home() {
           onActivate={() => navigate(dailyDecision.targetPath)}
         />
       )}
+
+      <DailyDecisionQualityStrip quality={dailyDecisionQuality} />
 
       {primaryAction && (
         <ActionClosureCard
