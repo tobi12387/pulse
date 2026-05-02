@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Shared Pulse Types nutzen Domain-Dateien mit Kompatibilitaets-Barrel
+
+- **Decision:** Pulse splittet `shared/types/pulse.ts` in `shared/types/pulse/{activity,daily-loop,garmin,mental,plan,profile,push,index}.ts` und behaelt `shared/types/pulse.ts` als Barrel fuer `@coaching-os/shared/pulse`.
+- **Why:** Der bisherige Pulse-Typ-Monolith war ein Merge-Konflikt-Hotspot fuer Backend, Frontend und Planarbeit. Domain-Dateien reduzieren kuenftige Konflikte, waehrend bestehende Importe stabil bleiben und schrittweise migriert werden koennen.
+- **Alternatives:** Alle Consumer sofort auf Domain-Subpfade umstellen (zu grosser PR und neues Package-Export-Risiko); `shared/package.json` sofort um `./pulse/*` erweitern (nicht noetig, solange Consumer den Kompatibilitaets-Barrel nutzen); Typen im Monolith belassen (Phase 6 wuerde den Struktur-Hotspot nicht adressieren).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Settings-Health-State-UI bildet ein eigenes Feature-Modul
 
 - **Decision:** Pulse verschiebt Health-State-Formular, aktive Status, erledigte Statushistorie und Health-State-Aktionen nach `frontend/src/features/settings/health/health-components.tsx`.

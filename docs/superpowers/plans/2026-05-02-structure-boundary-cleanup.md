@@ -85,11 +85,11 @@
 
 ## Phase 6: Shared Type Split With Compatibility Barrel
 
-- [ ] Create `shared/types/pulse/` and split domain types into activity, daily-loop, garmin, mental, plan, profile, push and index files.
-- [ ] Keep `shared/types/pulse.ts` as a compatibility barrel that re-exports the same public names.
-- [ ] Do not force all imports to change in the same PR; let feature files adopt domain imports gradually.
-- [ ] Run `npm run build -w shared`.
-- [ ] Run `npm run typecheck`.
+- [x] Create `shared/types/pulse/` and split domain types into activity, daily-loop, garmin, mental, plan, profile, push and index files.
+- [x] Keep `shared/types/pulse.ts` as a compatibility barrel that re-exports the same public names.
+- [x] Do not force all imports to change in the same PR; let feature files adopt domain imports gradually.
+- [x] Run `npm run build -w shared`.
+- [x] Run `npm run typecheck`.
 
 ## Phase 7: Ops And Tooling Cleanup
 

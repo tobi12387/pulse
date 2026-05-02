@@ -69,13 +69,15 @@ Keep this file short. Update it whenever the active work queue changes.
 63. Frontend Settings Push Components Split was merged and deployed via PR #144.
 64. Frontend Settings Profile Components Split was merged and deployed via PR #145.
 65. Frontend Settings Coach Components Split was merged and deployed via PR #146.
-66. Frontend Settings Health Components Split is active on `codex/frontend-settings-health-components`.
+66. Frontend Settings Health Components Split was merged and deployed via PR #147.
+67. Shared Pulse Type Split is active on `codex/shared-pulse-type-split`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-settings-health-components` for moving health-state controls into `frontend/src/features/settings/health/`.
+- Active branch: `codex/shared-pulse-type-split` for splitting `shared/types/pulse.ts` into domain files while preserving `@coaching-os/shared/pulse`.
 - Recent completed branches:
+- `codex/frontend-settings-health-components`: merged and deployed via PR #147.
 - `codex/frontend-settings-coach-components`: merged and deployed via PR #146.
 - `codex/frontend-settings-profile-components`: merged and deployed via PR #145.
 - `codex/frontend-settings-push-components`: merged and deployed via PR #144.
