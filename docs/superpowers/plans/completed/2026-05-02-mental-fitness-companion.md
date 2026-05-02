@@ -32,7 +32,7 @@ Pulse already extracts check-ins, themes, voice-derived follow-up questions and 
 
 ## Task 1: Guided Question Policy
 
-- [ ] **Step 1: Write failing policy tests**
+- [x] **Step 1: Write failing policy tests**
 
   Create `backend/src/pulse/services/mental-companion.test.ts` with these cases:
   - rest day with no workout today asks about recovery boundary and mental load;
@@ -41,7 +41,7 @@ Pulse already extracts check-ins, themes, voice-derived follow-up questions and 
   - resurfacing themes produce visible rationale rather than hidden inference;
   - policy output never contains diagnostic words such as `depression`, `anxiety disorder`, `burnout diagnosis`, `ADHD`, `trauma`, `insomnia`, `addiction` or clinical risk scoring language.
 
-- [ ] **Step 2: Implement `selectMentalCompanionGuidance`**
+- [x] **Step 2: Implement `selectMentalCompanionGuidance`**
 
   Create `backend/src/pulse/services/mental-companion.ts` with:
 
@@ -64,7 +64,7 @@ Pulse already extracts check-ins, themes, voice-derived follow-up questions and 
 
   Keep selection deterministic and capped at three questions plus one action.
 
-- [ ] **Step 3: Verify policy**
+- [x] **Step 3: Verify policy**
 
   Run:
 
@@ -75,15 +75,15 @@ Pulse already extracts check-ins, themes, voice-derived follow-up questions and 
 
 ## Task 2: Backend Contract And Coach Context
 
-- [ ] **Step 1: Add shared types**
+- [x] **Step 1: Add shared types**
 
   Add `PulseGuidedCheckinQuestion`, `PulseGuidedMentalAction` and `PulseGuidedCheckinResponse` to `shared/types/pulse.ts`.
 
-- [ ] **Step 2: Return guided questions from Pulse**
+- [x] **Step 2: Return guided questions from Pulse**
 
   In `backend/src/pulse/plugin.ts`, expose a small authenticated endpoint such as `GET /api/pulse/checkin/guidance` or extend the existing briefing response if that endpoint already carries daily guidance. Prefer a dedicated endpoint if it keeps Home/Coach queries small.
 
-- [ ] **Step 3: Add Coach prompt guardrails**
+- [x] **Step 3: Add Coach prompt guardrails**
 
   In `backend/src/pulse/services/coach-engine.ts`, include:
   - today's workout date distinction;
@@ -91,11 +91,11 @@ Pulse already extracts check-ins, themes, voice-derived follow-up questions and 
   - explicit "non-clinical, no diagnosis, no hidden trait inference" instruction;
   - crisis-language fallback that stops normal coaching and points to emergency/crisis support when immediate danger or self-harm is mentioned.
 
-- [ ] **Step 4: Add mental next-best action integration**
+- [x] **Step 4: Add mental next-best action integration**
 
   Extend `PulseNextBestActionSource` with a mental-support source only if shared types allow it cleanly. The action must be closable/deferable through existing action decisions and must not become a recurring habit tracker.
 
-- [ ] **Step 5: Verify backend**
+- [x] **Step 5: Verify backend**
 
   Run:
 
@@ -106,23 +106,23 @@ Pulse already extracts check-ins, themes, voice-derived follow-up questions and 
 
 ## Task 3: Coach/Home/Data UI
 
-- [ ] **Step 1: Add API client and hooks**
+- [x] **Step 1: Add API client and hooks**
 
   Add a TanStack Query hook for the guidance endpoint in `frontend/src/pulse/hooks.ts` and `frontend/src/pulse/api-client.ts`.
 
-- [ ] **Step 2: Render guided questions in Coach**
+- [x] **Step 2: Render guided questions in Coach**
 
   In `frontend/src/pages/Coach.tsx`, show guided question buttons near the Daily Briefing guide. Clicking a question fills the input; it must not auto-send.
 
-- [ ] **Step 3: Add Home nudge and Data context**
+- [x] **Step 3: Add Home nudge and Data context**
 
   In `frontend/src/pages/Home.tsx`, show at most one mental-fitness nudge when it is the primary next-best action or when no training action is open. In `frontend/src/pages/Data.tsx`, show recent themes/protective factors without clinical labels.
 
-- [ ] **Step 4: Add E2E coverage**
+- [x] **Step 4: Add E2E coverage**
 
   Extend `frontend/e2e/fixtures/pulse-api.ts` and `frontend/e2e/pulse-usability.spec.ts` so rest-day guidance never references a future workout as today's decision.
 
-- [ ] **Step 5: Verify frontend**
+- [x] **Step 5: Verify frontend**
 
   Run:
 

@@ -190,4 +190,76 @@ describe('rankNextBestActions', () => {
       source: 'checkin',
     }));
   });
+
+  it('adds a closable mental support action from guided check-in guidance', () => {
+    const visibility = rankNextBestActionVisibility(baseInput({
+      guidedCheckin: {
+        date: '2026-05-01',
+        questions: [{
+          id: 'stress-boundary',
+          label: 'Was darf heute bewusst kleiner bleiben?',
+          rationale: 'Stresssignal ist erhöht; ein kleinerer Anspruch schützt Stabilität.',
+          answerMode: 'short_text',
+        }],
+        action: {
+          id: 'mental-boundary',
+          label: 'Eine Grenze für heute setzen',
+          rationale: 'Stress ist hoch und Motivation niedrig; ein kleiner Schutzrahmen ist heute hilfreicher als mehr Druck.',
+          targetRoute: '/coach',
+          closureKind: 'boundary',
+        },
+      },
+    }));
+
+    expect(visibility.visible).toContainEqual(expect.objectContaining({
+      source: 'mental',
+      priority: 'normal',
+      title: 'Eine Grenze für heute setzen',
+      targetPath: '/coach',
+      resolvedBy: 'Mentale Support-Aktion abschließen, verschieben oder bewusst verwerfen.',
+      evidence: expect.arrayContaining(['boundary', 'stress-boundary']),
+    }));
+  });
+
+  it('does not hide today’s mental action because yesterday was completed', () => {
+    const visibility = rankNextBestActionVisibility(baseInput({
+      today: '2026-05-02',
+      guidedCheckin: {
+        date: '2026-05-02',
+        questions: [{
+          id: 'stress-boundary',
+          label: 'Was darf heute bewusst kleiner bleiben?',
+          rationale: 'Stresssignal ist erhöht; ein kleinerer Anspruch schützt Stabilität.',
+          answerMode: 'short_text',
+        }],
+        action: {
+          id: 'mental-boundary',
+          label: 'Eine Grenze für heute setzen',
+          rationale: 'Stress ist hoch und Motivation niedrig; ein kleiner Schutzrahmen ist heute hilfreicher als mehr Druck.',
+          targetRoute: '/coach',
+          closureKind: 'boundary',
+        },
+      },
+      actionDecisions: [{
+        id: 'decision-yesterday-mental',
+        userId: 'user-1',
+        source: 'next_best_action',
+        sourceId: 'mental:/coach:0',
+        kind: 'mental',
+        title: 'Eine Grenze für heute setzen',
+        status: 'completed',
+        createdAt: '2026-05-01T07:00:00.000Z',
+        resolvedAt: '2026-05-01T08:00:00.000Z',
+        resolutionReason: 'Mentale Grenze gesetzt.',
+        targetRoute: '/coach',
+        rawContext: { openedAt: '2026-05-01' },
+      }],
+    }));
+
+    expect(visibility.visible).toContainEqual(expect.objectContaining({ source: 'mental' }));
+    expect(visibility.suppressed).not.toContainEqual(expect.objectContaining({
+      decisionId: 'decision-yesterday-mental',
+      source: 'mental',
+    }));
+  });
 });

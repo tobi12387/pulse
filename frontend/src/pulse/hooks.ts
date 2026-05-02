@@ -19,6 +19,7 @@ export const pulseKeys = {
   review:       ['pulse', 'review', 'latest'] as const,
   coachHistory: ['pulse', 'coach', 'history'] as const,
   checkinToday:    ['pulse', 'checkin', 'today'] as const,
+  checkinGuidance: ['pulse', 'checkin', 'guidance'] as const,
   checkinHistory:  (days: number) => ['pulse', 'checkin', 'history', days] as const,
   mentalThemes:    (days: number) => ['pulse', 'mental', 'themes', days] as const,
   mentalLoadOverlay: (days: number) => ['pulse', 'mental', 'load-overlay', days] as const,
@@ -273,6 +274,14 @@ export function useCheckinToday() {
   });
 }
 
+export function useCheckinGuidance() {
+  return useQuery({
+    queryKey: pulseKeys.checkinGuidance,
+    queryFn: pulseApi.checkin.guidance,
+    staleTime: 60_000,
+  });
+}
+
 export function useCheckinHistory(days = 30) {
   return useQuery({
     queryKey: pulseKeys.checkinHistory(days),
@@ -328,6 +337,7 @@ export function usePulseCheckin() {
     onSuccess: () => {
       invalidatePulseContextQueries(qc);
       qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
+      qc.invalidateQueries({ queryKey: pulseKeys.checkinGuidance });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'load-overlay'] });

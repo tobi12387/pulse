@@ -6,6 +6,7 @@ import {
   useClearCoachHistory,
   useCoachHistory,
   useCoachSend,
+  useCheckinGuidance,
   usePulseBriefing,
   usePulseActions,
   usePulseHome,
@@ -135,6 +136,7 @@ function MicButton({ micState, onDone }: {
           if (res.isCheckin) {
             invalidatePulseContextQueries(qc);
             void qc.invalidateQueries({ queryKey: pulseKeys.checkinToday });
+            void qc.invalidateQueries({ queryKey: pulseKeys.checkinGuidance });
             void qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
             void qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
             void qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'load-overlay'] });
@@ -396,6 +398,7 @@ export default function Coach() {
   const { data: home } = usePulseHome();
   const { data: actionsData } = usePulseActions({ includeHistory: true });
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
+  const { data: checkinGuidance } = useCheckinGuidance();
   const m = home?.todayMetrics;
 
   const { data: historyData, isLoading } = useCoachHistory();
@@ -405,7 +408,15 @@ export default function Coach() {
   const hasMessages = (historyData?.messages.length ?? 0) > 0;
   const nextWorkout = home?.nextWorkout;
   const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
+  const guidedQuestionPrompts = checkinGuidance?.questions.map(question => question.label) ?? [];
   const quickPromptGroups: PromptGroup[] = [
+    ...(guidedQuestionPrompts.length > 0
+      ? [{
+          title: 'Heute geführt',
+          hint: checkinGuidance?.questions[0]?.rationale ?? 'Fragen passend zu Training, Erholung und mentaler Last.',
+          prompts: guidedQuestionPrompts,
+        }]
+      : []),
     {
       title: 'Daily Check-in',
       hint: 'Körper, Kopf und mentale Last sauber einordnen.',

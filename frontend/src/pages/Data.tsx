@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   usePulseSleep, usePulseCheckin, useCheckinToday,
   useDataCoverage, useGarminBackfill, usePulseMetrics, usePulseWeight, useLogWeight, useCheckinHistory,
+  useCheckinGuidance,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -1106,6 +1107,7 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
 function MentalTab() {
   const [days, setDays] = useState(30);
   const { data: today }    = useCheckinToday();
+  const { data: guidance } = useCheckinGuidance();
   const checkin            = usePulseCheckin();
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
   const [form, setForm]    = useState({ mood: 7, energy: 7, stress: 3, motivation: 7, notes: '' });
@@ -1126,6 +1128,25 @@ function MentalTab() {
 
   const alreadyDone = today?.checkin != null;
   const checkins    = histData?.checkins ?? [];
+  const guidedQuestions = guidance?.questions.length
+    ? guidance.questions
+    : [
+        {
+          id: 'fallback-stability',
+          label: 'Was brauchst du mental, damit heute stabil bleibt?',
+          rationale: 'Basisfrage für einen freien Check-in.',
+        },
+        {
+          id: 'fallback-smaller',
+          label: 'Was darf heute bewusst kleiner bleiben?',
+          rationale: 'Hilft, den Tagesanspruch realistisch zu setzen.',
+        },
+        {
+          id: 'fallback-closure',
+          label: 'Welcher kleine Abschluss würde sich heute gut anfühlen?',
+          rationale: 'Macht den Tag bewusst abschließbar.',
+        },
+      ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1172,15 +1193,11 @@ function MentalTab() {
               border: '1px solid var(--border)',
               borderRadius: 5,
             }}>
-              {[
-                'Was brauchst du mental, damit heute stabil bleibt?',
-                'Was darf heute bewusst kleiner bleiben?',
-                'Welcher kleine Abschluss würde sich heute gut anfühlen?',
-              ].map(question => (
+              {guidedQuestions.map(question => (
                 <button
-                  key={question}
+                  key={question.id}
                   type="button"
-                  onClick={() => appendNote(question)}
+                  onClick={() => appendNote(question.label)}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -1192,7 +1209,10 @@ function MentalTab() {
                     padding: 0,
                   }}
                 >
-                  {question}
+                  <span style={{ display: 'block', color: 'var(--text)' }}>{question.label}</span>
+                  <span style={{ display: 'block', marginTop: 3, fontSize: 10.5, color: 'var(--text-3)' }}>
+                    {question.rationale}
+                  </span>
                 </button>
               ))}
             </div>

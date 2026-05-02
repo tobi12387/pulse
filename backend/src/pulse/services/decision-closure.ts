@@ -1,7 +1,7 @@
 import type { PulseNextBestAction, PulseSuppressedActionReason } from '@coaching-os/shared/pulse';
 
 export type ActionDecisionStatus = 'open' | 'completed' | 'deferred' | 'dismissed' | 'superseded';
-export type ActionDecisionKind = 'checkin' | 'workout' | 'rpe' | 'risk' | 'plan' | 'push' | 'equipment' | 'manual';
+export type ActionDecisionKind = 'checkin' | 'workout' | 'rpe' | 'risk' | 'plan' | 'push' | 'equipment' | 'mental' | 'manual';
 
 export type ActionDecisionRawContext = Record<string, unknown>;
 
@@ -81,6 +81,18 @@ function isCheckinDecision(decision: ActionDecisionRecord): boolean {
   return decision.kind === 'checkin' || decision.source === 'checkin';
 }
 
+function isDailyScopedDecision(
+  action: Pick<PulseNextBestAction, 'source'>,
+  decision: Pick<ActionDecisionRecord, 'kind' | 'source'>,
+): boolean {
+  return action.source === 'checkin'
+    || decision.kind === 'checkin'
+    || decision.source === 'checkin'
+    || action.source === 'mental'
+    || decision.kind === 'mental'
+    || decision.source === 'mental';
+}
+
 function isoDate(value: unknown): string | null {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   if (typeof value !== 'string' || value.length < 10) return null;
@@ -96,7 +108,7 @@ export function actionDateMatchesDecision(
     rawContext: ActionDecisionRawContext | null;
   },
 ): boolean {
-  if (action.source !== 'checkin' && decision.kind !== 'checkin' && decision.source !== 'checkin') {
+  if (!isDailyScopedDecision(action, decision)) {
     return true;
   }
 
@@ -192,7 +204,7 @@ function suppressionReasonFor(
   if (derived.status === 'deferred') return 'deferred';
   if (derived.status === 'dismissed') return 'dismissed';
   if (derived.resolutionReason?.includes('Garmin-Aktivität')) return 'resolved_by_activity';
-  if (isCheckinDecision(decision) || action.source === 'checkin') return 'already_completed_today';
+  if (isDailyScopedDecision(action, decision)) return 'already_completed_today';
   return 'stale';
 }
 

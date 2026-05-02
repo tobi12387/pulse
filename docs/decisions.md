@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Mental Fitness Companion ist sichtbare Tages-Guidance
+
+- **Decision:** Pulse berechnet gefuehrte Daily-Check-in-Fragen deterministisch im `PulseContext` und stellt sie ueber `GET /api/pulse/checkin/guidance` bereit. Mentale Support-Aktionen laufen als `source: mental` durch das bestehende Next-Best-Action- und Closure-Modell; es gibt keine neue versteckte Mental-Health-Memory-Tabelle.
+- **Why:** Die Startfragen muessen zum heutigen Zustand passen und duerfen zukuenftige Workouts nicht wie heutige Aufgaben behandeln. Gleichzeitig sollen mentale Hinweise sichtbar, schliessbar und auditierbar bleiben, statt als implizite Coach-Annahme im Prompt zu verschwinden.
+- **Alternatives:** Statische Frontend-Fragen behalten (zu ungenau); alles nur vom LLM formulieren lassen (nicht deterministisch/testbar); neues psychologisches Memory einfuehren (zu sensibel und unsichtbar fuer Tobi).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Adaptive Training nutzt deterministisches Execution Review
 
 - **Decision:** Adaptive Training Intelligence v2 fuehrt ein reines `TrainingExecutionReview` ein, das geplante Workouts gegen ausgefuehrte Aktivitaeten, RPE, Soreness und verpasste/ersetzte Einheiten bewertet und diese Signale in Plan-Engine, Plan-Trace und Plan-UI durchreicht, ohne eine neue Persistenztabelle anzulegen.

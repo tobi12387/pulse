@@ -1,6 +1,6 @@
 # Pulse Future Direction Roadmap
 
-> Stand: 2026-05-02 after PR #105 and the Adaptive Training v2 implementation branch. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
+> Stand: 2026-05-02 after Adaptive Training v2 and Mental Fitness Companion implementation. This is the active orientation document for future Pulse work. It turns the completed Garmin, PWA, Decision Closure, Daily Loop Explainability and UX waves into a prioritized product direction.
 
 ## Product North Star
 
@@ -20,10 +20,9 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
 | 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Mental Fitness Companion | Guided check-ins become longitudinal reflection and lightweight interventions | `2026-05-02-mental-fitness-companion.md` |
-| 3 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | `2026-05-02-garmin-data-quality-control-center.md` |
-| 4 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | `2026-05-02-goal-race-command-center.md` |
-| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 2 | Garmin Data Quality Control Center | Make sync freshness, gaps, raw coverage and calendar alignment understandable | `2026-05-02-garmin-data-quality-control-center.md` |
+| 3 | Goal / Race Command Center | Turn goals, race dates and constraints into a focused preparation mode | `2026-05-02-goal-race-command-center.md` |
+| 4 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -32,34 +31,9 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Daily Loop Explainability | Home/Coach share visible action history, suppressed reasons are explainable, Insight evidence links to sources, and daily check-ins are date-scoped. | `completed/2026-05-02-daily-loop-explainability-wave.md`, PR #102 |
 | Local Ops Autopilot | `npm run pulse:status` separates Mac-local Docker/Postgres/Redis blockers from server deploy mirror health and documents the local ops flow. | `completed/2026-05-02-local-ops-autopilot.md`, PR #105 |
 | Adaptive Training Intelligence v2 | Plan generation now uses deterministic execution review for matched, missed, replaced, RPE/recovery and deliberate rest-day rationale. | `completed/2026-05-02-adaptive-training-intelligence-v2.md`, PR #106 |
+| Mental Fitness Companion | Guided Daily Check-in questions now come from deterministic PulseContext guidance; mental support actions use the existing closure model. | `completed/2026-05-02-mental-fitness-companion.md`, current implementation branch |
 
 ## Next Plan Summaries
-
-### Mental Fitness Companion
-
-Implementation plan: [`2026-05-02-mental-fitness-companion.md`](2026-05-02-mental-fitness-companion.md)
-
-**Goal:** The guided Daily Check-in should become a practical mental-fitness loop without becoming clinical or intrusive.
-
-**Scope:**
-- guided question sets for rest days, training days, high-stress days and low-readiness days;
-- longitudinal themes and protective factors;
-- small suggested actions: boundary, recovery block, reflection, easy movement, social/support prompt;
-- visible "why this question" context;
-- opt-out and low-friction skip behavior.
-
-**Likely files:**
-- `backend/src/pulse/services/coach-engine.ts`
-- `backend/src/pulse/services/mental-themes.ts`
-- `backend/src/pulse/services/next-best-actions.ts`
-- `frontend/src/pages/Data.tsx`
-- `frontend/src/pages/Home.tsx`
-- `frontend/src/pages/Coach.tsx`
-
-**Acceptance:**
-- check-in questions match today's actual state;
-- no future workout is framed as today's decision;
-- mental-fitness suggestions are supportive, non-diagnostic and grounded in recent check-ins.
 
 ### Garmin Data Quality Control Center
 

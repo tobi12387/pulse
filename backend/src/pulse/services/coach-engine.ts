@@ -1,5 +1,11 @@
 import { llmComplete, llmChat, SMART_MODEL, type LLMMessage } from '../../lib/llm.js';
-import type { PulseCoachPreferences, PulseNextBestAction, PulseRiskSignal, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type {
+  PulseCoachPreferences,
+  PulseGuidedCheckinResponse,
+  PulseNextBestAction,
+  PulseRiskSignal,
+  PulseSuppressedActionState,
+} from '@coaching-os/shared/pulse';
 
 // ─── Rich context ─────────────────────────────────────────────────────────────
 
@@ -48,6 +54,7 @@ export interface CoachFullContext {
   nextBestActions?: PulseNextBestAction[];
   suppressedNextBestActions?: PulseSuppressedActionState[];
   coachPreferences?: PulseCoachPreferences | null;
+  guidedCheckin?: PulseGuidedCheckinResponse | null;
   recentStrengthSessions?: Array<{
     date: string;
     sessionId: string;
@@ -127,6 +134,8 @@ export function buildRichSystemPrompt(ctx: CoachFullContext): string {
   let s = `Du bist Pulse, persönlicher Ausdauer-Coach für Tobi (polarisiertes Training, Radsport/Triathlon).
 Antworte auf Deutsch, präzise (max 150 Wörter), kein Markdown, kein Fett, direkt und praktisch wie ein erfahrener Sportwissenschaftler.
 Wenn ein aktives Risk-Signal critical ist, musst du es klar adressieren und darfst es nicht beschönigen.
+Mental-Fitness ist unterstützend und alltagspraktisch: keine Diagnosen, keine klinischen Labels, keine versteckten Eigenschaften oder Trait-Inferenzen.
+Wenn Tobi unmittelbare Gefahr, Selbstverletzung oder akute Fremdgefährdung benennt, stoppe normales Coaching und verweise klar auf Notruf 112, lokale Krisenhilfe oder eine vertraute Person in der Nähe.
 
 == HEUTE (${ctx.today}) ==
 Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
@@ -143,6 +152,26 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
     if (c.notes) s += ` | "${c.notes.slice(0, 80)}"`;
   } else {
     s += '\nKein Check-in heute.';
+  }
+
+  const todayWorkout = ctx.upcomingWorkouts.find(w => w.plannedDate === ctx.today) ?? null;
+  if (todayWorkout) {
+    s += `\nHeute geplantes Training: ${todayWorkout.activityType} Z${todayWorkout.zone} ${todayWorkout.durationMin}min.`;
+  } else {
+    s += '\nHeute geplantes Training: keines. Zukünftige Workouts nicht als heutige Aufgabe formulieren.';
+  }
+
+  if (ctx.guidedCheckin && ctx.guidedCheckin.questions.length > 0) {
+    s += '\n\n== MENTAL-FITNESS CHECK-IN ==';
+    ctx.guidedCheckin.questions.forEach(question => {
+      s += `\nFrage: ${question.label}`;
+      s += `\nRationale: ${question.rationale}`;
+    });
+    if (ctx.guidedCheckin.action) {
+      s += `\nSupport-Aktion: ${ctx.guidedCheckin.action.label}`;
+      s += `\nAktionsgrund: ${ctx.guidedCheckin.action.rationale}`;
+    }
+    s += '\nDiese Fragen sind sichtbare Hilfen fuer heute; nicht als Diagnose, Persoenlichkeitsprofil oder verstecktes Memory verwenden.';
   }
 
   if (ctx.recovery) {
