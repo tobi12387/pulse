@@ -66,13 +66,13 @@
 - [x] Move Week strip and workout-row UI into `frontend/src/features/plan/training/`.
 - [x] Move plan trace, race command and season strategy cards into `frontend/src/features/plan/strategy/`.
 - [x] Move goal forms and cards into `frontend/src/features/plan/goals/`.
-- [ ] Keep `frontend/src/pages/Plan.tsx` as route orchestration.
-- [ ] Run `npm run build -w frontend`.
-- [ ] Run focused E2E for Plan: `npm run test:e2e -- --grep "Plan"`.
+- [x] Keep `frontend/src/pages/Plan.tsx` as route orchestration.
+- [x] Run `npm run build -w frontend`.
+- [x] Run focused E2E for Plan: `npm run test:e2e -- --grep "Plan"`.
 
 ## Phase 5: Frontend Data And Settings Split
 
-- [ ] Create `frontend/src/features/data/coverage/` for Garmin coverage, backfill and signal usefulness UI now embedded in `Data.tsx`.
+- [x] Create `frontend/src/features/data/coverage/` for Garmin coverage, backfill and signal usefulness UI now embedded in `Data.tsx`.
 - [ ] Create `frontend/src/features/data/mental/` for mental check-in and mental trend UI.
 - [ ] Create `frontend/src/features/data/recovery/` for sleep, metrics and body composition UI.
 - [ ] Create `frontend/src/features/settings/push/` for PWA device and push notification cards.
