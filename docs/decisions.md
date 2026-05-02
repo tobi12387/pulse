@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-02 — Settings-Health-State-UI bildet ein eigenes Feature-Modul
+
+- **Decision:** Pulse verschiebt Health-State-Formular, aktive Status, erledigte Statushistorie und Health-State-Aktionen nach `frontend/src/features/settings/health/health-components.tsx`.
+- **Why:** Health-State setzt harte Trainingsgrenzen fuer Plan, Risk Watch und Coach-Kontext und ist fachlich keine Garmin- oder Push-Einstellung. Die Settings-Route bleibt dadurch nach Phase 5 eine Orchestrierung aus klaren Einstellungsgruppen statt ein Formular-Monolith.
+- **Alternatives:** Health-State im Settings-Monolith lassen (Phase 5 bleibt offen); mit Coach-Praeferenzen zusammenlegen (vermischt Praeferenzen mit harten Trainingsconstraints); zuerst generische Settings-Primitive extrahieren (groesserer Shared-UI-Slice ohne direkte fachliche Grenze).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — Settings-Coach-UI bildet ein eigenes Feature-Modul
 
 - **Decision:** Pulse verschiebt Coach-Praeferenzen, Praeferenzformular, Wochentagsauswahl und Kommunikationsstil-Anzeige nach `frontend/src/features/settings/coach/coach-components.tsx`.

@@ -68,13 +68,15 @@ Keep this file short. Update it whenever the active work queue changes.
 62. Frontend Data Recovery Components Split was merged and deployed via PR #143.
 63. Frontend Settings Push Components Split was merged and deployed via PR #144.
 64. Frontend Settings Profile Components Split was merged and deployed via PR #145.
-65. Frontend Settings Coach Components Split is active on `codex/frontend-settings-coach-components`.
+65. Frontend Settings Coach Components Split was merged and deployed via PR #146.
+66. Frontend Settings Health Components Split is active on `codex/frontend-settings-health-components`.
 
 ## Current PRs / Branches
 
 - Open PRs: none known from Codex.
-- Active branch: `codex/frontend-settings-coach-components` for moving coach preferences UI into `frontend/src/features/settings/coach/`.
+- Active branch: `codex/frontend-settings-health-components` for moving health-state controls into `frontend/src/features/settings/health/`.
 - Recent completed branches:
+- `codex/frontend-settings-coach-components`: merged and deployed via PR #146.
 - `codex/frontend-settings-profile-components`: merged and deployed via PR #145.
 - `codex/frontend-settings-push-components`: merged and deployed via PR #144.
 - `codex/frontend-data-recovery-components`: merged and deployed via PR #143.
