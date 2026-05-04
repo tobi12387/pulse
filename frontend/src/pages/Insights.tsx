@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
@@ -145,14 +145,20 @@ function EvidenceList({ evidence, missingData }: { evidence?: EvidenceItem[]; mi
   );
 }
 
-function DecisionQualityEvidenceCard({ quality }: { quality: PulseDailyDecisionQualityResponse | null | undefined }) {
+function DecisionQualityEvidenceCard({
+  quality,
+  testId = 'insights-decision-quality-card',
+}: {
+  quality: PulseDailyDecisionQualityResponse | null | undefined;
+  testId?: string;
+}) {
   if (!quality) return null;
   const color = decisionQualityColor(quality.status);
 
   return (
     <section
       className="card"
-      data-testid="insights-decision-quality-card"
+      data-testid={testId}
       aria-label="Entscheidungsqualität"
       style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
     >
@@ -340,21 +346,21 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   );
 }
 
-export default function Insights() {
+export function DataAnalysenTab() {
   const [days, setDays] = useState(30);
   const { data: decisionQuality } = useDailyDecisionQuality(14);
 
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow="INSIGHTS"
-        title="Insights"
+        eyebrow="DATA · ANALYSEN"
+        title="Analysen"
         description="Öffne eine Karte, um die Analyse gezielt zu laden."
         action={<RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />}
       />
 
       <MentalLoadOverlay />
-      <DecisionQualityEvidenceCard quality={decisionQuality} />
+      <DecisionQualityEvidenceCard quality={decisionQuality} testId="data-analysis-decision-quality-card" />
 
       {/* Domain cards */}
       {DOMAINS.map(d => (
@@ -362,4 +368,8 @@ export default function Insights() {
       ))}
     </div>
   );
+}
+
+export default function InsightsRedirect() {
+  return <Navigate to="/data?tab=analysen" replace />;
 }
