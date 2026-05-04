@@ -19,9 +19,11 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
-| 3 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 1 | Navigation IA Continuation | Insights is now planned as a Data capability; the next daily-flow step is moving Coach into contextual Home/Plan/Data surfaces without losing voice or history | `../specs/2026-05-04-nav-ia-design.md` |
+| 2 | Mental Check-in Simplification | Tobi explicitly reported that choosing the right mental values is hard; a Garmin-assisted quick check-in directly improves daily iPhone/PWA use | `2026-05-04-mental-checkin-simplification.md` |
+| 3 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
+| 4 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
+| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -61,6 +63,24 @@ Implementation plan: [`2026-05-02-mobile-field-reliability-wave.md`](2026-05-02-
 - evidence is recorded from Tobi's device;
 - any real issue has a reproducible regression check;
 - the local-server/VPN model remains the default until evidence says otherwise.
+
+### Mental Check-in Simplification
+
+Implementation plan: [`2026-05-04-mental-checkin-simplification.md`](2026-05-04-mental-checkin-simplification.md)
+
+**Goal:** Make the daily Mental Check-in easy enough to complete without deciding exact 1-10 values.
+
+**Scope:**
+- show a Garmin/recovery-informed suggestion before the input;
+- replace required numeric bars with three-state choices and a clear daily need;
+- keep exact 1-10 correction optional behind a small disclosure;
+- preserve the existing backend contract in the first PR by mapping choices to the current numeric fields.
+
+**Acceptance:**
+- a valid check-in takes only a few taps and no free text;
+- the UI explains which signals shaped the suggestion;
+- mental trends and Coach context continue to use the stored numeric fields;
+- mobile route evidence shows no overflow or tiny primary controls.
 
 ### Fueling & Recovery Companion
 
