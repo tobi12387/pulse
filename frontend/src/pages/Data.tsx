@@ -57,7 +57,7 @@ export default function Data() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader eyebrow="DATA" title={tab === 'analysen' ? 'Schlaf, Metriken & Mental' : 'Schlaf, Metriken, Mental & Analysen'} />
+      <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
       <SegmentedControl items={TABS} active={tab} onChange={setTab} />
       {tab === 'abdeckung' && <CoverageTab />}
       {tab === 'schlaf' && <SchlafTab />}
