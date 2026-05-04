@@ -8,10 +8,14 @@ Use this map to load the smallest useful context for a task.
 |---|---|
 | Hard rules | `AGENTS.md`, `docs/ai/non-negotiables.md` |
 | Current work | `docs/ai/current-focus.md` |
-| Roadmap | `docs/superpowers/plans/2026-04-28-roadmap.md` |
-| Decisions | `docs/decisions.md` newest entries first |
+| File selection | this file, then `rg` |
+| Roadmap / active plans | `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`, then concrete plan |
+| Decisions | `docs/decisions.md` newest entries only when needed |
 | Concrete feature | Matching file in `docs/superpowers/plans/` |
 | Structure refactors | `docs/ai/project-structure-audit.md`, `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` |
+| UI/UX evidence | `docs/qa/route-evidence-pack.md`, then focused route/e2e files |
+
+Do not read historical archives by default. Use `docs/superpowers/plans/completed/` only for regression comparison or when the user asks about history.
 
 ## Backend
 
@@ -39,6 +43,17 @@ Use this map to load the smallest useful context for a task.
 | Plan | `frontend/src/pages/Plan.tsx` |
 | Settings | `frontend/src/pages/Settings.tsx` |
 | Shared UI | `frontend/src/components/` |
+
+## Docs / Planning
+
+| Need | Start With |
+|---|---|
+| PR readiness | `docs/ai/checklists/pr-ready.md` |
+| Backend change guard | `docs/ai/checklists/backend-change.md` |
+| Frontend/mobile guard | `docs/ai/checklists/frontend-change.md` |
+| iPhone/PWA QA | `docs/ai/checklists/iphone-pwa-qa.md` |
+| Garmin sync boundaries | `docs/ai/garmin-sync-inventory.md` |
+| Broad structure cleanup | `docs/ai/project-structure-audit.md` |
 
 ## Search Patterns
 

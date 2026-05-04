@@ -7,6 +7,6 @@
 - No secrets or `.env` changes.
 - Explicit files staged; never `git add .`.
 - Relevant tests or build commands were run, or skipped with a clear reason.
-- Non-trivial decisions are added to `docs/decisions.md`.
+- Non-trivial decisions are added to `docs/decisions.md`, or the PR explains an explicitly approved narrower docs-only scope.
+- `docs/ai/current-focus.md` is updated only for durable queue/gate changes; no long PR history was appended.
 - PR body includes summary, tests, and known follow-up work.
-

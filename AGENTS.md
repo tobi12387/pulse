@@ -23,14 +23,19 @@ It is the active single source of truth for AI-agent workflow rules in this repo
 
 ## Token-efficient AI context
 
-Before broad code exploration, read the compact AI working set:
+Before broad code exploration, read the compact AI working set and then expand only by task:
 
 1. [`docs/ai/session-brief.md`](docs/ai/session-brief.md)
 2. [`docs/ai/current-focus.md`](docs/ai/current-focus.md)
 3. [`docs/ai/non-negotiables.md`](docs/ai/non-negotiables.md)
 4. [`docs/ai/context-map.md`](docs/ai/context-map.md)
 
-Use `docs/decisions.md` as the full decision history, not as the first place to re-read every past decision.
+Do not re-read long histories by default. Use:
+
+- `docs/ai/current-focus.md` for the current snapshot, not a PR archive.
+- `docs/ai/non-negotiables.md` for active constraints and product-quality rules.
+- `docs/ai/context-map.md` to pick the smallest relevant files.
+- `docs/decisions.md` only for recent, disputed, reversed or architectural context.
 
 ## Project-level Codex skills
 
@@ -68,6 +73,8 @@ gh pr create --base main --head codex/<topic> --title "..." --body "..."
 
 Commit-message format: `type: short description` where type ∈ `feat | fix | refactor | chore | docs | test`.
 
+Update `docs/ai/current-focus.md` only when the durable work queue, manual gates or next recommendation changes. Do not append long PR history; PR details belong in GitHub and completed plan docs.
+
 ---
 
 ## Conflict-prone files (rebase carefully when these change in parallel)
@@ -89,55 +96,16 @@ Commit-message format: `type: short description` where type ∈ `feat | fix | re
 
 ---
 
-## Stack quick-reference
-
-| Layer | Tech |
-|---|---|
-| Runtime | Node 22 LTS (ESM), TypeScript 5 |
-| Backend | Fastify 5, Drizzle ORM 0.45+ |
-| Frontend | React 19, Vite, TanStack Query v5, Tailwind |
-| LLM | OpenRouter via `backend/src/lib/llm.ts`; model defaults are OpenAI-based and configurable through env |
-| Auth | argon2id |
-
----
-
-## Repository layout
-
-| Directory | Purpose |
-|---|---|
-| `backend/src/routes/` | Fastify API route handlers |
-| `backend/src/db/` | Drizzle schema + migrations (`schema.ts`, `pulse-schema.ts`) |
-| `backend/src/lib/` | Shared utilities: env, llm, auth, garmin-client |
-| `backend/src/jobs/` | Background jobs |
-| `frontend/src/pages/` | React pages: Home, Coach, Data, Plan, Insights, Settings |
-| `frontend/src/pulse/` | Pulse-specific hooks and API wrappers |
-| `frontend/src/components/` | Shared UI components |
-
----
-
-## Navigation
-
-| Route | Page |
-|---|---|
-| `/` | Home (Readiness, metrics, briefing, activities) |
-| `/coach` | Coach (Chat + Garmin context) |
-| `/data` | Daten (Schlaf tab, Mental/Check-in tab) |
-| `/plan` | Plan (Training, Ziele, Review, Statistik tabs) |
-| `/insights` | Insights (KI-Analyse, Trends, Narrativ) |
-| `/settings` | Settings (Garmin sync, account) |
-
----
-
 ## Plan-Doc-Status
 
-`docs/superpowers/plans/` enthält **aktive** Pläne — implementiere die in der durch `2026-04-28-roadmap.md` definierten Reihenfolge.
+`docs/superpowers/plans/` enthält **aktive** Pläne — nutze `docs/ai/current-focus.md` und den passenden Roadmap-/Plan-Doc, um die aktuelle Reihenfolge zu bestimmen.
 
 `docs/superpowers/plans/completed/` enthält **bereits implementierte** Pläne als historische Referenz. **Nicht erneut implementieren** — siehe `completed/README.md`.
 
----
+## Canonical product constraints
 
-## Non-negotiable decisions (excerpt from [`docs/decisions.md`](docs/decisions.md))
+- **No Telegram integration.** Web Push is the notification channel.
+- **No Habit Tracker.** Voice check-ins plus Risk Watch cover this need.
+- Briefing and Coach context use Pulse schema data such as `pulse_daily_metrics` and `pulse_mental_checkins`, not legacy Garmin/check-in tables.
 
-- **No Telegram integration.** Phase 12 was dropped 2026-04-29; Web Push (PWA) is the planned replacement.
-- **No Habit-Tracker.** Phase 10 covers Strength + Equipment only. Habits are covered by voice check-in + Risk Watch.
-- **Briefing job reads from `pulse_daily_metrics` and `pulse_mental_checkins`** (Pulse schema), never from the legacy `garmin_daily_health` / `check_ins` tables. Migration is part of Bündel A.
+Active scope and product rules live in [`docs/ai/non-negotiables.md`](docs/ai/non-negotiables.md). Do not copy decision excerpts into this file; use [`docs/decisions.md`](docs/decisions.md) as the append-only decision history.

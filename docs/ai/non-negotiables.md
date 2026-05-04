@@ -27,13 +27,23 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - No Data Export unless Tobi explicitly reverses this decision.
 - Completed plans are historical references only. Do not rebuild them.
 
-## Current Priority
+## Product Quality Bar
 
-- The previous sequence (Bundle A/B/C, RPE, Risk Watch, Web Push, Phase 10/11, Trust Wave, Everyday Utility Wave, Reliability Wave, UI/UX Usability Wave, Everyday Flow Deepening Wave) is implemented and belongs to `docs/superpowers/plans/completed/`.
-- Current active plan family: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`, plus Mobile Field Reliability.
-- Next implementation order: real iPhone/PWA field evidence and Mobile Field Reliability fixes if evidence reveals any.
-- Remaining active feature plans are gated by Tobi/device evidence or preference decisions.
-- Fueling & Recovery remains preference-gated. Native iOS remains evidence-gated.
-- Future waves have active implementation plans in `docs/superpowers/plans/`; do not re-plan from scratch unless `docs/decisions.md` reverses this ordering.
-- Local iPhone access stays web/PWA over VPN for now. Native iOS wrapper work is only a later evaluation unless Tobi explicitly changes scope.
+- Optimize for daily usefulness before feature breadth.
+- Garmin, training, recovery and mental-health signals must visibly influence coaching, plans and explanations.
+- Planned workouts should match current data and goals; do not fill every available day by default.
+- Repeated generic recommendations are a product bug unless the data genuinely supports the same answer.
+- iPhone/PWA over VPN is a real usage path, so mobile touch, readable density, offline/cert friction and Settings diagnostics matter.
+- Error states should be local, recoverable and action-oriented instead of collapsing whole routes.
+- UI/UX work starts from evidence: route screenshots, Playwright checks, real-device notes or explicit user friction.
+- For current model, dependency, security or API recommendations, verify the latest official/current source before proposing changes.
+
+## Current Product Gates
+
+- UI/UX Deep Friction Closure is implemented and deployed; future UI/UX work should regenerate route evidence first.
+- Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the orientation for new product direction.
+- Fueling & Recovery remains preference-gated; ask Tobi before implementation.
+- Native iOS remains evidence-gated; local web/PWA over VPN is the current path.
+- iPhone certificate trust and Push activation are manual device gates.
+- Future waves may have active plans in `docs/superpowers/plans/`; do not re-plan from scratch unless `docs/decisions.md` reverses ordering.
 - Do not rebuild completed plans unless Tobi explicitly reverses scope.
