@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-05-04 — Mental Check-in wird als Quick-Check-in geplant
+
+- **Decision:** Pulse plant den Mental Check-in als naechste UX-Phase mit Garmin-/Recovery-Vorschlag, drei einfachen Zustandswahlen und optionalem Freitext statt verpflichtender 1-10-Feinbewertung.
+- **Why:** Tobi faellt es schwer, taeglich die "richtigen" Mental-Werte einzugeben. Ein schneller, erklaerbarer Check-in verbessert den Alltagsnutzen auf iPhone/PWA und laesst die vorhandenen numerischen Felder im ersten Schritt kompatibel weiterlaufen.
+- **Alternatives:** Vier 1-10-Regler beibehalten (zu viel kognitive Last); nur Voice nutzen (nicht immer alltagstauglich); sofort neue DB-Felder bauen (groesserer Backend-Scope ohne ersten UX-Beweis).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Insights wandert als Analysen nach Data
 
 - **Decision:** Insights wird aus der Hauptnavigation entfernt und als `Analysen`-Tab in Data gerendert; `/insights` bleibt vorerst ein Redirect auf `/data?tab=analysen`.

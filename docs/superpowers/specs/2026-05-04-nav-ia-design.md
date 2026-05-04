@@ -131,15 +131,19 @@ This PR should only happen after PR 1 and PR 2 have been used enough to catch aw
 
 ## Habit/Routine Scope Boundary
 
-Habit Tracker is not listed in this IA spec's Non-Goals because this spec only decides the navigation model for Coach and Insights. That does not reverse Pulse's broader non-negotiable against a Habit Tracker. A separate explicit decision would be required before any habit or routine implementation work.
+Habit Tracker is not listed in this IA spec's Non-Goals because this spec only decides the navigation model for Coach and Insights. Since 2026-05-04, Habit-/Routine-Tracking is no longer a global Pulse No-Go, but it still needs its own evidence, product boundary and QA plan before implementation.
 
 Boundary assessment:
 
 - It does not justify a new top-level tab. A separate Habits/Routine tab would work against the target of making daily iPhone/PWA use less bulky.
-- If Tobi later explicitly reverses the no-Habit-Tracker constraint, Home should own the daily action surface and Data should own trend/evidence review.
+- If routine support is planned later, Home should own the daily action surface and Data should own trend/evidence review.
 - Coach could support reflection through prompts or check-in extraction, but should still be a callable layer rather than a separate place.
 - Any future reversal would need its own evidence, product boundary and QA plan before it becomes implementation scope.
 - The staged order still stands: Insights into Data first, Coach into daily surfaces second, compatibility cleanup third.
+
+## Mental Check-in Follow-up
+
+Tobi reported that the current Mental Check-in is hard because choosing exact values feels uncertain. This belongs in the next UX phases as `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`: Garmin-assisted defaults, three-state quick choices and optional free text. The check-in simplification can run before or alongside Coach relocation, but it must not add a new top-level destination.
 
 ## QA Requirements
 
