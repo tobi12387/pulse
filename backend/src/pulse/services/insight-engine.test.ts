@@ -265,7 +265,7 @@ describe('generateDeepInsight mental domain', () => {
         value: 'r=-0.4',
         window: '90 Tage',
         status: 'available',
-        targetRoute: '/insights',
+        targetRoute: '/data?tab=analysen',
       }),
     ]));
     expect(result.missingData).toEqual([]);

@@ -18,6 +18,36 @@
 
 ---
 
+## 2026-05-04 — Insights wandert als Analysen nach Data
+
+- **Decision:** Insights wird aus der Hauptnavigation entfernt und als `Analysen`-Tab in Data gerendert; `/insights` bleibt vorerst ein Redirect auf `/data?tab=analysen`.
+- **Why:** Insights ist ein Evidenz- und Analysemodus, dessen Domains zu Data passen. Der Schritt reduziert die mobile und Desktop-Hauptnavigation sofort, ohne Coach Voice, History oder Chat-State anzufassen.
+- **Alternatives:** Insights als Haupttab behalten (keine Entlastung); Insights komplett loeschen (verliert Analysefaehigkeit); Coach zuerst entfernen (hoeheres Risiko durch Eingabe-, Voice- und History-Flows).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
+## 2026-05-04 — Habit-/Routine-Scope bleibt ausserhalb der Nav-IA
+
+- **Decision:** Der Navigation-IA-Spec fuehrt Habit Tracker nicht als eigenes Non-Goal, weil dieser Spec nur Coach/Insights-Navigation entscheidet. Das hebt die bestehenden Pulse-Non-Negotiables gegen Habit Tracker nicht auf; eine separate explizite Umkehrentscheidung waere dafuer noetig.
+- **Why:** Tobi wollte den Habit-Tracker-Punkt aus den Non-Goals dieses Specs streichen. Damit bleibt der IA-Spec enger und erzeugt keinen neuen Habit-Scope, waehrend die aktuelle Hauptentscheidung unveraendert bleibt: kein neuer Top-Level-Tab und zuerst Insights nach Data.
+- **Alternatives:** Habit Tracker im IA-Spec weiter als Non-Goal fuehren (vermischt globale Produktgrenzen mit diesem Navigations-Spec); Habit-/Routine-Support in diesem PR neu oeffnen (Scope-Creep und Konflikt mit `AGENTS.md`/`docs/ai/non-negotiables.md`); sofort einen Habit-Tab planen (widerspricht dem schlanken Ziel).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
+## 2026-05-04 — Coach und Insights werden zu Funktionen statt Haupttabs
+
+- **Decision:** Pulse zielt auf vier Haupttabs: Home, Data, Plan und Settings. Coach wird schrittweise als aufrufbare Interaktionsschicht in Home/Plan/Data integriert; Insights wird als Analysebereich in Data integriert. Zuerst soll Insights in Data wandern, weil das einen Haupttab entfernt und weniger Risiko als der Coach-Umbau hat.
+- **Why:** Frische Route-Evidence zeigt keine horizontalen Layoutfehler, aber die Navigation bleibt mit sechs Hauptzielen schwer fuer iPhone/PWA- und Desktop-Alltag. Coach ist ein Modus zum Fragen, Einchecken und Kontext klaeren; Insights ist ein Evidenzmodus, dessen Domains bereits zu Data passen.
+- **Alternatives:** Coach und Insights unveraendert als Haupttabs behalten (weiterhin zu bulky); beide sofort in einem grossen PR entfernen (zu riskant fuer Voice, History und Deep Links); neue Ersatz-Tabs einfuehren (verschiebt die Navigationslast nur).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Plan-Leerzustand bekommt direkte naechste Aktionen
 
 - **Decision:** Wenn auf Plan kein offenes Training geplant ist, zeigt die naechste Trainingsentscheidung direkte Aktionen fuer Verfuegbarkeit pruefen, Plan generieren und Coach fragen.

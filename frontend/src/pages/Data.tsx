@@ -3,8 +3,9 @@ import { PageHeader, SegmentedControl } from '@/components/PulseChrome';
 import { CoverageTab } from '@/features/data/coverage/coverage-components';
 import { MentalTab } from '@/features/data/mental/mental-components';
 import { GewichtTab, MetrikenTab, SchlafTab } from '@/features/data/recovery/recovery-components';
+import { DataAnalysenTab } from '@/pages/Insights';
 
-type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental';
+type Tab = 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental' | 'analysen';
 
 const TABS = [
   { id: 'abdeckung', label: 'Abdeckung' },
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'metriken', label: 'Metriken' },
   { id: 'gewicht', label: 'Gewicht' },
   { id: 'mental', label: 'Mental' },
+  { id: 'analysen', label: 'Analysen' },
 ];
 
 const TAB_QUERY: Record<Tab, string> = {
@@ -20,6 +22,7 @@ const TAB_QUERY: Record<Tab, string> = {
   metriken: 'metrics',
   gewicht: 'weight',
   mental: 'mental',
+  analysen: 'analysen',
 };
 
 const QUERY_TAB: Record<string, Tab> = {
@@ -32,6 +35,9 @@ const QUERY_TAB: Record<string, Tab> = {
   weight: 'gewicht',
   gewicht: 'gewicht',
   mental: 'mental',
+  analysen: 'analysen',
+  analysis: 'analysen',
+  insights: 'analysen',
 };
 
 function tabFromQuery(value: string | null): Tab {
@@ -51,13 +57,14 @@ export default function Data() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader eyebrow="DATA" title="Schlaf, Metriken & Mental" />
+      <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
       <SegmentedControl items={TABS} active={tab} onChange={setTab} />
       {tab === 'abdeckung' && <CoverageTab />}
       {tab === 'schlaf' && <SchlafTab />}
       {tab === 'metriken' && <MetrikenTab />}
       {tab === 'gewicht' && <GewichtTab />}
       {tab === 'mental' && <MentalTab />}
+      {tab === 'analysen' && <DataAnalysenTab />}
     </div>
   );
 }
