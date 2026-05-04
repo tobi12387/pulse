@@ -20,9 +20,8 @@ Pflichtlektüre in dieser Reihenfolge — bevor du irgendetwas implementierst:
   3. docs/ai/current-focus.md
   4. docs/ai/non-negotiables.md
   5. docs/ai/context-map.md
-  6. docs/superpowers/plans/2026-04-28-roadmap.md
-  7. das konkrete Plan-Doc zu deiner Aufgabe in docs/superpowers/plans/
-  8. docs/decisions.md nur fuer aktuelle oder strittige Architekturhistorie
+  6. das konkrete Plan-Doc zu deiner Aufgabe in docs/superpowers/plans/
+  7. docs/decisions.md nur fuer aktuelle, strittige oder architektonische Historie
 
 Pläne unter docs/superpowers/plans/completed/ sind bereits implementiert —
 NICHTS aus diesem Ordner erneut bauen.
@@ -34,8 +33,8 @@ dann git switch -c codex/<topic> origin/main.
 Nach jeder nicht-trivialen Entscheidung (Architektur, Scope, Priorität)
 einen Eintrag in docs/decisions.md anlegen, bevor die Session endet.
 
-Aufgabe: <hier deine konkrete Aufgabe einfügen, z.B. "Implementiere Bündel A
-laut docs/superpowers/plans/2026-04-29-bundle-a-context-unification.md">.
+Aufgabe: <hier deine konkrete Aufgabe einfügen. Nutze docs/ai/context-map.md,
+um das kleinste passende Plan- oder Source-Set zu finden>.
 ```
 
 ---
@@ -57,7 +56,7 @@ ein Wegweiser.
 ## Wartung
 
 - **Aktueller Arbeitsfokus:** in `docs/ai/current-focus.md`.
-- **Roadmap-Änderungen:** in `docs/superpowers/plans/2026-04-28-roadmap.md` → Codex sieht es beim nächsten Session-Start.
+- **Roadmap-Änderungen:** in `docs/ai/current-focus.md` und dem dort genannten aktiven Roadmap-/Plan-Doc.
 - **Hard-Rule-Änderungen:** in `AGENTS.md`. Der CI-Check prüft zentrale Marker in dieser Datei.
 - **Entscheidungen:** in `docs/decisions.md` (newest first). Pflicht für jede AI-Session.
 - **Diese Datei:** nur ändern, wenn sich der Pointer-Prompt selbst ändern soll. Inhaltliche Regeln gehören nicht hierher.

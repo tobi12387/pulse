@@ -40,6 +40,8 @@ Before pushing or opening a PR:
 
 ## Server Deploy
 
+Docs-only and planning-only PRs normally do not require server deploy. Deploy runtime changes only after the PR is merged to `main`.
+
 Deploy command:
 
 ```bash

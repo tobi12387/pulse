@@ -12,8 +12,11 @@ Use this map to load the smallest useful context for a task.
 | Roadmap / active plans | `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`, then concrete plan |
 | Decisions | `docs/decisions.md` newest entries only when needed |
 | Concrete feature | Matching file in `docs/superpowers/plans/` |
-| Structure refactors | `docs/ai/project-structure-audit.md`, `docs/superpowers/plans/2026-05-02-structure-boundary-cleanup.md` |
+| Structure refactors | Fresh `rg --files` / file counts first; historical only: `docs/ai/project-structure-audit.md`, `docs/superpowers/plans/completed/2026-05-02-structure-boundary-cleanup.md` |
 | UI/UX evidence | `docs/qa/route-evidence-pack.md`, then focused route/e2e files |
+| Prompt template | `docs/codex-system-prompt.md` |
+| Repo-local Codex skills | `.codex/skills/` |
+| Docs/rule CI | `.github/workflows/docs-sync.yml` |
 
 Do not read historical archives by default. Use `docs/superpowers/plans/completed/` only for regression comparison or when the user asks about history.
 
@@ -23,9 +26,9 @@ Do not read historical archives by default. Use `docs/superpowers/plans/complete
 |---|---|
 | Pulse routes | `backend/src/pulse/plugin.ts` |
 | Pulse context | `backend/src/pulse/lib/pulse-context.ts` |
-| Readiness | `backend/src/pulse/services/readiness.ts` |
+| Readiness | `backend/src/pulse/lib/pulse-context.ts`, `backend/src/pulse/services/load-engine.ts` |
 | Load / CTL / ATL / TSB | `backend/src/pulse/services/load-engine.ts` |
-| Thresholds | `shared/src/pulse-thresholds.ts` |
+| Thresholds | `shared/types/pulse-thresholds.ts` |
 | LLM calls | `backend/src/lib/llm.ts` |
 | Background jobs | `backend/src/jobs/` |
 | DB schema | `backend/src/db/pulse-schema.ts`, `backend/src/db/schema.ts` |
@@ -53,7 +56,7 @@ Do not read historical archives by default. Use `docs/superpowers/plans/complete
 | Frontend/mobile guard | `docs/ai/checklists/frontend-change.md` |
 | iPhone/PWA QA | `docs/ai/checklists/iphone-pwa-qa.md` |
 | Garmin sync boundaries | `docs/ai/garmin-sync-inventory.md` |
-| Broad structure cleanup | `docs/ai/project-structure-audit.md` |
+| Broad structure cleanup | Fresh `rg --files` / file counts; historical context in `docs/ai/project-structure-audit.md` |
 
 ## Search Patterns
 

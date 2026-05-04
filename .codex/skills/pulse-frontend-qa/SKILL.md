@@ -41,13 +41,15 @@ Key files:
 2. For repeatable smoke coverage, run `npm run test:e2e`. Use `npm run test:e2e:install` once on machines without the Playwright Chromium cache.
 3. Start or reuse the Vite dev server when ad-hoc browser QA is useful.
 4. Use the Browser plugin for local pages when interactive inspection or screenshots are needed.
-5. Check desktop and mobile widths for:
+5. For broad UI/UX work, start from `docs/qa/route-evidence-pack.md` and regenerate route evidence with `npm run qa:ux-evidence` before making claims about current friction.
+6. Check desktop and mobile widths for:
    - text overflow
    - overlapping panels
    - broken loading/error states
    - stale cache after mutations
    - empty data states
-6. For API-backed pages, verify query invalidation after create/update/delete actions.
+7. For daily-use flows, verify the route explains why Garmin, recovery, plan, or mental signals changed the recommendation when relevant.
+8. For API-backed pages, verify query invalidation after create/update/delete actions.
 
 ## Playwright Smoke Suite
 

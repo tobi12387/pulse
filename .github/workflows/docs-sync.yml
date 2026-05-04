@@ -1,25 +1,33 @@
 name: docs-sync
 
-# Stellt sicher, dass die zentralen Hard-Rule-Marker in AGENTS.md vorhanden sind.
+# Stellt sicher, dass zentrale Hard-Rule-Marker in AGENTS.md und der kompakten
+# AI-Arbeitsfassung `docs/ai/non-negotiables.md` vorhanden bleiben.
 #
 # Bewusst pragmatisch: kein Pixel-genauer Vergleich, sondern Marker-basiert.
-# Erweitern: PATTERNS-Liste unten ergänzen.
+# Erweitern: PATTERNS-Listen unten ergänzen.
 #
-# Hinweis: docs/codex-system-prompt.md ist seit 2026-04-29 nur noch ein
-# dünner Pointer-Prompt + Doku, keine Hard-Rules-Quelle. Wird hier nicht
-# mehr geprüft.
+# Hinweis: docs/codex-system-prompt.md ist nur noch ein dünner Pointer-Prompt.
+# Inhaltliche Regeln gehören in AGENTS.md, docs/ai/* und docs/decisions.md.
 
 on:
   pull_request:
     paths:
       - 'AGENTS.md'
+      - 'docs/ai/**'
+      - 'docs/ai/non-negotiables.md'
       - 'docs/decisions.md'
+      - 'docs/codex-system-prompt.md'
+      - '.codex/skills/**'
       - '.github/workflows/docs-sync.yml'
   push:
     branches: [main]
     paths:
       - 'AGENTS.md'
+      - 'docs/ai/**'
+      - 'docs/ai/non-negotiables.md'
       - 'docs/decisions.md'
+      - 'docs/codex-system-prompt.md'
+      - '.codex/skills/**'
   workflow_dispatch:
 
 jobs:
@@ -28,14 +36,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify canonical rules appear in AGENTS.md
+      - name: Verify canonical rules appear in AGENTS.md and AI summary
         run: |
           set -u
-          FILES=(AGENTS.md)
 
-          # Jeder Eintrag ist eine grep -E -i Pattern. Mindestens eines der
-          # alternativen Phrasings muss in jeder der beiden Dateien vorkommen.
-          PATTERNS=(
+          AGENTS_PATTERNS=(
             "single source of truth|source of truth"
             "git add \\."
             "additive|additiv"
@@ -45,27 +50,71 @@ jobs:
             "codex/<topic>|codex/[a-z]"
             "no.*telegram|kein.*telegram|keine.*telegram"
             "no.*habit|kein.*habit"
+            "no.*data export|kein.*datenexport|keine.*datenexport"
+          )
+
+          AI_PATTERNS=(
+            "single source of truth|source of truth"
+            "git add \\."
+            "additive|additiv"
+            "scripts/deploy\\.sh"
+            "pulse_daily_metrics"
+            "decisions\\.md"
+            "codex/<topic>|codex/[a-z]"
+            "no.*telegram|kein.*telegram|keine.*telegram"
+            "no.*habit|kein.*habit"
+            "no.*data export|kein.*datenexport|keine.*datenexport"
+            "daily usefulness|daily-use|taeglich"
+            "Garmin.*mental|mental.*Garmin"
           )
 
           fail=0
-          for pat in "${PATTERNS[@]}"; do
-            for f in "${FILES[@]}"; do
-              if ! grep -E -i -q -- "$pat" "$f"; then
-                echo "::error file=$f::missing canonical rule pattern: '$pat'"
-                fail=1
-              fi
-            done
+          for pat in "${AGENTS_PATTERNS[@]}"; do
+            if ! grep -E -i -q -- "$pat" AGENTS.md; then
+              echo "::error file=AGENTS.md::missing canonical rule pattern: '$pat'"
+              fail=1
+            fi
+          done
+
+          for pat in "${AI_PATTERNS[@]}"; do
+            if ! grep -E -i -q -- "$pat" docs/ai/non-negotiables.md; then
+              echo "::error file=docs/ai/non-negotiables.md::missing compact AI rule pattern: '$pat'"
+              fail=1
+            fi
           done
 
           if [ $fail -ne 0 ]; then
             echo ""
             echo "Hard-Rule-Drift erkannt — eine oder mehrere kanonische Regeln fehlen."
-            echo "AGENTS.md oder PATTERNS-Liste in dieser Workflow-Datei anpassen,"
-            echo "falls die Regel bewusst entfernt wurde."
+            echo "AGENTS.md, docs/ai/non-negotiables.md oder PATTERNS-Listen anpassen,"
+            echo "falls eine Regel bewusst entfernt oder umgezogen wurde."
             exit 1
           fi
 
-          echo "Alle kanonischen Regeln in beiden Hauptdokumenten gefunden."
+          echo "Alle kanonischen Regeln in AGENTS.md und docs/ai/non-negotiables.md gefunden."
+
+      - name: Verify pointer prompt stays compact
+        run: |
+          if grep -E -q "2026-04-28-roadmap|docs/superpowers/plans/completed/.*Pflicht" docs/codex-system-prompt.md; then
+            echo "::error file=docs/codex-system-prompt.md::pointer prompt must not force old roadmap or completed-plan reading"
+            exit 1
+          fi
+
+          for required in \
+            "docs/ai/session-brief.md" \
+            "docs/ai/current-focus.md" \
+            "docs/ai/non-negotiables.md" \
+            "docs/ai/context-map.md" \
+            "codex/<topic>" \
+            "gh pr create"
+          do
+            if ! grep -F -q "$required" docs/codex-system-prompt.md; then
+              echo "::error file=docs/codex-system-prompt.md::missing compact pointer marker: $required"
+              exit 1
+            fi
+          done
+
+          echo "Pointer prompt is compact and uses the docs/ai working set."
 
       - name: Verify decisions.md is append-only-friendly
         run: |

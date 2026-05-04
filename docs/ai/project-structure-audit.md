@@ -3,6 +3,8 @@
 Date: 2026-05-02
 Branch: `codex/project-structure-audit`
 
+> **Historical audit:** This file records the structure state before the PR #136-#148 extraction wave and the completed `2026-05-02-structure-boundary-cleanup` plan. Many line counts and "recommended split" sections are intentionally stale after that work. For new structure work, start with fresh `rg --files`, `wc -l`, and current imports, then use this file only for rationale/history.
+
 ## Scope
 
 This audit reviewed tracked project files plus ignored local artifacts across the root, backend, frontend, shared contracts, docs, skills, plugins, scripts and design handoff folders.

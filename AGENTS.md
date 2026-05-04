@@ -98,7 +98,7 @@ Update `docs/ai/current-focus.md` only when the durable work queue, manual gates
 
 ## Plan-Doc-Status
 
-`docs/superpowers/plans/` enthält **aktive** Pläne — nutze `docs/ai/current-focus.md` und den passenden Roadmap-/Plan-Doc, um die aktuelle Reihenfolge zu bestimmen.
+`docs/superpowers/plans/` enthält aktuelle Orientierung, aktive Pläne und einzelne historische Roadmaps. Nutze `docs/ai/current-focus.md` und den passenden Roadmap-/Plan-Doc, um die aktuelle Reihenfolge zu bestimmen.
 
 `docs/superpowers/plans/completed/` enthält **bereits implementierte** Pläne als historische Referenz. **Nicht erneut implementieren** — siehe `completed/README.md`.
 
@@ -106,6 +106,7 @@ Update `docs/ai/current-focus.md` only when the durable work queue, manual gates
 
 - **No Telegram integration.** Web Push is the notification channel.
 - **No Habit Tracker.** Voice check-ins plus Risk Watch cover this need.
+- **No Data Export** unless Tobi explicitly reverses this decision.
 - Briefing and Coach context use Pulse schema data such as `pulse_daily_metrics` and `pulse_mental_checkins`, not legacy Garmin/check-in tables.
 
 Active scope and product rules live in [`docs/ai/non-negotiables.md`](docs/ai/non-negotiables.md). Do not copy decision excerpts into this file; use [`docs/decisions.md`](docs/decisions.md) as the append-only decision history.

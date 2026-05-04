@@ -52,6 +52,12 @@ const sqlFiles = fs.readdirSync(migrationsDir)
   .filter((file) => file.endsWith('.sql'))
   .sort();
 
+for (const file of sqlFiles) {
+  if (!/^[0-9]{4}_[a-z0-9_]+\.sql$/.test(file)) {
+    report('migration filename must match NNNN_description.sql', path.join(migrationsDir, file));
+  }
+}
+
 const sqlTags = sqlFiles.map((file) => file.replace(/\.sql$/, ''));
 const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
 const journalTags = journal.entries.map((entry) => entry.tag).sort();

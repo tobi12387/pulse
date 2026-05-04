@@ -53,6 +53,8 @@
 | `2026-05-02-season-strategy-planner.md` | Season Strategy Planner — deterministic season line and weekly plan guardrails for target sessions, hard days, deloads and intentional free days | PR #114 |
 | `2026-05-02-garmin-signal-usefulness-wave.md` | Garmin Signal Usefulness — ranked used, underused and missing Garmin signals in Data without live Garmin page probes | PR #116 |
 | `2026-05-02-daily-decision-quality-loop.md` | Daily Decision Quality Loop — score helpful/stale/strategy-change recommendation quality in Home, Coach and Insights | PR #117 |
+| `2026-05-02-structure-boundary-cleanup.md` | Structure Boundary Cleanup — route/page/shared-type extraction and ops/design handoff cleanup | PR #136-#148 |
+| `2026-05-02-ui-ux-deep-friction-roadmap.md` | UI/UX Deep Friction Closure — mobile containment, daily-loop priority, feedback recovery, Settings diagnostics and route evidence refresh | PR #155-#160 |
 
 ## Bekannte veraltete Stellen
 
@@ -62,5 +64,5 @@
 ## Wo finde ich aktive Pläne?
 
 → [../](../) (`docs/superpowers/plans/`) ohne `completed/`
-→ Aktuelle Reihenfolge in [../2026-04-28-roadmap.md](../2026-04-28-roadmap.md)
+→ Aktuelle Reihenfolge in [../2026-05-02-future-direction-roadmap.md](../2026-05-02-future-direction-roadmap.md)
 → Tool-Workflow in [AGENTS.md](../../../../AGENTS.md)

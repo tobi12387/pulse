@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — AI-Kontext-Hierarchie ersetzt lange Pflichtlektuere
+
+- **Decision:** Pulse-Agenten starten mit `AGENTS.md` plus dem kompakten `docs/ai/*`-Arbeitsset; konkrete Roadmaps, Plandokumente, `docs/decisions.md`, lokale Skills und CI-Regeln werden nur bei passender Aufgabe erweitert.
+- **Why:** Lange Pflichtlese-Listen, alte Roadmap-Prompts und Branch-/PR-Archive verbrauchen viele Tokens und erzeugen stale Entscheidungen. Die kompakte Hierarchie haelt Hard Rules, Produktqualitaet, aktuelle Gates und File-Auswahl aktuell, waehrend GitHub PRs und completed Plans die Historie tragen.
+- **Alternatives:** Den kopierbaren Prompt weiter als umfassende Quelle pflegen (driftet schnell); `docs/decisions.md` immer komplett lesen (zu teuer); `docs/ai/current-focus.md` wieder als PR-Register nutzen (wird stale und dupliziert GitHub).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-02 — UI/UX Evidence nutzt ignorierte Route-Packs plus Companion Boards
 
 - **Decision:** Pulse erzeugt UI/UX-Screenshot-Evidence ueber einen explizit aktivierten Playwright-Route-Pack unter `test-results/route-evidence/` und haelt Canva/FigJam als visuelle Companion-Artefakte, nicht als Quelle fuer Akzeptanz oder Architektur.

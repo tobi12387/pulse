@@ -11,13 +11,14 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - Never commit directly to `main`.
 - Never use `git add .`; stage explicit files only.
 - Push immediately after every meaningful commit.
+- Server deploys run through `scripts/deploy.sh` only after the relevant PR is merged to `main`.
 
 ## Architecture
 
 - All LLM calls go through `backend/src/lib/llm.ts`.
 - No secrets in code. Never commit `.env`.
 - DB migrations are additive-only: no `DROP`, no `NOT NULL` without `DEFAULT`.
-- Briefing and Coach context should use the Pulse schema and shared PulseContext, not legacy Garmin/check-in tables.
+- Briefing and Coach context should use the Pulse schema and shared PulseContext, especially `pulse_daily_metrics` and `pulse_mental_checkins`, not legacy Garmin/check-in tables.
 - Thresholds for Readiness, TSB, HRV, and RPE belong in shared contracts, not duplicated frontend/server heuristics.
 
 ## Product Scope
