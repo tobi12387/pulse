@@ -69,7 +69,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('Insights load analyses only after the user opens a card', async ({ page }) => {
+test('Data analyses load only after the user opens a card', async ({ page }) => {
   let insightRequests = 0;
   await mockPulseApi(page, {
     onRequest: (pathname) => {
@@ -78,7 +78,7 @@ test('Insights load analyses only after the user opens a card', async ({ page })
   });
 
   await page.goto('/data?tab=analysen');
-  await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Analysen' })).toBeVisible();
   await expect(page.getByText('Öffne eine Karte, um die Analyse gezielt zu laden.')).toBeVisible();
   expect(insightRequests).toBe(0);
 
@@ -87,7 +87,7 @@ test('Insights load analyses only after the user opens a card', async ({ page })
   expect(insightRequests).toBe(1);
 });
 
-test('Insights show evidence links for opened analysis cards', async ({ page }) => {
+test('Data analyses show evidence links for opened analysis cards', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data?tab=analysen');
@@ -102,7 +102,7 @@ test('Insights show evidence links for opened analysis cards', async ({ page }) 
   await expect(page.getByText('OpenRouter')).toHaveCount(0);
 });
 
-test('Insights show a helpful state instead of raw server errors', async ({ page }) => {
+test('Data analyses show a helpful state instead of raw server errors', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'server' });
 
   await page.goto('/data?tab=analysen');
@@ -114,7 +114,7 @@ test('Insights show a helpful state instead of raw server errors', async ({ page
   await expect(page.getByText('Internal Server Error')).toHaveCount(0);
 });
 
-test('Insights classify provider errors with a retry action', async ({ page }) => {
+test('Data analyses classify provider errors with a retry action', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'provider' });
 
   await page.goto('/data?tab=analysen');
@@ -126,7 +126,7 @@ test('Insights classify provider errors with a retry action', async ({ page }) =
   await expect(page.getByText('OpenRouter')).toHaveCount(0);
 });
 
-test('Insights classify missing data without offering a retry', async ({ page }) => {
+test('Data analyses classify missing data without offering a retry', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'data_missing' });
 
   await page.goto('/data?tab=analysen');
