@@ -997,7 +997,7 @@ export default function Home() {
               cursor: 'pointer',
             }}
           >
-            INSIGHTS
+            ANALYSEN
           </button>
         </div>
       </div>

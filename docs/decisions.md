@@ -28,11 +28,11 @@
 
 ---
 
-## 2026-05-04 — Habit-/Routine-Support bleibt fuer die Nav-IA offen, aber nicht als Haupttab
+## 2026-05-04 — Habit-/Routine-Scope bleibt ausserhalb der Nav-IA
 
-- **Decision:** Der Navigation-IA-Spec schliesst Habit-/Routine-Support nicht mehr als Non-Goal aus. Fuer diese Welle bleibt er trotzdem ausserhalb der Umsetzung und darf keinen neuen Haupttab erzeugen; falls er spaeter sinnvoll wird, gehoert die taegliche Oberflaeche nach Home und die Evidenz nach Data.
-- **Why:** Tobi hat den Habit-Tracker-Ausschluss im Spec aufgehoben. Das veraendert die Produktoptionen fuer spaetere Routine-Unterstuetzung, aber nicht den aktuellen IA-Befund: Pulse soll im Alltag schlanker werden, und ein neuer Haupttab wuerde die Navigationslast wieder erhoehen.
-- **Alternatives:** Habit Tracker weiter kategorisch im Spec ausschliessen (zu eng nach Tobis Korrektur); sofort einen Habit-/Routine-Tab planen (widerspricht dem schlanken Ziel); Habit-Support in den Insights/Coach-Umbau mischen (zu viel Scope fuer den naechsten PR).
+- **Decision:** Der Navigation-IA-Spec fuehrt Habit Tracker nicht als eigenes Non-Goal, weil dieser Spec nur Coach/Insights-Navigation entscheidet. Das hebt die bestehenden Pulse-Non-Negotiables gegen Habit Tracker nicht auf; eine separate explizite Umkehrentscheidung waere dafuer noetig.
+- **Why:** Tobi wollte den Habit-Tracker-Punkt aus den Non-Goals dieses Specs streichen. Damit bleibt der IA-Spec enger und erzeugt keinen neuen Habit-Scope, waehrend die aktuelle Hauptentscheidung unveraendert bleibt: kein neuer Top-Level-Tab und zuerst Insights nach Data.
+- **Alternatives:** Habit Tracker im IA-Spec weiter als Non-Goal fuehren (vermischt globale Produktgrenzen mit diesem Navigations-Spec); Habit-/Routine-Support in diesem PR neu oeffnen (Scope-Creep und Konflikt mit `AGENTS.md`/`docs/ai/non-negotiables.md`); sofort einen Habit-Tab planen (widerspricht dem schlanken Ziel).
 - **Decided by:** Tobi + Codex.
 - **Status:** active.
 
