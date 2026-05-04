@@ -15,7 +15,7 @@ type EvidenceItem = {
   value: string;
   window: string;
   status: EvidenceStatus;
-  targetRoute?: '/data' | '/plan' | '/insights' | `/activities/${number}`;
+  targetRoute?: '/data' | '/data?tab=analysen' | '/plan' | '/insights' | `/activities/${number}`;
   targetLabel?: string;
 };
 type MissingDataItem = { label: string; reason: string; action?: string };

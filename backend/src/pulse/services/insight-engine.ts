@@ -18,7 +18,7 @@ export interface InsightEvidenceItem {
   value: string;
   window: string;
   status: InsightEvidenceStatus;
-  targetRoute?: '/data' | '/plan' | '/insights' | `/activities/${number}`;
+  targetRoute?: '/data' | '/data?tab=analysen' | '/plan' | '/insights' | `/activities/${number}`;
   targetLabel?: string;
 }
 
@@ -272,8 +272,8 @@ async function mentalContext(userId: string, since: string, days: number, today:
       stats.moodTsbCorrelation != null ? `r=${stats.moodTsbCorrelation}` : countLabel(overlay.stats.checkins, 'Check-in', 'Check-ins'),
       `${overlay.days} Tage`,
       stats.moodTsbCorrelation != null ? 'available' : dataStatus(overlay.stats.checkins, 3),
-      '/insights',
-      'Insights öffnen',
+      '/data?tab=analysen',
+      'Analysen öffnen',
     ),
   ];
   const lines = rows.slice(-14).map(r =>

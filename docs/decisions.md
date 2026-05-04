@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Insights wandert als Analysen nach Data
+
+- **Decision:** Insights wird aus der Hauptnavigation entfernt und als `Analysen`-Tab in Data gerendert; `/insights` bleibt vorerst ein Redirect auf `/data?tab=analysen`.
+- **Why:** Insights ist ein Evidenz- und Analysemodus, dessen Domains zu Data passen. Der Schritt reduziert die mobile und Desktop-Hauptnavigation sofort, ohne Coach Voice, History oder Chat-State anzufassen.
+- **Alternatives:** Insights als Haupttab behalten (keine Entlastung); Insights komplett loeschen (verliert Analysefaehigkeit); Coach zuerst entfernen (hoeheres Risiko durch Eingabe-, Voice- und History-Flows).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Habit-/Routine-Support bleibt fuer die Nav-IA offen, aber nicht als Haupttab
 
 - **Decision:** Der Navigation-IA-Spec schliesst Habit-/Routine-Support nicht mehr als Non-Goal aus. Fuer diese Welle bleibt er trotzdem ausserhalb der Umsetzung und darf keinen neuen Haupttab erzeugen; falls er spaeter sinnvoll wird, gehoert die taegliche Oberflaeche nach Home und die Evidenz nach Data.

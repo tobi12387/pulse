@@ -64,7 +64,7 @@ No new top-level tabs should be added for this wave. Adding a replacement tab wo
 
 ### PR 1: Move Insights Into Data
 
-This is the recommended first implementation PR.
+This is the active implementation PR.
 
 Scope:
 
