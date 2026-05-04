@@ -169,6 +169,30 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
 });
 
+test('Daily loop slimming keeps full decision details on Home and slim support on task routes', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByText('GRENZE', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('ALTERNATIVE', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
+
+  await page.goto('/coach');
+  await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Gespräch damit starten' })).toBeVisible();
+  await expect(page.getByText('Grenze', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Alternative', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Abschluss', { exact: true })).toHaveCount(0);
+
+  await page.goto('/plan');
+  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Coach fragen/i })).toBeVisible();
+  await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
+});
+
 test('Home closes a daily action and Coach shows the shared closed state', async ({ page }) => {
   const actions = [{
     id: 'checkin:/coach:0',
@@ -311,7 +335,7 @@ test('Home, Coach and Insights show the daily decision quality signal', async ({
   await expect(page.getByTestId('insights-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
-test('Home and Coach share one daily decision with boundary alternative and done criteria', async ({ page }) => {
+test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {
     home: {
@@ -376,8 +400,10 @@ test('Home and Coach share one daily decision with boundary alternative and done
   await page.getByRole('button').filter({ hasText: 'Training heute defensiv entscheiden' }).click();
   await expect(page).toHaveURL('/coach');
   await expect(page.getByText('Training heute defensiv entscheiden')).toBeVisible();
-  await expect(page.getByText('Alternative', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('Abschluss', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Readiness und TSB sprechen gegen einen ungeprüften harten Reiz.')).toBeVisible();
+  await expect(page.getByText('Grenze', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Alternative', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Abschluss', { exact: true })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Training heute defensiv entscheiden/);
@@ -551,9 +577,9 @@ test('Coach daily briefing guides the first conversation without auto-send', asy
   await page.goto('/coach');
   await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
   await expect(page.getByText('Tagesentscheidung')).toBeVisible();
-  await expect(page.getByText('Grenze', { exact: true })).toBeVisible();
-  await expect(page.getByText('Alternative', { exact: true })).toBeVisible();
-  await expect(page.getByText('Abschluss', { exact: true })).toBeVisible();
+  await expect(page.getByText('Grenze', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Alternative', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Abschluss', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Heute entscheiden')).toBeVisible();
   await expect(page.getByText('Plan anpassen')).toBeVisible();
   await expect(page.getByText('Warum?')).toBeVisible();
