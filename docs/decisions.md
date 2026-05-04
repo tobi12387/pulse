@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Coach und Insights werden zu Funktionen statt Haupttabs
+
+- **Decision:** Pulse zielt auf vier Haupttabs: Home, Data, Plan und Settings. Coach wird schrittweise als aufrufbare Interaktionsschicht in Home/Plan/Data integriert; Insights wird als Analysebereich in Data integriert. Zuerst soll Insights in Data wandern, weil das einen Haupttab entfernt und weniger Risiko als der Coach-Umbau hat.
+- **Why:** Frische Route-Evidence zeigt keine horizontalen Layoutfehler, aber die Navigation bleibt mit sechs Hauptzielen schwer fuer iPhone/PWA- und Desktop-Alltag. Coach ist ein Modus zum Fragen, Einchecken und Kontext klaeren; Insights ist ein Evidenzmodus, dessen Domains bereits zu Data passen.
+- **Alternatives:** Coach und Insights unveraendert als Haupttabs behalten (weiterhin zu bulky); beide sofort in einem grossen PR entfernen (zu riskant fuer Voice, History und Deep Links); neue Ersatz-Tabs einfuehren (verschiebt die Navigationslast nur).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Plan-Leerzustand bekommt direkte naechste Aktionen
 
 - **Decision:** Wenn auf Plan kein offenes Training geplant ist, zeigt die naechste Trainingsentscheidung direkte Aktionen fuer Verfuegbarkeit pruefen, Plan generieren und Coach fragen.
