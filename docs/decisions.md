@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Habit Tracker ist kein globales No-Go mehr
+
+- **Decision:** Habit-/Routine-Tracking wird aus den globalen Pulse-No-Gos entfernt. Das oeffnet den Scope fuer spaetere Bewertung, priorisiert oder implementiert aber noch keinen Habit Tracker.
+- **Why:** Tobi hat die globale Sperre explizit aufgehoben. Pulse soll Habit-/Routine-Ideen deshalb nicht mehr automatisch ablehnen, aber sie weiterhin gegen Alltagsnutzen, Datenquellen, Mental-Fitness-Scope und UI-Schlankheit pruefen.
+- **Alternatives:** Die Sperre in `AGENTS.md`/`docs/ai/non-negotiables.md` beibehalten (widerspricht Tobis aktueller Anweisung); sofort einen Habit Tracker bauen (zu grosser Scope ohne UX-/Datenplan); nur einzelne Specs anpassen (laesst CI und globale Agentenregeln stale).
+- **Decided by:** Tobi.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Insights wandert als Analysen nach Data
 
 - **Decision:** Insights wird aus der Hauptnavigation entfernt und als `Analysen`-Tab in Data gerendert; `/insights` bleibt vorerst ein Redirect auf `/data?tab=analysen`.

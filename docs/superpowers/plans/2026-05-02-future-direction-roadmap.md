@@ -108,6 +108,5 @@ These are not blocked by implementation skill; they need Tobi's device or approv
 
 - No Telegram integration.
 - No data export.
-- No habit tracker.
 - No direct development on the Ubuntu server.
 - No public cloud tunnel unless the local VPN model is explicitly reversed later.

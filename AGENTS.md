@@ -105,7 +105,6 @@ Update `docs/ai/current-focus.md` only when the durable work queue, manual gates
 ## Canonical product constraints
 
 - **No Telegram integration.** Web Push is the notification channel.
-- **No Habit Tracker.** Voice check-ins plus Risk Watch cover this need.
 - **No Data Export** unless Tobi explicitly reverses this decision.
 - Briefing and Coach context use Pulse schema data such as `pulse_daily_metrics` and `pulse_mental_checkins`, not legacy Garmin/check-in tables.
 
