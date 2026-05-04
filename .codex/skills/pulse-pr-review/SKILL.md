@@ -15,7 +15,7 @@ Use a code-review posture: findings first, ordered by severity, with tight file 
 - DB migrations must pass `pulse-migration-guard`.
 - Briefing and Coach context should use shared Pulse context and Pulse schema, not legacy `garmin_daily_health` or `check_ins`.
 - Readiness, TSB, HRV, RPE, and related thresholds should live in shared contracts, not duplicated frontend/server heuristics.
-- No Telegram or Habit Tracker work unless Tobi explicitly reverses prior decisions.
+- No Telegram work unless Tobi explicitly reverses prior decisions.
 - No Data Export work unless Tobi explicitly reverses prior decisions.
 - Daily-use recommendations must show how Garmin, training, recovery, plan, and mental signals influenced them when relevant.
 - Repeated generic plans or coaching answers are product risks unless the underlying data genuinely did not change.

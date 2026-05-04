@@ -49,7 +49,6 @@ jobs:
             "decisions\\.md"
             "codex/<topic>|codex/[a-z]"
             "no.*telegram|kein.*telegram|keine.*telegram"
-            "no.*habit|kein.*habit"
             "no.*data export|kein.*datenexport|keine.*datenexport"
           )
 
@@ -62,7 +61,6 @@ jobs:
             "decisions\\.md"
             "codex/<topic>|codex/[a-z]"
             "no.*telegram|kein.*telegram|keine.*telegram"
-            "no.*habit|kein.*habit"
             "no.*data export|kein.*datenexport|keine.*datenexport"
             "daily usefulness|daily-use|taeglich"
             "Garmin.*mental|mental.*Garmin"

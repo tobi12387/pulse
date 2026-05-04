@@ -48,6 +48,5 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 ## Out Of Scope Unless Reversed
 
 - Telegram integration.
-- Habit tracker.
 - Data export.
 - Rebuilding anything under `docs/superpowers/plans/completed/`.

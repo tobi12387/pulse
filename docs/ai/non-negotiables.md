@@ -24,7 +24,6 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 ## Product Scope
 
 - No Telegram integration. Web Push is the planned notification channel.
-- No Habit Tracker. Voice check-ins plus Risk Watch cover this need.
 - No Data Export unless Tobi explicitly reverses this decision.
 - Completed plans are historical references only. Do not rebuild them.
 
