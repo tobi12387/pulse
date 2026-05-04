@@ -102,20 +102,21 @@ export function DailyDecisionCard({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: onPrompt ? '1fr 1fr' : '1fr', gap: 8, marginTop: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: onActivate && onPrompt && !compact ? '1fr 1fr' : '1fr', gap: 8, marginTop: compact ? 10 : 12 }}>
         {onActivate && (
           <button
             type="button"
             onClick={onActivate}
             style={{
-              padding: '9px 10px',
+              minHeight: 40,
+              padding: compact ? '8px 10px' : '9px 10px',
               background: 'var(--surface-2)',
               border: `1px solid ${color}`,
               borderRadius: 5,
               color,
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '.1em',
+              letterSpacing: 0,
               textTransform: 'uppercase',
               cursor: 'pointer',
             }}
@@ -128,14 +129,15 @@ export function DailyDecisionCard({
             type="button"
             onClick={onPrompt}
             style={{
-              padding: '9px 10px',
+              minHeight: 40,
+              padding: compact ? '8px 10px' : '9px 10px',
               background: 'var(--surface-2)',
               border: '1px solid var(--accent)',
               borderRadius: 5,
               color: 'var(--accent)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '.1em',
+              letterSpacing: 0,
               textTransform: 'uppercase',
               cursor: 'pointer',
             }}

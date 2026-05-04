@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Daily Loop Slimming macht Home zur vollen Tagesentscheidungsquelle
+
+- **Decision:** Pulse behaelt die vollstaendige Tagesentscheidung mit Grenze, Alternative, Abschluss und Evidenz auf Home; Coach und Plan zeigen diese Tagesentscheidung nur noch als kompakte Kontext-/Aktionskarte.
+- **Why:** Die frische Route-Evidence vom 2026-05-04 zeigte keine horizontalen Layoutfehler, aber die gleiche schwere Tagesentscheidung wiederholte sich auf Home, Coach und Plan. Home bleibt damit der vollstaendige Tagesloop, waehrend Coach und Plan schneller in ihre eigentlichen Alltagsaufgaben fuehren.
+- **Alternatives:** Den vollen Tagesentscheidungsblock auf allen Routen belassen (zu sperrig auf iPhone/PWA); Coach komplett umsortieren (groesserer Flow-PR); zuerst Data/Settings verdichten (geringere Tagesroutine-Wirkung).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — AI-Kontext-Hierarchie ersetzt lange Pflichtlektuere
 
 - **Decision:** Pulse-Agenten starten mit `AGENTS.md` plus dem kompakten `docs/ai/*`-Arbeitsset; konkrete Roadmaps, Plandokumente, `docs/decisions.md`, lokale Skills und CI-Regeln werden nur bei passender Aufgabe erweitert.

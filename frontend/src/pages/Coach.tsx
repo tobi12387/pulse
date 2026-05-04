@@ -495,7 +495,7 @@ function DailyBriefingGuide({
         <DailyDecisionCard
           decision={dailyDecision}
           labelCase="title"
-          density={compact ? 'compact' : 'default'}
+          density="compact"
           onPrompt={() => onPrompt(dailyDecision.prompt)}
         />
       )}
