@@ -77,7 +77,7 @@ test('Insights load analyses only after the user opens a card', async ({ page })
     },
   });
 
-  await page.goto('/insights');
+  await page.goto('/data?tab=analysen');
   await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible();
   await expect(page.getByText('Öffne eine Karte, um die Analyse gezielt zu laden.')).toBeVisible();
   expect(insightRequests).toBe(0);
@@ -90,7 +90,7 @@ test('Insights load analyses only after the user opens a card', async ({ page })
 test('Insights show evidence links for opened analysis cards', async ({ page }) => {
   await mockPulseApi(page);
 
-  await page.goto('/insights');
+  await page.goto('/data?tab=analysen');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
 
   await expect(page.getByText('Datenbasis')).toBeVisible();
@@ -105,7 +105,7 @@ test('Insights show evidence links for opened analysis cards', async ({ page }) 
 test('Insights show a helpful state instead of raw server errors', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'server' });
 
-  await page.goto('/insights');
+  await page.goto('/data?tab=analysen');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
 
   await expect(page.getByText('Analyse konnte gerade nicht geladen werden.')).toBeVisible();
@@ -117,7 +117,7 @@ test('Insights show a helpful state instead of raw server errors', async ({ page
 test('Insights classify provider errors with a retry action', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'provider' });
 
-  await page.goto('/insights');
+  await page.goto('/data?tab=analysen');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
 
   await expect(page.getByText('KI-Provider gerade nicht erreichbar.')).toBeVisible();
@@ -129,7 +129,7 @@ test('Insights classify provider errors with a retry action', async ({ page }) =
 test('Insights classify missing data without offering a retry', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'data_missing' });
 
-  await page.goto('/insights');
+  await page.goto('/data?tab=analysen');
   await page.getByRole('button').filter({ hasText: 'Mental' }).click();
 
   await expect(page.getByText('Noch nicht genug Daten.')).toBeVisible();
@@ -293,7 +293,7 @@ test('Home and Coach show what Pulse learned from yesterday', async ({ page }) =
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Was lernen wir aus gestern/);
 });
 
-test('Home, Coach and Insights show the daily decision quality signal', async ({ page }) => {
+test('Home, Coach and Data analyses show the daily decision quality signal', async ({ page }) => {
   const decisionQuality = {
     range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
     qualityScore: 44,
@@ -330,9 +330,9 @@ test('Home, Coach and Insights show the daily decision quality signal', async ({
   await page.getByTestId('coach-decision-quality-chip').click();
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Wiederholung prüfen/);
 
-  await page.goto('/insights');
-  await expect(page.getByTestId('insights-decision-quality-card')).toContainText('Entscheidungsqualität');
-  await expect(page.getByTestId('insights-decision-quality-card')).toContainText('Mobilität 10 Minuten');
+  await page.goto('/data?tab=analysen');
+  await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Entscheidungsqualität');
+  await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
@@ -1769,7 +1769,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
 
   await page.goto('/');
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
-  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
+  await expect(bottomNav.locator('a[href="/insights"]')).toHaveCount(0);
   await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
@@ -1799,7 +1799,7 @@ test('Mobile routes avoid unintended horizontal overflow', async ({ page }) => {
 
   await mockPulseApi(page);
 
-  for (const route of ['/', '/coach', '/data', '/plan', '/insights', '/settings']) {
+  for (const route of ['/', '/coach', '/data', '/data?tab=analysen', '/plan', '/settings']) {
     await expectNoHorizontalOverflow(page, route);
   }
 });
@@ -1853,7 +1853,7 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await page.goto('/coach');
   await expectTouchTarget(page, 'Verlauf löschen');
 
-  await page.goto('/insights');
+  await page.goto('/data?tab=analysen');
   await expectTouchTarget(page, '7T');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');

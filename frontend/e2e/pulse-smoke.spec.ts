@@ -2,12 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
-  { path: '/', label: 'Dashboard', visibleText: 'READINESS' },
-  { path: '/coach', label: 'Coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'Data', visibleText: 'Schlaf, Metriken & Mental' },
-  { path: '/plan', label: 'Plan', visibleText: 'Training, Ziele & Statistik' },
-  { path: '/insights', label: 'Insights', visibleText: 'Insights' },
-  { path: '/settings', label: 'Settings', visibleText: 'Settings' },
+  { path: '/', label: 'Dashboard', navHref: '/', visibleText: 'READINESS' },
+  { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
+  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken & Mental' },
+  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
 
 async function expectHealthyPage(page: Page, visibleText: string) {
@@ -50,10 +49,23 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
   await expectHealthyPage(page, 'READINESS');
 
   for (const route of routes.slice(1)) {
-    await page.locator(`a[href="${route.path}"]`).filter({ visible: true }).click();
+    await page.locator(`a[href="${route.navHref}"]`).filter({ visible: true }).click();
     await expect(page).toHaveURL(route.path);
     await expectHealthyPage(page, route.visibleText);
   }
+});
+
+test('/insights redirects to the Data analysis tab', async ({ page }) => {
+  await page.goto('/insights');
+  await expect(page).toHaveURL('/data?tab=analysen');
+  await expect(page.getByRole('button', { name: 'Analysen' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: 'Analysen' })).toBeVisible();
+});
+
+test('primary navigation omits Insights after it moves into Data', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('a[href="/insights"]')).toHaveCount(0);
+  await expect(page.locator('a[href="/settings"]').filter({ visible: true })).toContainText('Settings');
 });
 
 test('PWA manifest and service worker endpoints are available', async ({ request }) => {

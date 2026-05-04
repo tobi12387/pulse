@@ -8,8 +8,8 @@ const routes = [
   { path: '/', label: 'home', visibleText: 'READINESS' },
   { path: '/coach', label: 'coach', visibleText: 'TAGESBRIEFING' },
   { path: '/data', label: 'data', visibleText: 'Schlaf, Metriken & Mental' },
+  { path: '/data?tab=analysen', label: 'data-analysen', visibleText: 'Analysen' },
   { path: '/plan', label: 'plan', visibleText: 'Training, Ziele & Statistik' },
-  { path: '/insights', label: 'insights', visibleText: 'Insights' },
   { path: '/settings', label: 'settings', visibleText: 'Settings' },
 ] as const;
 
