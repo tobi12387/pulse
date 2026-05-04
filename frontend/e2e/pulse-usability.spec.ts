@@ -187,7 +187,7 @@ test('Daily loop slimming keeps full decision details on Home and slim support o
 
   await page.goto('/plan');
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Coach fragen/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Coach fragen/i }).first()).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -906,6 +906,26 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await page.getByRole('button', { name: '+ Plan generieren' }).click();
   await expect(page.getByText('Verfügbarkeit: Mo/Mi/Fr/Sa')).toBeVisible();
   await expect(page.getByText('Umfang: 8 h')).toBeVisible();
+});
+
+test('Plan empty training decision offers direct next actions', async ({ page }) => {
+  await mockPulseApi(page, { planWorkouts: [] });
+
+  await page.goto('/plan');
+  const emptyDecision = page.locator('.card').filter({ hasText: 'Kein offenes Training geplant' }).first();
+  await expect(emptyDecision).toBeVisible();
+  await expect(emptyDecision.getByRole('button', { name: 'Verfügbarkeit prüfen' })).toBeVisible();
+  await expect(emptyDecision.getByRole('button', { name: 'Plan generieren', exact: true })).toBeVisible();
+  await expect(emptyDecision.getByRole('button', { name: 'Coach fragen' })).toBeVisible();
+
+  await emptyDecision.getByRole('button', { name: 'Verfügbarkeit prüfen' }).click();
+  await expect(page.getByText('Verfügbarkeit — nächste 2 Wochen')).toBeVisible();
+
+  await emptyDecision.getByRole('button', { name: 'Plan generieren', exact: true }).click();
+  await expect(page.getByText('Erstellt einen wissenschaftlich fundierten Wochenplan')).toBeVisible();
+
+  await emptyDecision.getByRole('button', { name: 'Coach fragen' }).click();
+  await expect(page).toHaveURL('/coach');
 });
 
 test('Plan shows race command with readiness evidence', async ({ page }) => {

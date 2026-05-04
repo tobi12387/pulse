@@ -65,6 +65,8 @@ function NextTrainingDecisionCard({
   planTrace,
   onNavigate,
   onOpen,
+  onOpenAvailability,
+  onOpenGenerator,
 }: {
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
@@ -72,6 +74,8 @@ function NextTrainingDecisionCard({
   planTrace: PulsePlanTrace | null;
   onNavigate: (path: string) => void;
   onOpen: (workout: PlannedWorkout) => void;
+  onOpenAvailability: () => void;
+  onOpenGenerator: () => void;
 }) {
   const update = useUpdateWorkout();
   const [alternativeError, setAlternativeError] = useState<{ id: PlanAlternativeId; message: string } | null>(null);
@@ -89,6 +93,34 @@ function NextTrainingDecisionCard({
         <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
           Prüfe deine Verfügbarkeit oder erstelle einen neuen Wochenplan, wenn du diese Woche trainieren willst.
         </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginTop: 12 }}>
+          {[
+            { label: 'Verfügbarkeit prüfen', onClick: onOpenAvailability, accent: false },
+            { label: 'Plan generieren', onClick: onOpenGenerator, accent: false },
+            { label: 'Coach fragen', onClick: () => onNavigate('/coach'), accent: true },
+          ].map(action => (
+            <button
+              key={action.label}
+              type="button"
+              onClick={action.onClick}
+              style={{
+                minHeight: 40,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                color: action.accent ? 'var(--accent)' : 'var(--text-2)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: 0,
+                padding: '8px 10px',
+                textTransform: 'uppercase',
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
@@ -277,11 +309,16 @@ function NextTrainingDecisionCard({
 
 const DAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-function AvailabilityEditor() {
+function AvailabilityEditor({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const { data, isLoading } = useWeekAvailability();
   const save = useSaveAvailability();
   const weeks = data?.weeks ?? [];
-  const [open, setOpen] = useState(false);
   const [local, setLocal] = useState<Record<string, { availableDays: number[]; weeklyHours: number; notes: string }>>({});
   const [saveError, setSaveError] = useState<{ weekStart: string; message: string } | null>(null);
 
@@ -317,7 +354,7 @@ function AvailabilityEditor() {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{
+      <button onClick={() => onOpenChange(true)} style={{
         width: '100%', padding: '8px 12px', textAlign: 'left',
         background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 5,
         fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em',
@@ -334,7 +371,7 @@ function AvailabilityEditor() {
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', color: 'var(--text-2)', textTransform: 'uppercase' }}>
           Verfügbarkeit — nächste 2 Wochen
         </span>
-        <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 16, lineHeight: 1 }}>×</button>
+        <button onClick={() => onOpenChange(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 16, lineHeight: 1 }}>×</button>
       </div>
       {isLoading ? <div style={{ padding: 12 }}><Skeleton height={80} /></div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -434,6 +471,7 @@ function TrainingTab() {
   const navigate  = useNavigate();
   const [weekOffset, setWeekOffset] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
+  const [showAvailability, setShowAvailability] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
@@ -494,6 +532,8 @@ function TrainingTab() {
         planTrace={decisionPlanTrace}
         onNavigate={navigate}
         onOpen={setSelectedWorkout}
+        onOpenAvailability={() => setShowAvailability(true)}
+        onOpenGenerator={() => setShowConfig(true)}
       />
 
       {dailyDecision && (
@@ -524,7 +564,7 @@ function TrainingTab() {
       />
 
       {/* Availability */}
-      <AvailabilityEditor />
+      <AvailabilityEditor open={showAvailability} onOpenChange={setShowAvailability} />
 
       {/* Plan-Generator */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

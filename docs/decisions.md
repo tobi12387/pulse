@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Plan-Leerzustand bekommt direkte naechste Aktionen
+
+- **Decision:** Wenn auf Plan kein offenes Training geplant ist, zeigt die naechste Trainingsentscheidung direkte Aktionen fuer Verfuegbarkeit pruefen, Plan generieren und Coach fragen.
+- **Why:** Nach dem Daily-Loop-Slimming blieb der wichtigste Plan-Leerzustand zwar erklaerend, aber nicht handlungsstark. Die direkten Aktionen reduzieren iPhone/PWA-Tap-Suche und fuehren zu den bestehenden Workflows, ohne neue Backend-Vertraege einzufuehren.
+- **Alternatives:** Den Hinweistext unveraendert lassen (weiterhin zu passiv); den Plan-Generator automatisch oeffnen (zu aufdringlich); eine neue Wizard-Route bauen (zu gross fuer den bestaetigten Friktionspunkt).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Daily Loop Slimming macht Home zur vollen Tagesentscheidungsquelle
 
 - **Decision:** Pulse behaelt die vollstaendige Tagesentscheidung mit Grenze, Alternative, Abschluss und Evidenz auf Home; Coach und Plan zeigen diese Tagesentscheidung nur noch als kompakte Kontext-/Aktionskarte.
