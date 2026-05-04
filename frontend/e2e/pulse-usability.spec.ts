@@ -130,7 +130,7 @@ test('Data analyses classify missing data without offering a retry', async ({ pa
   await mockPulseApi(page, { insightErrorKind: 'data_missing' });
 
   await page.goto('/data?tab=analysen');
-  await page.getByRole('button').filter({ hasText: 'Mental' }).click();
+  await page.locator('button[aria-controls="insight-mental-content"]').click();
 
   await expect(page.getByText('Noch nicht genug Daten.')).toBeVisible();
   await expect(page.getByText('Noch nicht genug Check-in-Daten für diesen Zeitraum.')).toBeVisible();
