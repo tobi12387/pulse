@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Habit-/Routine-Support bleibt fuer die Nav-IA offen, aber nicht als Haupttab
+
+- **Decision:** Der Navigation-IA-Spec schliesst Habit-/Routine-Support nicht mehr als Non-Goal aus. Fuer diese Welle bleibt er trotzdem ausserhalb der Umsetzung und darf keinen neuen Haupttab erzeugen; falls er spaeter sinnvoll wird, gehoert die taegliche Oberflaeche nach Home und die Evidenz nach Data.
+- **Why:** Tobi hat den Habit-Tracker-Ausschluss im Spec aufgehoben. Das veraendert die Produktoptionen fuer spaetere Routine-Unterstuetzung, aber nicht den aktuellen IA-Befund: Pulse soll im Alltag schlanker werden, und ein neuer Haupttab wuerde die Navigationslast wieder erhoehen.
+- **Alternatives:** Habit Tracker weiter kategorisch im Spec ausschliessen (zu eng nach Tobis Korrektur); sofort einen Habit-/Routine-Tab planen (widerspricht dem schlanken Ziel); Habit-Support in den Insights/Coach-Umbau mischen (zu viel Scope fuer den naechsten PR).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Coach und Insights werden zu Funktionen statt Haupttabs
 
 - **Decision:** Pulse zielt auf vier Haupttabs: Home, Data, Plan und Settings. Coach wird schrittweise als aufrufbare Interaktionsschicht in Home/Plan/Data integriert; Insights wird als Analysebereich in Data integriert. Zuerst soll Insights in Data wandern, weil das einen Haupttab entfernt und weniger Risiko als der Coach-Umbau hat.

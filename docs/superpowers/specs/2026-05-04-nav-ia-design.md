@@ -129,6 +129,18 @@ This PR should only happen after PR 1 and PR 2 have been used enough to catch aw
 - Existing deep links should recover through redirects during the transition.
 - Mobile bottom nav labels must remain short enough for iPhone/PWA use.
 
+## Habit/Routine Scope Impact
+
+Removing Habit Tracker from this spec's Non-Goals opens the door to evaluating lightweight habit or routine support later, but it does not change the navigation plan for this wave.
+
+Impact assessment:
+
+- It does not justify a new top-level tab. A separate Habits/Routine tab would work against the target of making daily iPhone/PWA use less bulky.
+- If habit or routine support becomes useful, Home should own the daily action surface and Data should own trend/evidence review.
+- Coach can support habit reflection through prompts or check-in extraction, but should still be a callable layer rather than a separate place.
+- Any future habit/routine implementation needs its own evidence, product boundary and QA plan before it becomes implementation scope.
+- The staged order still stands: Insights into Data first, Coach into daily surfaces second, compatibility cleanup third.
+
 ## QA Requirements
 
 Each implementation PR must include:
@@ -159,7 +171,6 @@ PR 2 should specifically verify:
 ## Non-Goals
 
 - No new top-level tab for "Assistant", "Analyse", "Routine" or similar labels.
-- No Habit Tracker.
 - No Telegram or new notification channel.
 - No backend LLM-provider changes.
 - No migration or schema work.
@@ -168,6 +179,6 @@ PR 2 should specifically verify:
 ## Spec Self-Review
 
 - Placeholder scan: no unresolved placeholder markers remain.
-- Consistency check: the target IA, staged plan and QA expectations all use the same final four-tab model.
+- Consistency check: the target IA, habit/routine impact assessment, staged plan and QA expectations all use the same final four-tab model.
 - Scope check: this spec is intentionally broader than one implementation PR, but each staged PR is narrow enough to implement and review separately.
 - Ambiguity check: Coach and Insights are kept as capabilities, while top-level navigation ownership moves to Home/Data/Plan/Settings.
