@@ -78,7 +78,7 @@ test('Data analyses load only after the user opens a card', async ({ page }) => 
   });
 
   await page.goto('/data?tab=analysen');
-  await expect(page.getByRole('heading', { name: 'Analysen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
   await expect(page.getByText('Öffne eine Karte, um die Analyse gezielt zu laden.')).toBeVisible();
   expect(insightRequests).toBe(0);
 

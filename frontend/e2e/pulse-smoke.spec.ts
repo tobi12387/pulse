@@ -4,7 +4,7 @@ import { mockPulseApi } from './fixtures/pulse-api';
 const routes = [
   { path: '/', label: 'Dashboard', navHref: '/', visibleText: 'READINESS' },
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken & Mental' },
+  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
@@ -59,7 +59,7 @@ test('/insights redirects to the Data analysis tab', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/data?tab=analysen');
   await expect(page.getByRole('button', { name: 'Analysen' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('heading', { name: 'Analysen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
 });
 
 test('primary navigation omits Insights after it moves into Data', async ({ page }) => {
