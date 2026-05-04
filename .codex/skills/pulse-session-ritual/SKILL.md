@@ -18,8 +18,8 @@ Use this skill before substantial Pulse work.
 2. Run:
    - `git fetch --all --prune`
    - `git status --short --branch`
-3. If the tree is dirty, inspect before editing. Do not stash, delete, or revert user/other-agent work.
-4. Work on a feature branch. Codex branches use `codex/<topic>`. Never work directly on `main`.
+3. If the tree is dirty, stop and inspect before editing. Do not stash, delete, or revert user/other-agent work.
+4. Create a fresh feature branch from `origin/main`: `git switch -c codex/<topic> origin/main`. Codex branches use `codex/<topic>`. Never work directly on `main`.
 
 ## During Work
 
@@ -35,5 +35,5 @@ Before finishing a substantial session:
 
 1. Run focused verification for the touched area.
 2. Update `docs/decisions.md` for non-trivial architecture, scope, priority, or workflow decisions.
-3. Update `docs/ai/current-focus.md` if the active branch, open PR, or next recommended work changed.
+3. Update `docs/ai/current-focus.md` only if the durable work queue, manual gates, or next recommended work changed. Put branch-specific PR detail in the PR body instead.
 4. Check `git status --short --branch` and call out any unrelated dirty files.

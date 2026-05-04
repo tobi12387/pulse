@@ -6,16 +6,17 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Last recorded deployed main before this AI-context cleanup: `ef061a9` / PR #160.
-- Open PRs on `main` at last update: none known.
+- Latest recorded runtime deploy before docs-only AI-context cleanup: `ef061a9` / PR #160.
+- Docs-only workflow/context updates after that do not require server deploy.
+- Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Deep Friction Closure is complete through PR #160.
 
 ## Active Direction
 
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the product orientation document.
-- Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`.
-- Broad structure work should start from `docs/ai/project-structure-audit.md` and the matching active structure plan.
+- Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
+- Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
@@ -30,6 +31,8 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - PR #154: dependency security refresh; runtime audit clean except documented dev-only tooling advisory.
 - PR #155-#160: UI/UX friction closure, Settings diagnostics, route evidence and status closeout.
+- 2026-05-04: AI working context was condensed so sessions start from AGENTS plus `docs/ai/*` instead of long pasted prompts or PR archives.
+- 2026-05-04: completed structure and UI/UX roadmap docs were moved out of the active plan surface to avoid reimplementation.
 - PR #149-#150: ops/tooling cleanup and design handoff relocation.
 - PR #136-#148: backend/frontend/shared structure extraction wave.
 - Earlier feature history lives in GitHub PRs and `docs/superpowers/plans/completed/`.

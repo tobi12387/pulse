@@ -60,6 +60,9 @@ jobs:
       - name: Check migrations
         run: npm run check:migrations
 
+      - name: Script guard tests
+        run: npm run test:scripts
+
       - name: Apply test database migrations
         run: npm run db:migrate -w backend
         env:
