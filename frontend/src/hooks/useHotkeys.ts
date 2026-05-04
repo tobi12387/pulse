@@ -6,8 +6,7 @@ const KEY_MAP: Record<string, string> = {
   '2': '/coach',
   '3': '/data',
   '4': '/plan',
-  '5': '/insights',
-  '6': '/settings',
+  '5': '/settings',
 };
 
 export function useNavHotkeys() {

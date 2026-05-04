@@ -983,7 +983,7 @@ export default function Home() {
             </div>
           </div>
           <button
-            onClick={() => navigate('/insights')}
+            onClick={() => navigate('/data?tab=analysen')}
             style={{
               flexShrink: 0,
               padding: '9px 11px',
