@@ -456,25 +456,51 @@ test('Coach does not treat a future workout as today training', async ({ page })
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
 });
 
-test('Data mental check-in uses guided mental fitness questions', async ({ page }) => {
+test('Data mental check-in uses quick choices with guided context', async ({ page }) => {
+  let submitted: unknown = null;
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
+    onCheckinSubmit: body => {
+      submitted = body;
+    },
   });
 
   await page.goto('/data');
   await page.getByRole('button', { name: 'Mental' }).click();
 
-  await expect(page.getByText('Geführter Daily Check-in')).toBeVisible();
-  await expect(page.getByText('Wie ist dein Kopf gerade?')).toBeVisible();
-  await expect(page.getByText('Was zieht gerade mentale Energie?')).toBeVisible();
+  await expect(page.getByText('Quick Check-in')).toBeVisible();
+  await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
+  await expect(page.getByText('Schlafscore 82')).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Energie: begrenzt' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Druck: hoch' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Tagesbedarf: Ruhe' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Feinjustieren' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Energie: bereit' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Druck: ruhig' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Tagesbedarf: Aktivierung' })).toHaveAttribute('aria-checked', 'true');
+
+  await page.getByRole('radio', { name: 'Kopf: schwer' }).click();
+  await page.getByRole('radio', { name: 'Energie: begrenzt' }).click();
+  await page.getByRole('radio', { name: 'Druck: hoch' }).click();
+  await page.getByRole('radio', { name: 'Tagesbedarf: Ruhe' }).click();
   await expect(page.getByText('Welche Grenze macht diesen freien Tag wirklich erholsam?')).toBeVisible();
-  await expect(page.getByText('Was wäre heute genug?')).toBeVisible();
   await page.getByRole('button', { name: /Welche Grenze macht diesen freien Tag wirklich erholsam/ }).click();
   await page.getByRole('button', { name: 'Mental: angespannt' }).click();
   await page.getByRole('button', { name: 'Schutz: aktiv einplanen' }).click();
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Welche Grenze macht diesen freien Tag wirklich erholsam/);
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Mental: angespannt/);
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Schutz: aktiv einplanen/);
+  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  expect(submitted).toMatchObject({
+    mood: 3,
+    energy: 5,
+    stress: 8,
+    motivation: 3,
+  });
+  expect(String((submitted as { notes?: string }).notes)).toContain('Bedarf: Ruhe');
 });
 
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {

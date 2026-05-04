@@ -39,6 +39,7 @@ type MockPulseApiOptions = {
   healthState?: unknown;
   checkinToday?: unknown;
   checkinGuidance?: unknown;
+  onCheckinSubmit?: (body: unknown) => void;
   metrics?: unknown[];
   sleepSessions?: unknown[];
   onRequest?: (pathname: string, method: string) => void;
@@ -682,6 +683,20 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
+    if (url.pathname === '/api/pulse/checkin' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      options.onCheckinSubmit?.(body);
+      return json(route, {
+        id: 'checkin-submitted',
+        userId: 'user-1',
+        date: today,
+        mood: body.mood,
+        energy: body.energy,
+        stress: body.stress,
+        motivation: body.motivation,
+        notes: body.notes ?? null,
+      });
+    }
     if (url.pathname === '/api/pulse/health-state' && 'healthState' in options) return json(route, options.healthState);
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
