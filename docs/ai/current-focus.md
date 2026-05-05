@@ -6,10 +6,10 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest recorded runtime deploy: `cbafa23` / PR #180.
+- Latest recorded runtime deploy: `7460d81` / PR #182.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
-- UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure and Mental Signal Impact are deployed through PR #180.
+- UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact and Garmin Sync Confidence are deployed through PR #182.
 
 ## Active Direction
 
@@ -38,7 +38,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - PR #176: Coach-nav regression coverage, qualitative Mental Check-in state cards, and Garmin 0-repeat repair detection are live.
 - PR #178: Home Daily Decision Closure deployed; no-training days close locally on Home while Coach remains a support action.
 - PR #180: Mental Signal Impact deployed; saved check-ins visibly influence Home, Plan and Coach wording through a shared frontend classifier.
-- Garmin Sync Confidence: Plan rows and workout detail modal now explain local-only, Garmin-template, calendar-ready, completed, missed and replaced planned workouts without live Garmin calls.
+- PR #182: Garmin Sync Confidence deployed; Plan rows and workout detail modal now explain local-only, Garmin-template, calendar-ready, completed, missed and replaced planned workouts without live Garmin calls.
 - 2026-05-04: AI working context was condensed so sessions start from AGENTS plus `docs/ai/*` instead of long pasted prompts or PR archives.
 - 2026-05-04: completed structure and UI/UX roadmap docs were moved out of the active plan surface to avoid reimplementation.
 - PR #149-#150: ops/tooling cleanup and design handoff relocation.
