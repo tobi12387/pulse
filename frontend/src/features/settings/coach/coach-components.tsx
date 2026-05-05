@@ -172,7 +172,7 @@ export function CoachPreferencesCard({ setMessage }: {
             onClick={openForm}
             style={{
               background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              minHeight: 40, padding: '7px 12px', fontFamily: 'var(--font-mono)', fontSize: 9,
+              minWidth: 44, minHeight: 44, padding: '7px 12px', fontFamily: 'var(--font-mono)', fontSize: 9,
               letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-2)', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}

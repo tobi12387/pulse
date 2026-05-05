@@ -269,7 +269,8 @@ export default function Settings() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.12em',
-                    minHeight: 40,
+                    minWidth: 44,
+                    minHeight: 44,
                     padding: '4px 8px',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
@@ -321,7 +322,7 @@ export default function Settings() {
             style={{
               width: '100%',
               background: 'var(--surface-2)', border: '1px solid var(--accent)',
-              borderRadius: 'var(--radius)', minHeight: 40, padding: '10px',
+              borderRadius: 'var(--radius)', minHeight: 44, padding: '10px',
               fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
               textTransform: 'uppercase', color: 'var(--accent)',
               cursor: syncing ? 'default' : 'pointer',
@@ -336,7 +337,7 @@ export default function Settings() {
             style={{
               width: '100%',
               background: 'var(--surface-2)', border: '1px solid var(--text-3)',
-              borderRadius: 'var(--radius)', minHeight: 40, padding: '10px',
+              borderRadius: 'var(--radius)', minHeight: 44, padding: '10px',
               fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
               textTransform: 'uppercase', color: 'var(--text-2)',
               cursor: syncingCalendar ? 'default' : 'pointer',
@@ -559,7 +560,8 @@ function SettingsDiagnosticsMatrix({
             type="button"
             onClick={() => onNavigate(shortcut.path)}
             style={{
-              minHeight: 40,
+              minWidth: 44,
+              minHeight: 44,
               padding: '7px 10px',
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
@@ -603,7 +605,8 @@ function SettingsDiagnosticsMatrix({
                 type="button"
                 onClick={() => onNavigate(row.action.path)}
                 style={{
-                  minHeight: 40,
+                  minWidth: 44,
+                  minHeight: 44,
                   padding: '6px 9px',
                   background: 'transparent',
                   border: '1px solid var(--border)',
@@ -623,7 +626,8 @@ function SettingsDiagnosticsMatrix({
                   type="button"
                   onClick={() => onNavigate(row.secondaryAction.path)}
                   style={{
-                    minHeight: 40,
+                    minWidth: 44,
+                    minHeight: 44,
                     padding: '6px 9px',
                     background: 'transparent',
                     border: '1px solid rgba(94,230,207,0.3)',

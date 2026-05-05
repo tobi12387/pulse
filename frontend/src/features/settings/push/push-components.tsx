@@ -298,7 +298,7 @@ export function PushNotificationsCard({ setMessage }: {
           disabled={!supported || !device.serviceWorker || !data?.configured || permissionState === 'denied' || subscribe.isPending}
           style={{
             flex: 1, background: 'var(--surface-2)', border: '1px solid var(--accent)',
-            borderRadius: 'var(--radius)', minHeight: 40, padding: '8px 12px',
+            borderRadius: 'var(--radius)', minHeight: 44, padding: '8px 12px',
             fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: supported && device.serviceWorker && data?.configured && permissionState !== 'denied' ? 'var(--accent)' : 'var(--text-3)',
             cursor: supported && device.serviceWorker && data?.configured && permissionState !== 'denied' ? 'pointer' : 'default',
@@ -312,7 +312,7 @@ export function PushNotificationsCard({ setMessage }: {
           disabled={!data?.configured || activeSubscriptions.length === 0 || sendTest.isPending}
           style={{
             background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-            minHeight: 40, padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
+            minWidth: 44, minHeight: 44, padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 10,
             letterSpacing: '0.12em', textTransform: 'uppercase',
             color: data?.configured && activeSubscriptions.length > 0 ? 'var(--text-2)' : 'var(--text-3)',
             cursor: data?.configured && activeSubscriptions.length > 0 ? 'pointer' : 'default',

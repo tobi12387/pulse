@@ -19,7 +19,7 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mobile/A11y Controls Polish | Route evidence has no document overflow, but touch targets and custom radio/tab semantics still need hardening | `2026-05-05-mobile-a11y-controls-polish.md` |
+| 1 | Mobile/A11y Controls Polish | 44px touch targets are being closed first; custom radio/tab keyboard semantics still need hardening | `2026-05-05-mobile-a11y-controls-polish.md` |
 | 2 | Data Decision Evidence Trail | Evidence should deep-link from Home/Plan to the exact Data section behind a recommendation | `2026-05-05-data-decision-evidence-trail.md` |
 | 3 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
 | 4 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |

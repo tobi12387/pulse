@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Mobile/A11y Controls werden in Touch-Ziele und Keyboard-Semantik getrennt
+
+- **Decision:** Die Mobile/A11y Controls Polish Phase wird in einen ersten 44px-Touch-Target-Slice und einen nachgelagerten Keyboard-Semantik-Slice aufgeteilt. Der erste Slice hebt wiederholte Daily-Use-Controls in Home/Data/Plan/Coach/Settings auf mindestens 44px; Tablist-/Radio-Arrow-Key-Verhalten bleibt im aktiven Plan offen.
+- **Why:** Die Touch-Ziel-Probleme sind konkret, risikarm und direkt relevant fuer iPhone/PWA-Nutzung. Tab-/Radio-Semantik beruehrt Rollen, Fokusmodell und bestehende Role-Tests und sollte getrennt verifiziert werden.
+- **Alternatives:** Alles in einem PR bauen (mehr Regressionrisiko bei Navigation und Mental Controls); nur Coach/Mental fixen (laesst vom verschärften Test gefundene Plan/Settings-Controls weiter unter 44px); Keyboard-Semantik zuerst bauen (laesst die haeufigsten Touch-Probleme bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Garmin Sync Confidence bleibt Frontend-Surface auf vorhandenem Execution-State
 
 - **Decision:** Plan nutzt die vorhandenen `executionStatus`-, Garmin-Template- und Garmin-Kalenderfelder fuer eine gemeinsame Frontend-Confidence-Copy in Zeilen und Workout-Detailmodal. Es gibt keine neue Backend-API, keine Migration und keine Live-Garmin-Requests in QA.

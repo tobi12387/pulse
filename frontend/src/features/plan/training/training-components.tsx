@@ -71,7 +71,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
         <button type="button" aria-label="Vorherige Woche" onClick={() => onChangeWeek(-1)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)', padding: '0 10px',
-          minWidth: 40, minHeight: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>←</button>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           {monday.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} –{' '}
@@ -81,7 +81,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
         <button type="button" aria-label="Nächste Woche" onClick={() => onChangeWeek(1)} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)', padding: '0 10px',
-          minWidth: 40, minHeight: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>→</button>
       </div>
 
@@ -210,7 +210,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
               onClick={() => setSwitching(v => !v)}
               style={{
                 fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '.08em',
-                minHeight: 40, padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 3,
+                minWidth: 44, minHeight: 44, padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 3,
                 background: 'transparent', color: 'var(--text-3)', cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
@@ -230,7 +230,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           {ACTIVITY_TYPES.map(t => (
             <button key={t} onClick={() => handleTypeChange(t)} disabled={update.isPending} style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase',
-              minHeight: 40, padding: '8px 12px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
+              minWidth: 44, minHeight: 44, padding: '8px 12px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: 3, background: t === w.activityType ? translucent('var(--accent)', 9) : 'transparent',
               color: t === w.activityType ? 'var(--accent)' : 'var(--text-2)', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

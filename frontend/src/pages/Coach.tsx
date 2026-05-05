@@ -183,7 +183,7 @@ function MicButton({ micState, onDone }: {
         disabled={isProcessing}
         aria-label={isRecording ? 'Aufnahme beenden' : 'Sprachaufnahme starten'}
         style={{
-          width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: isProcessing ? 'default' : 'pointer',
+          width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: '50%', border: 'none', cursor: isProcessing ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           background: isRecording ? 'var(--rose)' : 'var(--surface-2)',
           color: isRecording ? '#fff' : 'var(--text-2)',
@@ -558,7 +558,7 @@ function DailyBriefingGuide({
             style={{
               width: '100%',
               marginTop: 10,
-              minHeight: 40,
+              minHeight: 44,
               padding: '8px 10px',
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
@@ -927,10 +927,12 @@ export default function Coach() {
             }}
           />
           <button
+            type="button"
+            aria-label="Nachricht senden"
             onClick={handleSend}
             disabled={!input.trim() || sendMessage.isPending}
             style={{
-              width: 36, height: 36, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
+              width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
               background: input.trim() ? 'var(--accent)' : 'var(--surface-2)',
               color: input.trim() ? '#0A0B0D' : 'var(--text-3)',
               fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600,
@@ -953,7 +955,8 @@ export default function Coach() {
           style={{
             background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
             cursor: clearHistory.isPending ? 'default' : 'pointer',
-            minHeight: 40,
+            minWidth: 44,
+            minHeight: 44,
             padding: '7px 12px',
             fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: 'var(--text-3)',

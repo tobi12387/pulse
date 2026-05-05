@@ -69,7 +69,8 @@ export function SegmentedControl({ items, active, onChange, compact = false }: S
           aria-pressed={active === item.id}
           style={{
             flex: '0 0 auto',
-            minHeight: 40,
+            minWidth: 44,
+            minHeight: 44,
             padding: compact ? '7px 10px' : '8px 10px',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
@@ -112,7 +113,8 @@ export function RangeControl({ value, onChange, options }: RangeControlProps) {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            minHeight: 40,
+            minWidth: 44,
+            minHeight: 44,
             padding: '8px 12px',
             borderRadius: 4,
             letterSpacing: 0,
@@ -187,7 +189,8 @@ export function MiniButton({ children, onClick, disabled, tone = 'neutral', type
         background: 'none',
         border: `1px solid ${tone === 'neutral' ? 'var(--border)' : colorMix(color, 34)}`,
         borderRadius: 'var(--radius)',
-        minHeight: 40,
+        minWidth: 44,
+        minHeight: 44,
         padding: '7px 12px',
         fontFamily: 'var(--font-mono)',
         fontSize: 9,

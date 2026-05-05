@@ -54,16 +54,35 @@ async function expectNoHorizontalOverflow(page: Page, route: string) {
   expect(overflow, `${route} has horizontal overflow`).toEqual([]);
 }
 
-async function expectTouchTarget(page: Page, name: string | RegExp, minHeight = 40) {
-  await expectTouchTargetAt(page, name, 0, minHeight);
+async function expectTouchTarget(page: Page, name: string | RegExp, minSize = 44) {
+  await expectTouchTargetAt(page, name, 0, minSize);
 }
 
-async function expectTouchTargetAt(page: Page, name: string | RegExp, index: number, minHeight = 40) {
+async function expectTouchTargetAt(page: Page, name: string | RegExp, index: number, minSize = 44) {
   const target = page.getByRole('button', { name }).nth(index);
   await expect(target).toBeVisible();
   const box = await target.boundingBox();
   expect(box, `Missing touch target ${String(name)} at index ${index}`).not.toBeNull();
-  expect(box!.height, `${String(name)} at index ${index} should be at least ${minHeight}px tall`).toBeGreaterThanOrEqual(minHeight);
+  expect(box!.height, `${String(name)} at index ${index} should be at least ${minSize}px tall`).toBeGreaterThanOrEqual(minSize);
+  expect(box!.width, `${String(name)} at index ${index} should be at least ${minSize}px wide`).toBeGreaterThanOrEqual(minSize);
+}
+
+async function expectRadioTouchTarget(page: Page, name: string | RegExp, minSize = 44) {
+  const target = page.getByRole('radio', { name }).first();
+  await expect(target).toBeVisible();
+  const box = await target.boundingBox();
+  expect(box, `Missing radio touch target ${String(name)}`).not.toBeNull();
+  expect(box!.height, `${String(name)} radio should be at least ${minSize}px tall`).toBeGreaterThanOrEqual(minSize);
+  expect(box!.width, `${String(name)} radio should be at least ${minSize}px wide`).toBeGreaterThanOrEqual(minSize);
+}
+
+async function expectSelectorTouchTarget(page: Page, selector: string, minSize = 44) {
+  const target = page.locator(selector).first();
+  await expect(target).toBeVisible();
+  const box = await target.boundingBox();
+  expect(box, `Missing touch target ${selector}`).not.toBeNull();
+  expect(box!.height, `${selector} should be at least ${minSize}px tall`).toBeGreaterThanOrEqual(minSize);
+  expect(box!.width, `${selector} should be at least ${minSize}px wide`).toBeGreaterThanOrEqual(minSize);
 }
 
 function localIsoDateDaysFrom(days: number) {
@@ -1009,7 +1028,7 @@ test('Coach send failure preserves the draft and can retry', async ({ page }) =>
 
   await page.goto('/coach?focus=daily');
   await page.getByPlaceholder('Frage…').fill('Was ist heute der sinnvollste nächste Schritt?');
-  await page.getByRole('button', { name: '→' }).click();
+  await page.getByRole('button', { name: 'Nachricht senden' }).click();
 
   await expect(page.getByText('Nachricht nicht gesendet')).toBeVisible();
   await expect(page.getByText('KI-Provider gerade nicht verfügbar.')).toBeVisible();
@@ -2192,6 +2211,7 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
       ],
       recent: [],
     },
+    checkinToday: { checkin: null },
   });
 
   await page.goto('/data?tab=coverage');
@@ -2199,6 +2219,11 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, 'Abdeckung');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');
+
+  await page.goto('/data?tab=overview');
+  await expectTouchTarget(page, 'Analysen öffnen');
+  await expectTouchTarget(page, 'Check-in öffnen');
+  await expectTouchTarget(page, 'Schlaf öffnen');
 
   await page.goto('/plan');
   await expectTouchTarget(page, 'Training');
@@ -2208,7 +2233,21 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, 'Sportart ändern');
 
   await page.goto('/coach');
+  await expectSelectorTouchTarget(page, 'button[aria-label="Sprachaufnahme starten"]');
+  await expectSelectorTouchTarget(page, 'button[aria-label="Nachricht senden"]');
   await expectTouchTarget(page, 'Verlauf löschen');
+
+  await page.goto('/data?tab=mental');
+  await expectSelectorTouchTarget(page, 'button:has-text("Text auswerten")');
+  await expectSelectorTouchTarget(page, 'button:has-text("Feinjustieren")');
+  await page.getByRole('button', { name: 'Feinjustieren' }).click();
+  await expectRadioTouchTarget(page, 'Stimmung 1/10');
+  await expectRadioTouchTarget(page, 'Energie 1/10');
+  await expectRadioTouchTarget(page, 'Stress 1/10');
+  await expectRadioTouchTarget(page, 'Motivation 1/10');
+  await expectTouchTarget(page, 'Welche Grenze macht diesen freien Tag wirklich erholsam?');
+  await expectTouchTarget(page, 'Mental: ruhig');
+  await expectTouchTarget(page, 'Check-in senden');
 
   await page.goto('/data?tab=analysen');
   await expectTouchTarget(page, '7T');
