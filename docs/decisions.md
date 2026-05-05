@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Pull-Request-CI nutzt schnelle Browser-Smokes statt voller E2E
+
+- **Decision:** `build-and-test` bleibt der zentrale PR-Check, fuehrt bei Pull Requests aber nur die Desktop- und Mobile-Smoke-Suite aus. Die volle Playwright-Regression laeuft weiterhin auf `main` und per `workflow_dispatch`; alte CI-Laeufe desselben PRs werden automatisch abgebrochen.
+- **Why:** Kleine UI- und Tooling-PRs warteten bislang auf die komplette Browser-Suite, obwohl lokale fokussierte E2E-Checks bereits die konkrete Aenderung pruefen. Ein schneller PR-Gate reduziert Wartezeit, ohne die Full-Regression aus dem Projekt zu entfernen.
+- **Alternatives:** Full E2E auf jedem PR behalten (sicher, aber langsam); Full E2E komplett entfernen (zu riskant); Check-Namen/JOB-Struktur sofort stark splitten (mehr Branch-Protection-Risiko als erster Optimierungsschnitt).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Home `Was jetzt?` trennt erledigt, offen und Hinweise
 
 - **Decision:** Die Home Daily Decision nutzt fuer abgeschlossene Tages-Trainings strukturierte Schritte mit `Erledigt`, `Noch offen` und `Heute beachten`. Feedback wird nur als offene Aufgabe gezeigt, wenn zur gematchten Aktivitaet weder RPE noch Feedback-Zeitpunkt oder Workout-Feedback vorliegt; passive Regenerationshinweise erscheinen nicht mehr als Aufgabe.

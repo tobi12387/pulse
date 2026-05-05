@@ -9,6 +9,8 @@
     "typecheck": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
     "test": "npm run test -w backend",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test frontend/e2e/pulse-smoke.spec.ts --project=desktop-chromium --project=mobile-chromium",
+    "test:e2e:full": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:install:webkit": "playwright install webkit",
