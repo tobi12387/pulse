@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Mental Check-in bekommt sichtbaren Signal-Impact statt neuer Eingabe
+
+- **Decision:** Mental Health/Fitness wird nach dem Speichern ueber einen gemeinsamen Frontend-Klassifizierer in Data, Home, Plan und Coach ausgespielt. Home zeigt die Tageswirkung, Plan zeigt nur bei sensibler/schuetzender Lage eine Vorsichtszeile, Coach nutzt dieselben Labels im Kontext und Prompt. Es gibt keine neue Backend-API und keine neue Check-in-Eingabe.
+- **Why:** Nach der Vereinfachung der Eingabe muss Pulse zeigen, was der Check-in konkret veraendert. Ein shared Frontend-Mapping reduziert Sprachdrift und macht die Wirkung sichtbar, ohne das bestehende numerische Check-in-Modell zu erweitern.
+- **Alternatives:** Nur Data-Form weiter verbessern (loest nicht den Nutzen-Nachweis); Backend-Schema fuer qualitative Labels einfuehren (groesserer Scope ohne Bedarf); Coach eigene Labels behalten (Drift zwischen Home/Plan/Coach bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Home schliesst trainingsfreie Tage lokal ohne synthetische Action-Patches
 
 - **Decision:** Fallback-Tagesentscheidungen ohne Training nutzen auf Home `Erholungstag abschliessen` als primaere lokale Aktion und behalten `Coach fragen` nur als Support. Klicks auf `/`-Ziele patchen keine `nextBestActions.id`, weil diese IDs synthetisch sind; persistente Abschluesse bleiben beim separaten Action-Closure mit echter `decisionId`.

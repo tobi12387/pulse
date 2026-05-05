@@ -20,6 +20,7 @@ import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
+import { mentalImpact } from '@/features/mental/mental-impact';
 import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
 type MicState = 'idle' | 'recording' | 'processing';
@@ -386,21 +387,17 @@ function DailyDecisionQualityContext({ quality, onPrompt }: {
 }
 
 function mentalSummaryLabel(checkin: MentalCheckinSummary): string {
-  if (checkin.stress >= 7 || checkin.energy <= 3 || checkin.mood <= 4) return 'Schützen';
-  if (checkin.stress <= 3 && checkin.energy >= 7 && checkin.mood >= 7) return 'Stabil';
-  return 'Gemischt';
+  const impact = mentalImpact(checkin);
+  return `Mental Health ${impact.labels.health}, Mental Fitness ${impact.labels.fitness}`;
 }
 
 function mentalSummaryTone(checkin: MentalCheckinSummary): string {
-  const label = mentalSummaryLabel(checkin);
-  if (label === 'Schützen') return 'Heute Grenzen klein halten und Reizlast aktiv senken.';
-  if (label === 'Stabil') return 'Heute ist mentale Reserve da; trotzdem sauber dosieren.';
-  return 'Heute hilft ein klarer Rahmen statt noch mehr Optionen.';
+  return mentalImpact(checkin).labels.dailyImpact;
 }
 
 function mentalSummaryPrompt(checkin: MentalCheckinSummary): string {
   const label = mentalSummaryLabel(checkin);
-  return `Plane den heutigen Tag mit meinem Mental Check-in "${label}": Stimmung ${checkin.mood}/10, Energie ${checkin.energy}/10, Stress ${checkin.stress}/10, Motivation ${checkin.motivation}/10. Was sollte ich beim Training, bei Grenzen und beim Tagesabschluss konkret beachten?`;
+  return `Mentale Lage: ${label}. Plane den heutigen Tag mit meinem Mental Check-in: Stimmung ${checkin.mood}/10, Energie ${checkin.energy}/10, Stress ${checkin.stress}/10, Motivation ${checkin.motivation}/10. Was sollte ich beim Training, bei Grenzen und beim Tagesabschluss konkret beachten?`;
 }
 
 function MentalContextSummary({
@@ -412,6 +409,7 @@ function MentalContextSummary({
 }) {
   const label = mentalSummaryLabel(checkin);
   const tone = mentalSummaryTone(checkin);
+  const impactLevel = mentalImpact(checkin).level;
 
   return (
     <div
@@ -431,7 +429,7 @@ function MentalContextSummary({
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           MENTAL HEUTE
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: label === 'Schützen' ? 'var(--amber)' : 'var(--green)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: impactLevel === 'protect' ? 'var(--amber)' : 'var(--green)' }}>
           {label}
         </span>
       </div>

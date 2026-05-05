@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  useCheckinHistory, useCheckinToday,
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy,
@@ -27,6 +28,7 @@ import {
 import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
 import { PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
+import { mentalImpact } from '@/features/mental/mental-impact';
 import type { PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
@@ -62,6 +64,7 @@ function NextTrainingDecisionCard({
   availableDays,
   activeGoalsCount,
   planTrace,
+  mentalPlanImpact,
   onNavigate,
   onOpen,
   onOpenAvailability,
@@ -71,6 +74,7 @@ function NextTrainingDecisionCard({
   availableDays: number[];
   activeGoalsCount: number;
   planTrace: PulsePlanTrace | null;
+  mentalPlanImpact: string | null;
   onNavigate: (path: string) => void;
   onOpen: (workout: PlannedWorkout) => void;
   onOpenAvailability: () => void;
@@ -205,6 +209,23 @@ function NextTrainingDecisionCard({
       {nextWorkout.description && (
         <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: '0 0 12px' }}>
           {nextWorkout.description.split('\n')[0]}
+        </p>
+      )}
+      {mentalPlanImpact && (
+        <p
+          data-testid="mental-plan-impact"
+          style={{
+            fontSize: 12,
+            color: 'var(--amber)',
+            lineHeight: 1.45,
+            margin: '0 0 12px',
+            padding: '8px 9px',
+            background: 'rgba(251,191,36,0.08)',
+            border: '1px solid rgba(251,191,36,0.2)',
+            borderRadius: 5,
+          }}
+        >
+          Mentale Lage: {mentalPlanImpact}
         </p>
       )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
@@ -469,6 +490,8 @@ function TrainingTab() {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
   const goals     = usePulseGoals();
+  const checkinToday = useCheckinToday();
+  const checkinHistory = useCheckinHistory(7);
   const raceCommand = useRaceCommand();
   const seasonStrategy = useSeasonStrategy();
   const availability = useWeekAvailability();
@@ -502,6 +525,14 @@ function TrainingTab() {
   const decisionAvailableDays = decisionAvailability?.availableDays
     ?? (decisionWeekStart === selectedWeekStart ? availableDays : []);
   const decisionPlanTrace = decisionWeekStart === selectedWeekStart ? planTrace : null;
+  const todayCheckinDate = checkinToday.data?.checkin?.date ?? today;
+  const todayMentalCheckin = checkinToday.data?.checkin
+    ? checkinHistory.data?.checkins.find(checkin => checkin.date === todayCheckinDate) ?? null
+    : null;
+  const currentMentalImpact = todayMentalCheckin ? mentalImpact(todayMentalCheckin) : null;
+  const mentalPlanImpact = currentMentalImpact && currentMentalImpact.level !== 'stable'
+    ? currentMentalImpact.labels.planImpact
+    : null;
   const constraintChips = [
     `Verfügbarkeit: ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'keine Tage'}`,
     `Umfang: ${weeklyHours} h`,
@@ -534,6 +565,7 @@ function TrainingTab() {
         availableDays={decisionAvailableDays}
         activeGoalsCount={activeGoals.length}
         planTrace={decisionPlanTrace}
+        mentalPlanImpact={mentalPlanImpact}
         onNavigate={navigate}
         onOpen={setSelectedWorkout}
         onOpenAvailability={() => setShowAvailability(true)}

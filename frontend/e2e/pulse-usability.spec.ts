@@ -601,13 +601,15 @@ test('Coach uses today mental check-in as planning context instead of asking aga
 
   const summary = page.getByTestId('coach-mental-context-summary');
   await expect(summary.getByText('MENTAL HEUTE')).toBeVisible();
-  await expect(summary.getByText('Schützen')).toBeVisible();
+  await expect(summary).toContainText('Mental Health schuetzen');
+  await expect(summary).toContainText('Mental Fitness schonen');
   await expect(summary.getByText('Stimmung 3/10 · Energie 2/10 · Stress 8/10')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mit Check-in planen' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Führe mich mit kurzen Fragen durch Stimmung, Energie, Stress, Motivation und mentale Belastung.' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Mit Check-in planen' }).click();
-  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Schützen/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Mental Health schuetzen/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Mental Fitness schonen/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Stimmung 3\/10/);
   expect(coachSends).toBe(0);
 });
