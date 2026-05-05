@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 
 const KEY_MAP: Record<string, string> = {
   '1': '/',
-  '2': '/coach',
-  '3': '/data',
-  '4': '/plan',
-  '5': '/settings',
+  '2': '/data',
+  '3': '/plan',
+  '4': '/settings',
 };
 
 export function useNavHotkeys() {

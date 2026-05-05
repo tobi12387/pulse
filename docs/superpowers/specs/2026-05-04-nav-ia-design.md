@@ -90,6 +90,8 @@ Why first:
 
 ### PR 2: Move Coach Into Daily Surfaces
 
+Implementation note 2026-05-05: this stage is split into safe slices. The first slice removes Coach from the primary desktop/mobile navigation and remaps top-level hotkeys to Home/Data/Plan/Settings while preserving `/coach` as a compatibility route. Embedded composer/history relocation can continue in later slices without breaking existing deep links.
+
 Scope:
 
 - Introduce a compact Coach composer that can be embedded on Home and Plan.
