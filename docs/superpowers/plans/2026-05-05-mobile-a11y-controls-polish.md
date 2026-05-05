@@ -26,7 +26,9 @@ Fresh route evidence for `35e5263` reports no document horizontal overflow. Rema
 
 ## Task 1: Raise Daily Mobile Hit Areas To 44px
 
-- [ ] **Step 1: Add failing mobile tests**
+- [x] **Step 1: Add failing mobile tests**
+
+Implemented in the first PR-sized slice by tightening the existing mobile repeated-controls test to assert both width and height >= 44px and by adding Coach mic/send plus Mental text/fine-tune controls. The same stricter helper also exposed existing 40px Plan and Settings controls that were fixed in this slice.
 
 In `frontend/e2e/pulse-usability.spec.ts`, extend the mobile touch-target test to include:
 
@@ -43,7 +45,7 @@ for (const selector of [
 }
 ```
 
-- [ ] **Step 2: Run red**
+- [x] **Step 2: Run red**
 
 ```bash
 npm run test:e2e -- --project=mobile-chromium --grep "touch targets"
@@ -51,7 +53,9 @@ npm run test:e2e -- --project=mobile-chromium --grep "touch targets"
 
 Expected: FAIL for Coach mic/send or Mental actions currently under 44px.
 
-- [ ] **Step 3: Patch Coach buttons**
+Actual red evidence: the focused mobile test failed first on existing 40px/under-44px controls (`Vorherige Woche`, then `Sportart ändern`, `Verlauf löschen`, Settings `Bearbeiten`/`Abdeckung`/`ERLEDIGT`/`Push aktivieren`) after the stricter 44px assertion was added.
+
+- [x] **Step 3: Patch Coach buttons**
 
 In `frontend/src/pages/Coach.tsx`, change mic and send buttons:
 
@@ -62,9 +66,11 @@ minWidth: 44,
 minHeight: 44,
 ```
 
-- [ ] **Step 4: Patch Mental action buttons**
+- [x] **Step 4: Patch Mental action buttons**
 
 In `frontend/src/features/data/mental/mental-components.tsx`, set `minHeight: 44` for text action buttons and fine-tune toggle.
+
+Also raised shared segmented/range/mini controls and the Plan/Settings controls covered by the same mobile daily-use regression test. Tab semantics and Mental radio keyboard behavior remain open in Tasks 2 and 3.
 
 ## Task 2: Improve Segmented Control Semantics
 

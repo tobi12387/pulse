@@ -258,7 +258,11 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
         <span style={{ fontSize: 12, color: 'var(--text)' }}>{label}</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color }}>{value}/10</span>
       </div>
-      <div role="radiogroup" aria-label={label} style={{ display: 'flex', gap: 2 }}>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(44px, 1fr))', gap: 4 }}
+      >
         {Array.from({ length: 10 }, (_, i) => (
           <button
             key={i}
@@ -268,8 +272,8 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
             aria-checked={i + 1 === value}
             onClick={() => onChange(i + 1)}
             style={{
-              flex: 1,
-              minHeight: 22,
+              minWidth: 44,
+              minHeight: 44,
               padding: 0,
               borderRadius: 2,
               cursor: 'pointer',
@@ -675,7 +679,7 @@ export function MentalTab() {
                   onClick={() => void handleTextPreview()}
                   disabled={!freeText.trim() || textPreview.isPending}
                   style={{
-                    minHeight: 38,
+                    minHeight: 44,
                     padding: '7px 10px',
                     background: 'var(--surface)',
                     border: '1px solid var(--accent)',
@@ -696,7 +700,7 @@ export function MentalTab() {
                     onClick={() => void submitCheckin()}
                     disabled={checkin.isPending}
                     style={{
-                      minHeight: 38,
+                      minHeight: 44,
                       padding: '7px 10px',
                       background: 'var(--surface)',
                       border: '1px solid var(--green)',
@@ -787,7 +791,8 @@ export function MentalTab() {
                             lineHeight: 1.4,
                             textAlign: 'left',
                             cursor: 'pointer',
-                            padding: 0,
+                            minHeight: 44,
+                            padding: '6px 0',
                           }}
                         >
                           {question}
@@ -804,7 +809,7 @@ export function MentalTab() {
                 aria-expanded={fineTuneOpen}
                 onClick={() => setFineTuneOpen(open => !open)}
                 style={{
-                  minHeight: 40,
+                  minHeight: 44,
                   padding: '7px 10px',
                   background: 'transparent',
                   border: '1px solid var(--border)',
@@ -859,7 +864,8 @@ export function MentalTab() {
                     lineHeight: 1.4,
                     textAlign: 'left',
                     cursor: 'pointer',
-                    padding: 0,
+                    minHeight: 44,
+                    padding: '6px 0',
                   }}
                 >
                   <span style={{ display: 'block', color: 'var(--text)' }}>{question.label}</span>
@@ -876,6 +882,8 @@ export function MentalTab() {
                   type="button"
                   onClick={() => appendNote(tag)}
                   style={{
+                    minWidth: 44,
+                    minHeight: 44,
                     padding: '5px 8px',
                     background: 'var(--surface-2)',
                     border: '1px solid var(--border)',
@@ -914,6 +922,8 @@ export function MentalTab() {
                 background: 'var(--surface-2)',
                 border: '1px solid var(--accent)',
                 borderRadius: 'var(--radius)',
+                minWidth: 44,
+                minHeight: 44,
                 padding: '9px 16px',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,

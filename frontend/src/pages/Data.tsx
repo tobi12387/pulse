@@ -93,7 +93,8 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab) => void }) {
               onClick={() => onOpen(card.tab)}
               style={{
                 alignSelf: 'flex-start',
-                minHeight: 38,
+                minWidth: 44,
+                minHeight: 44,
                 padding: '7px 10px',
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',

@@ -188,7 +188,7 @@ export function HealthStateCard() {
                   type="button"
                   onClick={() => { void resolveState(s.id); }}
                   disabled={resolve.isPending}
-                  style={{ minHeight: 40, background: 'none', border: '1px solid var(--green)', borderRadius: 3, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--green)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ minWidth: 44, minHeight: 44, background: 'none', border: '1px solid var(--green)', borderRadius: 3, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--green)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   ERLEDIGT
                 </button>
@@ -196,7 +196,7 @@ export function HealthStateCard() {
                   type="button"
                   onClick={() => { void deleteState(s.id); }}
                   disabled={remove.isPending}
-                  style={{ minHeight: 40, background: 'none', border: '1px solid var(--text-3)', borderRadius: 3, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--text-3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ minWidth: 44, minHeight: 44, background: 'none', border: '1px solid var(--text-3)', borderRadius: 3, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--text-3)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   LÖSCHEN
                 </button>
