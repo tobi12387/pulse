@@ -17,6 +17,15 @@ const baseWorkout = {
 };
 
 describe('deriveWorkoutExecutionState', () => {
+  it('summarizes Garmin confidence states for planned workouts', () => {
+    expect(summarizeExecutionState('local_planned')).toBe('Lokal');
+    expect(summarizeExecutionState('garmin_template')).toBe('Garmin');
+    expect(summarizeExecutionState('garmin_scheduled')).toBe('Kalender');
+    expect(summarizeExecutionState('completed_matched')).toBe('Erledigt');
+    expect(summarizeExecutionState('missed')).toBe('Verpasst');
+    expect(summarizeExecutionState('replaced_or_off_plan')).toBe('Ersetzt');
+  });
+
   it('marks a local future workout without Garmin ids as local_planned', () => {
     const state = deriveWorkoutExecutionState(baseWorkout, null, null, new Date('2026-05-01T06:00:00.000Z'));
     expect(state.status).toBe('local_planned');
