@@ -84,7 +84,7 @@ test('Mental check-in can be saved from mental-health and mental-fitness state c
   expect(stateTop).toBeLessThan(detailTop);
 
   await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
-  await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Health: schützen');
+  await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Health: schuetzen');
   await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Fitness: schonen');
 
   await page.getByRole('button', { name: 'Check-in senden' }).click();
@@ -95,8 +95,98 @@ test('Mental check-in can be saved from mental-health and mental-fitness state c
     stress: 8,
     motivation: 3,
   });
-  expect(String((submitted as { notes?: string }).notes)).toContain('Mental Health: schützen');
+  expect(String((submitted as { notes?: string }).notes)).toContain('Mental Health: schuetzen');
   expect(String((submitted as { notes?: string }).notes)).toContain('Mental Fitness: schonen');
+});
+
+test('saved Schutzmodus check-in uses the same mental impact language across Data, Home, Plan and Coach', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  let submitted: { mood: number; energy: number; stress: number; motivation: number; notes?: string } | null = null;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    planWorkouts: [
+      {
+        id: 'workout-mental-impact',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 3,
+        durationMin: 75,
+        targetTss: 70,
+        status: 'planned',
+        description: 'Tempo mit sauberer Grenze.',
+      },
+    ],
+    onCheckinSubmit: body => {
+      submitted = body as typeof submitted;
+    },
+  });
+
+  await page.goto('/data?tab=mental');
+  await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
+  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  expect(submitted).not.toBeNull();
+
+  const savedCheckin = {
+    id: 'checkin-submitted',
+    date: '2026-05-01',
+    ...(submitted ?? { mood: 3, energy: 2, stress: 8, motivation: 3 }),
+  };
+  await page.route('**/api/pulse/checkin/today', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ checkin: { id: savedCheckin.id, date: savedCheckin.date } }),
+  }));
+  await page.route('**/api/pulse/checkin/history*', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ checkins: [savedCheckin] }),
+  }));
+
+  await page.goto('/');
+  await expect(page.getByTestId('mental-impact-summary')).toContainText(/Mental Health: schuetzen/i);
+  await expect(page.getByTestId('mental-impact-summary')).toContainText(/Mental Fitness: schonen/i);
+
+  await page.goto('/plan');
+  await expect(page.getByTestId('mental-plan-impact')).toContainText(/Plan vorsichtig interpretieren/i);
+
+  await page.goto('/coach');
+  await expect(page.getByTestId('coach-mental-context-summary')).toContainText(/Mental Health schuetzen/i);
+  await expect(page.getByTestId('coach-mental-context-summary')).toContainText(/Mental Fitness schonen/i);
+});
+
+test('stable saved mental check-in does not add a Plan caution line', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    checkinToday: { checkin: { id: 'checkin-stable', date: '2026-05-01' } },
+    checkinHistory: {
+      checkins: [{
+        id: 'checkin-stable',
+        date: '2026-05-01',
+        mood: 8,
+        energy: 8,
+        stress: 2,
+        motivation: 7,
+      }],
+    },
+    planWorkouts: [
+      {
+        id: 'workout-stable',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        targetTss: 55,
+        status: 'planned',
+        description: 'Aerobe Grundlage.',
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByTestId('mental-plan-impact')).toHaveCount(0);
 });
 
 test('Mental check-in auto labels follow extracted scores and stay within the notes limit', async ({ page }) => {
@@ -124,7 +214,7 @@ test('Mental check-in auto labels follow extracted scores and stay within the no
   });
   const notes = String((submitted as { notes?: string }).notes);
   expect(notes.length).toBeLessThanOrEqual(500);
-  expect(notes).toContain('Mental Health: schützen');
+  expect(notes).toContain('Mental Health: schuetzen');
   expect(notes).toContain('Mental Fitness: schonen');
   expect(notes).not.toContain('Mental Health: stabil');
   expect(notes).not.toContain('Mental Fitness: bereit');

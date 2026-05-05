@@ -19,13 +19,12 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mental Signal Impact Loop | PR #176 made input easier; now saved mental state must visibly affect Home, Plan and Coach | `2026-05-05-mental-signal-impact-loop.md` |
-| 2 | Garmin Workout Sync Confidence | PR #176 fixed 0-repeat repair detection; Plan now needs a clear trust surface for watch/Edge readiness | `2026-05-05-garmin-workout-sync-confidence.md` |
-| 3 | Mobile/A11y Controls Polish | Route evidence has no document overflow, but touch targets and custom radio/tab semantics still need hardening | `2026-05-05-mobile-a11y-controls-polish.md` |
-| 4 | Data Decision Evidence Trail | Evidence should deep-link from Home/Plan to the exact Data section behind a recommendation | `2026-05-05-data-decision-evidence-trail.md` |
-| 5 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
-| 6 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
-| 7 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 1 | Garmin Workout Sync Confidence | PR #176 fixed 0-repeat repair detection; Plan now needs a clear trust surface for watch/Edge readiness | `2026-05-05-garmin-workout-sync-confidence.md` |
+| 2 | Mobile/A11y Controls Polish | Route evidence has no document overflow, but touch targets and custom radio/tab semantics still need hardening | `2026-05-05-mobile-a11y-controls-polish.md` |
+| 3 | Data Decision Evidence Trail | Evidence should deep-link from Home/Plan to the exact Data section behind a recommendation | `2026-05-05-data-decision-evidence-trail.md` |
+| 4 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
+| 5 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
+| 6 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -49,6 +48,7 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Coach Primary-Nav Removal | The primary navigation is now Home, Data, Plan and Settings; `/coach` remains a compatibility/deep-link route. | `../specs/2026-05-04-nav-ia-design.md`, `../../qa/2026-05-05-remove-coach-tab.md`, PR #172 |
 | UI/UX Foundation And Trust Slice | Login, Data overview, daily-flow deduplication, Mental qualitative cards and Garmin 0-repeat repair detection are live. | `../../qa/2026-05-05-ui-ux-phase2-review.md`, PR #175-#176 |
 | Home Daily Decision Closure | Fallback no-training days close locally on Home; Coach remains a secondary support prompt and synthetic action ids are not patched. | `completed/2026-05-05-home-daily-decision-closure.md`, PR #178 |
+| Mental Signal Impact Loop | Saved mental check-ins now use shared impact language across Data, Home, Plan and Coach. | `completed/2026-05-05-mental-signal-impact-loop.md`, PR #180 |
 
 ## Next Plan Summaries
 

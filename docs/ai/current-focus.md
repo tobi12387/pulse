@@ -16,8 +16,8 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the product orientation document.
 - Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
 - Current navigation direction is documented in `docs/superpowers/specs/2026-05-04-nav-ia-design.md`: the target top-level set is Home, Data, Plan and Settings. Insights is now inside Data; Coach is no longer a primary-nav destination while `/coach` remains a compatibility/deep-link route; Home/Plan can open Coach with prepared draft prompts.
-- Mental Check-in Simplification: Home can complete the compact daily check-in, Data > Mental remains the detailed quick-choice/free-text/evidence surface, and Coach can reuse today's saved check-in as planning context without duplicating the input UI. Next mental-flow work is `docs/superpowers/plans/2026-05-05-mental-signal-impact-loop.md`.
-- Active trust-closure plans after Home Daily Decision Closure, in order: `2026-05-05-mental-signal-impact-loop.md`, `2026-05-05-garmin-workout-sync-confidence.md`, `2026-05-05-mobile-a11y-controls-polish.md`, then `2026-05-05-data-decision-evidence-trail.md`.
+- Mental Check-in Simplification and Mental Signal Impact: Home can complete the compact daily check-in; Data, Home, Plan and Coach now use one shared impact language. Next mental work should focus on evidence quality, not another input rebuild.
+- Active trust-closure plans after Mental Signal Impact, in order: `2026-05-05-garmin-workout-sync-confidence.md`, `2026-05-05-mobile-a11y-controls-polish.md`, then `2026-05-05-data-decision-evidence-trail.md`.
 - Completed 2026-05-04 implementation plans live in `docs/superpowers/plans/completed/`; do not rebuild them.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
@@ -37,6 +37,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - PR #175: UI/UX Foundation Flow deployed; Login, Daily Flow, Data overview, Mental quick path, responsive/A11y base and Settings Garmin diagnostics are live.
 - PR #176: Coach-nav regression coverage, qualitative Mental Check-in state cards, and Garmin 0-repeat repair detection are live.
 - PR #178: Home Daily Decision Closure deployed; no-training days close locally on Home while Coach remains a support action.
+- Mental Signal Impact: saved check-ins visibly influence Home, Plan and Coach wording through a shared frontend classifier.
 - 2026-05-04: AI working context was condensed so sessions start from AGENTS plus `docs/ai/*` instead of long pasted prompts or PR archives.
 - 2026-05-04: completed structure and UI/UX roadmap docs were moved out of the active plan surface to avoid reimplementation.
 - PR #149-#150: ops/tooling cleanup and design handoff relocation.

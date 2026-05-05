@@ -59,6 +59,7 @@
 | `2026-05-04-insights-into-data.md` | Insights Into Data — Insights moved into Data as `Analysen`, `/insights` redirects for compatibility | PR #165 |
 | `2026-05-04-mental-checkin-simplification.md` | Mental Check-in Simplification — quick choices, free-text preview, Home entry and Coach context | PR #167-#171 |
 | `2026-05-05-home-daily-decision-closure.md` | Home Daily Decision Closure — no-training days close locally on Home while Coach remains support | PR #178 |
+| `2026-05-05-mental-signal-impact-loop.md` | Mental Signal Impact Loop — shared mental impact language appears in Data, Home, Plan and Coach | PR #180 |
 
 ## Bekannte veraltete Stellen
 

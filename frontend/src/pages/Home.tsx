@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCheckinToday, useDailyDecisionQuality, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useCheckinHistory, useCheckinToday, useDailyDecisionQuality, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -11,6 +11,7 @@ import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
+import { mentalImpact } from '@/features/mental/mental-impact';
 import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
@@ -752,6 +753,7 @@ export default function Home() {
   const qualityQuery = useDailyDecisionQuality(14);
   const updateAction = useUpdatePulseAction();
   const checkinToday = useCheckinToday();
+  const checkinHistory = useCheckinHistory(7);
   const checkin = usePulseCheckin();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
@@ -798,6 +800,11 @@ export default function Home() {
   const dailyDecisionQuality = qualityQuery.data ?? null;
   const primaryAction = actionStates[0] ?? null;
   const hasMentalCheckin = homeCheckinSubmitted || checkinToday.data?.checkin != null;
+  const todayCheckinDate = checkinToday.data?.checkin?.date ?? data.date;
+  const todayMentalCheckin = checkinToday.data?.checkin
+    ? checkinHistory.data?.checkins.find(checkin => checkin.date === todayCheckinDate) ?? null
+    : null;
+  const mentalImpactSummary = todayMentalCheckin ? mentalImpact(todayMentalCheckin) : null;
   const homeMentalAction = !hasMentalCheckin && primaryAction?.source === 'checkin' ? primaryAction : null;
   const visiblePrimaryAction = homeMentalAction ? null : primaryAction;
   const followUpActions = visiblePrimaryAction
@@ -926,6 +933,24 @@ export default function Home() {
           onActivate={handleDailyDecisionActivate}
           onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
         />
+      )}
+
+      {mentalImpactSummary && (
+        <p
+          data-testid="mental-impact-summary"
+          style={{
+            margin: '-4px 0 0',
+            padding: '9px 10px',
+            background: 'var(--surface-2)',
+            border: '1px solid rgba(94,230,207,0.18)',
+            borderRadius: 5,
+            color: 'var(--text-2)',
+            fontSize: 12,
+            lineHeight: 1.45,
+          }}
+        >
+          Mental Health: {mentalImpactSummary.labels.health}. Mental Fitness: {mentalImpactSummary.labels.fitness}. {mentalImpactSummary.labels.dailyImpact}
+        </p>
       )}
 
       <DailyDecisionQualityStrip quality={dailyDecisionQuality} />

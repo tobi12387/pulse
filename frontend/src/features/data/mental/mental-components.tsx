@@ -5,6 +5,7 @@ import { ThemeTimeline } from '@/components/ThemeTimeline';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseCheckinTextPreview, usePulseHome } from '@/pulse/hooks';
 import { GarminDomainHint } from '@/features/data/coverage/coverage-components';
+import { mentalImpactLabels, mentalImpactLevel, type MentalImpactLevel } from '@/features/mental/mental-impact';
 import type { PulseHomeScreenData } from '@coaching-os/shared/pulse';
 import { MENTAL_CHECKIN_SUGGESTION_THRESHOLDS } from '@coaching-os/shared/pulse-thresholds';
 import type { PulseCheckinTextPreview } from '@/pulse/api-client';
@@ -19,7 +20,7 @@ type HeadChoice = 'easy' | 'middle' | 'hard';
 type EnergyChoice = 'easy' | 'middle' | 'hard';
 type PressureChoice = 'easy' | 'middle' | 'hard';
 type NeedChoice = 'activation' | 'structure' | 'rest';
-type StateProfile = 'stable' | 'steady' | 'protect';
+type StateProfile = MentalImpactLevel;
 
 type QuickChoices = {
   head: HeadChoice;
@@ -45,10 +46,7 @@ type ChoiceOption<T extends string> = {
 };
 
 type StateProfileOption = ChoiceOption<StateProfile> & {
-  health: string;
-  fitness: string;
   choices: QuickChoices;
-  notes: string[];
 };
 
 const CHECKIN_NOTES_MAX_LENGTH = 500;
@@ -101,28 +99,19 @@ const STATE_PROFILES: Record<StateProfile, StateProfileOption> = {
     value: 'stable',
     label: 'Stabil starten',
     hint: 'Mental Health ruhig, Mental Fitness bereit. Einfach speichern reicht.',
-    health: 'stabil',
-    fitness: 'bereit',
     choices: { head: 'easy', energy: 'easy', pressure: 'easy', need: 'activation' },
-    notes: ['Mental Health: stabil', 'Mental Fitness: bereit'],
   },
   steady: {
     value: 'steady',
     label: 'Dosiert bleiben',
     hint: 'Etwas Reibung, aber steuerbar. Der Tag braucht Leitplanken.',
-    health: 'sensibel',
-    fitness: 'dosieren',
     choices: { head: 'middle', energy: 'middle', pressure: 'middle', need: 'structure' },
-    notes: ['Mental Health: sensibel', 'Mental Fitness: dosieren'],
   },
   protect: {
     value: 'protect',
     label: 'Schutzmodus',
     hint: 'Kopf und Reserven schützen. Heute kleiner planen.',
-    health: 'schützen',
-    fitness: 'schonen',
     choices: { head: 'hard', energy: 'hard', pressure: 'hard', need: 'rest' },
-    notes: ['Mental Health: schützen', 'Mental Fitness: schonen'],
   },
 };
 
@@ -170,13 +159,7 @@ function stateProfileFromChoices(choices: QuickChoices): StateProfile {
 }
 
 function stateProfileFromScores(scores: Omit<CheckinForm, 'notes'>): StateProfile {
-  if (scores.mood <= 4 || scores.energy <= 3 || scores.stress >= 7 || scores.motivation <= 3) {
-    return 'protect';
-  }
-  if (scores.mood <= 6 || scores.energy <= 5 || scores.stress >= 5 || scores.motivation <= 6) {
-    return 'steady';
-  }
-  return 'stable';
+  return mentalImpactLevel(scores);
 }
 
 function needFromMotivation(motivation: number): NeedChoice {
@@ -186,9 +169,12 @@ function needFromMotivation(motivation: number): NeedChoice {
 }
 
 function buildCheckinNotes(notes: string, scores: Omit<CheckinForm, 'notes'>): string {
-  const profile = STATE_PROFILES[stateProfileFromScores(scores)];
+  const labels = mentalImpactLabels(stateProfileFromScores(scores));
   const withNeed = appendUniqueLine(notes, NEED_TAGS[needFromMotivation(scores.motivation)]);
-  return profile.notes.reduce((nextNotes, line) => appendUniqueLine(nextNotes, line), withNeed);
+  return [`Mental Health: ${labels.health}`, `Mental Fitness: ${labels.fitness}`].reduce(
+    (nextNotes, line) => appendUniqueLine(nextNotes, line),
+    withNeed,
+  );
 }
 
 function buildSuggestion(home?: PulseHomeScreenData) {
@@ -318,6 +304,7 @@ function StateProfileGroup({
       >
         {STATE_PROFILE_OPTIONS.map(option => {
           const selected = option.value === value;
+          const labels = mentalImpactLabels(option.value);
           return (
             <button
               key={option.value}
@@ -352,7 +339,7 @@ function StateProfileGroup({
                   color: 'var(--text-2)',
                   fontSize: 10.5,
                 }}>
-                  Mental Health: {option.health}
+                  Mental Health: {labels.health}
                 </span>
                 <span style={{
                   padding: '3px 6px',
@@ -362,7 +349,7 @@ function StateProfileGroup({
                   color: 'var(--text-2)',
                   fontSize: 10.5,
                 }}>
-                  Mental Fitness: {option.fitness}
+                  Mental Fitness: {labels.fitness}
                 </span>
               </span>
             </button>
@@ -451,7 +438,7 @@ export function MentalTab() {
   const quickScores = scoresFromQuickChoices(quickChoices);
   const displayedScores = fineTuned ? form : { ...form, ...quickScores };
   const stateProfile = fineTuned ? stateProfileFromScores(displayedScores) : stateProfileFromChoices(quickChoices);
-  const stateProfileDetails = STATE_PROFILES[stateProfile];
+  const stateProfileDetails = mentalImpactLabels(stateProfile);
 
   function updateStateProfile(value: StateProfile) {
     const nextChoices = STATE_PROFILES[value].choices;
