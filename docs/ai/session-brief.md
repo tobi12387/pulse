@@ -19,6 +19,8 @@ Do not read `docs/superpowers/plans/completed/` unless the task is explicitly ab
 - Start every coding session from a clean tree and a fresh `codex/<topic>` branch.
 - Search before reading whole files. Prefer `rg` anchors and small excerpts.
 - Keep PRs narrow: one backend contract, frontend slice, migration, UI consolidation, or docs change.
+- GitHub PR CI is path-filtered: PRs run focused build/backend/browser jobs only for touched runtime areas; browser PR coverage is the smoke suite. Full Playwright regression runs on `main` and `workflow_dispatch`.
+- When Tobi has authorized autonomous merge/deploy flow and no next local step depends on the live check output, prefer GitHub auto-merge over actively waiting in chat. Still inspect and fix failed checks.
 - Update `docs/ai/current-focus.md` only when the durable work queue, manual gates or next recommendation changes. Do not append a long PR register.
 - Add a `docs/decisions.md` entry for non-trivial architecture, scope, or priority decisions unless the user explicitly limited the edit scope to AI context docs.
 
