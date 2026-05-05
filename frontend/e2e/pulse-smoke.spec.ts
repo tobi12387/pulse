@@ -21,6 +21,19 @@ async function expectHealthyPage(page: Page, visibleText: string) {
   await expect(page.locator('main').getByText(visibleText).first()).toBeVisible();
 }
 
+async function expectPrimaryNavigationWithoutCoach(page: Page) {
+  const primaryNav = page.getByRole('navigation');
+  await expect(primaryNav).toHaveCount(1);
+  await expect(primaryNav.locator('a')).toHaveCount(primaryNavRoutes.length);
+  await expect(primaryNav.locator('a[href="/"]')).toContainText('Home');
+  await expect(primaryNav.locator('a[href="/data"]')).toContainText('Data');
+  await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
+  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Settings');
+  await expect(primaryNav.locator('a[href="/coach"]')).toHaveCount(0);
+  await expect(primaryNav.locator('a[href="/insights"]')).toHaveCount(0);
+  await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
+}
+
 test.beforeEach(async ({ page }) => {
   await mockPulseApi(page);
   await page.addInitScript(() => {
@@ -71,12 +84,11 @@ test('/insights redirects to the Data analysis tab', async ({ page }) => {
 
 test('primary navigation exposes only Home, Data, Plan and Settings', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('a[href="/coach"]')).toHaveCount(0);
-  await expect(page.locator('a[href="/insights"]')).toHaveCount(0);
-  await expect(page.locator('a[href="/"]').filter({ visible: true })).toContainText('Home');
-  await expect(page.locator('a[href="/data"]').filter({ visible: true })).toContainText('Data');
-  await expect(page.locator('a[href="/plan"]').filter({ visible: true })).toContainText('Plan');
-  await expect(page.locator('a[href="/settings"]').filter({ visible: true })).toContainText('Settings');
+  await expectPrimaryNavigationWithoutCoach(page);
+
+  await page.goto('/coach');
+  await expectHealthyPage(page, 'TAGESBRIEFING');
+  await expectPrimaryNavigationWithoutCoach(page);
 });
 
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {

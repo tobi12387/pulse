@@ -60,6 +60,96 @@ test('Mental check-in presents quick choices before optional detail entry', asyn
   expect(quickChoiceTop).toBeLessThan(detailTop);
 });
 
+test('Mental check-in can be saved from mental-health and mental-fitness state cards without numbers', async ({ page }) => {
+  let submitted: unknown = null;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    onCheckinSubmit: body => {
+      submitted = body;
+    },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await expect(page.getByText(/Mental Health/).first()).toBeVisible();
+  await expect(page.getByText(/Mental Fitness/).first()).toBeVisible();
+  await expect(page.getByTestId('mental-derived-summary')).toContainText('Keine Zahl nötig');
+
+  const stateTop = await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).evaluate(element =>
+    element.getBoundingClientRect().top,
+  );
+  const detailTop = await page.getByRole('textbox', { name: 'Kurz beschreiben' }).evaluate(element =>
+    element.getBoundingClientRect().top,
+  );
+  expect(stateTop).toBeLessThan(detailTop);
+
+  await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
+  await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Health: schützen');
+  await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Fitness: schonen');
+
+  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  expect(submitted).toMatchObject({
+    mood: 3,
+    energy: 2,
+    stress: 8,
+    motivation: 3,
+  });
+  expect(String((submitted as { notes?: string }).notes)).toContain('Mental Health: schützen');
+  expect(String((submitted as { notes?: string }).notes)).toContain('Mental Fitness: schonen');
+});
+
+test('Mental check-in auto labels follow extracted scores and stay within the notes limit', async ({ page }) => {
+  let submitted: unknown = null;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    onCheckinSubmit: body => {
+      submitted = body;
+    },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await page.getByRole('textbox', { name: 'Kurz beschreiben' }).fill('Kopf voll, Energie begrenzt, Druck spuerbar.');
+  await page.getByRole('button', { name: 'Text auswerten' }).click();
+  await expect(page.getByText('Stimmung 5/10')).toBeVisible();
+  await page.getByRole('button', { name: 'Ergebnis speichern' }).click();
+
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  expect(submitted).toMatchObject({
+    mood: 5,
+    energy: 4,
+    stress: 7,
+    motivation: 6,
+  });
+  const notes = String((submitted as { notes?: string }).notes);
+  expect(notes.length).toBeLessThanOrEqual(500);
+  expect(notes).toContain('Mental Health: schützen');
+  expect(notes).toContain('Mental Fitness: schonen');
+  expect(notes).not.toContain('Mental Health: stabil');
+  expect(notes).not.toContain('Mental Fitness: bereit');
+});
+
+test('Mental check-in hidden auto labels cannot push notes past the backend limit', async ({ page }) => {
+  let submitted: unknown = null;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    onCheckinSubmit: body => {
+      submitted = body;
+    },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
+  await page.getByRole('textbox', { name: 'Mentale Notizen' }).fill('x'.repeat(495));
+  await page.getByRole('button', { name: 'Check-in senden' }).click();
+
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  const notes = String((submitted as { notes?: string }).notes);
+  expect(notes.length).toBeLessThanOrEqual(500);
+});
+
 test('failed Mental check-in save shows inline recovery and keeps inputs available', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },

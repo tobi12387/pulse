@@ -51,6 +51,16 @@ describe('buildGarminWorkoutJson', () => {
       workoutSegments: [{
         workoutSteps: [{
           type: 'RepeatGroupDTO',
+          numberOfIterations: 0,
+          endConditionValue: 0,
+          endCondition: { conditionTypeKey: 'iterations' },
+        }],
+      }],
+    })).toBe(true);
+    expect(garminWorkoutHasBrokenRepeatIterations({
+      workoutSegments: [{
+        workoutSteps: [{
+          type: 'RepeatGroupDTO',
           numberOfIterations: 2,
           endConditionValue: 2,
           endCondition: { conditionTypeKey: 'iterations' },
