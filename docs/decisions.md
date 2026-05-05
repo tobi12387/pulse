@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Home `Was jetzt?` trennt erledigt, offen und Hinweise
+
+- **Decision:** Die Home Daily Decision nutzt fuer abgeschlossene Tages-Trainings strukturierte Schritte mit `Erledigt`, `Noch offen` und `Heute beachten`. Feedback wird nur als offene Aufgabe gezeigt, wenn zur gematchten Aktivitaet weder RPE noch Feedback-Zeitpunkt oder Workout-Feedback vorliegt; passive Regenerationshinweise erscheinen nicht mehr als Aufgabe.
+- **Why:** Nach erledigtem Training soll Tobi sofort erkennen, ob wirklich noch etwas zu tun ist. Pauschales `RPE/Feedback pruefen` war verwirrend, wenn Feedback bereits erfasst war, und liess Hinweise wie `kein Zusatztraining` wie abhakbare Aufgaben wirken.
+- **Alternatives:** Die bisherige nummerierte Liste nur umformulieren (loest den Statusfehler nicht); immer zur Planseite schicken (Feedback-Luecke bleibt indirekt); eine neue Aufgaben-API bauen (zu gross fuer diesen Home-UX-Slice).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Home-Tagesentscheidung nutzt klare Alltagssprache statt interne Entscheidungslabels
 
 - **Decision:** Die Home Daily Decision Card zeigt die internen Bausteine `Grenze`, `Alternative` und `Abschluss` nicht mehr als sichtbare Einzelkacheln. Home fasst sie unter `Was jetzt?` als nummerierte Hinweise zusammen und macht nur echte CTAs zu Buttons.
