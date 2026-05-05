@@ -372,6 +372,7 @@ export function usePulseCheckin() {
       qc.invalidateQueries({ queryKey: pulseKeys.checkinGuidance });
       qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.actions });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'load-overlay'] });

@@ -549,6 +549,47 @@ test('Data mental check-in turns free text into editable scores before saving', 
   expect(String((submitted as { notes?: string }).notes)).toContain('Kopf voll, Energie begrenzt, Druck spuerbar.');
 });
 
+test('Home completes a compact mental check-in without opening Data', async ({ page }) => {
+  let submitted: unknown = null;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    actions: [
+      {
+        id: 'checkin',
+        decisionId: 'decision-checkin',
+        source: 'checkin',
+        priority: 'normal',
+        title: 'Check-in eintragen',
+        reason: 'Tages-Check-in fehlt.',
+        cta: 'Eintragen',
+        targetPath: '/data?tab=mental',
+        status: 'open',
+        resolvedAt: null,
+        resolutionReason: null,
+        resolvedBy: 'Check-in heute speichern.',
+      },
+    ],
+    onCheckinSubmit: body => {
+      submitted = body;
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('Mental Check-in')).toBeVisible();
+  await page.getByRole('button', { name: 'Schützen' }).click();
+  await page.getByRole('button', { name: 'Check-in speichern' }).click();
+
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  expect(submitted).toMatchObject({
+    mood: 3,
+    energy: 2,
+    stress: 8,
+    motivation: 3,
+  });
+  expect(String((submitted as { notes?: string }).notes)).toContain('Home Quick: Schützen');
+});
+
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
   await mockPulseApi(page);
 
