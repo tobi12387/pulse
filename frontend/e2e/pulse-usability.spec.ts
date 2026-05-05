@@ -386,69 +386,98 @@ test('Coach and Data analyses show the daily decision quality signal', async ({ 
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
-test('Home treats completed planned training as done and stays focused', async ({ page }) => {
-  await mockPulseApi(page, {
-    home: {
-      todayWorkout: {
-        id: 'workout-done',
-        userId: 'user-1',
-        plannedDate: '2026-05-01',
-        activityType: 'bike',
-        zone: 2,
-        durationMin: 80,
-        distanceKm: null,
-        targetTss: 65,
-        description: 'Aerobe Grundlage.',
-        steps: null,
-        garminWorkoutId: 'garmin-workout-1',
-        garminScheduledId: 'garmin-schedule-1',
-        status: 'completed',
-        workoutFeedback: null,
-        complianceScore: null,
-        completedActivityId: 'activity-done',
-        executionStatus: 'completed_matched',
-        executionMatchedAt: '2026-05-01T09:30:00.000Z',
-        executionMatchConfidence: 0.91,
-        executionNotes: 'Geplantes Training wurde über Garmin erledigt.',
-      },
-      nextWorkout: null,
-      recentActivities: [{
-        id: 'activity-done',
-        userId: 'user-1',
-        externalId: 'garmin-activity-done',
-        source: 'garmin',
-        startTime: '2026-05-01T08:00:00.000Z',
-        activityType: 'bike',
-        name: 'Grundlage draußen',
-        durationSec: 4800,
-        distanceM: 32000,
-        avgHr: 138,
-        maxHr: 168,
-        avgPowerW: 182,
-        normalizedPowerW: 194,
-        tss: 66,
-        calories: 820,
-        elevationGainM: 240,
-        trainingEffectAerobic: 3.1,
-        trainingEffectAnaerobic: 0.4,
-        vo2maxEstimate: null,
-        rpe: null,
-        rpeNote: null,
-        sorenessAreas: null,
-        feedbackLoggedAt: null,
-      }],
+function completedWorkoutHome({ rpe, feedbackLoggedAt }: { rpe: number | null; feedbackLoggedAt: string | null }) {
+  return {
+    todayWorkout: {
+      id: 'workout-done',
+      userId: 'user-1',
+      plannedDate: '2026-05-01',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 80,
+      distanceKm: null,
+      targetTss: 65,
+      description: 'Aerobe Grundlage.',
+      steps: null,
+      garminWorkoutId: 'garmin-workout-1',
+      garminScheduledId: 'garmin-schedule-1',
+      status: 'completed',
+      workoutFeedback: null,
+      complianceScore: null,
+      completedActivityId: 'activity-done',
+      executionStatus: 'completed_matched',
+      executionMatchedAt: '2026-05-01T09:30:00.000Z',
+      executionMatchConfidence: 0.91,
+      executionNotes: 'Geplantes Training wurde über Garmin erledigt.',
     },
+    nextWorkout: null,
+    recentActivities: [{
+      id: 'activity-done',
+      userId: 'user-1',
+      externalId: 'garmin-activity-done',
+      source: 'garmin',
+      startTime: '2026-05-01T08:00:00.000Z',
+      activityType: 'bike',
+      name: 'Grundlage draußen',
+      durationSec: 4800,
+      distanceM: 32000,
+      avgHr: 138,
+      maxHr: 168,
+      avgPowerW: 182,
+      normalizedPowerW: 194,
+      tss: 66,
+      calories: 820,
+      elevationGainM: 240,
+      trainingEffectAerobic: 3.1,
+      trainingEffectAnaerobic: 0.4,
+      vo2maxEstimate: null,
+      rpe,
+      rpeNote: null,
+      sorenessAreas: null,
+      feedbackLoggedAt,
+    }],
+  };
+}
+
+test('Home treats completed planned training with feedback as done and stays focused', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: completedWorkoutHome({ rpe: 5, feedbackLoggedAt: '2026-05-01T09:45:00.000Z' }),
   });
 
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Erledigt');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Training abgeschlossen');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback eingetragen');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Für heute ist nichts mehr offen. Training und Feedback sind erledigt.');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Heute beachten');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Kein Zusatztraining');
+  await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Noch offen');
+  await expect(page.getByRole('button', { name: /Feedback erfassen/i })).toHaveCount(0);
+  await expect(page.getByText(/Feedback prüfen/i)).toHaveCount(0);
   await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
   await expect(page.getByText('Entscheidungsqualität')).toHaveCount(0);
   await expect(page.getByTestId('daily-decision-quality-strip')).toHaveCount(0);
   await expect(page.getByText('RECENT')).toHaveCount(0);
   await expect(page.getByText('Grundlage draußen')).toHaveCount(0);
   await expect(page.getByText(/Mental Health:/)).toHaveCount(0);
+});
+
+test('Home routes to activity feedback only when completed training still misses RPE', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: completedWorkoutHome({ rpe: null, feedbackLoggedAt: null }),
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Noch offen');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
+  await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Für heute ist nichts mehr offen');
+
+  await page.getByRole('button', { name: /Feedback erfassen/i }).click();
+  await expect(page).toHaveURL(/\/activity\/activity-done/);
 });
 
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
