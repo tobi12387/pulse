@@ -807,6 +807,13 @@ export default function Home() {
       : data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
   const showDataStatus = dataStatus.garmin.status !== 'ready' || !dataStatus.userReady || !dataStatus.profileReady;
+  function handleDailyDecisionActivate(path: string) {
+    if (path === '/') {
+      return;
+    }
+
+    navigate(path);
+  }
 
   const metrics  = metricsData?.metrics ?? [];
   const hrvSpark = metrics.map(d => d.hrvRmssd ?? null);
@@ -916,7 +923,7 @@ export default function Home() {
         <DailyDecisionCard
           decision={dailyDecision}
           labelCase="upper"
-          onActivate={() => navigate(dailyDecision.targetPath)}
+          onActivate={handleDailyDecisionActivate}
           onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
         />
       )}

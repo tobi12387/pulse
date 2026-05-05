@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Home schliesst trainingsfreie Tage lokal ohne synthetische Action-Patches
+
+- **Decision:** Fallback-Tagesentscheidungen ohne Training nutzen auf Home `Erholungstag abschliessen` als primaere lokale Aktion und behalten `Coach fragen` nur als Support. Klicks auf `/`-Ziele patchen keine `nextBestActions.id`, weil diese IDs synthetisch sind; persistente Abschluesse bleiben beim separaten Action-Closure mit echter `decisionId`.
+- **Why:** Ein freier Tag soll im Daily Flow abgeschlossen wirken, ohne einen Chat zu erzwingen oder einen falschen Backend-Status zu erzeugen. `nextBestActions.id` ist kein stabiler Action-Decision-Primary-Key.
+- **Alternatives:** Coach weiterhin primaer oeffnen (Daily Loop bleibt unfertig); fuer Fallback-Tage neue Completion-Events erfinden (neues Modell ohne Bedarf); synthetische IDs an `/api/pulse/actions/:id` senden (wuerde reale Action-Closure-Semantik brechen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — UI/UX Phase 2 priorisiert Trust Closure vor neuen Features
 
 - **Decision:** Nach PR #176 werden die naechsten UI/UX-Phasen als Trust-Closure-Welle sortiert: Home Daily Decision Closure, Mental Signal Impact, Garmin Workout Sync Confidence, Mobile/A11y Controls und Data Evidence Trail. Fueling/Recovery bleibt preference-gated, Native iOS bleibt evidence-gated.

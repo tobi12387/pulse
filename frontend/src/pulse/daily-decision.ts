@@ -11,6 +11,8 @@ export interface DailyDecision {
   prompt: string;
   priority: PulseNextBestAction['priority'];
   evidence: string[];
+  supportCta?: string;
+  supportPath?: string;
 }
 
 function readinessBoundary(score: number | null | undefined, tsb: number | null | undefined): string {
@@ -67,8 +69,10 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       ? 'Entscheidung zur Einheit treffen und bei Anpassung den Plan aktualisieren.'
       : 'Check-in abschließen und einen klaren Erholungsanker für heute setzen.');
   const alternative = alternativeFor(home, action);
-  const cta = action?.cta ?? (todayWorkout ? 'Plan prüfen' : 'Coach fragen');
-  const targetPath = action?.targetPath ?? (todayWorkout ? '/plan?tab=training' : '/coach?focus=daily');
+  const cta = action?.cta ?? (todayWorkout ? 'Plan prüfen' : 'Erholungstag abschliessen');
+  const targetPath = action?.targetPath ?? (todayWorkout ? '/plan?tab=training' : '/');
+  const supportCta = !action && !todayWorkout ? 'Coach fragen' : undefined;
+  const supportPath = !action && !todayWorkout ? '/coach?focus=daily' : undefined;
   const evidence = [
     `Readiness ${home.readiness.score}/100`,
     `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,
@@ -95,5 +99,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     prompt,
     priority: action?.priority ?? 'normal',
     evidence,
+    supportCta,
+    supportPath,
   };
 }
