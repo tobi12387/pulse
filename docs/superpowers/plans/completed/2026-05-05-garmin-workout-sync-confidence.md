@@ -1,6 +1,6 @@
 # Garmin Workout Sync Confidence Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Completed slice (2026-05-05):** Implemented as the smallest frontend trust-closure slice. The existing Pulse training contract already exposes `executionStatus`, `garminWorkoutId`, `garminScheduledId` and `executionNotes`, so this pass did not add backend schema, migrations or live Garmin calls. Plan rows now reuse shared Garmin confidence copy, and `WorkoutDetailModal` shows a visible confidence panel beside the existing bounded Garmin upload/repair action.
 
 **Goal:** Plan should clearly show whether each planned workout is local only, uploaded as a Garmin template, scheduled on Garmin calendar, repair-needed, synced or failed.
 
@@ -30,7 +30,9 @@ Do not reimplement Garmin upload or calendar repair logic. This plan surfaces co
 
 ## Task 1: Define Confidence States In Tests
 
-- [ ] **Step 1: Add backend tests for mapping**
+- [x] **Step 1: Add backend tests for mapping**
+
+Implemented as explicit unit label coverage; existing backend execution-state mapping was left unchanged.
 
 In `backend/src/pulse/services/workout-reconciliation.test.ts`, add cases:
 
@@ -45,7 +47,7 @@ it('summarizes Garmin confidence states for planned workouts', () => {
 });
 ```
 
-- [ ] **Step 2: Add frontend red test**
+- [x] **Step 2: Add frontend red test**
 
 In `frontend/e2e/pulse-usability.spec.ts`, add a Plan test with mocked workouts:
 
@@ -67,7 +69,7 @@ test('Plan explains Garmin workout sync confidence before opening Garmin actions
 });
 ```
 
-- [ ] **Step 3: Run red**
+- [x] **Step 3: Run red**
 
 ```bash
 npm run test:e2e -- --project=desktop-chromium --grep "Garmin workout sync confidence"
@@ -77,7 +79,7 @@ Expected: FAIL until confidence copy is rendered.
 
 ## Task 2: Add A Small Frontend Confidence Helper
 
-- [ ] **Step 1: Create local helper in `WorkoutDetailModal.tsx` or extract if reused**
+- [x] **Step 1: Create local helper in `WorkoutDetailModal.tsx` or extract if reused**
 
 Use this mapping:
 
@@ -86,18 +88,18 @@ function garminConfidenceCopy(workout: PulsePlannedWorkout): { title: string; de
   const status = executionStatusFor(workout);
   if (status === 'garmin_scheduled') return { title: 'Auf Garmin geplant', detail: 'Template und Kalendertermin sind vorhanden.', tone: 'ok' };
   if (status === 'garmin_template') return { title: 'Garmin Vorlage vorhanden', detail: 'Noch nicht sicher im Kalender. Bei Bedarf erneut synchronisieren.', tone: 'watch' };
-  if (status === 'local_planned') return { title: 'Nur lokal geplant', detail: 'Noch nicht auf Uhr oder Edge synchronisiert.', tone: 'watch' };
+  if (status === 'local_planned') return { title: 'Nur in Pulse geplant', detail: 'Noch nicht auf Uhr oder Edge synchronisiert.', tone: 'watch' };
   if (status === 'completed_matched') return { title: 'Mit Garmin erledigt', detail: 'Eine Garmin-Aktivitaet passt zu diesem Workout.', tone: 'ok' };
   if (status === 'missed') return { title: 'Nicht ausgefuehrt', detail: 'Keine passende Garmin-Aktivitaet gefunden.', tone: 'error' };
   return { title: 'Ersetzt oder ausserhalb Plan', detail: 'Garmin zeigt eine andere Ausfuehrung als geplant.', tone: 'watch' };
 }
 ```
 
-- [ ] **Step 2: Render compact row status in Plan**
+- [x] **Step 2: Render compact row status in Plan**
 
 In `frontend/src/pages/Plan.tsx`, show the title or badge near each workout row without adding a new card.
 
-- [ ] **Step 3: Render detail panel in modal**
+- [x] **Step 3: Render detail panel in modal**
 
 In `frontend/src/components/WorkoutDetailModal.tsx`, render:
 
@@ -112,17 +114,23 @@ Keep the existing "Auf Garmin" action as the bounded repair/upload action.
 
 ## Task 3: Wire Calendar Repair Evidence
 
-- [ ] **Step 1: Extend mocks only where needed**
+- [x] **Step 1: Extend mocks only where needed**
+
+Covered inline in `frontend/e2e/pulse-usability.spec.ts`; the shared `mockPulseApi` already accepts arbitrary `planWorkouts`, so `frontend/e2e/fixtures/pulse-api.ts` did not need a code change.
 
 In `frontend/e2e/fixtures/pulse-api.ts`, add mock fields for `garminWorkoutId`, `garminScheduledId`, `executionStatus`, and `executionNotes` in relevant workouts.
 
-- [ ] **Step 2: Add failed/sync retry coverage**
+- [x] **Step 2: Add failed/sync retry coverage**
+
+Covered in the modal confidence E2E with mocked `POST /api/pulse/plan/workout/:id/sync-garmin` failure. The modal keeps the confidence panel visible and shows the bounded failure message.
 
 Use existing `failEndpoints` to simulate `POST /api/pulse/plan/workout/:id/sync-garmin` failure and assert the workout stays visible.
 
 ## Task 4: Verify
 
-- [ ] **Step 1: Backend focused tests**
+- [x] **Step 1: Backend focused tests**
+
+Run for the reconciliation mapper touched by test coverage.
 
 ```bash
 npm run test -w backend -- src/pulse/services/garmin-workout.test.ts src/pulse/services/workout-reconciliation.test.ts
@@ -130,7 +138,7 @@ npm run test -w backend -- src/pulse/services/garmin-workout.test.ts src/pulse/s
 
 Expected: PASS.
 
-- [ ] **Step 2: Frontend focused tests**
+- [x] **Step 2: Frontend focused tests**
 
 ```bash
 npm run test:e2e -- --grep "Garmin workout sync confidence|Garmin execution states|sync-garmin"
@@ -138,7 +146,7 @@ npm run test:e2e -- --grep "Garmin workout sync confidence|Garmin execution stat
 
 Expected: PASS.
 
-- [ ] **Step 3: Build**
+- [x] **Step 3: Build**
 
 ```bash
 npm run build

@@ -2,6 +2,14 @@ import type { PulsePlannedWorkout } from '@coaching-os/shared/pulse';
 
 type PlannedWorkout = PulsePlannedWorkout;
 
+export type GarminConfidenceTone = 'ok' | 'watch' | 'error';
+
+export type GarminConfidenceCopy = {
+  title: string;
+  detail: string;
+  tone: GarminConfidenceTone;
+};
+
 export type WorkoutUpdate = {
   activityType?: string;
   zone?: number;
@@ -39,6 +47,50 @@ export function executionStatusFor(workout: PlannedWorkout): NonNullable<Planned
   if (workout.garminScheduledId) return 'garmin_scheduled';
   if (workout.garminWorkoutId) return 'garmin_template';
   return 'local_planned';
+}
+
+export function garminConfidenceCopy(workout: PlannedWorkout): GarminConfidenceCopy {
+  const status = executionStatusFor(workout);
+  if (status === 'garmin_scheduled') {
+    return {
+      title: 'Auf Garmin geplant',
+      detail: 'Template und Kalendertermin sind vorhanden.',
+      tone: 'ok',
+    };
+  }
+  if (status === 'garmin_template') {
+    return {
+      title: 'Garmin Vorlage vorhanden',
+      detail: 'Noch nicht sicher im Kalender. Bei Bedarf erneut synchronisieren.',
+      tone: 'watch',
+    };
+  }
+  if (status === 'local_planned') {
+    return {
+      title: 'Nur in Pulse geplant',
+      detail: 'Noch nicht auf Uhr oder Edge synchronisiert.',
+      tone: 'watch',
+    };
+  }
+  if (status === 'completed_matched') {
+    return {
+      title: 'Mit Garmin erledigt',
+      detail: 'Eine Garmin-Aktivität passt zu diesem Workout.',
+      tone: 'ok',
+    };
+  }
+  if (status === 'missed') {
+    return {
+      title: 'Nicht ausgeführt',
+      detail: 'Keine passende Garmin-Aktivität gefunden.',
+      tone: 'error',
+    };
+  }
+  return {
+    title: 'Ersetzt oder außerhalb Plan',
+    detail: 'Garmin zeigt eine andere Ausführung als geplant.',
+    tone: 'watch',
+  };
 }
 
 export function roundToFive(value: number): number {

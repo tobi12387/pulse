@@ -1445,6 +1445,86 @@ test('Plan shows Garmin execution states and match explanations', async ({ page 
   await expect(page.getByText('Mit Garmin-Aktivität activity-1 abgeglichen.')).toBeVisible();
 });
 
+test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-local',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 45,
+        status: 'planned',
+        description: 'Lokale Grundlage.',
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        executionStatus: 'local_planned',
+      },
+      {
+        id: 'workout-calendar',
+        plannedDate: '2026-05-02',
+        activityType: 'run',
+        zone: 3,
+        durationMin: 50,
+        status: 'planned',
+        description: 'Kalendertermin.',
+        garminWorkoutId: 'gw-calendar',
+        garminScheduledId: 'sched-calendar',
+        executionStatus: 'garmin_scheduled',
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  await expect(page.getByText('Lokal').first()).toBeVisible();
+  await expect(page.getByText('Kalender').first()).toBeVisible();
+
+  await page.getByText('Kalendertermin.').click();
+  const panel = page.getByTestId('garmin-sync-confidence');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Auf Garmin geplant');
+  await expect(panel).toContainText('Template und Kalendertermin sind vorhanden.');
+});
+
+test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-sync-fail',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 45,
+        status: 'planned',
+        description: 'Sync-Test.',
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        executionStatus: 'local_planned',
+        steps: [
+          { type: 'warmup', durationMin: 10, zone: 1, description: 'Einrollen' },
+          { type: 'steady', durationMin: 25, zone: 2, description: 'Grundlage' },
+          { type: 'cooldown', durationMin: 10, zone: 1, description: 'Ausschwingen' },
+        ],
+      },
+    ],
+    failEndpoints: {
+      'POST /api/pulse/plan/workout/workout-sync-fail/sync-garmin': {
+        status: 503,
+        error: 'Garmin Sync fehlgeschlagen.',
+      },
+    },
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Sync-Test.').click();
+  const panel = page.getByTestId('garmin-sync-confidence');
+  await expect(panel).toContainText('Nur in Pulse geplant');
+
+  await page.getByRole('button', { name: /Auf Garmin/ }).click();
+  await expect(page.getByText('Garmin Sync fehlgeschlagen.')).toBeVisible();
+  await expect(panel).toContainText('Nur in Pulse geplant');
+});
+
 test('Plan alternatives adapt the next workout with semantic choices', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const updates: unknown[] = [];

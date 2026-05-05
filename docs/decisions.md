@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Garmin Sync Confidence bleibt Frontend-Surface auf vorhandenem Execution-State
+
+- **Decision:** Plan nutzt die vorhandenen `executionStatus`-, Garmin-Template- und Garmin-Kalenderfelder fuer eine gemeinsame Frontend-Confidence-Copy in Zeilen und Workout-Detailmodal. Es gibt keine neue Backend-API, keine Migration und keine Live-Garmin-Requests in QA.
+- **Why:** Der Trust-Gap ist UI-Erklaerung, nicht fehlende Garmin-Reconciliation-Logik. Der bestehende Vertrag kann lokal, Template, Kalender, erledigt, verpasst und ersetzt bereits ausdruecken; ein kleiner Frontend-Slice reduziert Sprachdrift und haelt die Garmin-Aktion begrenzt.
+- **Alternatives:** Backend-Mapping neu einfuehren (groesserer Scope ohne neuen Datenbedarf); Live-Garmin-Sync in E2E pruefen (riskant und undeterministisch); mehrere Garmin-Aktionen im UI verteilen (mehr Unsicherheit statt Vertrauen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Mental Check-in bekommt sichtbaren Signal-Impact statt neuer Eingabe
 
 - **Decision:** Mental Health/Fitness wird nach dem Speichern ueber einen gemeinsamen Frontend-Klassifizierer in Data, Home, Plan und Coach ausgespielt. Home zeigt die Tageswirkung, Plan zeigt nur bei sensibler/schuetzender Lage eine Vorsichtszeile, Coach nutzt dieselben Labels im Kontext und Prompt. Es gibt keine neue Backend-API und keine neue Check-in-Eingabe.

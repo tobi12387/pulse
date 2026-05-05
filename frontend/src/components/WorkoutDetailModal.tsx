@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { pulseApi } from '@/pulse/api-client';
 import { pulseKeys } from '@/pulse/hooks';
+import { executionStatusFor, garminConfidenceCopy, type GarminConfidenceTone } from '@/features/plan/plan-utils';
 
 const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
@@ -37,13 +38,11 @@ const EXECUTION_META: Record<NonNullable<PulsePlannedWorkout['executionStatus']>
   replaced_or_off_plan: { label: 'Ersetzt', color: 'var(--amber)' },
 };
 
-function executionStatusFor(workout: PulsePlannedWorkout): NonNullable<PulsePlannedWorkout['executionStatus']> {
-  if (workout.executionStatus) return workout.executionStatus;
-  if (workout.status === 'completed') return 'completed_matched';
-  if (workout.garminScheduledId) return 'garmin_scheduled';
-  if (workout.garminWorkoutId) return 'garmin_template';
-  return 'local_planned';
-}
+const CONFIDENCE_TONE_COLOR: Record<GarminConfidenceTone, string> = {
+  ok: 'var(--green)',
+  watch: 'var(--amber)',
+  error: 'var(--rose)',
+};
 
 function ExecutionBadge({ workout }: { workout: PulsePlannedWorkout }) {
   const meta = EXECUTION_META[executionStatusFor(workout)];
@@ -167,6 +166,8 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
   });
 
   const zoneColor = ZONE_COLOR[workout.zone] ?? 'var(--text-2)';
+  const confidence = garminConfidenceCopy(workout);
+  const confidenceColor = CONFIDENCE_TONE_COLOR[confidence.tone];
   const totalMin = workout.steps
     ? workout.steps.reduce((acc, s) => {
         if (s.type === 'interval' && s.reps) return acc + s.reps * s.durationMin + (s.restMin ?? 0) * (s.reps - 1);
@@ -240,6 +241,40 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px' }}>
+          <div
+            data-testid="garmin-sync-confidence"
+            style={{
+              display: 'flex',
+              gap: 10,
+              alignItems: 'flex-start',
+              padding: '10px 12px',
+              marginBottom: 12,
+              background: translucent(confidenceColor, 9),
+              border: `1px solid ${translucent(confidenceColor, 35)}`,
+              borderLeft: `3px solid ${confidenceColor}`,
+              borderRadius: 5,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: confidenceColor,
+                flex: '0 0 auto',
+                marginTop: 5,
+              }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <strong style={{ display: 'block', fontSize: 12, color: 'var(--text)', lineHeight: 1.35 }}>
+                {confidence.title}
+              </strong>
+              <span style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, marginTop: 2 }}>
+                {confidence.detail}
+              </span>
+            </div>
+          </div>
           {workout.steps && workout.steps.length > 0 ? (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>

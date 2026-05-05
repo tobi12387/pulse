@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useUpdateWorkout } from '@/pulse/hooks';
 import type { PulsePlannedWorkout } from '@coaching-os/shared/pulse';
-import { executionStatusFor, getMonday, isoDate } from '../plan-utils';
+import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
 
 type PlannedWorkout = PulsePlannedWorkout;
 
@@ -151,6 +151,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
 export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout; index: number; onOpen: () => void }) {
   const update = useUpdateWorkout();
   const [switching, setSwitching] = useState(false);
+  const confidence = garminConfidenceCopy(w);
 
   function handleTypeChange(type: string) {
     void update.mutateAsync({ id: w.id, data: { activityType: type } });
@@ -189,8 +190,11 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
             }}>Z{w.zone}</span>
             <ExecutionBadge workout={w} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', lineHeight: 1.35 }}>
             <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>
+            {!switching && (
+              <span style={{ fontSize: 11, color: 'var(--text-2)' }}>{confidence.title}</span>
+            )}
           </div>
           {w.description && !switching && (
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
