@@ -165,6 +165,8 @@ export const pulseApi = {
       mood: number; energy: number; stress: number; motivation: number; notes?: string;
     }): Promise<PulseMentalCheckin> =>
       request('/checkin', { method: 'POST', body: JSON.stringify(data) }),
+    text: (text: string): Promise<PulseCheckinTextPreview> =>
+      request('/checkin/text', { method: 'POST', body: JSON.stringify({ text }) }),
     voice: (audio: string, mimeType: string): Promise<{
       transcript: string; reply: string; isCheckin: boolean; followUpQuestions: string[]; checkinId: string | null;
       extraction: { mood: number; energy: number; stress: number; motivation: number; themes: string[] } | null;
@@ -491,6 +493,20 @@ export interface EquipmentInput {
   retirementKm?: number | null;
   retirementDate?: string | null;
   notes?: string | null;
+}
+
+export interface PulseCheckinTextPreview {
+  text: string;
+  reply: string;
+  isCheckin: boolean;
+  followUpQuestions: string[];
+  extraction: {
+    mood: number;
+    energy: number;
+    stress: number;
+    motivation: number;
+    themes: string[];
+  } | null;
 }
 
 // ─── Phase 6 types ───────────────────────────────────────────────────────────

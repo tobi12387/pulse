@@ -704,6 +704,52 @@ describe('POST /api/pulse/checkin/voice', () => {
   });
 });
 
+describe('POST /api/pulse/checkin/text', () => {
+  it('returns an editable extraction preview without persisting a check-in', async () => {
+    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
+      isCheckin: true,
+      extraction: {
+        mood: 5,
+        energy: 4,
+        stress: 7,
+        motivation: 6,
+        themes: ['Arbeit', 'Muedigkeit'],
+        followUpQuestions: ['Was waere heute eine gute Grenze?'],
+      },
+      coachReply: 'Ich habe daraus einen Check-in-Vorschlag gemacht.',
+    }));
+
+    const res = await app.inject({
+      method: 'POST', url: '/api/pulse/checkin/text',
+      payload: { text: 'Heute ist der Kopf voll, Energie begrenzt und der Druck spuerbar.' },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      text: string;
+      isCheckin: boolean;
+      extraction: { mood: number; energy: number; stress: number; motivation: number; themes: string[] } | null;
+      followUpQuestions: string[];
+    }>();
+    expect(body).toMatchObject({
+      text: 'Heute ist der Kopf voll, Energie begrenzt und der Druck spuerbar.',
+      isCheckin: true,
+      extraction: {
+        mood: 5,
+        energy: 4,
+        stress: 7,
+        motivation: 6,
+        themes: ['Arbeit', 'Muedigkeit'],
+      },
+      followUpQuestions: ['Was waere heute eine gute Grenze?'],
+    });
+
+    const rows = await db.select().from(pulseMentalCheckins).where(eq(pulseMentalCheckins.userId, userId));
+    expect(rows).toHaveLength(0);
+  });
+});
+
 describe('GET /api/pulse/checkin/guidance', () => {
   it('returns rest-day guided questions without treating a future workout as today', async () => {
     const today = dateDaysAgo(0);

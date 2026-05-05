@@ -40,6 +40,8 @@ type MockPulseApiOptions = {
   checkinToday?: unknown;
   checkinGuidance?: unknown;
   onCheckinSubmit?: (body: unknown) => void;
+  textCheckinResult?: unknown | ((body: unknown) => unknown);
+  onTextCheckinSubmit?: (body: unknown) => void;
   metrics?: unknown[];
   sleepSessions?: unknown[];
   onRequest?: (pathname: string, method: string) => void;
@@ -683,6 +685,26 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
+    if (url.pathname === '/api/pulse/checkin/text' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      options.onTextCheckinSubmit?.(body);
+      const result = typeof options.textCheckinResult === 'function'
+        ? options.textCheckinResult(body)
+        : options.textCheckinResult;
+      return json(route, result ?? {
+        text: body.text ?? '',
+        isCheckin: true,
+        extraction: {
+          mood: 5,
+          energy: 4,
+          stress: 7,
+          motivation: 6,
+          themes: ['Arbeit', 'Muedigkeit'],
+        },
+        followUpQuestions: ['Was waere heute eine gute Grenze?'],
+        reply: 'Ich habe daraus einen Check-in-Vorschlag gemacht.',
+      });
+    }
     if (url.pathname === '/api/pulse/checkin' && request.method() === 'POST') {
       const body = request.postDataJSON();
       options.onCheckinSubmit?.(body);
