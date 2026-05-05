@@ -4,7 +4,7 @@ Date: 2026-05-04
 
 ## Scope
 
-PR 1 through PR 3 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`:
+PR 1 through PR 3 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`, plus the Coach-context follow-up:
 
 - Data > Mental uses a Quick Check-in instead of mandatory 1-10 scoring.
 - Quick choices map back to the existing numeric `POST /api/pulse/checkin` payload.
@@ -14,6 +14,7 @@ PR 1 through PR 3 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplific
 - Extracted mood, energy, stress, motivation, themes and follow-up questions are inspectable before saving through the existing numeric check-in contract.
 - Home can complete the daily mental check-in with three compact presets without opening Data.
 - Data remains the detailed mental review and evidence surface.
+- Coach shows today's saved mental check-in as planning context instead of asking for the same guided check-in again.
 
 ## Verification
 
@@ -35,6 +36,11 @@ PR 1 through PR 3 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplific
 | `npm run test:e2e -- --project=mobile-chromium --grep "Home completes a compact mental check-in"` | Passed: 1/1. |
 | `npm run test:e2e -- --project=mobile-chromium --grep "Home\|Mental\|Check-in\|Data"` | Passed: 27 passed, 1 route-evidence test skipped by flag. |
 | `PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence/mental-checkin-home-entry npm run qa:ux-evidence` | Passed: desktop and mobile route evidence captured; manifest reports no horizontal overflow on all captured routes. |
+| Red test: `npm run test:e2e -- --project=mobile-chromium --grep "Coach uses today mental check-in"` before Coach-context implementation | Failed because `MENTAL HEUTE` was missing on Coach. |
+| `npm run build` | Passed: shared, backend and frontend. |
+| `npm run test:e2e -- --project=mobile-chromium --grep "Coach uses today mental check-in"` | Passed: 1/1. |
+| `npm run test:e2e -- --project=mobile-chromium --grep "Coach\|Mental\|Check-in\|Data"` | Passed: 32 passed, 1 route-evidence test skipped by flag. |
+| `PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence/mental-checkin-coach-context npm run qa:ux-evidence` | Passed: desktop and mobile route evidence captured; manifest reports no horizontal overflow on all captured routes. |
 
 ## Evidence Pack
 
@@ -46,6 +52,8 @@ Generated under:
 - `test-results/route-evidence/mental-checkin-free-text/2026-05-05-<commit>/mobile-chromium/`
 - `test-results/route-evidence/mental-checkin-home-entry/2026-05-05-<commit>/desktop-chromium/`
 - `test-results/route-evidence/mental-checkin-home-entry/2026-05-05-<commit>/mobile-chromium/`
+- `test-results/route-evidence/mental-checkin-coach-context/2026-05-05-<commit>/desktop-chromium/`
+- `test-results/route-evidence/mental-checkin-coach-context/2026-05-05-<commit>/mobile-chromium/`
 
 The manifests report `horizontalOverflow: false` for all captured routes:
 
