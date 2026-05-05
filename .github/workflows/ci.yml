@@ -10,8 +10,81 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  build-and-test:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.filter.outputs.runtime }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            runtime:
+              - '.github/workflows/ci.yml'
+              - 'backend/**'
+              - 'frontend/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'playwright.config.ts'
+              - 'scripts/**'
+              - 'shared/**'
+              - 'tsconfig*.json'
+            backend:
+              - '.github/workflows/ci.yml'
+              - 'backend/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'scripts/**'
+              - 'shared/**'
+              - 'tsconfig*.json'
+            frontend:
+              - '.github/workflows/ci.yml'
+              - 'frontend/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'playwright.config.ts'
+              - 'shared/**'
+              - 'tsconfig*.json'
+
+  build:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.runtime == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check migrations
+        run: npm run check:migrations
+
+      - name: Script guard tests
+        run: npm run test:scripts
+
+      - name: Build
+        run: npm run build
+
+  backend_tests:
+    name: backend-tests
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -59,6 +132,34 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build -w shared
+
+      - name: Apply test database migrations
+        run: npm run db:migrate -w backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/coaching_os_v2_test
+
+      - name: Backend tests
+        run: npm test
+
+  browser_tests:
+    name: browser-tests
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
@@ -70,22 +171,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check migrations
-        run: npm run check:migrations
-
-      - name: Script guard tests
-        run: npm run test:scripts
-
-      - name: Apply test database migrations
-        run: npm run db:migrate -w backend
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5433/coaching_os_v2_test
-
-      - name: Build
-        run: npm run build
-
-      - name: Backend tests
-        run: npm test
+      - name: Build shared package
+        run: npm run build -w shared
 
       - name: Install Playwright Chromium
         run: npm run test:e2e:install
@@ -107,3 +194,25 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
+
+  build-and-test:
+    needs: [changes, build, backend_tests, browser_tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required CI jobs
+        run: |
+          echo "changes: ${{ needs.changes.result }}"
+          echo "build: ${{ needs.build.result }}"
+          echo "backend-tests: ${{ needs.backend_tests.result }}"
+          echo "browser-tests: ${{ needs.browser_tests.result }}"
+
+          if [[ "${{ needs.changes.result }}" != "success" ]]; then
+            exit 1
+          fi
+
+          for result in "${{ needs.build.result }}" "${{ needs.backend_tests.result }}" "${{ needs.browser_tests.result }}"; do
+            if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+              exit 1
+            fi
+          done

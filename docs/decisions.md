@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — CI trennt Build, Backend und Browser per Change-Fläche
+
+- **Decision:** Die GitHub-CI nutzt einen `changes`-Job und fuehrt Build, Backend-Tests und Browser-Tests als getrennte, parallelisierbare Jobs aus. Der stabile Pflicht-Check `build-and-test` bleibt als Aggregator erhalten und akzeptiert bewusst uebersprungene Jobs, solange kein benoetigter Job fehlschlaegt.
+- **Why:** PRs mit Docs- oder reinen Frontend-Aenderungen sollen nicht automatisch Postgres/Redis-Services starten oder Backend-Tests blockieren. Gleichzeitig soll die bestehende Branch-Protection nicht durch neue Pflicht-Check-Namen brechen.
+- **Alternatives:** Nur `paths-ignore` verwenden (koennte required checks fehlen lassen); komplett getrennte Workflows ohne Aggregator (Branch-Protection-Risiko); alle Jobs weiter seriell in einem Job lassen (verschwendet Zeit und startet Services unnoetig).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Pull-Request-CI nutzt schnelle Browser-Smokes statt voller E2E
 
 - **Decision:** `build-and-test` bleibt der zentrale PR-Check, fuehrt bei Pull Requests aber nur die Desktop- und Mobile-Smoke-Suite aus. Die volle Playwright-Regression laeuft weiterhin auf `main` und per `workflow_dispatch`; alte CI-Laeufe desselben PRs werden automatisch abgebrochen.
