@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Manuelle Profilwerte koennen feldweise auf Automatik wechseln
+
+- **Decision:** Manuelle Profilwerte bleiben weiterhin geschuetzt, koennen aber in Settings pro Feld explizit fuer den Garmin-Profil-Sync freigegeben werden. Die Freigabe gilt nur fuer angewaehlte Felder und uebernimmt den besten vorhandenen Garmin-Settings- oder Activity-derived-Kandidaten.
+- **Why:** Tobi moechte FTP, MaxHF, LTHR und VO2max im Alltag automatisch aus Garmin/Aktivitaeten nutzen koennen, ohne dass ein normaler Sync still alle manuell korrigierten Trainingsanker ueberschreibt. Feldweise Automatik erhaelt Auditierbarkeit und vermeidet globale Ueberraschungen.
+- **Alternatives:** Garmin immer alle manuellen Werte ueberschreiben lassen (zerstoert bewusste Korrekturen); nur die UI-Labels umbenennen (loest den eigentlichen Wechsel nicht); direkte DB-Korrekturen empfehlen (nicht alltagstauglich und nicht auditierbar).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Abgeschlossene Trust-Closure-Plaene werden archiviert
 
 - **Decision:** Die erledigten Plaene `2026-05-05-mobile-a11y-controls-polish.md` und `2026-05-05-data-decision-evidence-trail.md` werden nach `docs/superpowers/plans/completed/` verschoben. Die Future-Roadmap fuehrt sie als abgeschlossene Wellen, nicht mehr als priorisierte Zukunftsarbeit.

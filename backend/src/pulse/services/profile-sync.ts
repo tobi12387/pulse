@@ -29,7 +29,7 @@ export interface GarminProfileSyncResult {
 export async function syncProfileFromGarmin(
   userId: string,
   gc: GarminLikeClient,
-  options: { logger?: FastifyBaseLogger; now?: Date } = {},
+  options: { logger?: FastifyBaseLogger; now?: Date; overrideManualFields?: readonly PulseProfileMetricKey[] | undefined } = {},
 ): Promise<GarminProfileSyncResult> {
   const now = options.now ?? new Date();
   let garminSettings: unknown = null;
@@ -60,6 +60,7 @@ export async function syncProfileFromGarmin(
   const { updates, synced } = mergeProfileCandidates({
     existing: existing ?? null,
     candidates,
+    overrideManualFields: options.overrideManualFields,
     now,
   });
 

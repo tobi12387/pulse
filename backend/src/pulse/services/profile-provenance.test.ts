@@ -45,6 +45,41 @@ describe('profile provenance', () => {
     });
   });
 
+  it('adopts automatic candidates for explicitly unlocked manual fields only', () => {
+    const params = {
+      existing: {
+        ftpWatts: 255,
+        ftpWattsSource: 'manual',
+        maxHrBpm: 182,
+        maxHrBpmSource: 'manual',
+      },
+      candidates: {
+        ftpWatts: { value: 275, source: 'activity_derived' as const },
+        maxHrBpm: { value: 188, source: 'garmin_settings' as const },
+      },
+      overrideManualFields: ['ftpWatts' as const],
+      now,
+    };
+
+    const result = mergeProfileCandidates(params);
+
+    expect(result.updates).toMatchObject({
+      ftpWatts: 275,
+      ftpWattsSource: 'activity_derived',
+    });
+    expect(result.updates).not.toHaveProperty('maxHrBpm');
+    expect(result.synced.ftpWatts).toMatchObject({
+      value: 275,
+      source: 'activity_derived',
+      status: 'updated',
+    });
+    expect(result.synced.maxHrBpm).toMatchObject({
+      value: 182,
+      source: 'manual',
+      status: 'kept_manual',
+    });
+  });
+
   it('summarizes Garmin settings and activity-derived candidates separately', () => {
     expect(summarizeProfileCandidate('ftpWatts', 281, 'activity_derived')).toEqual({
       field: 'ftpWatts',

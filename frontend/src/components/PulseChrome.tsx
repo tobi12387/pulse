@@ -207,6 +207,7 @@ type MiniButtonProps = {
   disabled?: boolean;
   tone?: 'neutral' | 'accent' | 'amber' | 'danger';
   type?: 'button' | 'submit';
+  ariaLabel?: string;
 };
 
 const TONE_COLOR: Record<NonNullable<MiniButtonProps['tone']>, string> = {
@@ -216,7 +217,7 @@ const TONE_COLOR: Record<NonNullable<MiniButtonProps['tone']>, string> = {
   danger: 'var(--rose)',
 };
 
-export function MiniButton({ children, onClick, disabled, tone = 'neutral', type = 'button' }: MiniButtonProps) {
+export function MiniButton({ children, onClick, disabled, tone = 'neutral', type = 'button', ariaLabel }: MiniButtonProps) {
   const color = TONE_COLOR[tone];
 
   return (
@@ -224,6 +225,7 @@ export function MiniButton({ children, onClick, disabled, tone = 'neutral', type
       type={type}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       style={{
         background: 'none',
         border: `1px solid ${tone === 'neutral' ? 'var(--border)' : colorMix(color, 34)}`,

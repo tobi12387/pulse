@@ -796,6 +796,66 @@ test('Settings show profile value provenance for Garmin planning inputs', async 
   await expect(page.getByText('Garmin').first()).toBeVisible();
 });
 
+test('Settings can unlock a manual profile value for automatic Garmin sync', async ({ page }) => {
+  let syncPayload: unknown = null;
+  let profile = {
+    userId: 'user-1',
+    ftpWatts: 250,
+    maxHrBpm: 185,
+    lthrBpm: 170,
+    restingHrBpm: 49,
+    weeklyHoursTarget: 6,
+    trainingPhase: 'base',
+    vo2max: 52,
+    provenance: {
+      fields: {
+        ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+        maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+        lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+        vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+      },
+      warnings: [],
+    },
+  };
+  await mockPulseApi(page, {
+    profile: () => profile,
+    profileSyncResult: (body) => {
+      syncPayload = body;
+      profile = {
+        ...profile,
+        ftpWatts: 295,
+        provenance: {
+          ...profile.provenance,
+          fields: {
+            ...profile.provenance.fields,
+            ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 295, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: '2026-05-01T08:00:00.000Z', warning: null },
+          },
+        },
+      };
+      return {
+        synced: {
+          ftpWatts: { field: 'ftpWatts', value: 295, source: 'activity_derived', status: 'updated', label: 'FTP aus bester 20-Minuten-Leistung' },
+          maxHrBpm: { field: 'maxHrBpm', value: 185, source: 'activity_derived', status: 'updated', label: 'Max. Puls aus Aktivitaeten' },
+          lthrBpm: { field: 'lthrBpm', value: 170, source: 'garmin_settings', status: 'updated', label: 'LTHR aus Garmin-Einstellungen' },
+          vo2max: { field: 'vo2max', value: 52, source: 'garmin_settings', status: 'updated', label: 'VO2max aus Garmin-Einstellungen' },
+        },
+        diagnostics: { garminSettings: 'ok', activityRows: 20 },
+        profile,
+      };
+    },
+  });
+
+  await page.goto('/settings');
+  await expect(page.getByRole('button', { name: 'FTP automatisch übernehmen' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'FTP automatisch übernehmen' }).click();
+
+  await expect.poll(() => syncPayload).toEqual({ overrideManualFields: ['ftpWatts'] });
+  await expect(page.getByText('295 W')).toBeVisible();
+  await expect(page.getByText('FTP aus bester 20-Minuten-Leistung')).toBeVisible();
+  await expect(page.getByRole('button', { name: /automatisch übernehmen/ })).toHaveCount(0);
+});
+
 test('Settings edits explicit coach preferences for future recommendations', async ({ page }) => {
   let patched: unknown = null;
   await mockPulseApi(page, {
@@ -2345,7 +2405,8 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, '90T');
 
   await page.goto('/settings');
-  await expectTouchTarget(page, 'Von Garmin');
+  await expectTouchTarget(page, 'Garmin prüfen');
+  await expectTouchTarget(page, 'FTP automatisch übernehmen');
   await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(2);
   await expectTouchTargetAt(page, 'Bearbeiten', 0);
   await expectTouchTargetAt(page, 'Bearbeiten', 1);

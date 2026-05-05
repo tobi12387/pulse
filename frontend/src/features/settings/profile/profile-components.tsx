@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { MiniButton } from '@/components/PulseChrome';
 import { pulseApi } from '@/pulse/api-client';
 import { pulseKeys, usePulseProfile, useUpdateProfile } from '@/pulse/hooks';
-import type { PulseProfileMetricProvenance } from '@coaching-os/shared/pulse';
+import type { PulseProfileMetricKey, PulseProfileMetricProvenance } from '@coaching-os/shared/pulse';
 
 type SettingsMessage = { text: string; ok: boolean } | null;
 
@@ -78,13 +78,49 @@ function ProfileMetricValue({ metric, unit }: { metric?: PulseProfileMetricProve
   );
 }
 
+function ProfileMetricRow({
+  label,
+  metric,
+  unit,
+  disabled,
+  syncing,
+  onAutomatic,
+}: {
+  label: string;
+  metric?: PulseProfileMetricProvenance;
+  unit?: string;
+  disabled: boolean;
+  syncing: boolean;
+  onAutomatic: () => void;
+}) {
+  const isManual = metric?.source === 'manual';
+
+  return (
+    <Row label={label}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+        <ProfileMetricValue metric={metric} unit={unit} />
+        {isManual && (
+          <MiniButton
+            onClick={onAutomatic}
+            disabled={disabled}
+            tone="accent"
+            ariaLabel={`${label} automatisch übernehmen`}
+          >
+            {syncing ? '…' : 'Automatisch'}
+          </MiniButton>
+        )}
+      </div>
+    </Row>
+  );
+}
+
 export function AthleteProfileCard({ setMessage }: {
   setMessage: (message: SettingsMessage) => void;
 }) {
   const qc = useQueryClient();
   const { data: profile } = usePulseProfile();
   const updateProfile = useUpdateProfile();
-  const [syncingProfile, setSyncingProfile] = useState(false);
+  const [syncingProfile, setSyncingProfile] = useState<'all' | PulseProfileMetricKey | null>(null);
   const [profileForm, setProfileForm] = useState<ProfileForm | null>(null);
 
   function openProfile() {
@@ -113,22 +149,26 @@ export function AthleteProfileCard({ setMessage }: {
     setMessage({ text: 'Profil gespeichert.', ok: true });
   }
 
-  async function handleSyncProfile() {
-    setSyncingProfile(true);
+  async function handleSyncProfile(overrideManualFields: PulseProfileMetricKey[] = []) {
+    const target = overrideManualFields[0] ?? 'all';
+    setSyncingProfile(target);
     setMessage(null);
     try {
-      const res = await pulseApi.garmin.syncProfile();
+      const res = await pulseApi.garmin.syncProfile(
+        overrideManualFields.length > 0 ? { overrideManualFields } : undefined,
+      );
       await qc.invalidateQueries({ queryKey: pulseKeys.profile });
       const updated = Object.values(res.synced).filter(field => field.status === 'updated');
       const kept = Object.values(res.synced).filter(field => field.status === 'kept_manual');
       const parts = updated.map(field => field.label);
-      if (kept.length > 0) parts.push(`${kept.length} manuell behalten`);
+      if (kept.length > 0) parts.push(`${kept.length} manuell geschützt`);
       if (res.diagnostics.garminSettings === 'unavailable') parts.push('Garmin-Settings nicht verfügbar');
+      if (overrideManualFields.length > 0 && updated.length === 0) parts.unshift('kein automatischer Wert verfügbar');
       setMessage({ text: `Garmin Profil geprüft: ${parts.join(', ') || 'keine neuen Werte'}.`, ok: true });
     } catch (err) {
       setMessage({ text: err instanceof Error ? err.message : 'Profil-Sync fehlgeschlagen.', ok: false });
     } finally {
-      setSyncingProfile(false);
+      setSyncingProfile(null);
     }
   }
 
@@ -139,11 +179,11 @@ export function AthleteProfileCard({ setMessage }: {
         {!profileForm && (
           <div style={{ display: 'flex', gap: 6 }}>
             <MiniButton
-              onClick={handleSyncProfile}
-              disabled={syncingProfile}
+              onClick={() => void handleSyncProfile()}
+              disabled={syncingProfile != null}
               tone="accent"
             >
-              {syncingProfile ? '…' : 'Von Garmin'}
+              {syncingProfile === 'all' ? '…' : 'Garmin prüfen'}
             </MiniButton>
             <button
               onClick={openProfile}
@@ -163,7 +203,7 @@ export function AthleteProfileCard({ setMessage }: {
       {profileForm ? (
         <form onSubmit={(e) => void handleProfileSave(e)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <p style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
-            FTP, Max-HR + VO2max werden automatisch von Garmin geladen.
+            Geänderte Werte bleiben manuell geschützt. Automatisch übernimmt den besten Garmin- oder Aktivitätswert.
           </p>
           {([
             ['FTP (Watt)', 'ftpWatts', 'number'],
@@ -236,18 +276,37 @@ export function AthleteProfileCard({ setMessage }: {
         </form>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Row label="FTP">
-            <ProfileMetricValue metric={profile?.provenance.fields.ftpWatts} unit="W" />
-          </Row>
-          <Row label="Max. Puls">
-            <ProfileMetricValue metric={profile?.provenance.fields.maxHrBpm} unit="bpm" />
-          </Row>
-          <Row label="LTHR">
-            <ProfileMetricValue metric={profile?.provenance.fields.lthrBpm} unit="bpm" />
-          </Row>
-          <Row label="VO2max">
-            <ProfileMetricValue metric={profile?.provenance.fields.vo2max} />
-          </Row>
+          <ProfileMetricRow
+            label="FTP"
+            metric={profile?.provenance.fields.ftpWatts}
+            unit="W"
+            disabled={syncingProfile != null}
+            syncing={syncingProfile === 'ftpWatts'}
+            onAutomatic={() => void handleSyncProfile(['ftpWatts'])}
+          />
+          <ProfileMetricRow
+            label="Max. Puls"
+            metric={profile?.provenance.fields.maxHrBpm}
+            unit="bpm"
+            disabled={syncingProfile != null}
+            syncing={syncingProfile === 'maxHrBpm'}
+            onAutomatic={() => void handleSyncProfile(['maxHrBpm'])}
+          />
+          <ProfileMetricRow
+            label="LTHR"
+            metric={profile?.provenance.fields.lthrBpm}
+            unit="bpm"
+            disabled={syncingProfile != null}
+            syncing={syncingProfile === 'lthrBpm'}
+            onAutomatic={() => void handleSyncProfile(['lthrBpm'])}
+          />
+          <ProfileMetricRow
+            label="VO2max"
+            metric={profile?.provenance.fields.vo2max}
+            disabled={syncingProfile != null}
+            syncing={syncingProfile === 'vo2max'}
+            onAutomatic={() => void handleSyncProfile(['vo2max'])}
+          />
           <Row label="Wochenstunden">
             <Val>{profile?.weeklyHoursTarget ? `${profile.weeklyHoursTarget} h` : '–'}</Val>
           </Row>
