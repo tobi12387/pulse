@@ -209,22 +209,26 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByText('WARUM')).toBeVisible();
-  await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('WAS JETZT?', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
 
-  await page.getByRole('button').filter({ hasText: 'Check-in eintragen' }).click();
+  await page.getByRole('button', { name: 'Zum Coach' }).click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Check-in eintragen/);
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
 });
 
-test('Daily loop slimming keeps full decision details on Home and slim support on task routes', async ({ page }) => {
+test('Daily loop clarity keeps Home guidance plain and slim support on task routes', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByText('GRENZE', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('ALTERNATIVE', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('WAS JETZT?', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
 
   await page.goto('/coach');
   await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
@@ -505,11 +509,12 @@ test('Home owns the full daily decision while Coach carries slim prompt context'
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Training heute defensiv entscheiden' })).toBeVisible();
-  await expect(page.getByText('GRENZE', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('ALTERNATIVE', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('WAS JETZT?', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
 
-  await page.getByRole('button').filter({ hasText: 'Training heute defensiv entscheiden' }).click();
+  await page.getByRole('button', { name: 'Coach fragen' }).first().click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Training heute defensiv entscheiden/);
   await expect(page.getByRole('heading', { name: 'Training heute defensiv entscheiden' })).toBeVisible();

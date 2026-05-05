@@ -38,9 +38,8 @@ export function DailyDecisionCard({
   const promptIsPrimary = Boolean(onActivate && onPrompt && decision.targetPath.startsWith('/coach'));
   const primaryAction = promptIsPrimary ? onPrompt : onActivate ? () => onActivate(decision.targetPath) : undefined;
   const showPromptAction = Boolean(onPrompt && !promptIsPrimary && !(decision.supportCta && onActivate));
-  const isButton = Boolean(primaryAction);
-  const Wrapper = isButton ? 'button' : 'div';
   const compact = density === 'compact';
+  const guidanceItems = [decision.boundary, decision.alternative, decision.completionCriterion];
 
   return (
     <div data-testid="daily-decision-card" style={{ padding: compact ? '10px 12px' : '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
@@ -53,20 +52,7 @@ export function DailyDecisionCard({
         </span>
       </div>
 
-      <Wrapper
-        type={isButton ? 'button' : undefined}
-        onClick={primaryAction}
-        style={{
-          width: '100%',
-          padding: 0,
-          background: 'transparent',
-          border: 'none',
-          textAlign: 'left',
-          cursor: isButton ? 'pointer' : 'default',
-          color: 'inherit',
-          font: 'inherit',
-        }}
-      >
+      <div>
         <h2 style={{ fontSize: compact ? 14 : 16, color: 'var(--text)', margin: '0 0 7px', fontWeight: 600, lineHeight: 1.3 }}>
           {decision.title}
         </h2>
@@ -77,24 +63,25 @@ export function DailyDecisionCard({
           {decision.reason}
         </p>
         {!compact && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
-            {[
-              ['Grenze', decision.boundary],
-              ['Alternative', decision.alternative],
-              ['Abschluss', decision.completionCriterion],
-            ].map(([key, value]) => (
-              <div key={key} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none' }}>
-                  {label(key, labelCase)}
-                </div>
-                <div style={{ marginTop: 4, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
-                  {value}
-                </div>
-              </div>
-            ))}
+          <div data-testid="daily-decision-next-steps" style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '10px 11px', background: 'var(--surface-2)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 7 }}>
+              {label('Was jetzt?', labelCase)}
+            </div>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none', padding: 0, margin: 0 }}>
+              {guidanceItems.map((value, index) => (
+                <li key={`${index}-${value}`} style={{ display: 'grid', gridTemplateColumns: '18px minmax(0, 1fr)', gap: 7, alignItems: 'start' }}>
+                  <span aria-hidden="true" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color, lineHeight: 1.45 }}>
+                    {index + 1}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+                    {value}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-      </Wrapper>
+      </div>
 
       {!compact && decision.evidence.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
@@ -146,7 +133,7 @@ export function DailyDecisionCard({
             type="button"
             onClick={primaryAction}
             style={{
-              minHeight: 40,
+              minHeight: 44,
               padding: compact ? '8px 10px' : '9px 10px',
               background: 'var(--surface-2)',
               border: `1px solid ${color}`,
@@ -167,7 +154,7 @@ export function DailyDecisionCard({
             type="button"
             onClick={onPrompt}
             style={{
-              minHeight: 40,
+              minHeight: 44,
               padding: compact ? '8px 10px' : '9px 10px',
               background: 'var(--surface-2)',
               border: '1px solid var(--accent)',
@@ -194,7 +181,7 @@ export function DailyDecisionCard({
               onActivate(decision.supportPath!);
             }}
             style={{
-              minHeight: 40,
+              minHeight: 44,
               padding: compact ? '8px 10px' : '9px 10px',
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
