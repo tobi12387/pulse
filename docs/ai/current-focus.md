@@ -17,9 +17,10 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
 - Current navigation direction is documented in `docs/superpowers/specs/2026-05-04-nav-ia-design.md`: the target top-level set is Home, Data, Plan and Settings. Insights is now inside Data; Coach is no longer a primary-nav destination while `/coach` remains a compatibility/deep-link route; Home/Plan can open Coach with prepared draft prompts.
 - Mental Check-in Simplification and Mental Signal Impact: Home can complete the compact daily check-in; Data, Home, Plan and Coach now use one shared impact language. Next mental work should focus on evidence quality, not another input rebuild.
-- Active trust-closure plan: implement the first frontend-only slice of `2026-05-05-data-decision-evidence-trail.md`.
+- Trust-closure wave is code-complete through Data Decision Evidence Trail once the current PR lands: Home/Plan evidence should deep-link into Data instead of becoming another dashboard.
 - Completed 2026-05-04 implementation plans live in `docs/superpowers/plans/completed/`; do not rebuild them.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
+- Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
 - Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 

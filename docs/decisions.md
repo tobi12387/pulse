@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Data bleibt kanonische Evidence-Route fuer Home- und Plan-Entscheidungen
+
+- **Decision:** Home Daily Decision Evidence und Plan-Quellenchips bekommen strukturierte `targetPath`-Metadaten und verweisen auf stabile Data-Anker (`data-recovery`, `data-mental`, `data-garmin-quality`, `data-plan-trace`). Data waehlt bei Hash-Links automatisch den passenden Tab, scrollt zum Ziel und fokussiert den Abschnitt.
+- **Why:** Pulse soll im Alltag nicht nur Empfehlungen zeigen, sondern direkt erklaeren, woher sie kommen. Ein Data-zentrierter Evidence-Trail schliesst die Trust-Luecke ohne neue Route, Backend-API oder doppelte Dashboards.
+- **Alternatives:** Neue Evidence-Detailseite bauen (zu grosser Scope und neue IA); Chips weiter als passive Labels lassen (Nutzer muss Evidenz suchen); Deep-Link-Ziele aus Label-Text ableiten (fragil bei lokalisierter/dynamischer Copy).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Segmented Controls wechseln von Toggle-Buttons zu Tabs
 
 - **Decision:** Shared `SegmentedControl` nutzt fuer Data und Plan echte `tablist`/`tab`-Semantik mit `aria-selected`, roving `tabIndex`, Arrow-/Home-/End-Navigation und aktivem Scrollen. Mental `button role="radio"` Gruppen bekommen eigene Arrow-Key-Auswahl statt in Toggle-Button-Logik integriert zu werden.

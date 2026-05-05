@@ -58,6 +58,7 @@ function Loading({ rows = 3 }: { rows?: number }) {
 }
 
 type PlannedWorkout = PulsePlannedWorkout;
+type SourceChip = { label: string; targetPath?: string };
 
 function NextTrainingDecisionCard({
   nextWorkout,
@@ -144,11 +145,17 @@ function NextTrainingDecisionCard({
   const load = planTrace?.inputSnapshot.load ?? null;
   const riskCount = planTrace?.inputSnapshot.riskSignals.length ?? 0;
   const goalsCount = activeGoalsCount || planTrace?.inputSnapshot.goals.length || 0;
-  const sourceChips = [
-    load ? `Einbezogen: TSB ${load.tsb.toFixed(1)}` : 'Einbezogen: aktueller Plan',
-    `Verfügbarkeit ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'offen'}`,
-    goalsCount > 0 ? `Ziele ${goalsCount} aktiv` : 'Ziele keine aktiven',
-    riskCount > 0 ? `Risiko ${riskCount} Signal(e)` : 'Risiko unauffällig',
+  const sourceChips: SourceChip[] = [
+    load
+      ? { label: `Einbezogen: TSB ${load.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' }
+      : { label: 'Einbezogen: aktueller Plan', targetPath: '/data?tab=analysen#data-plan-trace' },
+    { label: `Verfügbarkeit ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'offen'}` },
+    goalsCount > 0
+      ? { label: `Ziele ${goalsCount} aktiv`, targetPath: '/plan?tab=goals' }
+      : { label: 'Ziele keine aktiven', targetPath: '/plan?tab=goals' },
+    riskCount > 0
+      ? { label: `Risiko ${riskCount} Signal(e)`, targetPath: '/data?tab=analysen#data-plan-trace' }
+      : { label: 'Risiko unauffällig', targetPath: '/data?tab=analysen#data-plan-trace' },
   ];
   const alternatives: Array<{ id: PlanAlternativeId; label: string; detail: string }> = [
     {
@@ -230,16 +237,41 @@ function NextTrainingDecisionCard({
       )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {sourceChips.map(chip => (
-          <span key={chip} style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            color: 'var(--text-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            padding: '3px 6px',
-          }}>
-            {chip}
-          </span>
+          chip.targetPath ? (
+            <button
+              key={`${chip.targetPath}:${chip.label}`}
+              type="button"
+              onClick={() => onNavigate(chip.targetPath!)}
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                maxWidth: '100%',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                color: 'var(--text-2)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: 0,
+                overflowWrap: 'anywhere',
+                padding: '8px 9px',
+              }}
+            >
+              {chip.label}
+            </button>
+          ) : (
+            <span key={chip.label} style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: 'var(--text-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              padding: '3px 6px',
+            }}>
+              {chip.label}
+            </span>
+          )
         ))}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 12 }}>

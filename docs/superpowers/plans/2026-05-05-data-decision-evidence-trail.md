@@ -26,7 +26,7 @@ Data now starts with a useful overview and contains Mental, Schlaf, Metriken, Ab
 
 ## Task 1: Add Stable Data Anchors
 
-- [ ] **Step 1: Add anchors in Data tab sections**
+- [x] **Step 1: Add anchors in Data tab sections**
 
 In `frontend/src/pages/Data.tsx`, add ids:
 
@@ -39,7 +39,7 @@ In `frontend/src/pages/Data.tsx`, add ids:
 
 Use existing wrapper elements where possible. Do not add nested cards.
 
-- [ ] **Step 2: Add scroll-on-load behavior**
+- [x] **Step 2: Add scroll-on-load behavior**
 
 When `location.hash` is present, scroll the matching id into view after tab render:
 
@@ -49,7 +49,7 @@ requestAnimationFrame(() => document.getElementById(hash)?.scrollIntoView({ bloc
 
 ## Task 2: Structure Evidence Targets
 
-- [ ] **Step 1: Extend daily-decision evidence type only if needed**
+- [x] **Step 1: Extend daily-decision evidence type only if needed**
 
 In `frontend/src/pulse/daily-decision.ts`, replace bare evidence strings with a compatible shape:
 
@@ -59,7 +59,7 @@ export type DailyDecisionEvidence = string | { label: string; targetPath: string
 
 Keep rendering compatible with existing string evidence.
 
-- [ ] **Step 2: Map common evidence**
+- [x] **Step 2: Map common evidence**
 
 Use these target paths:
 
@@ -72,7 +72,7 @@ Use these target paths:
 
 ## Task 3: Link Chips From Home And Plan
 
-- [ ] **Step 1: Update Home evidence rendering**
+- [x] **Step 1: Update Home evidence rendering**
 
 In `frontend/src/pages/Home.tsx`, render evidence objects as links:
 
@@ -84,13 +84,13 @@ In `frontend/src/pages/Home.tsx`, render evidence objects as links:
 
 Keep string evidence as non-clickable chips.
 
-- [ ] **Step 2: Update Plan evidence rendering**
+- [x] **Step 2: Update Plan evidence rendering**
 
 In `frontend/src/pages/Plan.tsx`, use the same link/chip pattern for plan trace and next decision evidence.
 
 ## Task 4: Add Data Overview Provenance
 
-- [ ] **Step 1: Add a compact provenance row**
+- [x] **Step 1: Add a compact provenance row**
 
 In `DataOverviewTab`, show the current decision evidence groups:
 
@@ -102,7 +102,7 @@ In `DataOverviewTab`, show the current decision evidence groups:
 
 ## Task 5: Verify
 
-- [ ] **Step 1: Add E2E**
+- [x] **Step 1: Add E2E**
 
 In `frontend/e2e/pulse-usability.spec.ts`:
 
@@ -115,7 +115,7 @@ test('Home evidence chips deep-link to Data evidence sections', async ({ page })
 });
 ```
 
-- [ ] **Step 2: Run focused and full checks**
+- [x] **Step 2: Run focused and full checks**
 
 ```bash
 npm run test:e2e -- --grep "evidence"
