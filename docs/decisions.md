@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Home-Tagesentscheidung nutzt klare Alltagssprache statt interne Entscheidungslabels
+
+- **Decision:** Die Home Daily Decision Card zeigt die internen Bausteine `Grenze`, `Alternative` und `Abschluss` nicht mehr als sichtbare Einzelkacheln. Home fasst sie unter `Was jetzt?` als nummerierte Hinweise zusammen und macht nur echte CTAs zu Buttons.
+- **Why:** Tobi soll auf Home sofort verstehen, was jetzt zu tun ist. Die bisherigen Labels waren fuer die Coaching-Logik nuetzlich, wirkten aber im Tages-Cockpit wie unklare Aktionen und erhoehten die kognitive Last.
+- **Alternatives:** Labels nur umbenennen (behält das Framework-Gefuehl); Kacheln als Buttons lassen (weiterhin falsche Affordance); alle Details entfernen (zu wenig Erklaerbarkeit fuer Tagesentscheidungen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Home zeigt abgeschlossene Tages-Trainings als erledigt statt als freien Tag
 
 - **Decision:** Home bekommt ein eigenes `todayWorkout`-Signal aus `/api/pulse/home` und behandelt heute geplante, per Garmin gematchte oder abgeschlossene Einheiten als erledigte Tagesentscheidung. Entscheidungsqualitaet und Recent Trainings werden nicht mehr auf Home angezeigt; Mental-Signale erscheinen dort nur noch als knapper Tageshinweis, wenn sie wirklich eine Belastungsgrenze setzen.
