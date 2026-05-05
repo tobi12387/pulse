@@ -54,6 +54,8 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Do not append every merged branch here.
 - Record only durable queue changes, manual gates or next recommended work.
 - If a branch-specific note is only useful until merge, put it in the PR body instead.
+- CI is optimized for small PRs: docs-only PRs should skip runtime jobs, runtime PR jobs are path-filtered, PR browser coverage is smoke-only, and full E2E remains on `main`/manual dispatch.
+- For authorized autonomous work, use `gh pr merge --auto --squash --delete-branch` when appropriate instead of blocking the session on green checks; inspect failures and keep runtime deploys after merged `main`.
 - Keep completed plan archives closed unless the user asks for history or regression comparison.
 
 ## Out Of Scope Unless Reversed
