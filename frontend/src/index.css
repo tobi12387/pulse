@@ -151,6 +151,16 @@
   outline-offset: 3px;
 }
 
+.evidence-section {
+  scroll-margin-top: 96px;
+}
+
+.evidence-section:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
 /* ─── Animations ─────────────────────────────────────────────────────────── */
 
 @keyframes shimmer {

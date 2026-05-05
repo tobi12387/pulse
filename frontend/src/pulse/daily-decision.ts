@@ -1,5 +1,7 @@
 import type { PulseHomeScreenData, PulseNextBestAction } from '@coaching-os/shared/pulse';
 
+export type DailyDecisionEvidence = string | { label: string; targetPath: string };
+
 export interface DailyDecision {
   title: string;
   reason: string;
@@ -10,7 +12,7 @@ export interface DailyDecision {
   targetPath: string;
   prompt: string;
   priority: PulseNextBestAction['priority'];
-  evidence: string[];
+  evidence: DailyDecisionEvidence[];
   supportCta?: string;
   supportPath?: string;
 }
@@ -50,6 +52,34 @@ function alternativeFor(home: PulseHomeScreenData, action: PulseNextBestAction |
   return 'Erholungstag bewusst schließen oder im Plan neue Verfügbarkeit setzen, falls Training doch geplant werden soll.';
 }
 
+function mapEvidence(item: string): DailyDecisionEvidence {
+  const normalized = item.toLowerCase();
+  if (
+    normalized.includes('check-in') ||
+    normalized.includes('stimmung') ||
+    normalized.includes('energie') ||
+    normalized.includes('stress') ||
+    normalized.includes('motivation') ||
+    normalized.includes('mental')
+  ) {
+    return { label: item, targetPath: '/data?tab=mental#data-mental' };
+  }
+  if (normalized.includes('garmin') || normalized.includes('abdeckung') || normalized.includes('coverage')) {
+    return { label: item, targetPath: '/data?tab=coverage#data-garmin-quality' };
+  }
+  if (
+    normalized.includes('tsb') ||
+    normalized.includes('ctl') ||
+    normalized.includes('atl') ||
+    normalized.includes('load') ||
+    normalized.includes('risiko') ||
+    normalized.includes('risk')
+  ) {
+    return { label: item, targetPath: '/data?tab=analysen#data-plan-trace' };
+  }
+  return item;
+}
+
 export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined): DailyDecision | null {
   if (!home) return null;
 
@@ -73,11 +103,11 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const targetPath = action?.targetPath ?? (todayWorkout ? '/plan?tab=training' : '/');
   const supportCta = !action && !todayWorkout ? 'Coach fragen' : undefined;
   const supportPath = !action && !todayWorkout ? '/coach?focus=daily' : undefined;
-  const evidence = [
-    `Readiness ${home.readiness.score}/100`,
-    `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,
+  const evidence: DailyDecisionEvidence[] = [
+    { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data#data-recovery' },
+    { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' },
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
-    ...(action?.evidence ?? []),
+    ...(action?.evidence?.map(mapEvidence) ?? []),
   ];
   const prompt = [
     `Tagesentscheidung: ${title}.`,

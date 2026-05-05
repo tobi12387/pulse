@@ -1,4 +1,4 @@
-import type { DailyDecision } from '@/pulse/daily-decision';
+import type { DailyDecision, DailyDecisionEvidence } from '@/pulse/daily-decision';
 
 type LabelCase = 'upper' | 'title';
 type Density = 'default' | 'compact';
@@ -11,6 +11,14 @@ function priorityColor(priority: DailyDecision['priority']): string {
 
 function label(text: string, labelCase: LabelCase): string {
   return labelCase === 'upper' ? text.toUpperCase() : text;
+}
+
+function evidenceLabel(item: DailyDecisionEvidence): string {
+  return typeof item === 'string' ? item : item.label;
+}
+
+function evidenceTarget(item: DailyDecisionEvidence): string | null {
+  return typeof item === 'string' ? null : item.targetPath;
 }
 
 export function DailyDecisionCard({
@@ -90,18 +98,45 @@ export function DailyDecisionCard({
 
       {!compact && decision.evidence.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-          {decision.evidence.slice(0, 4).map(item => (
-            <span key={item} style={{
+          {decision.evidence.slice(0, 4).map(item => {
+            const target = evidenceTarget(item);
+            const text = evidenceLabel(item);
+            const key = target ? `${target}:${text}` : text;
+            const baseStyle = {
+              maxWidth: '100%',
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              color: 'var(--text-3)',
+              color: target ? 'var(--text-2)' : 'var(--text-3)',
               border: '1px solid var(--border)',
               borderRadius: 4,
-              padding: '3px 6px',
-            }}>
-              {item}
-            </span>
-          ))}
+              padding: target ? '8px 9px' : '3px 6px',
+              overflowWrap: 'anywhere' as const,
+            };
+            if (target && onActivate) {
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onActivate(target)}
+                  style={{
+                    ...baseStyle,
+                    minWidth: 44,
+                    minHeight: 44,
+                    background: 'var(--surface-2)',
+                    cursor: 'pointer',
+                    letterSpacing: 0,
+                  }}
+                >
+                  {text}
+                </button>
+              );
+            }
+            return (
+              <span key={key} style={baseStyle}>
+                {text}
+              </span>
+            );
+          })}
         </div>
       )}
 

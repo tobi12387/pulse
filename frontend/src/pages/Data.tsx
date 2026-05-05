@@ -1,4 +1,5 @@
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, type ReactNode } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader, SegmentedControl } from '@/components/PulseChrome';
 import { CoverageTab } from '@/features/data/coverage/coverage-components';
 import { MentalTab } from '@/features/data/mental/mental-components';
@@ -44,11 +45,35 @@ const QUERY_TAB: Record<string, Tab> = {
   insights: 'analysen',
 };
 
+const HASH_TAB: Record<string, Tab> = {
+  'data-recovery': 'metriken',
+  'data-mental': 'mental',
+  'data-garmin-quality': 'abdeckung',
+  'data-plan-trace': 'analysen',
+};
+
 function tabFromQuery(value: string | null): Tab {
   return value ? QUERY_TAB[value] ?? 'ueberblick' : 'ueberblick';
 }
 
-function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab) => void }) {
+function hashFromLocation(hash: string): string {
+  const value = hash.replace(/^#/, '');
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function EvidenceSection({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <section id={id} className="evidence-section" tabIndex={-1}>
+      {children}
+    </section>
+  );
+}
+
+function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
   const cards: Array<{ tab: Tab; title: string; text: string; cta: string }> = [
     {
       tab: 'analysen',
@@ -67,6 +92,26 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab) => void }) {
       title: 'Schlaf & Erholung',
       text: 'Schlaf, Metriken und Gewicht als Grundlage für Entscheidungen prüfen.',
       cta: 'Schlaf öffnen',
+    },
+  ];
+  const provenance: Array<{ tab: Tab; hash: string; label: string; detail: string }> = [
+    {
+      tab: 'mental',
+      hash: 'data-mental',
+      label: 'Mental Check-in prüfen',
+      detail: 'Subjektive Lage und Tagesnotizen.',
+    },
+    {
+      tab: 'abdeckung',
+      hash: 'data-garmin-quality',
+      label: 'Garmin Abdeckung prüfen',
+      detail: 'Frische, Lücken und Sync-Qualität.',
+    },
+    {
+      tab: 'analysen',
+      hash: 'data-plan-trace',
+      label: 'Plan-/Load-Analyse prüfen',
+      detail: 'TSB, Ziele, Risiko und Planlogik.',
     },
   ];
 
@@ -112,32 +157,99 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab) => void }) {
           </div>
         ))}
       </div>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '10px 11px', background: 'var(--surface-2)' }}>
+        <div className="label-mono" style={{ marginBottom: 8, color: 'var(--accent)' }}>ENTSCHEIDUNGS-EVIDENZ</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {provenance.map(item => (
+            <button
+              key={item.hash}
+              type="button"
+              onClick={() => onOpen(item.tab, item.hash)}
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                maxWidth: '100%',
+                padding: '8px 10px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 5,
+                color: 'var(--text-2)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: 0,
+                textAlign: 'left',
+                textTransform: 'uppercase',
+              }}
+              title={item.detail}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function Data() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchKey = searchParams.toString();
   const tab = tabFromQuery(searchParams.get('tab'));
 
-  function setTab(tabId: string) {
+  function setTab(tabId: string, hash?: string) {
     const nextTab = tabId as Tab;
     const next = new URLSearchParams(searchParams);
     next.set('tab', TAB_QUERY[nextTab]);
+    if (hash) {
+      navigate({
+        pathname: location.pathname,
+        search: `?${next.toString()}`,
+        hash: `#${hash}`,
+      });
+      return;
+    }
     setSearchParams(next);
   }
+
+  useEffect(() => {
+    const hash = hashFromLocation(location.hash);
+    if (!hash) return;
+
+    const targetTab = HASH_TAB[hash];
+    if (targetTab && targetTab !== tab) {
+      const next = new URLSearchParams(searchKey);
+      next.set('tab', TAB_QUERY[targetTab]);
+      navigate({
+        pathname: location.pathname,
+        search: `?${next.toString()}`,
+        hash: location.hash,
+      }, { replace: true });
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(hash);
+      if (!target) return;
+      target.scrollIntoView({ block: 'start' });
+      target.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location.hash, location.pathname, navigate, searchKey, tab]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
       <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Data Bereiche" />
       {tab === 'ueberblick' && <DataOverviewTab onOpen={setTab} />}
-      {tab === 'abdeckung' && <CoverageTab />}
+      {tab === 'abdeckung' && <EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection>}
       {tab === 'schlaf' && <SchlafTab />}
-      {tab === 'metriken' && <MetrikenTab />}
+      {tab === 'metriken' && <EvidenceSection id="data-recovery"><MetrikenTab /></EvidenceSection>}
       {tab === 'gewicht' && <GewichtTab />}
-      {tab === 'mental' && <MentalTab />}
-      {tab === 'analysen' && <DataAnalysenTab />}
+      {tab === 'mental' && <EvidenceSection id="data-mental"><MentalTab /></EvidenceSection>}
+      {tab === 'analysen' && <EvidenceSection id="data-plan-trace"><DataAnalysenTab /></EvidenceSection>}
     </div>
   );
 }

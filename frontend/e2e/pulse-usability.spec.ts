@@ -948,6 +948,87 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
   await expect(page.getByRole('tab', { name: 'Training', exact: true })).toHaveAttribute('aria-selected', 'true');
 });
 
+test('Home evidence chips deep-link to Data evidence sections', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
+
+  await page.getByRole('button', { name: /Readiness 78\/100/ }).click();
+  await expect(page).toHaveURL(/\/data/);
+  await expect(page).toHaveURL(/#data-recovery$/);
+  await expect(page.getByRole('tab', { name: 'Metriken' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#data-recovery')).toBeVisible();
+});
+
+test('Plan evidence chips deep-link to Data plan trace', async ({ page }) => {
+  const plannedDate = localIsoDateDaysFrom(0);
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate,
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        description: 'Aerobe Grundlage, primaer ueber Puls steuern.',
+      },
+    ],
+    planTrace: {
+      weekStart: plannedDate,
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 48.1, tsb: -5.7 },
+        weeklyHoursTarget: 8,
+        phase: 'base',
+        goals: [],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        dataWarnings: [],
+        recentSportMix: {},
+        learningSnapshot: null,
+        adaptation: null,
+        restDayRationale: [],
+        seasonStrategy: null,
+      },
+      sportMix: {},
+      hardDays: [],
+      generatedSummary: [],
+      adaptation: null,
+      restDayRationale: [],
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
+
+  await page.getByRole('button', { name: /Einbezogen: TSB -5\.7/ }).click();
+  await expect(page).toHaveURL('/data?tab=analysen#data-plan-trace');
+  await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#data-plan-trace')).toBeVisible();
+});
+
+test('Data overview exposes provenance shortcuts', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/data');
+  await expect(page.getByText('DATA · ÜBERBLICK')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Plan-/Load-Analyse prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysen#data-plan-trace');
+  await expect(page.locator('#data-plan-trace')).toBeVisible();
+});
+
+test('Data ignores malformed hashes and stays usable', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/data#%');
+  await expect(page.getByText('DATA · ÜBERBLICK')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Überblick' })).toHaveAttribute('aria-selected', 'true');
+});
+
 test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) => {
   await mockPulseApi(page);
 
