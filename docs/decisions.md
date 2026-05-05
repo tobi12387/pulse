@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Abgeschlossene Trust-Closure-Plaene werden archiviert
+
+- **Decision:** Die erledigten Plaene `2026-05-05-mobile-a11y-controls-polish.md` und `2026-05-05-data-decision-evidence-trail.md` werden nach `docs/superpowers/plans/completed/` verschoben. Die Future-Roadmap fuehrt sie als abgeschlossene Wellen, nicht mehr als priorisierte Zukunftsarbeit.
+- **Why:** Beide Plaene sind durch PRs, QA und Server-Deploy abgeschlossen. Im aktiven Planordner wuerden sie Token verschwenden und neue Sessions dazu verleiten, bereits implementierte UI/UX-Arbeit erneut zu bauen.
+- **Alternatives:** Die Plaene aktiv liegen lassen (Reimplementierungsrisiko); Plaene loeschen (verliert Kontext und Acceptance-Historie); nur `current-focus` anpassen (Plan-Discovery bleibt stale).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Data bleibt kanonische Evidence-Route fuer Home- und Plan-Entscheidungen
 
 - **Decision:** Home Daily Decision Evidence und Plan-Quellenchips bekommen strukturierte `targetPath`-Metadaten und verweisen auf stabile Data-Anker (`data-recovery`, `data-mental`, `data-garmin-quality`, `data-plan-trace`). Data waehlt bei Hash-Links automatisch den passenden Tab, scrollt zum Ziel und fokussiert den Abschnitt.
