@@ -3,17 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, usePulseHome, useRaceCommand, useSeasonStrategy,
+  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { StrengthLogger } from '@/components/StrengthLogger';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
-import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
-import { deriveDailyDecision } from '@/pulse/daily-decision';
 import {
   buildPlanAlternative,
   getMonday,
@@ -470,7 +468,6 @@ function AvailabilityEditor({
 function TrainingTab() {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
-  const home      = usePulseHome();
   const goals     = usePulseGoals();
   const raceCommand = useRaceCommand();
   const seasonStrategy = useSeasonStrategy();
@@ -498,7 +495,6 @@ function TrainingTab() {
   const availableDays = weekAvailability?.availableDays ?? [0, 2, 4, 5];
   const weeklyHours = weekAvailability?.weeklyHours ?? planTrace?.inputSnapshot.weeklyHoursTarget ?? 8;
   const activeGoals = goals.data?.goals.filter(goal => goal.status === 'active') ?? [];
-  const dailyDecision = deriveDailyDecision(home.data);
   const today = isoDateLocal(new Date());
   const nextDecisionWorkout = getNextOpenWorkout(workouts, today);
   const decisionWeekStart = nextDecisionWorkout ? weekStartForDate(nextDecisionWorkout.plannedDate) : selectedWeekStart;
@@ -543,16 +539,6 @@ function TrainingTab() {
         onOpenAvailability={() => setShowAvailability(true)}
         onOpenGenerator={() => setShowConfig(true)}
       />
-
-      {dailyDecision && (
-        <DailyDecisionCard
-          decision={dailyDecision}
-          labelCase="upper"
-          density="compact"
-          onActivate={() => navigate(dailyDecision.targetPath)}
-          onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'plan'))}
-        />
-      )}
 
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}

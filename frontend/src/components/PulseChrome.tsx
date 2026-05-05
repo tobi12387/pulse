@@ -47,7 +47,7 @@ export function SegmentedControl({ items, active, onChange, compact = false }: S
     <div
       style={{
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
         gap: 2,
         padding: 2,
         background: 'var(--surface)',
@@ -55,6 +55,10 @@ export function SegmentedControl({ items, active, onChange, compact = false }: S
         borderRadius: 5,
         alignSelf: 'flex-start',
         maxWidth: '100%',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'thin',
       }}
     >
       {items.map(item => (

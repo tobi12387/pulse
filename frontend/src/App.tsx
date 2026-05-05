@@ -10,6 +10,7 @@ const Plan = lazy(() => import('@/pages/Plan'));
 const Insights = lazy(() => import('@/pages/Insights'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const ActivityDetail = lazy(() => import('@/pages/ActivityDetail'));
+const Login = lazy(() => import('@/pages/Login'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -83,6 +84,7 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<div className="p-4 text-xs text-[var(--text-3)]">Lädt…</div>}>
             <Routes>
+              <Route path="/login" element={<Login />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<Home />} />
                 <Route path="coach" element={<Coach />} />

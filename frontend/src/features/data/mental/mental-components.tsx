@@ -194,15 +194,20 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
         <span style={{ fontSize: 12, color: 'var(--text)' }}>{label}</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color }}>{value}/10</span>
       </div>
-      <div style={{ display: 'flex', gap: 2 }}>
+      <div role="radiogroup" aria-label={label} style={{ display: 'flex', gap: 2 }}>
         {Array.from({ length: 10 }, (_, i) => (
-          <div
+          <button
             key={i}
+            type="button"
+            role="radio"
+            aria-label={`${label} ${i + 1}/10`}
+            aria-checked={i + 1 === value}
             onClick={() => onChange(i + 1)}
             style={{
               flex: 1,
-              height: 6,
-              borderRadius: 1,
+              minHeight: 22,
+              padding: 0,
+              borderRadius: 2,
               cursor: 'pointer',
               background: i < value ? color : 'var(--bg)',
               border: '1px solid var(--border)',
@@ -287,6 +292,7 @@ export function MentalTab() {
   const [freeText, setFreeText] = useState('');
   const [textResult, setTextResult] = useState<PulseCheckinTextPreview | null>(null);
   const [textPreviewError, setTextPreviewError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const quickChoices = manualQuickChoices ?? suggestion.choices;
   const quickScores = scoresFromQuickChoices(quickChoices);
@@ -320,8 +326,13 @@ export function MentalTab() {
   async function submitCheckin() {
     const notes = mergeNeedTag(form.notes, quickChoices.need);
     const scores = fineTuned ? displayedScores : quickScores;
-    await checkin.mutateAsync({ ...scores, notes: notes || undefined });
-    setSubmitted(true);
+    setSaveError(null);
+    try {
+      await checkin.mutateAsync({ ...scores, notes: notes || undefined });
+      setSubmitted(true);
+    } catch (err) {
+      setSaveError(errorMessage(err, 'Check-in konnte gerade nicht gespeichert werden. Deine Auswahl bleibt erhalten.'));
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -397,6 +408,36 @@ export function MentalTab() {
             </p>
           </div>
           <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+              <QuickChoiceGroup
+                title="Wie ist dein Kopf gerade?"
+                ariaPrefix="Kopf"
+                value={quickChoices.head}
+                options={HEAD_OPTIONS}
+                onChange={head => updateQuickChoices({ ...quickChoices, head })}
+              />
+              <QuickChoiceGroup
+                title="Wie viel Energie ist verfügbar?"
+                ariaPrefix="Energie"
+                value={quickChoices.energy}
+                options={ENERGY_OPTIONS}
+                onChange={energy => updateQuickChoices({ ...quickChoices, energy })}
+              />
+              <QuickChoiceGroup
+                title="Was zieht gerade mentale Energie?"
+                ariaPrefix="Druck"
+                value={quickChoices.pressure}
+                options={PRESSURE_OPTIONS}
+                onChange={pressure => updateQuickChoices({ ...quickChoices, pressure })}
+              />
+              <QuickChoiceGroup
+                title="Was brauchst du heute?"
+                ariaPrefix="Tagesbedarf"
+                value={quickChoices.need}
+                options={NEED_OPTIONS}
+                onChange={need => updateQuickChoices({ ...quickChoices, need })}
+              />
+            </div>
             <div style={{
               padding: '10px 12px',
               background: 'var(--surface-2)',
@@ -477,8 +518,8 @@ export function MentalTab() {
                     cursor: !freeText.trim() || textPreview.isPending ? 'default' : 'pointer',
                   }}
                 >
-                  {textPreview.isPending ? 'Wird ausgewertet…' : 'Text auswerten'}
-                </button>
+                {textPreview.isPending ? 'Wird ausgewertet…' : 'Text auswerten'}
+              </button>
                 {textResult?.extraction && (
                   <button
                     type="button"
@@ -586,36 +627,6 @@ export function MentalTab() {
                   )}
                 </div>
               )}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-              <QuickChoiceGroup
-                title="Wie ist dein Kopf gerade?"
-                ariaPrefix="Kopf"
-                value={quickChoices.head}
-                options={HEAD_OPTIONS}
-                onChange={head => updateQuickChoices({ ...quickChoices, head })}
-              />
-              <QuickChoiceGroup
-                title="Wie viel Energie ist verfügbar?"
-                ariaPrefix="Energie"
-                value={quickChoices.energy}
-                options={ENERGY_OPTIONS}
-                onChange={energy => updateQuickChoices({ ...quickChoices, energy })}
-              />
-              <QuickChoiceGroup
-                title="Was zieht gerade mentale Energie?"
-                ariaPrefix="Druck"
-                value={quickChoices.pressure}
-                options={PRESSURE_OPTIONS}
-                onChange={pressure => updateQuickChoices({ ...quickChoices, pressure })}
-              />
-              <QuickChoiceGroup
-                title="Was brauchst du heute?"
-                ariaPrefix="Tagesbedarf"
-                value={quickChoices.need}
-                options={NEED_OPTIONS}
-                onChange={need => updateQuickChoices({ ...quickChoices, need })}
-              />
             </div>
             <div>
               <button
@@ -742,6 +753,16 @@ export function MentalTab() {
             >
               {checkin.isPending ? 'Speichern…' : 'Check-in senden'}
             </button>
+            {saveError && (
+              <InlineFeedback
+                title="Check-in speichern"
+                message={saveError}
+                tone="error"
+                actionLabel="Erneut versuchen"
+                onAction={() => void submitCheckin()}
+                actionPending={checkin.isPending}
+              />
+            )}
           </form>
         </div>
       )}

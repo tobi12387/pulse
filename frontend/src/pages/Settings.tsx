@@ -5,6 +5,7 @@ import {
   pulseKeys,
   useDataCoverage,
   useGarminCoverage,
+  useGarminSync,
   usePushSettings,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
@@ -97,15 +98,23 @@ export default function Settings() {
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [searchParams] = useSearchParams();
 
-  const { data: garminStatus, refetch } = useQuery<GarminStatus>({
+  const {
+    data: garminStatus,
+    refetch,
+    isLoading: garminStatusLoading,
+    isError: garminStatusError,
+  } = useQuery<GarminStatus>({
     queryKey: ['garmin-status'],
     queryFn: () => api.garmin.status() as Promise<GarminStatus>,
     refetchInterval: 30_000,
   });
 
   const qc = useQueryClient();
-  const { data: coverage30 } = useDataCoverage({ days: 30 });
-  const { data: garminCoverage } = useGarminCoverage(30);
+  const coverage30Query = useDataCoverage({ days: 30 });
+  const garminCoverageQuery = useGarminCoverage(30);
+  const { data: coverage30 } = coverage30Query;
+  const { data: garminCoverage } = garminCoverageQuery;
+  const garminSync = useGarminSync();
   const pushSettings = usePushSettings();
   const { data: pushPermission } = useQuery({
     queryKey: ['push-permission'],
@@ -125,9 +134,8 @@ export default function Settings() {
     setSyncing(true);
     setMessage(null);
     try {
-      await api.garmin.sync();
+      await garminSync.mutateAsync();
       await refetch();
-      await qc.invalidateQueries({ queryKey: ['pulse', 'garmin-coverage'] });
       setMessage({ text: 'Sync erfolgreich.', ok: true });
     } catch (err) {
       setMessage({ text: err instanceof Error ? err.message : 'Sync fehlgeschlagen.', ok: false });
@@ -168,6 +176,10 @@ export default function Settings() {
         garminStatus={garminStatus ?? null}
         garminBlocked={garminCoverage?.domains.some(domain => domain.status === 'blocked') ?? false}
         garminPartial={garminCoverage?.domains.some(domain => domain.status !== 'fresh') ?? false}
+        garminStatusLoading={garminStatusLoading}
+        garminStatusUnknown={garminStatusError || garminStatus?.syncStatus == null}
+        garminCoverageLoading={coverage30Query.isLoading || garminCoverageQuery.isLoading}
+        garminCoverageUnknown={coverage30Query.isError || garminCoverageQuery.isError}
         garminCoverageDays={coverage30 ? `${coverage30.summary.dailyMetricsDays}/${coverage30.range.days}` : null}
         pushConfigured={pushSettings.data?.configured ?? false}
         pushPermission={pushPermission ?? null}
@@ -383,6 +395,10 @@ function SettingsDiagnosticsMatrix({
   garminStatus,
   garminBlocked,
   garminPartial,
+  garminStatusLoading,
+  garminStatusUnknown,
+  garminCoverageLoading,
+  garminCoverageUnknown,
   garminCoverageDays,
   pushConfigured,
   pushPermission,
@@ -392,6 +408,10 @@ function SettingsDiagnosticsMatrix({
   garminStatus: GarminStatus | null;
   garminBlocked: boolean;
   garminPartial: boolean;
+  garminStatusLoading: boolean;
+  garminStatusUnknown: boolean;
+  garminCoverageLoading: boolean;
+  garminCoverageUnknown: boolean;
   garminCoverageDays: string | null;
   pushConfigured: boolean;
   pushPermission: PushPermissionState | null;
@@ -416,8 +436,14 @@ function SettingsDiagnosticsMatrix({
     : pushConfigured && pushSupported && pushPermission !== 'denied'
       ? 'var(--accent)'
       : 'var(--amber)';
-  const garminLabel = garminBlocked
+  const garminLoading = garminStatusLoading || garminCoverageLoading;
+  const garminUnknown = garminStatusUnknown || garminCoverageUnknown;
+  const garminLabel = garminLoading
+    ? 'Lädt'
+    : garminBlocked
     ? 'Blockiert'
+    : garminUnknown
+      ? 'Unbekannt'
     : garminStatus?.syncStatus === 'stale'
       ? 'Veraltet'
       : garminPartial
@@ -476,8 +502,12 @@ function SettingsDiagnosticsMatrix({
       label: 'Garmin',
       value: garminLabel,
       color: garminColor,
-      detail: garminBlocked
+      detail: garminLoading
+        ? 'Garmin-Status und Abdeckung werden geladen.'
+        : garminBlocked
         ? 'Garmin ist momentan begrenzt; prüfe Abdeckung und Backfill.'
+        : garminUnknown
+          ? 'Garmin-Status ist gerade nicht belastbar; prüfe die Verbindung oder lade erneut.'
         : garminCoverageDays
           ? `Tagesmetriken 30T: ${garminCoverageDays}.`
           : 'Garmin-Status wird geladen.',

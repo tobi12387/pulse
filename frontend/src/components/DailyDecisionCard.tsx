@@ -27,7 +27,10 @@ export function DailyDecisionCard({
   onPrompt?: () => void;
 }) {
   const color = priorityColor(decision.priority);
-  const isButton = Boolean(onActivate);
+  const promptIsPrimary = Boolean(onActivate && onPrompt && decision.targetPath.startsWith('/coach'));
+  const primaryAction = promptIsPrimary ? onPrompt : onActivate;
+  const showPromptAction = Boolean(onPrompt && !promptIsPrimary);
+  const isButton = Boolean(primaryAction);
   const Wrapper = isButton ? 'button' : 'div';
   const compact = density === 'compact';
 
@@ -44,7 +47,7 @@ export function DailyDecisionCard({
 
       <Wrapper
         type={isButton ? 'button' : undefined}
-        onClick={onActivate}
+        onClick={primaryAction}
         style={{
           width: '100%',
           padding: 0,
@@ -102,11 +105,11 @@ export function DailyDecisionCard({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: onActivate && onPrompt && !compact ? '1fr 1fr' : '1fr', gap: 8, marginTop: compact ? 10 : 12 }}>
-        {onActivate && (
+      <div style={{ display: 'grid', gridTemplateColumns: primaryAction && showPromptAction && !compact ? '1fr 1fr' : '1fr', gap: 8, marginTop: compact ? 10 : 12 }}>
+        {primaryAction && (
           <button
             type="button"
-            onClick={onActivate}
+            onClick={primaryAction}
             style={{
               minHeight: 40,
               padding: compact ? '8px 10px' : '9px 10px',
@@ -124,7 +127,7 @@ export function DailyDecisionCard({
             {decision.cta}
           </button>
         )}
-        {onPrompt && (
+        {showPromptAction && (
           <button
             type="button"
             onClick={onPrompt}
