@@ -8,6 +8,7 @@ const routes = [
   { path: '/', label: 'home', visibleText: 'READINESS' },
   { path: '/coach', label: 'coach', visibleText: 'TAGESBRIEFING' },
   { path: '/data', label: 'data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
+  { path: '/data?tab=mental', label: 'data-mental', visibleText: 'Quick Check-in' },
   { path: '/data?tab=analysen', label: 'data-analysen', visibleText: 'Analysen' },
   { path: '/plan', label: 'plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/settings', label: 'settings', visibleText: 'Settings' },
@@ -70,8 +71,8 @@ async function overflowSummary(page: Page) {
 test.describe('Route evidence screenshot pack', () => {
   test.skip(process.env.PULSE_ROUTE_EVIDENCE !== 'true', 'set PULSE_ROUTE_EVIDENCE=true to capture route screenshots');
 
-  test('captures six core routes with manifest metadata', async ({ page, baseURL }, testInfo) => {
-    await mockPulseApi(page);
+  test('captures core routes with manifest metadata', async ({ page, baseURL }, testInfo) => {
+    await mockPulseApi(page, { checkinToday: { checkin: null } });
     await seedAuth(page);
 
     const commit = currentCommit();

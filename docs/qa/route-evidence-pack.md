@@ -30,13 +30,14 @@ test-results/route-evidence/<date>-<commit>/<project>/
 - `/`
 - `/coach`
 - `/data`
+- `/data?tab=mental`
+- `/data?tab=analysen`
 - `/plan`
-- `/insights`
 - `/settings`
 
 Each project directory contains:
 
-- `01-home.png` through `06-settings.png`
+- `01-home.png` through `07-settings.png`
 - `manifest.json`
 - `README.md`
 

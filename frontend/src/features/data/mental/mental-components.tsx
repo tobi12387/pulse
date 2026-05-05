@@ -1,15 +1,175 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Skeleton } from '@/components/Skeleton';
 import { RangeControl } from '@/components/PulseChrome';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
-import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin } from '@/pulse/hooks';
+import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseHome } from '@/pulse/hooks';
 import { GarminDomainHint } from '@/features/data/coverage/coverage-components';
+import type { PulseHomeScreenData } from '@coaching-os/shared/pulse';
+import { MENTAL_CHECKIN_SUGGESTION_THRESHOLDS } from '@coaching-os/shared/pulse-thresholds';
 
 const RANGE_OPTS = [
   { value: 7, label: '7T' },
   { value: 30, label: '30T' },
   { value: 90, label: '90T' },
 ];
+
+type HeadChoice = 'easy' | 'middle' | 'hard';
+type EnergyChoice = 'easy' | 'middle' | 'hard';
+type PressureChoice = 'easy' | 'middle' | 'hard';
+type NeedChoice = 'activation' | 'structure' | 'rest';
+
+type QuickChoices = {
+  head: HeadChoice;
+  energy: EnergyChoice;
+  pressure: PressureChoice;
+  need: NeedChoice;
+};
+
+type CheckinForm = {
+  mood: number;
+  energy: number;
+  stress: number;
+  motivation: number;
+  notes: string;
+};
+
+type ChoiceOption<T extends string> = {
+  value: T;
+  label: string;
+  hint: string;
+};
+
+const DEFAULT_QUICK_CHOICES: QuickChoices = {
+  head: 'middle',
+  energy: 'middle',
+  pressure: 'middle',
+  need: 'structure',
+};
+
+const HEAD_OPTIONS: Array<ChoiceOption<HeadChoice>> = [
+  { value: 'easy', label: 'klar', hint: 'Gedanken sind geordnet.' },
+  { value: 'middle', label: 'gemischt', hint: 'Ein paar offene Fäden.' },
+  { value: 'hard', label: 'schwer', hint: 'Heute braucht der Kopf Schutz.' },
+];
+
+const ENERGY_OPTIONS: Array<ChoiceOption<EnergyChoice>> = [
+  { value: 'easy', label: 'bereit', hint: 'Genug Reserve für den Tag.' },
+  { value: 'middle', label: 'begrenzt', hint: 'Energie bewusst einteilen.' },
+  { value: 'hard', label: 'leer', hint: 'Heute klein und stabil halten.' },
+];
+
+const PRESSURE_OPTIONS: Array<ChoiceOption<PressureChoice>> = [
+  { value: 'easy', label: 'ruhig', hint: 'Druck ist gut steuerbar.' },
+  { value: 'middle', label: 'spürbar', hint: 'Ein klarer Rahmen hilft.' },
+  { value: 'hard', label: 'hoch', hint: 'Entlastung aktiv einplanen.' },
+];
+
+const NEED_OPTIONS: Array<ChoiceOption<NeedChoice>> = [
+  { value: 'activation', label: 'Aktivierung', hint: 'Etwas Schwung tut gut.' },
+  { value: 'structure', label: 'Struktur', hint: 'Der Tag braucht Leitplanken.' },
+  { value: 'rest', label: 'Ruhe', hint: 'Erholung hat Vorrang.' },
+];
+
+const NEED_TAGS: Record<NeedChoice, string> = {
+  activation: 'Bedarf: Aktivierung',
+  structure: 'Bedarf: Struktur',
+  rest: 'Bedarf: Ruhe',
+};
+
+const NEED_SCORE: Record<NeedChoice, number> = {
+  activation: 7,
+  structure: 5,
+  rest: 3,
+};
+
+function scoresFromQuickChoices(choices: QuickChoices): Omit<CheckinForm, 'notes'> {
+  return {
+    mood: choices.head === 'easy' ? 8 : choices.head === 'middle' ? 6 : 3,
+    energy: choices.energy === 'easy' ? 8 : choices.energy === 'middle' ? 5 : 2,
+    stress: choices.pressure === 'easy' ? 2 : choices.pressure === 'middle' ? 5 : 8,
+    motivation: NEED_SCORE[choices.need],
+  };
+}
+
+function buildInitialForm(choices: QuickChoices = DEFAULT_QUICK_CHOICES): CheckinForm {
+  return { ...scoresFromQuickChoices(choices), notes: '' };
+}
+
+function mergeNeedTag(notes: string, need: NeedChoice): string {
+  const trimmed = notes.trim();
+  const tag = NEED_TAGS[need];
+  if (trimmed.includes(tag)) return trimmed;
+  return trimmed.length > 0 ? `${trimmed}\n${tag}` : tag;
+}
+
+function buildSuggestion(home?: PulseHomeScreenData) {
+  const metrics = home?.todayMetrics;
+  const readiness = home?.readiness;
+  const sleepScore = metrics?.sleepScore ?? null;
+  const sleepHours = metrics?.sleepHours ?? null;
+  const bodyBattery = metrics?.bodyBatteryMax ?? metrics?.bodyBatteryAtWake ?? null;
+  const stressAvg = metrics?.stressAvg ?? null;
+  const hrvStatus = metrics?.hrvStatus ?? null;
+  const readinessScore = readiness?.score ?? null;
+  const thresholds = MENTAL_CHECKIN_SUGGESTION_THRESHOLDS;
+
+  const sleepHard =
+    (sleepScore != null && sleepScore < thresholds.sleepScoreHardBelow) ||
+    (sleepHours != null && sleepHours < thresholds.sleepHoursHardBelow);
+  const sleepGood =
+    (sleepScore != null && sleepScore >= thresholds.sleepScoreGoodAtLeast) ||
+    (sleepHours != null && sleepHours >= thresholds.sleepHoursGoodAtLeast);
+  const batteryHard = bodyBattery != null && bodyBattery < thresholds.bodyBatteryHardBelow;
+  const batteryGood = bodyBattery != null && bodyBattery >= thresholds.bodyBatteryGoodAtLeast;
+  const stressHard = stressAvg != null && stressAvg >= thresholds.stressHardAtLeast;
+  const stressGood = stressAvg != null && stressAvg <= thresholds.stressGoodAtMost;
+  const readinessHard = readinessScore != null && readinessScore < thresholds.readinessHardBelow;
+  const readinessGood = readinessScore != null && readinessScore >= thresholds.readinessGoodAtLeast;
+
+  const head: HeadChoice =
+    stressHard || sleepHard || hrvStatus === 'poor' || hrvStatus === 'below_normal'
+      ? 'hard'
+      : sleepGood && stressGood
+        ? 'easy'
+        : 'middle';
+  const energy: EnergyChoice =
+    batteryHard || sleepHard || readinessHard
+      ? 'hard'
+      : batteryGood && sleepGood && readinessGood
+        ? 'easy'
+        : 'middle';
+  const pressure: PressureChoice = stressHard ? 'hard' : stressGood ? 'easy' : 'middle';
+  const need: NeedChoice =
+    head === 'hard' || energy === 'hard' || pressure === 'hard'
+      ? 'rest'
+      : head === 'middle' || energy === 'middle' || pressure === 'middle'
+        ? 'structure'
+        : 'activation';
+
+  const factors = [
+    sleepScore != null
+      ? `Schlafscore ${sleepScore}`
+      : sleepHours != null
+        ? `Schlaf ${sleepHours.toFixed(1)} h`
+        : 'Schlafsignal offen',
+    bodyBattery != null ? `Body Battery ${bodyBattery}` : 'Body Battery offen',
+    stressAvg != null ? `Garmin Stress ${stressAvg}` : 'Stresssignal offen',
+    readinessScore != null ? `Readiness ${readinessScore}` : 'Readiness offen',
+  ];
+
+  const tone =
+    need === 'rest'
+      ? 'Heute eher schützen: niedrigere Reizlast, klare Grenze, kurze Reflexion.'
+      : need === 'structure'
+        ? 'Heute stabil halten: nicht überdenken, sondern mit einem klaren Rahmen starten.'
+        : 'Heute ist Aktivierung plausibel: ein kleiner Startimpuls reicht.';
+
+  return {
+    choices: { head, energy, pressure, need },
+    factors,
+    tone,
+  };
+}
 
 function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
   label: string;
@@ -44,14 +204,90 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
   );
 }
 
+function QuickChoiceGroup<T extends string>({
+  title,
+  ariaPrefix,
+  value,
+  options,
+  onChange,
+}: {
+  title: string;
+  ariaPrefix: string;
+  value: T;
+  options: Array<ChoiceOption<T>>;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{title}</p>
+      <div
+        role="radiogroup"
+        aria-label={title}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}
+      >
+        {options.map(option => {
+          const selected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-label={`${ariaPrefix}: ${option.label}`}
+              aria-checked={selected}
+              onClick={() => onChange(option.value)}
+              style={{
+                minHeight: 58,
+                padding: '8px 7px',
+                background: selected ? 'rgba(96,165,250,0.16)' : 'var(--surface-2)',
+                border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 5,
+                color: selected ? 'var(--text)' : 'var(--text-2)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'block', fontSize: 12, fontWeight: 700, lineHeight: 1.15 }}>
+                {option.label}
+              </span>
+              <span style={{ display: 'block', marginTop: 4, fontSize: 10.5, lineHeight: 1.25, color: 'var(--text-3)' }}>
+                {option.hint}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function MentalTab() {
   const [days, setDays] = useState(30);
   const { data: today } = useCheckinToday();
   const { data: guidance } = useCheckinGuidance();
+  const { data: home } = usePulseHome();
   const checkin = usePulseCheckin();
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
-  const [form, setForm] = useState({ mood: 7, energy: 7, stress: 3, motivation: 7, notes: '' });
+  const suggestion = useMemo(() => buildSuggestion(home), [home]);
+  const [manualQuickChoices, setManualQuickChoices] = useState<QuickChoices | null>(null);
+  const [fineTuneOpen, setFineTuneOpen] = useState(false);
+  const [fineTuned, setFineTuned] = useState(false);
+  const [form, setForm] = useState<CheckinForm>(() => buildInitialForm());
   const [submitted, setSubmitted] = useState(false);
+  const quickChoices = manualQuickChoices ?? suggestion.choices;
+  const quickScores = scoresFromQuickChoices(quickChoices);
+  const displayedScores = fineTuned ? form : { ...form, ...quickScores };
+
+  function updateQuickChoices(next: QuickChoices) {
+    setManualQuickChoices(next);
+    if (!fineTuned) {
+      setForm(f => ({ ...f, ...scoresFromQuickChoices(next) }));
+    }
+  }
+
+  function updateFineTune(score: keyof Omit<CheckinForm, 'notes'>, value: number) {
+    setFineTuned(true);
+    setForm(f => ({ ...f, ...displayedScores, [score]: value }));
+  }
 
   function appendNote(label: string) {
     setForm(f => {
@@ -62,7 +298,9 @@ export function MentalTab() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    await checkin.mutateAsync({ ...form, notes: form.notes || undefined });
+    const notes = mergeNeedTag(form.notes, quickChoices.need);
+    const scores = fineTuned ? displayedScores : quickScores;
+    await checkin.mutateAsync({ ...scores, notes: notes || undefined });
     setSubmitted(true);
   }
 
@@ -101,29 +339,108 @@ export function MentalTab() {
       ) : (
         <div className="card">
           <div style={{ marginBottom: 14 }}>
-            <div className="label-mono" style={{ marginBottom: 6 }}>Geführter Daily Check-in</div>
+            <div className="label-mono" style={{ marginBottom: 6 }}>Quick Check-in</div>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              Kurzer Lageabgleich für Körper und Kopf. Die Werte bleiben kompakt, die Notiz hält fest, was mental wirklich zählt.
+              Kurzer Lageabgleich für Körper und Kopf. Du wählst einfache Zustände; Pulse speichert daraus die vertrauten Trendwerte.
             </p>
           </div>
           <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{
+              padding: '10px 12px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+            }}>
+              <div className="label-mono" style={{ marginBottom: 6 }}>Pulse Vorschlag</div>
+              <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+                {suggestion.tone}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {suggestion.factors.map(factor => (
+                  <span
+                    key={factor}
+                    style={{
+                      padding: '4px 7px',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      fontSize: 10.5,
+                      color: 'var(--text-2)',
+                    }}
+                  >
+                    {factor}
+                  </span>
+                ))}
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-              <div>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Wie ist dein Kopf gerade?</p>
-                <SegmentedBar label="Stimmung" value={form.mood} onChange={(v) => setForm(f => ({ ...f, mood: v }))} color="var(--accent)" />
-              </div>
-              <div>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Wie viel Energie ist verfügbar?</p>
-                <SegmentedBar label="Energie" value={form.energy} onChange={(v) => setForm(f => ({ ...f, energy: v }))} color="var(--green)" />
-              </div>
-              <div>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Was zieht gerade mentale Energie?</p>
-                <SegmentedBar label="Stress" value={form.stress} onChange={(v) => setForm(f => ({ ...f, stress: v }))} color="var(--amber)" />
-              </div>
-              <div>
-                <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Was wäre heute genug?</p>
-                <SegmentedBar label="Motivation" value={form.motivation} onChange={(v) => setForm(f => ({ ...f, motivation: v }))} color="var(--blue)" />
-              </div>
+              <QuickChoiceGroup
+                title="Wie ist dein Kopf gerade?"
+                ariaPrefix="Kopf"
+                value={quickChoices.head}
+                options={HEAD_OPTIONS}
+                onChange={head => updateQuickChoices({ ...quickChoices, head })}
+              />
+              <QuickChoiceGroup
+                title="Wie viel Energie ist verfügbar?"
+                ariaPrefix="Energie"
+                value={quickChoices.energy}
+                options={ENERGY_OPTIONS}
+                onChange={energy => updateQuickChoices({ ...quickChoices, energy })}
+              />
+              <QuickChoiceGroup
+                title="Was zieht gerade mentale Energie?"
+                ariaPrefix="Druck"
+                value={quickChoices.pressure}
+                options={PRESSURE_OPTIONS}
+                onChange={pressure => updateQuickChoices({ ...quickChoices, pressure })}
+              />
+              <QuickChoiceGroup
+                title="Was brauchst du heute?"
+                ariaPrefix="Tagesbedarf"
+                value={quickChoices.need}
+                options={NEED_OPTIONS}
+                onChange={need => updateQuickChoices({ ...quickChoices, need })}
+              />
+            </div>
+            <div>
+              <button
+                type="button"
+                aria-expanded={fineTuneOpen}
+                onClick={() => setFineTuneOpen(open => !open)}
+                style={{
+                  minHeight: 40,
+                  padding: '7px 10px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  color: 'var(--text-2)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                Feinjustieren
+              </button>
+              {fineTuneOpen && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: 14,
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                }}>
+                  <SegmentedBar label="Stimmung" value={displayedScores.mood} onChange={(v) => updateFineTune('mood', v)} color="var(--accent)" />
+                  <SegmentedBar label="Energie" value={displayedScores.energy} onChange={(v) => updateFineTune('energy', v)} color="var(--green)" />
+                  <SegmentedBar label="Stress" value={displayedScores.stress} onChange={(v) => updateFineTune('stress', v)} color="var(--amber)" />
+                  <SegmentedBar label="Motivation" value={displayedScores.motivation} onChange={(v) => updateFineTune('motivation', v)} color="var(--blue)" />
+                </div>
+              )}
             </div>
             <div style={{
               display: 'grid',

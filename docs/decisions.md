@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-04 — Quick Check-in bleibt ein Frontend-Adapter
+
+- **Decision:** Der erste Mental-Check-in-Umsetzungsslice ersetzt die 1-10-Pflichtbewertung in Data > Mental durch Quick Choices, mapped diese aber clientseitig auf die bestehende numerische `POST /api/pulse/checkin`-Nutzlast. Garmin-/Recovery-Schwellen fuer die Vorauswahl liegen als Shared Threshold Contract in `@coaching-os/shared/pulse-thresholds`.
+- **Why:** Tobi braucht weniger kognitive Last im taeglichen Check-in, waehrend Trends, Coach-Kontext und Backend-Vertrag stabil bleiben sollen. Ein Frontend-Adapter liefert schnellen iPhone/PWA-Nutzen ohne Migration oder neue API-Felder; die Shared Thresholds verhindern lokale Drift in der Komponente.
+- **Alternatives:** Neue DB-Felder fuer Choice-Metadaten sofort einfuehren (groesserer Backend-Scope ohne ersten UX-Beweis); nur kosmetisch groessere 1-10-Regler bauen (loest das Entscheidungsproblem nicht); Schwellenwerte direkt in der React-Komponente halten (driftet gegen Pulse-Regeln); Voice zuerst bauen (mehr Fehlermodi und schwerer testbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Habit Tracker ist kein globales No-Go mehr
 
 - **Decision:** Habit-/Routine-Tracking wird aus den globalen Pulse-No-Gos entfernt. Das oeffnet den Scope fuer spaetere Bewertung, priorisiert oder implementiert aber noch keinen Habit Tracker.

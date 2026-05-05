@@ -80,6 +80,32 @@ export const HRV_STATUS_MAP: Record<string, { score: number; label: string; colo
   poor:         { score: 25,  label: 'schwach',                color: 'rose' },
 };
 
+export interface MentalCheckinSuggestionThresholds {
+  sleepScoreHardBelow: number;
+  sleepScoreGoodAtLeast: number;
+  sleepHoursHardBelow: number;
+  sleepHoursGoodAtLeast: number;
+  bodyBatteryHardBelow: number;
+  bodyBatteryGoodAtLeast: number;
+  stressHardAtLeast: number;
+  stressGoodAtMost: number;
+  readinessHardBelow: number;
+  readinessGoodAtLeast: number;
+}
+
+export const MENTAL_CHECKIN_SUGGESTION_THRESHOLDS: MentalCheckinSuggestionThresholds = {
+  sleepScoreHardBelow: 65,
+  sleepScoreGoodAtLeast: 80,
+  sleepHoursHardBelow: 6.25,
+  sleepHoursGoodAtLeast: 7.25,
+  bodyBatteryHardBelow: 55,
+  bodyBatteryGoodAtLeast: 72,
+  stressHardAtLeast: 45,
+  stressGoodAtMost: 28,
+  readinessHardBelow: 60,
+  readinessGoodAtLeast: 75,
+};
+
 export const RPE_BUCKETS: Bucket[] = [
   {
     min: 8,
