@@ -33,10 +33,12 @@ test('Home renders exactly one main daily decision card', async ({ page }) => {
 test('Home coach-target daily decision uses one prepared-prompt action', async ({ page }) => {
   await page.goto('/');
 
+  await expect(page.getByRole('navigation').locator('a[href="/coach"]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Coach fragen' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Gespräch damit starten' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Coach fragen' }).click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
+  await expect(page.getByRole('navigation').locator('a[href="/coach"]')).toHaveCount(0);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
 });

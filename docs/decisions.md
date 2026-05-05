@@ -18,6 +18,32 @@
 
 ---
 
+## 2026-05-05 — Mental Check-in nutzt qualitative Lagekarten vor Zahlen
+
+- **Decision:** Data > Mental startet mit drei qualitativen Lagekarten (`Stabil starten`, `Dosiert bleiben`, `Schutzmodus`) fuer Mental Health und Mental Fitness. Die Karten mappen weiterhin clientseitig auf den bestehenden numerischen Check-in-Vertrag; Feinjustierung bleibt optional.
+- **Why:** Tobi empfindet die direkte Werteingabe als zu schwer. Qualitative Presets reduzieren kognitive Last im Alltag, halten aber Trends, Coach-Kontext und bestehende API kompatibel.
+- **Alternatives:** Neue Backend-Felder fuer qualitative Labels einfuehren (groesserer Scope ohne Noetigung); nur die bestehenden Quick Choices behalten (immer noch zu kleinteilig fuer den ersten Schritt); Zahlen komplett entfernen (bricht bestehende Auswertung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-05 — Garmin-Repeats mit 0 Iterationen gelten als reparaturbeduerftig
+
+- **Decision:** Garmin-Workout-Reparatur erkennt Repeat-Gruppen nicht nur bei `null`, sondern auch bei `0` oder negativen `numberOfIterations`/`endConditionValue` als defekt.
+- **Why:** Garmin kann kaputte Wiederholungen als 0 anzeigen oder speichern. Ohne diese Erkennung bleiben geplante Workout-Vorlagen trotz Sync sichtbar falsch, obwohl sie neu hochgeladen werden sollten.
+- **Alternatives:** Nur neue Exporte anpassen (hilft nicht bei bereits defekten Vorlagen); Live-Garmin-Sync als Test nutzen (zu riskant und nicht deterministisch); alle Repeat-Workouts immer neu hochladen (mehr API- und Kalender-Rauschen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-05 — Coach-Tab-Entfernung wird als Navigation-Regression gesichert
+
+- **Decision:** Die Primary Navigation wird in Smoke- und Daily-Flow-E2E-Tests explizit auf Home, Data, Plan und Settings begrenzt; `/coach` bleibt deep-link-faehig, darf aber nicht als sichtbarer Haupttab zurueckkehren.
+- **Why:** Der sichtbare Coach-Tab war bereits entfernt, aber die Tests waren noch zu locker. Eine Regression wuerde die vereinfachte iPhone/PWA-Navigation wieder aufblaehen.
+- **Alternatives:** Nur manuell kontrollieren (zu leicht zu uebersehen); `/coach` komplett entfernen (bricht bestehende Prompt-, Push- und History-Flows); Navigationstest global auf jeden Coach-Text setzen (falsch positiv bei Settings/Content).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — UI/UX Foundation reduziert Daily-Flow-Dopplung
 
 - **Decision:** Home behaelt die volle Tagesentscheidung, Plan rendert keine generische `DailyDecisionCard` mehr und Coach-Zielentscheidungen zeigen in Home nur noch eine vorbereitete Prompt-Aktion statt zwei Coach-Buttons.

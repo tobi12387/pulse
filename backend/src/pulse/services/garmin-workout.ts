@@ -196,7 +196,9 @@ export function garminWorkoutHasBrokenRepeatIterations(workout: unknown): boolea
       if (repeat.type !== 'RepeatGroupDTO') return false;
       return (
         repeat.numberOfIterations == null ||
+        repeat.numberOfIterations <= 0 ||
         repeat.endConditionValue == null ||
+        repeat.endConditionValue <= 0 ||
         repeat.endCondition?.conditionTypeKey !== 'iterations'
       );
     });

@@ -19,6 +19,7 @@ type HeadChoice = 'easy' | 'middle' | 'hard';
 type EnergyChoice = 'easy' | 'middle' | 'hard';
 type PressureChoice = 'easy' | 'middle' | 'hard';
 type NeedChoice = 'activation' | 'structure' | 'rest';
+type StateProfile = 'stable' | 'steady' | 'protect';
 
 type QuickChoices = {
   head: HeadChoice;
@@ -42,6 +43,15 @@ type ChoiceOption<T extends string> = {
   label: string;
   hint: string;
 };
+
+type StateProfileOption = ChoiceOption<StateProfile> & {
+  health: string;
+  fitness: string;
+  choices: QuickChoices;
+  notes: string[];
+};
+
+const CHECKIN_NOTES_MAX_LENGTH = 500;
 
 const DEFAULT_QUICK_CHOICES: QuickChoices = {
   head: 'middle',
@@ -86,6 +96,42 @@ const NEED_SCORE: Record<NeedChoice, number> = {
   rest: 3,
 };
 
+const STATE_PROFILES: Record<StateProfile, StateProfileOption> = {
+  stable: {
+    value: 'stable',
+    label: 'Stabil starten',
+    hint: 'Mental Health ruhig, Mental Fitness bereit. Einfach speichern reicht.',
+    health: 'stabil',
+    fitness: 'bereit',
+    choices: { head: 'easy', energy: 'easy', pressure: 'easy', need: 'activation' },
+    notes: ['Mental Health: stabil', 'Mental Fitness: bereit'],
+  },
+  steady: {
+    value: 'steady',
+    label: 'Dosiert bleiben',
+    hint: 'Etwas Reibung, aber steuerbar. Der Tag braucht Leitplanken.',
+    health: 'sensibel',
+    fitness: 'dosieren',
+    choices: { head: 'middle', energy: 'middle', pressure: 'middle', need: 'structure' },
+    notes: ['Mental Health: sensibel', 'Mental Fitness: dosieren'],
+  },
+  protect: {
+    value: 'protect',
+    label: 'Schutzmodus',
+    hint: 'Kopf und Reserven schützen. Heute kleiner planen.',
+    health: 'schützen',
+    fitness: 'schonen',
+    choices: { head: 'hard', energy: 'hard', pressure: 'hard', need: 'rest' },
+    notes: ['Mental Health: schützen', 'Mental Fitness: schonen'],
+  },
+};
+
+const STATE_PROFILE_OPTIONS: StateProfileOption[] = [
+  STATE_PROFILES.stable,
+  STATE_PROFILES.steady,
+  STATE_PROFILES.protect,
+];
+
 const SCORE_LABELS: Record<CheckinScoreKey, string> = {
   mood: 'Stimmung',
   energy: 'Energie',
@@ -106,11 +152,43 @@ function buildInitialForm(choices: QuickChoices = DEFAULT_QUICK_CHOICES): Checki
   return { ...scoresFromQuickChoices(choices), notes: '' };
 }
 
-function mergeNeedTag(notes: string, need: NeedChoice): string {
-  const trimmed = notes.trim();
-  const tag = NEED_TAGS[need];
-  if (trimmed.includes(tag)) return trimmed;
-  return trimmed.length > 0 ? `${trimmed}\n${tag}` : tag;
+function appendUniqueLine(notes: string, line: string): string {
+  const trimmed = notes.trim().slice(0, CHECKIN_NOTES_MAX_LENGTH);
+  if (trimmed.includes(line)) return trimmed;
+  const next = trimmed.length > 0 ? `${trimmed}\n${line}` : line;
+  return next.length <= CHECKIN_NOTES_MAX_LENGTH ? next : trimmed;
+}
+
+function stateProfileFromChoices(choices: QuickChoices): StateProfile {
+  if (choices.head === 'hard' || choices.energy === 'hard' || choices.pressure === 'hard' || choices.need === 'rest') {
+    return 'protect';
+  }
+  if (choices.head === 'middle' || choices.energy === 'middle' || choices.pressure === 'middle' || choices.need === 'structure') {
+    return 'steady';
+  }
+  return 'stable';
+}
+
+function stateProfileFromScores(scores: Omit<CheckinForm, 'notes'>): StateProfile {
+  if (scores.mood <= 4 || scores.energy <= 3 || scores.stress >= 7 || scores.motivation <= 3) {
+    return 'protect';
+  }
+  if (scores.mood <= 6 || scores.energy <= 5 || scores.stress >= 5 || scores.motivation <= 6) {
+    return 'steady';
+  }
+  return 'stable';
+}
+
+function needFromMotivation(motivation: number): NeedChoice {
+  if (motivation <= 3) return 'rest';
+  if (motivation <= 6) return 'structure';
+  return 'activation';
+}
+
+function buildCheckinNotes(notes: string, scores: Omit<CheckinForm, 'notes'>): string {
+  const profile = STATE_PROFILES[stateProfileFromScores(scores)];
+  const withNeed = appendUniqueLine(notes, NEED_TAGS[needFromMotivation(scores.motivation)]);
+  return profile.notes.reduce((nextNotes, line) => appendUniqueLine(nextNotes, line), withNeed);
 }
 
 function buildSuggestion(home?: PulseHomeScreenData) {
@@ -220,6 +298,81 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
   );
 }
 
+function StateProfileGroup({
+  value,
+  onChange,
+}: {
+  value: StateProfile;
+  onChange: (value: StateProfile) => void;
+}) {
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text)', fontWeight: 700 }}>Wie ist deine mentale Lage?</p>
+        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Keine Zahl nötig</span>
+      </div>
+      <div
+        role="radiogroup"
+        aria-label="Mentale Lage"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}
+      >
+        {STATE_PROFILE_OPTIONS.map(option => {
+          const selected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-label={`Mentale Lage: ${option.label}`}
+              aria-checked={selected}
+              onClick={() => onChange(option.value)}
+              style={{
+                minHeight: 88,
+                padding: '10px 11px',
+                background: selected ? 'rgba(96,165,250,0.15)' : 'var(--surface-2)',
+                border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 6,
+                color: selected ? 'var(--text)' : 'var(--text-2)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>
+                {option.label}
+              </span>
+              <span style={{ display: 'block', marginTop: 6, fontSize: 11, lineHeight: 1.35, color: 'var(--text-3)' }}>
+                {option.hint}
+              </span>
+              <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 9 }}>
+                <span style={{
+                  padding: '3px 6px',
+                  borderRadius: 4,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-2)',
+                  fontSize: 10.5,
+                }}>
+                  Mental Health: {option.health}
+                </span>
+                <span style={{
+                  padding: '3px 6px',
+                  borderRadius: 4,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-2)',
+                  fontSize: 10.5,
+                }}>
+                  Mental Fitness: {option.fitness}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function QuickChoiceGroup<T extends string>({
   title,
   ariaPrefix,
@@ -297,6 +450,15 @@ export function MentalTab() {
   const quickChoices = manualQuickChoices ?? suggestion.choices;
   const quickScores = scoresFromQuickChoices(quickChoices);
   const displayedScores = fineTuned ? form : { ...form, ...quickScores };
+  const stateProfile = fineTuned ? stateProfileFromScores(displayedScores) : stateProfileFromChoices(quickChoices);
+  const stateProfileDetails = STATE_PROFILES[stateProfile];
+
+  function updateStateProfile(value: StateProfile) {
+    const nextChoices = STATE_PROFILES[value].choices;
+    setManualQuickChoices(nextChoices);
+    setFineTuned(false);
+    setForm(f => ({ ...f, ...scoresFromQuickChoices(nextChoices) }));
+  }
 
   function updateQuickChoices(next: QuickChoices) {
     setManualQuickChoices(next);
@@ -313,7 +475,7 @@ export function MentalTab() {
   function appendNote(label: string) {
     setForm(f => {
       const next = f.notes.trim().length > 0 ? `${f.notes.trim()}\n${label}` : label;
-      return { ...f, notes: next };
+      return { ...f, notes: next.slice(0, CHECKIN_NOTES_MAX_LENGTH) };
     });
   }
 
@@ -324,8 +486,8 @@ export function MentalTab() {
   }
 
   async function submitCheckin() {
-    const notes = mergeNeedTag(form.notes, quickChoices.need);
     const scores = fineTuned ? displayedScores : quickScores;
+    const notes = buildCheckinNotes(form.notes, scores);
     setSaveError(null);
     try {
       await checkin.mutateAsync({ ...scores, notes: notes || undefined });
@@ -404,10 +566,31 @@ export function MentalTab() {
           <div style={{ marginBottom: 14 }}>
             <div className="label-mono" style={{ marginBottom: 6 }}>Quick Check-in</div>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              Kurzer Lageabgleich für Körper und Kopf. Du wählst einfache Zustände; Pulse speichert daraus die vertrauten Trendwerte.
+              Kurzer Lageabgleich für Mental Health und Mental Fitness. Starte mit einer menschlichen Beschreibung; Pulse speichert daraus die vertrauten Trendwerte.
             </p>
           </div>
           <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <StateProfileGroup value={stateProfile} onChange={updateStateProfile} />
+            <div
+              data-testid="mental-derived-summary"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+                alignItems: 'center',
+                padding: '9px 10px',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 5,
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Keine Zahl nötig
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-2)' }}>Mental Health: {stateProfileDetails.health}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-2)' }}>Mental Fitness: {stateProfileDetails.fitness}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Feinjustieren bleibt optional.</span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
               <QuickChoiceGroup
                 title="Wie ist dein Kopf gerade?"
@@ -720,8 +903,10 @@ export function MentalTab() {
               ))}
             </div>
             <textarea
+              aria-label="Mentale Notizen"
               value={form.notes}
-              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value.slice(0, CHECKIN_NOTES_MAX_LENGTH) }))}
+              maxLength={CHECKIN_NOTES_MAX_LENGTH}
               rows={4}
               placeholder="Was ist mental gerade wichtig? Was belastet, was schützt dich heute, und was wäre ein guter kleiner Abschluss?"
               style={{
