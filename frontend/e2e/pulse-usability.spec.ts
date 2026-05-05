@@ -463,6 +463,40 @@ test('Coach does not treat a future workout as today training', async ({ page })
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
 });
 
+test('Coach uses today mental check-in as planning context instead of asking again', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: { id: 'checkin-today', date: '2026-05-01' } },
+    checkinHistory: {
+      checkins: [{
+        id: 'checkin-today',
+        date: '2026-05-01',
+        mood: 3,
+        energy: 2,
+        stress: 8,
+        motivation: 3,
+      }],
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/coach');
+
+  const summary = page.getByTestId('coach-mental-context-summary');
+  await expect(summary.getByText('MENTAL HEUTE')).toBeVisible();
+  await expect(summary.getByText('Schützen')).toBeVisible();
+  await expect(summary.getByText('Stimmung 3/10 · Energie 2/10 · Stress 8/10')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mit Check-in planen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Führe mich mit kurzen Fragen durch Stimmung, Energie, Stress, Motivation und mentale Belastung.' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Mit Check-in planen' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Schützen/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Stimmung 3\/10/);
+  expect(coachSends).toBe(0);
+});
+
 test('Data mental check-in uses quick choices with guided context', async ({ page }) => {
   let submitted: unknown = null;
   await mockPulseApi(page, {

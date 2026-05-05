@@ -38,6 +38,7 @@ type MockPulseApiOptions = {
   pushSettings?: unknown;
   healthState?: unknown;
   checkinToday?: unknown;
+  checkinHistory?: unknown;
   checkinGuidance?: unknown;
   onCheckinSubmit?: (body: unknown) => void;
   textCheckinResult?: unknown | ((body: unknown) => unknown);
@@ -684,6 +685,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
+    if (url.pathname === '/api/pulse/checkin/history' && options.checkinHistory) return json(route, options.checkinHistory);
     if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
     if (url.pathname === '/api/pulse/checkin/text' && request.method() === 'POST') {
       const body = request.postDataJSON();

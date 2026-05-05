@@ -7,6 +7,8 @@ import {
   useCoachHistory,
   useCoachSend,
   useCheckinGuidance,
+  useCheckinHistory,
+  useCheckinToday,
   useDailyDecisionQuality,
   useDailyOutcomeLearning,
   usePulseBriefing,
@@ -216,6 +218,14 @@ type FailedSend = {
   error: string;
 };
 
+type MentalCheckinSummary = {
+  date: string;
+  mood: number;
+  energy: number;
+  stress: number;
+  motivation: number;
+};
+
 function QuickPrompts({
   groups,
   onSelect,
@@ -374,6 +384,87 @@ function DailyDecisionQualityContext({ quality, onPrompt }: {
   );
 }
 
+function mentalSummaryLabel(checkin: MentalCheckinSummary): string {
+  if (checkin.stress >= 7 || checkin.energy <= 3 || checkin.mood <= 4) return 'Schützen';
+  if (checkin.stress <= 3 && checkin.energy >= 7 && checkin.mood >= 7) return 'Stabil';
+  return 'Gemischt';
+}
+
+function mentalSummaryTone(checkin: MentalCheckinSummary): string {
+  const label = mentalSummaryLabel(checkin);
+  if (label === 'Schützen') return 'Heute Grenzen klein halten und Reizlast aktiv senken.';
+  if (label === 'Stabil') return 'Heute ist mentale Reserve da; trotzdem sauber dosieren.';
+  return 'Heute hilft ein klarer Rahmen statt noch mehr Optionen.';
+}
+
+function mentalSummaryPrompt(checkin: MentalCheckinSummary): string {
+  const label = mentalSummaryLabel(checkin);
+  return `Plane den heutigen Tag mit meinem Mental Check-in "${label}": Stimmung ${checkin.mood}/10, Energie ${checkin.energy}/10, Stress ${checkin.stress}/10, Motivation ${checkin.motivation}/10. Was sollte ich beim Training, bei Grenzen und beim Tagesabschluss konkret beachten?`;
+}
+
+function MentalContextSummary({
+  checkin,
+  onPrompt,
+}: {
+  checkin: MentalCheckinSummary;
+  onPrompt: (prompt: string) => void;
+}) {
+  const label = mentalSummaryLabel(checkin);
+  const tone = mentalSummaryTone(checkin);
+
+  return (
+    <div
+      data-testid="coach-mental-context-summary"
+      style={{
+        marginTop: 10,
+        padding: '10px 11px',
+        background: 'var(--surface-2)',
+        border: '1px solid rgba(94,230,207,0.2)',
+        borderRadius: 5,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 7,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          MENTAL HEUTE
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: label === 'Schützen' ? 'var(--amber)' : 'var(--green)' }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+        Stimmung {checkin.mood}/10 · Energie {checkin.energy}/10 · Stress {checkin.stress}/10 · Motivation {checkin.motivation}/10
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.4 }}>
+        {tone}
+      </div>
+      <button
+        type="button"
+        onClick={() => onPrompt(mentalSummaryPrompt(checkin))}
+        style={{
+          width: '100%',
+          minHeight: 38,
+          padding: '8px 9px',
+          background: 'rgba(94,230,207,0.12)',
+          border: '1px solid rgba(94,230,207,0.28)',
+          borderRadius: 5,
+          color: 'var(--accent)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        Mit Check-in planen
+      </button>
+    </div>
+  );
+}
+
 function DailyBriefingGuide({
   home,
   actions,
@@ -385,6 +476,7 @@ function DailyBriefingGuide({
   briefingLoading,
   compact = false,
   primaryQuestion,
+  mentalCheckin,
   onPrompt,
 }: {
   home: ReturnType<typeof usePulseHome>['data'];
@@ -397,6 +489,7 @@ function DailyBriefingGuide({
   briefingLoading: boolean;
   compact?: boolean;
   primaryQuestion?: { label: string; rationale: string } | null;
+  mentalCheckin?: MentalCheckinSummary | null;
   onPrompt: (prompt: string) => void;
 }) {
   const readiness = home?.readiness;
@@ -451,14 +544,15 @@ function DailyBriefingGuide({
               Mental
             </span>
             <span style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
-              {primaryQuestion ? 'Geführte Frage bereit' : 'Mentale Lage kurz prüfen'}
+              {mentalCheckin ? 'Check-in gespeichert' : primaryQuestion ? 'Geführte Frage bereit' : 'Mentale Lage kurz prüfen'}
             </span>
             <span style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
-              {mentalCue}
+              {mentalCheckin ? `${mentalSummaryLabel(mentalCheckin)}: ${mentalSummaryTone(mentalCheckin)}` : mentalCue}
             </span>
           </div>
         </div>
-        {primaryQuestion && (
+        {mentalCheckin && <MentalContextSummary checkin={mentalCheckin} onPrompt={onPrompt} />}
+        {!mentalCheckin && primaryQuestion && (
           <button
             type="button"
             onClick={() => onPrompt(primaryQuestion.label)}
@@ -567,6 +661,8 @@ export default function Coach() {
   const { data: qualityData } = useDailyDecisionQuality(14);
   const { data: briefingData, isLoading: briefingLoading } = usePulseBriefing();
   const { data: checkinGuidance } = useCheckinGuidance();
+  const { data: checkinToday } = useCheckinToday();
+  const { data: checkinHistory } = useCheckinHistory(7);
   const m = home?.todayMetrics;
 
   const { data: historyData, isLoading } = useCoachHistory();
@@ -576,6 +672,10 @@ export default function Coach() {
   const hasMessages = (historyData?.messages.length ?? 0) > 0;
   const nextWorkout = home?.nextWorkout;
   const todayWorkout = nextWorkout?.plannedDate === home?.date ? nextWorkout : null;
+  const todayCheckinDate = checkinToday?.checkin?.date ?? home?.date ?? null;
+  const todayMentalCheckin = todayCheckinDate
+    ? checkinHistory?.checkins.find(checkin => checkin.date === todayCheckinDate) ?? null
+    : null;
   const latestOutcome = outcomeData?.items[0] ?? null;
   const decisionQuality = qualityData ?? null;
   const quickPromptGroups: PromptGroup[] = [
@@ -593,14 +693,23 @@ export default function Coach() {
           prompts: [`Was ändern wir heute, weil gestern "${latestOutcome.actionTitle}" ${latestOutcome.actionStatus === 'completed' ? 'erledigt' : 'anders entschieden'} wurde?`],
         }]
       : []),
-    {
-      title: 'Daily Check-in',
-      hint: 'Körper, Kopf und mentale Last sauber einordnen.',
-      prompts: [
-        'Führe mich mit kurzen Fragen durch Stimmung, Energie, Stress, Motivation und mentale Belastung.',
-        'Welche mentale Belastung sollte ich heute ernst nehmen, und was schützt mich?',
-      ],
-    },
+    todayMentalCheckin
+      ? {
+          title: 'Mental heute',
+          hint: `${mentalSummaryLabel(todayMentalCheckin)} · ${todayMentalCheckin.mood}/${todayMentalCheckin.energy}/${todayMentalCheckin.stress}/${todayMentalCheckin.motivation}`,
+          prompts: [
+            mentalSummaryPrompt(todayMentalCheckin),
+            'Welche Grenze schützt heute meine mentale Energie am besten?',
+          ],
+        }
+      : {
+          title: 'Daily Check-in',
+          hint: 'Körper, Kopf und mentale Last sauber einordnen.',
+          prompts: [
+            'Führe mich mit kurzen Fragen durch Stimmung, Energie, Stress, Motivation und mentale Belastung.',
+            'Welche mentale Belastung sollte ich heute ernst nehmen, und was schützt mich?',
+          ],
+        },
     {
       title: 'Heute entscheiden',
       hint: 'Was jetzt als Nächstes sinnvoll ist.',
@@ -720,6 +829,7 @@ export default function Coach() {
             briefingLoading={briefingLoading}
             compact={hasMessages}
             primaryQuestion={checkinGuidance?.questions[0] ?? null}
+            mentalCheckin={todayMentalCheckin}
             onPrompt={setInput}
           />
         )}

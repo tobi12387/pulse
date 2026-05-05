@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Coach zeigt erledigten Mental-Check-in als Kontext
+
+- **Decision:** Coach rendert einen gespeicherten Tages-Mental-Check-in als read-only Kontextkarte und bereitet daraus eine Planungsfrage vor, statt erneut die gefuehrte Check-in-Frage als Standardprompt zu zeigen. Die Eingabe bleibt bei Home/Data beziehungsweise Voice; Coach dupliziert keine Check-in-Form.
+- **Why:** Der Backend-Coach nutzt den Check-in bereits ueber PulseContext, aber die UI machte diesen Einfluss nicht sichtbar. Eine kleine Kontextkarte senkt Alltagsreibung und macht den Mental-Status handlungsrelevant, ohne den Coach zur zweiten Erfassungsoberflaeche aufzublasen.
+- **Alternatives:** Eine zweite Quick-Check-in-UI in Coach bauen (Duplikation und mehr Pflege); nur den LLM-Kontext unsichtbar lassen (zu wenig nachvollziehbar); einen neuen Backend-Endpunkt fuer eine Zusammenfassung bauen (unnötig, solange die bestehende Check-in-Historie die Werte liefert).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Home nutzt kompakten Mental-Check-in statt Data-Formular
 
 - **Decision:** Home bekommt fuer offene Check-in-Tagesaktionen eine kompakte Drei-Preset-Karte (`Stabil`, `Gemischt`, `Schuetzen`), die auf den bestehenden numerischen `POST /api/pulse/checkin`-Vertrag speichert. Data > Mental bleibt die detaillierte Eingabe-, Freitext- und Auswertungsflaeche.
