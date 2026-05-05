@@ -199,6 +199,65 @@ describe('GET /api/pulse/home', () => {
     expect(body.readiness).toHaveProperty('score');
     expect(Array.isArray(body.nextBestActions)).toBe(true);
   });
+
+  it('exposes completed planned training for today and skips it as the next workout', async () => {
+    const today = dateDaysAgo(0);
+    const tomorrow = dateDaysFrom(1);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'home-completed-planned-training',
+      source: 'garmin',
+      startTime: new Date(`${today}T08:00:00.000Z`),
+      activityType: 'bike',
+      name: 'Grundlage draussen',
+      durationSec: 4_800,
+      tss: 65,
+    }).returning({ id: pulseActivities.id });
+
+    await db.insert(pulsePlannedWorkouts).values([
+      {
+        userId,
+        plannedDate: today,
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        status: 'planned',
+        garminWorkoutId: 'home-garmin-workout',
+        garminScheduledId: 'home-garmin-scheduled',
+      },
+      {
+        userId,
+        plannedDate: tomorrow,
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 40,
+        status: 'planned',
+      },
+    ]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/home',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      todayWorkout: { completedActivityId: string | null; executionStatus: string | null; executionMatchConfidence: number | null } | null;
+      nextWorkout: { plannedDate: string; activityType: string } | null;
+    }>();
+    expect(body.todayWorkout).toMatchObject({
+      completedActivityId: activity!.id,
+      executionStatus: 'completed_matched',
+    });
+    expect(body.todayWorkout?.executionMatchConfidence).toBeGreaterThanOrEqual(0.8);
+    expect(body.nextWorkout).toMatchObject({
+      plannedDate: tomorrow,
+      activityType: 'run',
+    });
+  });
 });
 
 describe('Pulse action closure', () => {

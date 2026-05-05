@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { and, desc, eq, gte, or } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, or } from 'drizzle-orm';
 import type {
   PulseActionsResponse,
   PulseDailyDecisionQualityResponse,
@@ -27,6 +27,7 @@ import { computeReadinessScore } from '../services/load-engine.js';
 import { getPrognosis } from '../services/prognosis-engine.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from '../services/risk-engine.js';
 import { buildDailyOutcomeLearning, type DailyOutcomeLearningActionDecision } from '../services/daily-outcome-learning.js';
+import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import {
   addDateDays,
   computeStreaks,
@@ -40,23 +41,105 @@ import {
 type PulseDailyMetricsHrvStatus = 'poor' | 'below_normal' | 'normal' | 'above_normal' | null;
 type PulseActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 type PulseWorkoutStatus = 'planned' | 'completed' | 'skipped';
+type PulsePlannedWorkoutRow = typeof pulsePlannedWorkouts.$inferSelect;
+type PulseExecutionActivityRow = Pick<typeof pulseActivities.$inferSelect, 'id' | 'startTime' | 'activityType' | 'durationSec'>;
 
 const actionDecisionPatchSchema = z.object({
   status: z.enum(['completed', 'deferred', 'dismissed']),
   reason: z.string().trim().max(500).optional(),
 });
 
+function enrichHomeWorkoutExecutionState(
+  workout: PulsePlannedWorkoutRow,
+  activities: PulseExecutionActivityRow[],
+  now: Date,
+): PulsePlannedWorkoutRow {
+  const sameDayActivities = activities.filter(activity => toIsoDate(activity.startTime) === workout.plannedDate);
+  const completedActivity = workout.completedActivityId
+    ? activities.find(activity => activity.id === workout.completedActivityId) ?? null
+    : null;
+  const bestSameDayActivity = sameDayActivities
+    .map(activity => ({ activity, score: scoreActivityWorkoutMatch(workout, activity) }))
+    .sort((a, b) => b.score - a.score)[0]?.activity ?? null;
+  const activity = completedActivity ?? bestSameDayActivity;
+  const state = deriveWorkoutExecutionState({
+    id: workout.id,
+    plannedDate: workout.plannedDate,
+    activityType: workout.activityType,
+    status: workout.status,
+    garminWorkoutId: workout.garminWorkoutId,
+    garminScheduledId: workout.garminScheduledId,
+    completedActivityId: workout.completedActivityId,
+    durationMin: workout.durationMin,
+  }, null, activity ? {
+    id: activity.id,
+    startTime: activity.startTime,
+    activityType: activity.activityType,
+    durationSec: activity.durationSec,
+  } : null, now);
+
+  return {
+    ...workout,
+    completedActivityId: state.matchedActivityId ?? workout.completedActivityId,
+    executionStatus: state.status,
+    executionMatchedAt: state.matchedActivityId ? (workout.executionMatchedAt ?? now) : workout.executionMatchedAt,
+    executionMatchConfidence: state.confidence ?? workout.executionMatchConfidence ?? null,
+    executionNotes: workout.executionNotes ?? state.notes,
+  };
+}
+
+function isHomeWorkoutCompleted(workout: PulsePlannedWorkoutRow | null | undefined): boolean {
+  return workout?.status === 'completed'
+    || workout?.completedActivityId != null
+    || workout?.executionStatus === 'completed_matched';
+}
+
+function selectHomeTodayWorkout(workouts: PulsePlannedWorkoutRow[]): PulsePlannedWorkoutRow | null {
+  return workouts.find(workout => workout.status === 'planned' && !isHomeWorkoutCompleted(workout))
+    ?? workouts.find(isHomeWorkoutCompleted)
+    ?? workouts.find(workout => workout.status === 'planned')
+    ?? null;
+}
+
+function serializePlannedWorkout(workout: PulsePlannedWorkoutRow) {
+  return {
+    id: workout.id, userId: workout.userId,
+    plannedDate: workout.plannedDate, activityType: workout.activityType as PulseActivityType,
+    zone: workout.zone, durationMin: workout.durationMin,
+    distanceKm: workout.distanceKm, targetTss: workout.targetTss,
+    description: workout.description,
+    steps: (workout.steps ?? null) as WorkoutStep[] | null,
+    garminWorkoutId: workout.garminWorkoutId ?? null,
+    garminScheduledId: workout.garminScheduledId ?? null,
+    status: workout.status as PulseWorkoutStatus,
+    workoutFeedback: workout.workoutFeedback ?? null,
+    complianceScore: workout.complianceScore ?? null,
+    completedActivityId: workout.completedActivityId ?? null,
+    executionStatus: workout.executionStatus ?? (
+      workout.garminScheduledId ? 'garmin_scheduled' : workout.garminWorkoutId ? 'garmin_template' : 'local_planned'
+    ),
+    executionMatchedAt: workout.executionMatchedAt?.toISOString() ?? null,
+    executionMatchConfidence: workout.executionMatchConfidence ?? null,
+    executionNotes: workout.executionNotes ?? null,
+  };
+}
+
 export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
   app.get('/home', { onRequest: [app.authenticate] }, async (req): Promise<PulseHomeScreenData> => {
     const userId = req.user.sub;
-    const today = new Date().toISOString().split('T')[0]!;
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]!;
+    const todayStart = new Date(`${today}T00:00:00.000Z`);
+    const tomorrowStart = addDateDays(todayStart, 1);
 
     const since60d = new Date(Date.now() - 60 * 86_400_000).toISOString().split('T')[0]!;
     const [
       [metrics],
       [mental],
       recentActivities,
-      [nextWorkout],
+      todayWorkouts,
+      todayActivities,
+      upcomingWorkouts,
       fitnessLoad,
       prognosis,
       streaks,
@@ -76,11 +159,30 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
       db.select().from(pulsePlannedWorkouts)
         .where(and(
           eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.plannedDate, today),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.createdAt)),
+      db.select({
+        id: pulseActivities.id,
+        startTime: pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec,
+      }).from(pulseActivities)
+        .where(and(
+          eq(pulseActivities.userId, userId),
+          gte(pulseActivities.startTime, todayStart),
+          lt(pulseActivities.startTime, tomorrowStart),
+        ))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(20),
+      db.select().from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
           eq(pulsePlannedWorkouts.status, 'planned'),
           gte(pulsePlannedWorkouts.plannedDate, today),
         ))
         .orderBy(pulsePlannedWorkouts.plannedDate)
-        .limit(1),
+        .limit(7),
       getFitnessLoadCached(userId, today),
       getPrognosis(userId),
       computeStreaks(userId, today),
@@ -118,6 +220,13 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
           })),
         })
       : null;
+
+    const enrichedTodayWorkouts = todayWorkouts.map(workout => enrichHomeWorkoutExecutionState(workout, todayActivities, now));
+    const todayWorkout = selectHomeTodayWorkout(enrichedTodayWorkouts);
+    const nextWorkout = upcomingWorkouts
+      .map(workout => workout.plannedDate === today ? enrichHomeWorkoutExecutionState(workout, todayActivities, now) : workout)
+      .find(workout => !isHomeWorkoutCompleted(workout))
+      ?? null;
 
     const mentalScore = mental
       ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
@@ -159,6 +268,7 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
         source: metrics.source, syncedAt: metrics.syncedAt.toISOString(),
       } : null,
       fitnessLoad,
+      todayWorkout: todayWorkout ? serializePlannedWorkout(todayWorkout) : null,
       recentActivities: recentActivities.map((a) => ({
         id: a.id, userId: a.userId, externalId: a.externalId,
         source: a.source, startTime: a.startTime.toISOString(),
@@ -175,26 +285,7 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
         sorenessAreas: a.sorenessAreas as RpeSorenessArea[] | null,
         feedbackLoggedAt: a.feedbackLoggedAt?.toISOString() ?? null,
       })),
-      nextWorkout: nextWorkout ? {
-        id: nextWorkout.id, userId: nextWorkout.userId,
-        plannedDate: nextWorkout.plannedDate, activityType: nextWorkout.activityType as PulseActivityType,
-        zone: nextWorkout.zone, durationMin: nextWorkout.durationMin,
-        distanceKm: nextWorkout.distanceKm, targetTss: nextWorkout.targetTss,
-        description: nextWorkout.description,
-        steps: (nextWorkout.steps ?? null) as WorkoutStep[] | null,
-        garminWorkoutId: nextWorkout.garminWorkoutId ?? null,
-        garminScheduledId: nextWorkout.garminScheduledId ?? null,
-        status: nextWorkout.status as PulseWorkoutStatus,
-        workoutFeedback: nextWorkout.workoutFeedback ?? null,
-        complianceScore: nextWorkout.complianceScore ?? null,
-        completedActivityId: nextWorkout.completedActivityId ?? null,
-        executionStatus: nextWorkout.executionStatus ?? (
-          nextWorkout.garminScheduledId ? 'garmin_scheduled' : nextWorkout.garminWorkoutId ? 'garmin_template' : 'local_planned'
-        ),
-        executionMatchedAt: nextWorkout.executionMatchedAt?.toISOString() ?? null,
-        executionMatchConfidence: nextWorkout.executionMatchConfidence ?? null,
-        executionNotes: nextWorkout.executionNotes ?? null,
-      } : null,
+      nextWorkout: nextWorkout ? serializePlannedWorkout(nextWorkout) : null,
       prognosis,
       streaks,
       recovery,

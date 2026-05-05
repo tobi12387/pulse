@@ -25,13 +25,20 @@ function readinessBoundary(score: number | null | undefined, tsb: number | null 
 }
 
 function workoutLabel(home: PulseHomeScreenData): string | null {
-  const workout = home.nextWorkout;
+  const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   if (!workout || workout.plannedDate !== home.date) return null;
   return `${workout.activityType} · Z${workout.zone} · ${workout.durationMin} min`;
 }
 
+function completedTodayWorkout(home: PulseHomeScreenData) {
+  const workout = home.todayWorkout;
+  if (!workout || workout.plannedDate !== home.date) return null;
+  if (workout.status === 'completed' || workout.completedActivityId || workout.executionStatus === 'completed_matched') return workout;
+  return null;
+}
+
 function alternativeFor(home: PulseHomeScreenData, action: PulseNextBestAction | null): string {
-  const workout = home.nextWorkout;
+  const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
 
   if (action?.source === 'checkin') {
@@ -84,8 +91,44 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   if (!home) return null;
 
   const action = home.nextBestActions?.[0] ?? null;
+  const completedWorkout = completedTodayWorkout(home);
   const todayWorkout = workoutLabel(home);
   const boundary = readinessBoundary(home.readiness?.score, home.fitnessLoad?.tsb);
+  if (completedWorkout) {
+    const completedLabel = `${completedWorkout.activityType} · Z${completedWorkout.zone} · ${completedWorkout.durationMin} min`;
+    const evidence: DailyDecisionEvidence[] = [
+      { label: `Erledigt: ${completedLabel}`, targetPath: '/plan?tab=training' },
+      { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data#data-recovery' },
+      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' },
+    ];
+    const reason = 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
+    const alternative = 'Kein Zusatztraining nachschieben; wenn noch etwas offen ist, nur Feedback oder Planabgleich erledigen.';
+    const completionCriterion = 'RPE/Feedback prüfen und den Rest des Tages bewusst ohne Ersatz- oder Zusatztraining schließen.';
+    const prompt = [
+      'Tagesentscheidung: Training heute erledigt.',
+      `Warum: ${reason}`,
+      `Grenze: ${boundary}`,
+      `Alternative: ${alternative}`,
+      `Abschluss: ${completionCriterion}`,
+      'Hilf mir, daraus den sinnvollsten Resttag abzuleiten.',
+    ].join(' ');
+
+    return {
+      title: 'Training heute erledigt',
+      reason,
+      boundary,
+      alternative,
+      completionCriterion,
+      cta: 'Plan prüfen',
+      targetPath: '/plan?tab=training',
+      prompt,
+      priority: 'normal',
+      evidence,
+      supportCta: 'Coach fragen',
+      supportPath: '/coach?focus=daily',
+    };
+  }
+
   const title = action?.title
     ?? (todayWorkout
       ? `Heute ${todayWorkout} entscheiden`

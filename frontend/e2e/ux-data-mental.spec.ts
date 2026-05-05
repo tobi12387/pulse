@@ -171,8 +171,8 @@ test('saved Schutzmodus check-in uses the same mental impact language across Dat
   }));
 
   await page.goto('/');
-  await expect(page.getByTestId('mental-impact-summary')).toContainText(/Mental Health: schuetzen/i);
-  await expect(page.getByTestId('mental-impact-summary')).toContainText(/Mental Fitness: schonen/i);
+  await expect(page.getByTestId('mental-impact-summary')).toContainText(/Mentale Tageslage: Schutzmodus/i);
+  await expect(page.getByTestId('mental-impact-summary')).toContainText(/Heute kleinere Schritte/i);
 
   await page.goto('/plan');
   await expect(page.getByTestId('mental-plan-impact')).toContainText(/Plan vorsichtig interpretieren/i);

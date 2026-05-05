@@ -237,6 +237,7 @@ const home = {
     steps: 8400,
   },
   fitnessLoad: load,
+  todayWorkout: null,
   recentActivities: [],
   nextWorkout: null,
   prognosis: {
