@@ -341,7 +341,7 @@ test('Home and Coach show what Pulse learned from yesterday', async ({ page }) =
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Was lernen wir aus gestern/);
 });
 
-test('Home, Coach and Data analyses show the daily decision quality signal', async ({ page }) => {
+test('Coach and Data analyses show the daily decision quality signal', async ({ page }) => {
   const decisionQuality = {
     range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
     qualityScore: 44,
@@ -369,9 +369,8 @@ test('Home, Coach and Data analyses show the daily decision quality signal', asy
   await mockPulseApi(page, { decisionQuality });
 
   await page.goto('/');
-  await expect(page.getByTestId('daily-decision-quality-strip')).toContainText('ENTSCHEIDUNGSQUALITÄT');
-  await expect(page.getByTestId('daily-decision-quality-strip')).toContainText('WIEDERHOLUNG PRÜFEN');
-  await expect(page.getByText('Wiederkehrende Empfehlung kleiner, anders getaktet')).toBeVisible();
+  await expect(page.getByTestId('daily-decision-quality-strip')).toHaveCount(0);
+  await expect(page.getByText('Wiederkehrende Empfehlung kleiner, anders getaktet')).toHaveCount(0);
 
   await page.goto('/coach');
   await expect(page.getByTestId('coach-decision-quality-chip')).toContainText('Entscheidungsqualität');
@@ -381,6 +380,71 @@ test('Home, Coach and Data analyses show the daily decision quality signal', asy
   await page.goto('/data?tab=analysen');
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Entscheidungsqualität');
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
+});
+
+test('Home treats completed planned training as done and stays focused', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'workout-done',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        distanceKm: null,
+        targetTss: 65,
+        description: 'Aerobe Grundlage.',
+        steps: null,
+        garminWorkoutId: 'garmin-workout-1',
+        garminScheduledId: 'garmin-schedule-1',
+        status: 'completed',
+        workoutFeedback: null,
+        complianceScore: null,
+        completedActivityId: 'activity-done',
+        executionStatus: 'completed_matched',
+        executionMatchedAt: '2026-05-01T09:30:00.000Z',
+        executionMatchConfidence: 0.91,
+        executionNotes: 'Geplantes Training wurde über Garmin erledigt.',
+      },
+      nextWorkout: null,
+      recentActivities: [{
+        id: 'activity-done',
+        userId: 'user-1',
+        externalId: 'garmin-activity-done',
+        source: 'garmin',
+        startTime: '2026-05-01T08:00:00.000Z',
+        activityType: 'bike',
+        name: 'Grundlage draußen',
+        durationSec: 4800,
+        distanceM: 32000,
+        avgHr: 138,
+        maxHr: 168,
+        avgPowerW: 182,
+        normalizedPowerW: 194,
+        tss: 66,
+        calories: 820,
+        elevationGainM: 240,
+        trainingEffectAerobic: 3.1,
+        trainingEffectAnaerobic: 0.4,
+        vo2maxEstimate: null,
+        rpe: null,
+        rpeNote: null,
+        sorenessAreas: null,
+        feedbackLoggedAt: null,
+      }],
+    },
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
+  await expect(page.getByText('Entscheidungsqualität')).toHaveCount(0);
+  await expect(page.getByTestId('daily-decision-quality-strip')).toHaveCount(0);
+  await expect(page.getByText('RECENT')).toHaveCount(0);
+  await expect(page.getByText('Grundlage draußen')).toHaveCount(0);
+  await expect(page.getByText(/Mental Health:/)).toHaveCount(0);
 });
 
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCheckinHistory, useCheckinToday, useDailyDecisionQuality, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -12,7 +12,7 @@ import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { mentalImpact } from '@/features/mental/mental-impact';
-import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -231,53 +231,6 @@ function outcomeStatusColor(status: PulseDailyOutcomeLearningItem['status']): st
   if (status === 'superseded_by_data') return 'var(--blue)';
   if (status === 'stale_pattern') return 'var(--amber)';
   return 'var(--text-3)';
-}
-
-function decisionQualityColor(status: PulseDailyDecisionQualityResponse['status']): string {
-  if (status === 'helpful') return 'var(--green)';
-  if (status === 'watch') return 'var(--blue)';
-  if (status === 'stale') return 'var(--amber)';
-  if (status === 'needs_strategy_change') return 'var(--rose)';
-  return 'var(--text-3)';
-}
-
-function DailyDecisionQualityStrip({ quality }: { quality: PulseDailyDecisionQualityResponse | null }) {
-  if (!quality) return null;
-  const color = decisionQualityColor(quality.status);
-  const evidence = quality.bestEvidence[0] ?? 'Noch zu wenig Folge-Daten für eine belastbare Bewertung.';
-  const showAdjustment = quality.status === 'stale' || quality.status === 'needs_strategy_change' || quality.status === 'insufficient_evidence';
-
-  return (
-    <div
-      data-testid="daily-decision-quality-strip"
-      style={{
-        padding: '10px 12px',
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 6,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 5,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
-          ENTSCHEIDUNGSQUALITÄT
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
-          {quality.statusLabel.toUpperCase()} · {quality.qualityScore}/100
-        </span>
-      </div>
-      <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
-        {evidence}
-      </div>
-      {showAdjustment && (
-        <div style={{ fontSize: 11.5, color, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
-          {quality.suggestedAdjustment}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function DailyOutcomeLearningCard({ outcome }: { outcome: PulseDailyOutcomeLearningItem | null }) {
@@ -750,7 +703,6 @@ export default function Home() {
   const { data, isLoading, error, refetch: refetchHome } = usePulseHome();
   const actionsQuery = usePulseActions({ includeHistory: true });
   const outcomesQuery = useDailyOutcomeLearning(7);
-  const qualityQuery = useDailyDecisionQuality(14);
   const updateAction = useUpdatePulseAction();
   const checkinToday = useCheckinToday();
   const checkinHistory = useCheckinHistory(7);
@@ -797,7 +749,6 @@ export default function Home() {
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
-  const dailyDecisionQuality = qualityQuery.data ?? null;
   const primaryAction = actionStates[0] ?? null;
   const hasMentalCheckin = homeCheckinSubmitted || checkinToday.data?.checkin != null;
   const todayCheckinDate = checkinToday.data?.checkin?.date ?? data.date;
@@ -805,6 +756,9 @@ export default function Home() {
     ? checkinHistory.data?.checkins.find(checkin => checkin.date === todayCheckinDate) ?? null
     : null;
   const mentalImpactSummary = todayMentalCheckin ? mentalImpact(todayMentalCheckin) : null;
+  const mentalDaySignal = mentalImpactSummary && mentalImpactSummary.level !== 'stable'
+    ? `Mentale Tageslage: ${mentalImpactSummary.level === 'protect' ? 'Schutzmodus' : 'sensibel'}. ${mentalImpactSummary.labels.dailyImpact}`
+    : null;
   const homeMentalAction = !hasMentalCheckin && primaryAction?.source === 'checkin' ? primaryAction : null;
   const visiblePrimaryAction = homeMentalAction ? null : primaryAction;
   const followUpActions = visiblePrimaryAction
@@ -935,7 +889,7 @@ export default function Home() {
         />
       )}
 
-      {mentalImpactSummary && (
+      {mentalDaySignal && (
         <p
           data-testid="mental-impact-summary"
           style={{
@@ -949,11 +903,9 @@ export default function Home() {
             lineHeight: 1.45,
           }}
         >
-          Mental Health: {mentalImpactSummary.labels.health}. Mental Fitness: {mentalImpactSummary.labels.fitness}. {mentalImpactSummary.labels.dailyImpact}
+          {mentalDaySignal}
         </p>
       )}
-
-      <DailyDecisionQualityStrip quality={dailyDecisionQuality} />
 
       {homeCheckinSubmitted && (
         <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
@@ -1187,50 +1139,6 @@ export default function Home() {
           </button>
         </div>
       </div>
-
-      {/* ── Recent Activities ── */}
-      {data.recentActivities.length > 0 && (
-        <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', marginBottom: 10 }}>
-            RECENT
-          </div>
-          {data.recentActivities.slice(0, 5).map((a, i) => {
-            const dayLabel = new Date(a.startTime).toLocaleDateString('de-DE', { weekday: 'short' });
-            return (
-              <div
-                key={a.id}
-                onClick={() => navigate(`/activity/${a.id}`)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
-                  borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-              >
-                <div style={{ width: 28, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', textAlign: 'center', flexShrink: 0 }}>
-                  {dayLabel.toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {a.name ?? a.activityType}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>
-                    {a.distanceM ? `${(a.distanceM / 1000).toFixed(1)} km · ` : ''}
-                    {a.durationSec ? `${Math.round(a.durationSec / 60)}'` : ''}
-                    {a.tss ? ` · TSS ${a.tss.toFixed(0)}` : ''}
-                  </div>
-                </div>
-                {a.tss != null && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)', flexShrink: 0 }}>
-                    {a.tss.toFixed(0)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
 
     </div>
   );

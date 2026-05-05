@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Home zeigt abgeschlossene Tages-Trainings als erledigt statt als freien Tag
+
+- **Decision:** Home bekommt ein eigenes `todayWorkout`-Signal aus `/api/pulse/home` und behandelt heute geplante, per Garmin gematchte oder abgeschlossene Einheiten als erledigte Tagesentscheidung. Entscheidungsqualitaet und Recent Trainings werden nicht mehr auf Home angezeigt; Mental-Signale erscheinen dort nur noch als knapper Tageshinweis, wenn sie wirklich eine Belastungsgrenze setzen.
+- **Why:** Tobi nutzt Home als taeglichen Einstieg. Nach einer erledigten geplanten Einheit ist "Heute ist kein Training geplant" fachlich falsch und erzeugt Misstrauen; Entscheidungsqualitaet, rohe Mental-Health-Labels und Recent Trainings erhoehen die kognitive Last ohne unmittelbare Tageshandlung.
+- **Alternatives:** Recent Trainings auf Home behalten (dupliziert Data/Activity-Nutzen); Entscheidungsqualitaet weiter als Home-Strip zeigen (zu analytisch fuer den Startscreen); nur die Copy aendern ohne Backend-Contract (wuerde Garmin-Matches und naechstes Training weiter vermischen).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Manuelle Profilwerte koennen feldweise auf Automatik wechseln
 
 - **Decision:** Manuelle Profilwerte bleiben weiterhin geschuetzt, koennen aber in Settings pro Feld explizit fuer den Garmin-Profil-Sync freigegeben werden. Die Freigabe gilt nur fuer angewaehlte Felder und uebernimmt den besten vorhandenen Garmin-Settings- oder Activity-derived-Kandidaten.
