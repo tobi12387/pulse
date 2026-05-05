@@ -1340,7 +1340,7 @@ export default function Plan() {
       <PageHeader
         eyebrow="PLAN"
         title="Training, Ziele & Statistik"
-        action={<SegmentedControl items={TABS} active={tab} onChange={setTab} />}
+        action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" />}
       />
       {tab === 'training' && <TrainingTab />}
       {tab === 'ziele'    && <ZieleTab />}

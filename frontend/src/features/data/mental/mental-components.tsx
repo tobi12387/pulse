@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Skeleton } from '@/components/Skeleton';
 import { RangeControl } from '@/components/PulseChrome';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
@@ -127,6 +127,34 @@ const SCORE_LABELS: Record<CheckinScoreKey, string> = {
   stress: 'Stress',
   motivation: 'Motivation',
 };
+
+function focusRadioAtIndex(currentButton: HTMLButtonElement, index: number) {
+  const buttons = currentButton
+    .closest('[role="radiogroup"]')
+    ?.querySelectorAll<HTMLButtonElement>('button[role="radio"]');
+  window.requestAnimationFrame(() => buttons?.[index]?.focus());
+}
+
+function handleRadioArrowKey(
+  event: KeyboardEvent<HTMLButtonElement>,
+  index: number,
+  optionCount: number,
+  selectIndex: (index: number) => void,
+) {
+  const direction =
+    event.key === 'ArrowRight' || event.key === 'ArrowDown'
+      ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        ? -1
+        : 0;
+
+  if (direction === 0 || optionCount === 0) return;
+
+  event.preventDefault();
+  const nextIndex = (index + direction + optionCount) % optionCount;
+  selectIndex(nextIndex);
+  focusRadioAtIndex(event.currentTarget, nextIndex);
+}
 
 function scoresFromQuickChoices(choices: QuickChoices): Omit<CheckinForm, 'notes'> {
   return {
@@ -263,26 +291,33 @@ function SegmentedBar({ label, value, onChange, color = 'var(--accent)' }: {
         aria-label={label}
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(44px, 1fr))', gap: 4 }}
       >
-        {Array.from({ length: 10 }, (_, i) => (
-          <button
-            key={i}
-            type="button"
-            role="radio"
-            aria-label={`${label} ${i + 1}/10`}
-            aria-checked={i + 1 === value}
-            onClick={() => onChange(i + 1)}
-            style={{
-              minWidth: 44,
-              minHeight: 44,
-              padding: 0,
-              borderRadius: 2,
-              cursor: 'pointer',
-              background: i < value ? color : 'var(--bg)',
-              border: '1px solid var(--border)',
-              transition: 'background 0.1s',
-            }}
-          />
-        ))}
+        {Array.from({ length: 10 }, (_, i) => {
+          const selected = i + 1 === value;
+          return (
+            <button
+              key={i}
+              type="button"
+              role="radio"
+              aria-label={`${label} ${i + 1}/10`}
+              aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => onChange(i + 1)}
+              onKeyDown={(event) =>
+                handleRadioArrowKey(event, i, 10, nextIndex => onChange(nextIndex + 1))
+              }
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                padding: 0,
+                borderRadius: 2,
+                cursor: 'pointer',
+                background: i < value ? color : 'var(--bg)',
+                border: '1px solid var(--border)',
+                transition: 'background 0.1s',
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -306,7 +341,7 @@ function StateProfileGroup({
         aria-label="Mentale Lage"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}
       >
-        {STATE_PROFILE_OPTIONS.map(option => {
+        {STATE_PROFILE_OPTIONS.map((option, index) => {
           const selected = option.value === value;
           const labels = mentalImpactLabels(option.value);
           return (
@@ -316,7 +351,14 @@ function StateProfileGroup({
               role="radio"
               aria-label={`Mentale Lage: ${option.label}`}
               aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
               onClick={() => onChange(option.value)}
+              onKeyDown={(event) =>
+                handleRadioArrowKey(event, index, STATE_PROFILE_OPTIONS.length, nextIndex => {
+                  const nextOption = STATE_PROFILE_OPTIONS[nextIndex];
+                  if (nextOption) onChange(nextOption.value);
+                })
+              }
               style={{
                 minHeight: 88,
                 padding: '10px 11px',
@@ -385,7 +427,7 @@ function QuickChoiceGroup<T extends string>({
         aria-label={title}
         style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}
       >
-        {options.map(option => {
+        {options.map((option, index) => {
           const selected = option.value === value;
           return (
             <button
@@ -394,7 +436,14 @@ function QuickChoiceGroup<T extends string>({
               role="radio"
               aria-label={`${ariaPrefix}: ${option.label}`}
               aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
               onClick={() => onChange(option.value)}
+              onKeyDown={(event) =>
+                handleRadioArrowKey(event, index, options.length, nextIndex => {
+                  const nextOption = options[nextIndex];
+                  if (nextOption) onChange(nextOption.value);
+                })
+              }
               style={{
                 minHeight: 58,
                 padding: '8px 7px',

@@ -79,9 +79,9 @@ test('mobile Data tabs stay compact without document-level horizontal overflow',
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab containment check');
 
   await page.goto('/data');
-  await expect(page.getByRole('button', { name: 'Abdeckung' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Abdeckung' })).toBeVisible();
 
-  const tabControl = await page.getByRole('button', { name: 'Abdeckung' }).evaluate((element) => {
+  const tabControl = await page.getByRole('tab', { name: 'Abdeckung' }).evaluate((element) => {
     const parent = element.parentElement as HTMLElement;
     const rect = parent.getBoundingClientRect();
     return {
@@ -101,6 +101,21 @@ test('mobile Data tabs stay compact without document-level horizontal overflow',
   expect(tabControl.scrollWidth).toBeGreaterThan(tabControl.clientWidth);
   expect(['auto', 'scroll']).toContain(tabControl.overflowX);
   expect(await documentOverflow(page)).toEqual({ bodyOverflow: 0, documentOverflow: 0 });
+});
+
+test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
+  await page.goto('/data');
+
+  const tablist = page.getByRole('tablist', { name: 'Data Bereiche' });
+  await expect(tablist).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Überblick' }).focus();
+  await page.keyboard.press('ArrowRight');
+
+  const coverageTab = page.getByRole('tab', { name: 'Abdeckung' });
+  await expect(coverageTab).toBeFocused();
+  await expect(coverageTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL('/data?tab=coverage');
 });
 
 test('desktop operational routes use a wider shell than Home', async ({ page }, testInfo) => {

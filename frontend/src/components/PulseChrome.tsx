@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 function colorMix(color: string, percent: number) {
@@ -40,11 +40,44 @@ type SegmentedControlProps = {
   active: string;
   onChange: (id: string) => void;
   compact?: boolean;
+  ariaLabel?: string;
 };
 
-export function SegmentedControl({ items, active, onChange, compact = false }: SegmentedControlProps) {
+export function SegmentedControl({ items, active, onChange, compact = false, ariaLabel = 'Bereiche' }: SegmentedControlProps) {
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    tabRefs.current[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [active]);
+
+  function focusAndChange(index: number) {
+    const next = items[index];
+    if (!next) return;
+    onChange(next.id);
+    window.requestAnimationFrame(() => tabRefs.current[next.id]?.focus());
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (items.length === 0) return;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusAndChange((index + 1) % items.length);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusAndChange((index - 1 + items.length) % items.length);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusAndChange(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusAndChange(items.length - 1);
+    }
+  }
+
   return (
     <div
+      role="tablist"
+      aria-label={ariaLabel}
       style={{
         display: 'flex',
         flexWrap: 'nowrap',
@@ -61,12 +94,18 @@ export function SegmentedControl({ items, active, onChange, compact = false }: S
         scrollbarWidth: 'thin',
       }}
     >
-      {items.map(item => (
+      {items.map((item, index) => (
         <button
           key={item.id}
+          ref={(node) => {
+            tabRefs.current[item.id] = node;
+          }}
           type="button"
+          role="tab"
           onClick={() => onChange(item.id)}
-          aria-pressed={active === item.id}
+          onKeyDown={(event) => handleKeyDown(event, index)}
+          aria-selected={active === item.id}
+          tabIndex={active === item.id ? 0 : -1}
           style={{
             flex: '0 0 auto',
             minWidth: 44,

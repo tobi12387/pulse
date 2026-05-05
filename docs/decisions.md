@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Segmented Controls wechseln von Toggle-Buttons zu Tabs
+
+- **Decision:** Shared `SegmentedControl` nutzt fuer Data und Plan echte `tablist`/`tab`-Semantik mit `aria-selected`, roving `tabIndex`, Arrow-/Home-/End-Navigation und aktivem Scrollen. Mental `button role="radio"` Gruppen bekommen eigene Arrow-Key-Auswahl statt in Toggle-Button-Logik integriert zu werden.
+- **Why:** Data und Plan Tabs sind URL-backed Navigationsbereiche, keine unabhaengigen Toggle-Aktionen. Echte Tab-Semantik verbessert Screenreader- und Keyboard-Bedienung, waehrend Mental weiterhin radiogroup-Semantik behalten soll.
+- **Alternatives:** `aria-pressed` behalten und nur Keydown ergaenzen (semantisch falsch fuer Tabs); alle Kontrollgruppen in eine neue Primitive abstrahieren (zu grosser Scope); Mental auf native Inputs umbauen (mehr UI-Risiko fuer den kleinen A11y-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Mobile/A11y Controls werden in Touch-Ziele und Keyboard-Semantik getrennt
 
 - **Decision:** Die Mobile/A11y Controls Polish Phase wird in einen ersten 44px-Touch-Target-Slice und einen nachgelagerten Keyboard-Semantik-Slice aufgeteilt. Der erste Slice hebt wiederholte Daily-Use-Controls in Home/Data/Plan/Coach/Settings auf mindestens 44px; Tablist-/Radio-Arrow-Key-Verhalten bleibt im aktiven Plan offen.
