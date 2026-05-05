@@ -4,7 +4,7 @@ Date: 2026-05-04
 
 ## Scope
 
-PR 1 through PR 3 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`, plus the Coach-context follow-up:
+PR 1 through PR 3 of `docs/superpowers/plans/completed/2026-05-04-mental-checkin-simplification.md`, plus the Coach-context follow-up:
 
 - Data > Mental uses a Quick Check-in instead of mandatory 1-10 scoring.
 - Quick choices map back to the existing numeric `POST /api/pulse/checkin` payload.

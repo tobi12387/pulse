@@ -145,7 +145,7 @@ Boundary assessment:
 
 ## Mental Check-in Follow-up
 
-Tobi reported that the current Mental Check-in is hard because choosing exact values feels uncertain. This belongs in the next UX phases as `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`: Garmin-assisted defaults, three-state quick choices and optional free text. The check-in simplification can run before or alongside Coach relocation, but it must not add a new top-level destination.
+Tobi reported that the Mental Check-in was hard because choosing exact values felt uncertain. The simplification is now implemented and archived as `docs/superpowers/plans/completed/2026-05-04-mental-checkin-simplification.md`: Garmin-assisted defaults, three-state quick choices, optional free text, Home entry and Coach context. Any follow-up must keep the no-new-top-level-destination rule.
 
 ## QA Requirements
 
