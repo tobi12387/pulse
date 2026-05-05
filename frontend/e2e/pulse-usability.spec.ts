@@ -22,6 +22,17 @@ async function expectNoHorizontalOverflow(page: Page, route: string) {
           height: Math.round(rect.height),
           scrollWidth: element.scrollWidth,
           clientWidth: element.clientWidth,
+          insideHorizontalScroller: (() => {
+            let current: HTMLElement | null = element;
+            while (current && current !== document.body) {
+              const currentStyle = window.getComputedStyle(current);
+              const scrollable = (currentStyle.overflowX === 'auto' || currentStyle.overflowX === 'scroll')
+                && current.scrollWidth > current.clientWidth + 1;
+              if (scrollable) return true;
+              current = current.parentElement;
+            }
+            return false;
+          })(),
           display: style.display,
           visibility: style.visibility,
         };
@@ -31,6 +42,7 @@ async function expectNoHorizontalOverflow(page: Page, route: string) {
         item.visibility !== 'hidden' &&
         item.width > 0 &&
         item.height > 0 &&
+        !item.insideHorizontalScroller &&
         (
           item.left < -1 ||
           item.right > viewportWidth + 1 ||
@@ -172,7 +184,8 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
 
   await page.getByRole('button').filter({ hasText: 'Check-in eintragen' }).click();
-  await expect(page).toHaveURL('/coach');
+  await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Check-in eintragen/);
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
 });
 
@@ -399,15 +412,16 @@ test('Home owns the full daily decision while Coach carries slim prompt context'
 
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByText('Training heute defensiv entscheiden')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Training heute defensiv entscheiden' })).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('ALTERNATIVE', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('ABSCHLUSS', { exact: true }).first()).toBeVisible();
 
   await page.getByRole('button').filter({ hasText: 'Training heute defensiv entscheiden' }).click();
-  await expect(page).toHaveURL('/coach');
-  await expect(page.getByText('Training heute defensiv entscheiden')).toBeVisible();
-  await expect(page.getByText('Readiness und TSB sprechen gegen einen ungeprüften harten Reiz.')).toBeVisible();
+  await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Training heute defensiv entscheiden/);
+  await expect(page.getByRole('heading', { name: 'Training heute defensiv entscheiden' })).toBeVisible();
+  await expect(page.locator('p').filter({ hasText: 'Readiness und TSB sprechen gegen einen ungeprüften harten Reiz.' })).toBeVisible();
   await expect(page.getByText('Grenze', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Alternative', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Abschluss', { exact: true })).toHaveCount(0);
@@ -528,7 +542,7 @@ test('Home daily decision can open Coach with a prepared prompt', async ({ page 
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
+  await page.getByRole('button', { name: 'Coach fragen' }).click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Training heute defensiv entscheiden/);
   expect(coachSends).toBe(0);
@@ -608,7 +622,7 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   });
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Mental' }).click();
+  await page.getByRole('button', { name: 'Mental', exact: true }).click();
 
   await expect(page.getByText('Quick Check-in')).toBeVisible();
   await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
@@ -880,7 +894,8 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
   await page.goto('/');
   await expect(page.getByText('Heute ist kein Training geplant.')).toBeVisible();
   await page.getByRole('button', { name: 'Coach fragen' }).click();
-  await expect(page).toHaveURL('/coach?focus=daily');
+  await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
   await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Welche Grenze macht diesen freien Tag wirklich erholsam?' })).toBeVisible();
 
@@ -890,10 +905,9 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
 
   await page.goto('/plan?tab=training');
   const nextDecisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
-  const restDayBox = await page.getByText('Heute ist kein Training geplant.').boundingBox();
   expect(nextDecisionBox).not.toBeNull();
-  expect(restDayBox).not.toBeNull();
-  expect(nextDecisionBox!.y).toBeLessThan(restDayBox!.y);
+  await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
+  await expect(page.getByText('Radfahren · Zone 2')).toBeVisible();
 
   await page.getByRole('button', { name: 'Metriken prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=metrics');
@@ -908,7 +922,7 @@ test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) =>
   await mockPulseApi(page);
 
   await page.goto('/data?tab=mental');
-  await expect(page.getByRole('button', { name: 'Mental' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Mental', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Gewicht' }).click();
   await expect(page).toHaveURL('/data?tab=weight');
 
@@ -2027,11 +2041,21 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);
 
   await page.goto('/data');
-  const mentalTab = page.getByRole('button', { name: 'Mental' });
-  await expect(mentalTab).toBeVisible();
-  const box = await mentalTab.boundingBox();
+  const overviewTab = page.getByRole('button', { name: 'Überblick', exact: true });
+  await expect(overviewTab).toBeVisible();
+  const box = await overviewTab.boundingBox();
   expect(box).not.toBeNull();
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+  const dataTabs = await overviewTab.evaluate((element) => {
+    const parent = element.parentElement as HTMLElement;
+    return {
+      overflowX: window.getComputedStyle(parent).overflowX,
+      scrollWidth: parent.scrollWidth,
+      clientWidth: parent.clientWidth,
+    };
+  });
+  expect(['auto', 'scroll']).toContain(dataTabs.overflowX);
+  expect(dataTabs.scrollWidth).toBeGreaterThan(dataTabs.clientWidth);
 
   await page.goto('/plan');
   await expect(page.getByRole('button', { name: 'Statistik' })).toBeVisible();
@@ -2088,9 +2112,9 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
     },
   });
 
-  await page.goto('/data');
+  await page.goto('/data?tab=coverage');
+  await expectTouchTarget(page, 'Überblick');
   await expectTouchTarget(page, 'Abdeckung');
-  await expectTouchTarget(page, 'Mental');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');
 

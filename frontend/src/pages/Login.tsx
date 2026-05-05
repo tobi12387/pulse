@@ -34,7 +34,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-sm bg-card border-border">
         <CardHeader className="text-center pb-2">
-          <div className="text-2xl font-bold text-primary mb-1">Coaching OS</div>
+          <h1 className="text-2xl font-bold text-primary mb-1">Pulse</h1>
           <CardTitle className="text-lg font-medium text-foreground">Anmelden</CardTitle>
         </CardHeader>
         <CardContent>
@@ -46,7 +46,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tobi@coaching.os"
+                placeholder="tobi@pulse.local"
                 required
                 autoComplete="email"
                 className="bg-input border-border text-foreground"

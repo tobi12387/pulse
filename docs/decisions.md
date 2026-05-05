@@ -18,6 +18,38 @@
 
 ---
 
+## 2026-05-05 — UI/UX Foundation reduziert Daily-Flow-Dopplung
+
+- **Decision:** Home behaelt die volle Tagesentscheidung, Plan rendert keine generische `DailyDecisionCard` mehr und Coach-Zielentscheidungen zeigen in Home nur noch eine vorbereitete Prompt-Aktion statt zwei Coach-Buttons.
+- **Why:** Die Review zeigte, dass doppelte Tagesentscheidungen und zwei aehnliche Coach-CTAs Vertrauen kosten. Eine kanonische Home-Entscheidung plus Plan-spezifische Trainingsentscheidung macht den taeglichen Flow klarer, ohne bestehende `/coach`-Deep-Links zu brechen.
+- **Alternatives:** Plan weiter mit kompakter DailyDecisionCard lassen (Dopplung bleibt); Coach-Zielentscheidungen mit zwei Buttons lassen (unklare CTA-Semantik); Coach-Route sofort vollstaendig ersetzen (groesserer Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-05 — Data startet mit Nutzwert statt Wartungsstatus
+
+- **Decision:** `/data` oeffnet standardmaessig einen `Ueberblick` mit direkten Einstiegen in Analysen, Mental Check-in und Schlaf/Erholung. `Abdeckung` bleibt ueber `/data?tab=coverage` und Repair-/Settings-Links erreichbar.
+- **Why:** Data soll als Evidence- und Trend-Ort verstanden werden. Die bisherige Abdeckungs-Defaultansicht war fuer Diagnose wichtig, wirkte aber als erster Eindruck wie Wartung statt Alltagsnutzen.
+- **Alternatives:** Direkt `Analysen` als Default (weniger Fuehrung fuer Mental/Recovery); `Abdeckung` als Default behalten (Review-Finding bleibt); neuen Top-Level-Screen bauen (zu grosser Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-05 — Settings nutzt gemeinsamen Garmin-Sync und ehrliche Diagnosezustaende
+
+- **Decision:** Settings startet Garmin-Sync ueber die gemeinsame `useGarminSync`-Mutation und diagnostiziert Garmin getrennt als `Laedt`, `Blockiert`, `Unbekannt`, `Veraltet`, `Teilweise`, `Nicht verbunden` oder `Bereit`.
+- **Why:** Ein Sync aus Settings muss dieselben Pulse-Queries aktualisieren wie andere Sync-Einstiege. Ausserdem darf fehlender Status nicht mehr als `Bereit` erscheinen; bekannte Blockaden sollen aber weiterhin vor unbekanntem Legacy-Status sichtbar bleiben.
+- **Alternatives:** Nur Status/Coverage lokal refetchen (stale Home/Plan/Data-Risiko); Unknown immer vor Blocked priorisieren (versteckt bekannte Garmin-Circuit-Probleme); Status weiter implizit auf Bereit fallen lassen (irrefuehrend).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-05 — Frontend-Basis priorisiert sichtbaren Fokus und scrollende Mobile-Tabs
+
+- **Decision:** Pulse bekommt einen globalen `focus-visible`-Standard, helleren `text-3`-Kontrast, horizontal scrollende SegmentedControls auf engen Viewports und breitere Operational-Shells fuer Data/Plan.
+- **Why:** Die Review fand schwache Tastaturfuehrung, zu dunkle Kleinschrift, sperrige Mobile-Tab-Wraps und verschwendete Desktop-Breite. Die Basisregel verbessert Accessibility und Responsiveness, ohne die vier Haupttabs oder das bestehende Designsystem zu ersetzen.
+- **Alternatives:** Pro Komponente einzelne Fokusfixes (mehr Drift); Mobile-Tabs weiter umbrechen lassen (mehr first-viewport Reibung); alle Routen breit ziehen (Home verliert ruhige Tagesfokussierung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-05 — Coach-Kontext nutzt vorbereitete Deep-Link-Prompts
 
 - **Decision:** Home und Plan oeffnen Coach fuer kontextuelle Fragen ueber `/coach?focus=...&prompt=...`. Coach uebernimmt diesen Prompt nur als Entwurf im Eingabefeld und sendet nie automatisch; bestehende `/coach?actionId=...&decisionId=...` Push-/Action-Links bleiben ohne Prompt kompatibel.

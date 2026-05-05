@@ -15,7 +15,7 @@
   /* Text */
   --text:      #E8ECF1;
   --text-2:    #8B95A3;
-  --text-3:    #5C636E;
+  --text-3:    #737D8A;
 
   /* Accent */
   --accent:    #5EE6CF;
@@ -144,6 +144,11 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--surface-2); }
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 /* ─── Animations ─────────────────────────────────────────────────────────── */

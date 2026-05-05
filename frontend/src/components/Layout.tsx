@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
@@ -13,7 +13,11 @@ const NAV_ITEMS = [
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   useNavHotkeys();
+
+  const isOperationalRoute = location.pathname.startsWith('/data') || location.pathname.startsWith('/plan');
+  const pageShellStyle = isOperationalRoute ? { maxWidth: 1120 } : undefined;
 
   async function handleLogout() {
     await api.auth.logout().catch(() => {});
@@ -108,7 +112,7 @@ export default function Layout() {
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto">
-        <div className="pulse-page-shell mx-auto px-4 max-w-3xl">
+        <div className="pulse-page-shell mx-auto px-4 max-w-3xl" style={pageShellStyle} data-route-width={isOperationalRoute ? 'operational' : 'standard'}>
           <Outlet />
         </div>
       </main>
