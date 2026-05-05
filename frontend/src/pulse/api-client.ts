@@ -329,7 +329,7 @@ export const pulseApi = {
       request('/garmin/backfill', { method: 'POST', body: JSON.stringify(data) }),
     sync: (): Promise<{ status: string; days?: number; dates?: string[]; activities?: number }> =>
       request('/garmin/sync', { method: 'POST', body: '{}' }),
-    syncProfile: (): Promise<{
+    syncProfile: (params?: { overrideManualFields?: PulseProfileMetricKey[] }): Promise<{
       synced: Record<PulseProfileMetricKey, {
         field: PulseProfileMetricKey;
         value: number | null;
@@ -338,8 +338,14 @@ export const pulseApi = {
         label: string;
       }>;
       diagnostics: { garminSettings: 'ok' | 'unavailable'; activityRows: number };
+      profile: {
+        userId: string; ftpWatts: number | null; maxHrBpm: number | null;
+        lthrBpm: number | null; restingHrBpm: number | null; weeklyHoursTarget: number | null;
+        trainingPhase: string | null; vo2max: number | null;
+        provenance: PulseProfileProvenanceView;
+      };
     }> =>
-      request('/garmin/sync-profile', { method: 'POST', body: '{}' }),
+      request('/garmin/sync-profile', { method: 'POST', body: JSON.stringify(params ?? {}) }),
     calendarSync: (): Promise<{ uploaded: number; repaired?: number; removed: number; errors?: string[] }> =>
       request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
   },

@@ -45,6 +45,9 @@ type MockPulseApiOptions = {
   onTextCheckinSubmit?: (body: unknown) => void;
   metrics?: unknown[];
   sleepSessions?: unknown[];
+  profile?: unknown | (() => unknown);
+  profileSyncResult?: unknown | ((body: unknown) => unknown);
+  onProfileSync?: (body: unknown) => void;
   onRequest?: (pathname: string, method: string) => void;
 };
 
@@ -282,6 +285,28 @@ function json(route: Route, body: unknown, status = 200) {
     contentType: 'application/json',
     body: JSON.stringify(body),
   });
+}
+
+function defaultProfileResponse() {
+  return {
+    userId: 'user-1',
+    ftpWatts: 250,
+    maxHrBpm: 185,
+    lthrBpm: 170,
+    restingHrBpm: 49,
+    weeklyHoursTarget: 6,
+    trainingPhase: 'base',
+    vo2max: 52,
+    provenance: {
+      fields: {
+        ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+        maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+        lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+        vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+      },
+      warnings: [],
+    },
+  };
 }
 
 function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown {
@@ -532,25 +557,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
     };
   }
   if (pathname === '/api/pulse/profile') {
-    return {
-      userId: 'user-1',
-      ftpWatts: 250,
-      maxHrBpm: 185,
-      lthrBpm: 170,
-      restingHrBpm: 49,
-      weeklyHoursTarget: 6,
-      trainingPhase: 'base',
-      vo2max: 52,
-      provenance: {
-        fields: {
-          ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: `${today}T06:00:00.000Z`, warning: null },
-          maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: `${today}T06:00:00.000Z`, warning: null },
-          lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
-          vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
-        },
-        warnings: [],
-      },
-    };
+    return defaultProfileResponse();
   }
   if (pathname === '/api/pulse/sync/status') return dataStatus;
   if (pathname === '/api/pulse/push/settings') {
@@ -725,6 +732,27 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
+    if (url.pathname === '/api/pulse/profile' && request.method() === 'GET' && 'profile' in options) {
+      const profile = typeof options.profile === 'function' ? options.profile() : options.profile;
+      return json(route, profile ?? defaultProfileResponse());
+    }
+    if (url.pathname === '/api/pulse/garmin/sync-profile' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      options.onProfileSync?.(body);
+      const result = typeof options.profileSyncResult === 'function'
+        ? options.profileSyncResult(body)
+        : options.profileSyncResult;
+      return json(route, result ?? {
+        synced: {
+          ftpWatts: { field: 'ftpWatts', value: 250, source: 'manual', status: 'kept_manual', label: 'FTP manuell gesetzt' },
+          maxHrBpm: { field: 'maxHrBpm', value: 185, source: 'activity_derived', status: 'updated', label: 'Max. Puls aus Aktivitaeten' },
+          lthrBpm: { field: 'lthrBpm', value: 170, source: 'garmin_settings', status: 'updated', label: 'LTHR aus Garmin-Einstellungen' },
+          vo2max: { field: 'vo2max', value: 52, source: 'garmin_settings', status: 'updated', label: 'VO2max aus Garmin-Einstellungen' },
+        },
+        diagnostics: { garminSettings: 'ok', activityRows: 20 },
+        profile: defaultProfileResponse(),
+      });
+    }
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);

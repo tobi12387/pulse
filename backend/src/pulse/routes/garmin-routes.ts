@@ -48,6 +48,9 @@ const garminBackfillSchema = z.object({
   domains: z.array(z.enum(garminBackfillDomains)).min(1).max(garminBackfillDomains.length).optional(),
   dryRun: z.boolean().optional().default(false),
 });
+const profileSyncSchema = z.object({
+  overrideManualFields: z.array(z.enum(['ftpWatts', 'maxHrBpm', 'lthrBpm', 'vo2max'])).max(4).optional().default([]),
+});
 
 function addDateDays(date: Date, days: number): Date {
   const next = new Date(date);
@@ -813,10 +816,16 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
     return { uploaded, repaired, removed, errors: errors.length > 0 ? errors : undefined };
   });
 
-  app.post('/garmin/sync-profile', { onRequest: [app.authenticate] }, async (req) => {
+  app.post('/garmin/sync-profile', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = profileSyncSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
     const userId = req.user.sub;
     const gc = await import('../../lib/garmin-client.js').then(m => m.getGarminClient());
-    const result = await syncProfileFromGarmin(userId, gc, { logger: app.log });
+    const result = await syncProfileFromGarmin(userId, gc, {
+      logger: app.log,
+      overrideManualFields: parsed.data.overrideManualFields,
+    });
     await invalidateUser(userId);
     return {
       synced: result.synced,

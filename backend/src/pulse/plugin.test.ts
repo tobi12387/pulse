@@ -1365,6 +1365,60 @@ describe('Pulse profile provenance', () => {
       },
     });
   });
+
+  it('can explicitly switch selected manual profile values back to automatic sources', async () => {
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/profile',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        ftpWatts: 255,
+        maxHrBpm: 184,
+        lthrBpm: 171,
+        vo2max: 52,
+      },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    garminMocks.getUserSettings.mockResolvedValueOnce({
+      userData: {
+        vo2MaxRunning: 58,
+        vo2MaxCycling: 56,
+        lactateThresholdHeartRate: 176,
+        maxHeartRate: 190,
+      },
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'profile-auto-activity-1',
+      startTime: new Date('2026-05-01T08:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 3600,
+      maxHr: 192,
+      rawData: { max20MinPower: 310 },
+    });
+
+    const sync = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/garmin/sync-profile',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { overrideManualFields: ['ftpWatts', 'lthrBpm'] },
+    });
+
+    expect(sync.statusCode).toBe(200);
+    const syncBody = sync.json<{
+      synced: {
+        ftpWatts: { value: number | null; source: string; status: string };
+        maxHrBpm: { value: number | null; source: string; status: string };
+        lthrBpm: { value: number | null; source: string; status: string };
+        vo2max: { value: number | null; source: string; status: string };
+      };
+    }>();
+    expect(syncBody.synced.ftpWatts).toMatchObject({ value: 295, source: 'activity_derived', status: 'updated' });
+    expect(syncBody.synced.lthrBpm).toMatchObject({ value: 176, source: 'garmin_settings', status: 'updated' });
+    expect(syncBody.synced.maxHrBpm).toMatchObject({ value: 184, source: 'manual', status: 'kept_manual' });
+    expect(syncBody.synced.vo2max).toMatchObject({ value: 52, source: 'manual', status: 'kept_manual' });
+  });
 });
 
 describe('POST /api/pulse/plan/generate', () => {

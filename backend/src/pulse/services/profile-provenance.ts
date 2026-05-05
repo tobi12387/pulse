@@ -193,12 +193,14 @@ export function buildProfileProvenanceView(profile: ExistingProfileForProvenance
 export function mergeProfileCandidates(params: {
   existing: ExistingProfileForProvenance | null | undefined;
   candidates: ProfileCandidates;
+  overrideManualFields?: readonly PulseProfileMetricKey[] | undefined;
   now?: Date;
 }): {
   updates: Record<string, unknown>;
   synced: Record<PulseProfileMetricKey, SyncedProfileField>;
 } {
   const now = params.now ?? new Date();
+  const overrideManualFields = new Set(params.overrideManualFields ?? []);
   const updates: Record<string, unknown> = {};
   const synced = {} as Record<PulseProfileMetricKey, SyncedProfileField>;
 
@@ -216,7 +218,7 @@ export function mergeProfileCandidates(params: {
       continue;
     }
 
-    if (existingValue != null && existingSource === 'manual') {
+    if (existingValue != null && existingSource === 'manual' && !overrideManualFields.has(field)) {
       synced[field] = {
         ...summarizeProfileCandidate(field, existingValue, 'manual'),
         status: 'kept_manual',
