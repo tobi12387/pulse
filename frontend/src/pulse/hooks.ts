@@ -379,6 +379,12 @@ export function usePulseCheckin() {
   });
 }
 
+export function usePulseCheckinTextPreview() {
+  return useMutation({
+    mutationFn: pulseApi.checkin.text,
+  });
+}
+
 export function useCreateGoal() {
   const qc = useQueryClient();
   return useMutation({

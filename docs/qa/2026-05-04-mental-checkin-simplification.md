@@ -4,12 +4,14 @@ Date: 2026-05-04
 
 ## Scope
 
-PR 1 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`:
+PR 1 and PR 2 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`:
 
 - Data > Mental uses a Quick Check-in instead of mandatory 1-10 scoring.
 - Quick choices map back to the existing numeric `POST /api/pulse/checkin` payload.
 - Garmin/recovery signals from the existing home context are shown as a client-side suggestion.
 - Exact 1-10 correction remains available behind `Feinjustieren`.
+- Free text can be evaluated through a preview endpoint before explicit save.
+- Extracted mood, energy, stress, motivation, themes and follow-up questions are inspectable before saving through the existing numeric check-in contract.
 
 ## Verification
 
@@ -18,8 +20,14 @@ PR 1 of `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`:
 | Red test: `npm run test:e2e -- --project=mobile-chromium --grep "Data mental check-in uses quick choices"` before UI implementation | Failed because `Quick Check-in` was missing. |
 | Green test: `npm run test:e2e -- --project=mobile-chromium --grep "Data mental check-in uses quick choices"` | Passed: 1/1. |
 | `npm run build -w frontend` | Passed. |
-| `npm run test:e2e -- --project=mobile-chromium --grep "Mental\|Check-in\|Data"` | Passed: 18 passed, 1 route-evidence test skipped by flag. |
+| `npm run test:e2e -- --project=mobile-chromium --grep "Mental\|Check-in\|Data"` | Passed: 19 passed, 1 route-evidence test skipped by flag. |
 | `PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence/mental-checkin-simplification npm run qa:ux-evidence` | Passed: desktop and mobile route evidence captured. |
+| Red test: `npm run test:e2e -- --project=mobile-chromium --grep "free text into editable scores"` before UI implementation | Failed because `Kurz beschreiben` was missing. |
+| `npm run build` | Passed: shared, backend and frontend. |
+| `npm run test:e2e -- --project=mobile-chromium --grep "free text into editable scores"` | Passed: 1/1. |
+| `npm run test:e2e -- --project=mobile-chromium --grep "Data mental check-in"` | Passed: 2/2, covering quick choices plus free text. |
+| `PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence/mental-checkin-free-text npm run qa:ux-evidence` | Passed: desktop and mobile route evidence captured; manifest reports no horizontal overflow on all captured routes. |
+| `npm run test -w backend -- src/pulse/plugin.test.ts -t "POST /api/pulse/checkin/text"` | Blocked locally: Docker is not installed/running, so Postgres `127.0.0.1:5433` and Redis `127.0.0.1:6380` are unavailable. The backend test was still added for CI/service-backed environments. |
 
 ## Evidence Pack
 
@@ -27,6 +35,8 @@ Generated under:
 
 - `test-results/route-evidence/mental-checkin-simplification/2026-05-04-<commit>/desktop-chromium/`
 - `test-results/route-evidence/mental-checkin-simplification/2026-05-04-<commit>/mobile-chromium/`
+- `test-results/route-evidence/mental-checkin-free-text/2026-05-05-<commit>/desktop-chromium/`
+- `test-results/route-evidence/mental-checkin-free-text/2026-05-05-<commit>/mobile-chromium/`
 
 The manifests report `horizontalOverflow: false` for all captured routes:
 

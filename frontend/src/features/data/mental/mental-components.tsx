@@ -2,10 +2,12 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { Skeleton } from '@/components/Skeleton';
 import { RangeControl } from '@/components/PulseChrome';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
-import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseHome } from '@/pulse/hooks';
+import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseCheckinTextPreview, usePulseHome } from '@/pulse/hooks';
 import { GarminDomainHint } from '@/features/data/coverage/coverage-components';
 import type { PulseHomeScreenData } from '@coaching-os/shared/pulse';
 import { MENTAL_CHECKIN_SUGGESTION_THRESHOLDS } from '@coaching-os/shared/pulse-thresholds';
+import type { PulseCheckinTextPreview } from '@/pulse/api-client';
 
 const RANGE_OPTS = [
   { value: 7, label: '7T' },
@@ -32,6 +34,8 @@ type CheckinForm = {
   motivation: number;
   notes: string;
 };
+
+type CheckinScoreKey = keyof Omit<CheckinForm, 'notes'>;
 
 type ChoiceOption<T extends string> = {
   value: T;
@@ -80,6 +84,13 @@ const NEED_SCORE: Record<NeedChoice, number> = {
   activation: 7,
   structure: 5,
   rest: 3,
+};
+
+const SCORE_LABELS: Record<CheckinScoreKey, string> = {
+  mood: 'Stimmung',
+  energy: 'Energie',
+  stress: 'Stress',
+  motivation: 'Motivation',
 };
 
 function scoresFromQuickChoices(choices: QuickChoices): Omit<CheckinForm, 'notes'> {
@@ -266,12 +277,16 @@ export function MentalTab() {
   const { data: guidance } = useCheckinGuidance();
   const { data: home } = usePulseHome();
   const checkin = usePulseCheckin();
+  const textPreview = usePulseCheckinTextPreview();
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
   const suggestion = useMemo(() => buildSuggestion(home), [home]);
   const [manualQuickChoices, setManualQuickChoices] = useState<QuickChoices | null>(null);
   const [fineTuneOpen, setFineTuneOpen] = useState(false);
   const [fineTuned, setFineTuned] = useState(false);
   const [form, setForm] = useState<CheckinForm>(() => buildInitialForm());
+  const [freeText, setFreeText] = useState('');
+  const [textResult, setTextResult] = useState<PulseCheckinTextPreview | null>(null);
+  const [textPreviewError, setTextPreviewError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const quickChoices = manualQuickChoices ?? suggestion.choices;
   const quickScores = scoresFromQuickChoices(quickChoices);
@@ -296,12 +311,49 @@ export function MentalTab() {
     });
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  function updateFreeText(value: string) {
+    setFreeText(value);
+    setTextResult(null);
+    setTextPreviewError(null);
+  }
+
+  async function submitCheckin() {
     const notes = mergeNeedTag(form.notes, quickChoices.need);
     const scores = fineTuned ? displayedScores : quickScores;
     await checkin.mutateAsync({ ...scores, notes: notes || undefined });
     setSubmitted(true);
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    await submitCheckin();
+  }
+
+  async function handleTextPreview() {
+    const text = freeText.trim();
+    if (!text || textPreview.isPending) return;
+
+    setTextPreviewError(null);
+    setTextResult(null);
+    try {
+      const result = await textPreview.mutateAsync(text);
+      setTextResult(result);
+
+      if (result.extraction) {
+        setFineTuned(true);
+        setFineTuneOpen(true);
+        setForm(f => ({
+          ...f,
+          mood: result.extraction!.mood,
+          energy: result.extraction!.energy,
+          stress: result.extraction!.stress,
+          motivation: result.extraction!.motivation,
+          notes: f.notes.trim().length > 0 ? f.notes : result.text,
+        }));
+      }
+    } catch (err) {
+      setTextPreviewError(errorMessage(err, 'Der Text konnte gerade nicht ausgewertet werden.'));
+    }
   }
 
   const alreadyDone = today?.checkin != null;
@@ -372,6 +424,168 @@ export function MentalTab() {
                   </span>
                 ))}
               </div>
+            </div>
+            <div style={{
+              padding: '10px 12px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 9,
+            }}>
+              <div>
+                <div className="label-mono" style={{ marginBottom: 5 }}>Kurz beschreiben</div>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                  Schreib einen Satz, wenn Werte gerade schwer greifbar sind. Pulse macht daraus einen Vorschlag, den du prüfen kannst.
+                </p>
+              </div>
+              <textarea
+                aria-label="Kurz beschreiben"
+                value={freeText}
+                onChange={e => updateFreeText(e.target.value)}
+                rows={3}
+                placeholder="Zum Beispiel: Kopf voll, Energie begrenzt, Druck spürbar."
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  padding: '8px 10px',
+                  fontSize: 12,
+                  color: 'var(--text)',
+                  resize: 'vertical',
+                  minHeight: 74,
+                  outline: 'none',
+                }}
+              />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => void handleTextPreview()}
+                  disabled={!freeText.trim() || textPreview.isPending}
+                  style={{
+                    minHeight: 38,
+                    padding: '7px 10px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--accent)',
+                    borderRadius: 5,
+                    color: !freeText.trim() || textPreview.isPending ? 'var(--text-3)' : 'var(--accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    cursor: !freeText.trim() || textPreview.isPending ? 'default' : 'pointer',
+                  }}
+                >
+                  {textPreview.isPending ? 'Wird ausgewertet…' : 'Text auswerten'}
+                </button>
+                {textResult?.extraction && (
+                  <button
+                    type="button"
+                    onClick={() => void submitCheckin()}
+                    disabled={checkin.isPending}
+                    style={{
+                      minHeight: 38,
+                      padding: '7px 10px',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--green)',
+                      borderRadius: 5,
+                      color: checkin.isPending ? 'var(--text-3)' : 'var(--green)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      cursor: checkin.isPending ? 'default' : 'pointer',
+                    }}
+                  >
+                    {checkin.isPending ? 'Speichern…' : 'Ergebnis speichern'}
+                  </button>
+                )}
+              </div>
+              {textPreviewError && (
+                <InlineFeedback
+                  title="Textanalyse"
+                  message={textPreviewError}
+                  tone="warning"
+                />
+              )}
+              {textResult && !textResult.extraction && (
+                <InlineFeedback
+                  title="Noch kein Check-in"
+                  message={textResult.reply || 'Pulse konnte daraus noch keine Check-in-Werte ableiten. Ergänze einen Satz zu Energie, Druck oder Stimmung.'}
+                  tone="info"
+                />
+              )}
+              {textResult?.extraction && (
+                <div style={{
+                  padding: '9px 10px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                }}>
+                  <div className="label-mono" style={{ marginBottom: 8 }}>Erkannte Werte prüfen</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 6 }}>
+                    {(['mood', 'energy', 'stress', 'motivation'] as CheckinScoreKey[]).map(key => (
+                      <span
+                        key={key}
+                        style={{
+                          padding: '6px 7px',
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 4,
+                          color: 'var(--text)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10.5,
+                        }}
+                      >
+                        {SCORE_LABELS[key]} {textResult.extraction![key]}/10
+                      </span>
+                    ))}
+                  </div>
+                  {textResult.extraction.themes.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      {textResult.extraction.themes.map(theme => (
+                        <span
+                          key={theme}
+                          style={{
+                            padding: '4px 7px',
+                            background: 'var(--surface-2)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 4,
+                            fontSize: 10.5,
+                            color: 'var(--text-2)',
+                          }}
+                        >
+                          {theme}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {textResult.followUpQuestions.length > 0 && (
+                    <div style={{ marginTop: 8, display: 'grid', gap: 5 }}>
+                      {textResult.followUpQuestions.map(question => (
+                        <button
+                          key={question}
+                          type="button"
+                          onClick={() => appendNote(question)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-2)',
+                            fontSize: 11.5,
+                            lineHeight: 1.4,
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                        >
+                          {question}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
               <QuickChoiceGroup

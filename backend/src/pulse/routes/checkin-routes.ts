@@ -33,6 +33,10 @@ const voiceCheckinSchema = z.object({
   mimeType: z.string().default('audio/webm'),
 });
 
+const textCheckinSchema = z.object({
+  text: z.string().trim().min(3).max(1500),
+});
+
 export async function registerPulseCheckinRoutes(app: FastifyInstance) {
   app.post('/checkin', { onRequest: [app.authenticate] }, async (req, reply) => {
     const parsed = checkinSchema.safeParse(req.body);
@@ -52,6 +56,36 @@ export async function registerPulseCheckinRoutes(app: FastifyInstance) {
 
     await invalidateUser(userId);
     return reply.status(201).send(checkin);
+  });
+
+  app.post('/checkin/text', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = textCheckinSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const text = parsed.data.text.trim();
+    let classification: CheckinClassification;
+    try {
+      classification = await classifyAndExtractCheckin(text);
+    } catch (err) {
+      app.log.error(`[text-checkin] LLM classification error: ${err}`);
+      return reply.status(502).send({ error: 'Coach-Analyse fehlgeschlagen, bitte erneut versuchen.' });
+    }
+
+    return {
+      text,
+      reply:             classification.coachReply,
+      isCheckin:         classification.isCheckin,
+      followUpQuestions: classification.extraction?.followUpQuestions ?? [],
+      extraction:        classification.extraction
+        ? {
+            mood:       classification.extraction.mood,
+            energy:     classification.extraction.energy,
+            stress:     classification.extraction.stress,
+            motivation: classification.extraction.motivation,
+            themes:     classification.extraction.themes,
+          }
+        : null,
+    };
   });
 
   app.post('/checkin/voice', { onRequest: [app.authenticate] }, async (req, reply) => {

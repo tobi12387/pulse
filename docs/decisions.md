@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Mental Freitext nutzt Preview statt Auto-Save
+
+- **Decision:** Data > Mental bekommt fuer Freitext einen neuen `POST /api/pulse/checkin/text`-Preview-Endpunkt, der `classifyAndExtractCheckin` ueber den bestehenden LLM-Layer nutzt, aber keinen Check-in, keine Coach-Session und keinen Cache-Eintrag persistiert. Gespeichert wird erst nach expliziter Nutzerbestaetigung ueber den bestehenden `POST /api/pulse/checkin`-Vertrag.
+- **Why:** Der taegliche Mental Check-in soll weniger Zahlendenken erfordern, ohne dass eine unsichere LLM-Extraktion automatisch Tagesdaten veraendert. Die Preview macht erkannte Werte, Themen und Rueckfragen sichtbar und haelt den bestehenden Trend-/Coach-Kontext kompatibel.
+- **Alternatives:** Bestehenden Voice-Endpunkt wiederverwenden (speichert heute direkt und ist fuer Preview zu grob); Freitext nur lokal heuristisch mappen (weniger alltagstauglich fuer natuerliche Beschreibung); neue DB-Felder fuer Extraktionsconfidence einfuehren (groesserer Scope ohne aktuellen Speicherbedarf).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-04 — Quick Check-in bleibt ein Frontend-Adapter
 
 - **Decision:** Der erste Mental-Check-in-Umsetzungsslice ersetzt die 1-10-Pflichtbewertung in Data > Mental durch Quick Choices, mapped diese aber clientseitig auf die bestehende numerische `POST /api/pulse/checkin`-Nutzlast. Garmin-/Recovery-Schwellen fuer die Vorauswahl liegen als Shared Threshold Contract in `@coaching-os/shared/pulse-thresholds`.

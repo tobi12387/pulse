@@ -54,6 +54,13 @@ async function expectTouchTargetAt(page: Page, name: string | RegExp, index: num
   expect(box!.height, `${String(name)} at index ${index} should be at least ${minHeight}px tall`).toBeGreaterThanOrEqual(minHeight);
 }
 
+function localIsoDateDaysFrom(days: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -503,6 +510,45 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   expect(String((submitted as { notes?: string }).notes)).toContain('Bedarf: Ruhe');
 });
 
+test('Data mental check-in turns free text into editable scores before saving', async ({ page }) => {
+  let textPreviewBody: unknown = null;
+  let submitted: unknown = null;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    onTextCheckinSubmit: body => {
+      textPreviewBody = body;
+    },
+    onCheckinSubmit: body => {
+      submitted = body;
+    },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await page.getByRole('textbox', { name: 'Kurz beschreiben' }).fill('Kopf voll, Energie begrenzt, Druck spuerbar.');
+  await page.getByRole('button', { name: 'Text auswerten' }).click();
+
+  expect(textPreviewBody).toMatchObject({ text: 'Kopf voll, Energie begrenzt, Druck spuerbar.' });
+  await expect(page.getByText('Erkannte Werte prüfen')).toBeVisible();
+  await expect(page.getByText('Arbeit')).toBeVisible();
+  await expect(page.getByText('Muedigkeit')).toBeVisible();
+  await expect(page.getByText('Was waere heute eine gute Grenze?')).toBeVisible();
+  await expect(page.getByText('Stimmung 5/10')).toBeVisible();
+  await expect(page.getByText('Energie 4/10')).toBeVisible();
+  await expect(page.getByText('Stress 7/10')).toBeVisible();
+  await expect(page.getByText('Motivation 6/10')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Ergebnis speichern' }).click();
+  await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
+  expect(submitted).toMatchObject({
+    mood: 5,
+    energy: 4,
+    stress: 7,
+    motivation: 6,
+  });
+  expect(String((submitted as { notes?: string }).notes)).toContain('Kopf voll, Energie begrenzt, Druck spuerbar.');
+});
+
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
   await mockPulseApi(page);
 
@@ -617,11 +663,12 @@ test('Coach daily briefing guides the first conversation without auto-send', asy
 
 test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', async ({ page }) => {
   let coachSends = 0;
+  const plannedDate = localIsoDateDaysFrom(1);
   await mockPulseApi(page, {
     home: {
       nextWorkout: {
         id: 'workout-1',
-        plannedDate: '2026-05-04',
+        plannedDate,
         activityType: 'bike',
         zone: 2,
         durationMin: 80,
@@ -633,7 +680,7 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
     planWorkouts: [
       {
         id: 'workout-1',
-        plannedDate: '2026-05-04',
+        plannedDate,
         activityType: 'bike',
         zone: 2,
         durationMin: 80,
@@ -782,11 +829,12 @@ test('Coach send failure preserves the draft and can retry', async ({ page }) =>
 
 test('Plan alternative failure keeps the workout visible and offers retry', async ({ page }) => {
   let updates = 0;
+  const plannedDate = localIsoDateDaysFrom(1);
   await mockPulseApi(page, {
     planWorkouts: [
       {
         id: 'workout-1',
-        plannedDate: '2026-05-04',
+        plannedDate,
         activityType: 'bike',
         zone: 2,
         durationMin: 80,
