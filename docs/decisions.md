@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — UI/UX Phase 2 priorisiert Trust Closure vor neuen Features
+
+- **Decision:** Nach PR #176 werden die naechsten UI/UX-Phasen als Trust-Closure-Welle sortiert: Home Daily Decision Closure, Mental Signal Impact, Garmin Workout Sync Confidence, Mobile/A11y Controls und Data Evidence Trail. Fueling/Recovery bleibt preference-gated, Native iOS bleibt evidence-gated.
+- **Why:** Die App ist weniger bulky, aber der hoechste Alltagsnutzen entsteht jetzt aus Vertrauen: Was ist heute abgeschlossen, was hat der Check-in veraendert, und ist das Garmin-Workout wirklich korrekt auf Uhr/Edge? Neue Features ohne diese Vertrauensschicht wuerden die App wieder breiter statt nuetzlicher machen.
+- **Alternatives:** Direkt Fueling/Recovery bauen (blockiert durch offene Praeferenzen); nur mobile Polish machen (verbessert Bedienung, aber nicht Entscheidungssicherheit); Coach weiter einbetten, bevor Mental/Garmin-Signale klar genug sind (mehr UI ohne bessere Grundlage).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Mental Check-in nutzt qualitative Lagekarten vor Zahlen
 
 - **Decision:** Data > Mental startet mit drei qualitativen Lagekarten (`Stabil starten`, `Dosiert bleiben`, `Schutzmodus`) fuer Mental Health und Mental Fitness. Die Karten mappen weiterhin clientseitig auf den bestehenden numerischen Check-in-Vertrag; Feinjustierung bleibt optional.

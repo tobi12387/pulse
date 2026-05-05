@@ -19,10 +19,14 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Navigation IA Continuation | Insights is now a Data capability and Coach is no longer a primary tab; the next daily-flow step is embedding the remaining Coach composer/history affordances contextually without breaking `/coach` deep links | `../specs/2026-05-04-nav-ia-design.md` |
-| 2 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
-| 3 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
-| 4 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 1 | Home Daily Decision Closure | Home should close or anchor no-training days locally before Coach is needed | `2026-05-05-home-daily-decision-closure.md` |
+| 2 | Mental Signal Impact Loop | PR #176 made input easier; now saved mental state must visibly affect Home, Plan and Coach | `2026-05-05-mental-signal-impact-loop.md` |
+| 3 | Garmin Workout Sync Confidence | PR #176 fixed 0-repeat repair detection; Plan now needs a clear trust surface for watch/Edge readiness | `2026-05-05-garmin-workout-sync-confidence.md` |
+| 4 | Mobile/A11y Controls Polish | Route evidence has no document overflow, but touch targets and custom radio/tab semantics still need hardening | `2026-05-05-mobile-a11y-controls-polish.md` |
+| 5 | Data Decision Evidence Trail | Evidence should deep-link from Home/Plan to the exact Data section behind a recommendation | `2026-05-05-data-decision-evidence-trail.md` |
+| 6 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
+| 7 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
+| 8 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -44,6 +48,7 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Insights Into Data | Insights is rendered as Data `Analysen`, removed from primary navigation, and `/insights` redirects to `/data?tab=analysen`. | `completed/2026-05-04-insights-into-data.md`, PR #165 |
 | Mental Check-in Simplification | Data, Home and Coach now share a lower-friction mental check-in flow with quick choices, free-text preview and visible Coach context. | `completed/2026-05-04-mental-checkin-simplification.md`, PR #167-#171 |
 | Coach Primary-Nav Removal | The primary navigation is now Home, Data, Plan and Settings; `/coach` remains a compatibility/deep-link route. | `../specs/2026-05-04-nav-ia-design.md`, `../../qa/2026-05-05-remove-coach-tab.md`, PR #172 |
+| UI/UX Foundation And Trust Slice | Login, Data overview, daily-flow deduplication, Mental qualitative cards and Garmin 0-repeat repair detection are live. | `../../qa/2026-05-05-ui-ux-phase2-review.md`, PR #175-#176 |
 
 ## Next Plan Summaries
 
@@ -54,6 +59,7 @@ The UI/UX Deep Friction Closure roadmap is completed. New UI/UX work should begi
 ### Navigation IA Continuation
 
 Implementation spec: [`../specs/2026-05-04-nav-ia-design.md`](../specs/2026-05-04-nav-ia-design.md)
+Current next slice: [`2026-05-05-home-daily-decision-closure.md`](2026-05-05-home-daily-decision-closure.md)
 
 **Goal:** Finish the transition from Coach as a place to Coach as a contextual action layer.
 
