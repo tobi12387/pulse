@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Home nutzt kompakten Mental-Check-in statt Data-Formular
+
+- **Decision:** Home bekommt fuer offene Check-in-Tagesaktionen eine kompakte Drei-Preset-Karte (`Stabil`, `Gemischt`, `Schuetzen`), die auf den bestehenden numerischen `POST /api/pulse/checkin`-Vertrag speichert. Data > Mental bleibt die detaillierte Eingabe-, Freitext- und Auswertungsflaeche.
+- **Why:** Der taegliche iPhone/PWA-Flow soll den Mental Check-in ohne Tab-Wechsel abschliessen koennen, ohne Home mit der vollstaendigen Data-UI zu beladen. Die Presets nutzen die gleiche grobe Score-Logik wie der Quick Check-in und halten Trends, Coach-Kontext und Backend-Vertrag stabil.
+- **Alternatives:** Die komplette Data-Check-in-Komponente auf Home duplizieren (zu bulky fuer Home); Home nur auf Data verlinken lassen (loest die Alltagsreibung nicht); neue Home-spezifische API bauen (unnötiger Backend-Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Mental Freitext nutzt Preview statt Auto-Save
 
 - **Decision:** Data > Mental bekommt fuer Freitext einen neuen `POST /api/pulse/checkin/text`-Preview-Endpunkt, der `classifyAndExtractCheckin` ueber den bestehenden LLM-Layer nutzt, aber keinen Check-in, keine Coach-Session und keinen Cache-Eintrag persistiert. Gespeichert wird erst nach expliziter Nutzerbestaetigung ueber den bestehenden `POST /api/pulse/checkin`-Vertrag.

@@ -17,7 +17,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the product orientation document.
 - Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
 - Current navigation direction is documented in `docs/superpowers/specs/2026-05-04-nav-ia-design.md`: target four top-level tabs Home, Data, Plan and Settings, with Insights moving into Data before Coach moves into route-level composer surfaces.
-- Mental Check-in Simplification: Data > Mental uses Garmin-assisted quick choices and a free-text extraction preview before saving. Next slice is Home placement from `docs/superpowers/plans/2026-05-04-mental-checkin-simplification.md`.
+- Mental Check-in Simplification: Home can complete the compact daily check-in, while Data > Mental remains the detailed quick-choice, free-text and evidence surface. Next mental-flow work should focus on reuse inside Coach/daily composer surfaces only if fresh route evidence shows friction.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDailyDecisionQuality, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useCheckinToday, useDailyDecisionQuality, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -559,6 +559,127 @@ function ActionClosureCard({
   );
 }
 
+type HomeMentalPreset = {
+  id: 'stable' | 'mixed' | 'protect';
+  label: string;
+  hint: string;
+  note: string;
+  scores: {
+    mood: number;
+    energy: number;
+    stress: number;
+    motivation: number;
+  };
+};
+
+const HOME_MENTAL_PRESETS: HomeMentalPreset[] = [
+  {
+    id: 'stable',
+    label: 'Stabil',
+    hint: 'Kopf klar, genug Reserve.',
+    note: 'Home Quick: Stabil',
+    scores: { mood: 8, energy: 8, stress: 2, motivation: 7 },
+  },
+  {
+    id: 'mixed',
+    label: 'Gemischt',
+    hint: 'Ein klarer Rahmen hilft.',
+    note: 'Home Quick: Gemischt',
+    scores: { mood: 6, energy: 5, stress: 5, motivation: 5 },
+  },
+  {
+    id: 'protect',
+    label: 'Schützen',
+    hint: 'Reizlast senken, klein halten.',
+    note: 'Home Quick: Schützen',
+    scores: { mood: 3, energy: 2, stress: 8, motivation: 3 },
+  },
+];
+
+function HomeMentalCheckinCard({
+  isPending,
+  error,
+  onSubmit,
+}: {
+  isPending: boolean;
+  error: unknown;
+  onSubmit: (preset: HomeMentalPreset) => void;
+}) {
+  const [selected, setSelected] = useState<HomeMentalPreset['id']>('mixed');
+  const preset = HOME_MENTAL_PRESETS.find(candidate => candidate.id === selected) ?? HOME_MENTAL_PRESETS[1]!;
+
+  return (
+    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 9 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>Mental Check-in</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>Home Quick</span>
+      </div>
+      <p style={{ margin: '0 0 11px', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        Wenn Zahlen gerade zu viel sind: wähle einen Tageszustand. Pulse speichert daraus die bekannten Mentalwerte.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 7 }}>
+        {HOME_MENTAL_PRESETS.map(option => {
+          const active = option.id === selected;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setSelected(option.id)}
+              style={{
+                minHeight: 58,
+                padding: '8px 7px',
+                background: active ? 'rgba(94,230,207,0.14)' : 'var(--surface-2)',
+                border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 5,
+                color: active ? 'var(--text)' : 'var(--text-2)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'block', fontSize: 12, fontWeight: 700, lineHeight: 1.15 }}>{option.label}</span>
+              <span style={{ display: 'block', marginTop: 4, fontSize: 10.5, lineHeight: 1.25, color: 'var(--text-3)' }}>
+                {option.hint}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {error != null && (
+        <div style={{ marginTop: 10 }}>
+          <InlineFeedback
+            title="Check-in nicht gespeichert"
+            message={errorMessage(error, 'Der Check-in konnte nicht gespeichert werden.')}
+            tone="warning"
+          />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => onSubmit(preset)}
+        disabled={isPending}
+        style={{
+          width: '100%',
+          minHeight: 42,
+          marginTop: 12,
+          background: isPending ? 'var(--surface-2)' : 'var(--accent)',
+          border: 'none',
+          borderRadius: 5,
+          color: isPending ? 'var(--text-3)' : 'var(--bg)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '.12em',
+          textTransform: 'uppercase',
+          cursor: isPending ? 'default' : 'pointer',
+        }}
+      >
+        {isPending ? 'Speichern…' : 'Check-in speichern'}
+      </button>
+    </div>
+  );
+}
+
 function DailyLoopHistoryCard({
   recentDecisions,
   suppressed,
@@ -629,12 +750,15 @@ export default function Home() {
   const outcomesQuery = useDailyOutcomeLearning(7);
   const qualityQuery = useDailyDecisionQuality(14);
   const updateAction = useUpdatePulseAction();
+  const checkinToday = useCheckinToday();
+  const checkin = usePulseCheckin();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
   const { data: metricsData } = usePulseMetrics(14);
   const { data: briefingData } = usePulseBriefing();
   const garminSync = useGarminSync();
   const navigate = useNavigate();
+  const [homeCheckinSubmitted, setHomeCheckinSubmitted] = useState(false);
 
   if (isLoading) {
     return (
@@ -672,7 +796,14 @@ export default function Home() {
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
   const dailyDecisionQuality = qualityQuery.data ?? null;
   const primaryAction = actionStates[0] ?? null;
-  const followUpActions = primaryAction ? actionStates.slice(1) : data.nextBestActions?.slice(1) ?? [];
+  const hasMentalCheckin = homeCheckinSubmitted || checkinToday.data?.checkin != null;
+  const homeMentalAction = !hasMentalCheckin && primaryAction?.source === 'checkin' ? primaryAction : null;
+  const visiblePrimaryAction = homeMentalAction ? null : primaryAction;
+  const followUpActions = visiblePrimaryAction
+    ? actionStates.slice(1)
+    : actionStates.length > 0
+      ? actionStates.filter(action => action.source !== 'checkin')
+      : data.nextBestActions?.slice(1) ?? [];
   const dataStatus = data.dataStatus;
   const showDataStatus = dataStatus.garmin.status !== 'ready' || !dataStatus.userReady || !dataStatus.profileReady;
 
@@ -790,13 +921,34 @@ export default function Home() {
 
       <DailyDecisionQualityStrip quality={dailyDecisionQuality} />
 
-      {primaryAction && (
+      {homeCheckinSubmitted && (
+        <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)', letterSpacing: '0.12em' }}>
+            CHECK-IN HEUTE ERLEDIGT ✓
+          </span>
+        </div>
+      )}
+
+      {homeMentalAction && !homeCheckinSubmitted && (
+        <HomeMentalCheckinCard
+          isPending={checkin.isPending}
+          error={checkin.error}
+          onSubmit={(preset) => {
+            checkin.mutate(
+              { ...preset.scores, notes: preset.note },
+              { onSuccess: () => setHomeCheckinSubmitted(true) },
+            );
+          }}
+        />
+      )}
+
+      {visiblePrimaryAction && (
         <ActionClosureCard
-          action={primaryAction}
+          action={visiblePrimaryAction}
           isPending={updateAction.isPending}
           onNavigate={navigate}
           onResolve={(status) => updateAction.mutate({
-            id: primaryAction.decisionId,
+            id: visiblePrimaryAction.decisionId,
             status,
             reason: status === 'completed' ? 'In Home erledigt.' : 'In Home verschoben.',
           })}
