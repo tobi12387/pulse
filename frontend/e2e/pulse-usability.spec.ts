@@ -54,6 +54,13 @@ async function expectTouchTargetAt(page: Page, name: string | RegExp, index: num
   expect(box!.height, `${String(name)} at index ${index} should be at least ${minHeight}px tall`).toBeGreaterThanOrEqual(minHeight);
 }
 
+function localIsoDateDaysFrom(days: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -656,11 +663,12 @@ test('Coach daily briefing guides the first conversation without auto-send', asy
 
 test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', async ({ page }) => {
   let coachSends = 0;
+  const plannedDate = localIsoDateDaysFrom(1);
   await mockPulseApi(page, {
     home: {
       nextWorkout: {
         id: 'workout-1',
-        plannedDate: '2026-05-04',
+        plannedDate,
         activityType: 'bike',
         zone: 2,
         durationMin: 80,
@@ -672,7 +680,7 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
     planWorkouts: [
       {
         id: 'workout-1',
-        plannedDate: '2026-05-04',
+        plannedDate,
         activityType: 'bike',
         zone: 2,
         durationMin: 80,
@@ -821,11 +829,12 @@ test('Coach send failure preserves the draft and can retry', async ({ page }) =>
 
 test('Plan alternative failure keeps the workout visible and offers retry', async ({ page }) => {
   let updates = 0;
+  const plannedDate = localIsoDateDaysFrom(1);
   await mockPulseApi(page, {
     planWorkouts: [
       {
         id: 'workout-1',
-        plannedDate: '2026-05-04',
+        plannedDate,
         activityType: 'bike',
         zone: 2,
         durationMin: 80,
