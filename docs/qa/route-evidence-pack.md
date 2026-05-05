@@ -27,13 +27,18 @@ test-results/route-evidence/<date>-<commit>/<project>/
 
 ## Captured Routes
 
+Primary route set:
+
 - `/`
-- `/coach`
 - `/data`
 - `/data?tab=mental`
 - `/data?tab=analysen`
 - `/plan`
 - `/settings`
+
+Compatibility route still captured while old links and push targets can open it:
+
+- `/coach`
 
 Each project directory contains:
 

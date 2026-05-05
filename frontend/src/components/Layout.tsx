@@ -1,22 +1,18 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
-import { useCheckinToday } from '@/pulse/hooks';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Dashboard', mobileLabel: 'Home',     key: '1', end: true  },
-  { to: '/coach',     label: 'Coach',     mobileLabel: 'Coach',    key: '2', end: false },
-  { to: '/data',      label: 'Data',      mobileLabel: 'Data',     key: '3', end: false },
-  { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',     key: '4', end: false },
-  { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '5', end: false },
+  { to: '/',          label: 'Home',      mobileLabel: 'Home',     key: '1', end: true  },
+  { to: '/data',      label: 'Data',      mobileLabel: 'Data',     key: '2', end: false },
+  { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',     key: '3', end: false },
+  { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '4', end: false },
 ];
 
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
-  const { data: checkinData } = useCheckinToday();
-  const hasCheckin = !!checkinData?.checkin;
   useNavHotkeys();
 
   async function handleLogout() {
@@ -75,12 +71,6 @@ export default function Layout() {
               >
                 {key}
               </span>
-              {to === '/coach' && !hasCheckin && (
-                <span
-                  className="ml-1 w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: 'var(--amber)' }}
-                />
-              )}
             </NavLink>
           ))}
         </nav>
@@ -137,14 +127,6 @@ export default function Layout() {
           >
             {({ isActive }) => (
               <>
-                {to === '/coach' && !hasCheckin && (
-                  <span
-                    style={{
-                      position: 'absolute', top: 6, right: 'calc(50% - 14px)',
-                      width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)',
-                    }}
-                  />
-                )}
                 <span
                   style={{
                     width: 16, height: 2, borderRadius: 1,

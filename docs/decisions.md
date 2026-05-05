@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Coach ist kein Top-Level-Tab mehr
+
+- **Decision:** Pulse nutzt als primaere Navigation nur noch Home, Data, Plan und Settings. `/coach` bleibt als kompatible Route fuer bestehende Deep Links, Push-Aktionen, Home-/Plan-Einstiege und Verlauf erhalten, ist aber kein eigener Haupt-Tab und keine numerische Top-Level-Taste mehr.
+- **Why:** Tobi wollte den Coach-Tab nicht mehr sichtbar haben, und die Navigation soll fuer iPhone/PWA sowie Desktop weniger bulky werden. Coach ist weiterhin eine Aktionsebene fuer Fragen, Planung und Reflexion, aber kein taeglich notwendiger Ort in der Hauptnavigation.
+- **Alternatives:** `/coach` vollstaendig entfernen (zu riskant fuer Push-/Daily-Links und Verlauf); Coach als Top-Level-Tab behalten (widerspricht dem vier-Tab-IA-Ziel); Coach sofort komplett in neue Embedded Composer umbauen (groesserer Scope als der sichere erste Nav-Slice).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Coach zeigt erledigten Mental-Check-in als Kontext
 
 - **Decision:** Coach rendert einen gespeicherten Tages-Mental-Check-in als read-only Kontextkarte und bereitet daraus eine Planungsfrage vor, statt erneut die gefuehrte Check-in-Frage als Standardprompt zu zeigen. Die Eingabe bleibt bei Home/Data beziehungsweise Voice; Coach dupliziert keine Check-in-Form.
