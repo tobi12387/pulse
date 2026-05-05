@@ -6,10 +6,10 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest recorded runtime deploy: `d1f5584` / PR #184.
+- Latest recorded runtime deploy: `48c9c1b` / PR #186.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
-- UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence and Mobile Touch Targets are deployed through PR #184.
+- UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets and Mobile A11y Keyboard are deployed through PR #186.
 
 ## Active Direction
 
@@ -17,7 +17,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
 - Current navigation direction is documented in `docs/superpowers/specs/2026-05-04-nav-ia-design.md`: the target top-level set is Home, Data, Plan and Settings. Insights is now inside Data; Coach is no longer a primary-nav destination while `/coach` remains a compatibility/deep-link route; Home/Plan can open Coach with prepared draft prompts.
 - Mental Check-in Simplification and Mental Signal Impact: Home can complete the compact daily check-in; Data, Home, Plan and Coach now use one shared impact language. Next mental work should focus on evidence quality, not another input rebuild.
-- Active trust-closure plan after Mobile A11y Keyboard: implement the first frontend-only slice of `2026-05-05-data-decision-evidence-trail.md`.
+- Active trust-closure plan: implement the first frontend-only slice of `2026-05-05-data-decision-evidence-trail.md`.
 - Completed 2026-05-04 implementation plans live in `docs/superpowers/plans/completed/`; do not rebuild them.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
@@ -39,8 +39,8 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - PR #178: Home Daily Decision Closure deployed; no-training days close locally on Home while Coach remains a support action.
 - PR #180: Mental Signal Impact deployed; saved check-ins visibly influence Home, Plan and Coach wording through a shared frontend classifier.
 - PR #182: Garmin Sync Confidence deployed; Plan rows and workout detail modal now explain local-only, Garmin-template, calendar-ready, completed, missed and replaced planned workouts without live Garmin calls.
-- PR #184: Mobile Touch Targets deployed; daily-use controls in Home/Data/Plan/Coach/Settings now meet the 44px iPhone/PWA target-size baseline while keyboard semantics remain the next slice.
-- Mobile A11y Keyboard is the current PR-sized slice; once merged, Data Decision Evidence Trail is next.
+- PR #184: Mobile Touch Targets deployed; daily-use controls in Home/Data/Plan/Coach/Settings now meet the 44px iPhone/PWA target-size baseline.
+- PR #186: Mobile A11y Keyboard deployed; Data/Plan segmented controls use tab semantics and Mental radio groups support arrow-key selection.
 - 2026-05-04: AI working context was condensed so sessions start from AGENTS plus `docs/ai/*` instead of long pasted prompts or PR archives.
 - 2026-05-04: completed structure and UI/UX roadmap docs were moved out of the active plan surface to avoid reimplementation.
 - PR #149-#150: ops/tooling cleanup and design handoff relocation.
