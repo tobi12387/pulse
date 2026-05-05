@@ -23,19 +23,19 @@ export function DailyDecisionCard({
   decision: DailyDecision;
   labelCase?: LabelCase;
   density?: Density;
-  onActivate?: () => void;
+  onActivate?: (path: string) => void;
   onPrompt?: () => void;
 }) {
   const color = priorityColor(decision.priority);
   const promptIsPrimary = Boolean(onActivate && onPrompt && decision.targetPath.startsWith('/coach'));
-  const primaryAction = promptIsPrimary ? onPrompt : onActivate;
-  const showPromptAction = Boolean(onPrompt && !promptIsPrimary);
+  const primaryAction = promptIsPrimary ? onPrompt : onActivate ? () => onActivate(decision.targetPath) : undefined;
+  const showPromptAction = Boolean(onPrompt && !promptIsPrimary && !(decision.supportCta && onActivate));
   const isButton = Boolean(primaryAction);
   const Wrapper = isButton ? 'button' : 'div';
   const compact = density === 'compact';
 
   return (
-    <div style={{ padding: compact ? '10px 12px' : '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+    <div data-testid="daily-decision-card" style={{ padding: compact ? '10px 12px' : '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: compact ? 7 : 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em' }}>
           {label('Tagesentscheidung', labelCase)}
@@ -105,7 +105,7 @@ export function DailyDecisionCard({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: primaryAction && showPromptAction && !compact ? '1fr 1fr' : '1fr', gap: 8, marginTop: compact ? 10 : 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: (primaryAction && (showPromptAction || decision.supportCta) && !compact) ? '1fr 1fr' : '1fr', gap: 8, marginTop: compact ? 10 : 12 }}>
         {primaryAction && (
           <button
             type="button"
@@ -146,6 +146,33 @@ export function DailyDecisionCard({
             }}
           >
             Gespräch damit starten
+          </button>
+        )}
+        {decision.supportCta && decision.supportPath && onActivate && (
+          <button
+            type="button"
+            onClick={() => {
+              if (decision.supportPath?.startsWith('/coach') && onPrompt) {
+                onPrompt();
+                return;
+              }
+              onActivate(decision.supportPath!);
+            }}
+            style={{
+              minHeight: 40,
+              padding: compact ? '8px 10px' : '9px 10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              color: 'var(--text-2)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            {decision.supportCta}
           </button>
         )}
       </div>
