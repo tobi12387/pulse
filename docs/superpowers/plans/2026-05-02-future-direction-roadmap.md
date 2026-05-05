@@ -19,11 +19,9 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 
 | Rank | Wave | Why It Comes Here | Implementation Plan |
 |---|---|---|---|
-| 1 | Mobile/A11y Controls Polish | 44px touch targets are being closed first; custom radio/tab keyboard semantics still need hardening | `2026-05-05-mobile-a11y-controls-polish.md` |
-| 2 | Data Decision Evidence Trail | Evidence should deep-link from Home/Plan to the exact Data section behind a recommendation | `2026-05-05-data-decision-evidence-trail.md` |
-| 3 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
-| 4 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
-| 5 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+| 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
+| 2 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
+| 3 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
 
 ## Recently Completed Directional Waves
 
@@ -49,6 +47,8 @@ Pulse should be the quiet daily operating system for training and recovery: one 
 | Home Daily Decision Closure | Fallback no-training days close locally on Home; Coach remains a secondary support prompt and synthetic action ids are not patched. | `completed/2026-05-05-home-daily-decision-closure.md`, PR #178 |
 | Mental Signal Impact Loop | Saved mental check-ins now use shared impact language across Data, Home, Plan and Coach. | `completed/2026-05-05-mental-signal-impact-loop.md`, PR #180 |
 | Garmin Workout Sync Confidence | Plan rows and workout detail modal show whether a planned workout is local-only, Garmin-template-only, calendar-ready, completed, missed or replaced. | `completed/2026-05-05-garmin-workout-sync-confidence.md`, PR #182 |
+| Mobile/A11y Controls Polish | Daily-use controls meet the 44px mobile touch baseline; Data/Plan tabs and Mental radios support keyboard semantics. | `completed/2026-05-05-mobile-a11y-controls-polish.md`, PR #184, PR #186 |
+| Data Decision Evidence Trail | Home/Plan evidence chips deep-link to Data anchors with hash-driven tab selection, scrolling and visible focus. | `completed/2026-05-05-data-decision-evidence-trail.md`, PR #188 |
 
 ## Next Plan Summaries
 
