@@ -92,6 +92,8 @@ Why first:
 
 Implementation note 2026-05-05: this stage is split into safe slices. The first slice removes Coach from the primary desktop/mobile navigation and remaps top-level hotkeys to Home/Data/Plan/Settings while preserving `/coach` as a compatibility route. Embedded composer/history relocation can continue in later slices without breaking existing deep links.
 
+Implementation note 2026-05-05: the second slice carries context into Coach via `/coach?focus=...&prompt=...` from Home and Plan. Coach fills the draft but still requires explicit send; existing action/push links without `prompt` remain compatible. This keeps the route callable while avoiding a larger embedded-composer state move.
+
 Scope:
 
 - Introduce a compact Coach composer that can be embedded on Home and Plan.

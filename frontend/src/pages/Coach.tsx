@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   invalidatePulseContextQueries,
   pulseKeys,
@@ -654,6 +655,8 @@ export default function Coach() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [failedSend, setFailedSend] = useState<FailedSend | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const promptPrefillRef = useRef<string | null>(null);
+  const [searchParams] = useSearchParams();
 
   const { data: home } = usePulseHome();
   const { data: actionsData } = usePulseActions({ includeHistory: true });
@@ -743,6 +746,18 @@ export default function Coach() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [lastMessageTimestamp, voiceCard]);
+
+  useEffect(() => {
+    const prompt = searchParams.get('prompt')?.trim();
+    if (!prompt || promptPrefillRef.current === prompt) return;
+    const previousPrompt = promptPrefillRef.current;
+    promptPrefillRef.current = prompt;
+    setInput(current => {
+      const currentDraft = current.trim();
+      if (!currentDraft || current === previousPrompt) return prompt;
+      return current;
+    });
+  }, [searchParams]);
 
   function sendCoachMessage(message: string) {
     const msg = message.trim();
