@@ -74,7 +74,9 @@ Also raised shared segmented/range/mini controls and the Plan/Settings controls 
 
 ## Task 2: Improve Segmented Control Semantics
 
-- [ ] **Step 1: Add keyboard test**
+- [x] **Step 1: Add keyboard test**
+
+Implemented in the keyboard-semantics slice by adding desktop/mobile coverage for the Data segmented control as a real `tablist` with `tab` children and ArrowRight navigation from `Überblick` to `Abdeckung`.
 
 In `frontend/e2e/ux-a11y-responsive.spec.ts`:
 
@@ -91,7 +93,7 @@ test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
 
 Use the exact label text present in the component; prefer accessible role/name queries over brittle text-only selectors.
 
-- [ ] **Step 2: Implement `tablist`/`tab` roles**
+- [x] **Step 2: Implement `tablist`/`tab` roles**
 
 In `frontend/src/components/PulseChrome.tsx`, set:
 
@@ -108,11 +110,11 @@ aria-selected={active === item.id}
 tabIndex={active === item.id ? 0 : -1}
 ```
 
-- [ ] **Step 3: Add ArrowLeft/ArrowRight handling**
+- [x] **Step 3: Add ArrowLeft/ArrowRight handling**
 
 In the button `onKeyDown`, move to previous/next item and call `onChange(next.id)`.
 
-- [ ] **Step 4: Auto-scroll active tab into view**
+- [x] **Step 4: Auto-scroll active tab into view**
 
 Use a ref per active button and:
 
@@ -122,7 +124,9 @@ activeButtonRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
 
 ## Task 3: Make Mental Radios Keyboard-Complete
 
-- [ ] **Step 1: Add keyboard test for Mental state cards**
+- [x] **Step 1: Add keyboard test for Mental state cards**
+
+Implemented in the keyboard-semantics slice by covering state cards, quick-choice radios and fine-tune score radios in `frontend/e2e/ux-data-mental.spec.ts`.
 
 In `frontend/e2e/ux-data-mental.spec.ts`:
 
@@ -136,7 +140,7 @@ test('Mental state cards support arrow-key selection', async ({ page }) => {
 });
 ```
 
-- [ ] **Step 2: Implement roving focus helper inside `mental-components.tsx`**
+- [x] **Step 2: Implement roving focus helper inside `mental-components.tsx`**
 
 Add a small helper for the existing button-radio groups:
 
@@ -150,7 +154,7 @@ Use `onKeyDown` on radio buttons for `ArrowRight`, `ArrowDown`, `ArrowLeft`, and
 
 ## Task 4: Verify
 
-- [ ] **Step 1: Focused E2E**
+- [x] **Step 1: Focused E2E**
 
 ```bash
 npm run test:e2e -- frontend/e2e/ux-a11y-responsive.spec.ts frontend/e2e/ux-data-mental.spec.ts --project=desktop-chromium --project=mobile-chromium
@@ -158,7 +162,11 @@ npm run test:e2e -- frontend/e2e/ux-a11y-responsive.spec.ts frontend/e2e/ux-data
 
 Expected: PASS.
 
-- [ ] **Step 2: Full E2E and evidence**
+Actual: PASS with 25 tests and 3 expected project skips after the keyboard-semantics slice.
+
+- [x] **Step 2: Full E2E and evidence**
+
+Full verification passed: frontend build, script guards, focused A11y/Mental E2E, broader Smoke/Usability E2E, full E2E and route evidence.
 
 ```bash
 npm run test:e2e

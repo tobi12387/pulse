@@ -21,10 +21,10 @@ test('/data opens a user-facing overview by default', async ({ page }) => {
 
   await page.goto('/data');
 
-  await expect(page.getByRole('button', { name: 'Überblick' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: 'Überblick' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'Datenüberblick', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Analysen öffnen' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Abdeckung' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('tab', { name: 'Abdeckung' })).toHaveAttribute('aria-selected', 'false');
 });
 
 test('/data?tab=coverage still opens the coverage tab', async ({ page }) => {
@@ -32,8 +32,8 @@ test('/data?tab=coverage still opens the coverage tab', async ({ page }) => {
 
   await page.goto('/data?tab=coverage');
 
-  await expect(page.getByRole('button', { name: 'Abdeckung' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: 'Analysen' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('tab', { name: 'Abdeckung' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'false');
 });
 
 test('Mental check-in presents quick choices before optional detail entry', async ({ page }) => {
@@ -58,6 +58,33 @@ test('Mental check-in presents quick choices before optional detail entry', asyn
     element.getBoundingClientRect().top,
   );
   expect(quickChoiceTop).toBeLessThan(detailTop);
+});
+
+test('Mental button-radio groups support arrow-key selection', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await page.getByRole('radio', { name: 'Mentale Lage: Stabil starten' }).focus();
+  await page.keyboard.press('ArrowRight');
+  const dosiert = page.getByRole('radio', { name: 'Mentale Lage: Dosiert bleiben' });
+  await expect(dosiert).toBeFocused();
+  await expect(dosiert).toHaveAttribute('aria-checked', 'true');
+
+  await page.getByRole('radio', { name: 'Kopf: klar' }).focus();
+  await page.keyboard.press('ArrowRight');
+  const gemischt = page.getByRole('radio', { name: 'Kopf: gemischt' });
+  await expect(gemischt).toBeFocused();
+  await expect(gemischt).toHaveAttribute('aria-checked', 'true');
+
+  await page.getByRole('button', { name: 'Feinjustieren' }).click();
+  await page.getByRole('radio', { name: 'Stimmung 8/10' }).focus();
+  await page.keyboard.press('ArrowRight');
+  const moodNine = page.getByRole('radio', { name: 'Stimmung 9/10' });
+  await expect(moodNine).toBeFocused();
+  await expect(moodNine).toHaveAttribute('aria-checked', 'true');
 });
 
 test('Mental check-in can be saved from mental-health and mental-fitness state cards without numbers', async ({ page }) => {

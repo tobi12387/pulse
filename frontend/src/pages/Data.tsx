@@ -130,7 +130,7 @@ export default function Data() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
-      <SegmentedControl items={TABS} active={tab} onChange={setTab} />
+      <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Data Bereiche" />
       {tab === 'ueberblick' && <DataOverviewTab onOpen={setTab} />}
       {tab === 'abdeckung' && <CoverageTab />}
       {tab === 'schlaf' && <SchlafTab />}

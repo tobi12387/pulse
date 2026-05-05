@@ -76,6 +76,15 @@ async function expectRadioTouchTarget(page: Page, name: string | RegExp, minSize
   expect(box!.width, `${String(name)} radio should be at least ${minSize}px wide`).toBeGreaterThanOrEqual(minSize);
 }
 
+async function expectTabTouchTarget(page: Page, name: string | RegExp, minSize = 44) {
+  const target = page.getByRole('tab', { name }).first();
+  await expect(target).toBeVisible();
+  const box = await target.boundingBox();
+  expect(box, `Missing tab touch target ${String(name)}`).not.toBeNull();
+  expect(box!.height, `${String(name)} tab should be at least ${minSize}px tall`).toBeGreaterThanOrEqual(minSize);
+  expect(box!.width, `${String(name)} tab should be at least ${minSize}px wide`).toBeGreaterThanOrEqual(minSize);
+}
+
 async function expectSelectorTouchTarget(page: Page, selector: string, minSize = 44) {
   const target = page.locator(selector).first();
   await expect(target).toBeVisible();
@@ -643,7 +652,7 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   });
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Mental', exact: true }).click();
+  await page.getByRole('tab', { name: 'Mental', exact: true }).click();
 
   await expect(page.getByText('Quick Check-in')).toBeVisible();
   await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
@@ -764,7 +773,7 @@ test('Data shows Garmin recovery depth signals without exposing raw payloads', a
   await mockPulseApi(page);
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Metriken' }).click();
+  await page.getByRole('tab', { name: 'Metriken' }).click();
 
   await expect(page.getByText('Recovery Depth')).toBeVisible();
   await expect(page.getByText('Schlafbedarf')).toBeVisible();
@@ -932,24 +941,24 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
 
   await page.getByRole('button', { name: 'Metriken prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=metrics');
-  await expect(page.getByRole('button', { name: 'Metriken' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: 'Metriken' })).toHaveAttribute('aria-selected', 'true');
 
   await page.goBack();
   await expect(page).toHaveURL('/plan?tab=training');
-  await expect(page.getByRole('button', { name: 'Training', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: 'Training', exact: true })).toHaveAttribute('aria-selected', 'true');
 });
 
 test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data?tab=mental');
-  await expect(page.getByRole('button', { name: 'Mental', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Gewicht' }).click();
+  await expect(page.getByRole('tab', { name: 'Mental', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('tab', { name: 'Gewicht' }).click();
   await expect(page).toHaveURL('/data?tab=weight');
 
   await page.goto('/plan?tab=goals');
-  await expect(page.getByRole('button', { name: 'Ziele' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Statistik' }).click();
+  await expect(page.getByRole('tab', { name: 'Ziele' })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('tab', { name: 'Statistik' }).click();
   await expect(page).toHaveURL('/plan?tab=stats');
 
   await page.goto('/settings?section=push');
@@ -1342,7 +1351,7 @@ test('Plan preserves race goal metadata when editing', async ({ page }) => {
   });
 
   await page.goto('/plan');
-  await page.getByRole('button', { name: 'Ziele' }).click();
+  await page.getByRole('tab', { name: 'Ziele' }).click();
   await page.getByRole('button', { name: 'Bearbeiten' }).click();
 
   await expect(page.locator('select').first()).toHaveValue('half');
@@ -1744,7 +1753,7 @@ test('Data coverage explains status, cause and action before backfill', async ({
   });
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Abdeckung' }).click();
 
   await expect(page.getByText('Coverage Diagnose')).toBeVisible();
   await expect(page.getByText('Status', { exact: true })).toBeVisible();
@@ -1807,14 +1816,14 @@ test('Data shows Garmin domain quality and affected-tab hints', async ({ page })
   });
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Abdeckung' }).click();
 
   await expect(page.getByTestId('garmin-quality-panel')).toContainText('Garmin Domainqualität');
   await expect(page.getByTestId('garmin-quality-sleep')).toContainText('TEIL');
   await expect(page.getByTestId('garmin-quality-body_composition')).toContainText('ALT');
   await expect(page.getByTestId('garmin-quality-body_composition')).toContainText('Körperzusammensetzung fehlt');
 
-  await page.getByRole('button', { name: 'Gewicht' }).click();
+  await page.getByRole('tab', { name: 'Gewicht' }).click();
   await expect(page.getByTestId('garmin-quality-hint')).toContainText('Körperdaten');
   await expect(page.getByTestId('garmin-quality-hint')).toContainText('ALT');
 });
@@ -1854,7 +1863,7 @@ test('Data shows Garmin signal usefulness priorities', async ({ page }) => {
   });
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Abdeckung' }).click();
 
   await expect(page.getByTestId('garmin-signal-usefulness-panel')).toContainText('Garmin Signalnutzen');
   await expect(page.getByTestId('garmin-signal-body_battery_depth')).toContainText('UNTERGENUTZT');
@@ -1963,7 +1972,7 @@ test('Data backfill shows preview, last run and failed days first', async ({ pag
   });
 
   await page.goto('/data');
-  await page.getByRole('button', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Abdeckung' }).click();
   await page.getByRole('button', { name: 'Vorschau' }).click();
 
   await expect(page.getByText('Nächste Aktion')).toBeVisible();
@@ -2142,7 +2151,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);
 
   await page.goto('/data');
-  const overviewTab = page.getByRole('button', { name: 'Überblick', exact: true });
+  const overviewTab = page.getByRole('tab', { name: 'Überblick', exact: true });
   await expect(overviewTab).toBeVisible();
   const box = await overviewTab.boundingBox();
   expect(box).not.toBeNull();
@@ -2159,7 +2168,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   expect(dataTabs.scrollWidth).toBeGreaterThan(dataTabs.clientWidth);
 
   await page.goto('/plan');
-  await expect(page.getByRole('button', { name: 'Statistik' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Statistik' })).toBeVisible();
 
   await page.goto('/coach');
   const coachInput = page.getByPlaceholder('Frage…');
@@ -2215,8 +2224,8 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   });
 
   await page.goto('/data?tab=coverage');
-  await expectTouchTarget(page, 'Überblick');
-  await expectTouchTarget(page, 'Abdeckung');
+  await expectTabTouchTarget(page, 'Überblick');
+  await expectTabTouchTarget(page, 'Abdeckung');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');
 
@@ -2226,8 +2235,8 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, 'Schlaf öffnen');
 
   await page.goto('/plan');
-  await expectTouchTarget(page, 'Training');
-  await expectTouchTarget(page, 'Statistik');
+  await expectTabTouchTarget(page, 'Training');
+  await expectTabTouchTarget(page, 'Statistik');
   await expectTouchTarget(page, 'Vorherige Woche');
   await expectTouchTarget(page, 'Nächste Woche');
   await expectTouchTarget(page, 'Sportart ändern');

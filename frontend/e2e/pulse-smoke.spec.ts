@@ -78,7 +78,7 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
 test('/insights redirects to the Data analysis tab', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/data?tab=analysen');
-  await expect(page.getByRole('button', { name: 'Analysen' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
 });
 
