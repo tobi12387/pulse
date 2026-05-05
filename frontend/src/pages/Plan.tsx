@@ -12,6 +12,7 @@ import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { coachPromptPath } from '@/pulse/coach-link';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import {
   buildPlanAlternative,
@@ -97,7 +98,14 @@ function NextTrainingDecisionCard({
           {[
             { label: 'Verfügbarkeit prüfen', onClick: onOpenAvailability, accent: false },
             { label: 'Plan generieren', onClick: onOpenGenerator, accent: false },
-            { label: 'Coach fragen', onClick: () => onNavigate('/coach'), accent: true },
+            {
+              label: 'Coach fragen',
+              onClick: () => onNavigate(coachPromptPath(
+                'Ich habe kein offenes Training geplant. Soll ich Verfügbarkeit, Plan-Generator oder bewusste Erholung priorisieren?',
+                'plan',
+              )),
+              accent: true,
+            },
           ].map(action => (
             <button
               key={action.label}
@@ -542,6 +550,7 @@ function TrainingTab() {
           labelCase="upper"
           density="compact"
           onActivate={() => navigate(dailyDecision.targetPath)}
+          onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'plan'))}
         />
       )}
 

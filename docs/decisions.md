@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Coach-Kontext nutzt vorbereitete Deep-Link-Prompts
+
+- **Decision:** Home und Plan oeffnen Coach fuer kontextuelle Fragen ueber `/coach?focus=...&prompt=...`. Coach uebernimmt diesen Prompt nur als Entwurf im Eingabefeld und sendet nie automatisch; bestehende `/coach?actionId=...&decisionId=...` Push-/Action-Links bleiben ohne Prompt kompatibel.
+- **Why:** Coach ist nicht mehr Top-Level-Navigation, soll aber weiterhin als aufrufbare Aktionsebene helfen. Ein vorbereiteter Entwurf transportiert Tages-/Plan-Kontext mit sehr kleinem Frontend-Scope, ohne Backend-Vertrag, LLM-Kontextaufbau oder Push-Links zu veraendern.
+- **Alternatives:** Sofort einen eingebetteten Coach-Composer in Home/Plan/Data bauen (groesserer UI-/State-Scope); alle `/coach`-Links auf Data/Plan umbiegen (bricht Chat-/History-Kompatibilitaet); Prompt automatisch senden (zu uebergriffig und schwerer kontrollierbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Erledigte 2026-05-04-Pläne werden aus dem aktiven Backlog archiviert
 
 - **Decision:** `2026-05-04-daily-loop-slimming.md`, `2026-05-04-insights-into-data.md` und `2026-05-04-mental-checkin-simplification.md` werden nach `docs/superpowers/plans/completed/` verschoben. Die aktive Roadmap referenziert diese Arbeiten nur noch als abgeschlossene Wellen; aktive Umsetzung bleibt Navigation-IA-Fortsetzung, Mobile Field Reliability und preference-gegatetes Fueling/Recovery.

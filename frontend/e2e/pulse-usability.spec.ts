@@ -433,6 +433,107 @@ test('Coach quick prompts prepare a question without sending it', async ({ page 
   expect(coachSends).toBe(0);
 });
 
+test('Coach prompt deep links prepare a draft without sending it', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/coach?focus=daily&prompt=Soll%20ich%20heute%20defensiv%20trainieren%3F');
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Soll ich heute defensiv trainieren?');
+  expect(coachSends).toBe(0);
+});
+
+test('Coach prompt deep links can open a new prepared draft', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/coach?focus=daily&prompt=Erster%20Entwurf');
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Erster Entwurf');
+
+  await page.goto('/coach?focus=plan&prompt=Zweiter%20Entwurf');
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('Zweiter Entwurf');
+});
+
+test('Coach action deep links remain compatible without a prompt', async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('pageerror', (error) => consoleErrors.push(error.message));
+
+  await mockPulseApi(page);
+
+  await page.goto('/coach?actionId=checkin%3A%2Fcoach%3A0&decisionId=decision-1');
+  await expect(page).toHaveURL(/\/coach\?actionId=/);
+  await expect(page.getByText('TAGESBRIEFING')).toBeVisible();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue('');
+  expect(consoleErrors).toEqual([]);
+});
+
+test('Home daily decision can open Coach with a prepared prompt', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    home: {
+      readiness: {
+        date: '2026-05-01',
+        score: 52,
+        label: 'vorsichtig',
+        shortLabel: 'vorsichtig',
+        color: 'amber',
+        cached: false,
+        components: {
+          sleep: 55,
+          hrv: 50,
+          tsb: 44,
+          battery: 54,
+          mental: 60,
+          stress: 52,
+        },
+      },
+      fitnessLoad: {
+        date: '2026-05-01',
+        ctl: 42.4,
+        atl: 58.1,
+        tsb: -15.7,
+        cached: false,
+      },
+      nextWorkout: {
+        id: 'workout-today',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 60,
+        targetTss: 78,
+        status: 'planned',
+        description: 'Schwellenreiz mit klarer Pulsgrenze.',
+      },
+      nextBestActions: [
+        {
+          id: 'plan-today',
+          source: 'plan',
+          priority: 'high',
+          title: 'Training heute defensiv entscheiden',
+          reason: 'Readiness und TSB sprechen gegen einen ungeprüften harten Reiz.',
+          cta: 'Coach fragen',
+          targetPath: '/coach',
+          resolvedBy: 'Entscheidung zur Einheit treffen und Plan bei Bedarf anpassen.',
+        },
+      ],
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Gespräch damit starten' }).click();
+  await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Training heute defensiv entscheiden/);
+  expect(coachSends).toBe(0);
+});
+
 test('Coach does not treat a future workout as today training', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
@@ -1074,7 +1175,8 @@ test('Plan empty training decision offers direct next actions', async ({ page })
   await expect(page.getByText('Erstellt einen wissenschaftlich fundierten Wochenplan')).toBeVisible();
 
   await emptyDecision.getByRole('button', { name: 'Coach fragen' }).click();
-  await expect(page).toHaveURL('/coach');
+  await expect(page).toHaveURL(/\/coach\?focus=plan&prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/kein offenes Training/i);
 });
 
 test('Plan shows race command with readiness evidence', async ({ page }) => {

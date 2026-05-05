@@ -9,6 +9,7 @@ import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { coachPromptPath } from '@/pulse/coach-link';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
@@ -916,6 +917,7 @@ export default function Home() {
           decision={dailyDecision}
           labelCase="upper"
           onActivate={() => navigate(dailyDecision.targetPath)}
+          onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
         />
       )}
 
