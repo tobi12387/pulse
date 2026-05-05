@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-05 — Erledigte 2026-05-04-Pläne werden aus dem aktiven Backlog archiviert
+
+- **Decision:** `2026-05-04-daily-loop-slimming.md`, `2026-05-04-insights-into-data.md` und `2026-05-04-mental-checkin-simplification.md` werden nach `docs/superpowers/plans/completed/` verschoben. Die aktive Roadmap referenziert diese Arbeiten nur noch als abgeschlossene Wellen; aktive Umsetzung bleibt Navigation-IA-Fortsetzung, Mobile Field Reliability und preference-gegatetes Fueling/Recovery.
+- **Why:** Die drei Pläne sind durch QA-Dokumente und gemergte PRs belegt, lagen aber noch in der aktiven Planoberfläche. Das erzeugt Token- und Doppelarbeitsrisiko, weil neue Agenten sie erneut als offene Aufgaben lesen könnten.
+- **Alternatives:** Die Pläne aktiv liegen lassen (höheres Reimplementierungsrisiko); erledigte Pläne löschen (verliert Begründung und QA-Historie); nur `current-focus` ändern (Plan-Discovery bleibt stale).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — Coach ist kein Top-Level-Tab mehr
 
 - **Decision:** Pulse nutzt als primaere Navigation nur noch Home, Data, Plan und Settings. `/coach` bleibt als kompatible Route fuer bestehende Deep Links, Push-Aktionen, Home-/Plan-Einstiege und Verlauf erhalten, ist aber kein eigener Haupt-Tab und keine numerische Top-Level-Taste mehr.

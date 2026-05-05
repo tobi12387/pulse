@@ -18,6 +18,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
 - Current navigation direction is documented in `docs/superpowers/specs/2026-05-04-nav-ia-design.md`: the target top-level set is Home, Data, Plan and Settings. Insights is now inside Data; Coach is no longer a primary-nav destination while `/coach` remains a compatibility/deep-link route.
 - Mental Check-in Simplification: Home can complete the compact daily check-in, Data > Mental remains the detailed quick-choice/free-text/evidence surface, and Coach can reuse today's saved check-in as planning context without duplicating the input UI. Next mental-flow work should focus on whether daily decisions/plans visibly adapt enough from the saved signal.
+- Completed 2026-05-04 implementation plans live in `docs/superpowers/plans/completed/`; active plan discovery should treat Navigation IA Continuation, Mobile Field Reliability and preference-gated Fueling/Recovery as the remaining plan surface.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.

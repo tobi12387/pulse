@@ -55,6 +55,9 @@
 | `2026-05-02-daily-decision-quality-loop.md` | Daily Decision Quality Loop — score helpful/stale/strategy-change recommendation quality in Home, Coach and Insights | PR #117 |
 | `2026-05-02-structure-boundary-cleanup.md` | Structure Boundary Cleanup — route/page/shared-type extraction and ops/design handoff cleanup | PR #136-#148 |
 | `2026-05-02-ui-ux-deep-friction-roadmap.md` | UI/UX Deep Friction Closure — mobile containment, daily-loop priority, feedback recovery, Settings diagnostics and route evidence refresh | PR #155-#160 |
+| `2026-05-04-daily-loop-slimming.md` | Daily Loop Slimming — Home owns the full daily decision while Coach and Plan show compact support cards | PR #163 |
+| `2026-05-04-insights-into-data.md` | Insights Into Data — Insights moved into Data as `Analysen`, `/insights` redirects for compatibility | PR #165 |
+| `2026-05-04-mental-checkin-simplification.md` | Mental Check-in Simplification — quick choices, free-text preview, Home entry and Coach context | PR #167-#171 |
 
 ## Bekannte veraltete Stellen
 
