@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Fueling & Recovery darf konservative Carb-/Sodium-Guidance geben
+
+- **Decision:** Pulse darf fuer Fueling & Recovery konservative, koerpergewichtsbezogene Empfehlungen zu Kohlenhydraten pro Stunde und Sodium geben. Tobi hat keine Ernaehrungseinschraenkungen, nutzt primaer Ministry-Produkte, und Pulse soll die konkreten Gramm-/Sodium-Bereiche vorschlagen statt sie von Tobi zu verlangen.
+- **Why:** Der bisherige Plan war bewusst preference-gated, damit Pulse keine ungefragten oder unpassenden Ernaehrungsvorgaben macht. Mit den bestaetigten Grenzen kann die App praktische Vorher-/Waehrend-/Nachher-Hinweise liefern, ohne medizinische Praezision oder individuelle Schweissraten vorzutaeuschen.
+- **Alternatives:** Fueling weiter blockiert lassen (nimmt dem Plan den Alltagsnutzen); nur generische Hinweise ohne Mengen geben (zu wenig handlungsleitend); spezifische Produkte hart verdrahten (zu starr und wartungsintensiv).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-06 — Server-Verify zeigt PM2- und Garmin-Log-Signale als nicht-blockierende Ops-Hinweise
 
 - **Decision:** `scripts/verify-server.sh` bleibt ein harter Healthcheck fuer Git-Stand, PM2-Online-Status, Frontend und API-Health, gibt aber zusaetzlich PM2-Restart-Zaehler, instabile Restarts und zusammengefasste Garmin-/Rate-Limit-/Proxy-Logsignale aus.

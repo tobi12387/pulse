@@ -21,7 +21,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Completed implementation plans, including the 2026-05-05 Mobile/A11y and Data Evidence Trail slices, live in `docs/superpowers/plans/completed/`; do not rebuild them.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
-- Fueling & Recovery is useful but preference-gated; ask Tobi before implementing.
+- Fueling & Recovery preference gate is answered: no dietary restrictions, Ministry products are the preferred anchor, Pulse may propose conservative carb/hour, sodium and body-weight-based guidance. Next work should implement preferences, backend guidance and UI in narrow PRs.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates
@@ -29,7 +29,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - iPhone certificate trust is still manual if warning-free Safari/PWA behavior is required.
 - Push registration and test-push activation are manual per target browser/device.
 - Real Garmin calendar/workout sync should not be triggered during generic QA unless the task explicitly requires it.
-- New nutrition/fueling logic needs dietary, logging and recommendation-boundary preferences from Tobi.
+- New nutrition/fueling logic can proceed, but should stay conservative, educational and tied to workout/recovery evidence rather than medical prescription.
 
 ## Recent Landmarks
 

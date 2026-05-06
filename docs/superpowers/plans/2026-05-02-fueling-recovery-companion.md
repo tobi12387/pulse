@@ -12,14 +12,24 @@
 
 ## Decision Gate
 
-This plan should not be implemented until Tobi confirms:
+Gate status as of 2026-05-06: **answered by Tobi**.
+
+Confirmed preferences:
+
+- No dietary restrictions or excluded foods/products.
+- Tobi primarily uses Ministry products; guidance should use this as the preferred product anchor without hard-coding a single product dependency.
+- Pulse may propose grams-per-hour carbohydrate ranges.
+- Pulse may propose sodium ranges; keep them conservative and explain that real sweat-rate data would improve precision.
+- Body-weight-based recommendations are acceptable in the UI.
+
+Original gate:
 
 1. dietary constraints or excluded foods/products;
 2. whether Pulse may give gram-per-hour carbohydrate and sodium ranges;
 3. preferred product style for long bike/run sessions;
 4. whether body-weight-based recommendations are acceptable in the UI.
 
-Until then, keep this plan as a future direction and do not add opinionated nutrition prescriptions.
+Implementation can now start in narrow PR-sized slices. Guidance must stay educational and operational, not medical, and must avoid implying precision beyond the available data.
 
 ## Context
 
@@ -44,9 +54,9 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
 ## Task 1: Preference Gate Capture
 
-- [ ] **Step 1: Confirm scope**
+- [x] **Step 1: Confirm scope**
 
-  Do not implement until the decision gate above is answered.
+  Decision gate answered by Tobi on 2026-05-06. See the confirmed preferences above and `docs/decisions.md`.
 
 - [ ] **Step 2: Add additive schema fields**
 
