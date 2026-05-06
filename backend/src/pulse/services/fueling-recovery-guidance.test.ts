@@ -74,7 +74,7 @@ describe('buildFuelingRecoveryGuidance', () => {
     expect(guidance.during.map(item => item.text).join(' ')).toContain('7-11 Gel-Äquivalente');
     expect(guidance.during.map(item => item.text).join(' ')).toContain('Ministry');
     expect(guidance.during.map(item => item.text).join(' ')).toContain('400-800 mg Sodium pro Liter');
-    expect(guidance.during.map(item => item.text).join(' ')).toContain('200-400 mg pro 500 ml');
+    expect(guidance.during.map(item => item.text).join(' ')).toContain('300-600 mg pro 750 ml');
     expect(guidance.after.map(item => item.text).join(' ')).toContain('0,8-1,0 g/kg');
   });
 
@@ -92,8 +92,12 @@ describe('buildFuelingRecoveryGuidance', () => {
 
     expect(before).toContain('PORRIDGE BAR Sour Cherry');
     expect(during).toContain('POWER CARB Sour Cherry 1:0.8');
-    expect(during).toContain('2,5-3,5 hoch dosierte 500-ml-Flaschen');
-    expect(during).toContain('320 mg Natrium');
+    expect(during).toContain('2-3 x 750-ml-Flaschen');
+    expect(during).toContain('je ca. 95 g Pulver');
+    expect(during).toContain('190-285 g Pulver gesamt');
+    expect(during).toContain('ca. 360 mg Natrium pro 750 ml');
+    expect(during).not.toContain('500-ml-Flaschen');
+    expect(during).not.toContain('pro 500 ml');
     expect(during).not.toContain('BICARB GEL 40 Lemon');
     expect(after).toContain('PROTEIN BAR 8 Peanut & Cranberry');
     expect(after).toContain('14 g Protein');

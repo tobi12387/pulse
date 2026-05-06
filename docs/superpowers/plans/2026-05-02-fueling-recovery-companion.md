@@ -167,6 +167,20 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
   `BICARB GEL 40 Lemon 1:0.8` is only mentioned for race-week or high-intensity contexts and is not used as the generic everyday gel equivalent.
 
+## Task 7: 750 ml Bottle Mixing Instructions
+
+- [x] **Step 1: Capture bottle preference**
+
+  Tobi only uses 750 ml bottles.
+
+- [x] **Step 2: Convert POWER CARB guidance into bottle mixing copy**
+
+  During-workout MNSTRY guidance now gives 750 ml bottle counts, approximate POWER CARB powder grams per bottle and total powder for the workout.
+
+- [x] **Step 3: Keep 500 ml equivalents out of Tobi-specific MNSTRY copy**
+
+  Generic sodium math can still support bottle-size conversions, but Tobi-specific POWER CARB copy uses 750 ml bottles only.
+
 ## Acceptance
 
 - No opinionated fueling prescription appears before preferences are explicit.
@@ -174,4 +188,5 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 - Race and long-session support becomes practical on the day of execution.
 - Guidance can travel to Garmin workout descriptions without live Garmin calls in automated tests.
 - Guidance includes actionable generic portion equivalents and, after Tobi's confirmation, product-specific MNSTRY anchors without pretending medical precision.
+- Tobi-specific MNSTRY during guidance uses 750 ml bottle mixing instructions with approximate POWER CARB powder grams.
 - Medical or clinical claims remain out of scope.

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-06 — Fueling-Guidance rechnet fuer Tobi in 750-ml-Flaschen
+
+- **Decision:** MNSTRY-During-Guidance fuer Tobi verwendet 750-ml-Flaschen als Standard und nennt POWER-CARB-Pulvergramm pro Flasche sowie Gesamtpulver fuer die Einheit. 500-ml-Flaschen bleiben aus Tobis produktspezifischer Copy raus.
+- **Why:** Tobi nutzt nur 750-ml-Flaschen und braucht die Empfehlung als konkrete Mischanweisung, nicht als abstrakte Carb- oder 500-ml-Aequivalente. Die offizielle MNSTRY-Dosierung erlaubt eine konservative Umrechnung von POWER CARB Sour Cherry 1:0.8 in Pulvergramm pro 750-ml-Flasche.
+- **Alternatives:** Weiter 500-ml-Aequivalente zeigen (passt nicht zu Tobis Alltag); neue Flaschengroessen-Migration bauen (zu viel fuer eine bestaetigte Einzelpraeferenz); nur Gesamt-Carbs ohne Pulver nennen (nicht handlungsleitend genug).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-06 — MNSTRY-Kalibrierung nutzt bestaetigte Produkte ohne neues Schema
 
 - **Decision:** Pulse interpretiert `preferred_fueling_products = Ministry/MNSTRY` als Tobis bestaetigte Produktanker: `POWER CARB Sour Cherry 1:0.8` als primaeren During-Mix, `PORRIDGE BAR Sour Cherry` als Pre-/ruhiger Snack, `PROTEIN BAR 8 Peanut & Cranberry` als Recovery-Baustein und `BICARB GEL 40 Lemon 1:0.8` nur fuer race- oder intensitaetsnahe Kontexte. Intensity-/Caffeine-Produkte werden nicht automatisch empfohlen.

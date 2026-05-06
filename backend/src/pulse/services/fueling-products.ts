@@ -2,17 +2,29 @@ export interface FuelingProduct {
   id: string;
   name: string;
   carbsG: number;
+  powderG?: number;
+  servingVolumeMl?: number;
   sodiumMg?: number;
   proteinG?: number;
   bicarbonateG?: number;
+  targetBottleVolumeMl?: number;
+  targetBottleCarbsG?: number;
+  maxBottleCarbsG?: number;
+  maxBottlePowderG?: number;
 }
 
 export const TOBI_MNSTRY_PRODUCTS = {
   powerCarb: {
     id: 'mnstry-power-carb-sour-cherry-1-0-8',
     name: 'POWER CARB Sour Cherry 1:0.8',
-    carbsG: 80,
+    carbsG: 80.8,
+    powderG: 85,
+    servingVolumeMl: 500,
     sodiumMg: 320,
+    targetBottleVolumeMl: 750,
+    targetBottleCarbsG: 90,
+    maxBottleCarbsG: 120,
+    maxBottlePowderG: 126,
   },
   bicarbGel: {
     id: 'mnstry-bicarb-gel-40-lemon-1-0-8',
@@ -58,8 +70,8 @@ export function prefersTobiMnstryProducts(preferredProducts: string | null | und
   ].some(keyword => normalized.includes(keyword));
 }
 
-function roundToHalf(value: number): number {
-  return Math.ceil(value * 2) / 2;
+function formatGermanIntegerRange(min: number, max: number): string {
+  return min === max ? `${min}` : `${min}-${max}`;
 }
 
 function formatGermanNumber(value: number): string {
@@ -68,10 +80,13 @@ function formatGermanNumber(value: number): string {
     : value.toFixed(1).replace('.', ',');
 }
 
-function formatBottleRange(totalMinG: number, totalMaxG: number, carbsPerBottleG: number): string {
-  const minBottles = Math.max(0.5, roundToHalf(totalMinG / carbsPerBottleG));
-  const maxBottles = Math.max(minBottles, roundToHalf(totalMaxG / carbsPerBottleG));
-  return `${formatGermanNumber(minBottles)}-${formatGermanNumber(maxBottles)}`;
+function roundToNearest(value: number, increment: number): number {
+  return Math.round(value / increment) * increment;
+}
+
+function powderForCarbs(product: FuelingProduct, carbsG: number): number | null {
+  if (!product.powderG || product.carbsG <= 0) return null;
+  return roundToNearest(carbsG * (product.powderG / product.carbsG), 5);
 }
 
 export function buildMnstryPreWorkoutProductText(preferredProducts: string | null | undefined): string | null {
@@ -87,14 +102,42 @@ export function buildMnstryDuringCarbProductText(input: {
 }): string | null {
   if (!prefersTobiMnstryProducts(input.preferredProducts)) return null;
   const mix = TOBI_MNSTRY_PRODUCTS.powerCarb;
-  const bottleRange = formatBottleRange(input.totalMinG, input.totalMaxG, mix.carbsG);
-  return `Ministry/MNSTRY ${mix.name} als Basis: ca. ${bottleRange} hoch dosierte 500-ml-Flaschen-Äquivalente (${mix.carbsG} g Carbs, ${mix.sodiumMg} mg Natrium je Flasche), auf Trinkmenge und Verträglichkeit verteilen`;
+  const bottleVolumeMl = mix.targetBottleVolumeMl ?? 750;
+  const targetBottleCarbsG = mix.targetBottleCarbsG ?? 90;
+  const bottleMin = Math.max(1, Math.ceil(input.totalMinG / targetBottleCarbsG));
+  const bottleMax = Math.max(bottleMin, Math.ceil(input.totalMaxG / targetBottleCarbsG));
+  const bottleRange = formatGermanIntegerRange(bottleMin, bottleMax);
+  const powderPerBottleG = powderForCarbs(mix, targetBottleCarbsG);
+  const powderMinG = powderForCarbs(mix, input.totalMinG);
+  const powderMaxG = powderForCarbs(mix, input.totalMaxG);
+  const sodiumPerBottleMg = powderPerBottleG && mix.powderG && mix.sodiumMg
+    ? roundToNearest(mix.sodiumMg * (powderPerBottleG / mix.powderG), 10)
+    : null;
+
+  const powderText = powderPerBottleG && powderMinG && powderMaxG
+    ? `je ca. ${powderPerBottleG} g Pulver (${targetBottleCarbsG} g Carbs), insgesamt ca. ${powderMinG}-${powderMaxG} g Pulver gesamt`
+    : `je ca. ${targetBottleCarbsG} g Carbs`;
+  const sodiumText = sodiumPerBottleMg
+    ? `, ca. ${sodiumPerBottleMg} mg Natrium pro ${bottleVolumeMl} ml`
+    : '';
+  const maxText = mix.maxBottlePowderG && mix.maxBottleCarbsG
+    ? `; maximale Hersteller-Dosierung fuer ${bottleVolumeMl} ml: ${mix.maxBottlePowderG} g Pulver fuer ca. ${mix.maxBottleCarbsG} g Carbs`
+    : '';
+
+  return `Ministry/MNSTRY ${mix.name} als Basis: ca. ${bottleRange} x ${bottleVolumeMl}-ml-Flaschen, ${powderText}${sodiumText}${maxText}; auf Trinkmenge und Verträglichkeit verteilen`;
 }
 
 export function buildMnstrySodiumProductText(preferredProducts: string | null | undefined): string | null {
   if (!prefersTobiMnstryProducts(preferredProducts)) return null;
   const mix = TOBI_MNSTRY_PRODUCTS.powerCarb;
-  return `${mix.name} liegt bei hoher Dosierung mit ${mix.sodiumMg} mg Natrium pro 500 ml schon in der konservativen Sodium-Range; bei Hitze separat anpassen.`;
+  const bottleVolumeMl = mix.targetBottleVolumeMl ?? 750;
+  const powderPerBottleG = mix.targetBottleCarbsG ? powderForCarbs(mix, mix.targetBottleCarbsG) : null;
+  const sodiumPerBottleMg = powderPerBottleG && mix.powderG && mix.sodiumMg
+    ? roundToNearest(mix.sodiumMg * (powderPerBottleG / mix.powderG), 10)
+    : null;
+  return sodiumPerBottleMg
+    ? `${mix.name}: bei ca. ${powderPerBottleG} g Pulver in ${bottleVolumeMl} ml kommen etwa ${sodiumPerBottleMg} mg Natrium mit; bei Hitze separat anpassen.`
+    : `${mix.name} liefert bereits Natrium mit; bei Hitze separat anpassen.`;
 }
 
 export function buildMnstryBicarbProductText(input: {
