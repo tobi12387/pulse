@@ -78,14 +78,14 @@ const FIELD_META: Record<PulseProfileMetricKey, {
     valueKey: 'vo2max',
     sourceKey: 'vo2maxSource',
     updatedKey: 'vo2maxUpdatedAt',
-    fallbackWarning: 'VO2max fehlt; Zieltrend nutzt nur Aktivitaetsverlauf.',
+    fallbackWarning: 'VO2max fehlt; Zieltrend nutzt nur Aktivitätsverlauf.',
   },
 };
 
 const SOURCE_LABELS: Record<PulseProfileValueSource, string> = {
   manual: 'Manuell',
   garmin_settings: 'Garmin',
-  activity_derived: 'Aktivitaeten',
+  activity_derived: 'Aktivitäten',
   estimated: 'Geschaetzt',
   missing: 'Fehlt',
 };
@@ -138,21 +138,21 @@ export function summarizeProfileCandidate(
     maxHrBpm: {
       manual: 'Max. Puls manuell gesetzt',
       garmin_settings: 'Max. Puls aus Garmin-Einstellungen',
-      activity_derived: 'Max. Puls aus Aktivitaeten',
+      activity_derived: 'Max. Puls aus Aktivitäten',
       estimated: 'Max. Puls geschaetzt',
       missing: 'Max. Puls fehlt',
     },
     lthrBpm: {
       manual: 'LTHR manuell gesetzt',
       garmin_settings: 'LTHR aus Garmin-Einstellungen',
-      activity_derived: 'LTHR aus Aktivitaeten',
+      activity_derived: 'LTHR aus Aktivitäten',
       estimated: 'LTHR aus MaxHF geschaetzt',
       missing: 'LTHR fehlt',
     },
     vo2max: {
       manual: 'VO2max manuell gesetzt',
       garmin_settings: 'VO2max aus Garmin-Einstellungen',
-      activity_derived: 'VO2max aus Aktivitaeten',
+      activity_derived: 'VO2max aus Aktivitäten',
       estimated: 'VO2max geschaetzt',
       missing: 'VO2max fehlt',
     },

@@ -288,7 +288,7 @@ async function mentalContext(userId: string, since: string, days: number, today:
     const lowMoodHits = theme.occurrences.filter(occ => occ.mood <= 5).length;
     return `${theme.theme}: ${theme.count}x, zuletzt ${theme.lastSeen}, Stress>=7 ${stressHits}x, Stimmung<=5 ${lowMoodHits}x${flags ? ` (${flags})` : ''}`;
   }).join('\n');
-  const overlayWindow = overlay.days === days ? `${days} Tage` : `${overlay.days} Tage (Mindestfenster fuer stabile Korrelation)`;
+  const overlayWindow = overlay.days === days ? `${days} Tage` : `${overlay.days} Tage (Mindestfenster für stabile Korrelation)`;
   const prompt = `Analysiere Tobis mentale Verfassung anhand des gemeinsamen PulseContext.
 Aktueller Kontext: Readiness=${ctx.readiness.score}/100 (${ctx.readiness.label}), CTL=${ctx.fitnessLoad.ctl.toFixed(1)}, ATL=${ctx.fitnessLoad.atl.toFixed(1)}, TSB=${ctx.fitnessLoad.tsb.toFixed(1)}.
 Letzte bis zu 14 Check-ins im Analysefenster (${days} Tage):\n${lines || 'Keine aktuellen Check-ins'}

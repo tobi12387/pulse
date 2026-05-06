@@ -301,7 +301,7 @@ function defaultProfileResponse() {
     provenance: {
       fields: {
         ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: `${today}T06:00:00.000Z`, warning: null },
-        maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: `${today}T06:00:00.000Z`, warning: null },
+        maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitäten', updatedAt: `${today}T06:00:00.000Z`, warning: null },
         lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
         vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: `${today}T06:00:00.000Z`, warning: null },
       },
@@ -395,17 +395,17 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       strategy: {
         horizonWeeks: 12,
         primaryGoal: { id: 'race-1', title: '70.3 Kraichgau', category: 'race', targetDate: '2026-07-11', priority: 'A' },
-        currentBlock: { kind: 'build', label: 'Build', startWeek: today, endWeek: '2026-06-01', focus: 'Spezifitaet aufbauen, aber freie Tage schuetzen.' },
+        currentBlock: { kind: 'build', label: 'Build', startWeek: today, endWeek: '2026-06-01', focus: 'Spezifität aufbauen, aber freie Tage schützen.' },
         upcomingBlocks: [],
         guardrails: {
           targetSessions: 4,
           maxHardDays: 1,
           deload: false,
-          freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt geschuetzt.',
-          rationale: ['Verfuegbarkeit ist groesser als sinnvolle Trainingsdichte.'],
+          freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt geschützt.',
+          rationale: ['Verfügbarkeit ist größer als sinnvolle Trainingsdichte.'],
           nextBoundary: { label: 'Taper', date: '2026-06-29' },
         },
-        evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfuegbare Tage'],
+        evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfügbare Tage'],
       },
     };
   }
@@ -499,7 +499,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
           sampleDays: [today],
           currentConsumers: ['Activity Detail'],
           recommendedNextConsumer: 'plan_generation',
-          whyItMatters: 'HR-Zonen und Laps zeigen Ausfuehrungsqualitaet.',
+          whyItMatters: 'HR-Zonen und Laps zeigen Ausführungsqualität.',
           evidence: ['9 Tage mit Detailcache'],
         },
       ],
@@ -746,7 +746,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, result ?? {
         synced: {
           ftpWatts: { field: 'ftpWatts', value: 250, source: 'manual', status: 'kept_manual', label: 'FTP manuell gesetzt' },
-          maxHrBpm: { field: 'maxHrBpm', value: 185, source: 'activity_derived', status: 'updated', label: 'Max. Puls aus Aktivitaeten' },
+          maxHrBpm: { field: 'maxHrBpm', value: 185, source: 'activity_derived', status: 'updated', label: 'Max. Puls aus Aktivitäten' },
           lthrBpm: { field: 'lthrBpm', value: 170, source: 'garmin_settings', status: 'updated', label: 'LTHR aus Garmin-Einstellungen' },
           vo2max: { field: 'vo2max', value: 52, source: 'garmin_settings', status: 'updated', label: 'VO2max aus Garmin-Einstellungen' },
         },

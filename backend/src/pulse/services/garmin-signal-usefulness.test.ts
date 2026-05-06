@@ -73,7 +73,7 @@ describe('buildGarminSignalUsefulness', () => {
     expect(zones.status).toBe('underused');
     expect(zones.coverageDays).toBe(1);
     expect(zones.recommendedNextConsumer).toBe('plan_generation');
-    expect(zones.whyItMatters).toContain('Ausfuehrungsqualitaet');
+    expect(zones.whyItMatters).toContain('Ausführungsqualität');
   });
 
   it('marks sparse signal groups as missing without failing the response', () => {

@@ -90,14 +90,14 @@ export async function buildWorkoutSteps(
   const isRun = workout.activityType === 'run';
   const isBike = workout.activityType === 'bike';
   const intensityRef = supportsHrStepTargets(workout.activityType)
-    ? `HR-first: ${hrZoneReference(maxHr, profile?.lthrBpm)}. FTP=${ftp}W nur als Sekundaerkontrolle.`
+    ? `HR-first: ${hrZoneReference(maxHr, profile?.lthrBpm)}. FTP=${ftp}W nur als Sekundärkontrolle.`
     : isBike
-    ? `FTP=${ftp}W als Sekundaerinfo; wenn Pulsdaten fehlen: Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W.`
+    ? `FTP=${ftp}W als Sekundärinfo; wenn Pulsdaten fehlen: Z2 ${Math.round(ftp*0.56)}-${Math.round(ftp*0.75)}W, Z4 ${Math.round(ftp*0.90)}-${Math.round(ftp*1.05)}W.`
     : isRun
     ? `Max-HF=${maxHr}bpm, HR-first: ${hrZoneReference(maxHr, profile?.lthrBpm)}.`
-    : `Technik/Bewegungsqualitaet; keine harte Zielzone erzwingen.`;
+    : `Technik/Bewegungsqualität; keine harte Zielzone erzwingen.`;
 
-  const prompt = `Erstelle eine detaillierte Trainingsanleitung fuer dieses Workout:
+  const prompt = `Erstelle eine detaillierte Trainingsanleitung für dieses Workout:
 
 Typ: ${workout.activityType} | Zone: ${workout.zone} | Dauer: ${workout.durationMin} min
 Kurzbeschreibung: ${workout.description ?? '-'}
@@ -110,13 +110,13 @@ Antworte NUR mit einem JSON-Objekt:
     {"type":"interval","reps":4,"durationMin":8,"zone":4,"restMin":2,"description":"Ziel: X"},
     {"type":"cooldown","durationMin":10,"zone":1,"description":"Ausschwingen"}
   ],
-  "coachingNote": "1-2 Saetze Coaching-Hinweis auf Deutsch"
+  "coachingNote": "1-2 Sätze Coaching-Hinweis auf Deutsch"
 }
 
 Typen: warmup, interval, steady, cooldown. Zonen 1-5.
 Gesamtdauer der steps muss ~${workout.durationMin} Minuten ergeben (inkl. Pausen).
 Bei reinen Z2-Workouts: nur warmup + steady + cooldown, kein interval.
-Bei Run/Bike/Hike: Beschreibungen muessen die HR-Zielrange nennen; Watt/Pace nur als Sekundaerkontrolle.`;
+Bei Run/Bike/Hike: Beschreibungen müssen die HR-Zielrange nennen; Watt/Pace nur als Sekundärkontrolle.`;
 
   try {
     const raw = await llmComplete(

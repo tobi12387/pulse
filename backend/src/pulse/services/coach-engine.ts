@@ -173,7 +173,7 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
       s += `\nSupport-Aktion: ${ctx.guidedCheckin.action.label}`;
       s += `\nAktionsgrund: ${ctx.guidedCheckin.action.rationale}`;
     }
-    s += '\nDiese Fragen sind sichtbare Hilfen fuer heute; nicht als Diagnose, Persoenlichkeitsprofil oder verstecktes Memory verwenden.';
+    s += '\nDiese Fragen sind sichtbare Hilfen für heute; nicht als Diagnose, Persönlichkeitsprofil oder verstecktes Memory verwenden.';
   }
 
   if (ctx.recovery) {

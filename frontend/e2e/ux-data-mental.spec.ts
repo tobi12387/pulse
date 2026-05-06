@@ -111,7 +111,7 @@ test('Mental check-in can be saved from mental-health and mental-fitness state c
   expect(stateTop).toBeLessThan(detailTop);
 
   await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
-  await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Health: schuetzen');
+  await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Health: schützen');
   await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Fitness: schonen');
 
   await page.getByRole('button', { name: 'Check-in senden' }).click();
@@ -122,7 +122,7 @@ test('Mental check-in can be saved from mental-health and mental-fitness state c
     stress: 8,
     motivation: 3,
   });
-  expect(String((submitted as { notes?: string }).notes)).toContain('Mental Health: schuetzen');
+  expect(String((submitted as { notes?: string }).notes)).toContain('Mental Health: schützen');
   expect(String((submitted as { notes?: string }).notes)).toContain('Mental Fitness: schonen');
 });
 
@@ -178,7 +178,7 @@ test('saved Schutzmodus check-in uses the same mental impact language across Dat
   await expect(page.getByTestId('mental-plan-impact')).toContainText(/Plan vorsichtig interpretieren/i);
 
   await page.goto('/coach');
-  await expect(page.getByTestId('coach-mental-context-summary')).toContainText(/Mental Health schuetzen/i);
+  await expect(page.getByTestId('coach-mental-context-summary')).toContainText(/Mental Health schützen/i);
   await expect(page.getByTestId('coach-mental-context-summary')).toContainText(/Mental Fitness schonen/i);
 });
 
@@ -241,7 +241,7 @@ test('Mental check-in auto labels follow extracted scores and stay within the no
   });
   const notes = String((submitted as { notes?: string }).notes);
   expect(notes.length).toBeLessThanOrEqual(500);
-  expect(notes).toContain('Mental Health: schuetzen');
+  expect(notes).toContain('Mental Health: schützen');
   expect(notes).toContain('Mental Fitness: schonen');
   expect(notes).not.toContain('Mental Health: stabil');
   expect(notes).not.toContain('Mental Fitness: bereit');

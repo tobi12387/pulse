@@ -81,7 +81,7 @@ const SIGNALS: SignalDefinition[] = [
     label: 'Schlaf + HRV',
     currentConsumers: ['Home', 'Coach', 'Risk Watch', 'Insights', 'Plan'],
     recommendedNextConsumer: null,
-    whyItMatters: 'Basis fuer Readiness, Recovery und Tagesentscheidung.',
+    whyItMatters: 'Basis für Readiness, Recovery und Tagesentscheidung.',
     coverageDays: input => uniqueDays(input.dailyMetrics
       .filter(row => row.hrvRmssd != null || row.sleepHours != null)
       .map(row => row.date)),
@@ -90,12 +90,12 @@ const SIGNALS: SignalDefinition[] = [
   },
   {
     signalKey: 'training_load_execution',
-    label: 'Training Load + Ausfuehrung',
+    label: 'Training Load + Ausführung',
     currentConsumers: ['Plan', 'Race Command', 'Season Strategy', 'Daily Outcome'],
     recommendedNextConsumer: null,
-    whyItMatters: 'Koppelt geplante Belastung, Ausfuehrung und Anpassung.',
+    whyItMatters: 'Koppelt geplante Belastung, Ausführung und Anpassung.',
     coverageDays: input => uniqueDays(input.activities.map(row => row.date)),
-    evidence: (_input, days) => [`${days.length} Aktivitaetstage im Zeitraum`],
+    evidence: (_input, days) => [`${days.length} Aktivitätstage im Zeitraum`],
     usedWhen: input => hasDecisionEvidence(input, 'training_load_execution'),
   },
   {
@@ -177,7 +177,7 @@ const SIGNALS: SignalDefinition[] = [
     label: 'HR-Zonen + Laps',
     currentConsumers: ['Activity Detail'],
     recommendedNextConsumer: 'plan_generation',
-    whyItMatters: 'HR-Zonen und Laps zeigen Ausfuehrungsqualitaet: ob harte Reize wirklich hart und lockere Einheiten locker waren.',
+    whyItMatters: 'HR-Zonen und Laps zeigen Ausführungsqualität: ob harte Reize wirklich hart und lockere Einheiten locker waren.',
     coverageDays: input => uniqueDays(input.activities
       .filter(row => row.hasHrZones || row.hasLaps || row.hasDetail)
       .map(row => row.date)),
@@ -186,14 +186,14 @@ const SIGNALS: SignalDefinition[] = [
   },
   {
     signalKey: 'weather_detail_pairing',
-    label: 'Wetter + Aktivitaet',
+    label: 'Wetter + Aktivität',
     currentConsumers: ['Activity Detail', 'Data Coverage'],
     recommendedNextConsumer: 'recovery_note',
-    whyItMatters: 'Wetter erklaert Hitze, Kaelte, Wind und Belastungsdrift bei Einheiten besser als Pace/HR allein.',
+    whyItMatters: 'Wetter erklärt Hitze, Kälte, Wind und Belastungsdrift bei Einheiten besser als Pace/HR allein.',
     coverageDays: input => uniqueDays(input.activities
       .filter(row => row.hasWeather)
       .map(row => row.date)),
-    evidence: (_input, days) => [`${days.length} Aktivitaetstage mit Wetter`],
+    evidence: (_input, days) => [`${days.length} Aktivitätstage mit Wetter`],
     usedWhen: input => hasDecisionEvidence(input, 'weather_detail_pairing'),
   },
 ];

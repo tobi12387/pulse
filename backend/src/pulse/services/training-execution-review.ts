@@ -181,7 +181,7 @@ export function buildTrainingExecutionReview(input: BuildTrainingExecutionReview
   if (replaced.length > 0) {
     signals.add('replaced');
     intents.add('rotate');
-    variation.push(`${replaced.length} Einheit(en) wurden durch andere Aktivitaeten ersetzt; Sportmix und Platzierung bewusst pruefen.`);
+    variation.push(`${replaced.length} Einheit(en) wurden durch andere Aktivitäten ersetzt; Sportmix und Platzierung bewusst prüfen.`);
   }
 
   for (const match of matches) {
@@ -213,7 +213,7 @@ export function buildTrainingExecutionReview(input: BuildTrainingExecutionReview
   const negativeSignals = missed.length + replaced.length > 0 || signals.has('reduce_next_intensity') || signals.has('protect_recovery');
   const stableExecution = matched.length > 0 && !negativeSignals;
   if (matched.length > 0) {
-    learned.unshift(`${matched.length}/${Math.max(1, matches.filter(match => match.state !== 'pending').length)} geplante Einheit(en) wurden mit Ausfuehrung abgeglichen.`);
+    learned.unshift(`${matched.length}/${Math.max(1, matches.filter(match => match.state !== 'pending').length)} geplante Einheit(en) wurden mit Ausführung abgeglichen.`);
   }
   if (stableExecution) {
     intents.add('stable');
@@ -234,10 +234,10 @@ export function buildTrainingExecutionReview(input: BuildTrainingExecutionReview
   }
 
   if (learned.length === 0) {
-    learned.push('Noch kein belastbares Ausführungslernen fuer diese Woche.');
+    learned.push('Noch kein belastbares Ausführungslernen für diese Woche.');
   }
   if (variation.length === 0) {
-    variation.push('Keine zusaetzliche Variation aus Ausfuehrungsdaten erforderlich.');
+    variation.push('Keine zusätzliche Variation aus Ausführungsdaten erforderlich.');
   }
 
   return {
