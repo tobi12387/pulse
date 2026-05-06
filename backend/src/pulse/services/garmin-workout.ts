@@ -1,4 +1,5 @@
 import type { WorkoutStep } from '../../db/pulse-schema.js';
+import type { PulseFuelingRecoveryGuidanceResponse } from '@coaching-os/shared/pulse';
 
 const GARMIN_SPORT_TYPES: Record<string, { sportTypeId: number; sportTypeKey: string }> = {
   run:      { sportTypeId: 1,  sportTypeKey: 'running' },
@@ -48,6 +49,7 @@ const GARMIN_ACTIVITY_NAMES: Record<string, string> = {
   swim: 'Schwimmen',
   strength: 'Kraft',
 };
+const GARMIN_FUELING_HEADER = 'Pulse Fueling:';
 
 type GarminWorkoutStepType = { stepTypeId: number; stepTypeKey: string; displayOrder?: number };
 type GarminEndCondition = { conditionTypeId: number; conditionTypeKey: string; displayOrder: number; displayable: boolean };
@@ -80,6 +82,56 @@ export type GarminRepeatGroup = {
 
 export type GarminWorkoutStep = GarminExecutableStep | GarminRepeatGroup;
 
+function stripGarminFuelingBlock(description: string): string {
+  const index = description.indexOf(GARMIN_FUELING_HEADER);
+  if (index < 0) return description.trim();
+
+  const before = description.slice(0, index).replace(/\s+$/, '');
+  return before.trim();
+}
+
+function conciseGarminText(text: string, maxLength = 130): string {
+  const cleaned = text
+    .replace(/\s+/g, ' ')
+    .replace(/; .+$/, '')
+    .replace(/, an .+$/, '')
+    .trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  return `${cleaned.slice(0, maxLength - 1).trim()}…`;
+}
+
+function firstGuidanceText(
+  items: PulseFuelingRecoveryGuidanceResponse['during'],
+  idPart: string,
+): string | null {
+  const item = items.find(candidate => candidate.id.includes(idPart)) ?? items[0];
+  return item ? conciseGarminText(item.text) : null;
+}
+
+export function appendGarminFuelingDescription(
+  description: string | null,
+  guidance: PulseFuelingRecoveryGuidanceResponse | null | undefined,
+): string {
+  const base = stripGarminFuelingBlock(description ?? '');
+  if (!guidance?.shouldShow || guidance.preferenceStatus !== 'ready') {
+    return base || 'Fueling nach Gefühl und Verträglichkeit.';
+  }
+
+  const lines: string[] = [];
+  const carbs = firstGuidanceText(guidance.during, 'carbs');
+  const sodium = firstGuidanceText(guidance.during.filter(item => item.id.includes('sodium')), 'sodium');
+  const after = guidance.after[0]?.text ? conciseGarminText(guidance.after[0].text) : null;
+  const caution = guidance.recoveryCautions[0] ? conciseGarminText(guidance.recoveryCautions[0]) : null;
+
+  if (carbs) lines.push(`- Während: ${carbs}`);
+  if (sodium) lines.push(`- Sodium: ${sodium}`);
+  if (after) lines.push(`- Danach: ${after}`);
+  if (caution) lines.push(`- Achtung: ${caution}`);
+
+  if (lines.length === 0) return base || 'Fueling nach Gefühl und Verträglichkeit.';
+  return `${base ? `${base}\n\n` : ''}${GARMIN_FUELING_HEADER}\n${lines.join('\n')}`;
+}
+
 function supportsGarminHrTargets(activityType: string): boolean {
   return activityType === 'run' || activityType === 'bike' || activityType === 'hike';
 }
@@ -101,7 +153,7 @@ export function buildGarminWorkoutJson(workout: {
   durationMin: number;
   description: string | null;
   steps: WorkoutStep[] | null;
-}) {
+}, options: { fuelingGuidance?: PulseFuelingRecoveryGuidanceResponse | null } = {}) {
   const sportType = GARMIN_SPORT_TYPES[workout.activityType] ?? GARMIN_SPORT_TYPES.run!;
   let stepOrder = 0;
   const garminSteps: GarminWorkoutStep[] = [];
@@ -166,7 +218,10 @@ export function buildGarminWorkoutJson(workout: {
 
   return {
     workoutName: `${GARMIN_ACTIVITY_NAMES[workout.activityType] ?? workout.activityType} – Z${workout.zone} · ${workout.durationMin}min`,
-    description: workout.description ?? `Zone ${workout.zone} Training`,
+    description: appendGarminFuelingDescription(
+      workout.description ?? `Zone ${workout.zone} Training`,
+      options.fuelingGuidance,
+    ),
     sportType,
     estimatedDurationInSecs: workout.durationMin * 60,
     estimatedDistanceInMeters: null,

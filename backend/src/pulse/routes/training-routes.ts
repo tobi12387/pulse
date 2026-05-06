@@ -17,7 +17,6 @@ import {
   pulseWeekAvailability,
 } from '../../db/pulse-schema.js';
 import { invalidateUser } from '../lib/pulse-cache.js';
-import { buildCachedPulseContextFor } from '../lib/pulse-context.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from '../services/adapt-engine.js';
 import { computeFitnessLoad } from '../services/load-engine.js';
 import { buildPlanLearningSnapshot } from '../services/plan-learning.js';
@@ -57,7 +56,7 @@ import { getFitnessLoadCached } from '../services/daily-loop.js';
 import { profileWithProvenance } from '../services/profile-sync.js';
 import { fetchGarminCalendarWorkouts } from '../services/garmin-calendar-workouts.js';
 import { generateWeeklyReview } from '../services/review-engine.js';
-import { buildFuelingRecoveryGuidance } from '../services/fueling-recovery-guidance.js';
+import { buildFuelingRecoveryGuidanceForPlannedWorkout } from '../services/fueling-recovery-planned-workout.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -308,7 +307,11 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     try {
       const gc = await getGarminClient();
 
-      const garminWorkout = buildGarminWorkoutJson(workout);
+      const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, workout).catch((err: unknown) => {
+        app.log.warn(`[sync-garmin] Fueling guidance failed for ${workout.id}: ${err}`);
+        return null;
+      });
+      const garminWorkout = buildGarminWorkoutJson(workout, { fuelingGuidance });
       const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
       const garminWorkoutId = String(created.workoutId);
 
@@ -693,7 +696,11 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         // Upload new workouts to Garmin
         for (const w of withSteps.filter(ww => !ww.garminWorkoutId)) {
           try {
-            const garminWorkout = buildGarminWorkoutJson(w);
+            const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, w).catch((err: unknown) => {
+              app.log.warn(`[plan-generate] Fueling guidance failed for ${w.id}: ${err}`);
+              return null;
+            });
+            const garminWorkout = buildGarminWorkoutJson(w, { fuelingGuidance });
             const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
             const garminWorkoutId = String(created.workoutId);
             const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, w.plannedDate) as any;
@@ -1439,41 +1446,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .where(and(eq(pulsePlannedWorkouts.id, parsed.data.workoutId), eq(pulsePlannedWorkouts.userId, userId)));
     if (!workout) return reply.status(404).send({ error: 'Workout nicht gefunden' });
 
-    const ctx = await buildCachedPulseContextFor(userId, workout.plannedDate);
-    const profile = ctx.profile;
-    return buildFuelingRecoveryGuidance({
-      workout: {
-        id: workout.id,
-        plannedDate: workout.plannedDate,
-        activityType: workout.activityType,
-        zone: workout.zone,
-        durationMin: workout.durationMin,
-        targetTss: workout.targetTss,
-        description: workout.description,
-      },
-      preferences: {
-        fuelingEnabled: profile?.fuelingEnabled ?? true,
-        dietaryConstraints: profile?.dietaryConstraints ?? [],
-        preferredFuelingProducts: profile?.preferredFuelingProducts ?? 'Ministry',
-        carbGuidanceStyle: profile?.carbGuidanceStyle ?? 'suggest_ranges',
-        sodiumGuidanceStyle: profile?.sodiumGuidanceStyle ?? 'suggest_ranges',
-        bodyWeightGuidanceEnabled: profile?.bodyWeightGuidanceEnabled ?? true,
-      },
-      profile: {
-        weightKg: profile?.weightKg ?? ctx.latestWeight?.weightKg ?? null,
-      },
-      recovery: {
-        readinessScore: ctx.readiness.score,
-        sleepDebt7dH: ctx.recovery?.sleepDebt7d.hours ?? null,
-        hrvStatus: ctx.recovery?.hrvDeviation7d.status ?? ctx.todayMetrics?.hrvStatus ?? null,
-        bodyBatteryMax: ctx.todayMetrics?.bodyBatteryMax ?? null,
-      },
-      race: ctx.nextRace ? {
-        title: ctx.nextRace.title,
-        phase: ctx.nextRace.phase,
-        daysUntil: ctx.nextRace.daysUntil,
-      } : null,
-    });
+    return buildFuelingRecoveryGuidanceForPlannedWorkout(userId, workout);
   });
 
   app.post('/nutrition', { onRequest: [app.authenticate] }, async (req, reply) => {

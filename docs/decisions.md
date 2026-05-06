@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Fueling-Guidance reist als kurzer Text in Garmin-Workout-Beschreibungen mit
+
+- **Decision:** Beim Upload geplanter Workouts nach Garmin darf Pulse einen kurzen `Pulse Fueling`-Block in die Garmin-Workout-Beschreibung schreiben, wenn die workout-spezifische Fueling-&-Recovery-Guidance sichtbar sein soll. Der Block ersetzt ältere Pulse-Fueling-Blöcke statt sie zu duplizieren.
+- **Why:** Tobi will geplante Einheiten auf Uhr/Edge ausführen, daher muss die wichtigste Fueling-Information nicht nur in der Web-UI, sondern auch am Ausführungsort sichtbar sein. Die Description ist der risikoärmste erste Handoff, weil sie keine Garmin-Step-Logik oder Wiederholungen verändert.
+- **Alternatives:** Fueling nur in Pulse anzeigen (zu wenig Alltagstransfer); Garmin-Steps oder Workout-Namen verändern (höheres Risiko und schlechtere Anzeigequalität); produktgenaue Ministry-Portionen sofort schreiben (ohne konkrete Serving-Daten zu spekulativ).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-06 — Fueling-Guidance startet read-only im Plan-Workout-Modal
 
 - **Decision:** Die erste UI-Integration der Fueling-&-Recovery-Guidance ist ein read-only Card-Block im Plan-Workout-Modal, gespeist von `GET /api/pulse/fueling-recovery/guidance?workoutId=...`. Garmin-Workout-Beschreibungen, automatische Kalendertexte und produktgenaue Ministry-Portionen bleiben eigene Folge-PRs.

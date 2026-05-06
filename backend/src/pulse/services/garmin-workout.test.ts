@@ -6,6 +6,63 @@ import {
 } from './garmin-workout.js';
 
 describe('buildGarminWorkoutJson', () => {
+  it('adds concise fueling guidance to the Garmin workout description without duplicating old blocks', () => {
+    const payload = buildGarminWorkoutJson({
+      activityType: 'bike',
+      zone: 3,
+      durationMin: 180,
+      description: 'Lange Ausfahrt.\n\nPulse Fueling:\n- alter Hinweis',
+      steps: [
+        { type: 'steady', durationMin: 180, zone: 3, description: 'Z3 Endurance' },
+      ],
+    } as Parameters<typeof buildGarminWorkoutJson>[0], {
+      fuelingGuidance: {
+        shouldShow: true,
+        preferenceStatus: 'ready',
+        before: [{ id: 'before', text: '2-3 h vorher normale Mahlzeit.' }],
+        during: [
+          { id: 'during-carbs', text: '60-90 g Kohlenhydrate pro Stunde; Ministry als Produktanker nutzen.' },
+          { id: 'during-sodium', text: '400-800 mg Sodium pro Liter, an Hitze und Schweißrate anpassen.' },
+        ],
+        after: [{ id: 'after', text: 'Recovery innerhalb von 2 h starten.' }],
+        recoveryCautions: ['HRV/Recovery schwach: eher untere Carb-Range nutzen.'],
+        evidence: [],
+      },
+    } as never);
+
+    expect(payload.description).toContain('Lange Ausfahrt.');
+    expect(payload.description).toContain('Pulse Fueling:');
+    expect(payload.description).toContain('Während: 60-90 g Kohlenhydrate pro Stunde');
+    expect(payload.description).toContain('Sodium: 400-800 mg Sodium pro Liter');
+    expect(payload.description).toContain('Danach: Recovery innerhalb von 2 h starten.');
+    expect(payload.description).toContain('Achtung: HRV/Recovery schwach');
+    expect(payload.description).not.toContain('alter Hinweis');
+  });
+
+  it('keeps the Garmin workout description unchanged when fueling guidance should stay quiet', () => {
+    const payload = buildGarminWorkoutJson({
+      activityType: 'run',
+      zone: 2,
+      durationMin: 45,
+      description: 'Lockerer Lauf.',
+      steps: [
+        { type: 'steady', durationMin: 45, zone: 2, description: 'Aerob' },
+      ],
+    } as Parameters<typeof buildGarminWorkoutJson>[0], {
+      fuelingGuidance: {
+        shouldShow: false,
+        preferenceStatus: 'ready',
+        before: [],
+        during: [],
+        after: [],
+        recoveryCautions: [],
+        evidence: [],
+      },
+    } as never);
+
+    expect(payload.description).toBe('Lockerer Lauf.');
+  });
+
   it('exports interval repeats as Garmin iteration end conditions', () => {
     const payload = buildGarminWorkoutJson({
       activityType: 'bike',
