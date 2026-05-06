@@ -21,7 +21,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Completed implementation plans, including the 2026-05-05 Mobile/A11y and Data Evidence Trail slices, live in `docs/superpowers/plans/completed/`; do not rebuild them.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
-- Fueling & Recovery preference gate is answered and preference capture is implemented in Settings/Profile: no dietary restrictions, Ministry products are the preferred anchor, Pulse may propose conservative carb/hour, sodium and body-weight-based guidance. Next work should build the pure backend guidance service before adding workout UI cards.
+- Fueling & Recovery preference capture and the pure backend guidance engine are implemented: no dietary restrictions, Ministry products are the preferred anchor, Pulse may propose conservative carb/hour, sodium and body-weight-based guidance. Next work should wire the guidance service into a read-only API and a narrow Plan workout card/modal UI.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates
