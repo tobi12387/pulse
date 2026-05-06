@@ -76,7 +76,7 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
 ## Task 2: Guidance Builder
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
   Cover:
   - no fueling card for short easy workouts unless recovery is poor;
@@ -84,7 +84,7 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
   - high sleep debt or poor HRV shifts emphasis toward recovery and simplicity;
   - race-week guidance uses Race Command/Season Strategy context but remains conservative.
 
-- [ ] **Step 2: Implement pure service**
+- [x] **Step 2: Implement pure service**
 
   Return:
   - `before`;
@@ -94,7 +94,7 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
   - `evidence`;
   - `preferenceStatus`.
 
-- [ ] **Step 3: Verify service**
+- [x] **Step 3: Verify service**
 
   ```bash
   npm test -w backend -- --run src/pulse/services/fueling-recovery-guidance.test.ts

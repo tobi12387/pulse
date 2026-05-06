@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Fueling-Guidance nutzt konservative, evidenzbasierte Bereiche
+
+- **Decision:** Die Fueling-&-Recovery-Guidance startet mit konservativen, regelbasierten Bereichen: kurze lockere Einheiten bleiben still, längere Ausdauer-Einheiten bekommen 30-60 g Kohlenhydrate/h, sehr lange Einheiten optional 60-90 g/h nur mit geübter Glukose-/Fruktose-Strategie, und Sodium startet vorsichtig bei 400-800 mg/L mit Hinweis auf Hitze, Durst, Körpergewicht und fehlende Schweißratenmessung.
+- **Why:** Die App soll Tobi handlungsfähig machen, ohne medizinische oder sporternährungsdiagnostische Präzision vorzutäuschen. Die Bereiche orientieren sich an ACSM/AND/DC, Jeukendrup/Sports Medicine und NATA/Fluid-Replacement-Empfehlungen; individuelle Schweißrate und Verträglichkeit bleiben bewusst bessere zukünftige Datenquellen.
+- **Alternatives:** Produktgenaue Ministry-Portionen hart verdrahten (zu wartungsintensiv); nur generische Texte ohne Mengen zeigen (zu wenig alltagstauglich); aggressive High-Carb-/High-Sodium-Ziele immer empfehlen (zu riskant ohne Gut-Training und Schweißdaten).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-06 — Fueling-Preferences leben im Athletenprofil
 
 - **Decision:** Die expliziten Fueling-&-Recovery-Präferenzen werden als additive Felder in `pulse_user_profile` gespeichert, nicht in `pulse_coach_preferences`.
