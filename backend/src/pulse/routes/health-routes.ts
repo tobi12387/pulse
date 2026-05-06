@@ -235,6 +235,12 @@ export async function registerPulseHealthRoutes(app: FastifyInstance) {
       weeklyHoursTarget: z.number().min(1).max(40).optional(),
       trainingPhase:     z.enum(['base','build','peak','taper']).optional(),
       vo2max:            z.number().min(20).max(100).optional(),
+      fuelingEnabled:    z.boolean().optional(),
+      dietaryConstraints: z.array(z.string().trim().min(1).max(80)).max(12).optional(),
+      preferredFuelingProducts: z.string().trim().min(1).max(500).optional(),
+      carbGuidanceStyle: z.enum(['suggest_ranges', 'avoid_amounts']).optional(),
+      sodiumGuidanceStyle: z.enum(['suggest_ranges', 'avoid_amounts']).optional(),
+      bodyWeightGuidanceEnabled: z.boolean().optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });

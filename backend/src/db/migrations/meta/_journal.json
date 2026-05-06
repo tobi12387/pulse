@@ -176,6 +176,13 @@
       "when": 1777664100000,
       "tag": "0024_coach_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1777665000000,
+      "tag": "0025_fueling_preferences",
+      "breakpoints": true
     }
   ]
 }

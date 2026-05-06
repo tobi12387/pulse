@@ -17,6 +17,16 @@ export interface PulseProfileProvenanceView {
   warnings: string[];
 }
 export type PulseCoachCommunicationStyle = 'direct' | 'gentle' | 'data_first';
+export type PulseFuelingGuidanceStyle = 'suggest_ranges' | 'avoid_amounts';
+
+export interface PulseFuelingPreferences {
+  fuelingEnabled: boolean;
+  dietaryConstraints: string[];
+  preferredFuelingProducts: string;
+  carbGuidanceStyle: PulseFuelingGuidanceStyle;
+  sodiumGuidanceStyle: PulseFuelingGuidanceStyle;
+  bodyWeightGuidanceEnabled: boolean;
+}
 
 export interface PulseCoachPreferences {
   timeWindows: string;

@@ -58,7 +58,7 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
   Decision gate answered by Tobi on 2026-05-06. See the confirmed preferences above and `docs/decisions.md`.
 
-- [ ] **Step 2: Add additive schema fields**
+- [x] **Step 2: Add additive schema fields**
 
   After approval, add only nullable/defaulted fields such as:
   - `fueling_enabled`;
@@ -67,7 +67,7 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
   - `carb_guidance_style`;
   - `sodium_guidance_style`.
 
-- [ ] **Step 3: Verify migration**
+- [x] **Step 3: Verify migration**
 
   ```bash
   npm run check:migrations

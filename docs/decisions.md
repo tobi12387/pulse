@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Fueling-Preferences leben im Athletenprofil
+
+- **Decision:** Die expliziten Fueling-&-Recovery-Präferenzen werden als additive Felder in `pulse_user_profile` gespeichert, nicht in `pulse_coach_preferences`.
+- **Why:** Fueling-Guidance soll spaeter direkt Plan-, Workout- und Recovery-Entscheidungen steuern und dabei Gewicht, Profil und Garmin-nahe Athletenwerte lesen. Der bestehende Plan nennt das Profil als Ziel, und die Felder sind Empfehlungsgates fuer den Athleten, nicht nur Kommunikationsstil des Coach-Chats.
+- **Alternatives:** `pulse_coach_preferences` erweitern (naheliegend fuer sichtbare Vorlieben, aber zu stark an Coach-Texte gekoppelt); separate Preference-Tabelle bauen (sauber, aber zu gross fuer den ersten PR); nur im Plan-Doc festhalten (nicht maschinenlesbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-06 — Fueling & Recovery darf konservative Carb-/Sodium-Guidance geben
 
 - **Decision:** Pulse darf fuer Fueling & Recovery konservative, koerpergewichtsbezogene Empfehlungen zu Kohlenhydraten pro Stunde und Sodium geben. Tobi hat keine Ernaehrungseinschraenkungen, nutzt primaer Ministry-Produkte, und Pulse soll die konkreten Gramm-/Sodium-Bereiche vorschlagen statt sie von Tobi zu verlangen.

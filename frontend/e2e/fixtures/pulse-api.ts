@@ -46,6 +46,7 @@ type MockPulseApiOptions = {
   metrics?: unknown[];
   sleepSessions?: unknown[];
   profile?: unknown | (() => unknown);
+  onProfilePatch?: (body: unknown) => void;
   profileSyncResult?: unknown | ((body: unknown) => unknown);
   onProfileSync?: (body: unknown) => void;
   onRequest?: (pathname: string, method: string) => void;
@@ -298,6 +299,12 @@ function defaultProfileResponse() {
     weeklyHoursTarget: 6,
     trainingPhase: 'base',
     vo2max: 52,
+    fuelingEnabled: true,
+    dietaryConstraints: [],
+    preferredFuelingProducts: 'Ministry',
+    carbGuidanceStyle: 'suggest_ranges',
+    sodiumGuidanceStyle: 'suggest_ranges',
+    bodyWeightGuidanceEnabled: true,
     provenance: {
       fields: {
         ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: `${today}T06:00:00.000Z`, warning: null },
@@ -736,6 +743,14 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/profile' && request.method() === 'GET' && 'profile' in options) {
       const profile = typeof options.profile === 'function' ? options.profile() : options.profile;
       return json(route, profile ?? defaultProfileResponse());
+    }
+    if (url.pathname === '/api/pulse/profile' && request.method() === 'PATCH') {
+      const body = request.postDataJSON();
+      options.onProfilePatch?.(body);
+      return json(route, {
+        ...defaultProfileResponse(),
+        ...body,
+      });
     }
     if (url.pathname === '/api/pulse/garmin/sync-profile' && request.method() === 'POST') {
       const body = request.postDataJSON();

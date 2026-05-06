@@ -106,6 +106,12 @@ export function profileWithProvenance(
     vo2maxUpdatedAt: null,
     trainingPhase: 'base',
     weeklyHoursTarget: null,
+    fuelingEnabled: true,
+    dietaryConstraints: [],
+    preferredFuelingProducts: 'Ministry',
+    carbGuidanceStyle: 'suggest_ranges',
+    sodiumGuidanceStyle: 'suggest_ranges',
+    bodyWeightGuidanceEnabled: true,
     updatedAt: null,
   };
   const row = profile ?? fallback;

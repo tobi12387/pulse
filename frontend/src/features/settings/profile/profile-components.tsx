@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { MiniButton } from '@/components/PulseChrome';
 import { pulseApi } from '@/pulse/api-client';
 import { pulseKeys, usePulseProfile, useUpdateProfile } from '@/pulse/hooks';
-import type { PulseProfileMetricKey, PulseProfileMetricProvenance } from '@coaching-os/shared/pulse';
+import type { PulseFuelingGuidanceStyle, PulseProfileMetricKey, PulseProfileMetricProvenance } from '@coaching-os/shared/pulse';
 
 type SettingsMessage = { text: string; ok: boolean } | null;
 
@@ -14,7 +14,14 @@ type ProfileForm = {
   vo2max: string;
   weeklyHoursTarget: string;
   trainingPhase: string;
+  fuelingEnabled: boolean;
+  dietaryConstraints: string;
+  preferredFuelingProducts: string;
+  carbGuidanceStyle: PulseFuelingGuidanceStyle;
+  sodiumGuidanceStyle: PulseFuelingGuidanceStyle;
+  bodyWeightGuidanceEnabled: boolean;
 };
+type ProfileNumericField = 'ftpWatts' | 'maxHrBpm' | 'lthrBpm' | 'vo2max' | 'weeklyHoursTarget';
 
 const PROFILE_SOURCE_COLOR: Record<string, string> = {
   manual: 'var(--green)',
@@ -53,6 +60,19 @@ function Pill({ color, children }: { color: string; children: ReactNode }) {
       {children}
     </span>
   );
+}
+
+function linesToPreferenceList(value: string): string[] {
+  return value
+    .split(/\r?\n|,/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .filter(line => !['keine', 'keins', 'none', 'no restrictions'].includes(line.toLowerCase()));
+}
+
+function guidanceLabel(value: PulseFuelingGuidanceStyle | null | undefined, kind: 'carbs' | 'sodium'): string {
+  if (value === 'avoid_amounts') return `${kind === 'carbs' ? 'Carbs' : 'Sodium'}: nur Hinweise`;
+  return `${kind === 'carbs' ? 'Carbs' : 'Sodium'}: Pulse schlägt ${kind === 'carbs' ? 'g/h' : 'Bereiche'} vor`;
 }
 
 function ProfileMetricValue({ metric, unit }: { metric?: PulseProfileMetricProvenance; unit?: string }) {
@@ -131,19 +151,31 @@ export function AthleteProfileCard({ setMessage }: {
       vo2max: String(profile?.vo2max ?? ''),
       weeklyHoursTarget: String(profile?.weeklyHoursTarget ?? ''),
       trainingPhase: profile?.trainingPhase ?? 'base',
+      fuelingEnabled: profile?.fuelingEnabled ?? true,
+      dietaryConstraints: (profile?.dietaryConstraints ?? []).join('\n'),
+      preferredFuelingProducts: profile?.preferredFuelingProducts ?? 'Ministry',
+      carbGuidanceStyle: profile?.carbGuidanceStyle ?? 'suggest_ranges',
+      sodiumGuidanceStyle: profile?.sodiumGuidanceStyle ?? 'suggest_ranges',
+      bodyWeightGuidanceEnabled: profile?.bodyWeightGuidanceEnabled ?? true,
     });
   }
 
   async function handleProfileSave(e: FormEvent) {
     e.preventDefault();
     if (!profileForm) return;
-    const data: Record<string, number | string> = {};
+    const data: Record<string, boolean | number | string | string[]> = {};
     if (profileForm.ftpWatts) data.ftpWatts = Number(profileForm.ftpWatts);
     if (profileForm.maxHrBpm) data.maxHrBpm = Number(profileForm.maxHrBpm);
     if (profileForm.lthrBpm) data.lthrBpm = Number(profileForm.lthrBpm);
     if (profileForm.vo2max) data.vo2max = Number(profileForm.vo2max);
     if (profileForm.weeklyHoursTarget) data.weeklyHoursTarget = Number(profileForm.weeklyHoursTarget);
     if (profileForm.trainingPhase) data.trainingPhase = profileForm.trainingPhase;
+    data.fuelingEnabled = profileForm.fuelingEnabled;
+    data.dietaryConstraints = linesToPreferenceList(profileForm.dietaryConstraints);
+    data.preferredFuelingProducts = profileForm.preferredFuelingProducts.trim() || 'Ministry';
+    data.carbGuidanceStyle = profileForm.carbGuidanceStyle;
+    data.sodiumGuidanceStyle = profileForm.sodiumGuidanceStyle;
+    data.bodyWeightGuidanceEnabled = profileForm.bodyWeightGuidanceEnabled;
     await updateProfile.mutateAsync(data);
     setProfileForm(null);
     setMessage({ text: 'Profil gespeichert.', ok: true });
@@ -211,7 +243,7 @@ export function AthleteProfileCard({ setMessage }: {
             ['LTHR (bpm)', 'lthrBpm', 'number'],
             ['VO2max', 'vo2max', 'number'],
             ['Wochenstunden', 'weeklyHoursTarget', 'number'],
-          ] as [string, keyof ProfileForm, string][]).map(([label, key, type]) => (
+          ] as [string, ProfileNumericField, string][]).map(([label, key, type]) => (
             <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 12, color: 'var(--text-2)', flexShrink: 0 }}>{label}</span>
               <input
@@ -245,6 +277,53 @@ export function AthleteProfileCard({ setMessage }: {
               <option value="taper">Taper</option>
             </select>
           </div>
+          <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span className="label-mono">Fueling & Recovery</span>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: 'var(--text-2)' }}>
+              Bevorzugte Fueling-Produkte
+              <input
+                value={profileForm.preferredFuelingProducts}
+                onChange={e => setProfileForm(f => f ? { ...f, preferredFuelingProducts: e.target.value } : f)}
+                style={{
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', minHeight: 40, padding: '5px 8px',
+                  fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)',
+                  outline: 'none',
+                }}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: 'var(--text-2)' }}>
+              Ernährungseinschränkungen
+              <textarea
+                value={profileForm.dietaryConstraints}
+                onChange={e => setProfileForm(f => f ? { ...f, dietaryConstraints: e.target.value } : f)}
+                placeholder="keine"
+                rows={2}
+                style={{
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', minHeight: 48, padding: '7px 8px',
+                  fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)',
+                  outline: 'none', resize: 'vertical',
+                }}
+              />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-2)' }}>
+              <input
+                type="checkbox"
+                checked={profileForm.fuelingEnabled}
+                onChange={e => setProfileForm(f => f ? { ...f, fuelingEnabled: e.target.checked } : f)}
+              />
+              Fueling-Hinweise aktivieren
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-2)' }}>
+              <input
+                type="checkbox"
+                checked={profileForm.bodyWeightGuidanceEnabled}
+                onChange={e => setProfileForm(f => f ? { ...f, bodyWeightGuidanceEnabled: e.target.checked } : f)}
+              />
+              Körpergewichtsbasierte Hinweise erlauben
+            </label>
+          </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button
               type="submit"
@@ -257,7 +336,7 @@ export function AthleteProfileCard({ setMessage }: {
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              {updateProfile.isPending ? 'Speichern…' : 'Speichern'}
+              {updateProfile.isPending ? 'Speichern…' : 'Profil speichern'}
             </button>
             <button
               type="button"
@@ -313,6 +392,29 @@ export function AthleteProfileCard({ setMessage }: {
           <Row label="Phase">
             <Pill color="var(--accent)">{(profile?.trainingPhase ?? 'base').toUpperCase()}</Pill>
           </Row>
+          <div style={{ borderTop: '1px solid var(--border)', marginTop: 2, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span className="label-mono">Fueling & Recovery</span>
+              <Pill color={profile?.fuelingEnabled === false ? 'var(--text-3)' : 'var(--green)'}>
+                {profile?.fuelingEnabled === false ? 'AUS' : 'BEREIT'}
+              </Pill>
+            </div>
+            <Row label="Produkte">
+              <Val>{profile?.preferredFuelingProducts ?? 'Ministry'}</Val>
+            </Row>
+            <Row label="Einschränkungen">
+              <Val>{(profile?.dietaryConstraints ?? []).join(', ') || 'keine'}</Val>
+            </Row>
+            <Row label="Carbs">
+              <Val>{guidanceLabel(profile?.carbGuidanceStyle, 'carbs')}</Val>
+            </Row>
+            <Row label="Sodium">
+              <Val>{guidanceLabel(profile?.sodiumGuidanceStyle, 'sodium')}</Val>
+            </Row>
+            <Row label="Körpergewicht">
+              <Val>{profile?.bodyWeightGuidanceEnabled === false ? 'nicht nutzen' : 'darf genutzt werden'}</Val>
+            </Row>
+          </div>
         </div>
       )}
     </div>
