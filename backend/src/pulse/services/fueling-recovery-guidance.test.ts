@@ -70,8 +70,11 @@ describe('buildFuelingRecoveryGuidance', () => {
     expect(guidance.shouldShow).toBe(true);
     expect(guidance.before.map(item => item.text).join(' ')).toContain('80-160 g');
     expect(guidance.during.map(item => item.text).join(' ')).toContain('60-90 g Kohlenhydrate pro Stunde');
+    expect(guidance.during.map(item => item.text).join(' ')).toContain('180-270 g gesamt');
+    expect(guidance.during.map(item => item.text).join(' ')).toContain('7-11 Gel-Äquivalente');
     expect(guidance.during.map(item => item.text).join(' ')).toContain('Ministry');
     expect(guidance.during.map(item => item.text).join(' ')).toContain('400-800 mg Sodium pro Liter');
+    expect(guidance.during.map(item => item.text).join(' ')).toContain('200-400 mg pro 500 ml');
     expect(guidance.after.map(item => item.text).join(' ')).toContain('0,8-1,0 g/kg');
   });
 

@@ -4,6 +4,10 @@ import type {
   PulseFuelingRecoveryGuidanceItem,
   PulseFuelingRecoveryGuidanceResponse,
 } from '@coaching-os/shared/pulse';
+import {
+  buildCarbPortionEquivalent,
+  buildSodiumBottleEquivalent,
+} from './fueling-portions.js';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 
@@ -155,29 +159,34 @@ function buildBefore(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
   return items;
 }
 
-function carbRangeText(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): string | null {
+function carbRange(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): { min: number; max: number; text: string } | null {
   const { workout, preferences } = input;
   if (preferences.carbGuidanceStyle === 'avoid_amounts') return null;
   if (!isEnduranceFuelingSport(workout.activityType)) return null;
   if (workout.durationMin < 60 && workout.zone < 3) return null;
-  if (isWeakRecovery) return '30-45 g Kohlenhydrate pro Stunde';
-  if (workout.durationMin >= 150) return '60-90 g Kohlenhydrate pro Stunde';
-  if (workout.durationMin >= 75) return '30-60 g Kohlenhydrate pro Stunde';
-  return '20-30 g Kohlenhydrate pro Stunde optional';
+  if (isWeakRecovery) return { min: 30, max: 45, text: '30-45 g Kohlenhydrate pro Stunde' };
+  if (workout.durationMin >= 150) return { min: 60, max: 90, text: '60-90 g Kohlenhydrate pro Stunde' };
+  if (workout.durationMin >= 75) return { min: 30, max: 60, text: '30-60 g Kohlenhydrate pro Stunde' };
+  return { min: 20, max: 30, text: '20-30 g Kohlenhydrate pro Stunde optional' };
 }
 
 function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): FuelingRecoveryGuidanceItem[] {
   const { workout, preferences } = input;
   const items: FuelingRecoveryGuidanceItem[] = [];
-  const carbRange = carbRangeText(input, isWeakRecovery);
+  const carbs = carbRange(input, isWeakRecovery);
 
-  if (carbRange) {
+  if (carbs) {
+    const portionText = buildCarbPortionEquivalent({
+      durationMin: workout.durationMin,
+      minCarbsPerHour: carbs.min,
+      maxCarbsPerHour: carbs.max,
+    }).text.replace(`Für ${workout.durationMin} min: `, '');
     const longSessionNote = workout.durationMin >= 150 && !isWeakRecovery
       ? ' Nur mit geübter Glukose-/Fruktose-Strategie Richtung obere Range gehen.'
       : '';
     items.push({
       id: 'during-carbs',
-      text: `${carbRange}; ${preferences.preferredFuelingProducts || 'gewohnte Produkte'} als Produktanker nutzen.${longSessionNote}`,
+      text: `${carbs.text} (${portionText}); ${preferences.preferredFuelingProducts || 'gewohnte Produkte'} als Produktanker nutzen.${longSessionNote}`,
     });
   } else if (isWeakRecovery || workout.durationMin < 75) {
     items.push({
@@ -187,9 +196,10 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
   }
 
   if (workout.durationMin >= 75 && preferences.sodiumGuidanceStyle === 'suggest_ranges') {
+    const sodium = buildSodiumBottleEquivalent({ minSodiumMgPerL: 400, maxSodiumMgPerL: 800 });
     items.push({
       id: 'during-sodium',
-      text: 'Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter, an Hitze und echte Schweißrate anpassen und keine Gewichtszunahme durch Übertrinken riskieren.',
+      text: `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter (${sodium.text}), an Hitze und echte Schweißrate anpassen und keine Gewichtszunahme durch Übertrinken riskieren.`,
     });
   }
 

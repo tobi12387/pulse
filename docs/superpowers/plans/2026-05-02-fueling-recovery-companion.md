@@ -134,10 +134,25 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
   Ministry remains a product anchor in text. Product-specific serving counts stay a follow-up because Pulse does not yet store concrete product carbohydrate/sodium values.
 
+## Task 5: Generic Portion Equivalents
+
+- [x] **Step 1: Add product-free portion math**
+
+  Convert carb/hour ranges into workout-total carbs and gel-equivalents using a conservative generic 25 g carb serving.
+
+- [x] **Step 2: Add bottle-level sodium equivalents**
+
+  Convert 400-800 mg/L sodium into 500 ml and 750 ml bottle ranges so the guidance is easier to act on without requiring sweat-rate data.
+
+- [x] **Step 3: Wire equivalents into guidance copy**
+
+  Existing Plan and Garmin guidance text now includes total carbs, gel-equivalents and sodium-per-bottle explanations while keeping Ministry as a product anchor only.
+
 ## Acceptance
 
 - No opinionated fueling prescription appears before preferences are explicit.
 - Guidance is tied to concrete workouts and recovery state, not generic nutrition advice.
 - Race and long-session support becomes practical on the day of execution.
 - Guidance can travel to Garmin workout descriptions without live Garmin calls in automated tests.
+- Guidance includes actionable generic portion equivalents without pretending product-specific Ministry SKU knowledge.
 - Medical or clinical claims remain out of scope.
