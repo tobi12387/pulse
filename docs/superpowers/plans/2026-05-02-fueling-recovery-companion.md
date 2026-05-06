@@ -148,11 +148,30 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
   Existing Plan and Garmin guidance text now includes total carbs, gel-equivalents and sodium-per-bottle explanations while keeping Ministry as a product anchor only.
 
+## Task 6: Confirmed MNSTRY Product Calibration
+
+- [x] **Step 1: Capture Tobi's concrete products**
+
+  Tobi confirmed:
+  - `BICARB GEL 40 Lemon 1:0.8`;
+  - `POWER CARB Sour Cherry 1:0.8`;
+  - `PORRIDGE BAR Sour Cherry`;
+  - `PROTEIN BAR 8 Peanut & Cranberry`;
+  - no standard Intensity/Caffeine product automation for now.
+
+- [x] **Step 2: Add product-aware guidance without a new profile schema**
+
+  `preferred_fueling_products = Ministry/MNSTRY` now resolves to the confirmed product anchors in the pure backend guidance layer. Existing free-text profile storage remains enough for this slice.
+
+- [x] **Step 3: Keep BICARB special**
+
+  `BICARB GEL 40 Lemon 1:0.8` is only mentioned for race-week or high-intensity contexts and is not used as the generic everyday gel equivalent.
+
 ## Acceptance
 
 - No opinionated fueling prescription appears before preferences are explicit.
 - Guidance is tied to concrete workouts and recovery state, not generic nutrition advice.
 - Race and long-session support becomes practical on the day of execution.
 - Guidance can travel to Garmin workout descriptions without live Garmin calls in automated tests.
-- Guidance includes actionable generic portion equivalents without pretending product-specific Ministry SKU knowledge.
+- Guidance includes actionable generic portion equivalents and, after Tobi's confirmation, product-specific MNSTRY anchors without pretending medical precision.
 - Medical or clinical claims remain out of scope.
