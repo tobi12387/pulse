@@ -236,7 +236,7 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
     items.push({
       id: 'during-sodium',
       text: productSodiumText
-        ? `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter (${sodium.text}). ${productSodiumText}`
+        ? `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter, also grob ${sodium.bottle750MinMg}-${sodium.bottle750MaxMg} mg pro 750 ml Flasche. ${productSodiumText}`
         : `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter (${sodium.text}), an Hitze und echte Schweißrate anpassen und keine Gewichtszunahme durch Übertrinken riskieren.`,
     });
   }
