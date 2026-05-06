@@ -69,14 +69,14 @@ export function deriveWorkoutExecutionState(
         status: 'completed_matched',
         matchedActivityId: activity.id,
         confidence,
-        notes: `Mit Garmin-Aktivitaet ${activity.id} abgeglichen.`,
+        notes: `Mit Garmin-Aktivität ${activity.id} abgeglichen.`,
       };
     }
     return {
       status: 'replaced_or_off_plan',
       matchedActivityId: activity.id,
       confidence,
-      notes: `Am Plantag wurde eine andere Aktivitaet (${activity.activityType}) gefunden.`,
+      notes: `Am Plantag wurde eine andere Aktivität (${activity.activityType}) gefunden.`,
     };
   }
 
@@ -85,7 +85,7 @@ export function deriveWorkoutExecutionState(
       status: 'missed',
       matchedActivityId: null,
       confidence: null,
-      notes: 'Plantag ist vorbei und keine passende Garmin-Aktivitaet ist zugeordnet.',
+      notes: 'Plantag ist vorbei und keine passende Garmin-Aktivität ist zugeordnet.',
     };
   }
 

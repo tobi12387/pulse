@@ -21,10 +21,10 @@ export function mentalImpactLabels(level: MentalImpactLevel): {
 } {
   if (level === 'protect') {
     return {
-      health: 'schuetzen',
+      health: 'schützen',
       fitness: 'schonen',
       dailyImpact: 'Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.',
-      planImpact: 'Plan vorsichtig interpretieren: Intensitaet nur bewusst halten.',
+      planImpact: 'Plan vorsichtig interpretieren: Intensität nur bewusst halten.',
     };
   }
   if (level === 'steady') {
@@ -32,7 +32,7 @@ export function mentalImpactLabels(level: MentalImpactLevel): {
       health: 'sensibel',
       fitness: 'dosieren',
       dailyImpact: 'Heute hilft ein klarer Rahmen mehr als mehr Optionen.',
-      planImpact: 'Plan bleibt moeglich, aber mit enger Belastungsgrenze.',
+      planImpact: 'Plan bleibt möglich, aber mit enger Belastungsgrenze.',
     };
   }
   return {

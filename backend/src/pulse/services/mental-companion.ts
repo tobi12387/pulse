@@ -46,7 +46,7 @@ export interface MentalCompanionGuidance {
 const DEFAULT_QUESTION: GuidedCheckinQuestion = {
   id: 'mental-load',
   label: 'Was zieht heute mentale Energie?',
-  rationale: 'Basisfrage fuer den Daily Check-in: sichtbar machen, was gerade Aufmerksamkeit bindet.',
+  rationale: 'Basisfrage für den Daily Check-in: sichtbar machen, was gerade Aufmerksamkeit bindet.',
   answerMode: 'short_text',
 };
 
@@ -140,7 +140,7 @@ export function selectMentalCompanionGuidance(input: SelectMentalCompanionInput)
     addQuestion(questions, {
       id: 'stress-boundary',
       label: 'Was darf heute bewusst kleiner bleiben?',
-      rationale: `Stresssignal ist erhoeht${stressAvg != null ? ` (${Math.round(stressAvg)}/100)` : ''}; ein kleinerer Anspruch kann Stabilitaet schuetzen.`,
+      rationale: `Stresssignal ist erhöht${stressAvg != null ? ` (${Math.round(stressAvg)}/100)` : ''}; ein kleinerer Anspruch kann Stabilität schützen.`,
       answerMode: 'short_text',
     });
   }

@@ -125,7 +125,7 @@ function guardrails(input: SeasonStrategyInput, race: RaceContext | null, curren
   let deload = false;
 
   if (input.availability.availableDays.length > targetSessions) {
-    rationale.push('Verfuegbarkeit ist groesser als sinnvolle Trainingsdichte.');
+    rationale.push('Verfügbarkeit ist größer als sinnvolle Trainingsdichte.');
   }
 
   if (currentKind === 'maintenance') {
@@ -143,26 +143,26 @@ function guardrails(input: SeasonStrategyInput, race: RaceContext | null, curren
     deload = true;
     targetSessions = Math.max(2, targetSessions - 1);
     maxHardDays = 0;
-    rationale.push(`TSB ${input.fitnessLoad.tsb.toFixed(1)} / ATL-CTL ${(input.fitnessLoad.atl - input.fitnessLoad.ctl).toFixed(1)}: naechste Woche konsolidieren.`);
+    rationale.push(`TSB ${input.fitnessLoad.tsb.toFixed(1)} / ATL-CTL ${(input.fitnessLoad.atl - input.fitnessLoad.ctl).toFixed(1)}: nächste Woche konsolidieren.`);
   }
 
   if (input.coachPreferences.dislikedWorkoutPatterns.length > 0) {
-    rationale.push('Coach-Praeferenzen begrenzen monotone oder unerwuenschte Muster.');
+    rationale.push('Coach-Präferenzen begrenzen monotone oder unerwünschte Muster.');
   }
 
   const nextBoundary = blocks.find(candidate => candidate.startWeek > input.weekStart && (candidate.kind === 'taper' || candidate.kind === 'race_week'))
     ?? blocks.find(candidate => candidate.startWeek > input.weekStart && candidate.kind === 'peak')
     ?? null;
   const freeDayRationale = input.availability.availableDays.length > targetSessions
-    ? 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt fuer Erholung, Alltag und bessere Ausfuehrung geschuetzt.'
-    : 'Alle verfuegbaren Tage koennen genutzt werden, aber Zusatztraining bleibt optional und datenabhaengig.';
+    ? 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt für Erholung, Alltag und bessere Ausführung geschützt.'
+    : 'Alle verfügbaren Tage können genutzt werden, aber Zusatztraining bleibt optional und datenabhängig.';
 
   return {
     targetSessions,
     maxHardDays,
     deload,
     freeDayRationale,
-    rationale: rationale.length > 0 ? rationale : ['Saisonlinie nutzt aktuelle Ziele, Load und Verfuegbarkeit als Guardrails.'],
+    rationale: rationale.length > 0 ? rationale : ['Saisonlinie nutzt aktuelle Ziele, Load und Verfügbarkeit als Guardrails.'],
     nextBoundary: nextBoundary ? { label: nextBoundary.label, date: nextBoundary.startWeek } : null,
   };
 }
@@ -190,7 +190,7 @@ export function buildSeasonStrategy(input: SeasonStrategyInput): PulseSeasonStra
       `CTL ${input.fitnessLoad.ctl.toFixed(1)}`,
       `ATL ${input.fitnessLoad.atl.toFixed(1)}`,
       `TSB ${input.fitnessLoad.tsb.toFixed(1)}`,
-      `${input.availability.availableDays.length} verfuegbare Tage`,
+      `${input.availability.availableDays.length} verfügbare Tage`,
     ],
   };
 }

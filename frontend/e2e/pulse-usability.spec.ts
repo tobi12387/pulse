@@ -727,14 +727,14 @@ test('Coach uses today mental check-in as planning context instead of asking aga
 
   const summary = page.getByTestId('coach-mental-context-summary');
   await expect(summary.getByText('MENTAL HEUTE')).toBeVisible();
-  await expect(summary).toContainText('Mental Health schuetzen');
+  await expect(summary).toContainText('Mental Health schützen');
   await expect(summary).toContainText('Mental Fitness schonen');
   await expect(summary.getByText('Stimmung 3/10 · Energie 2/10 · Stress 8/10')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mit Check-in planen' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Führe mich mit kurzen Fragen durch Stimmung, Energie, Stress, Motivation und mentale Belastung.' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Mit Check-in planen' }).click();
-  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Mental Health schuetzen/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Mental Health schützen/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Mental Fitness schonen/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Stimmung 3\/10/);
   expect(coachSends).toBe(0);
@@ -890,7 +890,7 @@ test('Settings show profile value provenance for Garmin planning inputs', async 
   await expect(page.getByText('LTHR')).toBeVisible();
   await expect(page.getByText('VO2max')).toBeVisible();
   await expect(page.getByText('Manuell').first()).toBeVisible();
-  await expect(page.getByText('Aktivitaeten').first()).toBeVisible();
+  await expect(page.getByText('Aktivitäten').first()).toBeVisible();
   await expect(page.getByText('Garmin').first()).toBeVisible();
 });
 
@@ -908,7 +908,7 @@ test('Settings can unlock a manual profile value for automatic Garmin sync', asy
     provenance: {
       fields: {
         ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
-        maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+        maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'activity_derived', sourceLabel: 'Aktivitäten', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
         lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
         vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'garmin_settings', sourceLabel: 'Garmin', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
       },
@@ -926,14 +926,14 @@ test('Settings can unlock a manual profile value for automatic Garmin sync', asy
           ...profile.provenance,
           fields: {
             ...profile.provenance.fields,
-            ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 295, source: 'activity_derived', sourceLabel: 'Aktivitaeten', updatedAt: '2026-05-01T08:00:00.000Z', warning: null },
+            ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 295, source: 'activity_derived', sourceLabel: 'Aktivitäten', updatedAt: '2026-05-01T08:00:00.000Z', warning: null },
           },
         },
       };
       return {
         synced: {
           ftpWatts: { field: 'ftpWatts', value: 295, source: 'activity_derived', status: 'updated', label: 'FTP aus bester 20-Minuten-Leistung' },
-          maxHrBpm: { field: 'maxHrBpm', value: 185, source: 'activity_derived', status: 'updated', label: 'Max. Puls aus Aktivitaeten' },
+          maxHrBpm: { field: 'maxHrBpm', value: 185, source: 'activity_derived', status: 'updated', label: 'Max. Puls aus Aktivitäten' },
           lthrBpm: { field: 'lthrBpm', value: 170, source: 'garmin_settings', status: 'updated', label: 'LTHR aus Garmin-Einstellungen' },
           vo2max: { field: 'vo2max', value: 52, source: 'garmin_settings', status: 'updated', label: 'VO2max aus Garmin-Einstellungen' },
         },
@@ -1541,11 +1541,11 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
         targetSessions: 4,
         maxHardDays: 1,
         deload: false,
-        freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt fuer Erholung, Alltag und bessere Ausfuehrung geschuetzt.',
-        rationale: ['Sechs Tage sind verfuegbar, aber nur vier sind sinnvoll.'],
+        freeDayRationale: 'Pulse nutzt nicht alle verfügbaren Tage: mindestens ein freier Tag bleibt für Erholung, Alltag und bessere Ausführung geschützt.',
+        rationale: ['Sechs Tage sind verfügbar, aber nur vier sind sinnvoll.'],
         nextBoundary: { label: 'Taper', date: '2026-06-29' },
       },
-      evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfuegbare Tage'],
+      evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfügbare Tage'],
     },
   });
 
@@ -1557,7 +1557,7 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
   await expect(page.getByText('max. 1')).toBeVisible();
   await expect(page.getByText(/Pulse nutzt nicht alle verfügbaren Tage/)).toBeVisible();
   await expect(page.getByText(/Taper ab .*29\.06/)).toBeVisible();
-  await expect(page.getByText('6 verfuegbare Tage')).toBeVisible();
+  await expect(page.getByText('6 verfügbare Tage')).toBeVisible();
 });
 
 test('Plan preserves race goal metadata when editing', async ({ page }) => {
@@ -2092,7 +2092,7 @@ test('Data shows Garmin signal usefulness priorities', async ({ page }) => {
           sampleDays: ['2026-05-01'],
           currentConsumers: ['Activity Detail'],
           recommendedNextConsumer: 'plan_generation',
-          whyItMatters: 'HR-Zonen und Laps zeigen Ausfuehrungsqualitaet.',
+          whyItMatters: 'HR-Zonen und Laps zeigen Ausführungsqualität.',
           evidence: ['8 Tage mit Detailcache'],
         },
       ],

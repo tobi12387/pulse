@@ -345,7 +345,7 @@ export function buildDailyDecisionQuality(input: DailyDecisionQualityInput): Pul
     .map(item => `${item.label}: ${item.detail}`);
 
   if (bestEvidence.length === 0) {
-    bestEvidence.push('Noch zu wenig Folge-Daten fuer eine belastbare Qualitätsbewertung.');
+    bestEvidence.push('Noch zu wenig Folge-Daten für eine belastbare Qualitätsbewertung.');
   }
 
   return {

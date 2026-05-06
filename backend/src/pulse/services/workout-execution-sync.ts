@@ -168,7 +168,7 @@ export async function matchActivityToWorkout(
         executionStatus: 'replaced_or_off_plan',
         executionMatchedAt: new Date(),
         executionMatchConfidence: best.score,
-        executionNotes: `Am Plantag wurde eine andere Aktivitaet (${activityType}) gefunden.`,
+        executionNotes: `Am Plantag wurde eine andere Aktivität (${activityType}) gefunden.`,
       })
       .where(eq(pulsePlannedWorkouts.id, best.workout.id));
     return;
@@ -183,7 +183,7 @@ export async function matchActivityToWorkout(
       executionStatus: 'completed_matched',
       executionMatchedAt: new Date(),
       executionMatchConfidence: best.score,
-      executionNotes: `Mit Garmin-Aktivitaet ${activityId} abgeglichen.`,
+      executionNotes: `Mit Garmin-Aktivität ${activityId} abgeglichen.`,
     })
     .where(eq(pulsePlannedWorkouts.id, planned.id));
 

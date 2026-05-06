@@ -1289,7 +1289,7 @@ describe('GET /api/pulse/plan', () => {
     expect(statuses).toContain('missed');
     expect(statuses).toContain('replaced_or_off_plan');
     expect(body.workouts.find(w => w.executionStatus === 'completed_matched')?.executionMatchConfidence).toBeGreaterThanOrEqual(0.8);
-    expect(body.workouts.find(w => w.executionStatus === 'replaced_or_off_plan')?.executionNotes).toContain('andere Aktivitaet');
+    expect(body.workouts.find(w => w.executionStatus === 'replaced_or_off_plan')?.executionNotes).toContain('andere Aktivität');
   });
 });
 
