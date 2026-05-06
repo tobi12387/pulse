@@ -1294,6 +1294,38 @@ describe('GET /api/pulse/plan', () => {
 });
 
 describe('Pulse profile provenance', () => {
+  it('persists explicit fueling preferences on the athlete profile', async () => {
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/profile',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        fuelingEnabled: true,
+        dietaryConstraints: [],
+        preferredFuelingProducts: 'Ministry',
+        carbGuidanceStyle: 'suggest_ranges',
+        sodiumGuidanceStyle: 'suggest_ranges',
+        bodyWeightGuidanceEnabled: true,
+      },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    const profile = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/profile',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(profile.statusCode).toBe(200);
+    expect(profile.json()).toMatchObject({
+      fuelingEnabled: true,
+      dietaryConstraints: [],
+      preferredFuelingProducts: 'Ministry',
+      carbGuidanceStyle: 'suggest_ranges',
+      sodiumGuidanceStyle: 'suggest_ranges',
+      bodyWeightGuidanceEnabled: true,
+    });
+  });
+
   it('marks manual profile edits and protects them from Garmin profile sync', async () => {
     const patch = await app.inject({
       method: 'PATCH',

@@ -11,6 +11,7 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
+  PulseFuelingPreferences,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -343,7 +344,7 @@ export const pulseApi = {
         lthrBpm: number | null; restingHrBpm: number | null; weeklyHoursTarget: number | null;
         trainingPhase: string | null; vo2max: number | null;
         provenance: PulseProfileProvenanceView;
-      };
+      } & PulseFuelingPreferences;
     }> =>
       request('/garmin/sync-profile', { method: 'POST', body: JSON.stringify(params ?? {}) }),
     calendarSync: (): Promise<{ uploaded: number; repaired?: number; removed: number; errors?: string[] }> =>
@@ -396,10 +397,14 @@ export const pulseApi = {
       restingHrBpm: number | null; weeklyHoursTarget: number | null;
       trainingPhase: string | null; vo2max: number | null;
       provenance: PulseProfileProvenanceView;
-    }> => request('/profile'),
+    } & PulseFuelingPreferences> => request('/profile'),
     update: (data: {
       ftpWatts?: number; maxHrBpm?: number; lthrBpm?: number; restingHrBpm?: number;
       weeklyHoursTarget?: number; trainingPhase?: string; vo2max?: number;
+      fuelingEnabled?: boolean; dietaryConstraints?: string[]; preferredFuelingProducts?: string;
+      carbGuidanceStyle?: PulseFuelingPreferences['carbGuidanceStyle'];
+      sodiumGuidanceStyle?: PulseFuelingPreferences['sodiumGuidanceStyle'];
+      bodyWeightGuidanceEnabled?: boolean;
     }): Promise<unknown> => request('/profile', { method: 'PATCH', body: JSON.stringify(data) }),
   },
 

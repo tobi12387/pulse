@@ -954,6 +954,35 @@ test('Settings can unlock a manual profile value for automatic Garmin sync', asy
   await expect(page.getByRole('button', { name: /automatisch übernehmen/ })).toHaveCount(0);
 });
 
+test('Settings edits Fueling and Recovery preferences for future guidance', async ({ page }) => {
+  let patched: unknown = null;
+  await mockPulseApi(page, {
+    onProfilePatch: (body) => {
+      patched = body;
+    },
+  });
+
+  await page.goto('/settings');
+  await expect(page.getByText('Fueling & Recovery')).toBeVisible();
+  await expect(page.getByText('Ministry')).toBeVisible();
+  await expect(page.getByText('Carbs: Pulse schlägt g/h vor')).toBeVisible();
+
+  await page.locator('.card').filter({ hasText: 'Athletenprofil' }).getByRole('button', { name: 'Bearbeiten' }).click();
+  await page.getByLabel('Bevorzugte Fueling-Produkte').fill('Ministry Drink Mix und Gels');
+  await page.getByLabel('Ernährungseinschränkungen').fill('keine');
+  await page.getByRole('button', { name: 'Profil speichern' }).click();
+
+  await expect.poll(() => patched).toMatchObject({
+    preferredFuelingProducts: 'Ministry Drink Mix und Gels',
+    dietaryConstraints: [],
+    fuelingEnabled: true,
+    carbGuidanceStyle: 'suggest_ranges',
+    sodiumGuidanceStyle: 'suggest_ranges',
+    bodyWeightGuidanceEnabled: true,
+  });
+  await expect(page.getByText('Profil gespeichert.')).toBeVisible();
+});
+
 test('Settings edits explicit coach preferences for future recommendations', async ({ page }) => {
   let patched: unknown = null;
   await mockPulseApi(page, {
