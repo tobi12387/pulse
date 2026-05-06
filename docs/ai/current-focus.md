@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest verified server runtime: `ff44071` / PR #194. PR #195-#197 are CI/docs-only and do not require a runtime deploy.
+- Latest verified server runtime: `287aeab` / PR #200, deployed 2026-05-06.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
