@@ -5,6 +5,7 @@ import { test } from 'node:test';
 const script = readFileSync(new URL('./dev-services.sh', import.meta.url), 'utf8');
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const verifyLocalScript = readFileSync(new URL('./verify-local.sh', import.meta.url), 'utf8');
+const verifyServerScript = readFileSync(new URL('./verify-server.sh', import.meta.url), 'utf8');
 const pulseStatusScript = readFileSync(new URL('./pulse-status.sh', import.meta.url), 'utf8');
 const deployScript = readFileSync(new URL('./deploy.sh', import.meta.url), 'utf8');
 const pulseOpsScript = readFileSync(new URL('../plugins/pulse-ops/scripts/pulse_ops.sh', import.meta.url), 'utf8');
@@ -42,6 +43,14 @@ test('pulse-status checks local services and server health independently', () =>
   assert.match(pulseStatusScript, /bash scripts\/verify-server\.sh/);
   assert.match(pulseStatusScript, /local_status=0/);
   assert.match(pulseStatusScript, /server_status=0/);
+});
+
+test('verify-server surfaces PM2 restart and recent log attention signals', () => {
+  assert.match(verifyServerScript, /restarts=\$\{restarts\}/);
+  assert.match(verifyServerScript, /unstable_restarts=\$\{unstableRestarts\}/);
+  assert.match(verifyServerScript, /recent server log signals/);
+  assert.match(verifyServerScript, /recent_attention=/);
+  assert.match(verifyServerScript, /Too Many Requests\|Cloudflare\|ClientAuthorizationException\|ECONNREFUSED\|ECONNRESET\|\/api\/garmin\/status/);
 });
 
 test('verify-local prints local service remediation before DB checks', () => {

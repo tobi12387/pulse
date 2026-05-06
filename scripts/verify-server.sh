@@ -10,6 +10,7 @@ URL="${PULSE_URL:-https://192.168.178.46:5175}"
 BACKEND_PROC="${PULSE_PM2_BACKEND:-pulse}"
 FRONTEND_PROC="${PULSE_PM2_FRONTEND:-pulse-frontend}"
 EXPECTED_COMMIT="${PULSE_EXPECTED_COMMIT:-$(git rev-parse --short HEAD)}"
+LOG_LINES="${PULSE_SERVER_LOG_LINES:-300}"
 
 usage() {
   cat <<'USAGE'
@@ -22,11 +23,13 @@ Environment overrides:
   PULSE_PM2_BACKEND      Backend PM2 process, default pulse
   PULSE_PM2_FRONTEND     Frontend PM2 process, default pulse-frontend
   PULSE_EXPECTED_COMMIT  Expected short commit, default local HEAD
+  PULSE_SERVER_LOG_LINES Recent PM2 error-log lines to summarize, default 300
 
 Checks:
   - server worktree is clean on main
   - server commit matches PULSE_EXPECTED_COMMIT
-  - backend and frontend PM2 processes are online
+  - backend and frontend PM2 processes are online, with restart counters printed
+  - recent backend/frontend error logs summarize Garmin/rate-limit/proxy attention signals
   - public HTTPS root returns 200
   - /api/ping returns status ok
   - /api/pulse/health returns status ok
@@ -42,6 +45,8 @@ fail() {
   echo "ERROR: $*" >&2
   exit 1
 }
+
+[[ "$LOG_LINES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_LINES must be numeric"
 
 echo "==> server git status"
 server_info="$(ssh "$HOST" "cd '$APP_PATH' && \
@@ -68,10 +73,25 @@ for (const name of required) {
     process.exit(1);
   }
   const status = app.pm2_env?.status;
-  console.log(`${name}: ${status}`);
+  const restarts = Number(app.pm2_env?.restart_time ?? 0);
+  const unstableRestarts = Number(app.pm2_env?.unstable_restarts ?? 0);
+  const uptimeSince = app.pm2_env?.pm_uptime
+    ? new Date(app.pm2_env.pm_uptime).toISOString()
+    : 'unknown';
+  console.log(`${name}: ${status} restarts=${restarts} unstable_restarts=${unstableRestarts} uptime_since=${uptimeSince}`);
   if (status !== 'online') process.exit(1);
 }
 NODE
+
+echo "==> recent server log signals"
+ssh "$HOST" "for file in /root/.pm2/logs/${BACKEND_PROC}-error.log /root/.pm2/logs/${FRONTEND_PROC}-error.log; do
+  if [ -f \"\$file\" ]; then
+    recent_attention=\$(tail -n '$LOG_LINES' \"\$file\" | grep -Eic 'Too Many Requests|Cloudflare|ClientAuthorizationException|ECONNREFUSED|ECONNRESET|/api/garmin/status' || true)
+    printf '%s recent_attention=%s\n' \"\$(basename \"\$file\")\" \"\$recent_attention\"
+  else
+    printf '%s recent_attention=missing\n' \"\$(basename \"\$file\")\"
+  fi
+done"
 
 echo "==> public frontend"
 http_code="$(curl -ksS -o /dev/null -w '%{http_code}' "$URL")"

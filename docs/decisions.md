@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Server-Verify zeigt PM2- und Garmin-Log-Signale als nicht-blockierende Ops-Hinweise
+
+- **Decision:** `scripts/verify-server.sh` bleibt ein harter Healthcheck fuer Git-Stand, PM2-Online-Status, Frontend und API-Health, gibt aber zusaetzlich PM2-Restart-Zaehler, instabile Restarts und zusammengefasste Garmin-/Rate-Limit-/Proxy-Logsignale aus.
+- **Why:** Wiederkehrende Probleme wie hohe PM2-Restart-Zaehler, Garmin-SSO-Rate-Limits oder temporaere Proxy-Resets waren bislang nur durch manuelles Log-Lesen sichtbar. Der Statuslauf soll diese Hinweise frueh zeigen, ohne historische Logeintraege faelschlich als aktuellen Deploy-Blocker zu behandeln.
+- **Alternatives:** Logsignale weiter manuell per SSH pruefen (fehleranfaellig); `verify-server` bei jedem historischen Logtreffer fehlschlagen lassen (zu laut und blockiert gesunde Deploys); eine neue Monitoring-Infrastruktur bauen (zu gross fuer den lokalen Pulse-Betrieb).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-05 — CI trennt Build, Backend und Browser per Change-Fläche
 
 - **Decision:** Die GitHub-CI nutzt einen `changes`-Job und fuehrt Build, Backend-Tests und Browser-Tests als getrennte, parallelisierbare Jobs aus. Der stabile Pflicht-Check `build-and-test` bleibt als Aggregator erhalten und akzeptiert bewusst uebersprungene Jobs, solange kein benoetigter Job fehlschlaegt.
