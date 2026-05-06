@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Fueling-Portionen bleiben generische Äquivalente statt Ministry-SKU-Katalog
+
+- **Decision:** Pulse übersetzt Carb-/Sodium-Bereiche in generische Portionsäquivalente: Gesamt-Kohlenhydrate für die geplante Dauer, grobe Gel-Äquivalente mit 25 g Carbs pro Serving und Sodium-Spannen pro 500/750 ml Flasche. Ministry bleibt vorerst nur der bevorzugte Produktanker im Text.
+- **Why:** Tobi kennt die g/h- und Sodium-Werte nicht auswendig und braucht alltagstaugliche Orientierung. Ohne konkrete Ministry-Produktdaten würde ein SKU-Katalog falsche Präzision erzeugen; generische Äquivalente machen die Empfehlung direkt nutzbar und bleiben transparent.
+- **Alternatives:** Keine Portionshilfe geben (zu abstrakt); konkrete Ministry-Produkte hardcoden (veraltet schnell und riskant ohne Labeldaten); exakte Sodium-Mengen pro Stunde versprechen (zu präzise ohne Schweißrate und Trinkmenge).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-06 — Fueling-Guidance reist als kurzer Text in Garmin-Workout-Beschreibungen mit
 
 - **Decision:** Beim Upload geplanter Workouts nach Garmin darf Pulse einen kurzen `Pulse Fueling`-Block in die Garmin-Workout-Beschreibung schreiben, wenn die workout-spezifische Fueling-&-Recovery-Guidance sichtbar sein soll. Der Block ersetzt ältere Pulse-Fueling-Blöcke statt sie zu duplizieren.
