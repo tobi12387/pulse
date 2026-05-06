@@ -1964,6 +1964,45 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
     ]);
     expect(steps.map(s => s.zoneNumber)).toEqual([1, 2, 1]);
   });
+
+  it('includes concise fueling guidance in the Garmin workout description for long sessions', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      weightKg: 80,
+      fuelingEnabled: true,
+      preferredFuelingProducts: 'Ministry',
+      carbGuidanceStyle: 'suggest_ranges',
+      sodiumGuidanceStyle: 'suggest_ranges',
+      bodyWeightGuidanceEnabled: true,
+      updatedAt: new Date(),
+    });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-07',
+      activityType: 'bike',
+      zone: 3,
+      durationMin: 180,
+      targetTss: 145,
+      description: 'Lange Ausfahrt',
+      steps: [
+        { type: 'steady', durationMin: 180, zone: 3, description: 'Z3 Endurance' },
+      ],
+    }).returning();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/sync-garmin`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
+    const payload = garminMocks.addWorkout.mock.calls[0]![0] as { description: string };
+    expect(payload.description).toContain('Pulse Fueling:');
+    expect(payload.description).toContain('60-90 g Kohlenhydrate pro Stunde');
+    expect(payload.description).toContain('400-800 mg Sodium pro Liter');
+    expect(payload.description).toContain('Recovery innerhalb von 2 h');
+  });
 });
 
 describe('GET /api/pulse/goals', () => {

@@ -34,6 +34,7 @@ import {
 } from '../services/garmin-workout.js';
 import { profileWithProvenance, syncProfileFromGarmin } from '../services/profile-sync.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
+import { buildFuelingRecoveryGuidanceForPlannedWorkout } from '../services/fueling-recovery-planned-workout.js';
 
 const garminSyncSchema = z.object({
   days: z.number().int().min(1).max(30).optional().default(7),
@@ -765,7 +766,11 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
             .where(eq(pulsePlannedWorkouts.id, w.id));
           w = { ...w, steps: steps as typeof w.steps, description: updatedDescription };
         }
-        const garminWorkout = buildGarminWorkoutJson(w);
+        const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, w).catch((err: unknown) => {
+          app.log.warn(`[calendar-sync] Fueling guidance failed for ${w.id}: ${err}`);
+          return null;
+        });
+        const garminWorkout = buildGarminWorkoutJson(w, { fuelingGuidance });
         const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
         const garminWorkoutId = String(created.workoutId);
         const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, w.plannedDate) as any;

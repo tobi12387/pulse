@@ -120,9 +120,24 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
   npm run test:e2e -- --grep "Fueling|Recovery|Plan"
   ```
 
+## Task 4: Garmin Handoff
+
+- [x] **Step 1: Add concise Garmin description block**
+
+  Planned workout uploads append a short `Pulse Fueling` block to the Garmin workout description when workout-specific guidance should be visible. Existing Fueling blocks are replaced instead of duplicated.
+
+- [x] **Step 2: Wire all Garmin planned-workout upload paths**
+
+  Manual workout sync, Settings calendar sync and plan-generation fire-and-forget sync all use the same workout-specific guidance builder before creating Garmin payloads.
+
+- [x] **Step 3: Keep product portions out of scope**
+
+  Ministry remains a product anchor in text. Product-specific serving counts stay a follow-up because Pulse does not yet store concrete product carbohydrate/sodium values.
+
 ## Acceptance
 
 - No opinionated fueling prescription appears before preferences are explicit.
 - Guidance is tied to concrete workouts and recovery state, not generic nutrition advice.
 - Race and long-session support becomes practical on the day of execution.
+- Guidance can travel to Garmin workout descriptions without live Garmin calls in automated tests.
 - Medical or clinical claims remain out of scope.
