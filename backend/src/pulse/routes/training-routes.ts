@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import type { PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
+import type { PulseFuelingRecoveryGuidanceResponse, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
@@ -17,6 +17,7 @@ import {
   pulseWeekAvailability,
 } from '../../db/pulse-schema.js';
 import { invalidateUser } from '../lib/pulse-cache.js';
+import { buildCachedPulseContextFor } from '../lib/pulse-context.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from '../services/adapt-engine.js';
 import { computeFitnessLoad } from '../services/load-engine.js';
 import { buildPlanLearningSnapshot } from '../services/plan-learning.js';
@@ -56,6 +57,7 @@ import { getFitnessLoadCached } from '../services/daily-loop.js';
 import { profileWithProvenance } from '../services/profile-sync.js';
 import { fetchGarminCalendarWorkouts } from '../services/garmin-calendar-workouts.js';
 import { generateWeeklyReview } from '../services/review-engine.js';
+import { buildFuelingRecoveryGuidance } from '../services/fueling-recovery-guidance.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -1426,6 +1428,52 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .where(and(...conds))
       .orderBy(desc(pulseNutritionLogs.date), desc(pulseNutritionLogs.createdAt));
     return { logs };
+  });
+
+  app.get('/fueling-recovery/guidance', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseFuelingRecoveryGuidanceResponse | void> => {
+    const parsed = z.object({ workoutId: z.string().uuid() }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'workoutId fehlt oder ist ungültig' });
+
+    const userId = req.user.sub;
+    const [workout] = await db.select().from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.id, parsed.data.workoutId), eq(pulsePlannedWorkouts.userId, userId)));
+    if (!workout) return reply.status(404).send({ error: 'Workout nicht gefunden' });
+
+    const ctx = await buildCachedPulseContextFor(userId, workout.plannedDate);
+    const profile = ctx.profile;
+    return buildFuelingRecoveryGuidance({
+      workout: {
+        id: workout.id,
+        plannedDate: workout.plannedDate,
+        activityType: workout.activityType,
+        zone: workout.zone,
+        durationMin: workout.durationMin,
+        targetTss: workout.targetTss,
+        description: workout.description,
+      },
+      preferences: {
+        fuelingEnabled: profile?.fuelingEnabled ?? true,
+        dietaryConstraints: profile?.dietaryConstraints ?? [],
+        preferredFuelingProducts: profile?.preferredFuelingProducts ?? 'Ministry',
+        carbGuidanceStyle: profile?.carbGuidanceStyle ?? 'suggest_ranges',
+        sodiumGuidanceStyle: profile?.sodiumGuidanceStyle ?? 'suggest_ranges',
+        bodyWeightGuidanceEnabled: profile?.bodyWeightGuidanceEnabled ?? true,
+      },
+      profile: {
+        weightKg: profile?.weightKg ?? ctx.latestWeight?.weightKg ?? null,
+      },
+      recovery: {
+        readinessScore: ctx.readiness.score,
+        sleepDebt7dH: ctx.recovery?.sleepDebt7d.hours ?? null,
+        hrvStatus: ctx.recovery?.hrvDeviation7d.status ?? ctx.todayMetrics?.hrvStatus ?? null,
+        bodyBatteryMax: ctx.todayMetrics?.bodyBatteryMax ?? null,
+      },
+      race: ctx.nextRace ? {
+        title: ctx.nextRace.title,
+        phase: ctx.nextRace.phase,
+        daysUntil: ctx.nextRace.daysUntil,
+      } : null,
+    });
   });
 
   app.post('/nutrition', { onRequest: [app.authenticate] }, async (req, reply) => {

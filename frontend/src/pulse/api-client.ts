@@ -11,7 +11,7 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences,
+  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -91,6 +91,11 @@ export const pulseApi = {
       request('/nutrition', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id: string): Promise<void> =>
       request(`/nutrition/${id}`, { method: 'DELETE' }),
+  },
+
+  fuelingRecovery: {
+    guidance: (workoutId: string): Promise<PulseFuelingRecoveryGuidanceResponse> =>
+      request(`/fueling-recovery/guidance?workoutId=${encodeURIComponent(workoutId)}`),
   },
 
   coach: {

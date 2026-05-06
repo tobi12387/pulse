@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-06 — Fueling-Guidance startet read-only im Plan-Workout-Modal
+
+- **Decision:** Die erste UI-Integration der Fueling-&-Recovery-Guidance ist ein read-only Card-Block im Plan-Workout-Modal, gespeist von `GET /api/pulse/fueling-recovery/guidance?workoutId=...`. Garmin-Workout-Beschreibungen, automatische Kalendertexte und produktgenaue Ministry-Portionen bleiben eigene Folge-PRs.
+- **Why:** Tobi braucht die Hinweise zuerst dort, wo die konkrete Einheit geplant und geöffnet wird. Der read-only Schnitt reduziert Risiko, vermeidet versehentliche Garmin-Sync-Nebenwirkungen und erlaubt Browser-QA, bevor Guidance in externe Gerätebeschreibungen geschrieben wird.
+- **Alternatives:** Guidance sofort in Garmin-Descriptions schreiben (zu viel Sync-Risiko fuer den ersten UI-Schnitt); nur Backend-API ohne UI bauen (kein Alltagsnutzen); Guidance auf Home zeigen (zu viel kognitive Last fuer die Tagesentscheidung).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-06 — Fueling-Guidance nutzt konservative, evidenzbasierte Bereiche
 
 - **Decision:** Die Fueling-&-Recovery-Guidance startet mit konservativen, regelbasierten Bereichen: kurze lockere Einheiten bleiben still, längere Ausdauer-Einheiten bekommen 30-60 g Kohlenhydrate/h, sehr lange Einheiten optional 60-90 g/h nur mit geübter Glukose-/Fruktose-Strategie, und Sodium startet vorsichtig bei 400-800 mg/L mit Hinweis auf Hitze, Durst, Körpergewicht und fehlende Schweißratenmessung.

@@ -1293,6 +1293,41 @@ describe('GET /api/pulse/plan', () => {
   });
 });
 
+describe('GET /api/pulse/fueling-recovery/guidance', () => {
+  it('returns conservative fueling guidance for a long planned workout', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      weightKg: 80,
+      fuelingEnabled: true,
+      preferredFuelingProducts: 'Ministry',
+      carbGuidanceStyle: 'suggest_ranges',
+      sodiumGuidanceStyle: 'suggest_ranges',
+      bodyWeightGuidanceEnabled: true,
+    });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: dateDaysFrom(1),
+      activityType: 'bike',
+      zone: 3,
+      durationMin: 180,
+      targetTss: 145,
+      description: 'Lange Ausfahrt.',
+    }).returning();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/fueling-recovery/guidance?workoutId=${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ shouldShow: boolean; during: Array<{ text: string }> }>();
+    expect(body.shouldShow).toBe(true);
+    expect(body.during.map(item => item.text).join(' ')).toContain('60-90 g Kohlenhydrate pro Stunde');
+    expect(body.during.map(item => item.text).join(' ')).toContain('Ministry');
+  });
+});
+
 describe('Pulse profile provenance', () => {
   it('persists explicit fueling preferences on the athlete profile', async () => {
     const patch = await app.inject({
