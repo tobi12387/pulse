@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { pulseApi } from '@/pulse/api-client';
-import { pulseKeys } from '@/pulse/hooks';
+import { pulseKeys, useFuelingRecoveryGuidance } from '@/pulse/hooks';
 import { executionStatusFor, garminConfidenceCopy, type GarminConfidenceTone } from '@/features/plan/plan-utils';
 
 const ZONE_COLOR: Record<number, string> = {
@@ -136,6 +136,24 @@ function StepRow({ step }: { step: WorkoutStep }) {
   );
 }
 
+function GuidanceList({ title, items }: { title: string; items: Array<{ id: string; text: string }> }) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 5 }}>
+        {title}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {items.map(item => (
+          <div key={item.id} style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            {item.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   workout: PulsePlannedWorkout;
   onClose: () => void;
@@ -145,6 +163,7 @@ interface Props {
 export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Props) {
   const [workout, setWorkout] = useState(initial);
   const qc = useQueryClient();
+  const fuelingGuidance = useFuelingRecoveryGuidance(workout.id);
 
   const generateDetail = useMutation({
     mutationFn: () => pulseApi.plan.generateDetail(workout.id),
@@ -275,6 +294,63 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
               </span>
             </div>
           </div>
+          {fuelingGuidance.data?.shouldShow && (
+            <div
+              data-testid="fueling-recovery-guidance"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                padding: '10px 12px',
+                marginBottom: 12,
+                background: 'rgba(94,230,207,0.06)',
+                border: '1px solid rgba(94,230,207,0.22)',
+                borderLeft: '3px solid var(--accent)',
+                borderRadius: 5,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <strong style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.35 }}>
+                  Fueling & Recovery
+                </strong>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)' }}>
+                  BEREIT
+                </span>
+              </div>
+              {fuelingGuidance.data.recoveryCautions.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {fuelingGuidance.data.recoveryCautions.map((caution, index) => (
+                    <div key={index} style={{ fontSize: 11, color: 'var(--amber)', lineHeight: 1.45 }}>
+                      {caution}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <GuidanceList title="Vorher" items={fuelingGuidance.data.before} />
+              <GuidanceList title="Während" items={fuelingGuidance.data.during} />
+              <GuidanceList title="Danach" items={fuelingGuidance.data.after} />
+              {fuelingGuidance.data.evidence.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {fuelingGuidance.data.evidence.map(item => (
+                    <span
+                      key={`${item.label}:${item.value}`}
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        color: item.status === 'caution' ? 'var(--amber)' : 'var(--text-3)',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 3,
+                        padding: '2px 5px',
+                      }}
+                    >
+                      {item.label}: {item.value}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {workout.steps && workout.steps.length > 0 ? (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>

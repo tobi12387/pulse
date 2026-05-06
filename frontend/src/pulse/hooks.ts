@@ -50,6 +50,8 @@ export const pulseKeys = {
   equipment:        ['pulse', 'equipment'] as const,
   nutrition: (workoutId: string | null, activityId: string | null) =>
     ['pulse', 'nutrition', workoutId, activityId] as const,
+  fuelingRecoveryGuidance: (workoutId: string | null) =>
+    ['pulse', 'fueling-recovery', 'guidance', workoutId] as const,
 };
 
 export function invalidatePulseContextQueries(qc: QueryClient): void {
@@ -171,6 +173,15 @@ export function usePulseActivities(limit = 10) {
     queryKey: pulseKeys.activities(limit),
     queryFn: () => pulseApi.activities.list(limit),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useFuelingRecoveryGuidance(workoutId: string | null | undefined) {
+  return useQuery({
+    queryKey: pulseKeys.fuelingRecoveryGuidance(workoutId ?? null),
+    queryFn: () => pulseApi.fuelingRecovery.guidance(workoutId!),
+    enabled: Boolean(workoutId),
+    staleTime: 10 * 60_000,
   });
 }
 

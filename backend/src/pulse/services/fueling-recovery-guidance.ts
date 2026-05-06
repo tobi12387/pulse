@@ -1,4 +1,9 @@
-import type { PulseFuelingPreferences } from '@coaching-os/shared/pulse';
+import type {
+  PulseFuelingPreferences,
+  PulseFuelingRecoveryEvidence,
+  PulseFuelingRecoveryGuidanceItem,
+  PulseFuelingRecoveryGuidanceResponse,
+} from '@coaching-os/shared/pulse';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 
@@ -29,26 +34,9 @@ export interface FuelingRecoveryRaceInput {
   daysUntil: number;
 }
 
-export interface FuelingRecoveryGuidanceItem {
-  id: string;
-  text: string;
-}
-
-export interface FuelingRecoveryEvidence {
-  label: string;
-  value: string;
-  status: 'supporting' | 'caution' | 'limited';
-}
-
-export interface FuelingRecoveryGuidance {
-  shouldShow: boolean;
-  preferenceStatus: 'ready' | 'disabled';
-  before: FuelingRecoveryGuidanceItem[];
-  during: FuelingRecoveryGuidanceItem[];
-  after: FuelingRecoveryGuidanceItem[];
-  recoveryCautions: string[];
-  evidence: FuelingRecoveryEvidence[];
-}
+export type FuelingRecoveryGuidanceItem = PulseFuelingRecoveryGuidanceItem;
+export type FuelingRecoveryEvidence = PulseFuelingRecoveryEvidence;
+export type FuelingRecoveryGuidance = PulseFuelingRecoveryGuidanceResponse;
 
 export interface BuildFuelingRecoveryGuidanceInput {
   workout: FuelingRecoveryWorkoutInput;

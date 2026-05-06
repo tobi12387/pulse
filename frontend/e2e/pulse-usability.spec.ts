@@ -1782,6 +1782,51 @@ test('Plan explains Garmin workout sync confidence in the workout modal', async 
   await expect(panel).toContainText('Template und Kalendertermin sind vorhanden.');
 });
 
+test('Plan workout modal shows Fueling and Recovery guidance for long sessions', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-fuel',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 3,
+        durationMin: 180,
+        status: 'planned',
+        description: 'Lange Ausfahrt mit Race-Fueling.',
+        garminWorkoutId: 'gw-fuel',
+        garminScheduledId: 'sched-fuel',
+        executionStatus: 'garmin_scheduled',
+      },
+    ],
+    fuelingGuidance: (workoutId) => ({
+      shouldShow: workoutId === 'workout-fuel',
+      preferenceStatus: 'ready',
+      before: [{ id: 'before', text: '2-3 h vorher ca. 80-160 g Kohlenhydrate.' }],
+      during: [
+        { id: 'carbs', text: '60-90 g Kohlenhydrate pro Stunde; Ministry als Produktanker nutzen.' },
+        { id: 'sodium', text: '400-800 mg Sodium pro Liter, an Hitze und Schweißrate anpassen.' },
+      ],
+      after: [{ id: 'after', text: 'Recovery innerhalb von 2 h starten.' }],
+      recoveryCautions: [],
+      evidence: [
+        { label: 'Workout', value: '180 min Zone 3', status: 'supporting' },
+        { label: 'Guideline', value: 'Rad lang: Carb-/Sodium-Plan sinnvoll', status: 'supporting' },
+      ],
+    }),
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Lange Ausfahrt mit Race-Fueling.').click();
+
+  const card = page.getByTestId('fueling-recovery-guidance');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Fueling & Recovery');
+  await expect(card).toContainText('60-90 g Kohlenhydrate pro Stunde');
+  await expect(card).toContainText('400-800 mg Sodium pro Liter');
+  await expect(card).toContainText('Recovery innerhalb von 2 h');
+  await expect(card).toContainText('Workout');
+});
+
 test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

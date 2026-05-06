@@ -47,6 +47,7 @@ type MockPulseApiOptions = {
   sleepSessions?: unknown[];
   profile?: unknown | (() => unknown);
   onProfilePatch?: (body: unknown) => void;
+  fuelingGuidance?: unknown | ((workoutId: string | null) => unknown);
   profileSyncResult?: unknown | ((body: unknown) => unknown);
   onProfileSync?: (body: unknown) => void;
   onRequest?: (pathname: string, method: string) => void;
@@ -584,6 +585,17 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
   }
   if (pathname === '/api/pulse/equipment') return { equipment: [], defaults: [] };
   if (pathname === '/api/pulse/nutrition') return { logs: [] };
+  if (pathname === '/api/pulse/fueling-recovery/guidance') {
+    return {
+      shouldShow: false,
+      preferenceStatus: 'ready',
+      before: [],
+      during: [],
+      after: [],
+      recoveryCautions: [],
+      evidence: [],
+    };
+  }
 
   return { ok: true };
 }
@@ -772,6 +784,20 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
+    if (url.pathname === '/api/pulse/fueling-recovery/guidance') {
+      const result = typeof options.fuelingGuidance === 'function'
+        ? options.fuelingGuidance(url.searchParams.get('workoutId'))
+        : options.fuelingGuidance;
+      return json(route, result ?? {
+        shouldShow: false,
+        preferenceStatus: 'ready',
+        before: [],
+        during: [],
+        after: [],
+        recoveryCautions: [],
+        evidence: [],
+      });
+    }
     if (url.pathname === '/api/pulse/garmin/backfill' && request.method() === 'POST' && options.backfillResult) {
       const body = request.postDataJSON();
       const result = typeof options.backfillResult === 'function' ? options.backfillResult(body) : options.backfillResult;

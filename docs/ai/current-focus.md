@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest verified server runtime: `287aeab` / PR #200, deployed 2026-05-06.
+- Latest verified server runtime recorded in this file: `a106ef6` / PR #204, deployed 2026-05-06. Verify live deploy state with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
@@ -21,7 +21,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Completed implementation plans, including the 2026-05-05 Mobile/A11y and Data Evidence Trail slices, live in `docs/superpowers/plans/completed/`; do not rebuild them.
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
-- Fueling & Recovery preference capture and the pure backend guidance engine are implemented: no dietary restrictions, Ministry products are the preferred anchor, Pulse may propose conservative carb/hour, sodium and body-weight-based guidance. Next work should wire the guidance service into a read-only API and a narrow Plan workout card/modal UI.
+- Fueling & Recovery preference capture, the pure backend guidance engine, and read-only Plan modal guidance are implemented: no dietary restrictions, Ministry products are the preferred anchor, Pulse may propose conservative carb/hour, sodium and body-weight-based guidance. Next work should calibrate practical product/portion translation and decide separately whether concise guidance should be included in Garmin workout descriptions.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates

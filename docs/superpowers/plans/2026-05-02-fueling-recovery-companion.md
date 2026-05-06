@@ -43,11 +43,11 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 | Create | `backend/src/db/migrations/0025_fueling_preferences.sql` | Add nullable/defaulted fueling preference fields if 0025 is still the next free migration number |
 | Create | `backend/src/pulse/services/fueling-recovery-guidance.ts` | Pure guidance builder from workout, recovery, race and preferences |
 | Create | `backend/src/pulse/services/fueling-recovery-guidance.test.ts` | Tests for short/easy, long, intense and recovery-limited cases |
-| Modify | `shared/types/pulse.ts` | Add `PulseFuelingRecoveryGuidanceResponse` |
-| Modify | `backend/src/pulse/plugin.ts` | Add read-only guidance endpoint |
+| Modify | `shared/types/pulse/` | Add `PulseFuelingRecoveryGuidanceResponse` |
+| Modify | `backend/src/pulse/routes/training-routes.ts` | Add read-only guidance endpoint |
 | Modify | `frontend/src/pulse/api-client.ts` | Add client method |
 | Modify | `frontend/src/pulse/hooks.ts` | Add query hook and invalidation |
-| Modify | `frontend/src/pages/Plan.tsx` | Show guidance in workout modal / next workout card |
+| Modify | `frontend/src/components/WorkoutDetailModal.tsx` | Show guidance in workout modal |
 | Modify | `frontend/src/pages/Settings.tsx` | Add preference capture after decision gate |
 | Modify | `frontend/e2e/fixtures/pulse-api.ts` | Mock guidance endpoint |
 | Modify | `frontend/e2e/pulse-usability.spec.ts` | Browser coverage for guidance visibility |
@@ -103,18 +103,18 @@ Pulse already has nutrition logs, sleep debt, HRV deviation, soreness/RPE feedba
 
 ## Task 3: API and UI
 
-- [ ] **Step 1: Add endpoint**
+- [x] **Step 1: Add endpoint**
 
   Add `GET /api/pulse/fueling-recovery/guidance?workoutId=...`. It must return a preference-gated response if preferences are incomplete.
 
-- [ ] **Step 2: Add Plan UI**
+- [x] **Step 2: Add Plan UI**
 
   In the workout modal or next workout decision card, show:
   - short checklist;
   - recovery caution if present;
   - evidence chips for workout duration/intensity, sleep, HRV, soreness and race context.
 
-- [ ] **Step 3: Verify browser behavior**
+- [x] **Step 3: Verify browser behavior**
 
   ```bash
   npm run test:e2e -- --grep "Fueling|Recovery|Plan"

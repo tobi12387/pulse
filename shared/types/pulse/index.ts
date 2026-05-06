@@ -1,5 +1,6 @@
 export * from './activity.js';
 export * from './daily-loop.js';
+export * from './fueling.js';
 export * from './garmin.js';
 export * from './mental.js';
 export * from './plan.js';
