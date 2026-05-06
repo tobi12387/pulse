@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-06 — MNSTRY-Kalibrierung nutzt bestaetigte Produkte ohne neues Schema
+
+- **Decision:** Pulse interpretiert `preferred_fueling_products = Ministry/MNSTRY` als Tobis bestaetigte Produktanker: `POWER CARB Sour Cherry 1:0.8` als primaeren During-Mix, `PORRIDGE BAR Sour Cherry` als Pre-/ruhiger Snack, `PROTEIN BAR 8 Peanut & Cranberry` als Recovery-Baustein und `BICARB GEL 40 Lemon 1:0.8` nur fuer race- oder intensitaetsnahe Kontexte. Intensity-/Caffeine-Produkte werden nicht automatisch empfohlen.
+- **Why:** Tobi hat die konkreten Produkte bestaetigt, und die offiziellen MNSTRY-Angaben liefern genug Serving-Daten fuer alltagstaugliche Produktanker. Ein neues Profil-Schema waere fuer diesen Schritt Overhead, weil das bestehende freie Praeferenzfeld bereits den Ministry/MNSTRY-Anker speichert.
+- **Alternatives:** Neue Produkt-Key-Spalten oder JSONB-Profilfelder anlegen (zu viel Migration fuer eine kleine Kalibrierung); weiter nur generische Gel-Aequivalente zeigen (weniger nuetzlich); BICARB als Standard-Gel zaehlen (fachlich irrefuehrend, weil es ein Spezialprodukt mit Bikarbonat ist).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-06 — Fueling-Portionen bleiben generische Äquivalente statt Ministry-SKU-Katalog
 
 - **Decision:** Pulse übersetzt Carb-/Sodium-Bereiche in generische Portionsäquivalente: Gesamt-Kohlenhydrate für die geplante Dauer, grobe Gel-Äquivalente mit 25 g Carbs pro Serving und Sodium-Spannen pro 500/750 ml Flasche. Ministry bleibt vorerst nur der bevorzugte Produktanker im Text.

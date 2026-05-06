@@ -78,6 +78,43 @@ describe('buildFuelingRecoveryGuidance', () => {
     expect(guidance.after.map(item => item.text).join(' ')).toContain('0,8-1,0 g/kg');
   });
 
+  it('calibrates Ministry anchors to Tobi confirmed MNSTRY products without treating BICARB as an everyday gel', () => {
+    const guidance = buildFuelingRecoveryGuidance({
+      workout: workout({ durationMin: 180, zone: 3, targetTss: 145 }),
+      preferences,
+      profile: { weightKg: 80 },
+      recovery: { readinessScore: 72, sleepDebt7dH: 2, hrvStatus: 'stable' },
+    });
+
+    const before = guidance.before.map(item => item.text).join(' ');
+    const during = guidance.during.map(item => item.text).join(' ');
+    const after = guidance.after.map(item => item.text).join(' ');
+
+    expect(before).toContain('PORRIDGE BAR Sour Cherry');
+    expect(during).toContain('POWER CARB Sour Cherry 1:0.8');
+    expect(during).toContain('2,5-3,5 hoch dosierte 500-ml-Flaschen');
+    expect(during).toContain('320 mg Natrium');
+    expect(during).not.toContain('BICARB GEL 40 Lemon');
+    expect(after).toContain('PROTEIN BAR 8 Peanut & Cranberry');
+    expect(after).toContain('14 g Protein');
+  });
+
+  it('only offers BICARB GEL Lemon for race week or high intensity contexts', () => {
+    const steadyGuidance = buildFuelingRecoveryGuidance({
+      workout: workout({ durationMin: 120, zone: 2 }),
+      preferences,
+    });
+    const raceGuidance = buildFuelingRecoveryGuidance({
+      workout: workout({ activityType: 'bike', durationMin: 90, zone: 4 }),
+      preferences,
+      race: { title: 'Kraichgau 70.3', phase: 'race_week', daysUntil: 4 },
+    });
+
+    expect(steadyGuidance.during.map(item => item.text).join(' ')).not.toContain('BICARB GEL 40 Lemon');
+    expect(raceGuidance.during.map(item => item.text).join(' ')).toContain('BICARB GEL 40 Lemon 1:0.8');
+    expect(raceGuidance.during.map(item => item.text).join(' ')).toContain('1 bis maximal 3');
+  });
+
   it('lowers complexity when sleep debt and HRV are weak', () => {
     const guidance = buildFuelingRecoveryGuidance({
       workout: workout({ activityType: 'run', durationMin: 110, zone: 3 }),

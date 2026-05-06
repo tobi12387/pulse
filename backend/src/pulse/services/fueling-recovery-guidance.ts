@@ -8,6 +8,13 @@ import {
   buildCarbPortionEquivalent,
   buildSodiumBottleEquivalent,
 } from './fueling-portions.js';
+import {
+  buildMnstryBicarbProductText,
+  buildMnstryDuringCarbProductText,
+  buildMnstryPostWorkoutProductText,
+  buildMnstryPreWorkoutProductText,
+  buildMnstrySodiumProductText,
+} from './fueling-products.js';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 
@@ -149,6 +156,14 @@ function buildBefore(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
     });
   }
 
+  const productText = buildMnstryPreWorkoutProductText(preferences.preferredFuelingProducts);
+  if (productText) {
+    items.push({
+      id: 'pre-mnstry-porridge',
+      text: productText,
+    });
+  }
+
   if (raceWeek(race)) {
     items.push({
       id: 'race-no-experiments',
@@ -171,22 +186,30 @@ function carbRange(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boo
 }
 
 function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): FuelingRecoveryGuidanceItem[] {
-  const { workout, preferences } = input;
+  const { workout, preferences, race } = input;
   const items: FuelingRecoveryGuidanceItem[] = [];
   const carbs = carbRange(input, isWeakRecovery);
 
   if (carbs) {
-    const portionText = buildCarbPortionEquivalent({
+    const portion = buildCarbPortionEquivalent({
       durationMin: workout.durationMin,
       minCarbsPerHour: carbs.min,
       maxCarbsPerHour: carbs.max,
-    }).text.replace(`Für ${workout.durationMin} min: `, '');
+    });
+    const portionText = portion.text.replace(`Für ${workout.durationMin} min: `, '');
+    const productText = buildMnstryDuringCarbProductText({
+      preferredProducts: preferences.preferredFuelingProducts,
+      totalMinG: portion.totalMinG,
+      totalMaxG: portion.totalMaxG,
+    });
     const longSessionNote = workout.durationMin >= 150 && !isWeakRecovery
       ? ' Nur mit geübter Glukose-/Fruktose-Strategie Richtung obere Range gehen.'
       : '';
     items.push({
       id: 'during-carbs',
-      text: `${carbs.text} (${portionText}); ${preferences.preferredFuelingProducts || 'gewohnte Produkte'} als Produktanker nutzen.${longSessionNote}`,
+      text: productText
+        ? `${carbs.text} mit ${productText} (${portionText}).${longSessionNote}`
+        : `${carbs.text} (${portionText}); ${preferences.preferredFuelingProducts || 'gewohnte Produkte'} als Produktanker nutzen.${longSessionNote}`,
     });
   } else if (isWeakRecovery || workout.durationMin < 75) {
     items.push({
@@ -195,11 +218,26 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
     });
   }
 
+  const bicarbText = buildMnstryBicarbProductText({
+    preferredProducts: preferences.preferredFuelingProducts,
+    isRaceWeek: raceWeek(race),
+    isHighIntensity: workout.zone >= 4,
+  });
+  if (bicarbText) {
+    items.push({
+      id: 'during-mnstry-bicarb-special',
+      text: bicarbText,
+    });
+  }
+
   if (workout.durationMin >= 75 && preferences.sodiumGuidanceStyle === 'suggest_ranges') {
     const sodium = buildSodiumBottleEquivalent({ minSodiumMgPerL: 400, maxSodiumMgPerL: 800 });
+    const productSodiumText = buildMnstrySodiumProductText(preferences.preferredFuelingProducts);
     items.push({
       id: 'during-sodium',
-      text: `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter (${sodium.text}), an Hitze und echte Schweißrate anpassen und keine Gewichtszunahme durch Übertrinken riskieren.`,
+      text: productSodiumText
+        ? `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter (${sodium.text}). ${productSodiumText}`
+        : `Sodium konservativ starten: ca. 400-800 mg Sodium pro Liter (${sodium.text}), an Hitze und echte Schweißrate anpassen und keine Gewichtszunahme durch Übertrinken riskieren.`,
     });
   }
 
@@ -207,7 +245,7 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
 }
 
 function buildAfter(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): FuelingRecoveryGuidanceItem[] {
-  const { workout } = input;
+  const { workout, preferences } = input;
   const items: FuelingRecoveryGuidanceItem[] = [];
   if (workout.durationMin < 75 && !isWeakRecovery) return items;
 
@@ -220,6 +258,14 @@ function buildAfter(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: bo
     items.push({
       id: 'after-rapid-refuel',
       text: 'Wenn am nächsten Tag wieder Qualität geplant ist: 0,8-1,0 g/kg Kohlenhydrate in den ersten Stunden als vorsichtige Orientierung nutzen.',
+    });
+  }
+
+  const productText = buildMnstryPostWorkoutProductText(preferences.preferredFuelingProducts);
+  if (productText) {
+    items.push({
+      id: 'after-mnstry-protein-bar',
+      text: productText,
     });
   }
 
