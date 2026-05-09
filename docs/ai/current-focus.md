@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest verified server runtime recorded in this file: `c5e68cd` / PR #213, deployed 2026-05-09. Verify live deploy state with `scripts/verify-server.sh` when it matters.
+- Latest verified server runtime recorded in this file: `2ca7d32` / PR #218, deployed 2026-05-09. Verify live deploy state with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
@@ -22,7 +22,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
 - Fueling & Recovery preference capture, the pure backend guidance engine, read-only Plan modal guidance, Garmin workout-description handoff, generic portion equivalents, confirmed MNSTRY product calibration and practical Activity Fueling Logs are implemented: no dietary restrictions, `POWER CARB Sour Cherry 1:0.8` is the primary during anchor, Tobi-specific MNSTRY guidance uses 750 ml bottles plus approximate powder grams, `PORRIDGE BAR Sour Cherry` and `PROTEIN BAR 8 Peanut & Cranberry` support pre/post guidance, and `BICARB GEL 40 Lemon 1:0.8` stays race-/intensity-specific. Fueling logs now capture 750-ml bottles, powder grams, selected products/snacks and GI comfort.
-- Training-plan next slice after custom workout planning and off-plan Garmin Home closure: continue from the Training Intelligence control layer now used in generated workout descriptions for archetype labels and repeated-week variation. Fueling guidance and weekly planning now learn from During logs with GI comfort, bottles, powder and activity duration; next surface this evidence more clearly in Plan/Home.
+- Training-plan intelligence is now controlled by deterministic archetypes, repeated-week variation, fueling-tolerance learning and weekly density caps. Plan surfaces the weekly decision reasons as signal groups; next compare Pulse against TrainerRoad, TrainingPeaks and other leading plan products to find the next capability gaps.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates

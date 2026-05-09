@@ -2154,13 +2154,24 @@ test('Plan trace shows execution rationale and deliberate free days', async ({ p
         skippedAvailableDays: [1, 3],
         targetSessionCount: 2,
         primaryGoal: 'ftp',
-        reasons: ['Ausführung stabil: ähnliche Struktur ist bewusst gewählt.'],
+        reasons: [
+          'Fueling-Toleranz: lange Ausdauerreize bleiben gedeckelt.',
+          'TSB -14.2 und RPE 7 -> Erholung schützen.',
+          'Ausführung stabil: ähnliche Struktur ist bewusst gewählt.',
+          'Do verfügbar, bleibt frei als Reserve.',
+        ],
       },
     },
   });
 
   await page.goto('/plan');
 
+  await expect(page.getByText('Warum diese Woche so?')).toBeVisible();
+  await expect(page.getByText('2 Einheiten · Ziel: ftp · 2 freie verfügbare Tage')).toBeVisible();
+  await expect(page.getByText('Fueling', { exact: true })).toBeVisible();
+  await expect(page.getByText('Erholung', { exact: true })).toBeVisible();
+  await expect(page.getByText('Variation', { exact: true })).toBeVisible();
+  await expect(page.getByText('Freie Tage', { exact: true })).toBeVisible();
   await expect(page.getByText('Gelernt aus Ausführung')).toBeVisible();
   await expect(page.getByText('Warum ähnlich/anders')).toBeVisible();
   await expect(page.getByText('Freie Tage bewusst')).toBeVisible();
