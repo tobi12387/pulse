@@ -22,7 +22,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
 - Fueling & Recovery preference capture, the pure backend guidance engine, read-only Plan modal guidance, Garmin workout-description handoff, generic portion equivalents, confirmed MNSTRY product calibration and practical Activity Fueling Logs are implemented: no dietary restrictions, `POWER CARB Sour Cherry 1:0.8` is the primary during anchor, Tobi-specific MNSTRY guidance uses 750 ml bottles plus approximate powder grams, `PORRIDGE BAR Sour Cherry` and `PROTEIN BAR 8 Peanut & Cranberry` support pre/post guidance, and `BICARB GEL 40 Lemon 1:0.8` stays race-/intensity-specific. Fueling logs now capture 750-ml bottles, powder grams, selected products/snacks and GI comfort.
-- Training-plan intelligence is now controlled by deterministic archetypes, repeated-week variation, fueling-tolerance learning and weekly density caps. Plan surfaces the weekly decision reasons as signal groups; next compare Pulse against TrainerRoad, TrainingPeaks and other leading plan products to find the next capability gaps.
+- Training-plan intelligence is now controlled by deterministic archetypes, repeated-week variation, fueling-tolerance learning and weekly density caps. Plan surfaces the weekly decision reasons as signal groups. The active benchmark/gap plan is `docs/superpowers/plans/2026-05-09-training-benchmark-gap-plan.md`; next runtime PR should start with Pulse Capability Levels.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates
@@ -31,6 +31,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Push registration and test-push activation are manual per target browser/device.
 - Real Garmin calendar/workout sync should not be triggered during generic QA unless the task explicitly requires it.
 - New nutrition/fueling logic can proceed, but should stay conservative, educational and tied to workout/recovery evidence rather than medical prescription.
+- Benchmark work may use public TrainerRoad/TrainingPeaks/JOIN/Intervals/WKO capability patterns, but must not copy proprietary plan or workout content.
 
 ## Recent Landmarks
 
