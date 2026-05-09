@@ -41,6 +41,7 @@ import {
 type PulseDailyMetricsHrvStatus = 'poor' | 'below_normal' | 'normal' | 'above_normal' | null;
 type PulseActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 type PulseWorkoutStatus = 'planned' | 'completed' | 'skipped';
+type PulseActivityRow = typeof pulseActivities.$inferSelect;
 type PulsePlannedWorkoutRow = typeof pulsePlannedWorkouts.$inferSelect;
 type PulseExecutionActivityRow = Pick<typeof pulseActivities.$inferSelect, 'id' | 'startTime' | 'activityType' | 'durationSec'>;
 
@@ -126,6 +127,34 @@ function serializePlannedWorkout(workout: PulsePlannedWorkoutRow) {
   };
 }
 
+function serializeActivity(activity: PulseActivityRow) {
+  return {
+    id: activity.id,
+    userId: activity.userId,
+    externalId: activity.externalId,
+    source: activity.source,
+    startTime: activity.startTime.toISOString(),
+    activityType: activity.activityType as PulseActivityType,
+    name: activity.name,
+    durationSec: activity.durationSec,
+    distanceM: activity.distanceM,
+    avgHr: activity.avgHr,
+    maxHr: activity.maxHr,
+    avgPowerW: activity.avgPowerW,
+    normalizedPowerW: activity.normalizedPowerW,
+    tss: activity.tss,
+    calories: activity.calories,
+    elevationGainM: activity.elevationGainM,
+    trainingEffectAerobic: activity.trainingEffectAerobic,
+    trainingEffectAnaerobic: activity.trainingEffectAnaerobic,
+    vo2maxEstimate: activity.vo2maxEstimate,
+    rpe: activity.rpe,
+    rpeNote: activity.rpeNote,
+    sorenessAreas: activity.sorenessAreas as RpeSorenessArea[] | null,
+    feedbackLoggedAt: activity.feedbackLoggedAt?.toISOString() ?? null,
+  };
+}
+
 export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
   app.get('/home', { onRequest: [app.authenticate] }, async (req): Promise<PulseHomeScreenData> => {
     const userId = req.user.sub;
@@ -164,12 +193,7 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
           eq(pulsePlannedWorkouts.plannedDate, today),
         ))
         .orderBy(desc(pulsePlannedWorkouts.createdAt)),
-      db.select({
-        id: pulseActivities.id,
-        startTime: pulseActivities.startTime,
-        activityType: pulseActivities.activityType,
-        durationSec: pulseActivities.durationSec,
-      }).from(pulseActivities)
+      db.select().from(pulseActivities)
         .where(and(
           eq(pulseActivities.userId, userId),
           gte(pulseActivities.startTime, todayStart),
@@ -271,22 +295,8 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
       } : null,
       fitnessLoad,
       todayWorkout: todayWorkout ? serializePlannedWorkout(todayWorkout) : null,
-      recentActivities: recentActivities.map((a) => ({
-        id: a.id, userId: a.userId, externalId: a.externalId,
-        source: a.source, startTime: a.startTime.toISOString(),
-        activityType: a.activityType as PulseActivityType, name: a.name,
-        durationSec: a.durationSec, distanceM: a.distanceM,
-        avgHr: a.avgHr, maxHr: a.maxHr, avgPowerW: a.avgPowerW,
-        normalizedPowerW: a.normalizedPowerW, tss: a.tss,
-        calories: a.calories, elevationGainM: a.elevationGainM,
-        trainingEffectAerobic: a.trainingEffectAerobic,
-        trainingEffectAnaerobic: a.trainingEffectAnaerobic,
-        vo2maxEstimate: a.vo2maxEstimate,
-        rpe: a.rpe,
-        rpeNote: a.rpeNote,
-        sorenessAreas: a.sorenessAreas as RpeSorenessArea[] | null,
-        feedbackLoggedAt: a.feedbackLoggedAt?.toISOString() ?? null,
-      })),
+      todayActivities: todayActivities.map(serializeActivity),
+      recentActivities: recentActivities.map(serializeActivity),
       nextWorkout: nextWorkout ? serializePlannedWorkout(nextWorkout) : null,
       prognosis,
       streaks,

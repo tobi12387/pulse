@@ -219,6 +219,7 @@ export interface PulseHomeScreenData {
   todayMetrics: PulseDailyMetrics | null;
   fitnessLoad: PulseFitnessLoad;
   todayWorkout: PulsePlannedWorkout | null;
+  todayActivities?: PulseActivity[];
   recentActivities: PulseActivity[];
   nextWorkout: PulsePlannedWorkout | null;
   prognosis: PulsePrognosis;

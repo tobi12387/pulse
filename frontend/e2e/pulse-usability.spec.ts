@@ -411,6 +411,31 @@ function completedWorkoutHome({ rpe, feedbackLoggedAt }: { rpe: number | null; f
       executionNotes: 'Geplantes Training wurde über Garmin erledigt.',
     },
     nextWorkout: null,
+    todayActivities: [{
+      id: 'activity-done',
+      userId: 'user-1',
+      externalId: 'garmin-activity-done',
+      source: 'garmin',
+      startTime: '2026-05-01T08:00:00.000Z',
+      activityType: 'bike',
+      name: 'Grundlage draußen',
+      durationSec: 4800,
+      distanceM: 32000,
+      avgHr: 138,
+      maxHr: 168,
+      avgPowerW: 182,
+      normalizedPowerW: 194,
+      tss: 66,
+      calories: 820,
+      elevationGainM: 240,
+      trainingEffectAerobic: 3.1,
+      trainingEffectAnaerobic: 0.4,
+      vo2maxEstimate: null,
+      rpe,
+      rpeNote: null,
+      sorenessAreas: null,
+      feedbackLoggedAt,
+    }],
     recentActivities: [{
       id: 'activity-done',
       userId: 'user-1',
@@ -436,6 +461,40 @@ function completedWorkoutHome({ rpe, feedbackLoggedAt }: { rpe: number | null; f
       sorenessAreas: null,
       feedbackLoggedAt,
     }],
+  };
+}
+
+function offPlanActivityHome({ rpe, feedbackLoggedAt }: { rpe: number | null; feedbackLoggedAt: string | null }) {
+  const activity = {
+    id: 'activity-off-plan',
+    userId: 'user-1',
+    externalId: 'garmin-activity-off-plan',
+    source: 'garmin',
+    startTime: '2026-05-01T08:00:00.000Z',
+    activityType: 'bike',
+    name: 'Rennrad Tour',
+    durationSec: 9300,
+    distanceM: 52000,
+    avgHr: 137,
+    maxHr: 165,
+    avgPowerW: 176,
+    normalizedPowerW: 188,
+    tss: 112,
+    calories: 1480,
+    elevationGainM: 520,
+    trainingEffectAerobic: 3.4,
+    trainingEffectAnaerobic: 0.2,
+    vo2maxEstimate: null,
+    rpe,
+    rpeNote: null,
+    sorenessAreas: null,
+    feedbackLoggedAt,
+  };
+  return {
+    todayWorkout: null,
+    nextWorkout: null,
+    todayActivities: [activity],
+    recentActivities: [activity],
   };
 }
 
@@ -478,6 +537,24 @@ test('Home routes to activity feedback only when completed training still misses
 
   await page.getByRole('button', { name: /Feedback erfassen/i }).click();
   await expect(page).toHaveURL(/\/activity\/activity-done/);
+});
+
+test('Home treats a completed off-plan Garmin activity as today done', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: offPlanActivityHome({ rpe: null, feedbackLoggedAt: null }),
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Garmin-Aktivität abgeschlossen');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Rennrad Tour');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Plan abgleichen');
+  await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Feedback erfassen/i }).click();
+  await expect(page).toHaveURL(/\/activity\/activity-off-plan/);
 });
 
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
