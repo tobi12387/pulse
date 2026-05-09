@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Plan-UI unterdrückt leere Entscheidung bei geplanter Tagesoption
+
+- **Decision:** Wenn Pulse keine offene Zukunftseinheit im Wochenplan findet, aber `TodayOptions` den aktuellen Tag als `planned_workout` bewertet, zeigt die Plan-Seite nicht zusätzlich die leere Karte `Kein offenes Training geplant`. Die Today-Options-Karte wird dann zur sichtbaren Trainingsentscheidung; Route-Evidence friert die Mock-Uhr auf das Fixture-Datum ein.
+- **Why:** Browser-QA zeigte einen widersprüchlichen Plan-Screen: oben kein offenes Training, darunter heute trainieren. Die UI soll Dateninkonsistenzen defensiv behandeln und die tägliche Entscheidung nicht mit einem leeren Fallback überdecken.
+- **Alternatives:** Nur die Screenshot-Fixture-Zeit fixieren (lässt echte Dateninkonsistenzen weiter widersprüchlich erscheinen); den Text der leeren Karte abschwächen (bleibt kognitiv doppelt); TodayOptions aus Plan entfernen (nimmt den frisch gebauten TrainNow-Nutzen aus dem Flow).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Ziel-Limiter bleiben berechnete Plan-Evidence
 
 - **Decision:** Pulse führt physiologische Ziel-Limiter zunächst als deterministische, berechnete Plan-Evidence ein. Der Limiter wird aus aktivem Ziel, Capability Levels, jüngsten Aktivitäten und Fueling-/GI-Historie abgeleitet, im Plan-Trace gespeichert und in Plan-Entscheidungen/UI gezeigt; es gibt keine neue Tabelle und kein neues Dashboard.
