@@ -28,10 +28,11 @@ Runs the local Pulse verification path:
   2. start local Postgres/Redis through scripts/dev-services.sh unless --no-services is passed
   3. verify DATABASE_URL_TEST is separate and reachable
   4. run migration guard
-  5. migrate the test database
-  6. run backend tests
-  7. run typecheck/build
-  8. optionally run Playwright smoke tests with --with-e2e
+  5. run script and frontend logic tests
+  6. migrate the test database
+  7. run backend tests
+  8. run typecheck/build
+  9. optionally run Playwright smoke tests with --with-e2e
 
 Requirements:
   - npm dependencies installed
@@ -125,6 +126,9 @@ NODE
 
 echo "==> migration guard"
 npm run check:migrations
+
+echo "==> script and frontend logic tests"
+npm run test:scripts
 
 echo "==> test database migrations"
 DATABASE_URL="$DATABASE_URL_TEST" npm run db:migrate -w backend

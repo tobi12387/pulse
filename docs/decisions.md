@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-09 — Lokale Verify-Strecke umfasst Script- und Frontend-Logiktests
+
+- **Decision:** `scripts/verify-local.sh` fuehrt nach dem Migration Guard auch `npm run test:scripts` aus; dieser Lauf enthaelt nun die bestehenden Ops-Skripttests und kleine TypeScript-Frontend-Logiktests.
+- **Why:** UI-nahe Planlogik darf nicht nur ueber Build oder manuelle E2E-Pfade abgesichert sein. Der zusaetzliche Check ist schnell und faengt strukturierte Frontend-Entscheidungslogik ab, ohne den teuren Browser-Smoke standardmaessig zu erzwingen.
+- **Alternatives:** Neue Frontend-Logiktests nur manuell laufen lassen (zu leicht zu vergessen); vollen Playwright-Smoke in jede lokale Verify-Strecke aufnehmen (zu langsam fuer kleine PRs); alles in Backend-Vitest pressen (falsche Testgrenze).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-09 — Plan-Entscheidungen werden als Signalgruppen statt Rohgruende gezeigt
+
+- **Decision:** Die Plan-UI zeigt `planDecision.reasons` zuerst als kompakte Signalgruppen (`Fueling`, `Erholung`, `Variation`, `Freie Tage`, `Zielbezug`) und behaelt sonstige Gruende sichtbar, statt die Backend-Gruende nur als unstrukturierte Textliste auszugeben.
+- **Why:** Die neue Trainingsintelligenz soll im Alltag nachvollziehbar sein. Tobi muss direkt sehen, ob Pulse wegen GI-/Fueling-Toleranz, Recovery, Variation oder bewussten freien Tagen konservativ plant, ohne den tieferen Trace-Block lesen zu muessen.
+- **Alternatives:** Rohgruende weiter als Paragraphen zeigen (zu schwer scanbar); komplette Explainability-Dashboard bauen (zu gross fuer diesen Slice); Gruende nur im Data-Trace zeigen (zu weit weg vom Plan-Flow).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Fueling-Toleranz begrenzt Wochenplan-Dichte und Long-Endurance-Dosis
 
 - **Decision:** Wenn Pulse in den letzten During-Fueling-Logs GI-Probleme bei langen Einheiten erkennt, wird die Wochenplanung konservativer: ein verfuegbarer Tag bleibt frei, lange aerobe Einheiten werden gedeckelt und die Workout-Beschreibung nennt `Fueling-Toleranz` als Planungsgrund.

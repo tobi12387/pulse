@@ -1,7 +1,8 @@
 import { Skeleton } from '@/components/Skeleton';
-import type { PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import type { PulsePlanDecision, PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
 import { formatPlanDate } from '../plan-utils';
 import { ACTIVITY_LABEL } from '../training/training-components';
+import { buildPlanDecisionEvidence, type PlanDecisionEvidenceTone } from './plan-decision-insights';
 
 function translucent(color: string, percent: number) {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
@@ -23,6 +24,85 @@ function TraceInsightBlock({ title, items, color }: { title: string; items: stri
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+const PLAN_DECISION_TONE_COLOR: Record<PlanDecisionEvidenceTone, string> = {
+  accent: 'var(--accent)',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  rose: 'var(--rose)',
+  muted: 'var(--text-3)',
+};
+
+export function PlanDecisionCard({
+  decision,
+  dayLabels,
+}: {
+  decision: PulsePlanDecision;
+  dayLabels: Record<number, string>;
+}) {
+  const evidence = buildPlanDecisionEvidence(decision);
+
+  return (
+    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>Warum diese Woche so?</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', maxWidth: '100%', overflowWrap: 'anywhere' }}>
+          {evidence.summary}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {decision.selectedDays.map(day => (
+          <span key={`sel-${day}`} style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)',
+            border: '1px solid rgba(94,230,207,0.35)', borderRadius: 4, padding: '3px 7px',
+          }}>
+            {dayLabels[day] ?? day} Training
+          </span>
+        ))}
+        {decision.skippedAvailableDays.map(day => (
+          <span key={`skip-${day}`} style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)',
+            border: '1px solid var(--border)', borderRadius: 4, padding: '3px 7px',
+          }}>
+            {dayLabels[day] ?? day} bewusst frei
+          </span>
+        ))}
+      </div>
+
+      {evidence.groups.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+          {evidence.groups.map(group => (
+            <div
+              key={group.id}
+              style={{
+                border: `1px solid ${translucent(PLAN_DECISION_TONE_COLOR[group.tone], 28)}`,
+                borderRadius: 5,
+                padding: '9px 10px',
+                background: 'var(--surface)',
+              }}
+            >
+              <div className="label-mono" style={{ fontSize: 9, color: PLAN_DECISION_TONE_COLOR[group.tone], marginBottom: 6 }}>
+                {group.label}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {group.reasons.slice(0, 2).map(reason => (
+                  <p key={reason} style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+                    {reason}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+          Keine zusätzlichen Entscheidungsgründe für diese Woche.
+        </p>
+      )}
     </div>
   );
 }

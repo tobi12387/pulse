@@ -58,6 +58,7 @@ test('verify-local prints local service remediation before DB checks', () => {
   assert.match(verifyLocalScript, /start services:/);
   assert.match(verifyLocalScript, /npm run services:up/);
   assert.match(verifyLocalScript, /Docker Desktop/);
+  assert.match(verifyLocalScript, /npm run test:scripts/);
 });
 
 test('deploy preserves HTTPS by provisioning frontend certs after git pull', () => {
