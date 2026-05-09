@@ -6,6 +6,7 @@ import type {
   PulseSeasonStrategy,
   PulseTrainingExecutionReview,
 } from '@coaching-os/shared/pulse';
+import { evaluatePlanQuality, type PlanQualityWorkout } from './training-intelligence.js';
 
 type SportMix = Record<string, PulsePlanTrace['sportMix'][string]>;
 type RestDayRationale = PulseTrainingExecutionReview['restDayRationale'];
@@ -161,6 +162,8 @@ function summarizeTrace(
     summary.push(`${restDayRationale!.length} freie Tag(e) bewusst begründet.`);
   }
 
+  summary.push(...summarizePlanQuality(input, sportMix, hardDays));
+
   return summary;
 }
 
@@ -238,6 +241,85 @@ function summarizePlanVariation(params: {
   }
 
   return messages.length > 0 ? messages.slice(0, 4) : ['Sportmix und Belastung bewusst ähnlich gehalten.'];
+}
+
+function sportMixPatternFromTrace(mix: SportMix): string {
+  return Object.entries(mix)
+    .filter(([, entry]) => entry.sessions > 0)
+    .map(([sport, entry]) => `${sport}:${entry.sessions}:${Math.round(entry.totalMinutes / 5) * 5}`)
+    .sort()
+    .join('|');
+}
+
+function hardPatternFromTrace(weekStart: string, hardDays: PulsePlanTrace['hardDays']): string {
+  return hardDays
+    .map(day => {
+      const offset = dayOffsetFromWeekStart(weekStart, day.date);
+      return `${offset ?? '?'}:${day.activityType}:Z${day.zone}`;
+    })
+    .sort()
+    .join('|');
+}
+
+function currentRepeatsPreviousPattern(
+  input: BuildPlanTraceInput,
+  sportMix: SportMix,
+  hardDays: PulsePlanTrace['hardDays'],
+): boolean {
+  const previous = input.planLearning?.previousWeek;
+  if (!previous) return false;
+  const currentSport = sportMixPatternFromTrace(sportMix);
+  const previousSport = sportMixPatternFromTrace(previous.sportMix);
+  const currentHard = hardPatternFromTrace(input.weekStart, hardDays);
+  const previousHard = hardPatternFromTrace(previous.weekStart, previous.hardDays);
+
+  return currentSport !== ''
+    && currentSport === previousSport
+    && currentHard !== ''
+    && currentHard === previousHard;
+}
+
+function toPlanQualityWorkouts(workouts: BuildPlanTraceInput['workouts']): PlanQualityWorkout[] {
+  return workouts.map(workout => ({
+    plannedDate: workout.plannedDate,
+    activityType: workout.activityType,
+    zone: workout.zone,
+    durationMin: workout.durationMin,
+    targetTss: workout.targetTss,
+  }));
+}
+
+function summarizePlanQuality(
+  input: BuildPlanTraceInput,
+  sportMix: SportMix,
+  hardDays: PulsePlanTrace['hardDays'],
+): string[] {
+  const currentPlan = toPlanQualityWorkouts(input.workouts);
+  const previousPlans = currentRepeatsPreviousPattern(input, sportMix, hardDays)
+    ? [currentPlan.map(workout => ({ ...workout, plannedDate: dateFromWeekOffset(input.weekStart, Math.max(0, (dayOffsetFromWeekStart(input.weekStart, workout.plannedDate) ?? 0) - 7)) }))]
+    : [];
+  const quality = evaluatePlanQuality({
+    currentPlan,
+    previousPlans,
+    availableDays: input.availableDays,
+    weeklyHoursTarget: input.weeklyHoursTarget,
+    goals: input.goals.map(goal => ({ category: goal.category, title: goal.title })),
+    recentActivities: input.recentActivities.map(activity => ({
+      activityType: activity.activityType,
+      durationMin: activity.durationMin,
+      tss: activity.tss,
+      rpe: activity.rpe,
+      source: activity.plannedZone == null ? 'off_plan' : 'planned',
+    })),
+  });
+
+  const highOrMedium = quality.issues.filter(issue => issue.severity !== 'low');
+  if (highOrMedium.length === 0) return [];
+
+  return [
+    `Planqualität ${quality.score}/100: ${highOrMedium.map(issue => issue.message).join(' ')}`,
+    `Planqualität Empfehlung: ${quality.recommendations[0]}`,
+  ];
 }
 
 export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {

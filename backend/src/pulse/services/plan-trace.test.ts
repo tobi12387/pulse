@@ -130,4 +130,54 @@ describe('buildPlanTrace', () => {
     ]);
     expect(trace.generatedSummary.join(' ')).toContain('Ausführung');
   });
+
+  it('adds plan quality warnings when the generated week repeats the previous pattern', () => {
+    const trace = buildPlanTrace({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      mesocycleWeek: 3,
+      weeklyHoursTarget: 7,
+      availableDays: [0, 1, 2, 3, 4, 5],
+      load: { ctl: 42, atl: 40, tsb: 5, date: '2026-05-11' },
+      profile: { ftpWatts: 260, maxHrBpm: 185, lthrBpm: 170 },
+      goals: [{ title: 'FTP Aufbau', category: 'ftp', targetDate: null, raceDiscipline: null, raceDistanceKm: null, racePriority: null }],
+      riskSignals: [],
+      healthStates: [],
+      recentActivities: [],
+      planLearning: {
+        lookbackWeeks: 6,
+        weeks: [],
+        previousWeek: {
+          weekStart: '2026-05-04',
+          plannedSessions: 3,
+          completedSessions: 3,
+          skippedSessions: 0,
+          completionRate: 1,
+          avgComplianceScore: 0.9,
+          avgRpe: 6,
+          sportMix: { bike: { sessions: 3, totalMinutes: 315, totalTss: 287 } },
+          hardDays: [{ date: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 75 }],
+          skippedAvailableDays: [1, 3, 4],
+        },
+        learnedFromLastWeek: ['Vorwoche stabil.'],
+        variationComparedToLastWeek: [],
+        flags: [],
+      },
+      planDecision: {
+        selectedDays: [0, 2, 5],
+        skippedAvailableDays: [1, 3, 4],
+        targetSessionCount: 3,
+        primaryGoal: 'ftp',
+        reasons: ['FTP-Ziel: wenige, gezielte Reize statt viele Fülltage.'],
+      },
+      workouts: [
+        { plannedDate: '2026-05-11', activityType: 'bike', zone: 2, durationMin: 90, targetTss: 74 },
+        { plannedDate: '2026-05-13', activityType: 'bike', zone: 4, durationMin: 75, targetTss: 90 },
+        { plannedDate: '2026-05-16', activityType: 'bike', zone: 2, durationMin: 150, targetTss: 123 },
+      ],
+    });
+
+    expect(trace.generatedSummary.join(' ')).toContain('Planqualität');
+    expect(trace.generatedSummary.join(' ')).toContain('wiederholt');
+  });
 });
