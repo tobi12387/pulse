@@ -34,6 +34,8 @@ import {
 } from '../services/garmin-workout.js';
 import { profileWithProvenance, syncProfileFromGarmin } from '../services/profile-sync.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
+import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
+import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildFuelingRecoveryGuidanceForPlannedWorkout } from '../services/fueling-recovery-planned-workout.js';
 
 const garminSyncSchema = z.object({
@@ -43,6 +45,15 @@ const garminSyncSchema = z.object({
 const GARMIN_BACKFILL_LIMIT_DAYS = 31;
 const GARMIN_BACKFILL_DELAY_MS = 500;
 const garminBackfillDomains = ['dailyMetrics', 'sleep', 'activities', 'weather', 'weight'] as const;
+
+function workoutMetadataUpdate(metadata: WorkoutLibraryMetadata) {
+  return {
+    archetypeId: metadata.archetypeId,
+    difficultyLevel: metadata.difficultyLevel,
+    difficultyEnergySystem: metadata.difficultyEnergySystem,
+    capabilityFit: metadata.capabilityFit,
+  };
+}
 const garminBackfillSchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -760,11 +771,16 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
       try {
         let w = workout;
         if (!w.steps?.length) {
-          const { steps, updatedDescription } = await buildWorkoutSteps(w, profile ?? undefined);
+          const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+            app.log.warn(`[calendar-sync] Training capability summary failed (non-fatal): ${err}`);
+            return null;
+          });
+          const { steps, updatedDescription, metadata } = await buildWorkoutSteps(w, profile ?? undefined, capabilitySummary);
+          const metadataUpdate = workoutMetadataUpdate(metadata);
           await db.update(pulsePlannedWorkouts)
-            .set({ steps, description: updatedDescription })
+            .set({ steps, description: updatedDescription, ...metadataUpdate })
             .where(eq(pulsePlannedWorkouts.id, w.id));
-          w = { ...w, steps: steps as typeof w.steps, description: updatedDescription };
+          w = { ...w, steps: steps as typeof w.steps, description: updatedDescription, ...metadataUpdate };
         }
         const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, w).catch((err: unknown) => {
           app.log.warn(`[calendar-sync] Fueling guidance failed for ${w.id}: ${err}`);

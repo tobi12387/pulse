@@ -50,6 +50,7 @@ import { loadTrainingCapabilitySummary } from '../services/training-capability-s
 import { summarizePlanCapabilityFit } from '../services/training-capabilities.js';
 import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
+import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildGarminWorkoutJson } from '../services/garmin-workout.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
@@ -229,6 +230,15 @@ function customWorkoutDescription(input: {
   return note ? `${base}\n\n${note}` : base;
 }
 
+function workoutMetadataUpdate(metadata: WorkoutLibraryMetadata) {
+  return {
+    archetypeId: metadata.archetypeId,
+    difficultyLevel: metadata.difficultyLevel,
+    difficultyEnergySystem: metadata.difficultyEnergySystem,
+    capabilityFit: metadata.capabilityFit,
+  };
+}
+
 async function removeGarminRemoteForWorkout(
   app: FastifyInstance,
   gc: GarminClient,
@@ -366,12 +376,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     if (!created) return reply.status(500).send({ error: 'Workout konnte nicht erstellt werden' });
 
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-    const { steps, updatedDescription } = await buildWorkoutSteps(created, profile ?? undefined);
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan-workout-create] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+    const { steps, updatedDescription, metadata } = await buildWorkoutSteps(created, profile ?? undefined, capabilitySummary);
     const [withDetails] = await db.update(pulsePlannedWorkouts)
-      .set({ steps, description: updatedDescription })
+      .set({ steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) })
       .where(eq(pulsePlannedWorkouts.id, created.id))
       .returning();
-    let finalWorkout = withDetails ?? { ...created, steps, description: updatedDescription };
+    let finalWorkout = withDetails ?? { ...created, steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) };
     let garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } = { status: 'skipped' };
 
     if (parsed.data.syncGarmin) {
@@ -455,7 +469,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       ? tssFromWorkout(nextDurationMin, nextZone)
       : undefined;
 
-    let generatedDetail: { steps: PlannedWorkoutRow['steps']; description: string | null } | null = null;
+    let generatedDetail: ({ steps: PlannedWorkoutRow['steps']; description: string | null } & ReturnType<typeof workoutMetadataUpdate>) | null = null;
     if (changesPrescription && nextStatus === 'planned') {
       const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
       const detailSource = {
@@ -465,8 +479,12 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         durationMin: nextDurationMin,
         description: parsed.data.description !== undefined ? parsed.data.description : null,
       };
-      const { steps, updatedDescription } = await buildWorkoutSteps(detailSource, profile ?? undefined);
-      generatedDetail = { steps, description: updatedDescription };
+      const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+        app.log.warn(`[plan-workout-update] Training capability summary failed (non-fatal): ${err}`);
+        return null;
+      });
+      const { steps, updatedDescription, metadata } = await buildWorkoutSteps(detailSource, profile ?? undefined, capabilitySummary);
+      generatedDetail = { steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) };
     }
 
     const [updated] = await db.update(pulsePlannedWorkouts)
@@ -474,8 +492,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ...parsed.data,
         ...(changesPrescription
           ? generatedDetail
-            ? { steps: generatedDetail.steps, description: generatedDetail.description }
-            : { steps: null }
+            ? generatedDetail
+            : { steps: null, archetypeId: null, difficultyLevel: null, difficultyEnergySystem: null, capabilityFit: null }
           : {}),
         ...(targetTss !== undefined ? { targetTss } : {}),
         ...(changesGarminRelevant ? {
@@ -528,13 +546,17 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     if (!workout) return reply.status(404).send({ error: 'Not found' });
 
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
-    const { steps, updatedDescription } = await buildWorkoutSteps(workout, profile ?? undefined);
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan-workout-detail] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+    const { steps, updatedDescription, metadata } = await buildWorkoutSteps(workout, profile ?? undefined, capabilitySummary);
 
     await db.update(pulsePlannedWorkouts)
-      .set({ steps, description: updatedDescription })
+      .set({ steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) })
       .where(eq(pulsePlannedWorkouts.id, id));
 
-    return { workout: { ...workout, steps, description: updatedDescription } };
+    return { workout: { ...workout, steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) } };
   });
 
   // ─── Garmin Connect workout sync ──────────────────────────────────────────────
@@ -549,12 +571,21 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
 
     if (!workout.steps?.length) {
-      const { steps, updatedDescription } = await buildWorkoutSteps(workout, profile ?? undefined);
+      const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+        app.log.warn(`[plan-workout-sync] Training capability summary failed (non-fatal): ${err}`);
+        return null;
+      });
+      const { steps, updatedDescription, metadata } = await buildWorkoutSteps(workout, profile ?? undefined, capabilitySummary);
+      const metadataUpdate = workoutMetadataUpdate(metadata);
       await db.update(pulsePlannedWorkouts)
-        .set({ steps, description: updatedDescription })
+        .set({ steps, description: updatedDescription, ...metadataUpdate })
         .where(eq(pulsePlannedWorkouts.id, id));
       workout.steps = steps as typeof workout.steps;
       if (updatedDescription) workout.description = updatedDescription;
+      workout.archetypeId = metadataUpdate.archetypeId;
+      workout.difficultyLevel = metadataUpdate.difficultyLevel;
+      workout.difficultyEnergySystem = metadataUpdate.difficultyEnergySystem;
+      workout.capabilityFit = metadataUpdate.capabilityFit;
     }
 
     try {
@@ -892,15 +923,21 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ).returning()
       : [];
 
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+
     // Generate structured steps for all workouts in parallel (best-effort)
     const withSteps = await Promise.all(
       inserted.map(async (w) => {
         try {
-          const { steps, updatedDescription } = await buildWorkoutSteps(w, profile ?? undefined);
+          const { steps, updatedDescription, metadata } = await buildWorkoutSteps(w, profile ?? undefined, capabilitySummary);
+          const metadataUpdate = workoutMetadataUpdate(metadata);
           await db.update(pulsePlannedWorkouts)
-            .set({ steps, description: updatedDescription })
+            .set({ steps, description: updatedDescription, ...metadataUpdate })
             .where(eq(pulsePlannedWorkouts.id, w.id));
-          return { ...w, steps, description: updatedDescription };
+          return { ...w, steps, description: updatedDescription, ...metadataUpdate };
         } catch (err) {
           app.log.warn(`[plan] Step generation failed for workout ${w.id}: ${err}`);
           return w;
@@ -909,10 +946,6 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     );
 
     const traceWorkouts = mergeRegeneratedWorkoutsForTrace(preservedWorkoutRows, withSteps);
-    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
-      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
-      return null;
-    });
     const finalPlanDecisionBase = reconcilePlanDecisionWithWorkouts({
       decision: planDecision,
       weekStart: weekStartStr,
@@ -1424,14 +1457,20 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ).returning()
       : [];
 
+    const capabilitySummary2 = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+
     const workouts = await Promise.all(
       inserted2.map(async (w) => {
         try {
-          const { steps, updatedDescription } = await buildWorkoutSteps(w, profile ?? undefined);
+          const { steps, updatedDescription, metadata } = await buildWorkoutSteps(w, profile ?? undefined, capabilitySummary2);
+          const metadataUpdate = workoutMetadataUpdate(metadata);
           await db.update(pulsePlannedWorkouts)
-            .set({ steps, description: updatedDescription })
+            .set({ steps, description: updatedDescription, ...metadataUpdate })
             .where(eq(pulsePlannedWorkouts.id, w.id));
-          return { ...w, steps, description: updatedDescription };
+          return { ...w, steps, description: updatedDescription, ...metadataUpdate };
         } catch {
           return w;
         }
@@ -1439,10 +1478,6 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     );
 
     const traceWorkouts2 = mergeRegeneratedWorkoutsForTrace(preservedWorkoutRows2, workouts);
-    const capabilitySummary2 = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
-      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
-      return null;
-    });
     const finalPlanDecisionBase2 = reconcilePlanDecisionWithWorkouts({
       decision: planDecision2,
       weekStart,

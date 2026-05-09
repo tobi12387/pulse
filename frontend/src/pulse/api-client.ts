@@ -259,7 +259,7 @@ export const pulseApi = {
       plannedDate?: string;
       status?: 'planned' | 'skipped';
       description?: string | null;
-    }): Promise<{ workout: PulsePlannedWorkout }> =>
+    }): Promise<{ workout: PulsePlannedWorkout; garminSync?: { status: 'unchanged' | 'removed' | 'synced' | 'failed'; error?: string } }> =>
       request(`/plan/workout/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     generateDetail: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}/detail`, { method: 'POST', body: '{}' }),

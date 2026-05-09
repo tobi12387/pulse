@@ -18,6 +18,14 @@ const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
 };
 
+const FIT_META: Record<NonNullable<PlannedWorkout['capabilityFit']>, { label: string; color: string }> = {
+  recovery: { label: 'Recovery', color: 'var(--blue)' },
+  maintenance: { label: 'Erhaltung', color: 'var(--text-3)' },
+  productive: { label: 'Produktiv', color: 'var(--green)' },
+  stretch: { label: 'Stretch', color: 'var(--amber)' },
+  too_hard_today: { label: 'Zu hart', color: 'var(--rose)' },
+};
+
 const EXECUTION_META: Record<NonNullable<PlannedWorkout['executionStatus']>, { label: string; color: string }> = {
   local_planned:        { label: 'Lokal', color: 'var(--amber)' },
   garmin_template:      { label: 'Garmin', color: 'var(--accent)' },
@@ -196,10 +204,25 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
                 borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
               }}>Eigene</span>
             )}
+            {w.capabilityFit && (
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em',
+                color: FIT_META[w.capabilityFit].color,
+                border: `1px solid ${translucent(FIT_META[w.capabilityFit].color, 45)}`,
+                borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
+              }}>
+                {FIT_META[w.capabilityFit].label}
+              </span>
+            )}
             <ExecutionBadge workout={w} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', lineHeight: 1.35 }}>
             <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>
+            {w.archetypeId && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                {w.archetypeId.replaceAll('_', ' ')}
+              </span>
+            )}
             {!switching && (
               <span style={{ fontSize: 11, color: 'var(--text-2)' }}>{confidence.title}</span>
             )}

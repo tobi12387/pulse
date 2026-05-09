@@ -1,6 +1,6 @@
 import type { PulseFitnessLoad } from './daily-loop.js';
 import type { PulseProfileProvenanceView } from './profile.js';
-import type { PulseTrainingCapabilitySummary } from './training.js';
+import type { PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutFitLabel } from './training.js';
 
 // Training plan, race, season strategy and review Pulse contracts.
 export interface WorkoutStep {
@@ -32,6 +32,10 @@ export interface PulsePlannedWorkout {
   durationMin: number;
   distanceKm: number | null;
   targetTss: number | null;
+  archetypeId: string | null;
+  difficultyLevel: number | null;
+  difficultyEnergySystem: PulseTrainingEnergySystem | null;
+  capabilityFit: PulseWorkoutFitLabel | null;
   description: string | null;
   steps: WorkoutStep[] | null;
   garminWorkoutId: string | null;

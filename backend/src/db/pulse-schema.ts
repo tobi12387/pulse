@@ -14,6 +14,7 @@ import type {
   PulsePushTopics,
   PulseTrainingEnergySystem,
   PulseTrainingProgressionSignal,
+  PulseWorkoutFitLabel,
   WorkoutExecutionStatus,
 } from '@coaching-os/shared/pulse';
 
@@ -316,6 +317,10 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   durationMin:          integer('duration_min').notNull(),
   distanceKm:           real('distance_km'),
   targetTss:            real('target_tss'),
+  archetypeId:          varchar('archetype_id', { length: 80 }),
+  difficultyLevel:      real('difficulty_level'),
+  difficultyEnergySystem: varchar('difficulty_energy_system', { length: 40 }).$type<PulseTrainingEnergySystem>(),
+  capabilityFit:        varchar('capability_fit', { length: 32 }).$type<PulseWorkoutFitLabel>(),
   description:          text('description'),
   steps:                jsonb('steps').$type<WorkoutStep[]>(),
   garminWorkoutId:      varchar('garmin_workout_id', { length: 64 }),
