@@ -2259,6 +2259,14 @@ test('Plan trace shows execution rationale and deliberate free days', async ({ p
         restDayRationale: [
           { date: '2026-05-07', reason: 'Bewusster freier Tag: stabile Ausführung und gute Erholung.' },
         ],
+        goalLimiter: {
+          kind: 'threshold_vo2',
+          label: 'Schwelle + VO2',
+          confidence: 'medium',
+          evidence: ['Schwelle/VO2 2.2/2.1', 'Endurance 4.6'],
+          planBias: 'eine kontrollierte Schwellen-/VO2-Schlüsseleinheit setzen',
+          workoutFocus: ['threshold', 'vo2'],
+        },
       },
       adaptation: {
         learnedFromExecution: ['Ausführung stabil: 2/2 Einheiten abgeglichen.'],
@@ -2280,6 +2288,7 @@ test('Plan trace shows execution rationale and deliberate free days', async ({ p
           'Fueling-Toleranz: lange Ausdauerreize bleiben gedeckelt.',
           'TSB -14.2 und RPE 7 -> Erholung schützen.',
           'Ausführung stabil: ähnliche Struktur ist bewusst gewählt.',
+          'Limiter: Schwelle + VO2 — eine kontrollierte Schwellen-/VO2-Schlüsseleinheit setzen.',
           'Do verfügbar, bleibt frei als Reserve.',
         ],
       },
@@ -2294,6 +2303,9 @@ test('Plan trace shows execution rationale and deliberate free days', async ({ p
   await expect(page.getByText('Erholung', { exact: true })).toBeVisible();
   await expect(page.getByText('Variation', { exact: true })).toBeVisible();
   await expect(page.getByText('Freie Tage', { exact: true })).toBeVisible();
+  await expect(page.getByText('Zielbezug', { exact: true })).toBeVisible();
+  await expect(page.getByText('Limiter · Schwelle + VO2')).toBeVisible();
+  await expect(page.getByText('eine kontrollierte Schwellen-/VO2-Schlüsseleinheit setzen').first()).toBeVisible();
   await expect(page.getByText('Gelernt aus Ausführung')).toBeVisible();
   await expect(page.getByText('Warum ähnlich/anders')).toBeVisible();
   await expect(page.getByText('Freie Tage bewusst')).toBeVisible();

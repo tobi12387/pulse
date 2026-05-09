@@ -47,6 +47,7 @@ import {
   shiftIsoDate,
 } from '../services/plan-route-helpers.js';
 import { buildSeasonStrategy } from '../services/season-strategy.js';
+import { deriveGoalLimiter } from '../services/goal-limiters.js';
 import { buildRaceCommandSummary } from '../services/race-command.js';
 import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
 import { summarizePlanCapabilityFit } from '../services/training-capabilities.js';
@@ -881,6 +882,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       ? { ...planLearning, executionReview }
       : planLearning;
     const fuelingHistory = await loadRecentFuelingHistory(userId, weekStartStr);
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+    const goalLimiter = deriveGoalLimiter({
+      goals: planGoals,
+      trainingCapabilities: capabilitySummary,
+      recentActivities: recentPlanActivities,
+      fuelingHistory,
+    });
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
     const planDecision = decidePlanDays({
       availableDays,
@@ -895,6 +906,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       planLearning: planLearningWithExecution,
       executionReview,
       seasonStrategy,
+      goalLimiter,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -917,6 +929,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         planLearning:        planLearningWithExecution,
         executionReview,
         seasonStrategy,
+        goalLimiter,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1020,11 +1033,6 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ).returning()
       : [];
 
-    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
-      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
-      return null;
-    });
-
     // Generate structured steps for all workouts in parallel (best-effort)
     const withSteps = await Promise.all(
       inserted.map(async (w) => {
@@ -1083,6 +1091,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       workouts: traceWorkouts,
       seasonStrategy,
       trainingCapabilities: capabilitySummary,
+      goalLimiter,
     });
     const planTrace = await persistPlanTrace(app, {
       userId,
@@ -1541,6 +1550,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       ? { ...planLearning2, executionReview: executionReview2 }
       : planLearning2;
     const fuelingHistory2 = await loadRecentFuelingHistory(userId, weekStart);
+    const capabilitySummary2 = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+    const goalLimiter2 = deriveGoalLimiter({
+      goals: planGoals2,
+      trainingCapabilities: capabilitySummary2,
+      recentActivities: recentPlanActivities2,
+      fuelingHistory: fuelingHistory2,
+    });
     const mesocycleWeek2 = getMesocycleWeek(weekStart);
     const planDecision2 = decidePlanDays({
       availableDays: parsed.data.availableDays,
@@ -1555,6 +1574,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       planLearning: planLearningWithExecution2,
       executionReview: executionReview2,
       seasonStrategy: seasonStrategy2,
+      goalLimiter: goalLimiter2,
     });
 
     let generated: Awaited<ReturnType<typeof generateWeekWorkouts>>;
@@ -1574,6 +1594,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         planLearning: planLearningWithExecution2,
         executionReview: executionReview2,
         seasonStrategy: seasonStrategy2,
+        goalLimiter: goalLimiter2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1675,11 +1696,6 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ).returning()
       : [];
 
-    const capabilitySummary2 = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
-      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
-      return null;
-    });
-
     const workouts = await Promise.all(
       inserted2.map(async (w) => {
         try {
@@ -1736,6 +1752,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       workouts: traceWorkouts2,
       seasonStrategy: seasonStrategy2,
       trainingCapabilities: capabilitySummary2,
+      goalLimiter: goalLimiter2,
     });
     const planTrace = await persistPlanTrace(app, {
       userId,

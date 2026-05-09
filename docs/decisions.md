@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Ziel-Limiter bleiben berechnete Plan-Evidence
+
+- **Decision:** Pulse führt physiologische Ziel-Limiter zunächst als deterministische, berechnete Plan-Evidence ein. Der Limiter wird aus aktivem Ziel, Capability Levels, jüngsten Aktivitäten und Fueling-/GI-Historie abgeleitet, im Plan-Trace gespeichert und in Plan-Entscheidungen/UI gezeigt; es gibt keine neue Tabelle und kein neues Dashboard.
+- **Why:** Tobi braucht bessere Ziel- und Kurs-Spezifität im Wochenplan, aber zusätzliche Persistenz oder ein separates Analytics-Dashboard würde den Alltag überladen. Der Trace ist der richtige Ort, weil er erklärt, warum der aktuelle Plan Long-Endurance/Fueling oder Schwelle/VO2 priorisiert.
+- **Alternatives:** WKO-artige Modellierung mit eigener Persistenz bauen (zu groß und datenhungrig); Limiter nur als UI-Text ergänzen (nicht testbar); neues Top-Level-Dashboard bauen (verstößt gegen die schlanke Navigation).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Garmin-Sync bekommt einen gespeicherten Ausführungsvertrag
 
 - **Decision:** Pulse speichert pro geplantem Workout einen `garmin_sync_contract`, der den erzeugten Garmin-Payload vor dem Upload auf Wiederholungszahlen, Schrittstruktur und nicht unterstützte Zielarten prüft. Fehler blockieren den Upload sichtbar; degradierte Ziele wie Swim/Strength ohne HR-Ziel werden als Einschränkung in Plan und Modal gezeigt.

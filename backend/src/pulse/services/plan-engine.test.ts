@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateScientificWeekPlan, generateWeekWorkouts, adaptIntensityForReadiness, decidePlanDays } from './plan-engine.js';
-import type { PulsePlanLearningSnapshot, PulsePlanLearningWeek, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulsePlanLearningWeek, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
 
 vi.mock('../../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('[]'),
@@ -67,6 +67,15 @@ function seasonStrategy(overrides: Partial<PulseSeasonStrategy['guardrails']> = 
     evidence: [],
   };
 }
+
+const thresholdLimiter: PulseGoalLimiter = {
+  kind: 'threshold_vo2',
+  label: 'Schwelle + VO2',
+  confidence: 'medium',
+  evidence: ['Schwelle/VO2 2.2/2.1', 'Endurance 4.6'],
+  planBias: 'eine kontrollierte Schwellen-/VO2-Schlüsseleinheit setzen, ohne Hard-Day-Caps zu erhöhen',
+  workoutFocus: ['threshold', 'vo2'],
+};
 
 describe('generateWeekWorkouts', () => {
   it('generates workouts for the week', () => {
@@ -166,6 +175,22 @@ describe('decidePlanDays', () => {
     expect(decision.selectedDays).toHaveLength(4);
     expect(decision.reasons.join(' ')).toContain('Sportmix');
   });
+
+  it('adds active limiter evidence without changing session caps', () => {
+    const decision = decidePlanDays({
+      availableDays: [0, 1, 2, 3, 5],
+      weeklyHoursTarget: 8,
+      tsb: 4,
+      phase: 'build',
+      mesocycleWeek: 2,
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      goalLimiter: thresholdLimiter,
+      seasonStrategy: seasonStrategy({ targetSessions: 3, maxHardDays: 1 }),
+    });
+
+    expect(decision.targetSessionCount).toBeLessThanOrEqual(3);
+    expect(decision.reasons.join(' ')).toContain('Limiter: Schwelle + VO2');
+  });
 });
 
 describe('generateScientificWeekPlan', () => {
@@ -239,6 +264,29 @@ describe('generateScientificWeekPlan', () => {
     const runs = workouts.filter(w => w.activityType === 'run');
     expect(bikes.length).toBeGreaterThan(runs.length);
     expect(workouts.filter(w => w.zone >= 4).every(w => w.activityType === 'bike')).toBe(true);
+  });
+
+  it('keeps limiter-specific threshold work controlled and visible', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-04',
+      phase: 'peak',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      goalLimiter: thresholdLimiter,
+    });
+
+    const hard = workouts.filter(w => w.zone >= 4);
+    expect(hard.length).toBeGreaterThan(0);
+    expect(hard.every(w => w.zone === 4 && w.activityType === 'bike')).toBe(true);
+    expect(workouts.map(w => w.description).join(' ')).toContain('Limiter: Schwelle + VO2');
   });
 
   it('uses triathlon race goals to include swim, bike, and run specificity', async () => {

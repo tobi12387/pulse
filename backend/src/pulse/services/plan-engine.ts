@@ -1,6 +1,6 @@
 import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
-import type { PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
+import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
 import { trainingArchetypes, type TrainingArchetype } from './training-intelligence.js';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
@@ -588,6 +588,7 @@ export function decidePlanDays(params: {
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
   seasonStrategy?: PulseSeasonStrategy | null | undefined;
+  goalLimiter?: PulseGoalLimiter | null | undefined;
 }): PlanDayDecision {
   const available = [...new Set(params.availableDays)].sort((a, b) => a - b);
   const goal = primaryGoal(params.goals);
@@ -680,6 +681,10 @@ export function decidePlanDays(params: {
     }
   }
 
+  if (params.goalLimiter) {
+    reasons.push(`Limiter: ${params.goalLimiter.label} — ${params.goalLimiter.planBias}.`);
+  }
+
   const minSessions = available.length <= 1 ? available.length : 2;
   target = Math.min(available.length, Math.max(minSessions, target));
 
@@ -718,6 +723,7 @@ function buildPolarizedWorkouts(params: {
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
   seasonStrategy?: PulseSeasonStrategy | null | undefined;
+  goalLimiter?: PulseGoalLimiter | null | undefined;
 }): WeekWorkout[] {
   const { weekStart, availableDays, phase, weeklyTss, weeklyHoursTarget, tsb, primaryGoal, goals, riskSignals = [] } = params;
   const sorted = [...availableDays].sort((a, b) => a - b);
@@ -747,13 +753,18 @@ function buildPolarizedWorkouts(params: {
     const dayOffset = sorted[i]!;
     const remaining = n - i;
     const isHard = hardDays.has(dayOffset);
-    const activityType = pickActivityType(profile, i, isHard ? hardIndex++ : null, i === n - 1, rotationShift);
+    let activityType = pickActivityType(profile, i, isHard ? hardIndex++ : null, i === n - 1, rotationShift);
+    if (params.goalLimiter?.kind === 'long_endurance_fueling' && !isHard && i === n - 1) {
+      activityType = 'bike';
+    } else if (params.goalLimiter?.kind === 'threshold_vo2' && isHard) {
+      activityType = 'bike';
+    }
 
     // Zone: Z4 in base/build, Z5 for peak quality sessions, Z2 for easy days
     const zone = activityType === 'strength'
       ? 1
       : isHard
-      ? (phase === 'peak' ? 5 : 4)
+      ? (params.goalLimiter?.kind === 'threshold_vo2' ? 4 : phase === 'peak' ? 5 : 4)
       : 2;
 
     const ef = IF_BY_ZONE[zone] ?? 0.70;
@@ -879,6 +890,7 @@ function withHrFirstDescriptions(
     rpeSafety: RpePlanSafety;
     fuelingSafety: FuelingPlanSafety;
     executionReview?: PulseTrainingExecutionReview | null | undefined;
+    goalLimiter?: PulseGoalLimiter | null | undefined;
   },
 ): WeekWorkout[] {
   const profile = goalWorkoutProfile(ctx.goals, ctx.phase);
@@ -901,6 +913,9 @@ function withHrFirstDescriptions(
       : hasExecutionSignal(ctx.executionReview, 'maintain_structure')
       ? ' Ausführung stabil: ähnliche Struktur ist bewusst gewählt.'
       : '';
+    const limiterNote = ctx.goalLimiter
+      ? ` Limiter: ${ctx.goalLimiter.label} (${ctx.goalLimiter.planBias}).`
+      : '';
     const purpose = w.zone >= 4
       ? 'Qualitätsreiz mit klaren Erholungsphasen'
       : w.zone === 3
@@ -910,7 +925,7 @@ function withHrFirstDescriptions(
       : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
     return {
       ...w,
-      description: `${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${fueling}${safety}${executionNote}`,
+      description: `${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${fueling}${safety}${executionNote}${limiterNote}`,
     };
   });
 }
@@ -1191,6 +1206,7 @@ export interface ScientificPlanInput {
   planLearning?: PulsePlanLearningSnapshot | null;
   executionReview?: PulseTrainingExecutionReview | null;
   seasonStrategy?: PulseSeasonStrategy | null;
+  goalLimiter?: PulseGoalLimiter | null;
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -1235,6 +1251,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     seasonStrategy: input.seasonStrategy,
+    goalLimiter: input.goalLimiter,
   });
 
   const rawWorkouts = buildPolarizedWorkouts({
@@ -1252,6 +1269,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     seasonStrategy: input.seasonStrategy,
+    goalLimiter: input.goalLimiter,
   });
 
   // HARD constraints: filter/cap workouts based on active health states
@@ -1275,6 +1293,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     rpeSafety,
     fuelingSafety,
     executionReview: input.executionReview,
+    goalLimiter: input.goalLimiter,
   });
 
   if (workouts.length === 0) return [];
