@@ -19,6 +19,7 @@ type MockPulseApiOptions = {
   garminSignalUsefulness?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  planScenarioPreview?: unknown | ((body: unknown) => unknown);
   raceCommand?: unknown;
   seasonStrategy?: unknown;
   dailyOutcomes?: unknown[];
@@ -33,6 +34,7 @@ type MockPulseApiOptions = {
   todayProposal?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
+  onPlanScenarioPreview?: (body: unknown) => void;
   onGoalUpdate?: (goalId: string, body: unknown) => void;
   onActionPatch?: (decisionId: string, body: unknown) => void;
   onCoachPreferencesPatch?: (body: unknown) => void;
@@ -927,6 +929,33 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, result);
     }
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
+    if (url.pathname === '/api/pulse/plan/scenario/preview' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      options.onPlanScenarioPreview?.(body);
+      const result = typeof options.planScenarioPreview === 'function'
+        ? options.planScenarioPreview(body)
+        : options.planScenarioPreview;
+      return json(route, result ?? {
+        preview: {
+          type: body.type ?? 'add_custom_tour',
+          summary: 'Custom-Tour wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
+          projectedWorkouts: [],
+          changedDays: [{
+            date: body.workout?.plannedDate ?? today,
+            before: { sessions: 0, durationMin: 0, tss: 0 },
+            after: { sessions: 1, durationMin: 423, tss: 296 },
+            label: '+1 Einheit, +296 TSS',
+          }],
+          loadImpact: { tssDelta: 296, durationDeltaMin: 423, nextDayRecoveryDate: '2026-05-02' },
+          reasons: [
+            'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
+            'Folgetag als Recovery/Feedback-Fenster schützen.',
+          ],
+          warnings: ['155 km simuliert: danach keine harte Einheit erzwingen.'],
+          applySupported: true,
+        },
+      });
+    }
     if (url.pathname === '/api/pulse/race-command' && 'raceCommand' in options) {
       return json(route, { command: options.raceCommand ?? null });
     }
@@ -960,6 +989,40 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           executionMatchConfidence: null,
           executionNotes: 'Workout ist nur lokal in Pulse geplant.',
         },
+      });
+    }
+    if (url.pathname === '/api/pulse/plan/workout' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      return json(route, {
+        workout: {
+          id: 'created-workout',
+          userId: 'user-1',
+          plannedDate: body.plannedDate ?? today,
+          activityType: body.activityType ?? 'bike',
+          zone: body.zone ?? 2,
+          durationMin: body.durationMin ?? 423,
+          distanceKm: body.distanceKm ?? null,
+          targetTss: null,
+          archetypeId: 'long_endurance',
+          difficultyLevel: 4.2,
+          difficultyEnergySystem: 'long_endurance',
+          capabilityFit: 'stretch',
+          description: body.description ?? null,
+          steps: null,
+          garminWorkoutId: null,
+          garminScheduledId: null,
+          status: 'planned',
+          workoutFeedback: null,
+          complianceScore: null,
+          origin: 'user',
+          userLocked: true,
+          completedActivityId: null,
+          executionStatus: 'local_planned',
+          executionMatchedAt: null,
+          executionMatchConfidence: null,
+          executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+        },
+        garminSync: { status: 'skipped' },
       });
     }
     if (url.pathname.startsWith('/api/pulse/plan/trace/')) return json(route, { trace: options.planTrace ?? null });

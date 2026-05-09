@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Plan-Szenarien werden zuerst als write-free Preview bewertet
+
+- **Decision:** Pulse fuehrt Plan Scenario Preview als read-only Bewertung ein: `/plan/scenario/preview` berechnet Projected Workouts, geaenderte Tage, TSS-/Dauer-Delta, Recovery-Folgetag, Gruende und Warnungen, ohne Plan, Availability oder Garmin zu schreiben. Die Plan-UI kann eine Vorschau danach explizit ueber bestehende sichere Create-/Update-Pfade anwenden.
+- **Why:** Tobi will lange Touren, Verschieben oder Umfangsreduktion verstehen, bevor Pulse die Woche umschreibt. Ein write-free Preview-Layer verhindert versteckte Garmin-/DB-Seiteneffekte und macht Fueling-/Recovery-Auswirkungen sichtbar, besonders bei langen Custom-Touren.
+- **Alternatives:** Direkt den bestehenden Plan-Generator als Preview missbrauchen (zu viel LLM-/DB-Nebeneffekt); Availability-PUT fuer Vorschau nutzen (schreibt sofort); kompletten Plan-Builder mit Apply-Route in einem PR bauen (zu gross und konflikttraechtig).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — TrainNow bleibt read-only und priorisiert Tagesabschluss vor Zusatztraining
 
 - **Decision:** Pulse ergaenzt einen read-only Endpoint `/plan/today/options`, der 2-3 stabile Tagesoptionen aus geplanten Workouts, heutigen Garmin-Aktivitaeten, Readiness/TSB, Risk, Mental Check-in, Fueling-Hinweisen, Sportmix und aktiven Zielen ableitet. Home zeigt diese Optionen kompakt nur dann, wenn sie den Tagesfluss klaeren; Plan zeigt die vollere Evidenz.

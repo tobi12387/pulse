@@ -99,6 +99,68 @@ export interface PulseTodayOptionsResponse {
   signature: string;
 }
 
+export type PulsePlanScenarioType =
+  | 'add_custom_tour'
+  | 'move_workout'
+  | 'reduce_volume'
+  | 'change_availability'
+  | 'add_event';
+
+export type PulsePlanScenarioRequest =
+  | {
+      type: 'add_custom_tour';
+      workout: {
+        plannedDate: string;
+        activityType: PulseActivityType;
+        zone?: number;
+        durationMin?: number;
+        distanceKm?: number | null;
+        expectedSpeedKmh?: number | null;
+        description?: string | null;
+      };
+    }
+  | { type: 'move_workout'; workoutId: string; targetDate: string }
+  | { type: 'reduce_volume'; factor: number }
+  | { type: 'change_availability'; weekStart: string; availableDays: number[]; weeklyHours?: number | null }
+  | { type: 'add_event'; title: string; eventDate: string; priority?: RacePriority | null };
+
+export interface PulsePlanScenarioProjectedWorkout {
+  id: string;
+  plannedDate: string;
+  activityType: PulseActivityType;
+  zone: number;
+  durationMin: number;
+  targetTss: number | null;
+  userLocked: boolean;
+  status: string;
+  synthetic?: boolean;
+  description?: string | null;
+  distanceKm?: number | null;
+  expectedSpeedKmh?: number | null;
+}
+
+export interface PulsePlanScenarioChangedDay {
+  date: string;
+  before: { sessions: number; durationMin: number; tss: number };
+  after: { sessions: number; durationMin: number; tss: number };
+  label: string;
+}
+
+export interface PulsePlanScenarioPreview {
+  type: PulsePlanScenarioType;
+  summary: string;
+  projectedWorkouts: PulsePlanScenarioProjectedWorkout[];
+  changedDays: PulsePlanScenarioChangedDay[];
+  loadImpact: {
+    tssDelta: number;
+    durationDeltaMin: number;
+    nextDayRecoveryDate: string | null;
+  };
+  reasons: string[];
+  warnings: string[];
+  applySupported: boolean;
+}
+
 export interface PulsePlanSportMixEntry {
   sessions: number;
   totalMinutes: number;

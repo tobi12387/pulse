@@ -11,7 +11,8 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
+  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
+  PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -265,6 +266,8 @@ export const pulseApi = {
       request(`/plan/workout/${id}/detail`, { method: 'POST', body: '{}' }),
     syncGarmin: (id: string): Promise<{ garminWorkoutId: string; garminScheduledId: string | null; date: string; workout: PulsePlannedWorkout | null }> =>
       request(`/plan/workout/${id}/sync-garmin`, { method: 'POST', body: '{}' }),
+    previewScenario: (data: PulsePlanScenarioRequest): Promise<{ preview: PulsePlanScenarioPreview }> =>
+      request('/plan/scenario/preview', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   availability: {
