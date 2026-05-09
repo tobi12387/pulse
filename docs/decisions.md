@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Data-Untertabs zeigen auf Mobile alle Bereiche sichtbar
+
+- **Decision:** Data nutzt den gemeinsamen `SegmentedControl` mit opt-in Wrapping, damit alle sieben Unterbereiche auf iPhone-Breite sichtbar und direkt antippbar bleiben. Plan und andere kompakte Tab-Leisten behalten die einzeilige Variante.
+- **Why:** Route-Evidence und Benchmark-Blick auf mobile Trainings-/Analyseapps zeigten, dass dichte Analysebereiche zwar segmentiert sein dürfen, aber nicht wie abgeschnittene Navigation wirken sollten. Sichtbare Tabs reduzieren Suchaufwand für Mental, Analysen und Garmin-Abdeckung.
+- **Alternatives:** Scrollbare Leiste mit Fade/Arrow-Hinweis behalten (weiterhin versteckte Ziele); Data in mehrere Top-Level-Routen splitten (zu großer IA-Eingriff); Dropdown statt Tabs (weniger schnell für tägliche Wechsel).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Plan-UI unterdrückt leere Entscheidung bei geplanter Tagesoption
 
 - **Decision:** Wenn Pulse keine offene Zukunftseinheit im Wochenplan findet, aber `TodayOptions` den aktuellen Tag als `planned_workout` bewertet, zeigt die Plan-Seite nicht zusätzlich die leere Karte `Kein offenes Training geplant`. Die Today-Options-Karte wird dann zur sichtbaren Trainingsentscheidung; Route-Evidence friert die Mock-Uhr auf das Fixture-Datum ein.

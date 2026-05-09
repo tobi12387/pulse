@@ -91,6 +91,23 @@ test('primary navigation exposes only Home, Data, Plan and Settings', async ({ p
   await expectPrimaryNavigationWithoutCoach(page);
 });
 
+test('Data mobile subnavigation keeps every section tab in the visible viewport', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
+
+  await page.goto('/data');
+  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+
+  const viewportWidth = page.viewportSize()?.width ?? 0;
+  const labels = ['Überblick', 'Abdeckung', 'Schlaf', 'Metriken', 'Gewicht', 'Mental', 'Analysen'];
+
+  for (const label of labels) {
+    const box = await page.getByRole('tab', { name: label }).boundingBox();
+    expect(box, `${label} tab has a visible box`).not.toBeNull();
+    expect(box!.x, `${label} tab left edge`).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width, `${label} tab right edge`).toBeLessThanOrEqual(viewportWidth);
+  }
+});
+
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'top-level numeric hotkeys are a desktop navigation affordance');
 

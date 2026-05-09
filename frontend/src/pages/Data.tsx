@@ -242,7 +242,7 @@ export default function Data() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
-      <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Data Bereiche" />
+      <SegmentedControl items={TABS} active={tab} onChange={setTab} wrap ariaLabel="Data Bereiche" />
       {tab === 'ueberblick' && <DataOverviewTab onOpen={setTab} />}
       {tab === 'abdeckung' && <EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection>}
       {tab === 'schlaf' && <SchlafTab />}
