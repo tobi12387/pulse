@@ -1775,6 +1775,28 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
         rationale: ['Sechs Tage sind verfügbar, aber nur vier sind sinnvoll.'],
         nextBoundary: { label: 'Taper', date: '2026-06-29' },
       },
+      loadModel: {
+        method: 'weekly_hours_tss_ctl',
+        rampRateCapPct: 7,
+        deloadEveryWeeks: 4,
+        taperWeeks: 2,
+        currentWeek: {
+          weekStart: '2026-05-04',
+          kind: 'build',
+          targetHours: 8,
+          targetTss: 384,
+          ctlTarget: 42,
+          rampPct: 4,
+          note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.',
+        },
+        forecast: [
+          { weekStart: '2026-05-04', kind: 'build', targetHours: 8, targetTss: 384, ctlTarget: 42, rampPct: 4, note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.' },
+          { weekStart: '2026-05-11', kind: 'build', targetHours: 8.4, targetTss: 403, ctlTarget: 43, rampPct: 4.9, note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.' },
+          { weekStart: '2026-05-18', kind: 'build', targetHours: 8.4, targetTss: 403, ctlTarget: 44, rampPct: 0, note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.' },
+          { weekStart: '2026-05-25', kind: 'deload', targetHours: 5.2, targetTss: 250, ctlTarget: 42.8, rampPct: -38, note: 'Deload: ATL/TSB zuerst beruhigen, danach wieder aufbauen.' },
+        ],
+        warnings: [],
+      },
       evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfügbare Tage'],
     },
   });
@@ -1785,6 +1807,7 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
   await expect(page.getByText('Build · 70.3 Kraichgau')).toBeVisible();
   await expect(page.getByText('4 Einheiten')).toBeVisible();
   await expect(page.getByText('max. 1')).toBeVisible();
+  await expect(page.getByText('8h / 384 TSS')).toBeVisible();
   await expect(page.getByText(/Pulse nutzt nicht alle verfügbaren Tage/)).toBeVisible();
   await expect(page.getByText(/Taper ab .*29\.06/)).toBeVisible();
   await expect(page.getByText('6 verfügbare Tage')).toBeVisible();

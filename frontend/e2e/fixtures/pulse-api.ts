@@ -471,6 +471,28 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
           rationale: ['Verfügbarkeit ist größer als sinnvolle Trainingsdichte.'],
           nextBoundary: { label: 'Taper', date: '2026-06-29' },
         },
+        loadModel: {
+          method: 'weekly_hours_tss_ctl',
+          rampRateCapPct: 7,
+          deloadEveryWeeks: 4,
+          taperWeeks: 2,
+          currentWeek: {
+            weekStart: today,
+            kind: 'build',
+            targetHours: 8,
+            targetTss: 384,
+            ctlTarget: 42,
+            rampPct: 4,
+            note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.',
+          },
+          forecast: [
+            { weekStart: today, kind: 'build', targetHours: 8, targetTss: 384, ctlTarget: 42, rampPct: 4, note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.' },
+            { weekStart: '2026-05-08', kind: 'build', targetHours: 8.4, targetTss: 403, ctlTarget: 43, rampPct: 4.9, note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.' },
+            { weekStart: '2026-05-15', kind: 'build', targetHours: 8.4, targetTss: 403, ctlTarget: 44, rampPct: 0, note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.' },
+            { weekStart: '2026-05-22', kind: 'deload', targetHours: 5.2, targetTss: 250, ctlTarget: 42.8, rampPct: -38, note: 'Deload: ATL/TSB zuerst beruhigen, danach wieder aufbauen.' },
+          ],
+          warnings: [],
+        },
         evidence: ['A-Race in 10 Wochen', 'TSB 3.0', '6 verfügbare Tage'],
       },
     };

@@ -381,6 +381,36 @@ export interface PulseSeasonStrategyGuardrails {
   nextBoundary: { label: string; date: string } | null;
 }
 
+export type PulseSeasonLoadWeekKind =
+  | 'base'
+  | 'build'
+  | 'peak'
+  | 'deload'
+  | 'taper'
+  | 'race_week'
+  | 'maintenance'
+  | 'recovery';
+
+export interface PulseSeasonLoadWeek {
+  weekStart: string;
+  kind: PulseSeasonLoadWeekKind;
+  targetHours: number;
+  targetTss: number;
+  ctlTarget: number;
+  rampPct: number;
+  note: string;
+}
+
+export interface PulseSeasonLoadModel {
+  method: 'weekly_hours_tss_ctl';
+  rampRateCapPct: number;
+  deloadEveryWeeks: number;
+  taperWeeks: number;
+  currentWeek: PulseSeasonLoadWeek;
+  forecast: PulseSeasonLoadWeek[];
+  warnings: string[];
+}
+
 export interface PulseSeasonStrategy {
   horizonWeeks: number;
   primaryGoal: {
@@ -393,6 +423,7 @@ export interface PulseSeasonStrategy {
   currentBlock: PulseSeasonStrategyBlock;
   upcomingBlocks: PulseSeasonStrategyBlock[];
   guardrails: PulseSeasonStrategyGuardrails;
+  loadModel: PulseSeasonLoadModel;
   evidence: string[];
 }
 

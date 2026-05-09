@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Saisonlinie bekommt ein explizites Load-Modell
+
+- **Decision:** Pulse erweitert die Saisonlinie um ein deterministisches Load-Modell mit aktueller Zielwoche, 4-Wochen-Forecast, Zielstunden/TSS, CTL-Ziel, Ramp-Cap, Deload-Rhythmus und Taper-Warnungen. Die Plan-Entscheidung zitiert `Saisonlast` als Evidence, statt nur Zielblock/Guardrails zu zeigen.
+- **Why:** Wochenplanung soll langfristige Ziele, A/B/C-Events, Ramp-Rate, Deload und Taper sichtbar berücksichtigen. Damit reagiert Pulse nicht nur auf die nächste Woche, sondern erklärt, ob eine Woche Build, Deload, Taper, Maintenance oder Recovery ist.
+- **Alternatives:** Vollständiges TrainingPeaks-ATP-Schema mit eigener Persistenz bauen (zu groß für diesen Slice); nur UI-Text ergänzen (kein planbares Modell); TSS-Ziel dem LLM überlassen (nicht stabil/testbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Plan-Szenarien werden zuerst als write-free Preview bewertet
 
 - **Decision:** Pulse fuehrt Plan Scenario Preview als read-only Bewertung ein: `/plan/scenario/preview` berechnet Projected Workouts, geaenderte Tage, TSS-/Dauer-Delta, Recovery-Folgetag, Gruende und Warnungen, ohne Plan, Availability oder Garmin zu schreiben. Die Plan-UI kann eine Vorschau danach explizit ueber bestehende sichere Create-/Update-Pfade anwenden.

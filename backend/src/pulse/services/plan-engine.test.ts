@@ -47,6 +47,23 @@ function seasonStrategy(overrides: Partial<PulseSeasonStrategy['guardrails']> = 
       nextBoundary: { label: 'Taper', date: '2026-06-29' },
       ...overrides,
     },
+    loadModel: {
+      method: 'weekly_hours_tss_ctl',
+      rampRateCapPct: 7,
+      deloadEveryWeeks: 4,
+      taperWeeks: 2,
+      currentWeek: {
+        weekStart: '2026-05-04',
+        kind: 'build',
+        targetHours: 8,
+        targetTss: 384,
+        ctlTarget: 42,
+        rampPct: 4,
+        note: 'Build: konservativer Lastaufbau innerhalb Ramp-Cap.',
+      },
+      forecast: [],
+      warnings: [],
+    },
     evidence: [],
   };
 }
