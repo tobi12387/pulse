@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { RiskWatchBanner } from '@/components/RiskWatchBanner';
-import { AdjustTodayCard } from '@/components/AdjustTodayCard';
+import { TodayOptionsCard } from '@/components/TodayOptionsCard';
 import { RaceCard } from '@/components/RaceCard';
 import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
@@ -889,6 +889,8 @@ export default function Home() {
         />
       )}
 
+      <TodayOptionsCard variant="compact" onNavigate={navigate} />
+
       {mentalDaySignal && (
         <p
           data-testid="mental-impact-summary"
@@ -950,9 +952,6 @@ export default function Home() {
       <DailyOutcomeLearningCard outcome={latestOutcome} />
 
       <NextBestActionsCard actions={followUpActions} onNavigate={navigate} />
-
-      {/* ── Adjust-Today Proposal (if readiness/health requires) ── */}
-      <AdjustTodayCard />
 
       {/* ── Race Card (next/current race) ── */}
       <RaceCard />

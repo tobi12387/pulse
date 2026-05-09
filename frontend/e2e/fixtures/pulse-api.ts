@@ -29,6 +29,7 @@ type MockPulseApiOptions = {
   recentDecisions?: unknown[];
   coachHistory?: unknown[];
   coachPreferences?: unknown;
+  todayOptions?: unknown;
   todayProposal?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
@@ -425,6 +426,31 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
     };
   }
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
+  if (pathname === '/api/pulse/plan/today/options') {
+    return {
+      todayOptions: {
+        date: today,
+        state: 'planned_workout',
+        summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+        signature: `${today}|default`,
+        options: [{
+          id: 'planned-default',
+          kind: 'workout',
+          priority: 'primary',
+          title: 'Plan ausführen: Rad',
+          detail: '75 min Z2. Passt heute, solange Check-in und Warm-up unauffällig bleiben.',
+          cta: 'Workout öffnen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Readiness 82/100', 'TSB 3.0'],
+          activityType: 'bike',
+          zone: 2,
+          durationMin: 75,
+          archetypeId: 'endurance_steady',
+          capabilityFit: 'productive',
+        }],
+      },
+    };
+  }
   if (pathname === '/api/pulse/plan/today/proposal') return { proposal: null };
   if (pathname === '/api/pulse/races') return { races: [] };
   if (pathname === '/api/pulse/race-command') return { command: null };
@@ -814,6 +840,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/health-state' && 'healthState' in options) return json(route, options.healthState);
+    if (url.pathname === '/api/pulse/plan/today/options' && 'todayOptions' in options) return json(route, options.todayOptions);
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });

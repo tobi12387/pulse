@@ -1378,33 +1378,49 @@ test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) =>
   expect(box!.y).toBeLessThan(260);
 });
 
-test('Today adjustment keep decision survives refetch for the same proposal', async ({ page }) => {
+test('Home surfaces TrainNow options when no workout is planned', async ({ page }) => {
   await mockPulseApi(page, {
-    todayProposal: {
-      proposal: {
-        workoutId: '11111111-1111-4111-8111-111111111111',
+    todayOptions: {
+      todayOptions: {
         date: '2026-05-01',
-        reason: 'low_readiness',
-        readinessScore: 51,
-        rationale: 'Readiness ist niedrig; der Reiz bleibt möglich, aber kontrollierter.',
-        original: { activityType: 'run', zone: 4, durationMin: 70 },
-        proposed: {
-          activityType: 'run',
-          zone: 2,
-          durationMin: 45,
-          description: 'Locker laufen, keine Intensität erzwingen.',
-        },
+        state: 'unplanned_trainable',
+        summary: 'Kein Pflichttraining heute. Wenn du trainierst, dann gezielt und ohne den Tag automatisch zu fuellen.',
+        signature: '2026-05-01|train-now',
+        options: [
+          {
+            id: 'workout-bike-z2-45',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Rad locker',
+            detail: '45 min Z2. Sinnvoll, wenn du heute spontan trainieren willst.',
+            cta: 'Einheit planen',
+            targetPath: '/plan?tab=training',
+            evidence: ['Readiness 78/100', 'TSB 2.0'],
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 45,
+          },
+          {
+            id: 'rest-protect-recovery',
+            kind: 'rest',
+            priority: 'support',
+            title: 'Bewusst frei lassen',
+            detail: 'Kein Training aus Gewohnheit erzwingen.',
+            cta: 'Tagesentscheidung prüfen',
+            targetPath: '/',
+            evidence: ['Readiness 78/100'],
+          },
+        ],
       },
     },
   });
 
   await page.goto('/');
-  await expect(page.getByText('Heute anpassen?')).toBeVisible();
-  await page.getByRole('button', { name: 'Beibehalten' }).click();
-  await expect(page.getByText('Heute anpassen?')).toHaveCount(0);
-
-  await page.reload();
-  await expect(page.getByText('Heute anpassen?')).toHaveCount(0);
+  await expect(page.getByTestId('today-options-card')).toBeVisible();
+  await expect(page.getByText('TrainNow')).toBeVisible();
+  await expect(page.getByText('Rad locker')).toBeVisible();
+  await page.getByText('Rad locker').click();
+  await expect(page).toHaveURL(/\/plan\?tab=training/);
 });
 
 test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {

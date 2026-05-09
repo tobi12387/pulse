@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — TrainNow bleibt read-only und priorisiert Tagesabschluss vor Zusatztraining
+
+- **Decision:** Pulse ergaenzt einen read-only Endpoint `/plan/today/options`, der 2-3 stabile Tagesoptionen aus geplanten Workouts, heutigen Garmin-Aktivitaeten, Readiness/TSB, Risk, Mental Check-in, Fueling-Hinweisen, Sportmix und aktiven Zielen ableitet. Home zeigt diese Optionen kompakt nur dann, wenn sie den Tagesfluss klaeren; Plan zeigt die vollere Evidenz.
+- **Why:** Spontane Tage sollen nicht automatisch mit Training gefuellt werden. Wenn heute bereits eine Garmin-Aktivitaet abgeschlossen wurde, sind Feedback, Fueling und Erholung wichtiger als ein weiterer Workout-Vorschlag; bei hohem Recovery-Risk muss Rest als aktive Trainingsentscheidung sichtbar sein.
+- **Alternatives:** Existing Today-Adjust zu einem mutierenden Multi-Option-Flow ausbauen (zu riskant fuer diesen Slice); Optionen per LLM generieren (nicht stabil genug); TrainNow nur im Plan verstecken (Home-Friktion bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Planned Workouts speichern Archetyp, Difficulty und Capability-Fit
 
 - **Decision:** Geplante Workouts bekommen persistente Library-Metadaten (`archetype_id`, `difficulty_level`, `difficulty_energy_system`, `capability_fit`). Beschreibung, Steps, Plan-/Modal-Copy und Garmin-Payload werden aus derselben deterministischen Workout-Library-Materialisierung erzeugt.

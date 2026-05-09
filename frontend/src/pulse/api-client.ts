@@ -11,7 +11,7 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulseTrainingCapabilitySummary,
+  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -469,6 +469,11 @@ export const pulseApi = {
       request('/plan/today/proposal'),
     accept: (workoutId: string): Promise<{ ok: boolean; workout: unknown; proposal: AdjustProposal }> =>
       request('/plan/today/accept', { method: 'POST', body: JSON.stringify({ workoutId }) }),
+  },
+
+  todayOptions: {
+    get: (): Promise<{ todayOptions: PulseTodayOptionsResponse }> =>
+      request('/plan/today/options'),
   },
 };
 

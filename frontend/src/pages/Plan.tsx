@@ -9,6 +9,7 @@ import {
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
 import { StrengthLogger } from '@/components/StrengthLogger';
+import { TodayOptionsCard } from '@/components/TodayOptionsCard';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
@@ -750,6 +751,8 @@ function TrainingTab() {
         onOpenAvailability={() => setShowAvailability(true)}
         onOpenGenerator={() => setShowConfig(true)}
       />
+
+      <TodayOptionsCard variant="full" onNavigate={navigate} />
 
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}

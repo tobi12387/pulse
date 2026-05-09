@@ -1,14 +1,16 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import type { PulseFuelingRecoveryGuidanceResponse, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
   pulseActivities,
   pulseCoachPreferences,
+  pulseDailyMetrics,
   pulseGoals,
   pulseHealthState,
+  pulseMentalCheckins,
   pulseNutritionLogs,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
@@ -18,7 +20,7 @@ import {
 } from '../../db/pulse-schema.js';
 import { invalidateUser } from '../lib/pulse-cache.js';
 import { proposeTodayAdjustment, deriveCurrentPhase } from '../services/adapt-engine.js';
-import { computeFitnessLoad } from '../services/load-engine.js';
+import { computeFitnessLoad, computeReadinessScore } from '../services/load-engine.js';
 import { buildPlanLearningSnapshot } from '../services/plan-learning.js';
 import { buildPlanTrace } from '../services/plan-trace.js';
 import {
@@ -51,6 +53,7 @@ import { summarizePlanCapabilityFit } from '../services/training-capabilities.js
 import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
+import { buildTodayOptions } from '../services/today-options.js';
 import { buildGarminWorkoutJson } from '../services/garmin-workout.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
@@ -1077,6 +1080,143 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
   });
 
   // ─── Today-Adjust (Phase 6 Task 4) ────────────────────────────────────────────
+  app.get('/plan/today/options', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const todayStart = new Date(`${today}T00:00:00.000Z`);
+    const tomorrowStart = addDateDays(todayStart, 1);
+    const sinceRecent = addDateDays(todayStart, -21).toISOString().split('T')[0]!;
+    const sinceRecentDate = new Date(`${sinceRecent}T00:00:00.000Z`);
+
+    const [
+      [metrics],
+      [mental],
+      [plannedToday],
+      todayActivities,
+      recentActivities,
+      activeRiskSignals,
+      recentNutrition,
+      activeGoals,
+      fitnessLoad,
+    ] = await Promise.all([
+      db.select().from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
+      db.select().from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), eq(pulseMentalCheckins.date, today))),
+      db.select().from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          eq(pulsePlannedWorkouts.plannedDate, today),
+          eq(pulsePlannedWorkouts.status, 'planned'),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.createdAt))
+        .limit(1),
+      db.select().from(pulseActivities)
+        .where(and(
+          eq(pulseActivities.userId, userId),
+          gte(pulseActivities.startTime, todayStart),
+          lt(pulseActivities.startTime, tomorrowStart),
+        ))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(20),
+      db.select({
+        activityType: pulseActivities.activityType,
+      }).from(pulseActivities)
+        .where(and(
+          eq(pulseActivities.userId, userId),
+          gte(pulseActivities.startTime, sinceRecentDate),
+          lt(pulseActivities.startTime, tomorrowStart),
+        ))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(40),
+      getActiveRiskSignals(userId),
+      db.select({
+        date: pulseNutritionLogs.date,
+        giComfort: pulseNutritionLogs.giComfort,
+      }).from(pulseNutritionLogs)
+        .where(and(eq(pulseNutritionLogs.userId, userId), gte(pulseNutritionLogs.date, sinceRecent)))
+        .orderBy(desc(pulseNutritionLogs.date))
+        .limit(30),
+      db.select({
+        raceDiscipline: pulseGoals.raceDiscipline,
+      }).from(pulseGoals)
+        .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active'))),
+      computeFitnessLoad(userId, today),
+    ]);
+
+    const mentalScore = mental
+      ? ((mental.mood + mental.energy + mental.motivation) / 3) * 10
+      : null;
+    const readiness = computeReadinessScore({
+      sleepHours: metrics?.sleepHours ?? null,
+      hrvStatus: metrics?.hrvStatus ?? null,
+      bodyBatteryMax: metrics?.bodyBatteryMax ?? null,
+      stressAvg: metrics?.stressAvg ?? null,
+      mentalScore,
+      tsb: fitnessLoad.tsb,
+    });
+    const recentSportMix = recentActivities.reduce<Partial<Record<PulseActivityType, number>>>((acc, row) => {
+      const activityType = row.activityType as PulseActivityType;
+      acc[activityType] = (acc[activityType] ?? 0) + 1;
+      return acc;
+    }, {});
+    const preferredSports = activeGoals.flatMap(goal => {
+      const discipline = goal.raceDiscipline ?? '';
+      if (discipline.includes('triathlon')) return ['bike', 'run', 'swim'] as PulseActivityType[];
+      if (discipline === 'duathlon') return ['bike', 'run'] as PulseActivityType[];
+      if (discipline === 'bike' || discipline === 'run' || discipline === 'swim') return [discipline as PulseActivityType];
+      return [];
+    });
+
+    const options = buildTodayOptions({
+      date: today,
+      readinessScore: readiness.score,
+      tsb: fitnessLoad.tsb,
+      plannedToday: plannedToday ? {
+        id: plannedToday.id,
+        activityType: plannedToday.activityType as PulseActivityType,
+        zone: plannedToday.zone,
+        durationMin: plannedToday.durationMin,
+        targetTss: plannedToday.targetTss,
+        capabilityFit: plannedToday.capabilityFit ?? null,
+        archetypeId: plannedToday.archetypeId ?? null,
+      } : null,
+      completedTodayActivities: todayActivities
+        .filter(activity => (activity.durationSec ?? 0) >= 10 * 60)
+        .map(activity => ({
+          id: activity.id,
+          activityType: activity.activityType as PulseActivityType,
+          durationMin: Math.round((activity.durationSec ?? 0) / 60),
+          distanceKm: activity.distanceM != null ? activity.distanceM / 1000 : null,
+          tss: activity.tss,
+          rpe: activity.rpe,
+          feedbackLoggedAt: activity.feedbackLoggedAt?.toISOString() ?? null,
+        })),
+      recentSportMix,
+      riskSignals: activeRiskSignals.map(signal => ({
+        severity: signal.severity,
+        title: signal.title,
+      })),
+      mental: mental ? {
+        mood: mental.mood,
+        energy: mental.energy,
+        stress: mental.stress,
+        motivation: mental.motivation,
+      } : null,
+      fueling: {
+        recentGiIssue: recentNutrition.some(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue'),
+        loggedToday: recentNutrition.some(log => log.date === today),
+      },
+      goals: {
+        activeCount: activeGoals.length,
+        preferredSports,
+      },
+      capabilitySummary: null,
+    });
+
+    return { todayOptions: options };
+  });
+
   app.get('/plan/today/proposal', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
