@@ -1702,7 +1702,7 @@ describe('POST /api/pulse/plan/generate', () => {
 });
 
 describe('PATCH /api/pulse/plan/workout/:id', () => {
-  it('preserves generated steps for schedule/status alternatives and recalculates TSS for prescription changes', async () => {
+  it('preserves generated steps for schedule/status alternatives and regenerates details for prescription changes', async () => {
     const [workout] = await db.insert(pulsePlannedWorkouts).values({
       userId,
       plannedDate: '2026-05-04',
@@ -1742,8 +1742,104 @@ describe('PATCH /api/pulse/plan/workout/:id', () => {
     const easierWorkout = easier.json<{ workout: { zone: number; durationMin: number; steps: unknown[] | null; targetTss: number | null } }>().workout;
     expect(easierWorkout.zone).toBe(2);
     expect(easierWorkout.durationMin).toBe(75);
-    expect(easierWorkout.steps).toBeNull();
+    expect(easierWorkout.steps?.length).toBeGreaterThan(0);
     expect(easierWorkout.targetTss).toBe(61);
+  });
+
+  it('regenerates prescription details and replaces stale Garmin objects after sport changes', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      updatedAt: new Date(),
+    });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-06',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 90,
+      targetTss: 130,
+      description: 'Rad-Schwellenintervalle',
+      steps: [{ type: 'steady', durationMin: 90, zone: 4, description: 'Alte Rad-Einheit' }],
+      garminWorkoutId: 'old-workout',
+      garminScheduledId: 'old-schedule',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+    }).returning();
+    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
+      steps: [
+        { type: 'warmup', durationMin: 10, zone: 1, description: 'Locker einlaufen' },
+        { type: 'steady', durationMin: 25, zone: 2, description: 'Ruhiger Laufblock' },
+        { type: 'cooldown', durationMin: 10, zone: 1, description: 'Auslaufen' },
+      ],
+      coachingNote: 'Neu als lockerer Lauf in Z2 planen.',
+    }));
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { activityType: 'run', zone: 2, durationMin: 45 },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ workout: {
+      activityType: string;
+      description: string | null;
+      garminWorkoutId: string | null;
+      garminScheduledId: string | null;
+      steps: Array<{ targetLabel?: string; description?: string }> | null;
+    } }>();
+    expect(body.workout.activityType).toBe('run');
+    expect(body.workout.description).toContain('Neu als lockerer Lauf in Z2 planen.');
+    expect(body.workout.steps?.some(step => step.targetLabel != null)).toBe(true);
+    expect(body.workout.garminWorkoutId).toBe('12345');
+    expect(body.workout.garminScheduledId).toBe('67890');
+
+    const deletedUrls = garminMocks.delete.mock.calls.map(call => String(call[0]));
+    expect(deletedUrls.some(url => url.includes('/schedule/old-schedule'))).toBe(true);
+    expect(deletedUrls.some(url => url.includes('/workout/old-workout'))).toBe(true);
+    expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
+    const payload = garminMocks.addWorkout.mock.calls[0]![0] as { workoutName: string; description: string };
+    expect(payload.workoutName).toContain('Laufen');
+    expect(payload.description).toContain('Neu als lockerer Lauf');
+  });
+
+  it('removes Garmin objects when a planned workout is skipped', async () => {
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-06',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 61,
+      description: 'Grundlage',
+      steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+      garminWorkoutId: 'skip-workout',
+      garminScheduledId: 'skip-schedule',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+    }).returning();
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { status: 'skipped' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ workout: { status: string; garminWorkoutId: string | null; garminScheduledId: string | null; executionStatus: string | null } }>();
+    expect(body.workout.status).toBe('skipped');
+    expect(body.workout.garminWorkoutId).toBeNull();
+    expect(body.workout.garminScheduledId).toBeNull();
+    expect(body.workout.executionStatus).toBeNull();
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    const deletedUrls = garminMocks.delete.mock.calls.map(call => String(call[0]));
+    expect(deletedUrls.some(url => url.includes('/schedule/skip-schedule'))).toBe(true);
+    expect(deletedUrls.some(url => url.includes('/workout/skip-workout'))).toBe(true);
   });
 
   it('rejects empty updates and impossible planned dates', async () => {
@@ -1963,6 +2059,42 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
       'heart.rate.zone',
     ]);
     expect(steps.map(s => s.zoneNumber)).toEqual([1, 2, 1]);
+  });
+
+  it('replaces existing Garmin schedule and template before a manual resync', async () => {
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-06',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 61,
+      description: 'Neu laden',
+      garminWorkoutId: 'manual-old-workout',
+      garminScheduledId: 'manual-old-schedule',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+      steps: [
+        { type: 'warmup', durationMin: 10, zone: 1, description: 'Warmup' },
+        { type: 'steady', durationMin: 55, zone: 2, description: 'Z2' },
+        { type: 'cooldown', durationMin: 10, zone: 1, description: 'Cooldown' },
+      ],
+    }).returning();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/pulse/plan/workout/${workout!.id}/sync-garmin`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
+    const deletedUrls = garminMocks.delete.mock.calls.map(call => String(call[0]));
+    expect(deletedUrls.some(url => url.includes('/schedule/manual-old-schedule'))).toBe(true);
+    expect(deletedUrls.some(url => url.includes('/workout/manual-old-workout'))).toBe(true);
+    const body = res.json<{ workout: { garminWorkoutId: string | null; garminScheduledId: string | null } }>();
+    expect(body.workout.garminWorkoutId).toBe('12345');
+    expect(body.workout.garminScheduledId).toBe('67890');
   });
 
   it('includes concise fueling guidance in the Garmin workout description for long sessions', async () => {

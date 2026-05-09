@@ -45,6 +45,26 @@ function hrZoneReference(maxHrBpm: number, lthrBpm: number | null | undefined): 
     .join(', ');
 }
 
+function defaultWorkoutDescription(workout: WorkoutStepWorkout): string {
+  const activityLabel: Record<string, string> = {
+    run: 'Lauf',
+    bike: 'Radeinheit',
+    swim: 'Schwimmen',
+    strength: 'Krafttraining',
+    hike: 'Hike',
+    other: 'Training',
+  };
+  const label = activityLabel[workout.activityType] ?? 'Training';
+  const duration = `${workout.durationMin} min`;
+  if (workout.zone <= 2) {
+    return `${label}: ${duration} locker in Z${workout.zone}. Fokus auf ruhige Ausfuehrung und saubere Belastungssteuerung.`;
+  }
+  if (workout.zone >= 4) {
+    return `${label}: ${duration} mit Qualitaetsblock in Z${workout.zone}. Warm-up und Cool-down bewusst einhalten.`;
+  }
+  return `${label}: ${duration} moderat in Z${workout.zone}. Stabil bleiben und nicht in harte Spitzen treiben.`;
+}
+
 function buildDeterministicWorkoutSteps(
   workout: WorkoutStepWorkout,
   profile: WorkoutStepProfile | undefined,
@@ -86,6 +106,7 @@ export async function buildWorkoutSteps(
 ): Promise<{ steps: WorkoutStep[]; updatedDescription: string | null }> {
   const ftp = profile?.ftpWatts ?? 250;
   const maxHr = profile?.maxHrBpm ?? 185;
+  const baseDescription = workout.description?.trim() || defaultWorkoutDescription(workout);
 
   const isRun = workout.activityType === 'run';
   const isBike = workout.activityType === 'bike';
@@ -100,7 +121,7 @@ export async function buildWorkoutSteps(
   const prompt = `Erstelle eine detaillierte Trainingsanleitung für dieses Workout:
 
 Typ: ${workout.activityType} | Zone: ${workout.zone} | Dauer: ${workout.durationMin} min
-Kurzbeschreibung: ${workout.description ?? '-'}
+Kurzbeschreibung: ${baseDescription}
 Athleten-Referenz: ${intensityRef}
 
 Antworte NUR mit einem JSON-Objekt:
@@ -146,14 +167,14 @@ Bei Run/Bike/Hike: Beschreibungen müssen die HR-Zielrange nennen; Watt/Pace nur
 
     const coachingNote = parsed.coachingNote ?? null;
     const updatedDescription = coachingNote
-      ? `${workout.description ?? ''}\n\n${coachingNote}`.trim()
-      : workout.description;
+      ? `${baseDescription}\n\n${coachingNote}`.trim()
+      : baseDescription;
 
     return { steps, updatedDescription };
   } catch {
     return {
       steps: buildDeterministicWorkoutSteps(workout, profile),
-      updatedDescription: workout.description,
+      updatedDescription: baseDescription,
     };
   }
 }
