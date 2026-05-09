@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Benchmark gegen Top-Trainingstools priorisiert Faehigkeiten statt Plan-Kopien
+
+- **Decision:** Pulse nutzt TrainerRoad, TrainingPeaks, JOIN, Intervals.icu und WKO als Benchmark fuer Faehigkeitsluecken, kopiert aber keine proprietaeren Workout- oder Planinhalte. Die naechsten Training-PRs priorisieren Capability Levels, Workout-Difficulty-Fit, TrainNow-Optionen, Szenario-Preview, Jahreslastmodell, Garmin-Sync-Vertrag und Limiterspezifitaet.
+- **Why:** Tobi will TrainerRoad-/TrainingPeaks-Niveau oder besser erreichen, aber Pulse soll durch eigene Garmin-, Mental-, Recovery- und Fueling-Evidenz besser zu seinem Alltag passen. Planinhalte aus fremden Bibliotheken waeren rechtlich/fachlich falsch; die uebertragbaren Produktmuster sind die relevanten Vergleichsdimensionen.
+- **Alternatives:** Externe Plaene nachbauen (nicht akzeptabel); nur weitere Wochenplan-Promptlogik schreiben (zu wenig robust); sofort alle Benchmark-Luecken in einem PR bauen (zu gross und riskant).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Lokale Verify-Strecke umfasst Script- und Frontend-Logiktests
 
 - **Decision:** `scripts/verify-local.sh` fuehrt nach dem Migration Guard auch `npm run test:scripts` aus; dieser Lauf enthaelt nun die bestehenden Ops-Skripttests und kleine TypeScript-Frontend-Logiktests.
