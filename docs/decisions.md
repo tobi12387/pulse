@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Plan zeigt fehlgeschlagenen Garmin-Sync nach lokalen Planänderungen sofort an
+
+- **Decision:** Wenn eine eigene Einheit, ein angewendetes Szenario oder eine Planänderung lokal gespeichert wird, der Garmin-Upload aber fehlschlägt, zeigt Plan einen sichtbaren Warnhinweis (`Garmin-Sync offen`) im Flow und im Workout-Modal. Die Einheit bleibt in Pulse gespeichert; der Nutzer soll später über Workout oder Settings erneut synchronisieren können.
+- **Why:** Für Tobi ist Garmin/Edge/Uhr-Ausführung ein Kernnutzen. Stille Teilerfolge erzeugen falsches Vertrauen, weil Pulse zwar geplant hat, das Workout aber nicht auf dem Gerät landen muss.
+- **Alternatives:** Nur über Row-Badges `Lokal` informieren (zu indirekt nach einer Aktion); Mutation komplett fehlschlagen lassen, obwohl Pulse gespeichert hat (verliert den lokalen Plan); sofort automatisch retryen (riskant bei Garmin-Rate-Limits).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Data-Untertabs zeigen auf Mobile alle Bereiche sichtbar
 
 - **Decision:** Data nutzt den gemeinsamen `SegmentedControl` mit opt-in Wrapping, damit alle sieben Unterbereiche auf iPhone-Breite sichtbar und direkt antippbar bleiben. Plan und andere kompakte Tab-Leisten behalten die einzeilige Variante.

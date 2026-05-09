@@ -1467,6 +1467,50 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
   expect(previewBody).toMatchObject({ type: 'add_custom_tour' });
 });
 
+test('Plan surfaces Garmin sync failure after applying a custom tour scenario', async ({ page }) => {
+  await mockPulseApi(page, {
+    createWorkoutResult: (body) => ({
+      workout: {
+        id: 'created-workout',
+        userId: 'user-1',
+        plannedDate: (body as { plannedDate?: string }).plannedDate ?? '2026-05-02',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 423,
+        distanceKm: 155,
+        targetTss: 296,
+        archetypeId: 'long_endurance',
+        difficultyLevel: 4.2,
+        difficultyEnergySystem: 'long_endurance',
+        capabilityFit: 'stretch',
+        description: 'Entspannte Rennradtour mit Stops.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'user',
+        userLocked: true,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: 'Garmin Sync fehlgeschlagen.',
+      },
+      garminSync: { status: 'failed', error: 'Garmin Sync fehlgeschlagen.' },
+    }),
+  });
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await page.getByRole('button', { name: 'Vorschau anwenden' }).click();
+  await expect(page.getByText('Garmin-Sync offen')).toBeVisible();
+  await expect(page.getByText(/Die Einheit ist in Pulse gespeichert/)).toBeVisible();
+  await expect(page.getByText(/Garmin Sync fehlgeschlagen/).first()).toBeVisible();
+});
+
 test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {
   let readinessCalls = 0;
   await mockPulseApi(page, {

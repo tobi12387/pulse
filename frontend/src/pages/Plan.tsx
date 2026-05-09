@@ -64,6 +64,27 @@ type PlannedWorkout = PulsePlannedWorkout;
 type SourceChip = { label: string; targetPath?: string };
 const CUSTOM_ACTIVITY_TYPES: PulseActivityType[] = ['bike', 'run', 'hike', 'swim', 'strength', 'other'];
 
+type GarminSyncOutcome = {
+  status: 'skipped' | 'synced' | 'failed' | 'unchanged' | 'removed';
+  error?: string;
+};
+
+type PlanMutationNotice = {
+  title: string;
+  message: string;
+  tone: 'warning' | 'info' | 'error';
+};
+
+function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMessage: string): PlanMutationNotice | null {
+  if (outcome?.status !== 'failed') return null;
+  const detail = outcome.error ? `: ${outcome.error}` : '.';
+  return {
+    title: 'Garmin-Sync offen',
+    message: `${savedMessage}, aber Garmin wurde nicht aktualisiert${detail} Später im Workout oder in Settings erneut synchronisieren.`,
+    tone: 'warning',
+  };
+}
+
 function NextTrainingDecisionCard({
   nextWorkout,
   availableDays,
@@ -534,7 +555,7 @@ function CustomWorkoutForm({
   onCreated,
 }: {
   onCancel: () => void;
-  onCreated: (workout: PlannedWorkout) => void;
+  onCreated: (workout: PlannedWorkout, notice: PlanMutationNotice | null) => void;
 }) {
   const createWorkout = useCreateWorkout();
   const [plannedDate, setPlannedDate] = useState(isoDateLocal(new Date()));
@@ -575,7 +596,7 @@ function CustomWorkoutForm({
         userLocked: true,
       };
       const result = await createWorkout.mutateAsync(payload);
-      onCreated(result.workout);
+      onCreated(result.workout, garminSyncNotice(result.garminSync, 'Die Einheit ist in Pulse gespeichert'));
     } catch (err) {
       setFormError(errorMessage(err, 'Die Einheit konnte nicht erstellt werden.'));
     }
@@ -684,7 +705,7 @@ function PlanScenarioPreviewCard({
   workouts: PlannedWorkout[];
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
-  onApplied: (workout: PlannedWorkout | null) => void;
+  onApplied: (workout: PlannedWorkout | null, notice: PlanMutationNotice | null) => void;
 }) {
   const previewScenario = usePlanScenarioPreview();
   const createWorkout = useCreateWorkout();
@@ -761,22 +782,25 @@ function PlanScenarioPreviewCard({
           syncGarmin: true,
           userLocked: true,
         });
-        onApplied(result.workout);
+        onApplied(result.workout, garminSyncNotice(result.garminSync, 'Die Einheit ist in Pulse gespeichert'));
       } else if (mode === 'move' && nextWorkout) {
         const result = await updateWorkout.mutateAsync({
           id: nextWorkout.id,
           data: { plannedDate: moveDate },
         });
-        onApplied(result.workout);
+        onApplied(result.workout, garminSyncNotice(result.garminSync, 'Die Planänderung ist in Pulse gespeichert'));
       } else if (mode === 'reduce') {
         const factor = reduceFactor / 100;
-        await Promise.all(activeFutureWorkouts
+        const results = await Promise.all(activeFutureWorkouts
           .filter(workout => !workout.userLocked)
           .map(workout => updateWorkout.mutateAsync({
             id: workout.id,
             data: { durationMin: roundToFive(workout.durationMin * factor) },
           })));
-        onApplied(null);
+        const notice = results
+          .map(result => garminSyncNotice(result.garminSync, 'Die Planänderung ist in Pulse gespeichert'))
+          .find((item): item is PlanMutationNotice => item != null) ?? null;
+        onApplied(null, notice);
       }
       setPreview(null);
     } catch (err) {
@@ -986,6 +1010,7 @@ function TrainingTab() {
   const [showAvailability, setShowAvailability] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [planNotice, setPlanNotice] = useState<PlanMutationNotice | null>(null);
 
   const selectedWeekDate = getMonday(new Date());
   selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
@@ -1033,12 +1058,23 @@ function TrainingTab() {
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setGenerateError(null);
+    setPlanNotice(null);
     try {
       await generate.mutateAsync();
       setShowConfig(false);
     } catch (err) {
       setGenerateError(errorMessage(err, 'Der Trainingsplan konnte nicht erstellt werden.'));
     }
+  }
+
+  function openWorkout(workout: PlannedWorkout) {
+    setPlanNotice(null);
+    setSelectedWorkout(workout);
+  }
+
+  function closeWorkout() {
+    setSelectedWorkout(null);
+    setPlanNotice(null);
   }
 
   return (
@@ -1052,7 +1088,7 @@ function TrainingTab() {
         mentalPlanImpact={mentalPlanImpact}
         todayOptionsState={todayOptions.data?.todayOptions.state ?? null}
         onNavigate={navigate}
-        onOpen={setSelectedWorkout}
+        onOpen={openWorkout}
         onOpenCustom={() => setShowCustomWorkout(true)}
         onOpenAvailability={() => setShowAvailability(true)}
         onOpenGenerator={() => setShowConfig(true)}
@@ -1075,17 +1111,22 @@ function TrainingTab() {
         workouts={workouts}
         weekOffset={weekOffset}
         onChangeWeek={d => setWeekOffset(o => o + d)}
-        onSelectWorkout={setSelectedWorkout}
+        onSelectWorkout={openWorkout}
       />
 
       <PlanScenarioPreviewCard
         workouts={workouts}
         nextWorkout={nextDecisionWorkout}
         availableDays={decisionAvailableDays}
-        onApplied={workout => {
+        onApplied={(workout, notice) => {
+          setPlanNotice(notice);
           if (workout) setSelectedWorkout(workout);
         }}
       />
+
+      {planNotice && !selectedWorkout && (
+        <InlineFeedback title={planNotice.title} message={planNotice.message} tone={planNotice.tone} />
+      )}
 
       {/* Availability */}
       <AvailabilityEditor open={showAvailability} onOpenChange={setShowAvailability} />
@@ -1120,8 +1161,9 @@ function TrainingTab() {
       {showCustomWorkout && (
         <CustomWorkoutForm
           onCancel={() => setShowCustomWorkout(false)}
-          onCreated={workout => {
+          onCreated={(workout, notice) => {
             setShowCustomWorkout(false);
+            setPlanNotice(notice);
             setSelectedWorkout(workout);
           }}
         />
@@ -1185,7 +1227,7 @@ function TrainingTab() {
       {workouts.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {workouts.map((w, i) => (
-            <WorkoutRow key={w.id} workout={w} index={i} onOpen={() => setSelectedWorkout(w)} />
+            <WorkoutRow key={w.id} workout={w} index={i} onOpen={() => openWorkout(w)} />
           ))}
         </div>
       )}
@@ -1247,7 +1289,8 @@ function TrainingTab() {
       {selectedWorkout && (
         <WorkoutDetailModal
           workout={selectedWorkout}
-          onClose={() => setSelectedWorkout(null)}
+          notice={planNotice ?? undefined}
+          onClose={closeWorkout}
           onUpdate={updated => setSelectedWorkout(updated)}
         />
       )}
