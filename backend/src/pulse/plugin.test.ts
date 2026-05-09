@@ -1877,15 +1877,6 @@ describe('PATCH /api/pulse/plan/workout/:id', () => {
       executionStatus: 'garmin_scheduled',
       executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
     }).returning();
-    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
-      steps: [
-        { type: 'warmup', durationMin: 10, zone: 1, description: 'Locker einlaufen' },
-        { type: 'steady', durationMin: 25, zone: 2, description: 'Ruhiger Laufblock' },
-        { type: 'cooldown', durationMin: 10, zone: 1, description: 'Auslaufen' },
-      ],
-      coachingNote: 'Neu als lockerer Lauf in Z2 planen.',
-    }));
-
     const res = await app.inject({
       method: 'PATCH',
       url: `/api/pulse/plan/workout/${workout!.id}`,
@@ -1899,10 +1890,16 @@ describe('PATCH /api/pulse/plan/workout/:id', () => {
       description: string | null;
       garminWorkoutId: string | null;
       garminScheduledId: string | null;
+      archetypeId: string | null;
+      difficultyLevel: number | null;
+      capabilityFit: string | null;
       steps: Array<{ targetLabel?: string; description?: string }> | null;
     } }>();
     expect(body.workout.activityType).toBe('run');
-    expect(body.workout.description).toContain('Neu als lockerer Lauf in Z2 planen.');
+    expect(body.workout.description).toContain('Lauf: Archetyp Steady Endurance');
+    expect(body.workout.description).not.toContain('Rad-Schwellenintervalle');
+    expect(body.workout.archetypeId).toBe('endurance_steady');
+    expect(body.workout.difficultyLevel).toBeGreaterThan(0);
     expect(body.workout.steps?.some(step => step.targetLabel != null)).toBe(true);
     expect(body.workout.garminWorkoutId).toBe('12345');
     expect(body.workout.garminScheduledId).toBe('67890');
@@ -1913,7 +1910,7 @@ describe('PATCH /api/pulse/plan/workout/:id', () => {
     expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
     const payload = garminMocks.addWorkout.mock.calls[0]![0] as { workoutName: string; description: string };
     expect(payload.workoutName).toContain('Laufen');
-    expect(payload.description).toContain('Neu als lockerer Lauf');
+    expect(payload.description).toContain('Lauf: Archetyp Steady Endurance');
   });
 
   it('removes Garmin objects when a planned workout is skipped', async () => {

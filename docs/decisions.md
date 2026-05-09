@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Planned Workouts speichern Archetyp, Difficulty und Capability-Fit
+
+- **Decision:** Geplante Workouts bekommen persistente Library-Metadaten (`archetype_id`, `difficulty_level`, `difficulty_energy_system`, `capability_fit`). Beschreibung, Steps, Plan-/Modal-Copy und Garmin-Payload werden aus derselben deterministischen Workout-Library-Materialisierung erzeugt.
+- **Why:** Sportartwechsel und Alternativen duerfen nicht nur einzelne Felder patchen, sondern muessen Zweck, Beschreibung, Steps und Garmin-Remote konsistent neu aufbauen. Persistente Metadaten machen spaetere TrainNow-/Scenario-/Limiter-Features wiederverwendbar und verhindern, dass die UI anders argumentiert als Garmin ausfuehrt.
+- **Alternatives:** Nur Beschreibungstext anpassen (zu fragil); nur transient im Frontend fit-labeln (nicht Garmin-/API-sicher); weiterhin LLM-first Steps erzeugen (zu wenig stabil fuer Wiederholungen und Sync-Vertraeuen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Capability Levels werden als persistente Trainingsgrundlage eingefuehrt
 
 - **Decision:** Pulse speichert rolling Capability Levels pro Trainingssystem (`endurance`, `long_endurance`, `tempo`, `threshold`, `vo2`, `anaerobic`, `recovery`, `strength`) und nutzt daraus deterministische Fit-Labels wie `Erhaltung`, `Produktiv`, `Stretch` und `Zu hart heute` fuer Plan-Entscheidungen und Data-/Plan-Evidence.

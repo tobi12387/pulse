@@ -204,6 +204,13 @@
       "when": 1778341800000,
       "tag": "0028_training_capability_levels",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1778342700000,
+      "tag": "0029_workout_library_fit_columns",
+      "breakpoints": true
     }
   ]
 }

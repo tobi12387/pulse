@@ -9,6 +9,14 @@ const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
 };
 
+const FIT_META: Record<NonNullable<PulsePlannedWorkout['capabilityFit']>, { label: string; color: string }> = {
+  recovery: { label: 'Recovery', color: 'var(--blue)' },
+  maintenance: { label: 'Erhaltung', color: 'var(--text-3)' },
+  productive: { label: 'Produktiv', color: 'var(--green)' },
+  stretch: { label: 'Stretch', color: 'var(--amber)' },
+  too_hard_today: { label: 'Zu hart heute', color: 'var(--rose)' },
+};
+
 function translucent(color: string, percent: number) {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
@@ -228,6 +236,16 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
                   {new Date(workout.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
                 </span>
                 <ExecutionBadge workout={workout} />
+                {workout.capabilityFit && (
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em',
+                    color: FIT_META[workout.capabilityFit].color,
+                    border: `1px solid ${translucent(FIT_META[workout.capabilityFit].color, 45)}`,
+                    padding: '2px 6px', borderRadius: 2, textTransform: 'uppercase',
+                  }}>
+                    {FIT_META[workout.capabilityFit].label}
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>
                 {ACTIVITY_LABEL[workout.activityType] ?? workout.activityType}
@@ -236,7 +254,13 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
                 {fmtDuration(workout.durationMin)}
                 {workout.distanceKm ? ` · ${workout.distanceKm.toFixed(1)} km` : ''}
                 {workout.targetTss ? ` · TSS ${Math.round(workout.targetTss)}` : ''}
+                {workout.difficultyLevel ? ` · L${workout.difficultyLevel.toFixed(1)}` : ''}
               </div>
+              {workout.archetypeId && (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>
+                  {workout.archetypeId.replaceAll('_', ' ')}
+                </div>
+              )}
             </div>
             <button
               onClick={onClose}
