@@ -51,7 +51,7 @@ const GROUP_RULES: PlanDecisionRule[] = [
   },
   {
     id: 'goal',
-    patterns: [/zieltermin/i, /ziel:\s/i, /race/i, /wettkampf/i, /\ba-race\b/i, /\bb-race\b/i, /\bc-race\b/i, /taper/i, /peak/i],
+    patterns: [/zieltermin/i, /ziel:\s/i, /race/i, /wettkampf/i, /\ba-race\b/i, /\bb-race\b/i, /\bc-race\b/i, /taper/i, /peak/i, /saisonlast/i, /saisonlinie/i],
   },
 ];
 

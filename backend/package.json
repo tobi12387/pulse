@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "vitest run --fileParallelism=false",
     "test:parallel": "vitest run",
-    "test:training-intelligence": "vitest run src/pulse/services/training-intelligence.test.ts src/pulse/services/training-capabilities.test.ts src/pulse/services/workout-library.test.ts src/pulse/services/today-options.test.ts src/pulse/services/plan-scenario-preview.test.ts src/pulse/services/plan-engine.test.ts src/pulse/services/plan-trace.test.ts src/pulse/services/garmin-workout.test.ts",
+    "test:training-intelligence": "vitest run src/pulse/services/training-intelligence.test.ts src/pulse/services/training-capabilities.test.ts src/pulse/services/workout-library.test.ts src/pulse/services/today-options.test.ts src/pulse/services/plan-scenario-preview.test.ts src/pulse/services/season-strategy.test.ts src/pulse/services/plan-engine.test.ts src/pulse/services/plan-trace.test.ts src/pulse/services/garmin-workout.test.ts",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"

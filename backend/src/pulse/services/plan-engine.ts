@@ -670,6 +670,10 @@ export function decidePlanDays(params: {
     const guardrails = params.seasonStrategy.guardrails;
     target = Math.min(target, guardrails.targetSessions);
     reasons.push(`Saisonlinie: ${guardrails.freeDayRationale}`);
+    reasons.push(`Saisonlast: ${params.seasonStrategy.loadModel.currentWeek.kind} mit Ziel ${params.seasonStrategy.loadModel.currentWeek.targetHours}h / ${params.seasonStrategy.loadModel.currentWeek.targetTss} TSS.`);
+    if (params.seasonStrategy.loadModel.warnings.length > 0) {
+      reasons.push(`Saisonlast-Warnung: ${params.seasonStrategy.loadModel.warnings[0]}`);
+    }
     if (guardrails.deload) {
       target = Math.min(target, Math.max(2, guardrails.targetSessions));
       reasons.push('Saisonlinie: Konsolidierungs-/Deload-Woche begrenzt die Trainingsdichte.');

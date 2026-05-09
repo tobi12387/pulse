@@ -80,4 +80,29 @@ describe('buildSeasonStrategy', () => {
     expect(strategy.guardrails.maxHardDays).toBeLessThanOrEqual(1);
     expect(strategy.evidence).toContain('Kein aktives Race-Ziel');
   });
+
+  it('adds taper load targets when an A race is near', () => {
+    const strategy = buildSeasonStrategy(input({
+      races: [race({ daysUntil: 14, date: '2026-05-16', phase: 'taper' })],
+      availability: { availableDays: [0, 2, 4, 5], weeklyHours: 9 },
+    }));
+
+    expect(strategy.currentBlock.kind).toBe('taper');
+    expect(strategy.loadModel.currentWeek.kind).toBe('taper');
+    expect(strategy.loadModel.currentWeek.targetHours).toBeLessThan(9);
+    expect(strategy.loadModel.warnings.join(' ')).toContain('Taper');
+  });
+
+  it('caps overloaded weeks and shows a four-week correction lane', () => {
+    const strategy = buildSeasonStrategy(input({
+      races: [race({ daysUntil: 56, date: '2026-06-27', phase: 'build' })],
+      fitnessLoad: { ctl: 45, atl: 66, tsb: -21 },
+    }));
+
+    expect(strategy.currentBlock.kind).toBe('consolidation');
+    expect(strategy.loadModel.currentWeek.kind).toBe('deload');
+    expect(strategy.loadModel.forecast).toHaveLength(4);
+    expect(strategy.loadModel.forecast[0]?.targetTss).toBeLessThan(strategy.loadModel.forecast[3]?.targetTss ?? 0);
+    expect(strategy.loadModel.warnings.join(' ')).toContain('ATL-CTL');
+  });
 });
