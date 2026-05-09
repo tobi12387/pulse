@@ -55,10 +55,29 @@ interface RecentPlanActivity {
   plannedZone?: number | null;
 }
 
+interface FuelingPlanHistoryInput {
+  date: string;
+  context?: string | null;
+  activityType?: string | null;
+  durationMin?: number | null;
+  carbsG?: number | null;
+  bottles750Ml?: number | null;
+  powderG?: number | null;
+  giComfort?: string | null;
+  notes?: string | null;
+}
+
 interface RpePlanSafety {
   blockHard: boolean;
   reduceSessions: boolean;
   reasons: string[];
+  summary: string | null;
+  descriptionNote: string | null;
+}
+
+interface FuelingPlanSafety {
+  reduceSessions: boolean;
+  capLongEnduranceMin: number | null;
   summary: string | null;
   descriptionNote: string | null;
 }
@@ -141,6 +160,33 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
   return { blockHard, reduceSessions, reasons, summary, descriptionNote };
 }
 
+function fuelingCarbsPerHour(log: FuelingPlanHistoryInput): number | null {
+  if (log.carbsG == null || log.durationMin == null || log.durationMin <= 0) return null;
+  return Math.round(log.carbsG / (log.durationMin / 60));
+}
+
+function summarizeFuelingPlanSafety(history: FuelingPlanHistoryInput[] = []): FuelingPlanSafety {
+  const relevant = history
+    .filter(log => log.context === 'during' || log.context == null)
+    .filter(log => (log.durationMin ?? 0) >= 180 || (log.carbsG ?? 0) > 0 || (log.powderG ?? 0) > 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const issue = relevant.find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue');
+  if (!issue) {
+    return { reduceSessions: false, capLongEnduranceMin: null, summary: null, descriptionNote: null };
+  }
+
+  const cph = fuelingCarbsPerHour(issue);
+  const bottle = issue.bottles750Ml != null && issue.bottles750Ml > 0 ? `, ${issue.bottles750Ml}x750 ml` : '';
+  const powder = issue.powderG != null && issue.powderG > 0 ? `, ${Math.round(issue.powderG)}g Pulver` : '';
+  const summary = `Fueling-Toleranz: ${issue.date} ${issue.giComfort}${cph != null ? ` bei ${cph}g/h` : ''}${bottle}${powder}.`;
+  return {
+    reduceSessions: true,
+    capLongEnduranceMin: 165,
+    summary,
+    descriptionNote: `${summary} Naechste lange Einheit kontrolliert verpflegen, frueh starten und keine maximale Langdistanz direkt wiederholen.`,
+  };
+}
+
 function hasLearningFlag(learning: PulsePlanLearningSnapshot | null | undefined, flag: PulsePlanLearningSnapshot['flags'][number]): boolean {
   return learning?.flags.includes(flag) ?? false;
 }
@@ -183,6 +229,10 @@ function previousHardDayOffsets(learning: PulsePlanLearningSnapshot | null | und
 
 function hrTargetForZone(zone: number, maxHrBpm: number, lthrBpm?: number): string {
   return hrTargetRangeForZone(zone, maxHrBpm, lthrBpm).label;
+}
+
+function isEnduranceFuelingActivity(activityType: ActivityType): boolean {
+  return activityType === 'bike' || activityType === 'run';
 }
 
 // ─── Mesocycle position ───────────────────────────────────────────────────────
@@ -534,6 +584,7 @@ export function decidePlanDays(params: {
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
+  fuelingHistory?: FuelingPlanHistoryInput[];
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
   seasonStrategy?: PulseSeasonStrategy | null | undefined;
@@ -542,6 +593,7 @@ export function decidePlanDays(params: {
   const goal = primaryGoal(params.goals);
   const reasons: string[] = [];
   const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
+  const fuelingSafety = summarizeFuelingPlanSafety(params.fuelingHistory ?? []);
 
   let target = params.weeklyHoursTarget <= 3.5 ? 2
     : params.weeklyHoursTarget <= 5.5 ? 3
@@ -579,6 +631,11 @@ export function decidePlanDays(params: {
   if (rpeSafety.reduceSessions) {
     target -= 1;
     reasons.push(rpeSafety.reasons[0] ?? 'RPE-Signal: subjektive Belastung war zuletzt hoch; ein Trainingstag bleibt frei.');
+  }
+
+  if (fuelingSafety.reduceSessions) {
+    target -= 1;
+    reasons.push(`${fuelingSafety.summary} Ein verfügbarer Tag bleibt frei, damit der nächste lange Reiz als kontrollierte Fueling-Praxis geplant wird.`);
   }
 
   if (hasLearningFlag(params.planLearning, 'low_compliance') || hasLearningFlag(params.planLearning, 'low_completion')) {
@@ -653,6 +710,7 @@ function buildPolarizedWorkouts(params: {
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
+  fuelingHistory?: FuelingPlanHistoryInput[];
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
   seasonStrategy?: PulseSeasonStrategy | null | undefined;
@@ -664,6 +722,7 @@ function buildPolarizedWorkouts(params: {
 
   const profile = goalWorkoutProfile(goals, phase);
   const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
+  const fuelingSafety = summarizeFuelingPlanSafety(params.fuelingHistory ?? []);
   const rotationShift = rotationShiftForLearning(params.planLearning);
 
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
@@ -703,10 +762,15 @@ function buildPolarizedWorkouts(params: {
     const baseDur = BASE_DURATION[activityType]?.[zone] ?? 60;
     const maxMinPerDay = Math.round((weeklyHoursTarget * 60) / remaining * 1.4);
 
+    const defaultMaxMin = activityType === 'strength' ? 50 : 180;
+    const fuelingCap = fuelingSafety.capLongEnduranceMin != null && zone <= 2 && isEnduranceFuelingActivity(activityType)
+      ? fuelingSafety.capLongEnduranceMin
+      : defaultMaxMin;
+
     const durationMin = Math.max(
       20,
       Math.min(
-        activityType === 'strength' ? 50 : 180,
+        fuelingCap,
         Math.min(maxMinPerDay, isHard ? derivedMin : Math.max(derivedMin, Math.round(baseDur * 0.8))),
       ),
     );
@@ -809,6 +873,7 @@ function withHrFirstDescriptions(
     lthrBpm?: number | undefined;
     goals: GoalLite[];
     rpeSafety: RpePlanSafety;
+    fuelingSafety: FuelingPlanSafety;
     executionReview?: PulseTrainingExecutionReview | null | undefined;
   },
 ): WeekWorkout[] {
@@ -820,6 +885,9 @@ function withHrFirstDescriptions(
     const archetypeText = `Archetyp ${archetype.label}: ${archetype.description}`;
     const variation = w.variationReason
       ? ` Variation zur Vorwoche: ${w.variationReason}`
+      : '';
+    const fueling = ctx.fuelingSafety.descriptionNote && w.zone <= 2 && isEnduranceFuelingActivity(w.activityType)
+      ? ` ${ctx.fuelingSafety.descriptionNote}`
       : '';
     const safety = ctx.rpeSafety.descriptionNote
       ? ` ${ctx.rpeSafety.descriptionNote}`
@@ -838,7 +906,7 @@ function withHrFirstDescriptions(
       : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
     return {
       ...w,
-      description: `${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${safety}${executionNote}`,
+      description: `${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${fueling}${safety}${executionNote}`,
     };
   });
 }
@@ -1113,6 +1181,7 @@ export interface ScientificPlanInput {
   maxHrBpm: number;
   lthrBpm?: number | undefined;
   recentActivities: RecentPlanActivity[];
+  fuelingHistory?: FuelingPlanHistoryInput[];
   goals: GoalLite[];
   riskSignals?: RiskSignalLite[];
   planLearning?: PulsePlanLearningSnapshot | null;
@@ -1158,6 +1227,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     goals: input.goals,
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
+    fuelingHistory: input.fuelingHistory ?? [],
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     seasonStrategy: input.seasonStrategy,
@@ -1174,6 +1244,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     goals: input.goals,
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
+    fuelingHistory: input.fuelingHistory ?? [],
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     seasonStrategy: input.seasonStrategy,
@@ -1191,12 +1262,14 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
   });
 
   const rpeSafety = summarizeRpeSafety(input.recentActivities);
+  const fuelingSafety = summarizeFuelingPlanSafety(input.fuelingHistory ?? []);
   workouts = withHrFirstDescriptions(workouts, {
     phase,
     maxHrBpm: input.maxHrBpm,
     lthrBpm: input.lthrBpm,
     goals: input.goals,
     rpeSafety,
+    fuelingSafety,
     executionReview: input.executionReview,
   });
 

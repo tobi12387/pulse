@@ -20,7 +20,7 @@ function shiftIsoDate(date: string, days: number): string {
   return current.toISOString().split('T')[0]!;
 }
 
-async function loadRecentFuelingHistory(userId: string, plannedDate: string) {
+export async function loadRecentFuelingHistory(userId: string, plannedDate: string) {
   const since = shiftIsoDate(plannedDate, -120);
   const logs = await db.select({
     date: pulseNutritionLogs.date,

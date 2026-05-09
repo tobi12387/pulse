@@ -56,7 +56,10 @@ import { getFitnessLoadCached } from '../services/daily-loop.js';
 import { profileWithProvenance } from '../services/profile-sync.js';
 import { fetchGarminCalendarWorkouts } from '../services/garmin-calendar-workouts.js';
 import { generateWeeklyReview } from '../services/review-engine.js';
-import { buildFuelingRecoveryGuidanceForPlannedWorkout } from '../services/fueling-recovery-planned-workout.js';
+import {
+  buildFuelingRecoveryGuidanceForPlannedWorkout,
+  loadRecentFuelingHistory,
+} from '../services/fueling-recovery-planned-workout.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -747,6 +750,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const planLearningWithExecution = executionReview
       ? { ...planLearning, executionReview }
       : planLearning;
+    const fuelingHistory = await loadRecentFuelingHistory(userId, weekStartStr);
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
     const planDecision = decidePlanDays({
       availableDays,
@@ -757,6 +761,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       goals: planGoals,
       riskSignals,
       recentActivities: recentPlanActivities,
+      fuelingHistory,
       planLearning: planLearningWithExecution,
       executionReview,
       seasonStrategy,
@@ -776,6 +781,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         maxHrBpm:           profile?.maxHrBpm ?? 185,
         lthrBpm:            profile?.lthrBpm ?? undefined,
         recentActivities:   recentPlanActivities,
+        fuelingHistory,
         goals:              planGoals,
         riskSignals,
         planLearning:        planLearningWithExecution,
@@ -1272,6 +1278,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const planLearningWithExecution2 = executionReview2
       ? { ...planLearning2, executionReview: executionReview2 }
       : planLearning2;
+    const fuelingHistory2 = await loadRecentFuelingHistory(userId, weekStart);
     const mesocycleWeek2 = getMesocycleWeek(weekStart);
     const planDecision2 = decidePlanDays({
       availableDays: parsed.data.availableDays,
@@ -1282,6 +1289,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       goals: planGoals2,
       riskSignals: riskSignals2,
       recentActivities: recentPlanActivities2,
+      fuelingHistory: fuelingHistory2,
       planLearning: planLearningWithExecution2,
       executionReview: executionReview2,
       seasonStrategy: seasonStrategy2,
@@ -1298,6 +1306,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         maxHrBpm:  profile?.maxHrBpm ?? 185,
         lthrBpm:   profile?.lthrBpm ?? undefined,
         recentActivities: recentPlanActivities2,
+        fuelingHistory: fuelingHistory2,
         goals: planGoals2,
         riskSignals: riskSignals2,
         planLearning: planLearningWithExecution2,
