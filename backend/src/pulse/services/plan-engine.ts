@@ -1,6 +1,7 @@
 import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import type { PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
+import { trainingArchetypes, type TrainingArchetype } from './training-intelligence.js';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -21,6 +22,8 @@ interface WeekWorkout {
   durationMin: number;
   targetTss: number;
   description: string;
+  archetypeId?: string;
+  variationReason?: string;
   adjustedReason?: string;     // non-null when modified by enforceHealthConstraints
 }
 
@@ -358,6 +361,91 @@ const BASE_DURATION: Record<ActivityType, Record<number, number>> = {
   swim:     { 1: 45, 2: 55,  3: 50,  4: 45,  5: 40 },
   strength: { 1: 50, 2: 50,  3: 50,  4: 45,  5: 45 },
 };
+
+const ARCHETYPE_BY_ID = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
+
+function archetypeForWorkout(workout: Pick<WeekWorkout, 'activityType' | 'zone' | 'durationMin'>): TrainingArchetype {
+  const id = workout.activityType === 'strength'
+    ? 'strength_support'
+    : workout.zone <= 1
+    ? 'recovery_spin'
+    : workout.zone === 2 && workout.durationMin >= 150
+    ? 'long_endurance'
+    : workout.zone === 2
+    ? 'endurance_steady'
+    : workout.zone === 3
+    ? workout.activityType === 'bike' && workout.durationMin >= 90
+      ? 'gravel_specificity'
+      : 'tempo_sustained'
+    : workout.zone === 4
+    ? 'threshold_intervals'
+    : workout.durationMin <= 40
+    ? 'anaerobic_sharpening'
+    : 'vo2_repeats';
+
+  return ARCHETYPE_BY_ID.get(id) ?? ARCHETYPE_BY_ID.get('endurance_steady')!;
+}
+
+function learningNeedsVariation(
+  learning: PulsePlanLearningSnapshot | null | undefined,
+  review: PulseTrainingExecutionReview | null | undefined,
+): boolean {
+  return hasLearningFlag(learning, 'repeated_sport_mix')
+    || hasLearningFlag(learning, 'repeated_hard_pattern')
+    || (review?.intents.includes('rotate') ?? false);
+}
+
+function variationReasonForWorkout(
+  workout: WeekWorkout,
+  learning: PulsePlanLearningSnapshot | null | undefined,
+  review: PulseTrainingExecutionReview | null | undefined,
+): string | null {
+  if (!learningNeedsVariation(learning, review)) return null;
+  if (workout.zone >= 4) {
+    return 'gleicher Zielreiz, aber andere Struktur/Laenge statt identischem Wochenmuster.';
+  }
+  if (workout.durationMin >= 120 && workout.zone <= 2) {
+    return 'langer aerober Block bleibt, Umfang und Fokus werden bewusst anders gesetzt.';
+  }
+  return 'leichter Baustein rotiert Sportart, Umfang oder Platzierung gegen Routine.';
+}
+
+function withTrainingIntentAnnotations(
+  workouts: WeekWorkout[],
+  ctx: {
+    planLearning?: PulsePlanLearningSnapshot | null | undefined;
+    executionReview?: PulseTrainingExecutionReview | null | undefined;
+  },
+): WeekWorkout[] {
+  const needsVariation = learningNeedsVariation(ctx.planLearning, ctx.executionReview);
+  return workouts.map((workout, index) => {
+    const archetype = archetypeForWorkout(workout);
+    const variationReason = variationReasonForWorkout(workout, ctx.planLearning, ctx.executionReview);
+    let next: WeekWorkout = {
+      ...workout,
+      archetypeId: archetype.id,
+    };
+    if (variationReason) next.variationReason = variationReason;
+
+    if (needsVariation) {
+      const durationDelta = workout.zone >= 4
+        ? -5
+        : index === workouts.length - 1 && workout.zone <= 2
+        ? 10
+        : index % 2 === 0
+        ? -5
+        : 5;
+      const lowerBound = workout.zone >= 4 ? 35 : workout.activityType === 'strength' ? 25 : 30;
+      const upperBound = workout.zone <= 2 && index === workouts.length - 1 ? 180 : workout.activityType === 'strength' ? 55 : 120;
+      next = tssRecompute({
+        ...next,
+        durationMin: Math.max(lowerBound, Math.min(upperBound, workout.durationMin + durationDelta)),
+      });
+    }
+
+    return next;
+  });
+}
 
 // ─── Hard-day selector ────────────────────────────────────────────────────────
 
@@ -728,6 +816,11 @@ function withHrFirstDescriptions(
   return workouts.map((w): WeekWorkout => {
     const hr = hrTargetForZone(w.zone, ctx.maxHrBpm, ctx.lthrBpm);
     const goalPrefix = profile.label.endsWith('-Standard') ? '' : `${profile.label}: `;
+    const archetype = (w.archetypeId ? ARCHETYPE_BY_ID.get(w.archetypeId) : null) ?? archetypeForWorkout(w);
+    const archetypeText = `Archetyp ${archetype.label}: ${archetype.description}`;
+    const variation = w.variationReason
+      ? ` Variation zur Vorwoche: ${w.variationReason}`
+      : '';
     const safety = ctx.rpeSafety.descriptionNote
       ? ` ${ctx.rpeSafety.descriptionNote}`
       : '';
@@ -745,7 +838,7 @@ function withHrFirstDescriptions(
       : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
     return {
       ...w,
-      description: `${goalPrefix}${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${safety}${executionNote}`,
+      description: `${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${safety}${executionNote}`,
     };
   });
 }
@@ -1091,6 +1184,11 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
 
   // Race-week tapering (programmatic safety net even if LLM ignores prompt)
   workouts = applyRaceTaper(workouts, input.races ?? [], input.weekStart);
+
+  workouts = withTrainingIntentAnnotations(workouts, {
+    planLearning: input.planLearning,
+    executionReview: input.executionReview,
+  });
 
   const rpeSafety = summarizeRpeSafety(input.recentActivities);
   workouts = withHrFirstDescriptions(workouts, {
