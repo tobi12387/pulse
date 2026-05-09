@@ -240,7 +240,8 @@ const home = {
   },
   fitnessLoad: load,
   todayWorkout: null,
-  recentActivities: [],
+  todayActivities: [] as unknown[],
+  recentActivities: [] as unknown[],
   nextWorkout: null,
   prognosis: {
     alert: false,

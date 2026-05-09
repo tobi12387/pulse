@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Home zaehlt heutige Garmin-Aktivitaeten als Tagesabschluss
+
+- **Decision:** Wenn Garmin heute eine relevante Aktivitaet liefert und kein geplantes Pulse-Workout fuer heute offen ist, behandelt Home den Tag als `Training heute erledigt` statt als `Heute ist kein Training geplant`. Die Tagesentscheidung fuehrt dann zu RPE-/Feedback-Erfassung und Planabgleich, nicht zu einer weiteren Trainingssuche.
+- **Why:** Tobi faehrt oder laeuft auch Einheiten, die vorher nicht in Pulse geplant waren. Die App muss die reale Belastung aus Garmin ernst nehmen, damit Home nicht fachlich falsch wirkt und der naechste Plan die echte Einheit einbeziehen kann.
+- **Alternatives:** Weiter nur geplante Workouts als erledigt zaehlen (irrefuehrend nach spontanen Einheiten); jede kurze Aktivitaet zaehlen (zu laut, daher Mindestdauer); automatisch ein geplantes Workout nachtraeglich erzeugen (hoehere Sync- und Datenmodell-Komplexitaet, spaeterer Schritt).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Eigene geplante Workouts werden als user-locked Plananker behandelt
 
 - **Decision:** Pulse speichert manuell angelegte geplante Workouts mit `origin = user` und `user_locked = true`, zeigt sie im Plan als eigene Einheit und schuetzt sie bei Plan-Regenerationen vor Loeschung oder Ueberschreiben. Die Einheit wird beim Anlegen wie normale geplante Workouts mit Beschreibung, Steps und optionalem Garmin-Sync vorbereitet.
