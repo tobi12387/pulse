@@ -40,15 +40,16 @@ type SegmentedControlProps = {
   active: string;
   onChange: (id: string) => void;
   compact?: boolean;
+  wrap?: boolean;
   ariaLabel?: string;
 };
 
-export function SegmentedControl({ items, active, onChange, compact = false, ariaLabel = 'Bereiche' }: SegmentedControlProps) {
+export function SegmentedControl({ items, active, onChange, compact = false, wrap = false, ariaLabel = 'Bereiche' }: SegmentedControlProps) {
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => {
     tabRefs.current[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [active]);
+  }, [active, wrap]);
 
   function focusAndChange(index: number) {
     const next = items[index];
@@ -80,7 +81,7 @@ export function SegmentedControl({ items, active, onChange, compact = false, ari
       aria-label={ariaLabel}
       style={{
         display: 'flex',
-        flexWrap: 'nowrap',
+        flexWrap: wrap ? 'wrap' : 'nowrap',
         gap: 2,
         padding: 2,
         background: 'var(--surface)',
@@ -88,10 +89,10 @@ export function SegmentedControl({ items, active, onChange, compact = false, ari
         borderRadius: 5,
         alignSelf: 'flex-start',
         maxWidth: '100%',
-        overflowX: 'auto',
+        overflowX: wrap ? 'visible' : 'auto',
         overflowY: 'hidden',
         WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'thin',
+        scrollbarWidth: wrap ? 'none' : 'thin',
       }}
     >
       {items.map((item, index) => (
