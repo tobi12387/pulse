@@ -57,6 +57,7 @@ interface RpePlanSafety {
   reduceSessions: boolean;
   reasons: string[];
   summary: string | null;
+  descriptionNote: string | null;
 }
 
 // ─── TSS / intensity helpers ──────────────────────────────────────────────────
@@ -90,17 +91,32 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
     .filter((a): a is RecentPlanActivity & { rpe: number } => a.rpe != null)
     .slice(0, 8);
   if (rated.length === 0) {
-    return { blockHard: false, reduceSessions: false, reasons: [], summary: null };
+    const longLoadOnly = activities.find(a => a.plannedZone == null && (a.durationMin >= 240 || a.tss >= 250));
+    if (!longLoadOnly) {
+      return { blockHard: false, reduceSessions: false, reasons: [], summary: null, descriptionNote: null };
+    }
+    const reason = `Lange reale Einheit: ${longLoadOnly.activityType} mit ${longLoadOnly.durationMin}min und TSS ${longLoadOnly.tss}; Folgewoche zuerst absorbieren.`;
+    return {
+      blockHard: true,
+      reduceSessions: true,
+      reasons: [reason],
+      summary: reason,
+      descriptionNote: 'lange reale Einheit zuletzt: Erholung schuetzen, keine direkte Wiederholung des langen Reizes.',
+    };
   }
 
   const hardFeelingEasy = rated.find(a => {
     const zone = a.plannedZone ?? inferZoneFromTss(a.durationMin, a.tss);
     return zone != null && zone <= 2 && a.rpe >= 8;
   });
+  const longOffPlanLoad = activities.find(a => a.plannedZone == null && (a.durationMin >= 240 || a.tss >= 250));
   const highRpeCount = rated.slice(0, 5).filter(a => a.rpe >= 8).length;
   const latest = rated[0]!;
 
   const reasons: string[] = [];
+  if (longOffPlanLoad) {
+    reasons.push(`Lange reale Einheit: ${longOffPlanLoad.activityType} mit ${longOffPlanLoad.durationMin}min und TSS ${longOffPlanLoad.tss}; Folgewoche zuerst absorbieren.`);
+  }
   if (hardFeelingEasy) {
     reasons.push(`RPE-Signal: eine leichte ${hardFeelingEasy.activityType}-Einheit fühlte sich mit RPE ${hardFeelingEasy.rpe}/10 zu hart an.`);
   }
@@ -108,13 +124,18 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
     reasons.push(`RPE-Signal: ${highRpeCount} der letzten ${Math.min(5, rated.length)} bewerteten Einheiten lagen bei RPE >= 8.`);
   }
 
-  const blockHard = hardFeelingEasy != null || highRpeCount >= 2;
+  const blockHard = longOffPlanLoad != null || hardFeelingEasy != null || highRpeCount >= 2;
   const reduceSessions = blockHard || latest.rpe >= 9;
   const summary = reasons.length > 0
     ? reasons.join(' ')
     : `Letzte RPE-Bewertung: ${latest.activityType} am ${latest.date} mit RPE ${latest.rpe}/10.`;
+  const descriptionNote = longOffPlanLoad
+    ? 'lange reale Einheit zuletzt: Erholung schuetzen, keine direkte Wiederholung des langen Reizes.'
+    : blockHard
+    ? 'Subjektive Ermüdung zuletzt hoch: sauber aerob bleiben, keine Zusatzreize.'
+    : null;
 
-  return { blockHard, reduceSessions, reasons, summary };
+  return { blockHard, reduceSessions, reasons, summary, descriptionNote };
 }
 
 function hasLearningFlag(learning: PulsePlanLearningSnapshot | null | undefined, flag: PulsePlanLearningSnapshot['flags'][number]): boolean {
@@ -707,8 +728,8 @@ function withHrFirstDescriptions(
   return workouts.map((w): WeekWorkout => {
     const hr = hrTargetForZone(w.zone, ctx.maxHrBpm, ctx.lthrBpm);
     const goalPrefix = profile.label.endsWith('-Standard') ? '' : `${profile.label}: `;
-    const safety = ctx.rpeSafety.blockHard
-      ? ' Subjektive Ermüdung zuletzt hoch: sauber aerob bleiben, keine Zusatzreize.'
+    const safety = ctx.rpeSafety.descriptionNote
+      ? ` ${ctx.rpeSafety.descriptionNote}`
       : '';
     const executionNote = executionReviewNeedsRecoveryProtection(ctx.executionReview)
       ? ' Ausführung der Vorwoche: Erholung schützen, Umfang und harte Reize konservativ halten.'

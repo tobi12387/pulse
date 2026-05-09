@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-09 — Training Intelligence startet mit deterministischer Kontrollschicht
+
+- **Decision:** Der naechste Training-Intelligence-Slice baut zuerst Workout-Archetypen, Difficulty-Scoring, Athlete-Progression und Plan-Quality-Evaluation als deterministische Backend-Schicht, bevor Pulse externe Planbibliotheken oder komplexere Plan-Builder-UI nachbildet.
+- **Why:** Tobi kritisiert zu Recht wiederholte, generische Trainingsvorschlaege und fehlende Reaktion auf reale Garmin-Belastung. Eine kleine, testbare Kontrollschicht macht diese Fehler messbar und verhindert, dass die App harte oder lange Wochen wiederholt, bevor die groessere TrainerRoad-/TrainingPeaks-Vision weiter ausgebaut wird.
+- **Alternatives:** Direkt eine grosse Planbibliothek/UI bauen (zu hoher Scope ohne Guardrails); externe Trainingsplaene inhaltlich kopieren (fachlich und rechtlich nicht sinnvoll); nur Prompt-Texte anpassen (zu wenig belastbar).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
+## 2026-05-09 — Lokale Backend-Tests laufen standardmaessig seriell
+
+- **Decision:** Das Backend-Testscript nutzt `vitest run --fileParallelism=false`; parallele Ausfuehrung bleibt als `test:parallel` bewusst verfuegbar. Auf Macs ohne Docker darf die lokale Teststrecke ueber Homebrew-Postgres und Homebrew-Redis laufen.
+- **Why:** Die lokalen Postgres-/Redis-Services waren stabil, aber parallele DB-Tests loeschten gemeinsame User-Fixtures und erzeugten dadurch falsche Foreign-Key-Fehler. Serielle Backend-Tests dauern lokal nur rund 20 Sekunden und machen `verify:local:no-services` verlaesslicher.
+- **Alternatives:** Parallele DB-Tests trotz Flakiness behalten (blockiert PRs unnoetig); alle Fixtures sofort auf isolierte Transaktionen umbauen (groesserer Folgeslice); Docker als einzige lokale Option verlangen (passt nicht zu Tobis aktuellem Mac-Setup).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Fueling-Logs speichern alltagstaugliche During-Daten strukturiert
 
 - **Decision:** Pulse speichert Fueling-Logs fuer Aktivitaeten mit praktischen During-Feldern: 750-ml-Flaschen, POWER-CARB-Pulvergramm, ausgewaehlte Produkte/Snacks und GI-Vertraeglichkeit. Freitext-Notizen bleiben ergaenzend, sind aber nicht mehr die einzige Quelle fuer solche Informationen.

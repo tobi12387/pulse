@@ -410,6 +410,33 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts.map(w => w.description).join(' ')).toContain('Ausführung');
   });
 
+  it('protects recovery after a very long recent ride instead of repeating a hard week', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 45,
+      atl: 55,
+      tsb: -6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [{
+        date: '2026-05-10',
+        activityType: 'bike',
+        durationMin: 430,
+        tss: 310,
+        rpe: 7,
+        plannedZone: null,
+      }],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+    });
+
+    expect(workouts.length).toBeLessThanOrEqual(3);
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('lange reale Einheit');
+  });
+
   it('keeps stable execution weeks dense enough while explaining the stability', () => {
     const decision = decidePlanDays({
       availableDays: [0, 1, 2, 3, 5],
