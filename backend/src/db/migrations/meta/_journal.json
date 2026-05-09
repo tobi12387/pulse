@@ -211,6 +211,13 @@
       "when": 1778342700000,
       "tag": "0029_workout_library_fit_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1778343600000,
+      "tag": "0030_garmin_sync_contract",
+      "breakpoints": true
     }
   ]
 }

@@ -2006,6 +2006,45 @@ test('Plan explains Garmin workout sync confidence in the workout modal', async 
   await expect(panel).toContainText('Template und Kalendertermin sind vorhanden.');
 });
 
+test('Plan surfaces Garmin sync contract degradations before execution', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-swim-contract',
+        plannedDate: '2026-05-02',
+        activityType: 'swim',
+        zone: 3,
+        durationMin: 45,
+        status: 'planned',
+        description: 'Schwimmen mit Zielbereich.',
+        garminWorkoutId: 'gw-swim',
+        garminScheduledId: 'sched-swim',
+        executionStatus: 'garmin_scheduled',
+        garminSyncContract: {
+          version: 1,
+          status: 'degraded',
+          payloadReady: true,
+          checkedAt: '2026-05-09T12:00:00.000Z',
+          summary: 'Garmin-Upload mit Einschränkung: Schwimmen wird auf Garmin ohne HR-Zielzonen hochgeladen.',
+          issues: [{
+            code: 'unsupported_hr_target',
+            severity: 'warning',
+            message: 'Schwimmen wird auf Garmin ohne HR-Zielzonen hochgeladen.',
+          }],
+        },
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  await expect(page.getByText('Garmin mit Einschränkung')).toBeVisible();
+
+  await page.getByText('Schwimmen mit Zielbereich.').click();
+  const panel = page.getByTestId('garmin-sync-confidence');
+  await expect(panel).toContainText('Garmin mit Einschränkung');
+  await expect(panel).toContainText('ohne HR-Zielzonen');
+});
+
 test('Plan workout modal shows Fueling and Recovery guidance for long sessions', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

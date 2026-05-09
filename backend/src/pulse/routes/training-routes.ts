@@ -55,7 +55,7 @@ import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildTodayOptions } from '../services/today-options.js';
 import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
-import { buildGarminWorkoutJson } from '../services/garmin-workout.js';
+import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract } from '../services/garmin-workout.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { getActiveRaces } from '../services/race-engine.js';
@@ -273,6 +273,17 @@ async function uploadWorkoutToGarmin(
     return null;
   });
   const garminWorkout = buildGarminWorkoutJson(workout, { fuelingGuidance });
+  const garminSyncContract = buildGarminSyncContract(workout, garminWorkout);
+  if (!garminSyncContract.payloadReady) {
+    await db.update(pulsePlannedWorkouts)
+      .set({
+        garminSyncContract,
+        executionStatus: 'local_planned',
+        executionNotes: garminSyncContract.summary,
+      })
+      .where(eq(pulsePlannedWorkouts.id, workout.id));
+    throw new Error(garminSyncContract.summary);
+  }
   const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
   const garminWorkoutId = String(created.workoutId);
   const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as unknown;
@@ -283,11 +294,11 @@ async function uploadWorkoutToGarmin(
     : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
 
   const [updated] = await db.update(pulsePlannedWorkouts)
-    .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
+    .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
     .where(eq(pulsePlannedWorkouts.id, workout.id))
     .returning();
 
-  return updated ?? { ...workout, garminWorkoutId, garminScheduledId, executionStatus, executionNotes };
+  return updated ?? { ...workout, garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes };
 }
 
 async function replaceGarminRemoteForWorkout(
@@ -459,11 +470,12 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       return null;
     });
     const { steps, updatedDescription, metadata } = await buildWorkoutSteps(created, profile ?? undefined, capabilitySummary);
+    const garminSyncContract = previewGarminSyncContract({ ...created, steps, description: updatedDescription });
     const [withDetails] = await db.update(pulsePlannedWorkouts)
-      .set({ steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) })
+      .set({ steps, description: updatedDescription, garminSyncContract, ...workoutMetadataUpdate(metadata) })
       .where(eq(pulsePlannedWorkouts.id, created.id))
       .returning();
-    let finalWorkout = withDetails ?? { ...created, steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) };
+    let finalWorkout = withDetails ?? { ...created, steps, description: updatedDescription, garminSyncContract, ...workoutMetadataUpdate(metadata) };
     let garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } = { status: 'skipped' };
 
     if (parsed.data.syncGarmin) {
@@ -547,7 +559,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       ? tssFromWorkout(nextDurationMin, nextZone)
       : undefined;
 
-    let generatedDetail: ({ steps: PlannedWorkoutRow['steps']; description: string | null } & ReturnType<typeof workoutMetadataUpdate>) | null = null;
+    let generatedDetail: ({ steps: PlannedWorkoutRow['steps']; description: string | null; garminSyncContract: ReturnType<typeof previewGarminSyncContract> } & ReturnType<typeof workoutMetadataUpdate>) | null = null;
     if (changesPrescription && nextStatus === 'planned') {
       const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
       const detailSource = {
@@ -562,7 +574,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         return null;
       });
       const { steps, updatedDescription, metadata } = await buildWorkoutSteps(detailSource, profile ?? undefined, capabilitySummary);
-      generatedDetail = { steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) };
+      const garminSyncContract = previewGarminSyncContract({ ...detailSource, steps, description: updatedDescription });
+      generatedDetail = { steps, description: updatedDescription, garminSyncContract, ...workoutMetadataUpdate(metadata) };
     }
 
     const [updated] = await db.update(pulsePlannedWorkouts)
@@ -577,6 +590,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ...(changesGarminRelevant ? {
           garminWorkoutId: null,
           garminScheduledId: null,
+          garminSyncContract: null,
           executionStatus: null,
           executionNotes: null,
           executionMatchConfidence: null,
@@ -629,12 +643,13 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       return null;
     });
     const { steps, updatedDescription, metadata } = await buildWorkoutSteps(workout, profile ?? undefined, capabilitySummary);
+    const garminSyncContract = previewGarminSyncContract({ ...workout, steps, description: updatedDescription });
 
     await db.update(pulsePlannedWorkouts)
-      .set({ steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) })
+      .set({ steps, description: updatedDescription, garminSyncContract, ...workoutMetadataUpdate(metadata) })
       .where(eq(pulsePlannedWorkouts.id, id));
 
-    return { workout: { ...workout, steps, description: updatedDescription, ...workoutMetadataUpdate(metadata) } };
+    return { workout: { ...workout, steps, description: updatedDescription, garminSyncContract, ...workoutMetadataUpdate(metadata) } };
   });
 
   // ─── Garmin Connect workout sync ──────────────────────────────────────────────
@@ -654,12 +669,14 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         return null;
       });
       const { steps, updatedDescription, metadata } = await buildWorkoutSteps(workout, profile ?? undefined, capabilitySummary);
+      const garminSyncContract = previewGarminSyncContract({ ...workout, steps, description: updatedDescription });
       const metadataUpdate = workoutMetadataUpdate(metadata);
       await db.update(pulsePlannedWorkouts)
-        .set({ steps, description: updatedDescription, ...metadataUpdate })
+        .set({ steps, description: updatedDescription, garminSyncContract, ...metadataUpdate })
         .where(eq(pulsePlannedWorkouts.id, id));
       workout.steps = steps as typeof workout.steps;
       if (updatedDescription) workout.description = updatedDescription;
+      workout.garminSyncContract = garminSyncContract;
       workout.archetypeId = metadataUpdate.archetypeId;
       workout.difficultyLevel = metadataUpdate.difficultyLevel;
       workout.difficultyEnergySystem = metadataUpdate.difficultyEnergySystem;
@@ -674,6 +691,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           .set({
             garminWorkoutId: null,
             garminScheduledId: null,
+            garminSyncContract: null,
             executionStatus: null,
             executionNotes: null,
             executionMatchConfidence: null,
@@ -682,6 +700,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           .where(eq(pulsePlannedWorkouts.id, id));
         workout.garminWorkoutId = null;
         workout.garminScheduledId = null;
+        workout.garminSyncContract = null;
         workout.executionStatus = null;
         workout.executionNotes = null;
         workout.executionMatchConfidence = null;
@@ -1012,10 +1031,11 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         try {
           const { steps, updatedDescription, metadata } = await buildWorkoutSteps(w, profile ?? undefined, capabilitySummary);
           const metadataUpdate = workoutMetadataUpdate(metadata);
+          const garminSyncContract = previewGarminSyncContract({ ...w, steps, description: updatedDescription });
           await db.update(pulsePlannedWorkouts)
-            .set({ steps, description: updatedDescription, ...metadataUpdate })
+            .set({ steps, description: updatedDescription, garminSyncContract, ...metadataUpdate })
             .where(eq(pulsePlannedWorkouts.id, w.id));
-          return { ...w, steps, description: updatedDescription, ...metadataUpdate };
+          return { ...w, steps, description: updatedDescription, garminSyncContract, ...metadataUpdate };
         } catch (err) {
           app.log.warn(`[plan] Step generation failed for workout ${w.id}: ${err}`);
           return w;
@@ -1080,25 +1100,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         // Upload new workouts to Garmin
         for (const w of withSteps.filter(ww => !ww.garminWorkoutId)) {
           try {
-            const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, w).catch((err: unknown) => {
-              app.log.warn(`[plan-generate] Fueling guidance failed for ${w.id}: ${err}`);
-              return null;
-            });
-            const garminWorkout = buildGarminWorkoutJson(w, { fuelingGuidance });
-            const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
-            const garminWorkoutId = String(created.workoutId);
-            const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, w.plannedDate) as any;
-            const garminScheduledId = scheduled?.workoutScheduleId != null
-              ? String(scheduled.workoutScheduleId)
-              : scheduled?.id != null ? String(scheduled.id) : null;
-            const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
-            const executionNotes = garminScheduledId
-              ? 'Workout ist auf Garmin im Kalender geplant.'
-              : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
-            await db.update(pulsePlannedWorkouts)
-              .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
-              .where(eq(pulsePlannedWorkouts.id, w.id));
-            app.log.info(`[plan-generate] Synced workout ${w.id} → Garmin ${garminWorkoutId}`);
+            const updated = await uploadWorkoutToGarmin(app, userId, w, gc, 'plan-generate');
+            app.log.info(`[plan-generate] Synced workout ${w.id} → Garmin ${updated.garminWorkoutId}`);
           } catch (err) {
             app.log.warn(`[plan-generate] Garmin sync failed for ${w.id}: ${err}`);
           }
@@ -1682,10 +1685,11 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         try {
           const { steps, updatedDescription, metadata } = await buildWorkoutSteps(w, profile ?? undefined, capabilitySummary2);
           const metadataUpdate = workoutMetadataUpdate(metadata);
+          const garminSyncContract = previewGarminSyncContract({ ...w, steps, description: updatedDescription });
           await db.update(pulsePlannedWorkouts)
-            .set({ steps, description: updatedDescription, ...metadataUpdate })
+            .set({ steps, description: updatedDescription, garminSyncContract, ...metadataUpdate })
             .where(eq(pulsePlannedWorkouts.id, w.id));
-          return { ...w, steps, description: updatedDescription, ...metadataUpdate };
+          return { ...w, steps, description: updatedDescription, garminSyncContract, ...metadataUpdate };
         } catch {
           return w;
         }

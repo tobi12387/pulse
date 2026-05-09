@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Garmin-Sync bekommt einen gespeicherten Ausführungsvertrag
+
+- **Decision:** Pulse speichert pro geplantem Workout einen `garmin_sync_contract`, der den erzeugten Garmin-Payload vor dem Upload auf Wiederholungszahlen, Schrittstruktur und nicht unterstützte Zielarten prüft. Fehler blockieren den Upload sichtbar; degradierte Ziele wie Swim/Strength ohne HR-Ziel werden als Einschränkung in Plan und Modal gezeigt.
+- **Why:** Workouts auf Edge/Uhr müssen Vertrauen erzeugen. Wiederholungen dürfen nicht mehr als `null`/0 auf Garmin landen, und stille Ziel-Degradierungen sind in der UI verwirrend, wenn Pulse im Plan etwas anderes suggeriert als Garmin ausführen kann.
+- **Alternatives:** Nur Remote-Reparatur nach dem Upload behalten (zu spät); Sync-Fehler nur loggen (nicht alltagstauglich); Garmin-Targets komplett deaktivieren (verliert Nutzen für Run/Bike/Hike).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Saisonlinie bekommt ein explizites Load-Modell
 
 - **Decision:** Pulse erweitert die Saisonlinie um ein deterministisches Load-Modell mit aktueller Zielwoche, 4-Wochen-Forecast, Zielstunden/TSS, CTL-Ziel, Ramp-Cap, Deload-Rhythmus und Taper-Warnungen. Die Plan-Entscheidung zitiert `Saisonlast` als Evidence, statt nur Zielblock/Guardrails zu zeigen.

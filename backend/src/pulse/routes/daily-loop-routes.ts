@@ -116,6 +116,7 @@ function serializePlannedWorkout(workout: PulsePlannedWorkoutRow) {
     steps: (workout.steps ?? null) as WorkoutStep[] | null,
     garminWorkoutId: workout.garminWorkoutId ?? null,
     garminScheduledId: workout.garminScheduledId ?? null,
+    garminSyncContract: workout.garminSyncContract ?? null,
     status: workout.status as PulseWorkoutStatus,
     workoutFeedback: workout.workoutFeedback ?? null,
     complianceScore: workout.complianceScore ?? null,

@@ -1,5 +1,9 @@
 import type { WorkoutStep } from '../../db/pulse-schema.js';
-import type { PulseFuelingRecoveryGuidanceResponse } from '@coaching-os/shared/pulse';
+import type {
+  PulseFuelingRecoveryGuidanceResponse,
+  PulseGarminSyncContract,
+  PulseGarminSyncContractIssue,
+} from '@coaching-os/shared/pulse';
 
 const GARMIN_SPORT_TYPES: Record<string, { sportTypeId: number; sportTypeKey: string }> = {
   run:      { sportTypeId: 1,  sportTypeKey: 'running' },
@@ -258,4 +262,149 @@ export function garminWorkoutHasBrokenRepeatIterations(workout: unknown): boolea
       );
     });
   });
+}
+
+function contractIssue(issue: PulseGarminSyncContractIssue): PulseGarminSyncContractIssue {
+  return issue;
+}
+
+function payloadWorkoutSteps(payload: unknown): unknown[] {
+  const segments = typeof payload === 'object' && payload != null && Array.isArray((payload as { workoutSegments?: unknown }).workoutSegments)
+    ? (payload as { workoutSegments: Array<{ workoutSteps?: unknown }> }).workoutSegments
+    : [];
+  return segments.flatMap(segment => Array.isArray(segment.workoutSteps) ? segment.workoutSteps : []);
+}
+
+function isGarminRepeatGroup(step: unknown): step is Partial<GarminRepeatGroup> {
+  return typeof step === 'object' && step != null && (step as { type?: unknown }).type === 'RepeatGroupDTO';
+}
+
+function summarizeGarminContract(status: PulseGarminSyncContract['status'], issues: PulseGarminSyncContractIssue[]): string {
+  if (status === 'blocked') {
+    const first = issues.find(issue => issue.severity === 'error') ?? issues[0];
+    return first ? `Garmin-Sync blockiert: ${first.message}` : 'Garmin-Sync blockiert: Payload pruefen.';
+  }
+  if (status === 'degraded') {
+    const warnings = issues.filter(issue => issue.severity === 'warning');
+    const first = warnings[0] ?? issues[0];
+    return first ? `Garmin-Upload mit Einschränkung: ${first.message}` : 'Garmin-Upload mit Einschränkung.';
+  }
+  return 'Garmin-Payload bereit: Wiederholungen und Ziele sind pruefbar.';
+}
+
+export function buildGarminSyncContract(
+  workout: {
+    activityType: string;
+    steps: WorkoutStep[] | null;
+  },
+  payload: unknown,
+  options: { checkedAt?: string } = {},
+): PulseGarminSyncContract {
+  const issues: PulseGarminSyncContractIssue[] = [];
+  const steps = workout.steps ?? [];
+  if (steps.length === 0) {
+    issues.push(contractIssue({
+      code: 'empty_steps',
+      severity: 'error',
+      message: 'Workout hat keine strukturierten Schritte fuer Garmin.',
+    }));
+  }
+
+  steps.forEach((step, index) => {
+    if (step.durationMin <= 0) {
+      issues.push(contractIssue({
+        code: 'invalid_step_duration',
+        severity: 'error',
+        message: `Schritt ${index + 1} hat keine gueltige Dauer.`,
+        stepIndex: index,
+      }));
+    }
+  });
+
+  const repeatGroups = payloadWorkoutSteps(payload).filter(isGarminRepeatGroup);
+  const localRepeats = steps
+    .map((step, index) => ({ step, index }))
+    .filter(({ step }) => step.type === 'interval' && (step.reps ?? 0) > 1);
+
+  localRepeats.forEach(({ step, index }, repeatIndex) => {
+    const repeat = repeatGroups[repeatIndex];
+    if (!repeat) {
+      issues.push(contractIssue({
+        code: 'repeat_group_missing',
+        severity: 'error',
+        message: `Intervall-Schritt ${index + 1} hat Wiederholungen, aber keine Garmin-Repeat-Gruppe.`,
+        stepIndex: index,
+      }));
+      return;
+    }
+
+    const expected = step.reps ?? 0;
+    const numberOfIterations = repeat.numberOfIterations ?? null;
+    const endConditionValue = repeat.endConditionValue ?? null;
+    if (
+      numberOfIterations == null ||
+      numberOfIterations <= 0 ||
+      endConditionValue == null ||
+      endConditionValue <= 0 ||
+      numberOfIterations !== expected ||
+      endConditionValue !== expected ||
+      repeat.endCondition?.conditionTypeKey !== 'iterations'
+    ) {
+      issues.push(contractIssue({
+        code: 'repeat_iterations_invalid',
+        severity: 'error',
+        message: `Intervall-Schritt ${index + 1} wuerde mit ungueltiger Wiederholungszahl zu Garmin gehen.`,
+        stepIndex: index,
+      }));
+    }
+  });
+
+  if (!supportsGarminHrTargets(workout.activityType) && steps.some(step => step.zone > 1)) {
+    issues.push(contractIssue({
+      code: 'unsupported_hr_target',
+      severity: 'warning',
+      message: `${GARMIN_ACTIVITY_NAMES[workout.activityType] ?? workout.activityType} wird auf Garmin ohne HR-Zielzonen hochgeladen.`,
+    }));
+  }
+
+  const status: PulseGarminSyncContract['status'] = issues.some(issue => issue.severity === 'error')
+    ? 'blocked'
+    : issues.some(issue => issue.severity === 'warning')
+      ? 'degraded'
+      : 'ready';
+
+  return {
+    version: 1,
+    status,
+    payloadReady: status !== 'blocked',
+    checkedAt: options.checkedAt ?? new Date().toISOString(),
+    summary: summarizeGarminContract(status, issues),
+    issues,
+  };
+}
+
+export function previewGarminSyncContract(workout: {
+  activityType: string;
+  zone: number;
+  durationMin: number;
+  description: string | null;
+  steps: WorkoutStep[] | null;
+}): PulseGarminSyncContract {
+  return buildGarminSyncContract(workout, buildGarminWorkoutJson(workout));
+}
+
+export function buildGarminRemoteRepeatRepairContract(options: { checkedAt?: string } = {}): PulseGarminSyncContract {
+  const issues = [contractIssue({
+    code: 'remote_repeat_repair',
+    severity: 'warning',
+    message: 'Remote-Garmin-Workout hatte ungueltige Wiederholungen und wird neu aufgebaut.',
+  })];
+  return {
+    version: 1,
+    status: 'degraded',
+    payloadReady: true,
+    checkedAt: options.checkedAt ?? new Date().toISOString(),
+    summary: summarizeGarminContract('degraded', issues),
+    issues,
+  };
 }

@@ -24,6 +24,32 @@ export type WorkoutExecutionStatus =
   | 'missed'
   | 'replaced_or_off_plan';
 
+export type PulseGarminSyncContractStatus = 'ready' | 'degraded' | 'blocked';
+export type PulseGarminSyncContractSeverity = 'info' | 'warning' | 'error';
+export type PulseGarminSyncContractIssueCode =
+  | 'repeat_iterations_invalid'
+  | 'repeat_group_missing'
+  | 'unsupported_hr_target'
+  | 'empty_steps'
+  | 'invalid_step_duration'
+  | 'remote_repeat_repair';
+
+export interface PulseGarminSyncContractIssue {
+  code: PulseGarminSyncContractIssueCode;
+  severity: PulseGarminSyncContractSeverity;
+  message: string;
+  stepIndex?: number;
+}
+
+export interface PulseGarminSyncContract {
+  version: 1;
+  status: PulseGarminSyncContractStatus;
+  payloadReady: boolean;
+  checkedAt: string;
+  summary: string;
+  issues: PulseGarminSyncContractIssue[];
+}
+
 export interface PulsePlannedWorkout {
   id: string;
   userId: string;
@@ -41,6 +67,7 @@ export interface PulsePlannedWorkout {
   steps: WorkoutStep[] | null;
   garminWorkoutId: string | null;
   garminScheduledId: string | null;
+  garminSyncContract: PulseGarminSyncContract | null;
   status: 'planned' | 'completed' | 'skipped';
   workoutFeedback: string | null;
   complianceScore: number | null;
