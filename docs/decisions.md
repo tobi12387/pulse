@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Planvariation muss im Workout selbst sichtbar werden
+
+- **Decision:** Wenn Pulse ein Wiederholungsmuster erkennt, variiert die Plan-Engine nicht nur intern Sportmix/Tage, sondern annotiert Workouts mit Trainingsarchetypen und einem sichtbaren `Variation zur Vorwoche`-Hinweis; kleine deterministische Dauer-/TSS-Nudges verhindern rein identische Einheiten.
+- **Why:** Tobi soll im Plan nachvollziehen koennen, warum eine Einheit genau so aussieht und ob Pulse wirklich gelernt hat. Eine Trace-Warnung allein hilft nicht im Alltag, wenn die konkrete Einheit weiterhin generisch wirkt oder auf Garmin wie dieselbe Einheit erscheint.
+- **Alternatives:** Nur Plan-Trace warnen (zu indirekt); Variation komplett dem LLM ueberlassen (nicht deterministisch genug); sofort ein grosses Workout-Library-UI bauen (groesserer Folgeslice).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Training Intelligence startet mit deterministischer Kontrollschicht
 
 - **Decision:** Der naechste Training-Intelligence-Slice baut zuerst Workout-Archetypen, Difficulty-Scoring, Athlete-Progression und Plan-Quality-Evaluation als deterministische Backend-Schicht, bevor Pulse externe Planbibliotheken oder komplexere Plan-Builder-UI nachbildet.

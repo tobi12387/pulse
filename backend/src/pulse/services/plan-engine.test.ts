@@ -362,6 +362,35 @@ describe('generateScientificWeekPlan', () => {
     expect(varied.map(w => w.activityType)).not.toEqual(baseline.map(w => w.activityType));
   });
 
+  it('makes repeated-week variation visible through archetypes and description notes', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 35,
+      atl: 30,
+      tsb: 8,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      planLearning: planLearning({
+        weekStart: '2026-05-04',
+        sportMix: {
+          bike: { sessions: 3, totalMinutes: 315, totalTss: 287 },
+          run: { sessions: 1, totalMinutes: 45, totalTss: 35 },
+        },
+        hardDays: [{ date: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 75 }],
+      }, ['repeated_sport_mix', 'repeated_hard_pattern']),
+    });
+
+    const descriptions = workouts.map(w => w.description).join(' ');
+    expect(descriptions).toContain('Archetyp');
+    expect(descriptions).toContain('Variation zur Vorwoche');
+    expect(workouts.filter(w => w.zone >= 4).map(w => w.description).join(' ')).toContain('Threshold Intervals');
+  });
+
   it('does not reduce density when learning has history but no actual issue flag', async () => {
     const workouts = await generateScientificWeekPlan({
       weekStart: '2026-05-04',
