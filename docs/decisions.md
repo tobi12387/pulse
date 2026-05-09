@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Eigene geplante Workouts werden als user-locked Plananker behandelt
+
+- **Decision:** Pulse speichert manuell angelegte geplante Workouts mit `origin = user` und `user_locked = true`, zeigt sie im Plan als eigene Einheit und schuetzt sie bei Plan-Regenerationen vor Loeschung oder Ueberschreiben. Die Einheit wird beim Anlegen wie normale geplante Workouts mit Beschreibung, Steps und optionalem Garmin-Sync vorbereitet.
+- **Why:** Tobi muss Touren wie eine 155-km-Rennradausfahrt selbst in Pulse planen koennen, damit die App um diese Realitaet herum plant, statt sie beim naechsten Generatorlauf zu verlieren. Garmin bleibt Ausfuehrungsziel, aber Pulse bleibt fachlich fuehrend.
+- **Alternatives:** Eigene Einheiten nur in der Beschreibung markieren (nicht maschinenlesbar); nur ueber Verfuegbarkeit blocken (keine konkrete Einheit, kein Garmin-Workout); alle manuellen Einheiten beim Generator wie normale Vorschlaege ersetzen (zerstoert explizite Nutzerabsicht).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Plan-Aenderungen ersetzen Garmin-Remote-Workouts statt sie zu behalten
 
 - **Decision:** Wenn eine geplante Einheit fachlich geaendert wird (Sportart, Zone, Dauer, Datum, Beschreibung oder Status), behandelt Pulse vorhandene Garmin-Vorlagen und Kalendertermine als stale: alte Schedule/Template-Objekte werden best-effort entfernt, lokale Garmin-Felder werden zurueckgesetzt und geplante Einheiten werden anschliessend mit neu erzeugter Beschreibung/Steps wieder zu Garmin synchronisiert. `skipped` entfernt nur remote und laedt nichts neu hoch.

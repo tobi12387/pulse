@@ -114,6 +114,8 @@ function serializePlannedWorkout(workout: PulsePlannedWorkoutRow) {
     status: workout.status as PulseWorkoutStatus,
     workoutFeedback: workout.workoutFeedback ?? null,
     complianceScore: workout.complianceScore ?? null,
+    origin: workout.origin ?? 'generated',
+    userLocked: workout.userLocked ?? false,
     completedActivityId: workout.completedActivityId ?? null,
     executionStatus: workout.executionStatus ?? (
       workout.garminScheduledId ? 'garmin_scheduled' : workout.garminWorkoutId ? 'garmin_template' : 'local_planned'

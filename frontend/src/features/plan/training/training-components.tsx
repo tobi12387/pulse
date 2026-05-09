@@ -188,6 +188,14 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
               border: `1px solid ${ZONE_COLOR[w.zone] ?? 'var(--border)'}`,
               borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
             }}>Z{w.zone}</span>
+            {w.origin === 'user' && (
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
+                color: 'var(--accent)',
+                border: '1px solid rgba(94,230,207,0.45)',
+                borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
+              }}>Eigene</span>
+            )}
             <ExecutionBadge workout={w} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', lineHeight: 1.35 }}>
