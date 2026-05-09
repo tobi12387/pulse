@@ -37,6 +37,7 @@ export const pulseKeys = {
   trainingAnalytics: (weeks: number) => ['pulse', 'training-analytics', weeks] as const,
   trainingCapabilities: (days: number) => ['pulse', 'training-capabilities', days] as const,
   healthState:      ['pulse', 'health-state'] as const,
+  todayOptions:     ['pulse', 'today-options'] as const,
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
   raceCommand:      ['pulse', 'race-command'] as const,
@@ -67,6 +68,7 @@ function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'trace'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
   void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
+  void qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
   void qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
   void qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.home });
@@ -812,6 +814,7 @@ export function useCreateHealthState() {
     mutationFn: pulseApi.healthState.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
       qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
@@ -826,6 +829,7 @@ export function useResolveHealthState() {
     mutationFn: (id: string) => pulseApi.healthState.resolve(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
       qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
@@ -840,6 +844,7 @@ export function useDeleteHealthState() {
     mutationFn: (id: string) => pulseApi.healthState.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.healthState });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
       qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
@@ -857,12 +862,22 @@ export function useTodayProposal() {
   });
 }
 
+export function useTodayOptions() {
+  return useQuery({
+    queryKey: pulseKeys.todayOptions,
+    queryFn: pulseApi.todayOptions.get,
+    staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
+  });
+}
+
 export function useAcceptTodayAdjustment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (workoutId: string) => pulseApi.todayAdjust.accept(workoutId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: pulseKeys.todayProposal });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       invalidatePulsePlanContextQueries(qc);
     },
   });

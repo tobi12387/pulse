@@ -1,4 +1,5 @@
 import type { PulseFitnessLoad } from './daily-loop.js';
+import type { PulseActivityType } from './activity.js';
 import type { PulseProfileProvenanceView } from './profile.js';
 import type { PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutFitLabel } from './training.js';
 
@@ -58,6 +59,44 @@ export interface PulsePlanDecision {
   targetSessionCount: number;
   primaryGoal: string | null;
   reasons: string[];
+}
+
+export type PulseTodayOptionsState =
+  | 'completed_activity'
+  | 'planned_workout'
+  | 'unplanned_trainable'
+  | 'recovery_protect';
+
+export type PulseTodayOptionKind =
+  | 'workout'
+  | 'rest'
+  | 'recovery'
+  | 'fueling'
+  | 'feedback'
+  | 'skills';
+
+export interface PulseTodayOption {
+  id: string;
+  kind: PulseTodayOptionKind;
+  priority: 'primary' | 'secondary' | 'support';
+  title: string;
+  detail: string;
+  cta: string;
+  targetPath: string;
+  evidence: string[];
+  activityType?: PulseActivityType;
+  zone?: number;
+  durationMin?: number;
+  archetypeId?: string | null;
+  capabilityFit?: PulseWorkoutFitLabel | null;
+}
+
+export interface PulseTodayOptionsResponse {
+  date: string;
+  state: PulseTodayOptionsState;
+  summary: string;
+  options: PulseTodayOption[];
+  signature: string;
 }
 
 export interface PulsePlanSportMixEntry {
