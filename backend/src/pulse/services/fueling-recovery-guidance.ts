@@ -45,6 +45,19 @@ export interface FuelingRecoveryRaceInput {
   daysUntil: number;
 }
 
+export interface FuelingToleranceLogInput {
+  date: string;
+  context?: string | null;
+  activityType?: FuelingActivityType | string | null;
+  durationMin?: number | null;
+  carbsG?: number | null;
+  drinksMl?: number | null;
+  bottles750Ml?: number | null;
+  powderG?: number | null;
+  giComfort?: 'ok' | 'mild_issue' | 'issue' | string | null;
+  notes?: string | null;
+}
+
 export type FuelingRecoveryGuidanceItem = PulseFuelingRecoveryGuidanceItem;
 export type FuelingRecoveryEvidence = PulseFuelingRecoveryEvidence;
 export type FuelingRecoveryGuidance = PulseFuelingRecoveryGuidanceResponse;
@@ -55,6 +68,7 @@ export interface BuildFuelingRecoveryGuidanceInput {
   profile?: FuelingRecoveryProfileInput | null;
   recovery?: FuelingRecoveryRecoveryInput | null;
   race?: FuelingRecoveryRaceInput | null;
+  fuelingHistory?: FuelingToleranceLogInput[];
 }
 
 function activityLabel(activityType: FuelingActivityType): string {
@@ -127,11 +141,84 @@ function recoveryCautions(recovery: FuelingRecoveryRecoveryInput | null | undefi
   return cautions.length > 0 ? cautions : ['Recovery schwach: Fueling einfach halten und Nachbereitung priorisieren.'];
 }
 
+function relevantFuelingHistory(logs: FuelingToleranceLogInput[] | undefined): FuelingToleranceLogInput[] {
+  return (logs ?? [])
+    .filter(log => log.context === 'during' || log.context == null)
+    .filter(log =>
+      (log.durationMin ?? 0) >= 120
+      || (log.carbsG ?? 0) > 0
+      || (log.powderG ?? 0) > 0
+      || (log.bottles750Ml ?? 0) > 0,
+    )
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function carbsPerHour(log: FuelingToleranceLogInput): number | null {
+  if (log.carbsG == null || log.durationMin == null || log.durationMin <= 0) return null;
+  return Math.round(log.carbsG / (log.durationMin / 60));
+}
+
+function bottleText(log: FuelingToleranceLogInput): string | null {
+  if (log.bottles750Ml == null || log.bottles750Ml <= 0) return null;
+  return `${log.bottles750Ml} x 750 ml`;
+}
+
+function powderText(log: FuelingToleranceLogInput): string | null {
+  if (log.powderG == null || log.powderG <= 0) return null;
+  return `${Math.round(log.powderG)} g Pulver`;
+}
+
+function summarizeFuelingTolerance(logs: FuelingToleranceLogInput[] | undefined): {
+  item: FuelingRecoveryGuidanceItem | null;
+  evidence: FuelingRecoveryEvidence | null;
+} {
+  const relevant = relevantFuelingHistory(logs);
+  const latestIssue = relevant.find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue');
+  const latestOk = relevant.find(log => log.giComfort === 'ok');
+  const log = latestIssue ?? latestOk ?? null;
+  if (!log) return { item: null, evidence: null };
+
+  const cph = carbsPerHour(log);
+  const parts = [
+    cph != null ? `${cph} g/h` : null,
+    bottleText(log),
+    powderText(log),
+  ].filter(Boolean);
+  const basis = parts.length > 0 ? ` bei ca. ${parts.join(', ')}` : '';
+
+  if (latestIssue) {
+    return {
+      item: {
+        id: 'during-fueling-tolerance',
+        text: `Toleranz-Lernen: ${log.date} gab es Magen-/GI-Thema${basis}. Naechste lange Einheit frueh und gleichmaessig zufuehren, mit unterer bis mittlerer Range starten und spaete Notfall-Snacks nicht als Standard einplanen.`,
+      },
+      evidence: {
+        label: 'Fueling-Toleranz',
+        value: `${log.date}: ${log.giComfort}${basis}`,
+        status: 'caution',
+      },
+    };
+  }
+
+  return {
+    item: {
+      id: 'during-fueling-tolerance',
+      text: `Toleranz-Lernen: letzter langer Fueling-Log war vertraeglich${basis}. Diese Strategie als Ausgangspunkt nutzen und nur kleinen Schritt veraendern.`,
+    },
+    evidence: {
+      label: 'Fueling-Toleranz',
+      value: `${log.date}: vertraeglich${basis}`,
+      status: 'supporting',
+    },
+  };
+}
+
 function shouldShowGuidance(input: BuildFuelingRecoveryGuidanceInput): boolean {
   const { workout, recovery, race } = input;
   if (!input.preferences.fuelingEnabled) return false;
   if (weakRecovery(recovery)) return true;
   if (raceWeek(race)) return true;
+  if (summarizeFuelingTolerance(input.fuelingHistory).evidence?.status === 'caution') return true;
   if (!isEnduranceFuelingSport(workout.activityType)) return workout.durationMin >= 75 || workout.zone >= 3;
   return workout.durationMin >= 75 || (workout.zone >= 3 && workout.durationMin >= 60);
 }
@@ -189,6 +276,7 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
   const { workout, preferences, race } = input;
   const items: FuelingRecoveryGuidanceItem[] = [];
   const carbs = carbRange(input, isWeakRecovery);
+  const tolerance = summarizeFuelingTolerance(input.fuelingHistory);
 
   if (carbs) {
     const portion = buildCarbPortionEquivalent({
@@ -216,6 +304,10 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
       id: 'during-water',
       text: 'Wasser nach Durst reicht; bei Hitze oder viel Schweiß kleine Elektrolytmenge erwägen.',
     });
+  }
+
+  if (tolerance.item && workout.durationMin >= 75 && isEnduranceFuelingSport(workout.activityType)) {
+    items.push(tolerance.item);
   }
 
   const bicarbText = buildMnstryBicarbProductText({
@@ -274,6 +366,7 @@ function buildAfter(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: bo
 
 export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidanceInput): FuelingRecoveryGuidance {
   const { workout, preferences, recovery, race } = input;
+  const fuelingTolerance = summarizeFuelingTolerance(input.fuelingHistory);
   const evidence: FuelingRecoveryEvidence[] = [{
     label: 'Workout',
     value: `${workout.durationMin} min Zone ${workout.zone}`,
@@ -281,6 +374,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
   }];
   const recoveryEvidence = evidenceForRecovery(recovery);
   if (recoveryEvidence) evidence.push(recoveryEvidence);
+  if (fuelingTolerance.evidence) evidence.push(fuelingTolerance.evidence);
   if (raceWeek(race) && race) {
     evidence.push({
       label: 'Race Context',

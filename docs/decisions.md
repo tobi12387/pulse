@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Fueling-Toleranz aus echten Logs beeinflusst kuenftige Guidance
+
+- **Decision:** Pulse nutzt During-Fueling-Logs mit GI-Komfort, 750-ml-Flaschen, Pulvergramm und Aktivitaetsdauer als Toleranzsignal fuer spaetere lange Einheiten. Die Guidance zeigt ein `Toleranz-Lernen` und Evidence an, statt alte Fueling-Daten nur historisch zu speichern.
+- **Why:** Tobis 155-km-Tour zeigte, dass Magen-/Energieprobleme erst nach vielen Stunden auftreten koennen und konkrete Mengen wie 300 g Pulver und vier Flaschen wichtig sind. Kuenftige Empfehlungen muessen diese Erfahrung sichtbar einpreisen, ohne daraus medizinische Praezision zu machen.
+- **Alternatives:** Fueling-Logs nur anzeigen (kein Lernnutzen); Carb-Range aggressiv automatisch senken (fachlich riskant, weil GI- und Energieprobleme nicht immer zu viel Fueling bedeuten); neues Schema fuer Toleranzscores bauen (zu gross fuer diesen Slice).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Planvariation muss im Workout selbst sichtbar werden
 
 - **Decision:** Wenn Pulse ein Wiederholungsmuster erkennt, variiert die Plan-Engine nicht nur intern Sportmix/Tage, sondern annotiert Workouts mit Trainingsarchetypen und einem sichtbaren `Variation zur Vorwoche`-Hinweis; kleine deterministische Dauer-/TSS-Nudges verhindern rein identische Einheiten.

@@ -78,6 +78,35 @@ describe('buildFuelingRecoveryGuidance', () => {
     expect(guidance.after.map(item => item.text).join(' ')).toContain('0,8-1,0 g/kg');
   });
 
+  it('uses prior GI and bottle logs to shape the next long-ride fueling guidance', () => {
+    const guidance = buildFuelingRecoveryGuidance({
+      workout: workout({ durationMin: 240, zone: 2, targetTss: 196 }),
+      preferences,
+      profile: { weightKg: 80 },
+      fuelingHistory: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 430,
+        carbsG: 300,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'mild_issue',
+        notes: 'Nach 100 km etwas Magenprobleme; Mars half nach ein paar Minuten.',
+      }],
+    });
+
+    const during = guidance.during.map(item => item.text).join(' ');
+    expect(during).toContain('Toleranz-Lernen');
+    expect(during).toContain('Magen');
+    expect(during).toContain('42 g/h');
+    expect(during).toContain('4 x 750 ml');
+    expect(guidance.evidence).toContainEqual(expect.objectContaining({
+      label: 'Fueling-Toleranz',
+      status: 'caution',
+    }));
+  });
+
   it('calibrates Ministry anchors to Tobi confirmed MNSTRY products without treating BICARB as an everyday gel', () => {
     const guidance = buildFuelingRecoveryGuidance({
       workout: workout({ durationMin: 180, zone: 3, targetTss: 145 }),
