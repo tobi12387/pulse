@@ -178,6 +178,81 @@ function enrichWorkoutExecutionState(
   };
 }
 
+type PlannedWorkoutRow = typeof pulsePlannedWorkouts.$inferSelect;
+type GarminClient = Awaited<ReturnType<typeof getGarminClient>>;
+
+function extractGarminScheduledId(scheduled: unknown): string | null {
+  if (!scheduled || typeof scheduled !== 'object') return null;
+  const row = scheduled as { workoutScheduleId?: unknown; scheduledWorkoutId?: unknown; id?: unknown };
+  const id = row.workoutScheduleId ?? row.scheduledWorkoutId ?? row.id;
+  return id != null ? String(id) : null;
+}
+
+function hasGarminRemote(workout: Pick<PlannedWorkoutRow, 'garminWorkoutId' | 'garminScheduledId'>): boolean {
+  return Boolean(workout.garminWorkoutId || workout.garminScheduledId);
+}
+
+async function removeGarminRemoteForWorkout(
+  app: FastifyInstance,
+  gc: GarminClient,
+  workout: Pick<PlannedWorkoutRow, 'id' | 'garminWorkoutId' | 'garminScheduledId'>,
+  context: string,
+): Promise<void> {
+  if (workout.garminScheduledId) {
+    await garminApi.deleteWorkoutSchedule(gc, workout.garminScheduledId).catch((err: unknown) => {
+      app.log.warn(`[${context}] Failed to remove Garmin schedule ${workout.garminScheduledId} for ${workout.id}: ${err}`);
+    });
+  }
+  if (workout.garminWorkoutId) {
+    await garminApi.deleteWorkout(gc, workout.garminWorkoutId).catch((err: unknown) => {
+      app.log.warn(`[${context}] Failed to remove Garmin workout ${workout.garminWorkoutId} for ${workout.id}: ${err}`);
+    });
+  }
+}
+
+async function uploadWorkoutToGarmin(
+  app: FastifyInstance,
+  userId: string,
+  workout: PlannedWorkoutRow,
+  gc: GarminClient,
+  context: string,
+): Promise<PlannedWorkoutRow> {
+  const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, workout).catch((err: unknown) => {
+    app.log.warn(`[${context}] Fueling guidance failed for ${workout.id}: ${err}`);
+    return null;
+  });
+  const garminWorkout = buildGarminWorkoutJson(workout, { fuelingGuidance });
+  const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
+  const garminWorkoutId = String(created.workoutId);
+  const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as unknown;
+  const garminScheduledId = extractGarminScheduledId(scheduled);
+  const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
+  const executionNotes = garminScheduledId
+    ? 'Workout ist auf Garmin im Kalender geplant.'
+    : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
+
+  const [updated] = await db.update(pulsePlannedWorkouts)
+    .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
+    .where(eq(pulsePlannedWorkouts.id, workout.id))
+    .returning();
+
+  return updated ?? { ...workout, garminWorkoutId, garminScheduledId, executionStatus, executionNotes };
+}
+
+async function replaceGarminRemoteForWorkout(
+  app: FastifyInstance,
+  userId: string,
+  previousWorkout: PlannedWorkoutRow,
+  workout: PlannedWorkoutRow,
+  context: string,
+): Promise<PlannedWorkoutRow> {
+  const gc = await getGarminClient();
+  if (hasGarminRemote(previousWorkout)) {
+    await removeGarminRemoteForWorkout(app, gc, previousWorkout, context);
+  }
+  return uploadWorkoutToGarmin(app, userId, workout, gc, context);
+}
+
 export async function registerPulseTrainingRoutes(app: FastifyInstance) {
   // ─── Training plan ────────────────────────────────────────────────────────────
   app.get('/plan', { onRequest: [app.authenticate] }, async (req) => {
@@ -241,30 +316,96 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     if (Object.keys(parsed.data).length === 0) return reply.status(400).send({ error: 'Ungültige Eingabe' });
     const userId = req.user.sub;
     const { id } = req.params as { id: string };
+    const [current] = await db.select().from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
+    if (!current) return reply.status(404).send({ error: 'Not found' });
+
+    const activityTypeChanged = parsed.data.activityType !== undefined && parsed.data.activityType !== current.activityType;
+    const zoneChanged = parsed.data.zone !== undefined && parsed.data.zone !== current.zone;
+    const durationChanged = parsed.data.durationMin !== undefined && parsed.data.durationMin !== current.durationMin;
+    const plannedDateChanged = parsed.data.plannedDate !== undefined && parsed.data.plannedDate !== current.plannedDate;
+    const statusChanged = parsed.data.status !== undefined && parsed.data.status !== current.status;
+    const descriptionChanged = parsed.data.description !== undefined && parsed.data.description !== current.description;
     const changesPrescription =
-      parsed.data.activityType !== undefined ||
-      parsed.data.zone !== undefined ||
-      parsed.data.durationMin !== undefined;
-    let targetTss: number | undefined;
-    if (parsed.data.zone !== undefined || parsed.data.durationMin !== undefined) {
-      const [current] = await db.select({
-        zone: pulsePlannedWorkouts.zone,
-        durationMin: pulsePlannedWorkouts.durationMin,
-      }).from(pulsePlannedWorkouts)
-        .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)));
-      if (!current) return reply.status(404).send({ error: 'Not found' });
-      targetTss = tssFromWorkout(parsed.data.durationMin ?? current.durationMin, parsed.data.zone ?? current.zone);
+      activityTypeChanged ||
+      zoneChanged ||
+      durationChanged;
+    const changesGarminRelevant =
+      changesPrescription ||
+      plannedDateChanged ||
+      statusChanged ||
+      descriptionChanged;
+    const nextStatus = parsed.data.status ?? current.status;
+    const nextActivityType = parsed.data.activityType ?? current.activityType;
+    const nextZone = parsed.data.zone ?? current.zone;
+    const nextDurationMin = parsed.data.durationMin ?? current.durationMin;
+    const targetTss = zoneChanged || durationChanged
+      ? tssFromWorkout(nextDurationMin, nextZone)
+      : undefined;
+
+    let generatedDetail: { steps: PlannedWorkoutRow['steps']; description: string | null } | null = null;
+    if (changesPrescription && nextStatus === 'planned') {
+      const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+      const detailSource = {
+        ...current,
+        activityType: nextActivityType,
+        zone: nextZone,
+        durationMin: nextDurationMin,
+        description: parsed.data.description !== undefined ? parsed.data.description : null,
+      };
+      const { steps, updatedDescription } = await buildWorkoutSteps(detailSource, profile ?? undefined);
+      generatedDetail = { steps, description: updatedDescription };
     }
+
     const [updated] = await db.update(pulsePlannedWorkouts)
       .set({
         ...parsed.data,
-        ...(changesPrescription ? { steps: null } : {}),
+        ...(changesPrescription
+          ? generatedDetail
+            ? { steps: generatedDetail.steps, description: generatedDetail.description }
+            : { steps: null }
+          : {}),
         ...(targetTss !== undefined ? { targetTss } : {}),
+        ...(changesGarminRelevant ? {
+          garminWorkoutId: null,
+          garminScheduledId: null,
+          executionStatus: null,
+          executionNotes: null,
+          executionMatchConfidence: null,
+          executionMatchedAt: null,
+        } : {}),
       })
       .where(and(eq(pulsePlannedWorkouts.id, id), eq(pulsePlannedWorkouts.userId, userId)))
       .returning();
     if (!updated) return reply.status(404).send({ error: 'Not found' });
-    return { workout: updated };
+
+    let finalWorkout = updated;
+    let garminSync: { status: 'unchanged' | 'removed' | 'synced' | 'failed'; error?: string } = { status: 'unchanged' };
+    if (changesGarminRelevant) {
+      if (nextStatus === 'skipped') {
+        garminSync = { status: 'removed' };
+        if (hasGarminRemote(current)) {
+          try {
+            const gc = await getGarminClient();
+            await removeGarminRemoteForWorkout(app, gc, current, 'plan-workout-update');
+          } catch (err) {
+            app.log.warn(`[plan-workout-update] Garmin cleanup failed for skipped workout ${id}: ${err}`);
+            garminSync = { status: 'failed', error: String(err).slice(0, 120) };
+          }
+        }
+      } else if (nextStatus === 'planned') {
+        try {
+          finalWorkout = await replaceGarminRemoteForWorkout(app, userId, current, updated, 'plan-workout-update');
+          garminSync = { status: 'synced' };
+        } catch (err) {
+          app.log.warn(`[plan-workout-update] Garmin resync failed for ${id}: ${err}`);
+          garminSync = { status: 'failed', error: String(err).slice(0, 120) };
+        }
+      }
+    }
+
+    await invalidateUser(userId);
+    return { workout: finalWorkout, garminSync };
   });
 
   app.post('/plan/workout/:id/detail', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -306,37 +447,33 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
 
     try {
       const gc = await getGarminClient();
+      if (hasGarminRemote(workout)) {
+        await removeGarminRemoteForWorkout(app, gc, workout, 'sync-garmin');
+        await db.update(pulsePlannedWorkouts)
+          .set({
+            garminWorkoutId: null,
+            garminScheduledId: null,
+            executionStatus: null,
+            executionNotes: null,
+            executionMatchConfidence: null,
+            executionMatchedAt: null,
+          })
+          .where(eq(pulsePlannedWorkouts.id, id));
+        workout.garminWorkoutId = null;
+        workout.garminScheduledId = null;
+        workout.executionStatus = null;
+        workout.executionNotes = null;
+        workout.executionMatchConfidence = null;
+        workout.executionMatchedAt = null;
+      }
 
-      const fuelingGuidance = await buildFuelingRecoveryGuidanceForPlannedWorkout(userId, workout).catch((err: unknown) => {
-        app.log.warn(`[sync-garmin] Fueling guidance failed for ${workout.id}: ${err}`);
-        return null;
-      });
-      const garminWorkout = buildGarminWorkoutJson(workout, { fuelingGuidance });
-      const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
-      const garminWorkoutId = String(created.workoutId);
-
-      const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as any;
-      const garminScheduledId = scheduled?.workoutScheduleId != null
-        ? String(scheduled.workoutScheduleId)
-        : scheduled?.scheduledWorkoutId != null
-          ? String(scheduled.scheduledWorkoutId)
-          : null;
-
-      const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
-      const executionNotes = garminScheduledId
-        ? 'Workout ist auf Garmin im Kalender geplant.'
-        : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
-
-      const [updated] = await db.update(pulsePlannedWorkouts)
-        .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
-        .where(eq(pulsePlannedWorkouts.id, id))
-        .returning();
+      const updated = await uploadWorkoutToGarmin(app, userId, workout, gc, 'sync-garmin');
 
       return {
-        garminWorkoutId,
-        garminScheduledId,
-        date: workout.plannedDate,
-        workout: updated ? enrichWorkoutExecutionState(updated, [], new Date()) : null,
+        garminWorkoutId: updated.garminWorkoutId,
+        garminScheduledId: updated.garminScheduledId,
+        date: updated.plannedDate,
+        workout: enrichWorkoutExecutionState(updated, [], new Date()),
       };
     } catch (err) {
       app.log.error(`Garmin workout sync failed: ${err}`);

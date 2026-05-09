@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Plan-Aenderungen ersetzen Garmin-Remote-Workouts statt sie zu behalten
+
+- **Decision:** Wenn eine geplante Einheit fachlich geaendert wird (Sportart, Zone, Dauer, Datum, Beschreibung oder Status), behandelt Pulse vorhandene Garmin-Vorlagen und Kalendertermine als stale: alte Schedule/Template-Objekte werden best-effort entfernt, lokale Garmin-Felder werden zurueckgesetzt und geplante Einheiten werden anschliessend mit neu erzeugter Beschreibung/Steps wieder zu Garmin synchronisiert. `skipped` entfernt nur remote und laedt nichts neu hoch.
+- **Why:** Tobi fuehrt die Workouts auf Uhr/Edge aus; eine geaenderte Pulse-Einheit darf dort nicht als alte Sportart, alte Beschreibung oder altes Intervallprofil liegen bleiben. Die lokale Planbearbeitung bleibt dennoch fuehrend: falls Garmin nicht erreichbar ist, bleibt die Pulse-Aenderung gespeichert und die Einheit faellt sichtbar auf local-planned zurueck.
+- **Alternatives:** Nur `steps = null` setzen und manuellen Resync verlangen (veraltet auf Garmin und in der UI verwirrend); alte Garmin-IDs behalten (stale Confidence); PATCH hart fehlschlagen lassen, wenn Garmin nicht erreichbar ist (blockiert Planarbeit wegen eines externen Sync-Problems).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-06 — Fueling-Guidance rechnet fuer Tobi in 750-ml-Flaschen
 
 - **Decision:** MNSTRY-During-Guidance fuer Tobi verwendet 750-ml-Flaschen als Standard und nennt POWER-CARB-Pulvergramm pro Flasche sowie Gesamtpulver fuer die Einheit. 500-ml-Flaschen bleiben aus Tobis produktspezifischer Copy raus.
