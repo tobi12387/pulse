@@ -70,6 +70,32 @@ const dataStatus = {
   },
 };
 
+function capabilitySummary(days = 90) {
+  return {
+    generatedAt: `${today}T08:00:00.000Z`,
+    lookbackDays: days,
+    levels: [
+      { energySystem: 'long_endurance', label: 'Long Endurance', level: 4.3, confidence: 'medium', evidence: ['lange Ausdauer erkannt'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'endurance', label: 'Endurance', level: 3.8, confidence: 'medium', evidence: ['ruhige Ausdauer stabil'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'tempo', label: 'Tempo', level: 3.1, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'threshold', label: 'Threshold', level: 3.7, confidence: 'medium', evidence: ['Schwelle solide abgeschlossen'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'vo2', label: 'VO2', level: 2.5, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'anaerobic', label: 'Anaerobic', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'recovery', label: 'Recovery', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'strength', label: 'Strength', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+    ],
+    signals: ['quality_progress'],
+    recommendations: ['Progression ruhig halten und Ausfuehrung weiter bewerten.'],
+    fitLegend: {
+      recovery: 'Aktive Erholung',
+      maintenance: 'Erhaltung',
+      productive: 'Produktiv',
+      stretch: 'Stretch',
+      too_hard_today: 'Zu hart heute',
+    },
+  };
+}
+
 const coverageDay = {
   date: today,
   dailyMetrics: {
@@ -577,8 +603,10 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       zoneDistribution: [],
       vo2maxTrend: [],
       rpeByZone: { totalRated: 0, zones: [] },
+      capabilitySummary: capabilitySummary(Number(searchParams.get('weeks') ?? 12) * 7),
     };
   }
+  if (pathname === '/api/pulse/training-capabilities') return { capabilitySummary: capabilitySummary(Number(searchParams.get('days') ?? 90)) };
   if (pathname === '/api/pulse/strength/sessions') return { sessions: [], trends: [] };
   if (pathname === '/api/pulse/mental/themes') return { themes: [], totalCheckins: 0 };
   if (pathname === '/api/pulse/mental/load-overlay') {

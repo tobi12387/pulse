@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/Skeleton';
+import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { PulsePlanDecision, PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
 import { formatPlanDate } from '../plan-utils';
 import { ACTIVITY_LABEL } from '../training/training-components';
@@ -185,6 +186,12 @@ export function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | nu
             items={restDayRationale.map(item => `${item.date}: ${item.reason}`)}
             color="var(--amber)"
           />
+        </div>
+      )}
+
+      {trace.inputSnapshot.trainingCapabilities && (
+        <div style={{ marginBottom: 12 }}>
+          <TrainingCapabilityCard summary={trace.inputSnapshot.trainingCapabilities} framed={false} />
         </div>
       )}
 

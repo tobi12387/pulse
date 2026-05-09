@@ -197,6 +197,13 @@
       "when": 1778340900000,
       "tag": "0027_nutrition_practical_fueling",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1778341800000,
+      "tag": "0028_training_capability_levels",
+      "breakpoints": true
     }
   ]
 }

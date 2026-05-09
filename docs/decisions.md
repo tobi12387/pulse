@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Capability Levels werden als persistente Trainingsgrundlage eingefuehrt
+
+- **Decision:** Pulse speichert rolling Capability Levels pro Trainingssystem (`endurance`, `long_endurance`, `tempo`, `threshold`, `vo2`, `anaerobic`, `recovery`, `strength`) und nutzt daraus deterministische Fit-Labels wie `Erhaltung`, `Produktiv`, `Stretch` und `Zu hart heute` fuer Plan-Entscheidungen und Data-/Plan-Evidence.
+- **Why:** Tobis wiederkehrendes Problem waren gleichfoermige oder nicht datenbasierte Trainingsempfehlungen. Ein persistenter, testbarer Level-Layer macht abgeschlossene Einheiten, Fehlversuche, lange ungeplante Garmin-Aktivitaeten, RPE und Compliance als Planungsgrund sichtbar, ohne Home weiter zu ueberladen.
+- **Alternatives:** Level nur ad hoc im Frontend berechnen (nicht belastbar und nicht wiederverwendbar); direkt eine grosse Workout-Bibliothek bauen (Story 2, braucht diese Grundlage); Fit komplett dem LLM ueberlassen (zu zufaellig und schwer testbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Benchmark gegen Top-Trainingstools priorisiert Faehigkeiten statt Plan-Kopien
 
 - **Decision:** Pulse nutzt TrainerRoad, TrainingPeaks, JOIN, Intervals.icu und WKO als Benchmark fuer Faehigkeitsluecken, kopiert aber keine proprietaeren Workout- oder Planinhalte. Die naechsten Training-PRs priorisieren Capability Levels, Workout-Difficulty-Fit, TrainNow-Optionen, Szenario-Preview, Jahreslastmodell, Garmin-Sync-Vertrag und Limiterspezifitaet.

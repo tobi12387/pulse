@@ -11,7 +11,7 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse,
+  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulseTrainingCapabilitySummary,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -376,8 +376,14 @@ export const pulseApi = {
         totalRated: number;
         zones: Array<{ zone: number; avgRpe: number | null; count: number; previousAvgRpe: number | null; drift: number | null }>;
       };
+      capabilitySummary: PulseTrainingCapabilitySummary;
     }> =>
       request(`/training-analytics?weeks=${weeks}`),
+  },
+
+  trainingCapabilities: {
+    get: (days = 90): Promise<{ capabilitySummary: PulseTrainingCapabilitySummary }> =>
+      request(`/training-capabilities?days=${days}`),
   },
 
   correlations: {

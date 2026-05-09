@@ -13,6 +13,7 @@ import {
   pulsePlannedWorkouts,
   pulsePushSubscriptions,
   pulseSleepSessions,
+  pulseTrainingCapabilityLevels,
   pulseUserProfile,
   pulseWeightLog,
 } from '../db/pulse-schema.js';
@@ -137,6 +138,7 @@ afterAll(async () => {
     await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
     await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
     await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    await db.delete(pulseTrainingCapabilityLevels).where(eq(pulseTrainingCapabilityLevels.userId, userId));
     await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
     await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
     await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));
@@ -155,6 +157,7 @@ beforeEach(async () => {
   await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
   await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
   await db.delete(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+  await db.delete(pulseTrainingCapabilityLevels).where(eq(pulseTrainingCapabilityLevels.userId, userId));
   await db.delete(pulsePushSubscriptions).where(eq(pulsePushSubscriptions.userId, userId));
   await db.delete(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
   await db.delete(pulseCoachSessions).where(eq(pulseCoachSessions.userId, userId));

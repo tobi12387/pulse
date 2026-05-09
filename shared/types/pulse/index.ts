@@ -6,3 +6,4 @@ export * from './mental.js';
 export * from './plan.js';
 export * from './profile.js';
 export * from './push.js';
+export * from './training.js';

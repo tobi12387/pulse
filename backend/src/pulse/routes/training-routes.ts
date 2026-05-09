@@ -46,6 +46,8 @@ import {
 } from '../services/plan-route-helpers.js';
 import { buildSeasonStrategy } from '../services/season-strategy.js';
 import { buildRaceCommandSummary } from '../services/race-command.js';
+import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
+import { summarizePlanCapabilityFit } from '../services/training-capabilities.js';
 import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import { buildGarminWorkoutJson } from '../services/garmin-workout.js';
@@ -907,12 +909,20 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     );
 
     const traceWorkouts = mergeRegeneratedWorkoutsForTrace(preservedWorkoutRows, withSteps);
-    const finalPlanDecision = reconcilePlanDecisionWithWorkouts({
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+    const finalPlanDecisionBase = reconcilePlanDecisionWithWorkouts({
       decision: planDecision,
       weekStart: weekStartStr,
       availableDays,
       workouts: traceWorkouts,
     });
+    const capabilityReasons = capabilitySummary ? summarizePlanCapabilityFit(traceWorkouts, capabilitySummary) : [];
+    const finalPlanDecision = capabilityReasons.length > 0
+      ? { ...finalPlanDecisionBase, reasons: [...finalPlanDecisionBase.reasons, ...capabilityReasons] }
+      : finalPlanDecisionBase;
     const planTracePayload = buildPlanTrace({
       weekStart: weekStartStr,
       phase,
@@ -941,6 +951,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       planDecision: finalPlanDecision,
       workouts: traceWorkouts,
       seasonStrategy,
+      trainingCapabilities: capabilitySummary,
     });
     const planTrace = await persistPlanTrace(app, {
       userId,
@@ -1428,12 +1439,20 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     );
 
     const traceWorkouts2 = mergeRegeneratedWorkoutsForTrace(preservedWorkoutRows2, workouts);
-    const finalPlanDecision2 = reconcilePlanDecisionWithWorkouts({
+    const capabilitySummary2 = await loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
+    const finalPlanDecisionBase2 = reconcilePlanDecisionWithWorkouts({
       decision: planDecision2,
       weekStart,
       availableDays: parsed.data.availableDays,
       workouts: traceWorkouts2,
     });
+    const capabilityReasons2 = capabilitySummary2 ? summarizePlanCapabilityFit(traceWorkouts2, capabilitySummary2) : [];
+    const finalPlanDecision2 = capabilityReasons2.length > 0
+      ? { ...finalPlanDecisionBase2, reasons: [...finalPlanDecisionBase2.reasons, ...capabilityReasons2] }
+      : finalPlanDecisionBase2;
     const planTracePayload = buildPlanTrace({
       weekStart,
       phase,
@@ -1462,6 +1481,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       planDecision: finalPlanDecision2,
       workouts: traceWorkouts2,
       seasonStrategy: seasonStrategy2,
+      trainingCapabilities: capabilitySummary2,
     });
     const planTrace = await persistPlanTrace(app, {
       userId,
@@ -1820,7 +1840,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since = new Date(Date.now() - weeks * 7 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
 
-    const [activities, profileRows] = await Promise.all([
+    const [activities, profileRows, capabilitySummary] = await Promise.all([
       db.select({
         id:               pulseActivities.id,
         startTime:        pulseActivities.startTime,
@@ -1835,6 +1855,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         .orderBy(pulseActivities.startTime),
       db.select({ ftpWatts: pulseUserProfile.ftpWatts })
         .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
+      loadTrainingCapabilitySummary(userId, { lookbackDays: Math.max(42, weeks * 7) }),
     ]);
 
     const ftp = profileRows[0]?.ftpWatts ?? null;
@@ -1952,7 +1973,15 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     });
     const totalRated = [...recentRpe.values()].reduce((sum, z) => sum + z.count, 0);
 
-    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone } };
+    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone }, capabilitySummary };
+  });
+
+  app.get('/training-capabilities', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { days?: string };
+    const lookbackDays = Math.min(180, Math.max(28, parseInt(q.days ?? '90', 10)));
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId, { lookbackDays });
+    return { capabilitySummary };
   });
 
   app.put('/activities/:id/equipment', { onRequest: [app.authenticate] }, async (req, reply) => {

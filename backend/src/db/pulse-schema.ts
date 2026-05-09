@@ -7,10 +7,13 @@ import type {
   EquipmentCategory,
   PulseActivityType,
   PulseCoachCommunicationStyle,
+  PulseCapabilityConfidence,
   PulseFuelingGuidanceStyle,
   PulsePlanDecision,
   PulsePlanTrace,
   PulsePushTopics,
+  PulseTrainingEnergySystem,
+  PulseTrainingProgressionSignal,
   WorkoutExecutionStatus,
 } from '@coaching-os/shared/pulse';
 
@@ -349,6 +352,23 @@ export const pulsePlanGenerations = pgTable('pulse_plan_generations', {
   createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow(),
 }, (t) => [
   index('idx_plan_generations_user_week').on(t.userId, t.weekStart, t.createdAt),
+]);
+
+// ─── Training capability levels ─────────────────────────────────────────────
+export const pulseTrainingCapabilityLevels = pgTable('pulse_training_capability_levels', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  userId:           uuid('user_id').notNull(),
+  energySystem:     varchar('energy_system', { length: 40 }).$type<PulseTrainingEnergySystem>().notNull(),
+  label:            varchar('label', { length: 80 }).notNull(),
+  level:            real('level').notNull().default(2),
+  confidence:       varchar('confidence', { length: 16 }).$type<PulseCapabilityConfidence>().notNull().default('low'),
+  evidence:         text('evidence').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  signals:          text('signals').array().$type<PulseTrainingProgressionSignal[]>().notNull().default(sql`ARRAY[]::TEXT[]`),
+  sourceWindowDays: integer('source_window_days').notNull().default(90),
+  updatedAt:        timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_training_capability_levels_user_system_uq').on(t.userId, t.energySystem),
+  index('pulse_training_capability_levels_user_updated_idx').on(t.userId, t.updatedAt),
 ]);
 
 // ─── Health states (illness, injury, fatigue, travel) ────────────────────────
