@@ -18,7 +18,7 @@ import {
 } from '../db/pulse-schema.js';
 import { hashPassword } from '../lib/auth.js';
 import type { FastifyInstance } from 'fastify';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { llmChat, llmComplete } from '../lib/llm.js';
 import { transcribeAudio } from '../lib/whisper.js';
 import { invalidateUser } from './lib/pulse-cache.js';
@@ -1698,6 +1698,112 @@ describe('POST /api/pulse/plan/generate', () => {
     expect(learning.variationComparedToLastWeek.length).toBeGreaterThan(0);
     expect(learning.executionReview?.signals).toContain('matched');
     expect(learning.executionReview?.learnedFromLastWeek.join(' ')).toContain('abgeglichen');
+  });
+
+  it('preserves user-locked planned workouts during regeneration', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 260,
+      maxHrBpm: 186,
+      weeklyHoursTarget: 8,
+      updatedAt: new Date(),
+    });
+    const [custom] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-06',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 420,
+      distanceKm: 155,
+      targetTss: 343,
+      description: 'Eigene 155-km-Tour',
+      origin: 'user',
+      userLocked: true,
+      status: 'planned',
+      garminWorkoutId: 'locked-garmin-workout',
+      garminScheduledId: 'locked-garmin-schedule',
+    }).returning();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/plan/generate',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { weekStart: '2026-05-04' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json<{ workouts: Array<{ id: string; plannedDate: string; origin?: string; userLocked?: boolean }> }>();
+    expect(body.workouts.find(workout => workout.id === custom!.id)).toMatchObject({
+      origin: 'user',
+      userLocked: true,
+    });
+    const rowsOnLockedDate = await db.select()
+      .from(pulsePlannedWorkouts)
+      .where(and(eq(pulsePlannedWorkouts.userId, userId), eq(pulsePlannedWorkouts.plannedDate, '2026-05-06')));
+    expect(rowsOnLockedDate).toHaveLength(1);
+    expect(rowsOnLockedDate[0]).toMatchObject({
+      id: custom!.id,
+      garminWorkoutId: 'locked-garmin-workout',
+      garminScheduledId: 'locked-garmin-schedule',
+    });
+  });
+});
+
+describe('POST /api/pulse/plan/workout', () => {
+  it('creates a user-locked workout with generated details and Garmin sync', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      updatedAt: new Date(),
+    });
+    vi.mocked(llmComplete).mockResolvedValueOnce(JSON.stringify({
+      steps: [
+        { type: 'warmup', durationMin: 15, zone: 1, description: 'Locker einrollen' },
+        { type: 'steady', durationMin: 390, zone: 2, description: 'Lange ruhige Tour' },
+        { type: 'cooldown', durationMin: 15, zone: 1, description: 'Ruhig ausrollen' },
+      ],
+      coachingNote: 'Lange eigene Tour mit Stopps konservativ in Z2 fahren.',
+    }));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/plan/workout',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        plannedDate: '2026-05-09',
+        activityType: 'bike',
+        distanceKm: 155,
+        expectedSpeedKmh: 22,
+        zone: 2,
+        description: '155 km Rennrad entspannt, ein paar Stopps',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json<{ workout: {
+      activityType: string;
+      durationMin: number;
+      distanceKm: number | null;
+      origin: string;
+      userLocked: boolean;
+      garminWorkoutId: string | null;
+      garminScheduledId: string | null;
+      description: string | null;
+      steps: unknown[] | null;
+    }; garminSync: { status: string } }>();
+    expect(body.workout.activityType).toBe('bike');
+    expect(body.workout.durationMin).toBe(423);
+    expect(body.workout.distanceKm).toBe(155);
+    expect(body.workout.origin).toBe('user');
+    expect(body.workout.userLocked).toBe(true);
+    expect(body.workout.steps?.length).toBeGreaterThan(0);
+    expect(body.workout.description).toContain('155 km Rennrad');
+    expect(body.workout.garminWorkoutId).toBe('12345');
+    expect(body.workout.garminScheduledId).toBe('67890');
+    expect(body.garminSync.status).toBe('synced');
+    expect(garminMocks.addWorkout).toHaveBeenCalledTimes(1);
   });
 });
 

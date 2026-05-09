@@ -4,7 +4,7 @@ import {
   useCheckinHistory, useCheckinToday,
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy,
+  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -29,7 +29,7 @@ import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
 import { PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { mentalImpact } from '@/features/mental/mental-impact';
-import type { PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -59,6 +59,7 @@ function Loading({ rows = 3 }: { rows?: number }) {
 
 type PlannedWorkout = PulsePlannedWorkout;
 type SourceChip = { label: string; targetPath?: string };
+const CUSTOM_ACTIVITY_TYPES: PulseActivityType[] = ['bike', 'run', 'hike', 'swim', 'strength', 'other'];
 
 function NextTrainingDecisionCard({
   nextWorkout,
@@ -68,6 +69,7 @@ function NextTrainingDecisionCard({
   mentalPlanImpact,
   onNavigate,
   onOpen,
+  onOpenCustom,
   onOpenAvailability,
   onOpenGenerator,
 }: {
@@ -78,6 +80,7 @@ function NextTrainingDecisionCard({
   mentalPlanImpact: string | null;
   onNavigate: (path: string) => void;
   onOpen: (workout: PlannedWorkout) => void;
+  onOpenCustom: () => void;
   onOpenAvailability: () => void;
   onOpenGenerator: () => void;
 }) {
@@ -100,6 +103,7 @@ function NextTrainingDecisionCard({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginTop: 12 }}>
           {[
             { label: 'Verfügbarkeit prüfen', onClick: onOpenAvailability, accent: false },
+            { label: 'Einheit hinzufügen', onClick: onOpenCustom, accent: false },
             { label: 'Plan generieren', onClick: onOpenGenerator, accent: false },
             {
               label: 'Coach fragen',
@@ -516,6 +520,146 @@ function AvailabilityEditor({
   );
 }
 
+function CustomWorkoutForm({
+  onCancel,
+  onCreated,
+}: {
+  onCancel: () => void;
+  onCreated: (workout: PlannedWorkout) => void;
+}) {
+  const createWorkout = useCreateWorkout();
+  const [plannedDate, setPlannedDate] = useState(isoDateLocal(new Date()));
+  const [activityType, setActivityType] = useState<PulseActivityType>('bike');
+  const [zone, setZone] = useState(2);
+  const [distanceKm, setDistanceKm] = useState('155');
+  const [expectedSpeedKmh, setExpectedSpeedKmh] = useState('22');
+  const [durationMin, setDurationMin] = useState('');
+  const [description, setDescription] = useState('');
+  const [syncGarmin, setSyncGarmin] = useState(true);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const distance = Number(distanceKm.replace(',', '.'));
+  const speed = Number(expectedSpeedKmh.replace(',', '.'));
+  const explicitDuration = Number(durationMin);
+  const inferredDuration = Number.isFinite(distance) && distance > 0 && Number.isFinite(speed) && speed > 0
+    ? Math.round((distance / speed) * 60)
+    : null;
+  const effectiveDuration = Number.isFinite(explicitDuration) && explicitDuration > 0 ? explicitDuration : inferredDuration;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    if (!effectiveDuration) {
+      setFormError('Dauer oder Distanz plus Schnitt fehlt.');
+      return;
+    }
+    try {
+      const payload = {
+        plannedDate,
+        activityType,
+        zone,
+        durationMin: Number.isFinite(explicitDuration) && explicitDuration > 0 ? Math.round(explicitDuration) : undefined,
+        distanceKm: Number.isFinite(distance) && distance > 0 ? distance : undefined,
+        expectedSpeedKmh: Number.isFinite(speed) && speed > 0 ? speed : undefined,
+        description: description.trim() || undefined,
+        syncGarmin,
+        userLocked: true,
+      };
+      const result = await createWorkout.mutateAsync(payload);
+      onCreated(result.workout);
+    } catch (err) {
+      setFormError(errorMessage(err, 'Die Einheit konnte nicht erstellt werden.'));
+    }
+  }
+
+  return (
+    <form className="card" onSubmit={handleSubmit} style={{ borderColor: 'rgba(94,230,207,0.22)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 12 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>Eigene Einheit</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {effectiveDuration ? `${Math.round(effectiveDuration)} min` : 'Dauer offen'}
+        </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+          Datum
+          <input type="date" value={plannedDate} onChange={e => setPlannedDate(e.target.value)} style={fieldStyle} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+          Sportart
+          <select value={activityType} onChange={e => setActivityType(e.target.value as PulseActivityType)} style={fieldStyle}>
+            {CUSTOM_ACTIVITY_TYPES.map(type => (
+              <option key={type} value={type}>{ACTIVITY_LABEL[type] ?? type}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+          Zone
+          <input type="number" min={1} max={5} value={zone} onChange={e => setZone(Number(e.target.value))} style={fieldStyle} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+          km
+          <input inputMode="decimal" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} style={fieldStyle} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+          km/h
+          <input inputMode="decimal" value={expectedSpeedKmh} onChange={e => setExpectedSpeedKmh(e.target.value)} style={fieldStyle} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+          Minuten
+          <input inputMode="numeric" value={durationMin} onChange={e => setDurationMin(e.target.value)} placeholder={inferredDuration ? String(inferredDuration) : ''} style={fieldStyle} />
+        </label>
+      </div>
+
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)', marginTop: 10 }}>
+        Notiz
+        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.5 }} />
+      </label>
+
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 11, color: 'var(--text-2)' }}>
+        <input type="checkbox" checked={syncGarmin} onChange={e => setSyncGarmin(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+        Garmin synchronisieren
+      </label>
+
+      {formError && (
+        <div style={{ marginTop: 10 }}>
+          <InlineFeedback title="Einheit nicht erstellt" message={formError} />
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button type="submit" disabled={createWorkout.isPending} style={{
+          flex: 1, minHeight: 42, background: 'var(--surface-2)', border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius)', color: 'var(--accent)', cursor: 'pointer',
+          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+        }}>
+          {createWorkout.isPending ? '● Speichere…' : 'Einheit speichern'}
+        </button>
+        <button type="button" onClick={onCancel} style={{
+          minHeight: 42, background: 'transparent', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', color: 'var(--text-3)', cursor: 'pointer',
+          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+          padding: '0 12px',
+        }}>
+          Abbrechen
+        </button>
+      </div>
+    </form>
+  );
+}
+
+const fieldStyle: React.CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 4,
+  color: 'var(--text)',
+  fontSize: 12,
+  padding: '8px 9px',
+};
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -531,6 +675,7 @@ function TrainingTab() {
   const navigate  = useNavigate();
   const [weekOffset, setWeekOffset] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
+  const [showCustomWorkout, setShowCustomWorkout] = useState(false);
   const [showAvailability, setShowAvailability] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -600,6 +745,7 @@ function TrainingTab() {
         mentalPlanImpact={mentalPlanImpact}
         onNavigate={navigate}
         onOpen={setSelectedWorkout}
+        onOpenCustom={() => setShowCustomWorkout(true)}
         onOpenAvailability={() => setShowAvailability(true)}
         onOpenGenerator={() => setShowConfig(true)}
       />
@@ -628,17 +774,39 @@ function TrainingTab() {
       {/* Plan-Generator */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="label-mono">Trainingsplan</div>
-        <button
-          onClick={() => setShowConfig(v => !v)}
-          style={{
-            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-            padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: showConfig ? 'var(--rose)' : 'var(--text-3)', cursor: 'pointer',
-          }}
-        >
-          {showConfig ? 'Abbrechen' : '+ Plan generieren'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => setShowCustomWorkout(v => !v)}
+            style={{
+              background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+              padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: showCustomWorkout ? 'var(--rose)' : 'var(--accent)', cursor: 'pointer',
+            }}
+          >
+            {showCustomWorkout ? 'Abbrechen' : '+ Einheit'}
+          </button>
+          <button
+            onClick={() => setShowConfig(v => !v)}
+            style={{
+              background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+              padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: showConfig ? 'var(--rose)' : 'var(--text-3)', cursor: 'pointer',
+            }}
+          >
+            {showConfig ? 'Abbrechen' : '+ Plan generieren'}
+          </button>
+        </div>
       </div>
+
+      {showCustomWorkout && (
+        <CustomWorkoutForm
+          onCancel={() => setShowCustomWorkout(false)}
+          onCreated={workout => {
+            setShowCustomWorkout(false);
+            setSelectedWorkout(workout);
+          }}
+        />
+      )}
 
       {showConfig && (
         <div className="card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>

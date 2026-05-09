@@ -192,6 +192,38 @@ function hasGarminRemote(workout: Pick<PlannedWorkoutRow, 'garminWorkoutId' | 'g
   return Boolean(workout.garminWorkoutId || workout.garminScheduledId);
 }
 
+function activityLabel(activityType: string): string {
+  const labels: Record<string, string> = {
+    run: 'Lauf',
+    bike: 'Radeinheit',
+    swim: 'Schwimmen',
+    strength: 'Krafttraining',
+    hike: 'Wanderung',
+    other: 'Training',
+  };
+  return labels[activityType] ?? 'Training';
+}
+
+function customWorkoutDescription(input: {
+  activityType: string;
+  zone: number;
+  durationMin: number;
+  distanceKm?: number | null;
+  expectedSpeedKmh?: number | null;
+  description?: string | null;
+}): string {
+  const parts = [
+    activityLabel(input.activityType),
+    input.distanceKm != null ? `${input.distanceKm.toFixed(input.distanceKm % 1 === 0 ? 0 : 1)} km` : null,
+    `${input.durationMin} min`,
+    `Z${input.zone}`,
+    input.expectedSpeedKmh != null ? `ca. ${input.expectedSpeedKmh.toFixed(input.expectedSpeedKmh % 1 === 0 ? 0 : 1)} km/h` : null,
+  ].filter(Boolean);
+  const base = `Eigene Einheit: ${parts.join(' · ')}.`;
+  const note = input.description?.trim();
+  return note ? `${base}\n\n${note}` : base;
+}
+
 async function removeGarminRemoteForWorkout(
   app: FastifyInstance,
   gc: GarminClient,
@@ -280,6 +312,81 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     return { workouts: workouts.map(workout => enrichWorkoutExecutionState(workout, activities, now)) };
   });
 
+  app.post('/plan/workout', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      plannedDate: isoDateSchema,
+      activityType: z.enum(['run','bike','swim','strength','hike','other']),
+      zone: z.number().int().min(1).max(5).optional().default(2),
+      durationMin: z.number().int().min(5).max(900).optional(),
+      distanceKm: z.number().min(0.1).max(1000).optional(),
+      expectedSpeedKmh: z.number().min(1).max(80).optional(),
+      description: z.string().trim().max(1000).optional(),
+      syncGarmin: z.boolean().optional().default(true),
+      userLocked: z.boolean().optional().default(true),
+    }).refine(value => value.durationMin != null || (value.distanceKm != null && value.expectedSpeedKmh != null), {
+      message: 'Dauer oder Distanz plus erwarteter Schnitt erforderlich',
+      path: ['durationMin'],
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const durationMin = parsed.data.durationMin
+      ?? Math.max(5, Math.round((parsed.data.distanceKm! / parsed.data.expectedSpeedKmh!) * 60));
+    if (durationMin > 900) return reply.status(400).send({ error: 'Die geplante Dauer ist zu lang.' });
+
+    const description = customWorkoutDescription({
+      activityType: parsed.data.activityType,
+      zone: parsed.data.zone,
+      durationMin,
+      distanceKm: parsed.data.distanceKm ?? null,
+      expectedSpeedKmh: parsed.data.expectedSpeedKmh ?? null,
+      description: parsed.data.description ?? null,
+    });
+    const targetTss = tssFromWorkout(durationMin, parsed.data.zone);
+
+    const [created] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: parsed.data.plannedDate,
+      activityType: parsed.data.activityType,
+      zone: parsed.data.zone,
+      durationMin,
+      distanceKm: parsed.data.distanceKm ?? null,
+      targetTss,
+      description,
+      origin: 'user',
+      userLocked: parsed.data.userLocked,
+      status: 'planned',
+    }).returning();
+    if (!created) return reply.status(500).send({ error: 'Workout konnte nicht erstellt werden' });
+
+    const [profile] = await db.select().from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId));
+    const { steps, updatedDescription } = await buildWorkoutSteps(created, profile ?? undefined);
+    const [withDetails] = await db.update(pulsePlannedWorkouts)
+      .set({ steps, description: updatedDescription })
+      .where(eq(pulsePlannedWorkouts.id, created.id))
+      .returning();
+    let finalWorkout = withDetails ?? { ...created, steps, description: updatedDescription };
+    let garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } = { status: 'skipped' };
+
+    if (parsed.data.syncGarmin) {
+      try {
+        const gc = await getGarminClient();
+        finalWorkout = await uploadWorkoutToGarmin(app, userId, finalWorkout, gc, 'plan-workout-create');
+        garminSync = { status: 'synced' };
+      } catch (err) {
+        app.log.warn(`[plan-workout-create] Garmin sync failed for ${created.id}: ${err}`);
+        garminSync = { status: 'failed', error: String(err).slice(0, 120) };
+      }
+    }
+
+    await invalidateUser(userId);
+    return reply.status(201).send({
+      workout: enrichWorkoutExecutionState(finalWorkout, [], new Date()),
+      garminSync,
+    });
+  });
+
   // ─── Single workout + detail generation ──────────────────────────────────────
   app.get('/plan/workout/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
@@ -306,7 +413,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const schema = z.object({
       activityType: z.enum(['run','bike','swim','strength','hike','other']).optional(),
       zone:         z.number().int().min(1).max(5).optional(),
-      durationMin:  z.number().int().min(5).max(360).optional(),
+      durationMin:  z.number().int().min(5).max(900).optional(),
       plannedDate:  isoDateSchema.optional(),
       status:       z.enum(['planned','skipped']).optional(),
       description:  z.string().max(1000).nullable().optional(),
@@ -706,14 +813,24 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       generated = generateWeekWorkouts({ weekStart: weekStartStr, phase, weeklyHoursTarget, availableDays: planDecision.selectedDays });
     }
     const replacementCutoff = determinePlanReplacementCutoff(weekStartStr, today);
-    const generatedForInsert = generated.filter(w => w.plannedDate >= replacementCutoff);
-    const preservedWorkoutRows = replacementCutoff > weekStartStr
+    const weekEndStr = shiftIsoDate(weekStartStr, 7);
+    const protectedWorkoutRows = await db.select().from(pulsePlannedWorkouts).where(and(
+      eq(pulsePlannedWorkouts.userId, userId),
+      gte(pulsePlannedWorkouts.plannedDate, replacementCutoff),
+      lt(pulsePlannedWorkouts.plannedDate, weekEndStr),
+      eq(pulsePlannedWorkouts.status, 'planned'),
+      eq(pulsePlannedWorkouts.userLocked, true),
+    ));
+    const protectedDates = new Set(protectedWorkoutRows.map(w => w.plannedDate));
+    const generatedForInsert = generated.filter(w => w.plannedDate >= replacementCutoff && !protectedDates.has(w.plannedDate));
+    const preservedPastRows = replacementCutoff > weekStartStr
       ? await db.select().from(pulsePlannedWorkouts).where(and(
           eq(pulsePlannedWorkouts.userId, userId),
           gte(pulsePlannedWorkouts.plannedDate, weekStartStr),
           lt(pulsePlannedWorkouts.plannedDate, replacementCutoff),
         ))
       : [];
+    const preservedWorkoutRows = [...preservedPastRows, ...protectedWorkoutRows];
 
     // Clean up old Garmin workouts before deleting from DB (prevents duplicates)
     const oldWorkouts = await db.select({
@@ -723,6 +840,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       eq(pulsePlannedWorkouts.userId, userId),
       gte(pulsePlannedWorkouts.plannedDate, replacementCutoff),
       eq(pulsePlannedWorkouts.status, 'planned'),
+      eq(pulsePlannedWorkouts.userLocked, false),
     ));
 
     const oldWithGarmin = oldWorkouts.filter(w => w.garminWorkoutId);
@@ -746,6 +864,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         eq(pulsePlannedWorkouts.userId, userId),
         gte(pulsePlannedWorkouts.plannedDate, replacementCutoff),
         eq(pulsePlannedWorkouts.status, 'planned'),
+        eq(pulsePlannedWorkouts.userLocked, false),
       ),
     );
 
@@ -1220,14 +1339,24 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       });
     }
     const replacementCutoff2 = determinePlanReplacementCutoff(weekStart, today);
-    const generatedForInsert2 = generated.filter(w => w.plannedDate >= replacementCutoff2);
-    const preservedWorkoutRows2 = replacementCutoff2 > weekStart
+    const weekEnd2 = shiftIsoDate(weekStart, 7);
+    const protectedWorkoutRows2 = await db.select().from(pulsePlannedWorkouts).where(and(
+      eq(pulsePlannedWorkouts.userId, userId),
+      gte(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
+      lt(pulsePlannedWorkouts.plannedDate, weekEnd2),
+      eq(pulsePlannedWorkouts.status, 'planned'),
+      eq(pulsePlannedWorkouts.userLocked, true),
+    ));
+    const protectedDates2 = new Set(protectedWorkoutRows2.map(w => w.plannedDate));
+    const generatedForInsert2 = generated.filter(w => w.plannedDate >= replacementCutoff2 && !protectedDates2.has(w.plannedDate));
+    const preservedPastRows2 = replacementCutoff2 > weekStart
       ? await db.select().from(pulsePlannedWorkouts).where(and(
           eq(pulsePlannedWorkouts.userId, userId),
           gte(pulsePlannedWorkouts.plannedDate, weekStart),
           lt(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
         ))
       : [];
+    const preservedWorkoutRows2 = [...preservedPastRows2, ...protectedWorkoutRows2];
 
     // Clean up old Garmin workouts before deleting (prevents duplicates)
     const oldAvailWorkouts = await db.select({
@@ -1237,6 +1366,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       eq(pulsePlannedWorkouts.userId, userId),
       gte(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
       eq(pulsePlannedWorkouts.status, 'planned'),
+      eq(pulsePlannedWorkouts.userLocked, false),
     ));
     const oldAvailWithGarmin = oldAvailWorkouts.filter(w => w.garminWorkoutId);
     if (oldAvailWithGarmin.length > 0) {
@@ -1255,6 +1385,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       eq(pulsePlannedWorkouts.userId, userId),
       gte(pulsePlannedWorkouts.plannedDate, replacementCutoff2),
       eq(pulsePlannedWorkouts.status, 'planned'),
+      eq(pulsePlannedWorkouts.userLocked, false),
     ));
 
     const inserted2 = generatedForInsert2.length > 0

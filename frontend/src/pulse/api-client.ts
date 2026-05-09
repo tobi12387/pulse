@@ -250,6 +250,8 @@ export const pulseApi = {
       request(`/plan/trace/${weekStart}`),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),
+    createWorkout: (data: PlanWorkoutInput): Promise<{ workout: PulsePlannedWorkout; garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } }> =>
+      request('/plan/workout', { method: 'POST', body: JSON.stringify(data) }),
     updateWorkout: (id: string, data: {
       activityType?: string;
       zone?: number;
@@ -480,6 +482,18 @@ export interface NutritionLogInput {
   carbsG?: number; gelsCount?: number; drinksMl?: number; sodiumMg?: number;
   calories?: number; proteinG?: number; fatG?: number;
   description?: string; notes?: string;
+}
+
+export interface PlanWorkoutInput {
+  plannedDate: string;
+  activityType: PulseActivityType;
+  zone?: number;
+  durationMin?: number;
+  distanceKm?: number;
+  expectedSpeedKmh?: number;
+  description?: string;
+  syncGarmin?: boolean;
+  userLocked?: boolean;
 }
 
 // ─── Phase 10: Strength + Equipment inputs ──────────────────────────────────

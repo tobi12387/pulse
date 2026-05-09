@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { pulseApi } from './api-client.js';
-import type { EquipmentInput, NutritionLogInput, StrengthSessionInput } from './api-client.js';
+import type { EquipmentInput, NutritionLogInput, PlanWorkoutInput, StrengthSessionInput } from './api-client.js';
 import type { PulseActivityType } from '@coaching-os/shared/pulse';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -574,6 +574,14 @@ export function useUpdateWorkout() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof pulseApi.plan.updateWorkout>[1] }) =>
       pulseApi.plan.updateWorkout(id, data),
+    onSuccess: () => invalidatePulsePlanContextQueries(qc),
+  });
+}
+
+export function useCreateWorkout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: PlanWorkoutInput) => pulseApi.plan.createWorkout(data),
     onSuccess: () => invalidatePulsePlanContextQueries(qc),
   });
 }

@@ -38,6 +38,8 @@ export interface PulsePlannedWorkout {
   status: 'planned' | 'completed' | 'skipped';
   workoutFeedback: string | null;
   complianceScore: number | null;
+  origin: 'generated' | 'user' | 'adjusted' | string;
+  userLocked: boolean;
   completedActivityId: string | null;
   executionStatus: WorkoutExecutionStatus | null;
   executionMatchedAt: string | null;

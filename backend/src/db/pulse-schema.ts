@@ -325,6 +325,8 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   executionNotes:       text('execution_notes'),
   workoutFeedback:      text('workout_feedback'),
   complianceScore:      real('compliance_score'),
+  origin:               varchar('origin', { length: 20 }).notNull().default('generated'),
+  userLocked:           boolean('user_locked').notNull().default(false),
   originalZone:         integer('original_zone'),
   originalDurationMin:  integer('original_duration_min'),
   adjustedReason:       varchar('adjusted_reason', { length: 30 }),
