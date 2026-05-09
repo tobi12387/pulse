@@ -5,6 +5,7 @@ import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
+  useTodayOptions,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -31,7 +32,7 @@ import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } 
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
-import type { PulseActivityType, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -69,6 +70,7 @@ function NextTrainingDecisionCard({
   activeGoalsCount,
   planTrace,
   mentalPlanImpact,
+  todayOptionsState,
   onNavigate,
   onOpen,
   onOpenCustom,
@@ -80,6 +82,7 @@ function NextTrainingDecisionCard({
   activeGoalsCount: number;
   planTrace: PulsePlanTrace | null;
   mentalPlanImpact: string | null;
+  todayOptionsState: PulseTodayOptionsResponse['state'] | null;
   onNavigate: (path: string) => void;
   onOpen: (workout: PlannedWorkout) => void;
   onOpenCustom: () => void;
@@ -89,6 +92,10 @@ function NextTrainingDecisionCard({
   const update = useUpdateWorkout();
   const [alternativeError, setAlternativeError] = useState<{ id: PlanAlternativeId; message: string } | null>(null);
   const today = isoDateLocal(new Date());
+
+  if (!nextWorkout && todayOptionsState === 'planned_workout') {
+    return null;
+  }
 
   if (!nextWorkout) {
     return (
@@ -969,6 +976,7 @@ function TrainingTab() {
   const checkinHistory = useCheckinHistory(7);
   const raceCommand = useRaceCommand();
   const seasonStrategy = useSeasonStrategy();
+  const todayOptions = useTodayOptions();
   const availability = useWeekAvailability();
   const generate  = useGeneratePlan();
   const navigate  = useNavigate();
@@ -1042,6 +1050,7 @@ function TrainingTab() {
         activeGoalsCount={activeGoals.length}
         planTrace={decisionPlanTrace}
         mentalPlanImpact={mentalPlanImpact}
+        todayOptionsState={todayOptions.data?.todayOptions.state ?? null}
         onNavigate={navigate}
         onOpen={setSelectedWorkout}
         onOpenCustom={() => setShowCustomWorkout(true)}

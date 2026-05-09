@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { mockPulseApi } from './fixtures/pulse-api';
+import { MOCK_TODAY, mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
   { path: '/', label: 'home', visibleText: 'READINESS' },
@@ -72,6 +72,7 @@ test.describe('Route evidence screenshot pack', () => {
   test.skip(process.env.PULSE_ROUTE_EVIDENCE !== 'true', 'set PULSE_ROUTE_EVIDENCE=true to capture route screenshots');
 
   test('captures core routes with manifest metadata', async ({ page, baseURL }, testInfo) => {
+    await page.clock.setFixedTime(new Date(`${MOCK_TODAY}T08:00:00+02:00`));
     await mockPulseApi(page, { checkinToday: { checkin: null } });
     await seedAuth(page);
 

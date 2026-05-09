@@ -1,6 +1,7 @@
 import type { Page, Route } from '@playwright/test';
 
-const today = '2026-05-01';
+export const MOCK_TODAY = '2026-05-01';
+const today = MOCK_TODAY;
 
 type MockPulseApiOptions = {
   insightError?: boolean;

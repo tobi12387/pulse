@@ -17,11 +17,18 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('Plan keeps the next training decision without duplicating the generic daily decision', async ({ page }) => {
+test('Plan keeps one training decision surface without duplicating the generic daily decision', async ({ page }) => {
   await page.goto('/plan');
 
-  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByTestId('today-options-card-full')).toContainText('Heute trainieren');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toHaveCount(0);
+});
+
+test('Plan evidence does not show an empty decision beside a planned-workout today option', async ({ page }) => {
+  await page.goto('/plan');
+
+  await expect(page.getByTestId('today-options-card-full')).toContainText('Heute trainieren');
+  await expect(page.getByText('Kein offenes Training geplant')).toHaveCount(0);
 });
 
 test('Home renders exactly one main daily decision card', async ({ page }) => {
