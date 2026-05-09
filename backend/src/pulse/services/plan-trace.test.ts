@@ -62,6 +62,14 @@ describe('buildPlanTrace', () => {
         primaryGoal: 'ftp',
         reasons: ['FTP-Ziel: wenige, gezielte Reize statt viele Fülltage.', 'RPE-Signal: eine leichte bike-Einheit fühlte sich mit RPE 8/10 zu hart an.'],
       },
+      goalLimiter: {
+        kind: 'threshold_vo2',
+        label: 'Schwelle + VO2',
+        confidence: 'medium',
+        evidence: ['Schwelle/VO2 2.2/2.1'],
+        planBias: 'eine kontrollierte Schwellen-/VO2-Schlüsseleinheit setzen',
+        workoutFocus: ['threshold', 'vo2'],
+      },
       workouts: [
         adjustedWorkout,
         { plannedDate: '2026-05-06', activityType: 'bike', zone: 4, durationMin: 50, targetTss: 80 },
@@ -77,6 +85,7 @@ describe('buildPlanTrace', () => {
     expect(trace.inputSnapshot.load).toMatchObject({ ctl: 42, atl: 50, tsb: -8 });
     expect(trace.inputSnapshot.riskSignals[0]).toMatchObject({ ruleId: 'sleep_debt_5d', severity: 'warn' });
     expect(trace.inputSnapshot.healthStates[0]).toMatchObject({ type: 'fatigue', severity: 'moderate' });
+    expect(trace.inputSnapshot.goalLimiter?.label).toBe('Schwelle + VO2');
     expect(trace.inputSnapshot.learningSnapshot?.learnedFromLastWeek[0]).toContain('Compliance');
     expect(trace.inputSnapshot.learningSnapshot?.variationComparedToLastWeek.join(' ')).toContain('Harte Tage');
     expect(trace.generatedSummary.join(' ')).toContain('1 verfügbare Tag');
@@ -84,6 +93,7 @@ describe('buildPlanTrace', () => {
     expect(trace.generatedSummary.join(' ')).toContain('Variation');
     expect(trace.generatedSummary.join(' ')).toContain('Angepasst');
     expect(trace.generatedSummary.join(' ')).toContain('fatigue');
+    expect(trace.generatedSummary.join(' ')).toContain('Limiter');
   });
 
   it('carries execution-review adaptation and deliberate rest-day rationale into trace output', () => {

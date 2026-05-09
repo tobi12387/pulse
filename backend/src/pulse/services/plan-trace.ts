@@ -1,5 +1,6 @@
 import type {
   PulseFitnessLoad,
+  PulseGoalLimiter,
   PulsePlanDecision,
   PulsePlanLearningSnapshot,
   PulsePlanTrace,
@@ -74,6 +75,7 @@ export interface BuildPlanTraceInput {
   executionReview?: PulseTrainingExecutionReview | null;
   seasonStrategy?: PulseSeasonStrategy | null;
   trainingCapabilities?: PulseTrainingCapabilitySummary | null;
+  goalLimiter?: PulseGoalLimiter | null;
   planDecision: PulsePlanDecision;
   workouts: PlanTraceWorkout[];
 }
@@ -129,6 +131,10 @@ function summarizeTrace(
 
   if (hardDays.length > 0) {
     summary.push(`${hardDays.length} harte Einheit(en) ab Z4: ${hardDays.map(day => `${day.activityType} ${day.date}`).join(', ')}.`);
+  }
+
+  if (input.goalLimiter) {
+    summary.push(`Limiter: ${input.goalLimiter.label} — ${input.goalLimiter.planBias}.`);
   }
 
   const adjustedCounts = input.workouts.reduce<Record<string, number>>((counts, workout) => {
@@ -409,6 +415,7 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
       restDayRationale,
       seasonStrategy: input.seasonStrategy ?? null,
       trainingCapabilities: input.trainingCapabilities ?? null,
+      goalLimiter: input.goalLimiter ?? null,
     },
     planDecision: input.planDecision,
     sportMix,

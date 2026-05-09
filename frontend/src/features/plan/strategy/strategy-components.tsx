@@ -131,6 +131,7 @@ export function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | nu
   const learning = trace.inputSnapshot.learningSnapshot ?? null;
   const adaptation = trace.adaptation ?? trace.inputSnapshot.adaptation ?? null;
   const restDayRationale = trace.restDayRationale ?? trace.inputSnapshot.restDayRationale ?? [];
+  const goalLimiter = trace.inputSnapshot.goalLimiter ?? null;
 
   return (
     <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
@@ -192,6 +193,16 @@ export function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | nu
       {trace.inputSnapshot.trainingCapabilities && (
         <div style={{ marginBottom: 12 }}>
           <TrainingCapabilityCard summary={trace.inputSnapshot.trainingCapabilities} framed={false} />
+        </div>
+      )}
+
+      {goalLimiter && (
+        <div style={{ marginBottom: 12 }}>
+          <TraceInsightBlock
+            title={`Limiter · ${goalLimiter.label}`}
+            items={[goalLimiter.planBias, ...goalLimiter.evidence.slice(0, 3)]}
+            color="var(--amber)"
+          />
         </div>
       )}
 

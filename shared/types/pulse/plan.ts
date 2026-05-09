@@ -1,7 +1,7 @@
 import type { PulseFitnessLoad } from './daily-loop.js';
 import type { PulseActivityType } from './activity.js';
 import type { PulseProfileProvenanceView } from './profile.js';
-import type { PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutFitLabel } from './training.js';
+import type { PulseCapabilityConfidence, PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutFitLabel } from './training.js';
 
 // Training plan, race, season strategy and review Pulse contracts.
 export interface WorkoutStep {
@@ -249,6 +249,20 @@ export interface PulsePlanTraceAdaptation {
   variationRationale: string[];
   signals?: PulseTrainingExecutionReviewSignal[];
 }
+
+export type PulseGoalLimiterKind =
+  | 'long_endurance_fueling'
+  | 'threshold_vo2';
+
+export interface PulseGoalLimiter {
+  kind: PulseGoalLimiterKind;
+  label: string;
+  confidence: PulseCapabilityConfidence;
+  evidence: string[];
+  planBias: string;
+  workoutFocus: PulseTrainingEnergySystem[];
+}
+
 export interface PulsePlanTrace {
   id: string;
   userId: string;
@@ -285,6 +299,7 @@ export interface PulsePlanTrace {
     restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
     seasonStrategy?: PulseSeasonStrategy | null;
     trainingCapabilities?: PulseTrainingCapabilitySummary | null;
+    goalLimiter?: PulseGoalLimiter | null;
   };
   planDecision: PulsePlanDecision;
   sportMix: Record<string, PulsePlanSportMixEntry>;
