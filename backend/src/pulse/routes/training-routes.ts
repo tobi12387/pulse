@@ -1732,6 +1732,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       gelsCount:   z.number().int().min(0).max(50).optional(),
       drinksMl:    z.number().int().min(0).max(20000).optional(),
       sodiumMg:    z.number().int().min(0).max(50000).optional(),
+      bottles750Ml: z.number().min(0).max(40).optional(),
+      powderG:     z.number().min(0).max(3000).optional(),
+      fuelingProducts: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
+      giComfort:   z.enum(['ok','mild_issue','issue']).optional(),
       notes:       z.string().max(1000).optional(),
     });
     const parsed = schema.safeParse(req.body);
@@ -1759,6 +1763,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       gelsCount:   parsed.data.gelsCount   ?? null,
       drinksMl:    parsed.data.drinksMl    ?? null,
       sodiumMg:    parsed.data.sodiumMg    ?? null,
+      bottles750Ml: parsed.data.bottles750Ml ?? null,
+      powderG:     parsed.data.powderG     ?? null,
+      fuelingProducts: parsed.data.fuelingProducts ?? [],
+      giComfort:   parsed.data.giComfort   ?? null,
       notes:       parsed.data.notes       ?? null,
     }).returning();
 

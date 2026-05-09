@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Fueling-Logs speichern alltagstaugliche During-Daten strukturiert
+
+- **Decision:** Pulse speichert Fueling-Logs fuer Aktivitaeten mit praktischen During-Feldern: 750-ml-Flaschen, POWER-CARB-Pulvergramm, ausgewaehlte Produkte/Snacks und GI-Vertraeglichkeit. Freitext-Notizen bleiben ergaenzend, sind aber nicht mehr die einzige Quelle fuer solche Informationen.
+- **Why:** Tobis 155-km-Tour hat gezeigt, dass konkrete Daten wie 300 g Pulver, vier 750-ml-Flaschen, Mars als GI-Hilfe und RPE spaeter fuer bessere Empfehlungen lernbar sein muessen. Strukturierte Felder machen diese Muster in der App sichtbar und fuer spaetere Guidance nutzbar.
+- **Alternatives:** Weiter nur Notizen speichern (nicht maschinenlesbar); sofort einen vollstaendigen Produkt-/SKU-Katalog bauen (zu grosser Scope fuer diesen Slice); nur generische Carbs/Drinks speichern (verliert Tobis reale Produkte und GI-Kontext).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Home zaehlt heutige Garmin-Aktivitaeten als Tagesabschluss
 
 - **Decision:** Wenn Garmin heute eine relevante Aktivitaet liefert und kein geplantes Pulse-Workout fuer heute offen ist, behandelt Home den Tag als `Training heute erledigt` statt als `Heute ist kein Training geplant`. Die Tagesentscheidung fuehrt dann zu RPE-/Feedback-Erfassung und Planabgleich, nicht zu einer weiteren Trainingssuche.

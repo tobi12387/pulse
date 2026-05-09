@@ -1,0 +1,5 @@
+ALTER TABLE "pulse_nutrition_logs"
+  ADD COLUMN IF NOT EXISTS "bottles_750_ml" REAL,
+  ADD COLUMN IF NOT EXISTS "powder_g" REAL,
+  ADD COLUMN IF NOT EXISTS "fueling_products" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN IF NOT EXISTS "gi_comfort" VARCHAR(30);
