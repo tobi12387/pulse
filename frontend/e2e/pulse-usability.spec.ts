@@ -557,6 +557,70 @@ test('Home treats a completed off-plan Garmin activity as today done', async ({ 
   await expect(page).toHaveURL(/\/activity\/activity-off-plan/);
 });
 
+test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort', async ({ page }) => {
+  let createdLog: unknown = null;
+  await mockPulseApi(page, {
+    nutritionLogs: [],
+    onNutritionCreate: body => {
+      createdLog = body;
+    },
+    activityDetail: {
+      activity: {
+        id: 'activity-fueling',
+        userId: 'user-1',
+        externalId: 'garmin-activity-fueling',
+        source: 'garmin',
+        startTime: '2026-05-01T08:00:00.000Z',
+        activityType: 'bike',
+        name: 'Rennrad Tour',
+        durationSec: 4 * 3600,
+        distanceM: 88000,
+        avgHr: 137,
+        maxHr: 165,
+        avgPowerW: 176,
+        normalizedPowerW: 188,
+        tss: 210,
+        calories: 2600,
+        elevationGainM: 900,
+        trainingEffectAerobic: 3.4,
+        trainingEffectAnaerobic: 0.2,
+        vo2maxEstimate: null,
+        rpe: 7,
+        rpeNote: null,
+        sorenessAreas: null,
+        feedbackLoggedAt: '2026-05-01T13:00:00.000Z',
+        equipmentIds: [],
+      },
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
+  });
+
+  await page.goto('/activity/activity-fueling');
+  await page.getByRole('button', { name: '+ Fueling-Log' }).click();
+
+  await expect(page.getByText('750-ml-Flaschen')).toBeVisible();
+  await page.getByLabel('750-ml-Flaschen').fill('4');
+  await page.getByLabel('POWER CARB Pulver (g)').fill('300');
+  await page.getByRole('button', { name: 'POWER CARB Sour Cherry' }).click();
+  await page.getByRole('button', { name: 'Mars' }).click();
+  await page.getByRole('button', { name: 'Magen leicht unruhig' }).click();
+  await page.getByLabel('Notizen (optional)').fill('Nach 100 km kurz Magenprobleme, Mars hat geholfen.');
+  await page.getByRole('button', { name: 'SPEICHERN' }).click();
+
+  await expect.poll(() => createdLog).toMatchObject({
+    activityId: 'activity-fueling',
+    context: 'during',
+    bottles750Ml: 4,
+    drinksMl: 3000,
+    powderG: 300,
+    fuelingProducts: expect.arrayContaining(['mnstry-power-carb-sour-cherry-1-0-8', 'mars']),
+    giComfort: 'mild_issue',
+  });
+  expect(String((createdLog as { notes?: string }).notes)).toContain('Mars hat geholfen');
+});
+
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

@@ -190,6 +190,13 @@
       "when": 1778340000000,
       "tag": "0026_user_locked_workouts",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1778340900000,
+      "tag": "0027_nutrition_practical_fueling",
+      "breakpoints": true
     }
   ]
 }

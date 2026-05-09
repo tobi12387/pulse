@@ -474,12 +474,14 @@ export interface NutritionLog {
   mealType: string | null; description: string | null;
   calories: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null;
   gelsCount: number | null; drinksMl: number | null; sodiumMg: number | null;
+  bottles750Ml: number | null; powderG: number | null; fuelingProducts: string[]; giComfort: 'ok' | 'mild_issue' | 'issue' | null;
   notes: string | null; createdAt: string;
 }
 export interface NutritionLogInput {
   date?: string; workoutId?: string; activityId?: string;
   context?: 'pre' | 'during' | 'post' | 'daily';
   carbsG?: number; gelsCount?: number; drinksMl?: number; sodiumMg?: number;
+  bottles750Ml?: number; powderG?: number; fuelingProducts?: string[]; giComfort?: 'ok' | 'mild_issue' | 'issue';
   calories?: number; proteinG?: number; fatG?: number;
   description?: string; notes?: string;
 }

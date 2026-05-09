@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCreateNutritionLog } from '@/pulse/hooks';
+import type { NutritionLogInput } from '@/pulse/api-client';
 
 interface Props {
   activityId: string;
@@ -13,6 +14,27 @@ function suggestedCarbs(type: Props['activityType'], durationMin: number): numbe
   if (type === 'bike') return durationMin > 60 ? 60 : 30;
   if (type === 'run')  return durationMin > 75 ? 50 : 20;
   return 30;
+}
+
+const POWER_CARB_ID = 'mnstry-power-carb-sour-cherry-1-0-8';
+const POWER_CARB_CARB_PER_POWDER = 80.8 / 85;
+
+const FUELING_PRODUCTS = [
+  { id: POWER_CARB_ID, label: 'POWER CARB Sour Cherry', carbsG: 0 },
+  { id: 'mnstry-bicarb-gel-40-lemon-1-0-8', label: 'BICARB GEL 40 Lemon', carbsG: 40 },
+  { id: 'mnstry-porridge-bar-sour-cherry', label: 'PORRIDGE BAR Sour Cherry', carbsG: 47 },
+  { id: 'mnstry-protein-bar-8-peanut-cranberry', label: 'PROTEIN BAR 8 Peanut & Cranberry', carbsG: 35 },
+  { id: 'mars', label: 'Mars', carbsG: 40 },
+] as const;
+
+const GI_OPTIONS: Array<{ value: NonNullable<NutritionLogInput['giComfort']>; label: string }> = [
+  { value: 'ok', label: 'Magen ok' },
+  { value: 'mild_issue', label: 'Magen leicht unruhig' },
+  { value: 'issue', label: 'Magenprobleme' },
+];
+
+function powderCarbsG(powderG: number): number {
+  return Math.round(powderG * POWER_CARB_CARB_PER_POWDER);
 }
 
 function NumInput({
@@ -41,6 +63,7 @@ function NumInput({
           type="number"
           min={0}
           step={step}
+          aria-label={`${label}${unit ? ` (${unit})` : ''}`}
           value={value === 0 ? '' : value}
           placeholder="0"
           onChange={e => onChange(Math.max(0, Number(e.target.value) || 0))}
@@ -70,6 +93,10 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
   const create = useCreateNutritionLog();
   const [gels, setGels]   = useState(0);
   const [drinks, setDrinks] = useState(0);
+  const [bottles750Ml, setBottles750Ml] = useState(0);
+  const [powderG, setPowderG] = useState(0);
+  const [fuelingProducts, setFuelingProducts] = useState<string[]>([]);
+  const [giComfort, setGiComfort] = useState<NutritionLogInput['giComfort'] | null>(null);
   const [carbs, setCarbs] = useState(0);
   const [notes, setNotes] = useState('');
   const [hasTouchedCarbs, setHasTouchedCarbs] = useState(false);
@@ -87,6 +114,29 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
   function handleCarbsChange(v: number) {
     setHasTouchedCarbs(true);
     setCarbs(v);
+  }
+
+  function handleBottlesChange(v: number) {
+    setBottles750Ml(v);
+    setDrinks(Math.round(v * 750));
+  }
+
+  function handlePowderChange(v: number) {
+    setPowderG(v);
+    if (!hasTouchedCarbs) {
+      setCarbs(powderCarbsG(v));
+    }
+  }
+
+  function toggleProduct(id: string, carbsG: number) {
+    const isActive = fuelingProducts.includes(id);
+    setFuelingProducts(cur => {
+      const active = cur.includes(id);
+      return active ? cur.filter(item => item !== id) : [...cur, id];
+    });
+    if (!hasTouchedCarbs && carbsG > 0 && !isActive) {
+      setCarbs(current => current + carbsG);
+    }
   }
 
   // Esc closes
@@ -107,6 +157,16 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
       gelsCount: gels || undefined,
       drinksMl: drinks || undefined,
       carbsG: carbs || undefined,
+      bottles750Ml: bottles750Ml || undefined,
+      powderG: powderG || undefined,
+      fuelingProducts: fuelingProducts.length > 0 ? fuelingProducts : undefined,
+      giComfort: giComfort ?? undefined,
+      description: fuelingProducts.length > 0
+        ? FUELING_PRODUCTS
+            .filter(product => fuelingProducts.includes(product.id))
+            .map(product => product.label)
+            .join(', ')
+        : undefined,
       notes: notes.trim() || undefined,
     });
     onClose();
@@ -158,13 +218,30 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
           />
 
           <NumInput
-            label="Trinken"
-            value={drinks}
-            onChange={setDrinks}
-            step={50}
-            quickAdd={250}
-            unit="ml"
+            label="750-ml-Flaschen"
+            value={bottles750Ml}
+            onChange={handleBottlesChange}
+            step={1}
+            quickAdd={1}
           />
+
+          <NumInput
+            label="POWER CARB Pulver"
+            value={powderG}
+            onChange={handlePowderChange}
+            step={10}
+            quickAdd={50}
+            unit="g"
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: -6 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+              Trinken: {drinks > 0 ? `${drinks} ml` : 'offen'}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+              Pulver ≈ {powderG > 0 ? `${powderCarbsG(powderG)} g Carbs` : '0 g Carbs'}
+            </span>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -215,11 +292,73 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
             </div>
           </div>
 
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              Produkte / Snacks
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {FUELING_PRODUCTS.map(product => {
+                const active = fuelingProducts.includes(product.id);
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => toggleProduct(product.id, product.carbsG)}
+                    style={{
+                      minHeight: 34,
+                      border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                      borderRadius: 5,
+                      background: active ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+                      color: active ? 'var(--accent)' : 'var(--text-2)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      padding: '6px 8px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {product.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              Verträglichkeit
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 6 }}>
+              {GI_OPTIONS.map(option => {
+                const active = giComfort === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setGiComfort(option.value)}
+                    style={{
+                      minHeight: 36,
+                      border: `1px solid ${active ? 'var(--amber)' : 'var(--border)'}`,
+                      borderRadius: 5,
+                      background: active ? 'rgba(245,158,11,0.12)' : 'var(--surface-2)',
+                      color: active ? 'var(--amber)' : 'var(--text-2)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.12em', textTransform: 'uppercase' }}>
               Notizen (optional)
             </span>
             <textarea
+              aria-label="Notizen (optional)"
               value={notes}
               onChange={e => setNotes(e.target.value.slice(0, 200))}
               rows={2}

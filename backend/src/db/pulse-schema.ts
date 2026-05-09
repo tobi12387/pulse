@@ -467,6 +467,10 @@ export const pulseNutritionLogs = pgTable('pulse_nutrition_logs', {
   gelsCount:    integer('gels_count'),
   drinksMl:     integer('drinks_ml'),
   sodiumMg:     integer('sodium_mg'),
+  bottles750Ml: real('bottles_750_ml'),
+  powderG:      real('powder_g'),
+  fuelingProducts: text('fueling_products').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  giComfort:    varchar('gi_comfort', { length: 30 }),
   notes:        text('notes'),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
 }, (t) => [

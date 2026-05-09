@@ -645,6 +645,18 @@ function FuelingSection({
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
     : 'other';
+  const productLabels: Record<string, string> = {
+    'mnstry-power-carb-sour-cherry-1-0-8': 'POWER CARB',
+    'mnstry-bicarb-gel-40-lemon-1-0-8': 'BICARB GEL',
+    'mnstry-porridge-bar-sour-cherry': 'PORRIDGE BAR',
+    'mnstry-protein-bar-8-peanut-cranberry': 'PROTEIN BAR 8',
+    mars: 'Mars',
+  };
+  const giLabels: Record<string, string> = {
+    ok: 'Magen ok',
+    mild_issue: 'Magen leicht unruhig',
+    issue: 'Magenprobleme',
+  };
 
   return (
     <>
@@ -688,9 +700,29 @@ function FuelingSection({
                       {log.drinksMl} ml
                     </span>
                   )}
+                  {log.bottles750Ml != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--blue)' }}>
+                      {log.bottles750Ml} x 750 ml
+                    </span>
+                  )}
+                  {log.powderG != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--amber)' }}>
+                      {log.powderG}g Pulver
+                    </span>
+                  )}
                   {log.carbsG != null && (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--amber)' }}>
                       {log.carbsG}g CH
+                    </span>
+                  )}
+                  {log.fuelingProducts?.length > 0 && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)' }}>
+                      {log.fuelingProducts.map(id => productLabels[id] ?? id).join(', ')}
+                    </span>
+                  )}
+                  {log.giComfort && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: log.giComfort === 'ok' ? 'var(--green)' : 'var(--amber)' }}>
+                      {giLabels[log.giComfort] ?? log.giComfort}
                     </span>
                   )}
                   {log.sodiumMg != null && (

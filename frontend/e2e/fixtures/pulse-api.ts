@@ -45,6 +45,9 @@ type MockPulseApiOptions = {
   onTextCheckinSubmit?: (body: unknown) => void;
   metrics?: unknown[];
   sleepSessions?: unknown[];
+  activityDetail?: unknown;
+  nutritionLogs?: unknown[];
+  onNutritionCreate?: (body: unknown) => void;
   profile?: unknown | (() => unknown);
   onProfilePatch?: (body: unknown) => void;
   fuelingGuidance?: unknown | ((workoutId: string | null) => unknown);
@@ -448,6 +451,39 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
     };
   }
   if (pathname === '/api/pulse/activities') return { activities: [] };
+  if (pathname.startsWith('/api/pulse/activities/')) {
+    return {
+      activity: {
+        id: 'activity-detail',
+        userId: 'user-1',
+        externalId: 'garmin-activity-detail',
+        source: 'garmin',
+        startTime: `${today}T08:00:00.000Z`,
+        activityType: 'bike',
+        name: 'Rennrad Tour',
+        durationSec: 4 * 3600,
+        distanceM: 88000,
+        avgHr: 137,
+        maxHr: 165,
+        avgPowerW: 176,
+        normalizedPowerW: 188,
+        tss: 210,
+        calories: 2600,
+        elevationGainM: 900,
+        trainingEffectAerobic: 3.4,
+        trainingEffectAnaerobic: 0.2,
+        vo2maxEstimate: null,
+        rpe: 7,
+        rpeNote: null,
+        sorenessAreas: null,
+        feedbackLoggedAt: `${today}T13:00:00.000Z`,
+        equipmentIds: [],
+      },
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    };
+  }
   if (pathname === '/api/pulse/weight') return { entries: [] };
   if (pathname === '/api/pulse/data-coverage') {
     const days = searchParams.get('days');
@@ -753,6 +789,37 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
+    if (url.pathname.startsWith('/api/pulse/activities/') && options.activityDetail) return json(route, options.activityDetail);
+    if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
+      return json(route, { logs: options.nutritionLogs });
+    }
+    if (url.pathname === '/api/pulse/nutrition' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      options.onNutritionCreate?.(body);
+      return json(route, {
+        id: 'nutrition-created',
+        userId: 'user-1',
+        date: today,
+        workoutId: body.workoutId ?? null,
+        activityId: body.activityId ?? null,
+        context: body.context ?? null,
+        mealType: body.mealType ?? null,
+        description: body.description ?? null,
+        calories: body.calories ?? null,
+        proteinG: body.proteinG ?? null,
+        carbsG: body.carbsG ?? null,
+        fatG: body.fatG ?? null,
+        gelsCount: body.gelsCount ?? null,
+        drinksMl: body.drinksMl ?? null,
+        sodiumMg: body.sodiumMg ?? null,
+        bottles750Ml: body.bottles750Ml ?? null,
+        powderG: body.powderG ?? null,
+        fuelingProducts: body.fuelingProducts ?? [],
+        giComfort: body.giComfort ?? null,
+        notes: body.notes ?? null,
+        createdAt: `${today}T13:15:00.000Z`,
+      }, 201);
+    }
     if (url.pathname === '/api/pulse/profile' && request.method() === 'GET' && 'profile' in options) {
       const profile = typeof options.profile === 'function' ? options.profile() : options.profile;
       return json(route, profile ?? defaultProfileResponse());
