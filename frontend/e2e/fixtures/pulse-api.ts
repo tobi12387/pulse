@@ -20,6 +20,7 @@ type MockPulseApiOptions = {
   garminSignalUsefulness?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  createWorkoutResult?: unknown | ((body: unknown) => unknown);
   planScenarioPreview?: unknown | ((body: unknown) => unknown);
   raceCommand?: unknown;
   seasonStrategy?: unknown;
@@ -1016,7 +1017,10 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/plan/workout' && request.method() === 'POST') {
       const body = request.postDataJSON();
-      return json(route, {
+      const result = typeof options.createWorkoutResult === 'function'
+        ? options.createWorkoutResult(body)
+        : options.createWorkoutResult;
+      return json(route, result ?? {
         workout: {
           id: 'created-workout',
           userId: 'user-1',

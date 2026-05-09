@@ -4,6 +4,7 @@ import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse
 import { pulseApi } from '@/pulse/api-client';
 import { pulseKeys, useFuelingRecoveryGuidance } from '@/pulse/hooks';
 import { executionStatusFor, garminConfidenceCopy, type GarminConfidenceTone } from '@/features/plan/plan-utils';
+import { InlineFeedback } from '@/components/Feedback';
 
 const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
@@ -164,11 +165,16 @@ function GuidanceList({ title, items }: { title: string; items: Array<{ id: stri
 
 interface Props {
   workout: PulsePlannedWorkout;
+  notice?: {
+    title: string;
+    message: string;
+    tone: 'warning' | 'info' | 'error';
+  };
   onClose: () => void;
   onUpdate: (updated: PulsePlannedWorkout) => void;
 }
 
-export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Props) {
+export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate }: Props) {
   const [workout, setWorkout] = useState(initial);
   const qc = useQueryClient();
   const fuelingGuidance = useFuelingRecoveryGuidance(workout.id);
@@ -284,6 +290,11 @@ export function WorkoutDetailModal({ workout: initial, onClose, onUpdate }: Prop
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px' }}>
+          {notice && (
+            <div style={{ marginBottom: 12 }}>
+              <InlineFeedback title={notice.title} message={notice.message} tone={notice.tone} />
+            </div>
+          )}
           <div
             data-testid="garmin-sync-confidence"
             style={{
