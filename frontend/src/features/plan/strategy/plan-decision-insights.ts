@@ -3,6 +3,7 @@ import type { PulsePlanDecision } from '@coaching-os/shared/pulse';
 export type PlanDecisionEvidenceGroupId =
   | 'fueling'
   | 'recovery'
+  | 'capability'
   | 'variation'
   | 'availability'
   | 'goal'
@@ -37,6 +38,10 @@ const GROUP_RULES: PlanDecisionRule[] = [
     patterns: [/tsb/i, /\brpe\b/i, /erholung/i, /recovery/i, /schlaf/i, /\bhrv\b/i, /body battery/i, /ruhe/i, /belastung/i, /mued/i, /müd/i, /fatigue/i, /risk/i, /risiko/i],
   },
   {
+    id: 'capability',
+    patterns: [/level-fit/i, /capability/i, /produkt/i, /stretch/i, /erhaltung/i, /zu hart/i, /workout-level/i],
+  },
+  {
     id: 'variation',
     patterns: [/variation/i, /vorwoche/i, /ähnlich/i, /aehnlich/i, /anders/i, /rotation/i, /rotiert/i, /sportmix/i, /archetyp/i, /lernsignal/i],
   },
@@ -53,6 +58,7 @@ const GROUP_RULES: PlanDecisionRule[] = [
 const GROUP_LABELS: Record<PlanDecisionEvidenceGroupId, Omit<PlanDecisionEvidenceGroup, 'reasons'>> = {
   fueling: { id: 'fueling', label: 'Fueling', tone: 'amber' },
   recovery: { id: 'recovery', label: 'Erholung', tone: 'rose' },
+  capability: { id: 'capability', label: 'Level-Fit', tone: 'green' },
   variation: { id: 'variation', label: 'Variation', tone: 'accent' },
   availability: { id: 'availability', label: 'Freie Tage', tone: 'muted' },
   goal: { id: 'goal', label: 'Zielbezug', tone: 'green' },

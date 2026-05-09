@@ -29,6 +29,7 @@ import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
 import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { mentalImpact } from '@/features/mental/mental-impact';
+import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { PulseActivityType, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
@@ -1275,6 +1276,8 @@ function StatistikTab() {
           ))}
         </div>
       </div>
+
+      <TrainingCapabilityCard summary={data?.capabilitySummary} />
 
       <StrengthStatsCard
         sessions={strength.data?.sessions ?? []}

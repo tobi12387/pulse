@@ -1,5 +1,6 @@
 import type { PulseFitnessLoad } from './daily-loop.js';
 import type { PulseProfileProvenanceView } from './profile.js';
+import type { PulseTrainingCapabilitySummary } from './training.js';
 
 // Training plan, race, season strategy and review Pulse contracts.
 export interface WorkoutStep {
@@ -151,6 +152,7 @@ export interface PulsePlanTrace {
     adaptation?: PulsePlanTraceAdaptation | null;
     restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
     seasonStrategy?: PulseSeasonStrategy | null;
+    trainingCapabilities?: PulseTrainingCapabilitySummary | null;
   };
   planDecision: PulsePlanDecision;
   sportMix: Record<string, PulsePlanSportMixEntry>;

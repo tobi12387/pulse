@@ -35,6 +35,7 @@ export const pulseKeys = {
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
   correlations:      (days: number)  => ['pulse', 'correlations', days] as const,
   trainingAnalytics: (weeks: number) => ['pulse', 'training-analytics', weeks] as const,
+  trainingCapabilities: (days: number) => ['pulse', 'training-capabilities', days] as const,
   healthState:      ['pulse', 'health-state'] as const,
   todayProposal:    ['pulse', 'today-proposal'] as const,
   races:            ['pulse', 'races'] as const,
@@ -757,6 +758,14 @@ export function useTrainingAnalytics(weeks = 12) {
   return useQuery({
     queryKey: pulseKeys.trainingAnalytics(weeks),
     queryFn: () => pulseApi.trainingAnalytics.get(weeks),
+    staleTime: 15 * 60_000,
+  });
+}
+
+export function useTrainingCapabilities(days = 90) {
+  return useQuery({
+    queryKey: pulseKeys.trainingCapabilities(days),
+    queryFn: () => pulseApi.trainingCapabilities.get(days),
     staleTime: 15 * 60_000,
   });
 }

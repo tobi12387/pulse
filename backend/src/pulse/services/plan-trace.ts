@@ -4,6 +4,7 @@ import type {
   PulsePlanLearningSnapshot,
   PulsePlanTrace,
   PulseSeasonStrategy,
+  PulseTrainingCapabilitySummary,
   PulseTrainingExecutionReview,
 } from '@coaching-os/shared/pulse';
 import { evaluatePlanQuality, type PlanQualityWorkout } from './training-intelligence.js';
@@ -72,6 +73,7 @@ export interface BuildPlanTraceInput {
   planLearning?: PulsePlanLearningSnapshot | null;
   executionReview?: PulseTrainingExecutionReview | null;
   seasonStrategy?: PulseSeasonStrategy | null;
+  trainingCapabilities?: PulseTrainingCapabilitySummary | null;
   planDecision: PulsePlanDecision;
   workouts: PlanTraceWorkout[];
 }
@@ -406,6 +408,7 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
       adaptation,
       restDayRationale,
       seasonStrategy: input.seasonStrategy ?? null,
+      trainingCapabilities: input.trainingCapabilities ?? null,
     },
     planDecision: input.planDecision,
     sportMix,

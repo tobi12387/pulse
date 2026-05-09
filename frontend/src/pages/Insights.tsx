@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight, useTrainingCapabilities } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
+import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { LucideIcon } from 'lucide-react';
 import type { PulseDailyDecisionQualityResponse } from '@coaching-os/shared/pulse';
 
@@ -349,6 +350,7 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
 export function DataAnalysenTab() {
   const [days, setDays] = useState(30);
   const { data: decisionQuality } = useDailyDecisionQuality(14);
+  const capability = useTrainingCapabilities(90);
 
   return (
     <div className="flex flex-col gap-3">
@@ -360,6 +362,7 @@ export function DataAnalysenTab() {
       />
 
       <MentalLoadOverlay />
+      <TrainingCapabilityCard summary={capability.data?.capabilitySummary} loading={capability.isLoading} />
       <DecisionQualityEvidenceCard quality={decisionQuality} testId="data-analysis-decision-quality-card" />
 
       {/* Domain cards */}
