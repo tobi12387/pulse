@@ -466,6 +466,36 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts.map(workout => workout.description).join(' ')).toContain('lange reale Einheit');
   });
 
+  it('uses GI fueling tolerance history to cap the next long endurance dose', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 12,
+      availableDays: [0, 1, 2, 3, 4, 5],
+      ctl: 52,
+      atl: 47,
+      tsb: 5,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: '155 km Rennrad sicher und gut verpflegen', targetDate: '2026-08-01', category: 'volume' }],
+      fuelingHistory: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 430,
+        carbsG: 300,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'mild_issue',
+        notes: 'Nach 100 km Magenprobleme, Mars half.',
+      }],
+    });
+
+    expect(Math.max(...workouts.map(workout => workout.durationMin))).toBeLessThanOrEqual(165);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('Fueling-Toleranz');
+  });
+
   it('keeps stable execution weeks dense enough while explaining the stability', () => {
     const decision = decidePlanDays({
       availableDays: [0, 1, 2, 3, 5],

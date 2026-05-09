@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-09 — Fueling-Toleranz begrenzt Wochenplan-Dichte und Long-Endurance-Dosis
+
+- **Decision:** Wenn Pulse in den letzten During-Fueling-Logs GI-Probleme bei langen Einheiten erkennt, wird die Wochenplanung konservativer: ein verfuegbarer Tag bleibt frei, lange aerobe Einheiten werden gedeckelt und die Workout-Beschreibung nennt `Fueling-Toleranz` als Planungsgrund.
+- **Why:** Fueling-Erfahrung ist nicht nur Detail-Copy fuer ein einzelnes Workout. Nach Tobis langer Tour mit Magenproblemen muss Pulse die naechste Woche so planen, dass Fueling kontrolliert geuebt wird, statt denselben langen Reiz oder maximale Dichte stumpf zu wiederholen.
+- **Alternatives:** Fueling-Toleranz nur in der Modal-Guidance anzeigen (zu spaet im Flow); harte automatische Carb-Vorgaben erzwingen (zu medizinisch/pseudopraezise); kompletten Nutrition-Score einfuehren (groesserer spaeterer Slice).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Fueling-Toleranz aus echten Logs beeinflusst kuenftige Guidance
 
 - **Decision:** Pulse nutzt During-Fueling-Logs mit GI-Komfort, 750-ml-Flaschen, Pulvergramm und Aktivitaetsdauer als Toleranzsignal fuer spaetere lange Einheiten. Die Guidance zeigt ein `Toleranz-Lernen` und Evidence an, statt alte Fueling-Daten nur historisch zu speichern.
