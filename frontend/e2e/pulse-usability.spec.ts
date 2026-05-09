@@ -1423,6 +1423,50 @@ test('Home surfaces TrainNow options when no workout is planned', async ({ page 
   await expect(page).toHaveURL(/\/plan\?tab=training/);
 });
 
+test('Plan scenario preview shows long-tour load and recovery impact before applying', async ({ page }) => {
+  let previewBody: unknown = null;
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'planned-1',
+      userId: 'user-1',
+      plannedDate: '2026-05-03',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 90,
+      distanceKm: null,
+      targetTss: 68,
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 2.5,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer.',
+      steps: null,
+      garminWorkoutId: null,
+      garminScheduledId: null,
+      status: 'planned',
+      workoutFeedback: null,
+      complianceScore: null,
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: null,
+    }],
+    onPlanScenarioPreview: body => { previewBody = body; },
+  });
+
+  await page.goto('/plan?tab=training');
+  await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
+  await page.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByText('TSS', { exact: true })).toBeVisible();
+  await expect(page.getByText('+296', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Fueling und GI-Komfort/)).toBeVisible();
+  expect(previewBody).toMatchObject({ type: 'add_custom_tour' });
+});
+
 test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {
   let readinessCalls = 0;
   await mockPulseApi(page, {

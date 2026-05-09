@@ -13,6 +13,7 @@ export const pulseKeys = {
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
   activityDetail: (id: string) => ['pulse', 'activity-detail', id] as const,
   plan:         ['pulse', 'plan'] as const,
+  planScenarioPreview: ['pulse', 'plan', 'scenario-preview'] as const,
   planTrace:    (weekStart: string) => ['pulse', 'plan', 'trace', weekStart] as const,
   availability: ['pulse', 'availability'] as const,
   goals:        ['pulse', 'goals'] as const,
@@ -586,6 +587,12 @@ export function useCreateWorkout() {
   return useMutation({
     mutationFn: (data: PlanWorkoutInput) => pulseApi.plan.createWorkout(data),
     onSuccess: () => invalidatePulsePlanContextQueries(qc),
+  });
+}
+
+export function usePlanScenarioPreview() {
+  return useMutation({
+    mutationFn: pulseApi.plan.previewScenario,
   });
 }
 

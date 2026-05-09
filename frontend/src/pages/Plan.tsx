@@ -4,7 +4,7 @@ import {
   useCheckinHistory, useCheckinToday,
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
+  usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -31,7 +31,7 @@ import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } 
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
-import type { PulseActivityType, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -662,6 +662,303 @@ const fieldStyle: React.CSSProperties = {
   padding: '8px 9px',
 };
 
+function addLocalDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function PlanScenarioPreviewCard({
+  workouts,
+  nextWorkout,
+  availableDays,
+  onApplied,
+}: {
+  workouts: PlannedWorkout[];
+  nextWorkout: PlannedWorkout | null;
+  availableDays: number[];
+  onApplied: (workout: PlannedWorkout | null) => void;
+}) {
+  const previewScenario = usePlanScenarioPreview();
+  const createWorkout = useCreateWorkout();
+  const updateWorkout = useUpdateWorkout();
+  const today = isoDateLocal(new Date());
+  const [mode, setMode] = useState<'tour' | 'move' | 'reduce' | 'availability'>('tour');
+  const [tourDate, setTourDate] = useState(isoDateLocal(addLocalDays(new Date(), 1)));
+  const [tourDistance, setTourDistance] = useState('155');
+  const [tourSpeed, setTourSpeed] = useState('22');
+  const [tourDescription, setTourDescription] = useState('Entspannte Rennradtour mit Stops.');
+  const [moveDate, setMoveDate] = useState(nextWorkout ? nextAvailableDateAfter(nextWorkout.plannedDate, availableDays) : isoDateLocal(addLocalDays(new Date(), 1)));
+  const [reduceFactor, setReduceFactor] = useState(75);
+  const [error, setError] = useState<string | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
+  const pending = previewScenario.isPending || createWorkout.isPending || updateWorkout.isPending;
+  const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
+
+  function scenario(): PulsePlanScenarioRequest {
+    if (mode === 'move' && nextWorkout) {
+      return { type: 'move_workout', workoutId: nextWorkout.id, targetDate: moveDate };
+    }
+    if (mode === 'reduce') {
+      return { type: 'reduce_volume', factor: reduceFactor / 100 };
+    }
+    if (mode === 'availability') {
+      return {
+        type: 'change_availability',
+        weekStart: weekStartForDate(today),
+        availableDays,
+      };
+    }
+    const distanceKm = Number(tourDistance.replace(',', '.'));
+    const expectedSpeedKmh = Number(tourSpeed.replace(',', '.'));
+    return {
+      type: 'add_custom_tour',
+      workout: {
+        plannedDate: tourDate,
+        activityType: 'bike',
+        zone: 2,
+        distanceKm: Number.isFinite(distanceKm) && distanceKm > 0 ? distanceKm : null,
+        expectedSpeedKmh: Number.isFinite(expectedSpeedKmh) && expectedSpeedKmh > 0 ? expectedSpeedKmh : null,
+        description: tourDescription.trim() || null,
+      },
+    };
+  }
+
+  async function handlePreview(e?: React.FormEvent) {
+    e?.preventDefault();
+    setError(null);
+    setApplyError(null);
+    try {
+      const result = await previewScenario.mutateAsync(scenario());
+      setPreview(result.preview);
+    } catch (err) {
+      setError(errorMessage(err, 'Die Vorschau konnte nicht berechnet werden.'));
+    }
+  }
+
+  async function handleApply() {
+    if (!preview) return;
+    setApplyError(null);
+    try {
+      if (mode === 'tour') {
+        const sc = scenario();
+        if (sc.type !== 'add_custom_tour') return;
+        const result = await createWorkout.mutateAsync({
+          plannedDate: sc.workout.plannedDate,
+          activityType: sc.workout.activityType,
+          zone: sc.workout.zone ?? 2,
+          distanceKm: sc.workout.distanceKm ?? undefined,
+          expectedSpeedKmh: sc.workout.expectedSpeedKmh ?? undefined,
+          description: sc.workout.description ?? undefined,
+          syncGarmin: true,
+          userLocked: true,
+        });
+        onApplied(result.workout);
+      } else if (mode === 'move' && nextWorkout) {
+        const result = await updateWorkout.mutateAsync({
+          id: nextWorkout.id,
+          data: { plannedDate: moveDate },
+        });
+        onApplied(result.workout);
+      } else if (mode === 'reduce') {
+        const factor = reduceFactor / 100;
+        await Promise.all(activeFutureWorkouts
+          .filter(workout => !workout.userLocked)
+          .map(workout => updateWorkout.mutateAsync({
+            id: workout.id,
+            data: { durationMin: roundToFive(workout.durationMin * factor) },
+          })));
+        onApplied(null);
+      }
+      setPreview(null);
+    } catch (err) {
+      setApplyError(errorMessage(err, 'Die Vorschau konnte nicht angewendet werden.'));
+    }
+  }
+
+  return (
+    <section className="card" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 12 }}>
+        <div>
+          <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Szenario-Vorschau</div>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            Erst Auswirkungen prüfen, dann bewusst anwenden. Die Vorschau schreibt nichts in Plan oder Garmin.
+          </p>
+        </div>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          Preview-only
+        </span>
+      </div>
+
+      <form onSubmit={handlePreview} style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
+          {[
+            ['tour', '155-km Tour'],
+            ['move', 'Verschieben'],
+            ['reduce', 'Umfang senken'],
+            ['availability', 'Verfügbarkeit'],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setMode(id as typeof mode);
+                setPreview(null);
+              }}
+              style={{
+                minHeight: 38,
+                border: `1px solid ${mode === id ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius)',
+                background: mode === id ? 'rgba(94,230,207,0.08)' : 'var(--surface-2)',
+                color: mode === id ? 'var(--accent)' : 'var(--text-2)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: 0,
+                textTransform: 'uppercase',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'tour' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 10 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              Datum
+              <input type="date" value={tourDate} onChange={e => setTourDate(e.target.value)} style={fieldStyle} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              km
+              <input inputMode="decimal" value={tourDistance} onChange={e => setTourDistance(e.target.value)} style={fieldStyle} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              km/h
+              <input inputMode="decimal" value={tourSpeed} onChange={e => setTourSpeed(e.target.value)} style={fieldStyle} />
+            </label>
+          </div>
+        )}
+
+        {mode === 'tour' && (
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+            Notiz
+            <textarea value={tourDescription} onChange={e => setTourDescription(e.target.value)} rows={2} style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.5 }} />
+          </label>
+        )}
+
+        {mode === 'move' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+              {nextWorkout
+                ? `${ACTIVITY_LABEL[nextWorkout.activityType] ?? nextWorkout.activityType} · ${nextWorkout.plannedDate} · Z${nextWorkout.zone} · ${nextWorkout.durationMin} min`
+                : 'Kein offenes Workout zum Verschieben gefunden.'}
+            </div>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              Neues Datum
+              <input type="date" value={moveDate} onChange={e => setMoveDate(e.target.value)} style={fieldStyle} disabled={!nextWorkout} />
+            </label>
+          </div>
+        )}
+
+        {mode === 'reduce' && (
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+            Nicht gesperrte Zukunfts-Workouts auf {reduceFactor}%
+            <input type="range" min={50} max={95} step={5} value={reduceFactor} onChange={e => setReduceFactor(Number(e.target.value))} />
+          </label>
+        )}
+
+        {mode === 'availability' && (
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            Aktuelle Woche: {availableDays.map(day => DAY_SHORT[day]).join('/') || 'keine Tage'}. Diese Vorschau zeigt nur die Annahme; Speichern bleibt im Verfügbarkeitsbereich.
+          </p>
+        )}
+
+        <button type="submit" disabled={pending || (mode === 'move' && !nextWorkout)} style={{
+          minHeight: 42,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius)',
+          color: 'var(--accent)',
+          cursor: pending ? 'wait' : 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+        }}>
+          {previewScenario.isPending ? '● Prüfe…' : 'Szenario prüfen'}
+        </button>
+      </form>
+
+      {error && (
+        <div style={{ marginTop: 10 }}>
+          <InlineFeedback title="Vorschau nicht erstellt" message={error} actionLabel="Erneut versuchen" onAction={() => { void handlePreview(); }} />
+        </div>
+      )}
+
+      {preview && (
+        <div style={{ marginTop: 12, display: 'grid', gap: 10 }} data-testid="plan-scenario-preview-result">
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{preview.summary}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+            {[
+              ['TSS', `${preview.loadImpact.tssDelta >= 0 ? '+' : ''}${preview.loadImpact.tssDelta}`],
+              ['Dauer', `${preview.loadImpact.durationDeltaMin >= 0 ? '+' : ''}${preview.loadImpact.durationDeltaMin} min`],
+              ['Recovery', preview.loadImpact.nextDayRecoveryDate ?? 'kein extra Tag'],
+            ].map(([label, value]) => (
+              <div key={label} style={{ background: 'var(--surface-2)', padding: 9 }}>
+                <div className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>{label}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)', marginTop: 4 }}>{value}</div>
+              </div>
+            ))}
+          </div>
+          {preview.changedDays.length > 0 && (
+            <div style={{ display: 'grid', gap: 6 }}>
+              {preview.changedDays.slice(0, 5).map(day => (
+                <div key={day.date} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, border: '1px solid var(--border)', borderRadius: 4, padding: '7px 8px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)' }}>{day.date}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text)' }}>{day.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {preview.reasons.length > 0 && (
+            <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.55 }}>
+              {preview.reasons.slice(0, 3).map(reason => <div key={reason}>- {reason}</div>)}
+            </div>
+          )}
+          {preview.warnings.map(warning => (
+            <div key={warning} style={{ fontSize: 11.5, color: 'var(--amber)', lineHeight: 1.5 }}>
+              {warning}
+            </div>
+          ))}
+          {applyError && <InlineFeedback title="Szenario nicht angewendet" message={applyError} />}
+          <button
+            type="button"
+            onClick={() => { void handleApply(); }}
+            disabled={pending || !preview.applySupported || mode === 'availability'}
+            style={{
+              minHeight: 42,
+              background: preview.applySupported && mode !== 'availability' ? 'var(--accent)' : 'var(--surface-2)',
+              color: preview.applySupported && mode !== 'availability' ? 'var(--bg)' : 'var(--text-3)',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              cursor: preview.applySupported && mode !== 'availability' ? 'pointer' : 'default',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {mode === 'availability' ? 'Im Verfügbarkeitsbereich speichern' : pending ? '● Wende an…' : 'Vorschau anwenden'}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -770,6 +1067,15 @@ function TrainingTab() {
         weekOffset={weekOffset}
         onChangeWeek={d => setWeekOffset(o => o + d)}
         onSelectWorkout={setSelectedWorkout}
+      />
+
+      <PlanScenarioPreviewCard
+        workouts={workouts}
+        nextWorkout={nextDecisionWorkout}
+        availableDays={decisionAvailableDays}
+        onApplied={workout => {
+          if (workout) setSelectedWorkout(workout);
+        }}
       />
 
       {/* Availability */}

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
@@ -54,6 +54,7 @@ import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildTodayOptions } from '../services/today-options.js';
+import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
 import { buildGarminWorkoutJson } from '../services/garmin-workout.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
@@ -328,6 +329,80 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .limit(100);
 
     return { workouts: workouts.map(workout => enrichWorkoutExecutionState(workout, activities, now)) };
+  });
+
+  app.post('/plan/scenario/preview', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const scenarioSchema = z.discriminatedUnion('type', [
+      z.object({
+        type: z.literal('add_custom_tour'),
+        workout: z.object({
+          plannedDate: isoDateSchema,
+          activityType: z.enum(['run','bike','swim','strength','hike','other']),
+          zone: z.number().int().min(1).max(5).optional(),
+          durationMin: z.number().int().min(5).max(900).optional(),
+          distanceKm: z.number().min(0.1).max(1000).nullable().optional(),
+          expectedSpeedKmh: z.number().min(1).max(80).nullable().optional(),
+          description: z.string().trim().max(1000).nullable().optional(),
+        }).refine(value => value.durationMin != null || (value.distanceKm != null && value.expectedSpeedKmh != null), {
+          message: 'Dauer oder Distanz plus erwarteter Schnitt erforderlich',
+          path: ['durationMin'],
+        }),
+      }),
+      z.object({
+        type: z.literal('move_workout'),
+        workoutId: z.string().uuid(),
+        targetDate: isoDateSchema,
+      }),
+      z.object({
+        type: z.literal('reduce_volume'),
+        factor: z.number().min(0.3).max(0.95),
+      }),
+      z.object({
+        type: z.literal('change_availability'),
+        weekStart: isoDateSchema,
+        availableDays: z.array(z.number().int().min(0).max(6)).max(7),
+        weeklyHours: z.number().min(0).max(40).nullable().optional(),
+      }),
+      z.object({
+        type: z.literal('add_event'),
+        title: z.string().trim().min(1).max(255),
+        eventDate: isoDateSchema,
+        priority: z.enum(['A','B','C']).nullable().optional(),
+      }),
+    ]);
+    const parsed = scenarioSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const until = toIsoDate(addDateDays(new Date(`${today}T12:00:00.000Z`), 28));
+    const workouts = await db.select().from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        gte(pulsePlannedWorkouts.plannedDate, today),
+        lte(pulsePlannedWorkouts.plannedDate, until),
+      ))
+      .orderBy(pulsePlannedWorkouts.plannedDate);
+
+    const preview = buildPlanScenarioPreview({
+      today,
+      workouts: workouts.map(workout => ({
+        id: workout.id,
+        plannedDate: workout.plannedDate,
+        activityType: workout.activityType as PulseActivityType,
+        zone: workout.zone,
+        durationMin: workout.durationMin,
+        targetTss: workout.targetTss,
+        userLocked: workout.userLocked,
+        status: workout.status,
+        description: workout.description,
+        distanceKm: workout.distanceKm,
+        expectedSpeedKmh: null,
+      })),
+      scenario: parsed.data as PulsePlanScenarioRequest,
+    });
+
+    return { preview };
   });
 
   app.post('/plan/workout', { onRequest: [app.authenticate] }, async (req, reply) => {
