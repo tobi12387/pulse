@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildGarminWorkoutJson,
+  buildGarminSyncContract,
   garminWorkoutHasBrokenRepeatIterations,
   workoutHasRepeatSteps,
 } from './garmin-workout.js';
@@ -124,5 +125,55 @@ describe('buildGarminWorkoutJson', () => {
         }],
       }],
     })).toBe(false);
+  });
+
+  it('blocks Garmin sync when a repeat payload would upload without iterations', () => {
+    const workout = {
+      id: 'planned-repeat',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 26,
+      description: 'Repeat-Test',
+      steps: [
+        { type: 'warmup', durationMin: 8, zone: 1, description: 'Warmup' },
+        { type: 'interval', durationMin: 5, zone: 4, reps: 2, restMin: 3, description: 'Z4' },
+      ],
+    } as Parameters<typeof buildGarminWorkoutJson>[0] & { id: string };
+    const payload = buildGarminWorkoutJson(workout);
+    const repeat = payload.workoutSegments[0]!.workoutSteps.find(step => step.type === 'RepeatGroupDTO');
+    if (repeat?.type === 'RepeatGroupDTO') {
+      repeat.numberOfIterations = 0;
+      repeat.endConditionValue = 0;
+    }
+
+    const contract = buildGarminSyncContract(workout, payload, { checkedAt: '2026-05-09T12:00:00.000Z' });
+
+    expect(contract.status).toBe('blocked');
+    expect(contract.payloadReady).toBe(false);
+    expect(contract.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'repeat_iterations_invalid', severity: 'error' }),
+    ]));
+  });
+
+  it('marks unsupported Garmin HR targets as degraded instead of hiding them', () => {
+    const workout = {
+      id: 'planned-swim',
+      activityType: 'swim',
+      zone: 3,
+      durationMin: 45,
+      description: 'Swim Z3',
+      steps: [
+        { type: 'steady', durationMin: 45, zone: 3, description: 'Z3 steady' },
+      ],
+    } as Parameters<typeof buildGarminWorkoutJson>[0] & { id: string };
+
+    const contract = buildGarminSyncContract(workout, buildGarminWorkoutJson(workout), { checkedAt: '2026-05-09T12:00:00.000Z' });
+
+    expect(contract.status).toBe('degraded');
+    expect(contract.payloadReady).toBe(true);
+    expect(contract.summary).toContain('ohne HR-Ziel');
+    expect(contract.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'unsupported_hr_target', severity: 'warning' }),
+    ]));
   });
 });

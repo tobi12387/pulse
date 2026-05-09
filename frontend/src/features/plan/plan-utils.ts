@@ -50,6 +50,21 @@ export function executionStatusFor(workout: PlannedWorkout): NonNullable<Planned
 }
 
 export function garminConfidenceCopy(workout: PlannedWorkout): GarminConfidenceCopy {
+  if (workout.garminSyncContract?.status === 'blocked') {
+    return {
+      title: 'Garmin Sync blockiert',
+      detail: workout.garminSyncContract.summary,
+      tone: 'error',
+    };
+  }
+  if (workout.garminSyncContract?.status === 'degraded') {
+    return {
+      title: 'Garmin mit Einschränkung',
+      detail: workout.garminSyncContract.summary,
+      tone: 'watch',
+    };
+  }
+
   const status = executionStatusFor(workout);
   if (status === 'garmin_scheduled') {
     return {

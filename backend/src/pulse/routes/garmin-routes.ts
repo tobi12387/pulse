@@ -28,6 +28,8 @@ import { buildGarminDataQuality } from '../services/garmin-data-quality.js';
 import { buildGarminSignalUsefulness } from '../services/garmin-signal-usefulness.js';
 import { fetchGarminCalendarWorkouts } from '../services/garmin-calendar-workouts.js';
 import {
+  buildGarminRemoteRepeatRepairContract,
+  buildGarminSyncContract,
   buildGarminWorkoutJson,
   garminWorkoutHasBrokenRepeatIterations,
   workoutHasRepeatSteps,
@@ -753,6 +755,7 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
           .set({
             garminWorkoutId: null,
             garminScheduledId: null,
+            garminSyncContract: buildGarminRemoteRepeatRepairContract(),
             executionStatus: null,
             executionNotes: null,
             executionMatchConfidence: null,
@@ -787,6 +790,18 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
           return null;
         });
         const garminWorkout = buildGarminWorkoutJson(w, { fuelingGuidance });
+        const garminSyncContract = buildGarminSyncContract(w, garminWorkout);
+        if (!garminSyncContract.payloadReady) {
+          await db.update(pulsePlannedWorkouts)
+            .set({
+              garminSyncContract,
+              executionStatus: 'local_planned',
+              executionNotes: garminSyncContract.summary,
+            })
+            .where(eq(pulsePlannedWorkouts.id, w.id));
+          errors.push(`${workout.plannedDate}: ${garminSyncContract.summary}`);
+          continue;
+        }
         const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
         const garminWorkoutId = String(created.workoutId);
         const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, w.plannedDate) as any;
@@ -798,7 +813,7 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
           ? 'Workout ist auf Garmin im Kalender geplant.'
           : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
         await db.update(pulsePlannedWorkouts)
-          .set({ garminWorkoutId, garminScheduledId, executionStatus, executionNotes })
+          .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
           .where(eq(pulsePlannedWorkouts.id, w.id));
         uploaded++;
       } catch (err) {
