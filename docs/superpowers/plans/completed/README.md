@@ -63,6 +63,7 @@
 | `2026-05-05-garmin-workout-sync-confidence.md` | Garmin Workout Sync Confidence — Plan rows and workout detail modal show local/template/calendar/completed/missed/replaced confidence without live Garmin calls | PR #182 |
 | `2026-05-05-mobile-a11y-controls-polish.md` | Mobile/A11y Controls Polish — 44px touch targets, tab semantics and Mental radio keyboard support | PR #184, PR #186 |
 | `2026-05-05-data-decision-evidence-trail.md` | Data Decision Evidence Trail — Home/Plan evidence chips deep-link into Data anchors with hash tab selection and visible focus | PR #188 |
+| `2026-05-09-training-benchmark-gap-plan.md` | Training Benchmark Gap Plan — capability levels, workout library fit, TrainNow, scenario preview, season load model, Garmin sync contract and goal limiter evidence | `8a384ab`-`6de9f86` |
 
 ## Bekannte veraltete Stellen
 

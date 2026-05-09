@@ -1,5 +1,7 @@
 # Training Benchmark Gap Plan
 
+> **Status:** Completed on 2026-05-09. Implemented through `8a384ab` (capability levels), `92d4d34` (workout library fit), `18b0025` (TrainNow today options), `cdf9275` (plan scenario preview), `602bf94` (season load model), `2467fa8` (Garmin sync contract) and `6de9f86` (goal limiter evidence).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Close the highest-value gaps between Pulse and leading endurance training products without copying proprietary plan content.
@@ -35,7 +37,7 @@ Already implemented:
 - Fueling and recovery guidance with Tobi-specific MNSTRY anchors, 750 ml bottles, During logs, GI comfort and weekly plan-density caps.
 - Plan UI evidence card: `Warum diese Woche so?` grouped by Fueling, Erholung, Variation, Freie Tage and Zielbezug.
 
-Current main gaps:
+Original gaps this plan closed:
 
 - No durable athlete capability levels by zone/archetype that evolve over time.
 - No reusable workout library with stable difficulty labels and alternatives.
@@ -178,15 +180,15 @@ Current main gaps:
 - Do not make nutrition or medical claims beyond conservative fueling/recovery guidance.
 - Do not trigger live Garmin sync in generic QA.
 
-## Recommended Next PR Sequence
+## Implemented Sequence
 
-1. `codex/capability-levels` — backend capability levels, tests, small Data/Plan read surface.
-2. `codex/workout-library-fit` — reusable library and fit labels; sport-change regeneration.
-3. `codex/train-now-options` — today options API + Home/Plan surfaces.
-4. `codex/plan-scenario-preview` — preview/apply flow for custom tours and availability changes.
-5. `codex/season-load-model` — annual load/ramp/taper constraints feeding weekly generation.
-6. `codex/garmin-sync-contract` — validator and repeat/target regression tests.
-7. `codex/limiters-specificity` — goal limiter evidence and archetype selection.
+1. `8a384ab` — backend capability levels, tests, small Data/Plan read surface.
+2. `92d4d34` — reusable workout library, difficulty fit and sport-change consistency.
+3. `18b0025` — TrainNow/today options API and Home/Plan surfaces.
+4. `cdf9275` — preview/apply flow for custom tours and availability changes.
+5. `602bf94` — annual load/ramp/taper constraints feeding weekly generation.
+6. `2467fa8` — Garmin sync contract and repeat/target regression tests.
+7. `6de9f86` — goal limiter evidence and limiter-aware archetype selection.
 
 ## Verification Strategy
 

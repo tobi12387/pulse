@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest verified server runtime recorded in this file: `2467fa8` / PR #226, deployed 2026-05-09. Verify live deploy state with `scripts/verify-server.sh` when it matters.
+- Latest verified server runtime recorded in this file: `6de9f86` / PR #227, deployed 2026-05-09. Verify live deploy state with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
@@ -22,7 +22,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
 - Fueling & Recovery preference capture, the pure backend guidance engine, read-only Plan modal guidance, Garmin workout-description handoff, generic portion equivalents, confirmed MNSTRY product calibration and practical Activity Fueling Logs are implemented: no dietary restrictions, `POWER CARB Sour Cherry 1:0.8` is the primary during anchor, Tobi-specific MNSTRY guidance uses 750 ml bottles plus approximate powder grams, `PORRIDGE BAR Sour Cherry` and `PROTEIN BAR 8 Peanut & Cranberry` support pre/post guidance, and `BICARB GEL 40 Lemon 1:0.8` stays race-/intensity-specific. Fueling logs now capture 750-ml bottles, powder grams, selected products/snacks and GI comfort.
-- Training-plan intelligence is now controlled by persisted capability levels, deterministic archetypes, repeated-week variation, fueling-tolerance learning and weekly density caps. Plan surfaces the weekly decision reasons as signal groups. The active benchmark/gap plan is `docs/superpowers/plans/2026-05-09-training-benchmark-gap-plan.md`; the current runtime branch adds Physiological Limiters + Course Specificity. After that, rerun the benchmark against TrainerRoad/TrainingPeaks/JOIN/Intervals/WKO patterns and use real Garmin sync QA to find the next gap.
+- Training-plan intelligence is now controlled by persisted capability levels, deterministic archetypes, TrainNow options, scenario preview/apply, season load modeling, Garmin sync contracts and goal limiter evidence. Plan surfaces weekly decision reasons as signal groups. The 2026-05-09 benchmark/gap plan is completed history in `docs/superpowers/plans/completed/`; next work should rerun the benchmark against TrainerRoad/TrainingPeaks/JOIN/Intervals/WKO patterns and use real Garmin sync QA to find the next gap.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates
@@ -45,6 +45,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - PR #184: Mobile Touch Targets deployed; daily-use controls in Home/Data/Plan/Coach/Settings now meet the 44px iPhone/PWA target-size baseline.
 - PR #186: Mobile A11y Keyboard deployed; Data/Plan segmented controls use tab semantics and Mental radio groups support arrow-key selection.
 - PR #188: Data Decision Evidence Trail deployed; Home/Plan evidence chips now deep-link to Data anchors with hash-driven tab selection and visible focus.
+- PR #225-#227: Training Benchmark Gap closure deployed; season load modeling, Garmin sync contracts and goal limiter evidence now feed plan decisions, trace evidence and Garmin confidence.
 - 2026-05-04: AI working context was condensed so sessions start from AGENTS plus `docs/ai/*` instead of long pasted prompts or PR archives.
 - 2026-05-04: completed structure and UI/UX roadmap docs were moved out of the active plan surface to avoid reimplementation.
 - PR #149-#150: ops/tooling cleanup and design handoff relocation.
