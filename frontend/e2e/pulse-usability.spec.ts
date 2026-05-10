@@ -2371,6 +2371,8 @@ test('Plan summarizes Garmin sync debt before opening individual workouts', asyn
   await expect(card).toContainText('1 lokal');
   await expect(card).toContainText('1 nur Vorlage');
   await expect(card).toContainText('1 Einschränkung');
+  await expect(card).toContainText('Gerätehorizont 15 Tage');
+  await expect(card).toContainText('3 offen im Gerätehorizont');
 
   await card.getByRole('button', { name: 'Garmin öffnen' }).click();
   await expect(page).toHaveURL('/settings?section=garmin');

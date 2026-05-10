@@ -86,6 +86,8 @@ type PlanAdaptationSignal = {
 
 type GarminSyncDebtSummary = {
   futureCount: number;
+  deviceWindowDays: number;
+  deviceWindowDebt: number;
   localOnly: number;
   templateOnly: number;
   degraded: number;
@@ -179,9 +181,17 @@ function buildGarminSyncDebtSummary(workouts: PlannedWorkout[], today: string): 
   const templateOnly = future.filter(workout => executionStatusFor(workout) === 'garmin_template').length;
   const degraded = future.filter(workout => workout.garminSyncContract?.status === 'degraded').length;
   const blocked = future.filter(workout => workout.garminSyncContract?.status === 'blocked').length;
+  const deviceWindowDays = 15;
+  const deviceWindowEnd = isoDateLocal(addLocalDays(new Date(today + 'T12:00:00'), deviceWindowDays));
+  const deviceWindowDebt = future.filter(workout => workout.plannedDate <= deviceWindowEnd && (
+    executionStatusFor(workout) === 'local_planned'
+    || executionStatusFor(workout) === 'garmin_template'
+    || workout.garminSyncContract?.status === 'degraded'
+    || workout.garminSyncContract?.status === 'blocked'
+  )).length;
 
   if (localOnly + templateOnly + degraded + blocked === 0) return null;
-  return { futureCount: future.length, localOnly, templateOnly, degraded, blocked };
+  return { futureCount: future.length, deviceWindowDays, deviceWindowDebt, localOnly, templateOnly, degraded, blocked };
 }
 
 function PlanGarminSyncDebtCard({
@@ -222,6 +232,9 @@ function PlanGarminSyncDebtCard({
       <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
         Einige geplante Einheiten sind noch nicht vollständig als Garmin-Vorlage oder Kalendertermin abgesichert.
       </p>
+      <div style={{ marginTop: 9, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+        Gerätehorizont {summary.deviceWindowDays} Tage · {summary.deviceWindowDebt} offen im Gerätehorizont
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
         {chips.map(chip => (
           <span

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Garmin-Sync-Schulden zeigen einen 15-Tage-Gerätehorizont
+
+- **Decision:** Die Plan-Garmin-Sync-Karte zeigt zusätzlich zur Gesamtzahl geplanter Zukunftseinheiten, wie viele offene Sync-Schulden im nächsten 15-Tage-Gerätehorizont liegen.
+- **Why:** TrainingPeaks/Garmin-Workflows machen geplante strukturierte Workouts vor allem in einem nahen Gerätefenster relevant. Tobi braucht vor der Ausführung Vertrauen, ob Uhr oder Edge die nächsten Einheiten wirklich bekommen, statt nur eine ungewichtete Zukunftsliste zu sehen.
+- **Alternatives:** Nur Gesamtzahl und Statuschips zeigen (zu wenig ausführungsscharf); automatisch synchronisieren (zu viel versteckte Mutation); einen separaten Garmin-Kalender-Screen bauen (zu groß für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Planalternativen dürfen bei grünen Signalen auch Wachstum anbieten
 
 - **Decision:** Die nächste Trainingsentscheidung bietet `Länger` als zielorientierte Alternative nur an, wenn keine Risiko- oder Mental-Warnung aktiv ist, ein Ziel vorhanden ist, die Einheit locker bleibt, die Dauer nicht bereits sehr lang ist und TSB positiv ist. In diesem Fall kann `Länger` als Empfehlung markiert werden.
