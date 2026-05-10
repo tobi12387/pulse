@@ -153,7 +153,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
       id: 'plan-load',
       tab: 'analysen',
       hash: 'data-plan-trace',
-      targetPath: '/plan?tab=training#plan-scenario-preview',
+      targetPath: '/plan?tab=training&source=data-load#plan-scenario-preview',
       label: 'Plan-/Load',
       value: `CTL ${fmtMetric(home?.fitnessLoad.ctl, 1)} · ATL ${fmtMetric(home?.fitnessLoad.atl, 1)}`,
       detail: 'Zur Szenario-Vorschau wechseln und Planwirkung prüfen.',

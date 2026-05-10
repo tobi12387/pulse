@@ -1370,12 +1370,14 @@ test('Data Plan Load triage hands off to the actionable Plan scenario surface', 
   await page.goto('/data');
   await page.getByTestId('data-triage-plan-load').click();
 
-  await expect(page).toHaveURL('/plan?tab=training#plan-scenario-preview');
+  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-scenario-preview');
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
   await expect(scenarioCard).toBeInViewport();
   await expect(scenarioCard).toBeFocused();
   await expect(scenarioCard).toContainText('Szenario-Vorschau');
+  await expect(scenarioCard).toContainText('Aus Data geöffnet');
+  await expect(scenarioCard).toContainText('Readiness, TSB und Plan-/Load-Evidenz');
 });
 
 test('Data ignores malformed hashes and stays usable', async ({ page }) => {

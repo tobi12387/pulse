@@ -821,12 +821,14 @@ function PlanScenarioPreviewCard({
   nextWorkout,
   availableDays,
   reviewRequest,
+  entrySource,
   onApplied,
 }: {
   workouts: PlannedWorkout[];
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
   reviewRequest: number;
+  entrySource: string | null;
   onApplied: (workout: PlannedWorkout | null, notice: PlanMutationNotice | null) => void;
 }) {
   const previewScenario = usePlanScenarioPreview();
@@ -954,6 +956,24 @@ function PlanScenarioPreviewCard({
           Preview-only
         </span>
       </div>
+
+      {entrySource === 'data-load' && (
+        <p
+          data-testid="plan-scenario-entry-context"
+          style={{
+            margin: '0 0 10px',
+            padding: '8px 10px',
+            border: '1px solid rgba(94,230,207,0.24)',
+            borderRadius: 5,
+            background: 'rgba(94,230,207,0.07)',
+            color: 'var(--text-2)',
+            fontSize: 11.5,
+            lineHeight: 1.45,
+          }}
+        >
+          Aus Data geöffnet: Prüfe hier, ob Readiness, TSB und Plan-/Load-Evidenz eine konkrete Planänderung rechtfertigen.
+        </p>
+      )}
 
       <form onSubmit={handlePreview} style={{ display: 'grid', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
@@ -1265,7 +1285,7 @@ function PlanAdaptationReviewCard({
 
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
-function TrainingTab() {
+function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
   const goals     = usePulseGoals();
@@ -1410,6 +1430,7 @@ function TrainingTab() {
         nextWorkout={nextDecisionWorkout}
         availableDays={decisionAvailableDays}
         reviewRequest={scenarioReviewRequest}
+        entrySource={entrySource}
         onApplied={(workout, notice) => {
           setPlanNotice(notice);
           if (workout) setSelectedWorkout(workout);
@@ -2166,6 +2187,7 @@ export default function Plan() {
   const navigate = useNavigate();
   const searchKey = searchParams.toString();
   const tab = tabFromQuery(searchParams.get('tab'));
+  const entrySource = searchParams.get('source');
 
   function setTab(tabId: string) {
     const nextTab = tabId as Tab;
@@ -2206,7 +2228,7 @@ export default function Plan() {
         title="Training, Ziele & Statistik"
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" />}
       />
-      {tab === 'training' && <TrainingTab />}
+      {tab === 'training' && <TrainingTab entrySource={entrySource} />}
       {tab === 'ziele'    && <ZieleTab />}
       {tab === 'review'   && <ReviewTab />}
       {tab === 'statistik' && <StatistikTab />}
