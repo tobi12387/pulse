@@ -4,6 +4,7 @@ import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
 import {
   pulseActivities,
+  pulseActivityStreams,
   pulseActionDecisions,
   pulseCoachPreferences,
   pulseCoachSessions,
@@ -133,6 +134,7 @@ afterAll(async () => {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
     await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
     await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+    await db.delete(pulseActivityStreams);
     await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
     await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
     await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -152,6 +154,7 @@ beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
   await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
   await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+  await db.delete(pulseActivityStreams);
   await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
   await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
   await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -1183,6 +1186,89 @@ describe('GET /api/pulse/data-coverage', () => {
     expect(body.days.find(day => day.date === yesterday)).toMatchObject({
       dailyMetrics: { status: 'present' },
       activities: { count: 1, weatherCount: 1 },
+    });
+  });
+});
+
+describe('GET /api/pulse/training-analytics', () => {
+  it('reports lap-approximated power quality without mutating profile values', async () => {
+    const yesterday = dateDaysAgo(1);
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 3600,
+      normalizedPowerW: 190,
+      garminLaps: [
+        { index: 1, durationSec: 900, avgPowerW: 180 },
+        { index: 2, durationSec: 900, avgPowerW: 190 },
+        { index: 3, durationSec: 900, avgPowerW: 185 },
+        { index: 4, durationSec: 900, avgPowerW: 175 },
+      ],
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/training-analytics?weeks=4',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      powerDataQuality: {
+        source: string;
+        status: string;
+        limitations: string[];
+        updatedAt: string | null;
+      };
+    }>();
+    expect(body.powerDataQuality).toMatchObject({
+      source: 'lap_approximation',
+      status: 'usable_with_caution',
+      updatedAt: `${yesterday}T08:00:00.000Z`,
+    });
+    expect(body.powerDataQuality.limitations).toContain('Keine 1Hz-Power-Streams im Pulse-Datensatz.');
+
+    const [profile] = await db.select({ ftpWatts: pulseUserProfile.ftpWatts })
+      .from(pulseUserProfile)
+      .where(eq(pulseUserProfile.userId, userId));
+    expect(profile?.ftpWatts).toBe(250);
+  });
+
+  it('reports trusted power quality when a dense stream is available', async () => {
+    const yesterday = dateDaysAgo(1);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 600,
+      normalizedPowerW: 205,
+    }).returning({ id: pulseActivities.id });
+    await db.insert(pulseActivityStreams).values({
+      activityId: activity!.id,
+      durationSec: 600,
+      sampleRateHz: 1,
+      powerStream: Array.from({ length: 600 }, (_, index) => (index % 120 === 0 ? 260 : 210)),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/training-analytics?weeks=4',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      powerDataQuality: { source: string; status: string; coveragePct: number };
+    }>();
+    expect(body.powerDataQuality).toMatchObject({
+      source: 'stream',
+      status: 'trusted',
+      coveragePct: 100,
     });
   });
 });

@@ -6,6 +6,7 @@ import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
   pulseActivities,
+  pulseActivityStreams,
   pulseCoachPreferences,
   pulseDailyMetrics,
   pulseGoals,
@@ -51,6 +52,7 @@ import { deriveGoalLimiter } from '../services/goal-limiters.js';
 import { buildRaceCommandSummary } from '../services/race-command.js';
 import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
 import { summarizePlanCapabilityFit } from '../services/training-capabilities.js';
+import { classifyPowerDataQuality } from '../services/power-data-quality.js';
 import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
@@ -2236,6 +2238,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         normalizedPowerW: pulseActivities.normalizedPowerW,
         vo2maxEstimate:   pulseActivities.vo2maxEstimate,
         rpe:              pulseActivities.rpe,
+        garminLaps:       pulseActivities.garminLaps,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since)))
         .orderBy(pulseActivities.startTime),
@@ -2245,6 +2248,45 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     ]);
 
     const ftp = profileRows[0]?.ftpWatts ?? null;
+    const activityIds = activities.map(a => a.id);
+    const activityStreams = activityIds.length > 0
+      ? await db.select({
+          activityId: pulseActivityStreams.activityId,
+          durationSec: pulseActivityStreams.durationSec,
+          sampleRateHz: pulseActivityStreams.sampleRateHz,
+          powerStream: pulseActivityStreams.powerStream,
+        }).from(pulseActivityStreams)
+          .where(inArray(pulseActivityStreams.activityId, activityIds))
+      : [];
+    const streamByActivityId = new Map(activityStreams.map(stream => [stream.activityId, stream]));
+    const powerQualityActivity = [...activities].reverse().find((activity) => {
+      if (activity.activityType !== 'bike') return false;
+      const stream = streamByActivityId.get(activity.id);
+      const hasStreamPower = (stream?.powerStream?.length ?? 0) > 0;
+      const hasLapPower = (activity.garminLaps ?? []).some(lap => (lap.avgPowerW ?? 0) > 0);
+      return hasStreamPower || hasLapPower;
+    }) ?? null;
+    const powerDataQuality = (() => {
+      if (!powerQualityActivity) {
+        const result = classifyPowerDataQuality({
+          durationSec: 1,
+          sampleRateHz: null,
+          powerStream: null,
+          laps: [],
+        });
+        return { ...result, updatedAt: null };
+      }
+
+      const stream = streamByActivityId.get(powerQualityActivity.id);
+      const powerStream = (stream?.powerStream?.length ?? 0) > 0 ? stream!.powerStream : null;
+      const result = classifyPowerDataQuality({
+        durationSec: stream?.durationSec ?? powerQualityActivity.durationSec ?? 1,
+        sampleRateHz: stream?.sampleRateHz ?? null,
+        powerStream,
+        laps: powerQualityActivity.garminLaps ?? [],
+      });
+      return { ...result, updatedAt: powerQualityActivity.startTime.toISOString() };
+    })();
     const ratedActivityIds = activities.filter(a => a.rpe != null).map(a => a.id);
     const completedPlans = ratedActivityIds.length > 0
       ? await db.select({
@@ -2359,7 +2401,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     });
     const totalRated = [...recentRpe.values()].reduce((sum, z) => sum + z.count, 0);
 
-    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone }, capabilitySummary };
+    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone }, capabilitySummary, powerDataQuality };
   });
 
   app.get('/training-capabilities', { onRequest: [app.authenticate] }, async (req) => {

@@ -12,7 +12,7 @@ import type {
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
   PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
-  PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
+  PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -371,20 +371,7 @@ export const pulseApi = {
   },
 
   trainingAnalytics: {
-    get: (weeks = 12): Promise<{
-      weeks: number;
-      tssHeatmap: Array<{ date: string; tss: number }>;
-      zoneDistribution: Array<{
-        weekStart: string; totalH: number;
-        zones: { z1: number; z2: number; z3: number; z4: number; z5: number };
-      }>;
-      vo2maxTrend: Array<{ date: string; vo2max: number }>;
-      rpeByZone: {
-        totalRated: number;
-        zones: Array<{ zone: number; avgRpe: number | null; count: number; previousAvgRpe: number | null; drift: number | null }>;
-      };
-      capabilitySummary: PulseTrainingCapabilitySummary;
-    }> =>
+    get: (weeks = 12): Promise<PulseTrainingAnalyticsResponse> =>
       request(`/training-analytics?weeks=${weeks}`),
   },
 

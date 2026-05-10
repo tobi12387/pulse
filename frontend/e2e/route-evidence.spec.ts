@@ -113,7 +113,13 @@ test.describe('Route evidence screenshot pack', () => {
     }
 
     for (const route of routes) {
-      await capture(route);
+      await capture(route, route.label === 'data-analysen'
+        ? async () => {
+            const qualityCard = page.getByTestId('power-data-quality');
+            await expect(qualityCard).toBeVisible();
+            await expect(qualityCard).toContainText('Nur Lap-Approximation');
+          }
+        : undefined);
     }
 
     if (testInfo.project.name === 'mobile-chromium') {

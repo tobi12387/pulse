@@ -8,6 +8,8 @@
 
 **Tech Stack:** TypeScript pure services, existing Pulse activity/analytics schema, Fastify routes, React Data/Plan surfaces, Vitest, Playwright route checks.
 
+**Implementation note:** Implemented as a read-only power-quality foundation. `/training-analytics` now reports stream, lap-approximation or blocked provenance via `powerDataQuality`; Data > Analysen shows a compact evidence card. FTP/profile values are not mutated.
+
 ---
 
 ## Files
@@ -24,7 +26,7 @@
 
 ## Task 1: Classify Signal Provenance
 
-- [ ] **Step 1: Write the failing pure-service test**
+- [x] **Step 1: Write the failing pure-service test**
 
 Create `backend/src/pulse/services/power-data-quality.test.ts`:
 
@@ -78,7 +80,7 @@ describe('classifyPowerDataQuality', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -88,7 +90,7 @@ npm test -w backend -- --run src/pulse/services/power-data-quality.test.ts
 
 Expected: FAIL because the service does not exist.
 
-- [ ] **Step 3: Implement the service**
+- [x] **Step 3: Implement the service**
 
 Create `backend/src/pulse/services/power-data-quality.ts`:
 
@@ -141,7 +143,7 @@ export function classifyPowerDataQuality(input: {
 }
 ```
 
-- [ ] **Step 4: Run focused test**
+- [x] **Step 4: Run focused test**
 
 Run:
 
@@ -153,7 +155,7 @@ Expected: PASS.
 
 ## Task 2: Expose Coverage Without Changing FTP
 
-- [ ] **Step 1: Extend shared training type**
+- [x] **Step 1: Extend shared training type**
 
 In `shared/types/pulse/training.ts`, add:
 
@@ -168,7 +170,7 @@ export interface PulsePowerDataQualitySummary {
 }
 ```
 
-- [ ] **Step 2: Wire route summary**
+- [x] **Step 2: Wire route summary**
 
 In the existing Data/training analytics route, query the latest activity streams and lap caches for the user, call `classifyPowerDataQuality`, and return:
 
@@ -185,7 +187,7 @@ powerDataQuality: {
 
 If no power data exists, return `source: 'unavailable'` and `status: 'blocked'`. Do not update FTP or profile values in this plan.
 
-- [ ] **Step 3: Add backend integration test**
+- [x] **Step 3: Add backend integration test**
 
 Extend `backend/src/pulse/plugin.test.ts` with one route test proving:
 
@@ -200,7 +202,7 @@ Use seeded lap cache data; do not require live Garmin.
 
 ## Task 3: Add Compact UI Evidence
 
-- [ ] **Step 1: Data UI**
+- [x] **Step 1: Data UI**
 
 In `frontend/src/pages/Data.tsx`, add one compact row or card in the existing analytics area:
 
@@ -212,11 +214,11 @@ In `frontend/src/pages/Data.tsx`, add one compact row or card in the existing an
 </section>
 ```
 
-- [ ] **Step 2: Plan warning only when needed**
+- [x] **Step 2: Plan warning only when needed**
 
 If Plan displays a durability or power-derived limiter later, it must also display the quality source. This foundation plan may add a placeholder warning only when `status !== 'trusted'`; it must not add a new dashboard.
 
-- [ ] **Step 3: Browser verification**
+- [x] **Step 3: Browser verification**
 
 Run:
 
