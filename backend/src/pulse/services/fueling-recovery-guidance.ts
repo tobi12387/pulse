@@ -187,10 +187,15 @@ function summarizeFuelingTolerance(logs: FuelingToleranceLogInput[] | undefined)
   const basis = parts.length > 0 ? ` bei ca. ${parts.join(', ')}` : '';
 
   if (latestIssue) {
+    const likelyLowIntake = cph != null && cph < 50;
+    const reliefSnackHint = /mars|snack|riegel|half|geholfen/i.test(log.notes ?? '');
+    const learningText = likelyLowIntake
+      ? `Nächste lange Einheit nicht pauschal senken, sondern früher und gleichmäßiger zuführen: 50-70 g/h als kontrollierten Schritt testen, Trinkmenge und Flaschenkonzentration prüfen.${reliefSnackHint ? ' Der Mars-Hinweis spricht eher für rechtzeitigeres Fueling als für weniger Carbs.' : ''}`
+      : 'Naechste lange Einheit frueh und gleichmaessig zufuehren, mit unterer bis mittlerer Range starten und spaete Notfall-Snacks nicht als Standard einplanen.';
     return {
       item: {
         id: 'during-fueling-tolerance',
-        text: `Toleranz-Lernen: ${log.date} gab es Magen-/GI-Thema${basis}. Naechste lange Einheit frueh und gleichmaessig zufuehren, mit unterer bis mittlerer Range starten und spaete Notfall-Snacks nicht als Standard einplanen.`,
+        text: `Toleranz-Lernen: ${log.date} gab es Magen-/GI-Thema${basis}. ${learningText}`,
       },
       evidence: {
         label: 'Fueling-Toleranz',
