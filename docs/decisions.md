@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-10 — Naechste Roadmap fokussiert Plan-Aktivierung statt neue Tabs
+
+- **Decision:** Nach Abschluss der Progression Library v2 priorisiert Pulse Plan Refresh Preview, Garmin Readback Closure, Today Options Signal Labels, Fueling Debt Closure, Limiter-to-Workout Mapping und eine No-Garmin-Write QA Harness. Es wird kein neuer Top-Level-Tab eingefuehrt.
+- **Why:** Der frische Benchmark gegen TrainerRoad, TrainingPeaks, JOIN, WKO/Intervals und die aktuelle Route-Evidence zeigen, dass Pulse jetzt genug Logik besitzt; der groesste Nutzen entsteht, wenn Refresh, Apply, Garmin-Beweis und Tagesentscheidung als geschlossene Flows sichtbar werden.
+- **Alternatives:** Weitere Workout-Library-Tiefe sofort bauen (zu frueh ohne Aktivierungsflow); neues Analytics-/Benchmark-Tab einfuehren (mehr Navigation statt mehr Alltagssicherheit); Live-Garmin-Write-Tests als Standard-QA nutzen (zu riskant).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-10 — Today Options nutzt Capability-Fortschritt und offene GI-Schutzsignale
 
 - **Decision:** Today Options liest die aktuelle Training-Capability-Zusammenfassung und markiert freie Endurance-Optionen als produktiv, wenn Endurance-Evidenz einen kleinen naechsten Reiz erlaubt. Gleichzeitig werden harte geplante Einheiten bei offenem GI-/Fueling-Hinweis in den Recovery-Protect-Pfad verschoben.
