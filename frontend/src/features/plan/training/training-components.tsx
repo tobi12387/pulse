@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUpdateWorkout } from '@/pulse/hooks';
-import { ACTIVITY_LABEL, activityLabel } from '@/pulse/activity-labels';
+import { ACTIVITY_LABEL, activityLabel, workoutArchetypeCopy } from '@/pulse/activity-labels';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
 
@@ -193,6 +193,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
   const [updateNotice, setUpdateNotice] = useState<{ tone: 'ok' | 'warning' | 'error'; text: string } | null>(null);
   const confidence = garminConfidenceCopy(w);
   const structureSummary = workoutStructureSummary(w);
+  const archetypeCopy = workoutArchetypeCopy(w.archetypeId);
 
   async function handleTypeChange(type: string) {
     if (type === w.activityType) {
@@ -271,9 +272,12 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', lineHeight: 1.35 }}>
             <span style={{ fontSize: 12, color: 'var(--text)' }}>{ACTIVITY_LABEL[w.activityType] ?? w.activityType}</span>
-            {w.archetypeId && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-                {w.archetypeId.replaceAll('_', ' ')}
+            {archetypeCopy && (
+              <span
+                title={archetypeCopy.purpose}
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}
+              >
+                Archetyp: {archetypeCopy.label}
               </span>
             )}
             {!switching && (

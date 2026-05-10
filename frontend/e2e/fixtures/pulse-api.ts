@@ -1058,7 +1058,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           durationMin: body.durationMin ?? 423,
           distanceKm: body.distanceKm ?? null,
           targetTss: null,
-          archetypeId: 'long_endurance',
+          archetypeId: body.archetypeId ?? 'long_endurance',
           difficultyLevel: 4.2,
           difficultyEnergySystem: 'long_endurance',
           capabilityFit: 'stretch',

@@ -512,6 +512,7 @@ export interface PlanWorkoutInput {
   distanceKm?: number;
   expectedSpeedKmh?: number;
   description?: string;
+  archetypeId?: string;
   syncGarmin?: boolean;
   userLocked?: boolean;
 }

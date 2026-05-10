@@ -215,6 +215,7 @@ export type PulsePlanScenarioRequest =
         distanceKm?: number | null;
         expectedSpeedKmh?: number | null;
         description?: string | null;
+        archetypeId?: string | null;
       };
     }
   | { type: 'move_workout'; workoutId: string; targetDate: string }
@@ -235,6 +236,7 @@ export interface PulsePlanScenarioProjectedWorkout {
   description?: string | null;
   distanceKm?: number | null;
   expectedSpeedKmh?: number | null;
+  archetypeId?: string | null;
 }
 
 export interface PulsePlanScenarioChangedDay {

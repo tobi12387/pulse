@@ -2,6 +2,7 @@ import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
 import { trainingArchetypes, type TrainingArchetype } from './training-intelligence.js';
+import { selectWorkoutArchetype } from './workout-library.js';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -415,25 +416,18 @@ const BASE_DURATION: Record<ActivityType, Record<number, number>> = {
 const ARCHETYPE_BY_ID = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
 
 function archetypeForWorkout(workout: Pick<WeekWorkout, 'activityType' | 'zone' | 'durationMin'>): TrainingArchetype {
-  const id = workout.activityType === 'strength'
-    ? 'strength_support'
-    : workout.zone <= 1
-    ? 'recovery_spin'
-    : workout.zone === 2 && workout.durationMin >= 150
-    ? 'long_endurance'
-    : workout.zone === 2
-    ? 'endurance_steady'
-    : workout.zone === 3
-    ? workout.activityType === 'bike' && workout.durationMin >= 90
-      ? 'gravel_specificity'
-      : 'tempo_sustained'
-    : workout.zone === 4
-    ? 'threshold_intervals'
-    : workout.durationMin <= 40
-    ? 'anaerobic_sharpening'
-    : 'vo2_repeats';
+  return selectWorkoutArchetype(workout);
+}
 
-  return ARCHETYPE_BY_ID.get(id) ?? ARCHETYPE_BY_ID.get('endurance_steady')!;
+function previousArchetypeAvoidance(learning: PulsePlanLearningSnapshot | null | undefined): string[] {
+  const previousWeek = learning?.previousWeek;
+  if (!previousWeek) return [];
+  const ids: string[] = [];
+  const hasEasyEndurance = Object.entries(previousWeek.sportMix)
+    .some(([sport, summary]) => ['bike', 'run'].includes(sport) && summary.sessions > 0);
+  if (hasEasyEndurance) ids.push('endurance_steady');
+  if (previousWeek.hardDays.some(day => day.zone >= 4)) ids.push('threshold_intervals');
+  return ids.slice(0, 3);
 }
 
 function learningNeedsVariation(
@@ -465,15 +459,17 @@ function withTrainingIntentAnnotations(
   ctx: {
     planLearning?: PulsePlanLearningSnapshot | null | undefined;
     executionReview?: PulseTrainingExecutionReview | null | undefined;
+    goalLimiter?: PulseGoalLimiter | null | undefined;
   },
 ): WeekWorkout[] {
   const needsVariation = learningNeedsVariation(ctx.planLearning, ctx.executionReview);
+  const previousAvoidance = previousArchetypeAvoidance(ctx.planLearning);
+  const selectedArchetypes: string[] = [];
+
   return workouts.map((workout, index) => {
-    const archetype = archetypeForWorkout(workout);
     const variationReason = variationReasonForWorkout(workout, ctx.planLearning, ctx.executionReview);
     let next: WeekWorkout = {
       ...workout,
-      archetypeId: archetype.id,
     };
     if (variationReason) next.variationReason = variationReason;
 
@@ -493,7 +489,17 @@ function withTrainingIntentAnnotations(
       });
     }
 
-    return next;
+    const archetype = selectWorkoutArchetype({
+      ...next,
+      avoidRepeatArchetypeIds: [...previousAvoidance, ...selectedArchetypes].slice(-4),
+      goalLimiterKind: ctx.goalLimiter?.kind ?? null,
+    });
+    selectedArchetypes.push(archetype.id);
+
+    return {
+      ...next,
+      archetypeId: archetype.id,
+    };
   });
 }
 
@@ -1281,6 +1287,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
   workouts = withTrainingIntentAnnotations(workouts, {
     planLearning: input.planLearning,
     executionReview: input.executionReview,
+    goalLimiter: input.goalLimiter,
   });
 
   const rpeSafety = summarizeRpeSafety(input.recentActivities);
@@ -1374,12 +1381,14 @@ export function generateWeekWorkouts(params: {
     const durationMin = Math.round(t.durationMin * scale);
     const plannedDate = new Date(startDate);
     plannedDate.setUTCDate(startDate.getUTCDate() + sorted[i]!);
+    const archetype = selectWorkoutArchetype({ ...t, durationMin });
     return {
       plannedDate: plannedDate.toISOString().split('T')[0]!,
       activityType: t.activityType,
       zone: t.zone,
       durationMin,
       targetTss: tssFromWorkout(durationMin, t.zone),
+      archetypeId: archetype.id,
       description: t.description,
     };
   });

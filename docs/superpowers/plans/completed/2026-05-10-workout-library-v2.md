@@ -1,12 +1,16 @@
 # Workout Library V2 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Expand Pulse from a small archetype set to a richer deterministic workout library with progression levels, alternatives and Garmin-safe step generation.
 
 **Architecture:** Keep the library local and Tobi-specific instead of copying public workout catalogs. Add variants under each energy system, select by capability fit and plan limiter, and generate title, description, steps and Garmin contract from the same library item.
 
 **Tech Stack:** TypeScript pure services, shared Pulse types, Fastify route consumers, Vitest.
+
+## Implementation Note
+
+Implemented in the Workout Library v2 PR. Pulse now has a 20-item deterministic workout library with progression-family metadata, scored variant selection, Garmin-safe repeat/steady/support step generation, forced-archetype preservation through generated plan rows and scenario/custom workout creation, Today Options archetype handoff, and Plan row labels for selected archetypes. The implementation uses the acceptable forced-archetype preservation path: generated rows store `archetypeId`, and `buildWorkoutSteps()` passes it into the library so description, steps, difficulty metadata and Garmin contract stay aligned.
 
 ---
 
@@ -38,7 +42,7 @@ Add 30-50 variants over time, but implement the first safe slice with 20 variant
 
 ## Task 1: Extend Archetype Metadata
 
-- [ ] **Step 1: Add variant fields**
+- [x] **Step 1: Add variant fields**
 
 Modify `TrainingArchetype` in `backend/src/pulse/services/training-intelligence.ts`:
 
@@ -58,7 +62,7 @@ export interface TrainingArchetype {
 }
 ```
 
-- [ ] **Step 2: Update all existing archetypes**
+- [x] **Step 2: Update all existing archetypes**
 
 For example:
 
@@ -78,7 +82,7 @@ For example:
 }
 ```
 
-- [ ] **Step 3: Test unique IDs**
+- [x] **Step 3: Test unique IDs**
 
 Add to `backend/src/pulse/services/training-intelligence.test.ts`:
 
@@ -91,7 +95,7 @@ it('keeps workout library archetype ids unique and Garmin-structure aware', () =
 });
 ```
 
-- [ ] **Step 4: Run the library test**
+- [x] **Step 4: Run the library test**
 
 Run:
 
@@ -103,7 +107,7 @@ Expected: PASS after metadata is complete.
 
 ## Task 2: Select Variants By Capability And Goal Limiter
 
-- [ ] **Step 1: Add input fields**
+- [x] **Step 1: Add input fields**
 
 Extend `WorkoutLibraryInput`:
 
@@ -116,7 +120,7 @@ export interface WorkoutLibraryInput extends WorkoutDifficultyInput {
 }
 ```
 
-- [ ] **Step 2: Replace single-rule selection**
+- [x] **Step 2: Replace single-rule selection**
 
 In `selectWorkoutArchetype`, score candidates:
 
@@ -135,7 +139,7 @@ function scoreArchetype(candidate: TrainingArchetype, workout: WorkoutLibraryInp
 
 Then choose the highest scored candidate from the same broad system rather than the first hard-coded match.
 
-- [ ] **Step 3: Test non-repetition**
+- [x] **Step 3: Test non-repetition**
 
 Add:
 
@@ -155,7 +159,7 @@ it('rotates endurance variants when the previous archetype should be avoided', (
 
 ## Task 3: Generate Variant-Specific Garmin Steps
 
-- [ ] **Step 1: Add step builders by `garminStructure`**
+- [x] **Step 1: Add step builders by `garminStructure`**
 
 In `workout-library.ts`, split step generation into helpers:
 
@@ -177,7 +181,7 @@ Add equivalent helpers for:
 - `sweet_spot_builder`: Z3/Z4 mix, capped when capability is not high.
 - `strength_prehab`: steady note block without fake Garmin intervals.
 
-- [ ] **Step 2: Route archetype IDs to helpers**
+- [x] **Step 2: Route archetype IDs to helpers**
 
 Add a switch in `buildWorkoutLibrarySteps`:
 
@@ -187,7 +191,7 @@ if (archetype.id === 'long_endurance_fueling_practice') return buildLongFuelingS
 if (archetype.id === 'threshold_cruise') return buildThresholdCruiseSteps(duration);
 ```
 
-- [ ] **Step 3: Test Garmin repeat readiness**
+- [x] **Step 3: Test Garmin repeat readiness**
 
 Add:
 
@@ -208,7 +212,7 @@ it('builds threshold cruise as Garmin-safe repeat groups', () => {
 
 ## Task 4: Feed Plan Engine And Today Options
 
-- [ ] **Step 1: Preserve selected variants through the real plan-generation path**
+- [x] **Step 1: Preserve selected variants through the real plan-generation path**
 
 Current weekly generation sets `archetypeId` in `backend/src/pulse/services/plan-engine.ts`, inserts workouts in `backend/src/pulse/routes/training-routes.ts`, and then calls `buildWorkoutSteps()` / `buildWorkoutLibraryPrescription()` from only activity, zone, duration and description. This plan must change that path so selected variants are not lost.
 
@@ -219,15 +223,15 @@ Implement one of these two approaches and document the choice in the PR body:
 
 Add a regression test in `backend/src/pulse/services/plan-engine.test.ts` proving generated weeks persist at least two different endurance-family archetypes across repeated weeks.
 
-- [ ] **Step 2: Pass previous archetypes**
+- [x] **Step 2: Pass previous archetypes**
 
 In `backend/src/pulse/services/plan-engine.ts`, collect the last 2-3 archetype IDs from the learning snapshot and pass them as `avoidRepeatArchetypeIds` when selecting the workout library variant.
 
-- [ ] **Step 3: Pass goal limiter**
+- [x] **Step 3: Pass goal limiter**
 
 When `params.goalLimiter` exists, pass `goalLimiterKind: params.goalLimiter.kind` using the shared `PulseGoalLimiterKind` type.
 
-- [ ] **Step 4: Pass Today Options into better variants**
+- [x] **Step 4: Pass Today Options into better variants**
 
 In `today-options.ts`, use:
 
@@ -237,7 +241,7 @@ archetypeId: input.fueling.recentGiIssue ? 'long_endurance_fueling_practice' : '
 
 only when the suggested duration and activity type match; keep recovery days simple. Also specify how the selected `archetypeId` influences the created workout: Today Options must deep-link into scenario preview or create/update with the selected archetype preserved through the same generation path from Step 1.
 
-- [ ] **Step 5: Surface variant purpose in Plan**
+- [x] **Step 5: Surface variant purpose in Plan**
 
 In `frontend/src/features/plan/training/training-components.tsx`, show archetype label and purpose near the existing fit label:
 
@@ -247,7 +251,7 @@ In `frontend/src/features/plan/training/training-components.tsx`, show archetype
 
 Implement `formatArchetype` from a small frontend map in `frontend/src/pulse/activity-labels.ts` or extend the existing label helper if present.
 
-- [ ] **Step 6: Verification**
+- [x] **Step 6: Verification**
 
 Run:
 
