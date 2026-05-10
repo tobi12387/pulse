@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Sportartwechsel erklärt Detail- und Garmin-Neuaufbau
+
+- **Decision:** Plan-Workout-Rows zeigen nach einem Sportartwechsel ein sichtbares `aria-live`-Feedback, dass Beschreibung, Garmin-Struktur und Garmin-Sync neu geprüft bzw. bei Sync-Fehlern offen bleiben.
+- **Why:** Der Backend-Pfad regeneriert Sportart-, Zonen- und Daueränderungen bereits inklusive Garmin-Remote-Replacement. Ohne UI-Feedback wirkt der Flow aber wie ein reiner Feldwechsel und erklärt nicht, warum Beschreibung, Steps und Garmin-Kalender kurz danach anders aussehen können.
+- **Alternatives:** Nur auf Query-Invalidation vertrauen (zu still); sofort ein Detailmodal öffnen (zu schwergewichtig); Sportartwechsel blockieren, bis Garmin fertig ist (zu langsam und fehleranfällig).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Planliste zeigt Garmin-Struktur vor dem Öffnen
 
 - **Decision:** Strukturierte Workouts zeigen in der Planliste eine kompakte `Garmin-Struktur`-Zeile mit Blockanzahl, berechneter Step-Dauer, Repeat-Hinweis und HR-Ziel-Anzahl.

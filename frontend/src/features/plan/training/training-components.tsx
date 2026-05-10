@@ -193,12 +193,33 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
 export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout; index: number; onOpen: () => void }) {
   const update = useUpdateWorkout();
   const [switching, setSwitching] = useState(false);
+  const [updateNotice, setUpdateNotice] = useState<{ tone: 'ok' | 'warning' | 'error'; text: string } | null>(null);
   const confidence = garminConfidenceCopy(w);
   const structureSummary = workoutStructureSummary(w);
 
-  function handleTypeChange(type: string) {
-    void update.mutateAsync({ id: w.id, data: { activityType: type } });
-    setSwitching(false);
+  async function handleTypeChange(type: string) {
+    if (type === w.activityType) {
+      setSwitching(false);
+      return;
+    }
+
+    setUpdateNotice(null);
+    try {
+      const result = await update.mutateAsync({ id: w.id, data: { activityType: type } });
+      const syncStatus = result.garminSync?.status;
+      setUpdateNotice({
+        tone: syncStatus === 'failed' ? 'warning' : 'ok',
+        text: syncStatus === 'failed'
+          ? 'Sportart aktualisiert. Beschreibung und Garmin-Struktur wurden neu aufgebaut; Garmin-Sync ist noch offen.'
+          : 'Sportart aktualisiert. Beschreibung, Garmin-Struktur und Garmin-Sync werden neu geprüft.',
+      });
+      setSwitching(false);
+    } catch (err) {
+      setUpdateNotice({
+        tone: 'error',
+        text: err instanceof Error ? err.message : 'Sportart konnte nicht aktualisiert werden.',
+      });
+    }
   }
 
   return (
@@ -318,7 +339,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
             Sportart auswählen
           </div>
           {ACTIVITY_TYPES.map(t => (
-            <button key={t} onClick={() => handleTypeChange(t)} disabled={update.isPending} style={{
+            <button key={t} onClick={() => void handleTypeChange(t)} disabled={update.isPending} style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.08em', textTransform: 'uppercase',
               minWidth: 44, minHeight: 44, padding: '8px 12px', border: `1px solid ${t === w.activityType ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: 3, background: t === w.activityType ? translucent('var(--accent)', 9) : 'transparent',
@@ -326,6 +347,31 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}>{ACTIVITY_LABEL[t]}</button>
           ))}
+        </div>
+      )}
+
+      {updateNotice && (
+        <div
+          data-testid="plan-workout-update-notice"
+          aria-live="polite"
+          style={{
+            margin: '0 10px 10px',
+            padding: '8px 10px',
+            borderRadius: 4,
+            border: `1px solid ${
+              updateNotice.tone === 'error' ? 'var(--rose)' : updateNotice.tone === 'warning' ? 'var(--amber)' : 'var(--green)'
+            }`,
+            background: updateNotice.tone === 'error'
+              ? translucent('var(--rose)', 9)
+              : updateNotice.tone === 'warning'
+                ? translucent('var(--amber)', 9)
+                : translucent('var(--green)', 9),
+            color: updateNotice.tone === 'error' ? 'var(--rose)' : updateNotice.tone === 'warning' ? 'var(--amber)' : 'var(--green)',
+            fontSize: 11,
+            lineHeight: 1.4,
+          }}
+        >
+          {updateNotice.text}
         </div>
       )}
 
