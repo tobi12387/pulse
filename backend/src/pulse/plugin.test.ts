@@ -1605,6 +1605,7 @@ describe('Pulse profile provenance', () => {
 
 describe('POST /api/pulse/plan/generate', () => {
   it('generates workouts and returns a persisted trace', async () => {
+    const weekStart = dateDaysFrom(1);
     await db.insert(pulseUserProfile).values({
       userId,
       ftpWatts: 260,
@@ -1617,7 +1618,7 @@ describe('POST /api/pulse/plan/generate', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/pulse/plan/generate',
       headers: { Authorization: `Bearer ${token}` },
-      payload: { weekStart: '2026-05-04' },
+      payload: { weekStart },
     });
     expect(res.statusCode).toBe(201);
     const body = res.json<{
@@ -1639,7 +1640,7 @@ describe('POST /api/pulse/plan/generate', () => {
     }>();
     expect(body.workouts.length).toBeGreaterThan(0);
     expect(body.planTrace).toMatchObject({
-      weekStart: '2026-05-04',
+      weekStart,
       inputSnapshot: {
         weeklyHoursTarget: 7,
         profile: {
@@ -1664,14 +1665,52 @@ describe('POST /api/pulse/plan/generate', () => {
 
     const traceRes = await app.inject({
       method: 'GET',
-      url: '/api/pulse/plan/trace/2026-05-04',
+      url: `/api/pulse/plan/trace/${weekStart}`,
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(traceRes.statusCode).toBe(200);
     expect(traceRes.json<{ trace: { id: string; weekStart: string } }>().trace).toMatchObject({
       id: body.planTrace.id,
-      weekStart: '2026-05-04',
+      weekStart,
     });
+  });
+
+  it('uses current load instead of week-start load for the persisted generation trace', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 260,
+      maxHrBpm: 186,
+      weeklyHoursTarget: 7,
+      updatedAt: new Date(),
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'late-week-long-ride',
+      activityType: 'bike',
+      startTime: new Date('2026-05-09T08:00:00.000Z'),
+      durationSec: 6 * 3600,
+      tss: 275,
+      name: 'Late week long ride',
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/plan/generate',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { weekStart: '2026-05-04' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const load = res.json<{
+      planTrace: {
+        inputSnapshot: {
+          load: { date: string; ctl: number; atl: number; tsb: number };
+        };
+      };
+    }>().planTrace.inputSnapshot.load;
+    expect(load.date).toBe(new Date().toISOString().split('T')[0]);
+    expect(load.atl).toBeGreaterThan(load.ctl);
+    expect(load.tsb).toBeLessThan(-10);
   });
 
   it('includes previous-week learning in the persisted trace', async () => {

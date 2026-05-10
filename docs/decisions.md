@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan-Generierung schreibt aktuelle Fitnesslast in den Trace
+
+- **Decision:** Wochenplan-Generierung und automatische Regeneration nach Verfügbarkeitsänderungen verwenden die Fitnesslast des aktuellen Tages als Plan-/Trace-Eingabe, auch wenn die Zielwoche am vergangenen oder kommenden Montag beginnt.
+- **Why:** Tobi bewertet Planqualität im Daily Flow anhand der heutigen Garmin-/Load-Situation. Ein Trace-Snapshot vom Wochenbeginn ignoriert spätere reale Belastungen wie die lange Bike-Einheit und erzeugt widersprüchliche Werte zwischen Home/Data/Plan.
+- **Alternatives:** Weiter mit `weekStart` rechnen (stale Trace-Werte); nur die UI mit aktuellem TSB überschreiben (Trace bleibt fachlich falsch); nach jeder Aktivität manuell eine neue Woche erzwingen (zu viel Bedienaufwand).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Planentscheidung nutzt aktuelle Load-Daten und kein fixes 155-km-Preset
 
 - **Decision:** Die nächste Trainingsentscheidung nutzt den aktuellen `/api/pulse/load`-Wert für TSB-Chips und Adaptionslogik statt den gespeicherten Generation-Trace als Load-Quelle. Das 155-km-Beispiel bleibt nur eine frei eingebbare eigene Einheit; Formular und Szenario-Vorschau enthalten keinen festen 155-km-Preset mehr.
