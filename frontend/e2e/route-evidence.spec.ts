@@ -124,18 +124,94 @@ test.describe('Route evidence screenshot pack', () => {
     }
 
     if (testInfo.project.name === 'mobile-chromium') {
+      await mockPulseApi(page, {
+        checkinToday: { checkin: null },
+        todayOptionsState: 'planned_workout',
+        home: {
+          todayWorkout: {
+            id: 'workout-planned-command',
+            userId: 'user-1',
+            plannedDate: MOCK_TODAY,
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 75,
+            distanceKm: null,
+            targetTss: 62,
+            archetypeId: 'endurance_steady',
+            difficultyLevel: 3,
+            difficultyEnergySystem: 'endurance',
+            capabilityFit: 'productive',
+            description: 'Aerobe Grundlage.',
+            steps: null,
+            garminWorkoutId: 'garmin-workout-planned',
+            garminScheduledId: 'garmin-scheduled-planned',
+            garminSyncContract: null,
+            status: 'planned',
+            workoutFeedback: null,
+            complianceScore: null,
+            origin: 'generated',
+            userLocked: false,
+            completedActivityId: null,
+            executionStatus: 'garmin_scheduled',
+            executionMatchedAt: null,
+            executionMatchConfidence: null,
+            executionNotes: null,
+          },
+        },
+      });
+      await capture(
+        { path: '/', label: 'home-planned-command', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-options-card')).toContainText('Plan ausfuehren: Rad');
+          await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
       await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'unplanned_trainable' });
       await capture(
-        { path: '/', label: 'home-mobile-intent', visibleText: 'READINESS' },
+        { path: '/', label: 'home-free-command', visibleText: 'READINESS' },
         async () => {
           await expect(page.getByTestId('today-availability-intent')).toBeVisible();
         },
       );
 
-      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'completed_activity' });
+      await mockPulseApi(page, {
+        checkinToday: { checkin: null },
+        todayOptionsState: 'completed_activity',
+        home: {
+          todayActivities: [{
+            id: 'activity-completed-command',
+            userId: 'user-1',
+            externalId: 'garmin-activity-completed-command',
+            source: 'garmin',
+            startTime: `${MOCK_TODAY}T07:30:00.000Z`,
+            activityType: 'bike',
+            name: 'Rennrad Grundlage',
+            durationSec: 4200,
+            distanceM: 26000,
+            avgHr: 136,
+            maxHr: 162,
+            avgPowerW: 178,
+            normalizedPowerW: 188,
+            tss: 58,
+            calories: 690,
+            elevationGainM: 180,
+            trainingEffectAerobic: 3,
+            trainingEffectAnaerobic: 0.2,
+            vo2maxEstimate: null,
+            rpe: 5,
+            rpeNote: null,
+            sorenessAreas: null,
+            feedbackLoggedAt: `${MOCK_TODAY}T09:10:00.000Z`,
+            equipmentIds: [],
+          }],
+        },
+      });
       await capture(
-        { path: '/', label: 'home-completed-no-intent', visibleText: 'READINESS' },
+        { path: '/', label: 'home-completed-command', visibleText: 'READINESS' },
         async () => {
+          await expect(page.getByTestId('daily-decision-card')).toContainText('Training heute erledigt');
+          await expect(page.getByTestId('today-options-card')).toHaveCount(0);
           await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
         },
       );
@@ -145,6 +221,16 @@ test.describe('Route evidence screenshot pack', () => {
         { path: '/', label: 'home-recovery-no-intent', visibleText: 'READINESS' },
         async () => {
           await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null } });
+      await capture(
+        { path: '/data?tab=mental', label: 'data-mental-first-viewport', visibleText: 'Quick Check-in' },
+        async () => {
+          await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+          await expect(page.getByRole('button', { name: 'Mehr beschreiben' })).toBeVisible();
+          await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toHaveCount(0);
         },
       );
 

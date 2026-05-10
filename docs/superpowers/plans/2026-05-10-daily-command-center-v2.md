@@ -8,6 +8,8 @@
 
 **Tech Stack:** React 19, TanStack Query, Pulse typed API client, Playwright, existing Pulse inline styles.
 
+**Status 2026-05-10:** Implemented on `codex/daily-command-center-v2`. Evidence: focused mobile Mental/Home E2E, frontend build and `PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence/daily-command-center-final npm run qa:ux-evidence`.
+
 ---
 
 ## Files
@@ -22,7 +24,7 @@
 
 ## Task 1: Add Daily Command State
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests to `frontend/e2e/pulse-usability.spec.ts`:
 
@@ -42,7 +44,7 @@ test('Home does not show planned-training options when the daily decision says n
 
 Expected before implementation: fail or expose the contradiction seen in route evidence.
 
-- [ ] **Step 2: Create `daily-command.ts`**
+- [x] **Step 2: Create `daily-command.ts`**
 
 Implement a pure resolver:
 
@@ -65,13 +67,13 @@ export function resolveDailyCommand(home: PulseHomeScreenData, options: PulseTod
 }
 ```
 
-- [ ] **Step 3: Wire Home and TodayOptions**
+- [x] **Step 3: Wire Home and TodayOptions**
 
 In `Home.tsx`, derive `commandKind` from `home` and `todayOptions`. Pass it to `TodayOptionsCard`.
 
 In `TodayOptionsCard.tsx`, hide mobile intent when `commandKind` is `completed_planned`, `completed_off_plan`, `recovery`, or `free_rest`.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -83,7 +85,7 @@ Expected: contradiction test and completed-training tests pass.
 
 ## Task 2: Tighten Home First Viewport
 
-- [ ] **Step 1: Add screenshot/e2e expectation**
+- [x] **Step 1: Add screenshot/e2e expectation**
 
 Add a mobile test that Home first viewport contains:
 
@@ -93,7 +95,7 @@ Add a mobile test that Home first viewport contains:
 - No Recent Trainings card.
 - No more than one secondary command card above recovery strip.
 
-- [ ] **Step 2: Refactor Home layout**
+- [x] **Step 2: Refactor Home layout**
 
 In `Home.tsx`, create a `HomeCommandSection` that renders:
 
@@ -103,7 +105,7 @@ In `Home.tsx`, create a `HomeCommandSection` that renders:
 
 Move lower-priority cards below this section.
 
-- [ ] **Step 3: Add desktop two-column Home shell**
+- [x] **Step 3: Add desktop two-column Home shell**
 
 In `Layout.tsx`, include Home in the wider operational shell:
 
@@ -113,7 +115,7 @@ const isOperationalRoute = location.pathname === '/' || location.pathname.starts
 
 In `Home.tsx`, use a responsive grid for lower evidence cards while keeping the command section first.
 
-- [ ] **Step 4: Run route evidence**
+- [x] **Step 4: Run route evidence**
 
 Run:
 
@@ -125,7 +127,7 @@ Expected: no overflow, mobile Home first screenshot answers the daily action wit
 
 ## Task 3: Make Mental Check-in One-Tap-First
 
-- [ ] **Step 1: Write failing viewport test**
+- [x] **Step 1: Write failing viewport test**
 
 In mobile `Data?tab=mental`, assert that the first viewport contains a primary save button:
 
@@ -134,7 +136,7 @@ await page.goto('/data?tab=mental');
 await expect(page.getByRole('button', { name: /Check-in speichern|Stabil speichern|Heute speichern/i })).toBeInViewport();
 ```
 
-- [ ] **Step 2: Reorder Mental form**
+- [x] **Step 2: Reorder Mental form**
 
 In `mental-components.tsx`, put these elements before optional detail:
 
@@ -148,7 +150,7 @@ Move quick-choice fine detail, free text, guided questions, tags and notes behin
 - `Mehr beschreiben`.
 - `Feinjustieren`.
 
-- [ ] **Step 3: Keep mental health/fintess language but reduce labels**
+- [x] **Step 3: Keep mental health/fintess language but reduce labels**
 
 Use copy:
 
@@ -158,7 +160,7 @@ Use copy:
 
 Avoid long explanatory text above the save action.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -171,7 +173,7 @@ Expected: Mental tests and frontend build pass.
 
 ## Task 4: Update Evidence Pack
 
-- [ ] **Step 1: Extend route evidence labels**
+- [x] **Step 1: Extend route evidence labels**
 
 Add screenshots for:
 
@@ -180,7 +182,7 @@ Add screenshots for:
 - `home-completed-command`.
 - `data-mental-first-viewport`.
 
-- [ ] **Step 2: Run and inspect**
+- [x] **Step 2: Run and inspect**
 
 Run:
 
@@ -196,4 +198,3 @@ Expected: no horizontal overflow; screenshots show one consistent daily command.
 - No Coach primary-nav return.
 - No live Garmin sync.
 - No new habit/streak system.
-
