@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Garmin-Resync-Fehler behalten lokalen Sync-Vertrag
+
+- **Decision:** Wenn eine Prescription-Änderung wie Sportart, Zone oder Dauer neue Workout-Details erzeugt, bleibt der frisch berechnete Garmin-Sync-Vertrag erhalten, auch wenn der anschließende Garmin-Reupload fehlschlägt.
+- **Why:** Pulse muss bei Garmin-Ausfällen weiterhin lokal erklären können, welche Struktur, Repeats und Zielarten geplant sind. Ein fehlgeschlagener Remote-Sync darf nicht die lokale Export-Evidenz löschen und dadurch die UI wieder in einen unklaren Zustand bringen.
+- **Alternatives:** Den Vertrag bei jedem Garmin-relevanten PATCH löschen (verliert Evidenz bei Netzwerkfehlern); Sync-Fehler als kompletten PATCH-Fehler behandeln (würde lokale Planänderungen unnötig blockieren).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Sportartwechsel erklärt Detail- und Garmin-Neuaufbau
 
 - **Decision:** Plan-Workout-Rows zeigen nach einem Sportartwechsel ein sichtbares `aria-live`-Feedback, dass Beschreibung, Garmin-Struktur und Garmin-Sync neu geprüft bzw. bei Sync-Fehlern offen bleiben.
