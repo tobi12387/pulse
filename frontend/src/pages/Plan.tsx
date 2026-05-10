@@ -402,6 +402,24 @@ function NextTrainingDecisionCard({
   const alternatives: PlanAlternativeOption[] = baseAlternatives.map(option => option.id === recommendedAlternative?.id
     ? { ...option, recommended: true, recommendationReason: recommendedAlternative.reason }
     : option);
+  const recommendedOption = alternatives.find(option => option.recommended) ?? null;
+  const adaptationStatus = recommendedOption
+    ? {
+      label: '1 Empfehlung prüfen',
+      title: `${recommendedOption.label} empfohlen`,
+      detail: `${recommendedOption.recommendationReason ?? 'Pulse sieht eine sinnvolle Anpassung.'} · ${recommendedOption.detail}`,
+      tone: 'var(--amber)',
+      border: 'rgba(251,191,36,0.28)',
+      background: 'rgba(251,191,36,0.08)',
+    }
+    : {
+      label: 'Plan aktuell',
+      title: 'Keine Anpassung nötig',
+      detail: 'Load, Risiko, mentale Lage und Ziele sprechen gerade nicht gegen die geplante Einheit.',
+      tone: 'var(--green)',
+      border: 'rgba(52,211,153,0.28)',
+      background: 'rgba(52,211,153,0.08)',
+    };
 
   async function applyAlternative(id: PlanAlternativeId) {
     const workout = nextWorkout;
@@ -524,6 +542,31 @@ function NextTrainingDecisionCard({
             {label}
           </button>
         ))}
+      </div>
+      <div
+        data-testid="plan-adaptation-status"
+        style={{
+          marginBottom: 12,
+          padding: '9px 10px',
+          border: `1px solid ${adaptationStatus.border}`,
+          borderRadius: 5,
+          background: adaptationStatus.background,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+          <span className="label-mono" style={{ color: adaptationStatus.tone }}>
+            ADAPTIONS-CHECK
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: adaptationStatus.tone, textTransform: 'uppercase' }}>
+            {adaptationStatus.label}
+          </span>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, marginBottom: 3 }}>
+          {adaptationStatus.title}
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+          {adaptationStatus.detail}
+        </div>
       </div>
       <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>ALTERNATIVEN</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 7, marginBottom: 10 }}>

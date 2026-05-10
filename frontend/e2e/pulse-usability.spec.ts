@@ -2752,6 +2752,9 @@ test('Plan alternatives adapt the next workout with semantic choices', async ({ 
   await expect(page.getByText('ALTERNATIVEN')).toBeVisible();
   await expect(page.getByText('Einbezogen: TSB -15.8')).toBeVisible();
   await expect(page.getByText('Ziele 1 aktiv')).toBeVisible();
+  await expect(decision.getByText('ADAPTIONS-CHECK')).toBeVisible();
+  await expect(decision.getByText('1 Empfehlung prüfen')).toBeVisible();
+  await expect(decision.getByText('Leichter empfohlen')).toBeVisible();
   await expect(decision.getByRole('button', { name: /Kürzer/ })).toBeVisible();
   const easier = decision.getByRole('button', { name: /Leichter/ });
   await expect(easier).toBeVisible();
