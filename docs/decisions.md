@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Limiter-Zuordnung bleibt beschreibungs- und Trace-basiert
+
+- **Decision:** Pulse macht den aktiven Ziel-Limiter in `Warum diese Einheit`, der Plan-Wochenzusammenfassung und Data > Analysen sichtbar, ohne dafuer neue Workout-DB-Spalten einzufuehren. Die UI nutzt die vorhandene Plan-Trace-`goalLimiter`-Evidenz und die deterministisch erzeugten Beschreibungen.
+- **Why:** Tobi braucht schnell erkennbaren Zweck pro Schluesseleinheit, aber die erste Umsetzung soll keine Migration oder Garmin-Contract-Aenderung erzwingen. Der bestehende Trace kennt Limiter, Fokus-Systeme und Capability-Evidenz bereits; dadurch bleibt die Aenderung klein, testbar und rueckwaertskompatibel fuer bestehende Plaene.
+- **Alternatives:** Limiter pro Workout persistieren (mehr Schema-/Backfill-Aufwand fuer v1); einen neuen Plan-Top-Level-Tab bauen (gegen aktuelle IA-Entscheidung); proprietaere Workout-Bibliotheken kopieren (explizit ausgeschlossen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Fueling-Schutz wird als explizite Debt Closure modelliert
 
 - **Decision:** Pulse fuehrt fuer GI-/Fueling-Schutz einen expliziten `PulseFuelingDebtSummary` mit den Zustaenden `open_gi_issue`, `controlled_practice_planned`, `tolerated_follow_up` und `resolved`. Plan-Engine, Today Options, Adaptation Events und Activity-Fueling-UI nutzen diesen Status statt eines rohen `recentGiIssue`-Booleans.

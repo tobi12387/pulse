@@ -109,6 +109,8 @@
 
 ## Phase 5: Limiter-To-Workout Mapping
 
+**Status:** Implemented in branch `codex/limiter-workout-mapping-v1`.
+
 **Problem:** Goals and limiters influence planning, but workout rows do not always make the race/goal purpose obvious.
 
 **Story:** As Tobi, I want every key workout to say which limiter or event demand it serves, so the plan feels intentional instead of generic.

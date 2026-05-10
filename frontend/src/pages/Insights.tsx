@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDeepInsight, usePlanTrace, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
+import { getMonday, isoDate } from '@/features/plan/plan-utils';
 import type { LucideIcon } from 'lucide-react';
-import type { PulseDailyDecisionQualityResponse, PulsePowerDataQualitySummary, PulsePowerDurationSummary } from '@coaching-os/shared/pulse';
+import type { PulseDailyDecisionQualityResponse, PulsePlanTrace, PulsePowerDataQualitySummary, PulsePowerDurationSummary, PulseTrainingCapabilityLevel } from '@coaching-os/shared/pulse';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 type EvidenceStatus = 'available' | 'limited' | 'missing';
@@ -318,6 +319,72 @@ function PowerDurationSummaryCard({ summary }: { summary: PulsePowerDurationSumm
   );
 }
 
+function LimiterEvidenceCard({ trace, loading }: { trace: PulsePlanTrace | null | undefined; loading: boolean }) {
+  const limiter = trace?.inputSnapshot.goalLimiter ?? null;
+  if (!limiter && !loading) return null;
+
+  const focusedLevels = limiter
+    ? limiter.workoutFocus
+      .map(system => trace?.inputSnapshot.trainingCapabilities?.levels.find(level => level.energySystem === system) ?? null)
+      .filter((level): level is PulseTrainingCapabilityLevel => level != null)
+    : [];
+  const hasStale = focusedLevels.some(level => level.staleReason != null);
+  const tone = hasStale ? 'var(--amber)' : 'var(--green)';
+
+  return (
+    <section
+      className="card"
+      data-testid="data-limiter-evidence-card"
+      aria-label="Limiter Evidenz"
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(245,158,11,0.22)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Limiter-Evidenz
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: limiter ? tone : 'var(--text-3)' }}>
+          {loading && !limiter ? 'prüft aktuelle Woche' : hasStale ? 'Evidenz begrenzt' : 'Evidenz nutzbar'}
+        </span>
+      </div>
+      {limiter ? (
+        <>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+            {limiter.label}: {limiter.planBias}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 6 }}>
+            {focusedLevels.map(level => (
+              <div key={level.energySystem} style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{level.label}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: level.staleReason ? 'var(--amber)' : 'var(--green)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {level.staleReason ? 'stale' : level.confidence}
+                  </span>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45, margin: '4px 0 0' }}>
+                  {level.staleReason ?? level.evidence[0] ?? 'Noch keine konkrete Evidenz im aktuellen Fenster.'}
+                </p>
+              </div>
+            ))}
+          </div>
+          {limiter.evidence.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {limiter.evidence.slice(0, 4).map(item => (
+                <span key={item} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px' }}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <p style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.55, margin: 0 }}>
+          Die aktuelle Plan-Evidenz wird geladen.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const [expanded, setExpanded] = useState(false);
   const { data, isLoading, isFetching, error, refetch } = useDeepInsight(domain, days, expanded);
@@ -461,6 +528,8 @@ export function DataAnalysenTab() {
   const { data: decisionQuality } = useDailyDecisionQuality(14);
   const capability = useTrainingCapabilities(90);
   const trainingAnalytics = useTrainingAnalytics(12);
+  const currentWeekStart = isoDate(getMonday(new Date()));
+  const planTrace = usePlanTrace(currentWeekStart);
 
   return (
     <div className="flex flex-col gap-3">
@@ -478,6 +547,7 @@ export function DataAnalysenTab() {
         loading={trainingAnalytics.isLoading}
       />
       <PowerDurationSummaryCard summary={trainingAnalytics.data?.powerDuration} />
+      <LimiterEvidenceCard trace={planTrace.data?.trace} loading={planTrace.isLoading} />
       <DecisionQualityEvidenceCard quality={decisionQuality} testId="data-analysis-decision-quality-card" />
 
       {/* Domain cards */}

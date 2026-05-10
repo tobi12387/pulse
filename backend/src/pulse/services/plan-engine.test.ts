@@ -321,6 +321,8 @@ describe('generateScientificWeekPlan', () => {
     expect(hard.length).toBeGreaterThan(0);
     expect(hard.every(w => w.zone === 4 && w.activityType === 'bike')).toBe(true);
     expect(workouts.map(w => w.description).join(' ')).toContain('Limiter: Schwelle + VO2');
+    expect(hard.map(w => w.description).join(' ')).toContain('Warum diese Einheit:');
+    expect(hard.map(w => w.description).join(' ')).toContain('Limiter Schwelle + VO2');
   });
 
   it('uses triathlon race goals to include swim, bike, and run specificity', async () => {
