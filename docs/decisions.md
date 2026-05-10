@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Optional UI-Echos werden nach Route Evidence nicht gebaut
+
+- **Decision:** Nach frischer Route Evidence auf `7c087da` werden Daily-Delta-Plan/Data-Echos und weiteres Garmin-Modal-Wording vorerst nicht umgesetzt.
+- **Why:** Die Screenshots zeigen keinen Overflow und keinen klaren Nachweis, dass Home-only Daily Closure unzureichend ist. Zusätzliche Echo-Karten wuerden die UI verdichten, obwohl Tobi gerade weniger überfüllte Seiten möchte.
+- **Alternatives:** Optional-Echos trotzdem bauen (mehr Flaeche ohne Evidenz); Garmin-Modal-Wording pauschal nachschaerfen (Copy-Churn ohne belegten Friktionspunkt); Evidence ignorieren und Roadmap mechanisch abarbeiten (widerspricht UX-Task-Contract).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Fueling Outcome Baseline bleibt in vorhandenen Flows
 
 - **Decision:** Pulse modelliert Fueling-Lernen als `PulseFuelingOutcomeBaseline` und zeigt diese kompakt in bestehenden Activity- und Plan-Fueling-Flaechen statt einen neuen Nutrition-Tab zu bauen.
