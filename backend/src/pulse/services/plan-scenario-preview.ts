@@ -5,12 +5,16 @@ import type {
   PulsePlanScenarioPreview,
   PulsePlanScenarioProjectedWorkout,
   PulsePlanScenarioRequest,
+  PulseTrainingCapabilitySummary,
 } from '@coaching-os/shared/pulse';
+import { fitWorkoutToCapabilities } from './training-capabilities.js';
+import { buildWorkoutLibraryPrescription } from './workout-library.js';
 
 export interface PlanScenarioPreviewInput {
   today: string;
   workouts: PulsePlanScenarioProjectedWorkout[];
   scenario: PulsePlanScenarioRequest;
+  capabilitySummary?: PulseTrainingCapabilitySummary | null;
 }
 
 function addDays(date: string, days: number): string {
@@ -80,6 +84,38 @@ function project(input: PlanScenarioPreviewInput): PulsePlanScenarioProjectedWor
   }
 
   return workouts;
+}
+
+function annotateCapabilityFit(
+  workout: PulsePlanScenarioProjectedWorkout,
+  capabilitySummary: PulseTrainingCapabilitySummary | null | undefined,
+): PulsePlanScenarioProjectedWorkout {
+  if (!capabilitySummary) return workout;
+
+  const prescription = buildWorkoutLibraryPrescription({
+    activityType: workout.activityType,
+    zone: workout.zone,
+    durationMin: workout.durationMin,
+    targetTss: workout.targetTss,
+    description: workout.description ?? null,
+  }, capabilitySummary, { forcedArchetypeId: workout.archetypeId ?? null });
+  const fitDetail = fitWorkoutToCapabilities({
+    activityType: workout.activityType,
+    zone: workout.zone,
+    durationMin: workout.durationMin,
+    targetTss: workout.targetTss,
+    steps: prescription.steps,
+  }, capabilitySummary);
+
+  return {
+    ...workout,
+    archetypeId: workout.archetypeId ?? prescription.metadata.archetypeId,
+    archetypeLabel: prescription.archetype.label,
+    difficultyLevel: prescription.metadata.difficultyLevel,
+    difficultyEnergySystem: prescription.metadata.difficultyEnergySystem,
+    capabilityFit: fitDetail.label,
+    capabilityFitDetail: fitDetail,
+  };
 }
 
 function byDate(workouts: PulsePlanScenarioProjectedWorkout[]): Map<string, { sessions: number; durationMin: number; tss: number }> {
@@ -191,6 +227,7 @@ function garminImpact(input: PlanScenarioPreviewInput, projectedWorkouts: PulseP
 
 export function buildPlanScenarioPreview(input: PlanScenarioPreviewInput): PulsePlanScenarioPreview {
   const projectedWorkouts = project(input)
+    .map(workout => annotateCapabilityFit(workout, input.capabilitySummary))
     .sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
   const beforeTss = input.workouts.reduce((sum, workout) => sum + estimateTss(workout), 0);
   const afterTss = projectedWorkouts.reduce((sum, workout) => sum + estimateTss(workout), 0);

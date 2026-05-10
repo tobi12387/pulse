@@ -1762,6 +1762,20 @@ test('Plan scenario preview lists affected future workouts before applying', asy
             userLocked: false,
             status: 'planned',
             description: 'Ruhige Ausdauer.',
+            archetypeLabel: 'Steady Endurance',
+            difficultyLevel: 2.8,
+            difficultyEnergySystem: 'endurance',
+            capabilityFit: 'productive',
+            capabilityFitDetail: {
+              energySystem: 'endurance',
+              workoutLevel: 2.8,
+              capabilityLevel: 3.4,
+              label: 'productive',
+              displayLabel: 'Produktiv',
+              message: 'Workout-Level 2.8 passt zu deinem aktuellen Bereich 3.4.',
+              recommendation: 'Sinnvoller Progressionsreiz, wenn Tagesform und Fueling stimmen.',
+              confidence: 'high',
+            },
           },
           {
             id: 'planned-reduce-2',
@@ -1773,6 +1787,20 @@ test('Plan scenario preview lists affected future workouts before applying', asy
             userLocked: false,
             status: 'planned',
             description: 'Tempo kontrolliert.',
+            archetypeLabel: 'Tempo Builder',
+            difficultyLevel: 3.6,
+            difficultyEnergySystem: 'tempo',
+            capabilityFit: 'maintenance',
+            capabilityFitDetail: {
+              energySystem: 'tempo',
+              workoutLevel: 3.6,
+              capabilityLevel: 4.8,
+              label: 'maintenance',
+              displayLabel: 'Erhaltung',
+              message: 'Workout-Level 3.6 liegt klar unter deinem aktuellen Bereich 4.8.',
+              recommendation: 'Gut fuer Erhaltung, Technik oder ruhige Alltagskonsistenz.',
+              confidence: 'high',
+            },
           },
         ],
         changedDays: [
@@ -1807,6 +1835,10 @@ test('Plan scenario preview lists affected future workouts before applying', asy
   await expect(page.getByText('Radfahren · 2026-05-03')).toBeVisible();
   await expect(page.getByText('90 -> 70 min')).toBeVisible();
   await expect(page.getByText('68 -> 51 TSS')).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-preview-result')).toContainText('Athlete-Level');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toContainText('Steady Endurance');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toContainText('Workout-Level 2.8');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toContainText('Produktiv');
   await expect(page.getByText('Laufen · 2026-05-05')).toBeVisible();
   expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.75 });
 });

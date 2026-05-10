@@ -52,7 +52,7 @@ async function persistTrainingCapabilities(userId: string, summary: PulseTrainin
 
 export async function loadTrainingCapabilitySummary(
   userId: string,
-  options: { lookbackDays?: number } = {},
+  options: { lookbackDays?: number; persist?: boolean } = {},
 ): Promise<PulseTrainingCapabilitySummary> {
   const lookbackDays = Math.min(180, Math.max(28, options.lookbackDays ?? CAPABILITY_LOOKBACK_DAYS));
   const since = lookbackStart(lookbackDays);
@@ -137,5 +137,5 @@ export async function loadTrainingCapabilitySummary(
     lookbackDays,
   });
 
-  return persistTrainingCapabilities(userId, summary);
+  return options.persist === false ? summary : persistTrainingCapabilities(userId, summary);
 }

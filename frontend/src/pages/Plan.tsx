@@ -33,7 +33,7 @@ import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
 import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
 import { PlanLimiterWorkoutSummary, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { DAY_SHORT } from '@/features/plan/training/training-copy';
-import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
+import { ACTIVITY_LABEL, workoutArchetypeCopy } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { PulseActivityType, PulseAdaptationEvent, PulseFitnessLoad, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
@@ -1206,6 +1206,8 @@ type ScenarioAffectedWorkout = {
   id: string;
   title: string;
   detail: string;
+  fitLine: string | null;
+  fitDetail: string | null;
   durationLine: string;
   tssLine: string;
   tone: string;
@@ -1217,15 +1219,33 @@ function scenarioTss(workout: Pick<ScenarioProjectedWorkout, 'durationMin' | 'zo
   return Math.round(workout.durationMin * factor);
 }
 
+function scenarioFitCopy(workout: ScenarioProjectedWorkout): { line: string; detail: string | null } | null {
+  const archetypeLabel = workout.archetypeLabel ?? workoutArchetypeCopy(workout.archetypeId)?.label ?? null;
+  const workoutLevel = workout.difficultyLevel != null ? `Workout-Level ${workout.difficultyLevel.toFixed(1)}` : null;
+  const fitLabel = workout.capabilityFit
+    ? FIT_DECISION_META[workout.capabilityFit]?.label ?? workout.capabilityFitDetail?.displayLabel ?? null
+    : workout.capabilityFitDetail?.displayLabel ?? null;
+  const line = [archetypeLabel, workoutLevel, fitLabel].filter(Boolean).join(' · ');
+  if (!line) return null;
+  return {
+    line,
+    detail: workout.capabilityFitDetail?.recommendation
+      ?? (workout.capabilityFit ? FIT_DECISION_META[workout.capabilityFit]?.nextAction ?? null : null),
+  };
+}
+
 function workoutImpactLabel(before: PlannedWorkout | null, after: ScenarioProjectedWorkout): ScenarioAffectedWorkout | null {
   const title = `${ACTIVITY_LABEL[after.activityType] ?? after.activityType} · ${after.plannedDate}`;
   const afterTss = scenarioTss(after);
+  const fitCopy = scenarioFitCopy(after);
 
   if (!before) {
     return {
       id: after.id,
       title,
       detail: after.description ?? 'Neue Einheit aus der Vorschau.',
+      fitLine: fitCopy?.line ?? null,
+      fitDetail: fitCopy?.detail ?? null,
       durationLine: `+${after.durationMin} min`,
       tssLine: `+${afterTss} TSS`,
       tone: 'var(--accent)',
@@ -1247,6 +1267,8 @@ function workoutImpactLabel(before: PlannedWorkout | null, after: ScenarioProjec
       `Z${before.zone} -> Z${after.zone}`,
       after.description ?? before.description ?? null,
     ].filter(Boolean).join(' · '),
+    fitLine: fitCopy?.line ?? null,
+    fitDetail: fitCopy?.detail ?? null,
     durationLine: `${before.durationMin} -> ${after.durationMin} min`,
     tssLine: `${beforeTss} -> ${afterTss} TSS`,
     tone: after.durationMin < before.durationMin || afterTss < beforeTss ? 'var(--amber)' : 'var(--accent)',
@@ -1743,6 +1765,15 @@ function PlanScenarioPreviewCard({
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{workout.title}</div>
                 <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>{workout.detail}</div>
+                {workout.fitLine && (
+                  <div style={{ marginTop: 5, fontSize: 10.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+                    <span className="label-mono" style={{ color: 'var(--accent)', marginRight: 5 }}>Athlete-Level</span>
+                    <span>{workout.fitLine}</span>
+                    {workout.fitDetail && (
+                      <span style={{ display: 'block', marginTop: 2, color: 'var(--text-3)' }}>{workout.fitDetail}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', textAlign: 'right', lineHeight: 1.55 }}>
                 <div>{workout.durationLine}</div>

@@ -2,7 +2,7 @@ import type { PulseFitnessLoad } from './daily-loop.js';
 import type { PulseActivityType } from './activity.js';
 import type { PulseFuelingDebtSummary } from './fueling.js';
 import type { PulseProfileProvenanceView } from './profile.js';
-import type { PulseCapabilityConfidence, PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutFitLabel } from './training.js';
+import type { PulseCapabilityConfidence, PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutCapabilityFit, PulseWorkoutFitLabel } from './training.js';
 
 // Training plan, race, season strategy and review Pulse contracts.
 export interface WorkoutStep {
@@ -312,6 +312,11 @@ export interface PulsePlanScenarioProjectedWorkout {
   distanceKm?: number | null;
   expectedSpeedKmh?: number | null;
   archetypeId?: string | null;
+  archetypeLabel?: string | null;
+  difficultyLevel?: number | null;
+  difficultyEnergySystem?: PulseTrainingEnergySystem | null;
+  capabilityFit?: PulseWorkoutFitLabel | null;
+  capabilityFitDetail?: PulseWorkoutCapabilityFit | null;
 }
 
 export interface PulsePlanScenarioChangedDay {
