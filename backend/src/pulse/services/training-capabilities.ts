@@ -64,6 +64,9 @@ function emptyLevel(energySystem: PulseTrainingEnergySystem): PulseTrainingCapab
     energySystem,
     label: CAPABILITY_LABELS[energySystem],
     level: 2,
+    nextRecommendedWorkoutLevel: 2,
+    lastProgressionReason: null,
+    staleReason: null,
     confidence: 'low',
     evidence: [],
     updatedAt: null,
@@ -126,11 +129,13 @@ export function deriveTrainingCapabilities(input: {
       target.level = Math.max(target.level, round1(difficulty.level * (compliance >= 0.9 ? 0.82 : 0.75)));
       target.confidence = setConfidence(target.confidence, compliance >= 0.9 ? 'high' : 'medium');
       addEvidence(target, `${workout.activityType} Z${workout.zone} ${workout.durationMin}min mit gutem Fit abgeschlossen.`);
+      target.lastProgressionReason = `${CAPABILITY_LABELS[system]} sauber abgeschlossen; nächster produktiver Reiz darf leicht steigen.`;
       addSignal(signals, 'quality_progress');
     } else if (struggle) {
       target.level = Math.min(target.level, 2.5);
       target.confidence = setConfidence(target.confidence, 'medium');
       addEvidence(target, `${workout.activityType} Z${workout.zone} war kein Progressionssignal.`);
+      target.lastProgressionReason = `${CAPABILITY_LABELS[system]} vorsichtig halten: hohe Anstrengung oder niedrige Compliance.`;
       addSignal(signals, 'reduce_next_intensity');
     }
   }
@@ -150,11 +155,13 @@ export function deriveTrainingCapabilities(input: {
     longLevel.level = Math.max(longLevel.level, round1(difficulty.level * 0.6));
     longLevel.confidence = setConfidence(longLevel.confidence, 'medium');
     addEvidence(longLevel, `ungeplante lange ${activity.activityType}-Einheit ${activity.durationMin}min erkannt.`);
+    longLevel.lastProgressionReason = 'Long Endurance geschützt nach langer ungeplanter Belastung; erst Erholung und Fueling schließen.';
 
     const endurance = levels.endurance;
     endurance.level = Math.max(endurance.level, round1(Math.min(longLevel.level - 0.4, 4.2)));
     endurance.confidence = setConfidence(endurance.confidence, 'medium');
     addEvidence(endurance, 'lange Ausdauer wurde real ausgefuehrt, aber nicht als Freifahrtschein fuer Zusatzstress gewertet.');
+    endurance.lastProgressionReason = 'Endurance vorsichtig angehoben, weil die lange Einheit real ausgeführt wurde.';
 
     addSignal(signals, 'long_off_plan_load');
     addSignal(signals, 'protect_recovery');
@@ -172,9 +179,36 @@ export function deriveTrainingCapabilities(input: {
     generatedAt: (input.generatedAt ?? new Date()).toISOString(),
     lookbackDays: input.lookbackDays ?? CAPABILITY_LOOKBACK_DAYS,
     levels: CAPABILITY_ORDER.map(system => ({
-      ...levels[system],
-      level: clamp(round1(levels[system].level), 1, 10),
-      evidence: levels[system].evidence.slice(0, 4),
+      ...(() => {
+        const level = clamp(round1(levels[system].level), 1, 10);
+        const isHardSystem = ['tempo', 'threshold', 'vo2', 'anaerobic'].includes(system);
+        const recoveryProtected = signals.includes('protect_recovery')
+          && (system === 'long_endurance' || isHardSystem);
+        const intensityReduced = signals.includes('reduce_next_intensity') && isHardSystem;
+        const hasEvidence = levels[system].evidence.length > 0;
+        const nextRecommendedWorkoutLevel = recoveryProtected
+          ? level
+          : intensityReduced
+            ? clamp(round1(level - 0.2), 1, 10)
+            : hasEvidence
+              ? clamp(round1(level + 0.3), 1, 10)
+              : level;
+        const fallbackReason = recoveryProtected
+          ? `${CAPABILITY_LABELS[system]} geschützt: erst Erholung, Fueling und Tagesform prüfen.`
+          : intensityReduced
+            ? `${CAPABILITY_LABELS[system]} vorsichtig halten: letzte harte Ausführung war zu schwer.`
+            : hasEvidence
+              ? `${CAPABILITY_LABELS[system]} stabil; nächster produktiver Reiz darf leicht steigen.`
+              : null;
+        return {
+          ...levels[system],
+          level,
+          nextRecommendedWorkoutLevel,
+          lastProgressionReason: levels[system].lastProgressionReason ?? fallbackReason,
+          staleReason: hasEvidence ? null : `${CAPABILITY_LABELS[system]} hat noch keine belastbare Evidenz im ${input.lookbackDays ?? CAPABILITY_LOOKBACK_DAYS}-Tage-Fenster.`,
+          evidence: levels[system].evidence.slice(0, 4),
+        };
+      })(),
     })),
     signals,
     recommendations: recommendations.slice(0, 4),

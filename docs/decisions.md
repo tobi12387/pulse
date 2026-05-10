@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Capability Levels zeigen den nächsten Progressionsreiz
+
+- **Decision:** Jede Training-Capability liefert zusätzlich `nextRecommendedWorkoutLevel`, `lastProgressionReason` und `staleReason`. Die Plan-Statistik zeigt daraus kompakt, ob der nächste Reiz steigen darf, gehalten/reduziert wird oder wegen fehlender Evidenz vorsichtig bleibt.
+- **Why:** Pulse soll nicht nur abstrakte Level anzeigen, sondern erklären, was daraus für die nächste Einheit folgt. Das reduziert das Gefühl wiederholter Standardpläne und macht Fortschritt, Schutz und Datenlücken sichtbar.
+- **Alternatives:** Nur Planbeschreibung erweitern (zu spät im Flow); separate Progression-Seite bauen (mehr Navigation); Level ohne nächste Empfehlung lassen (weniger handlungsfähig).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan-Ausführung repariert Garmin nur nach explizitem Klick
 
 - **Decision:** Die Reparaturbuttons im Plan-Tab `Ausführung` nutzen ausschließlich bestehende Endpunkte: `sync-garmin` für Vorlage/Repeat und `garmin/calendar/sync` für Kalender/Stale. Die Liste wird danach erneut gelesen; es gibt weiterhin keine Schreibaktion beim Laden des Tabs.

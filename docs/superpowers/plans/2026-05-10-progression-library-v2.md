@@ -24,7 +24,7 @@
 
 ## Task 1: Make Progression Visible
 
-- [ ] **Step 1: Add backend tests for capability language**
+- [x] **Step 1: Add backend tests for capability language**
 
 Extend `training-capabilities.test.ts`:
 
@@ -32,7 +32,7 @@ Extend `training-capabilities.test.ts`:
 - Hard-feeling low-compliance workout marks `reduce_next_intensity`.
 - Long off-plan ride raises long endurance cautiously and triggers recovery protection.
 
-- [ ] **Step 2: Extend shared type**
+- [x] **Step 2: Extend shared type**
 
 Add to each capability level:
 
@@ -42,7 +42,7 @@ lastProgressionReason: string | null;
 staleReason: string | null;
 ```
 
-- [ ] **Step 3: Implement fields**
+- [x] **Step 3: Implement fields**
 
 In `deriveTrainingCapabilities`, compute:
 
@@ -50,7 +50,7 @@ In `deriveTrainingCapabilities`, compute:
 - Hold or reduce if `protect_recovery` or `reduce_next_intensity` is present.
 - `staleReason` if no evidence in that energy system.
 
-- [ ] **Step 4: Surface in UI**
+- [x] **Step 4: Surface in UI**
 
 In `TrainingCapabilityCard`, show compact rows:
 
@@ -58,7 +58,7 @@ In `TrainingCapabilityCard`, show compact rows:
 - `Threshold 3.2 · vorsichtig`.
 - `Long Endurance · geschützt nach langer Tour`.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run:
 
@@ -174,4 +174,3 @@ Expected: options vary by data and do not fill every available day automatically
 - No automatic FTP/profile changes from power-duration estimates.
 - No extra top-level Workout Library tab.
 - No plan mutation without explicit preview/apply.
-

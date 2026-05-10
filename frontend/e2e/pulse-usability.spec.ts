@@ -3619,6 +3619,15 @@ test('Plan Ausführung repair actions call existing Garmin repair endpoints only
   expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
 });
 
+test('Plan Statistik shows progression guidance in capability levels', async ({ page }) => {
+  await mockPulseApi(page);
+  await page.goto('/plan?tab=stats');
+
+  await expect(page.getByText('Capability Levels')).toBeVisible();
+  await expect(page.getByText('nächster produktiver Reiz 4.0')).toBeVisible();
+  await expect(page.getByText('geschützt · nächster Reiz 4.3')).toBeVisible();
+});
+
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
   const coverage = {
     range: { from: '2026-05-01', to: '2026-05-02', days: 2, year: null },
