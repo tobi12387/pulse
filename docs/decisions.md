@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Planliste zeigt Garmin-Struktur vor dem Öffnen
+
+- **Decision:** Strukturierte Workouts zeigen in der Planliste eine kompakte `Garmin-Struktur`-Zeile mit Blockanzahl, berechneter Step-Dauer, Repeat-Hinweis und HR-Ziel-Anzahl.
+- **Why:** Benchmark-Blick auf TrainerRoad und TrainingPeaks zeigt, dass Schwierigkeit, Struktur und Exportrelevanz schon vor dem Öffnen der Detailansicht scannbar sein müssen. Pulse soll besonders auf iPhone/PWA Vertrauen in Garmin-Workouts geben, ohne jeden Row zu einer Detailkarte aufzublähen.
+- **Alternatives:** Nur das Detailmodal erweitern (bereits umgesetzt, aber zu spät im Flow); Backend-DTO erweitern (für diese vorhandenen Step-Daten unnötig); vollständige Step-Liste in jeder Row zeigen (zu bulky).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Workout-Detail zeigt Garmin-Handoff-Inhalt vor Upload
 
 - **Decision:** Das Workout-Detailmodal zeigt bei strukturierten Workouts eine kompakte `Garmin Workout-Inhalt`-Zusammenfassung mit Blockanzahl, Dauer, Repeat-Blöcken, Wiederholungen und HR-Zielen, bevor die Einheit auf Garmin geladen wird.
