@@ -755,6 +755,67 @@ function addLocalDays(date: Date, days: number): Date {
   return next;
 }
 
+type ScenarioProjectedWorkout = PulsePlanScenarioPreview['projectedWorkouts'][number];
+
+type ScenarioAffectedWorkout = {
+  id: string;
+  title: string;
+  detail: string;
+  durationLine: string;
+  tssLine: string;
+  tone: string;
+};
+
+function scenarioTss(workout: Pick<ScenarioProjectedWorkout, 'durationMin' | 'zone' | 'targetTss'>): number {
+  if (workout.targetTss != null) return Math.round(workout.targetTss);
+  const factor = [0, 0.35, 0.7, 0.9, 1.12, 1.3][Math.max(1, Math.min(5, workout.zone))] ?? 0.7;
+  return Math.round(workout.durationMin * factor);
+}
+
+function workoutImpactLabel(before: PlannedWorkout | null, after: ScenarioProjectedWorkout): ScenarioAffectedWorkout | null {
+  const title = `${ACTIVITY_LABEL[after.activityType] ?? after.activityType} · ${after.plannedDate}`;
+  const afterTss = scenarioTss(after);
+
+  if (!before) {
+    return {
+      id: after.id,
+      title,
+      detail: after.description ?? 'Neue Einheit aus der Vorschau.',
+      durationLine: `+${after.durationMin} min`,
+      tssLine: `+${afterTss} TSS`,
+      tone: 'var(--accent)',
+    };
+  }
+
+  const beforeTss = scenarioTss(before);
+  const dateChanged = before.plannedDate !== after.plannedDate;
+  const durationChanged = before.durationMin !== after.durationMin;
+  const tssChanged = beforeTss !== afterTss;
+  const zoneChanged = before.zone !== after.zone;
+  if (!dateChanged && !durationChanged && !tssChanged && !zoneChanged) return null;
+
+  return {
+    id: after.id,
+    title,
+    detail: [
+      dateChanged ? `Datum ${before.plannedDate} -> ${after.plannedDate}` : null,
+      `Z${before.zone} -> Z${after.zone}`,
+      after.description ?? before.description ?? null,
+    ].filter(Boolean).join(' · '),
+    durationLine: `${before.durationMin} -> ${after.durationMin} min`,
+    tssLine: `${beforeTss} -> ${afterTss} TSS`,
+    tone: after.durationMin < before.durationMin || afterTss < beforeTss ? 'var(--amber)' : 'var(--accent)',
+  };
+}
+
+function scenarioAffectedWorkouts(workouts: PlannedWorkout[], preview: PulsePlanScenarioPreview): ScenarioAffectedWorkout[] {
+  const beforeById = new Map(workouts.map(workout => [workout.id, workout]));
+  return preview.projectedWorkouts
+    .map(workout => workoutImpactLabel(beforeById.get(workout.id) ?? null, workout))
+    .filter((item): item is ScenarioAffectedWorkout => item != null)
+    .slice(0, 5);
+}
+
 function PlanScenarioPreviewCard({
   workouts,
   nextWorkout,
@@ -785,6 +846,7 @@ function PlanScenarioPreviewCard({
   const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
   const pending = previewScenario.isPending || createWorkout.isPending || updateWorkout.isPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
+  const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
 
   useEffect(() => {
     if (reviewRequest <= 0) return;
@@ -1033,6 +1095,36 @@ function PlanScenarioPreviewCard({
               </div>
             ))}
           </div>
+          {affectedWorkouts.length > 0 && (
+            <div style={{ display: 'grid', gap: 7 }}>
+              <div className="label-mono" style={{ color: 'var(--accent)' }}>Betroffene Einheiten</div>
+              {affectedWorkouts.map(workout => (
+                <div
+                  key={workout.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                    gap: 8,
+                    alignItems: 'center',
+                    border: '1px solid var(--border)',
+                    borderLeft: `3px solid ${workout.tone}`,
+                    borderRadius: 4,
+                    padding: '8px 9px',
+                    background: 'var(--surface-2)',
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{workout.title}</div>
+                    <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>{workout.detail}</div>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', textAlign: 'right', lineHeight: 1.55, whiteSpace: 'nowrap' }}>
+                    <div>{workout.durationLine}</div>
+                    <div>{workout.tssLine}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {preview.changedDays.length > 0 && (
             <div style={{ display: 'grid', gap: 6 }}>
               {preview.changedDays.slice(0, 5).map(day => (

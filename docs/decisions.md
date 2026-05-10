@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Szenario-Vorschau zeigt betroffene Workouts vor dem Anwenden
+
+- **Decision:** Die Plan-Szenario-Vorschau zeigt konkrete betroffene Zukunftseinheiten mit Dauer- und TSS-Änderung, bevor ein Szenario angewendet wird. Tagesdeltas bleiben sichtbar, werden aber durch Workout-spezifische Auswirkungen ergänzt.
+- **Why:** Plananpassungen müssen nachvollziehbar sein, bevor Pulse lokale Änderungen oder Garmin-Sync-Folgen auslöst. Das reduziert Blindflug bei Umfangssenkung, Verschieben und selbst vorgeschlagenen Einheiten.
+- **Alternatives:** Nur aggregierte Tagesdeltas behalten (zu abstrakt); Backend-Vertrag um neue Impact-DTOs erweitern (größerer Slice); Szenario automatisch anwenden (zu wenig Kontrolle).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Data-Überblick wird zur täglichen Evidence-Triage
 
 - **Decision:** Der Data-Überblick zeigt zuerst eine kompakte Triage aus Readiness/TSB, Mental Check-in, Garmin-Frische und Plan-/Load-Evidenz. Die Detailkarten bleiben bestehen, aber der Einstieg beantwortet zuerst, welche Daten heute entscheidungsrelevant sind.

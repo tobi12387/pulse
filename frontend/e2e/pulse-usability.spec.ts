@@ -1474,12 +1474,138 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
 
   await page.goto('/plan?tab=training');
   await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
-  await page.getByTestId('plan-adaptation-review').getByRole('button', { name: 'Szenario prüfen' }).click();
+  await page.getByTestId('plan-scenario-preview-card').getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByText('TSS', { exact: true })).toBeVisible();
   await expect(page.getByText('+296', { exact: true })).toBeVisible();
   await expect(page.getByText(/Fueling und GI-Komfort/)).toBeVisible();
   expect(previewBody).toMatchObject({ type: 'add_custom_tour' });
+});
+
+test('Plan scenario preview lists affected future workouts before applying', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  let previewBody: unknown = null;
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'planned-reduce-1',
+        userId: 'user-1',
+        plannedDate: '2026-05-03',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        distanceKm: null,
+        targetTss: 68,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 2.5,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Ausdauer.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      {
+        id: 'planned-reduce-2',
+        userId: 'user-1',
+        plannedDate: '2026-05-05',
+        activityType: 'run',
+        zone: 3,
+        durationMin: 60,
+        distanceKm: null,
+        targetTss: 54,
+        archetypeId: 'tempo',
+        difficultyLevel: 3,
+        difficultyEnergySystem: 'tempo',
+        capabilityFit: 'productive',
+        description: 'Tempo kontrolliert.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+    ],
+    onPlanScenarioPreview: body => { previewBody = body; },
+    planScenarioPreview: {
+      preview: {
+        type: 'reduce_volume',
+        summary: 'Offene, nicht gesperrte Workouts werden im Preview reduziert.',
+        projectedWorkouts: [
+          {
+            id: 'planned-reduce-1',
+            plannedDate: '2026-05-03',
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 70,
+            targetTss: 51,
+            userLocked: false,
+            status: 'planned',
+            description: 'Ruhige Ausdauer.',
+          },
+          {
+            id: 'planned-reduce-2',
+            plannedDate: '2026-05-05',
+            activityType: 'run',
+            zone: 3,
+            durationMin: 45,
+            targetTss: 41,
+            userLocked: false,
+            status: 'planned',
+            description: 'Tempo kontrolliert.',
+          },
+        ],
+        changedDays: [
+          {
+            date: '2026-05-03',
+            before: { sessions: 1, durationMin: 90, tss: 68 },
+            after: { sessions: 1, durationMin: 70, tss: 51 },
+            label: '-17 TSS',
+          },
+          {
+            date: '2026-05-05',
+            before: { sessions: 1, durationMin: 60, tss: 54 },
+            after: { sessions: 1, durationMin: 45, tss: 41 },
+            label: '-13 TSS',
+          },
+        ],
+        loadImpact: { tssDelta: -30, durationDeltaMin: -35, nextDayRecoveryDate: null },
+        reasons: ['Offene Planlast wird auf 75% reduziert.'],
+        warnings: [],
+        applySupported: true,
+      },
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('button', { name: 'Umfang senken' }).click();
+  await page.getByTestId('plan-scenario-preview-card').getByRole('button', { name: 'Szenario prüfen' }).click();
+
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-preview-result')).toContainText('Betroffene Einheiten');
+  await expect(page.getByText('Radfahren · 2026-05-03')).toBeVisible();
+  await expect(page.getByText('90 -> 70 min')).toBeVisible();
+  await expect(page.getByText('68 -> 51 TSS')).toBeVisible();
+  await expect(page.getByText('Laufen · 2026-05-05')).toBeVisible();
+  expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.75 });
 });
 
 test('Plan surfaces Garmin sync failure after applying a custom tour scenario', async ({ page }) => {
