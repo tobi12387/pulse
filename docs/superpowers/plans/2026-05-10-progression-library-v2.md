@@ -141,7 +141,7 @@ Expected: variant rationale is visible and matches backend selection.
 
 ## Task 4: Today Options Becomes Progression-Aware
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 In `today-options.test.ts`, assert that Today Options:
 
@@ -149,7 +149,7 @@ In `today-options.test.ts`, assert that Today Options:
 - offers productive endurance when short availability and good readiness.
 - does not offer hard VO2 after GI discomfort or protect mental state.
 
-- [ ] **Step 2: Implement selection**
+- [x] **Step 2: Implement selection**
 
 Use capability fit and daily command state to produce at most three options:
 
@@ -157,7 +157,7 @@ Use capability fit and daily command state to produce at most three options:
 - Alternate: shorter/lighter option.
 - Support: mobility/fueling/feedback if training is not the best next action.
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run:
 
