@@ -1426,6 +1426,74 @@ test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) =>
   expect(box!.y).toBeLessThan(260);
 });
 
+test('Tablet navigation and segmented panels expose accessible targets', async ({ page }) => {
+  await page.setViewportSize({ width: 834, height: 1112 });
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  const sidebarTargets = page.locator('aside nav a');
+  await expect(sidebarTargets).toHaveCount(4);
+  for (const index of [0, 1, 2, 3]) {
+    const box = await sidebarTargets.nth(index).boundingBox();
+    expect(box, `sidebar nav target ${index} should render`).not.toBeNull();
+    expect(box!.height, `sidebar nav target ${index} should be at least 44px tall`).toBeGreaterThanOrEqual(44);
+  }
+  const logoutBox = await page.getByRole('button', { name: 'out' }).boundingBox();
+  expect(logoutBox, 'desktop logout should render').not.toBeNull();
+  expect(logoutBox!.height, 'desktop logout should be at least 44px tall').toBeGreaterThanOrEqual(44);
+  expect(logoutBox!.width, 'desktop logout should be at least 44px wide').toBeGreaterThanOrEqual(44);
+
+  await page.goto('/data?tab=mental');
+  const mentalTab = page.getByRole('tab', { name: 'Mental', exact: true });
+  await expect(mentalTab).toHaveAttribute('aria-controls', 'data-mental-panel');
+  const mentalPanel = page.locator('#data-mental-panel[role="tabpanel"]');
+  await expect(mentalPanel).toBeVisible();
+  await expect(mentalPanel).toHaveAttribute('aria-labelledby', 'data-mental-tab');
+
+  await page.goto('/plan?tab=training');
+  const trainingTab = page.getByRole('tab', { name: 'Training', exact: true });
+  await expect(trainingTab).toHaveAttribute('aria-controls', 'plan-training-panel');
+  const trainingPanel = page.locator('#plan-training-panel[role="tabpanel"]');
+  await expect(trainingPanel).toBeVisible();
+  await expect(trainingPanel).toHaveAttribute('aria-labelledby', 'plan-training-tab');
+});
+
+test('Home metric tooltips and Plan activity rows work from keyboard', async ({ page }) => {
+  await mockPulseApi(page, {
+    activities: [
+      {
+        id: 'activity-row-1',
+        startTime: '2026-05-01T07:30:00.000Z',
+        activityType: 'bike',
+        name: 'Rennrad Grundlage',
+        durationSec: 3600,
+        distanceM: 30000,
+        tss: 45,
+      },
+    ],
+  });
+
+  await page.goto('/');
+  const readinessTrigger = page.getByRole('button', { name: /READINESS erklären/i });
+  await readinessTrigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(readinessTrigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('tooltip')).toContainText(/Readiness|Trainingsbereitschaft/i);
+  await page.keyboard.press('Escape');
+  await expect(readinessTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+
+  await page.goto('/plan?tab=training');
+  const activityButton = page.getByRole('button', { name: /Rennrad Grundlage.*Aktivität öffnen/i });
+  await expect(activityButton).toBeVisible();
+  const activityBox = await activityButton.boundingBox();
+  expect(activityBox, 'activity row button should render').not.toBeNull();
+  expect(activityBox!.height, 'activity row button should be at least 44px tall').toBeGreaterThanOrEqual(44);
+  await activityButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/activity\/activity-row-1$/);
+});
+
 test('Home surfaces quick availability intents when no workout is planned', async ({ page }) => {
   let previewBody: unknown = null;
   await mockPulseApi(page, {
@@ -1448,6 +1516,10 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
   await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
+  await expect(scenarioCard).not.toContainText('155 km');
+  await expect(scenarioCard).not.toContainText('423 min');
   expect(previewBody).toMatchObject({
     type: 'add_custom_tour',
     workout: {
@@ -1669,7 +1741,12 @@ test('Plan surfaces Garmin sync failure after applying a custom tour scenario', 
   });
 
   await page.goto('/plan?tab=training');
-  await page.getByTestId('plan-adaptation-review').getByRole('button', { name: 'Szenario prüfen' }).click();
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await scenarioCard.getByLabel('km optional').fill('155');
+  await scenarioCard.getByLabel('km/h optional').fill('22');
+  await scenarioCard.getByLabel('Notiz').fill('Entspannte Rennradtour mit Stops.');
+  await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await page.getByRole('button', { name: 'Vorschau anwenden' }).click();
   await expect(page.getByText('Garmin-Sync offen')).toBeVisible();
@@ -1974,6 +2051,7 @@ test('Data Garmin backfill failure shows local recovery', async ({ page }) => {
 });
 
 test('Plan prioritizes the next training decision before tools', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   await mockPulseApi(page, {
     planWorkouts: [
       {
@@ -1992,7 +2070,7 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await page.goto('/plan');
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sportart ändern' })).toBeVisible();
-  await expect(page.getByText('Lokal')).toBeVisible();
+  await expect(page.getByText('Lokal', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'wechseln' })).toHaveCount(0);
 
   const decisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
@@ -2007,7 +2085,7 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
 });
 
 test('Plan empty training decision offers direct next actions', async ({ page }) => {
-  await mockPulseApi(page, { planWorkouts: [] });
+  await mockPulseApi(page, { planWorkouts: [], todayOptionsState: 'unplanned_trainable' });
 
   await page.goto('/plan');
   const emptyDecision = page.locator('.card').filter({ hasText: 'Kein offenes Training geplant' }).first();

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
@@ -97,11 +97,12 @@ const TOOLTIPS: Record<string, TooltipDef> = {
 };
 
 function Tooltip({ id, children }: { id: string; children: React.ReactNode }) {
+  const tooltipId = useId();
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const tip = TOOLTIPS[id];
   if (!tip) return <>{children}</>;
 
-  function handleClick(e: React.MouseEvent) {
+  function handleClick(e: React.MouseEvent<HTMLElement>) {
     e.stopPropagation();
     if (pos) { setPos(null); return; }
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -110,13 +111,41 @@ function Tooltip({ id, children }: { id: string; children: React.ReactNode }) {
 
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}>
-      <span onClick={handleClick} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-3)' }}>
+      <button
+        type="button"
+        onClick={handleClick}
+        onKeyDown={event => {
+          if (event.key === 'Escape') {
+            event.stopPropagation();
+            setPos(null);
+          }
+        }}
+        aria-label={`${id} erklären`}
+        aria-expanded={Boolean(pos)}
+        aria-describedby={pos ? tooltipId : undefined}
+        style={{
+          cursor: 'help',
+          border: 'none',
+          borderBottom: '1px dotted var(--text-3)',
+          background: 'transparent',
+          padding: 0,
+          color: 'inherit',
+          font: 'inherit',
+          letterSpacing: 'inherit',
+          textTransform: 'inherit',
+        }}
+      >
         {children}
-      </span>
+      </button>
       {pos && (
         <>
-          <span style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setPos(null)} />
-          <div style={{
+          <button
+            type="button"
+            aria-label="Tooltip schließen"
+            style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent', border: 'none', padding: 0 }}
+            onClick={() => setPos(null)}
+          />
+          <div id={tooltipId} role="tooltip" style={{
             position: 'fixed',
             left: Math.min(pos.x - 120, window.innerWidth - 256),
             top: pos.y - 8,
