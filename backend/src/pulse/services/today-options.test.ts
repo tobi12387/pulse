@@ -129,6 +129,12 @@ describe('buildTodayOptions', () => {
       activityType: 'bike',
       zone: 2,
     });
+    expect(first.options[0]?.targetPath).toContain('/plan?');
+    expect(first.options[0]?.targetPath).toContain('source=today-options');
+    expect(first.options[0]?.targetPath).toContain('scenario=workout');
+    expect(first.options[0]?.targetPath).toContain('activityType=bike');
+    expect(first.options[0]?.targetPath).toContain('durationMin=60');
+    expect(first.options[0]?.targetPath).toContain('#plan-scenario-preview');
     expect(first.options[0]?.evidence.length).toBeGreaterThanOrEqual(2);
   });
 });
