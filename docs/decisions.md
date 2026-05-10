@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Nutrition Intelligence nutzt GI-Learning als konkrete Zielrange
+
+- **Decision:** Wenn eine aktuelle lange Ausdauereinheit mit niedrigem Carb-Intake und GI-/Magenproblem geloggt wurde, nutzt Pulse fuer die naechste lange Einheit eine kontrollierte `50-70 g/h`-Zielrange und rechnet 750-ml-Flaschen sowie MNSTRY-Pulver daraus neu.
+- **Why:** Tobi braucht nach der 155-km-Erfahrung keine generische `60-90 g/h`-Empfehlung plus separaten Warntext, sondern eine konkrete naechste Teststufe, die frueheres und gleichmaessigeres Fueling sichtbar macht. Das bleibt konservativ und trainingspraktisch, ohne daraus eine medizinische Diagnose oder eine harte Dauergrenze zu machen.
+- **Alternatives:** `60-90 g/h` unveraendert lassen und nur Toleranztext zeigen (zu wenig handlungsleitend); pauschal niedriger empfehlen (falsch, weil der Mars-Hinweis eher fuer rechtzeitigeres Fueling spricht); eine neue Nutrition-Seite oder Migration bauen (zu grosser Scope fuer v1).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Scenario Preview zeigt Capability Fit read-only
 
 - **Decision:** Plan-Szenario-Vorschauen berechnen Archetyp, Workout-Level, Energy-System und Capability-Fit als reine Response-Metadaten und laden Capability Summary dafuer mit `persist: false`.

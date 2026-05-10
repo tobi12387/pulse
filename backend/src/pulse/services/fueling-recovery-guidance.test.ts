@@ -138,6 +138,32 @@ describe('buildFuelingRecoveryGuidance', () => {
     expect(during).not.toContain('unterer bis mittlerer Range starten');
   });
 
+  it('uses low-intake GI learning as the concrete next-session carb and bottle target', () => {
+    const guidance = buildFuelingRecoveryGuidance({
+      workout: workout({ durationMin: 240, zone: 2, targetTss: 196 }),
+      preferences,
+      profile: { weightKg: 80 },
+      fuelingHistory: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 430,
+        carbsG: 300,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'mild_issue',
+        notes: 'Nach 100 km etwas Magenprobleme; Mars half nach ein paar Minuten.',
+      }],
+    });
+
+    const carbsItem = guidance.during.find(item => item.id === 'during-carbs')?.text ?? '';
+    expect(carbsItem).toContain('50-70 g Kohlenhydrate pro Stunde');
+    expect(carbsItem).toContain('200-280 g gesamt');
+    expect(carbsItem).toContain('3-4 x 750-ml-Flaschen');
+    expect(carbsItem).toContain('210-295 g Pulver gesamt');
+    expect(carbsItem).not.toContain('60-90 g Kohlenhydrate pro Stunde');
+  });
+
   it('calibrates Ministry anchors to Tobi confirmed MNSTRY products without treating BICARB as an everyday gel', () => {
     const guidance = buildFuelingRecoveryGuidance({
       workout: workout({ durationMin: 180, zone: 3, targetTss: 145 }),
