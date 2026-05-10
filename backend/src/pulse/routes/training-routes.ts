@@ -58,6 +58,7 @@ import { buildTodayOptions } from '../services/today-options.js';
 import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
 import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract, summarizeGarminPayloadSnapshot } from '../services/garmin-workout.js';
 import { recordGarminExecution } from '../services/garmin-execution-ledger.js';
+import { loadOpenAdaptationEvents, refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { getActiveRaces } from '../services/race-engine.js';
@@ -216,8 +217,23 @@ async function recordGarminExecutionSafely(
   context: string,
   input: Parameters<typeof recordGarminExecution>[1],
 ): Promise<void> {
-  await recordGarminExecution(db, input).catch((err: unknown) => {
+  try {
+    await recordGarminExecution(db, input);
+    const today = new Date().toISOString().split('T')[0]!;
+    await refreshAdaptationEventsSafely(app, input.userId, today, context);
+  } catch (err: unknown) {
     app.log.warn(`[${context}] Failed to record Garmin execution ledger for ${input.plannedWorkoutId}: ${err}`);
+  }
+}
+
+async function refreshAdaptationEventsSafely(
+  app: FastifyInstance,
+  userId: string,
+  today: string,
+  context: string,
+): Promise<void> {
+  await refreshAdaptationEventsForUser(db, userId, today).catch((err: unknown) => {
+    app.log.warn(`[${context}] Failed to refresh adaptation events for ${userId}: ${err}`);
   });
 }
 
@@ -707,6 +723,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     }
 
     await invalidateUser(userId);
+    await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'plan-workout-update');
     return { workout: finalWorkout, garminSync };
   });
 
@@ -1244,6 +1261,13 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .limit(1);
 
     return { trace: row ? mapPlanTrace(row) : null };
+  });
+
+  app.get('/plan/adaptation-events', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const events = await loadOpenAdaptationEvents(db, userId, today);
+    return { events };
   });
 
   // ─── Today-Adjust (Phase 6 Task 4) ────────────────────────────────────────────
@@ -2154,6 +2178,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       notes:       parsed.data.notes       ?? null,
     }).returning();
 
+    await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'nutrition-log');
     return reply.status(201).send(log);
   });
 

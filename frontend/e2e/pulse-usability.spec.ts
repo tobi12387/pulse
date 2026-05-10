@@ -501,6 +501,21 @@ function offPlanActivityHome({ rpe, feedbackLoggedAt }: { rpe: number | null; fe
 test('Home treats completed planned training with feedback as done and stays focused', async ({ page }) => {
   await mockPulseApi(page, {
     home: completedWorkoutHome({ rpe: 5, feedbackLoggedAt: '2026-05-01T09:45:00.000Z' }),
+    adaptationEvents: {
+      events: [{
+        id: 'adapt-1',
+        userId: 'user-1',
+        eventDate: '2026-05-01',
+        kind: 'activity_completed',
+        sourceId: 'activity-done',
+        severity: 'action',
+        recommendation: 'protect_recovery',
+        summary: 'Lange reale Einheit erkannt; Folgetage müssen Belastung absorbieren.',
+        evidence: ['bike 430 min', 'TSB -18.0'],
+        resolvedAt: null,
+        createdAt: '2026-05-01T10:00:00.000Z',
+      }],
+    },
   });
 
   await page.goto('/');
@@ -521,6 +536,8 @@ test('Home treats completed planned training with feedback as done and stays foc
   await expect(page.getByText('RECENT')).toHaveCount(0);
   await expect(page.getByText('Grundlage draußen')).toHaveCount(0);
   await expect(page.getByText(/Mental Health:/)).toHaveCount(0);
+  await expect(page.getByTestId('home-adaptation-event')).toContainText('PLAN GEPRÜFT');
+  await expect(page.getByTestId('home-adaptation-event')).toContainText('Lange reale Einheit erkannt');
 });
 
 test('Home routes to activity feedback only when completed training still misses RPE', async ({ page }) => {
@@ -2521,6 +2538,70 @@ test('Plan surfaces an adaptation check when recent Garmin execution diverged', 
 
   await adaptationReview.getByRole('button', { name: 'Plan beibehalten' }).click();
   await expect(page.getByTestId('plan-adaptation-review')).toHaveCount(0);
+});
+
+test('Plan shows persisted adaptation events with concrete actions', async ({ page }) => {
+  await mockPulseApi(page, {
+    adaptationEvents: {
+      events: [
+        {
+          id: 'adapt-sync',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'sync_debt',
+          sourceId: null,
+          severity: 'action',
+          recommendation: 'sync_garmin',
+          summary: 'Garmin-Sync-Schulden müssen vor Ausführung geschlossen werden.',
+          evidence: ['2 offene Einheiten'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T07:00:00.000Z',
+        },
+        {
+          id: 'adapt-recovery',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'activity_completed',
+          sourceId: 'activity-long',
+          severity: 'watch',
+          recommendation: 'protect_recovery',
+          summary: 'Lange reale Einheit erkannt; Folgetage müssen Belastung absorbieren.',
+          evidence: ['bike 430 min', 'TSS 310'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T06:00:00.000Z',
+        },
+        {
+          id: 'adapt-move',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'planned_workout_missed',
+          sourceId: 'workout-missed',
+          severity: 'watch',
+          recommendation: 'move_workout',
+          summary: 'Mindestens eine geplante Einheit wurde nicht ausgeführt.',
+          evidence: ['2026-04-30: run Z2 45 min'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T05:00:00.000Z',
+        },
+      ],
+    },
+  });
+
+  await page.goto('/plan');
+  const card = page.getByTestId('plan-adaptation-events');
+  await expect(card).toContainText('Adaptionshinweise');
+  await expect(card).toContainText('Garmin-Sync-Schulden');
+  await expect(card).toContainText('Lange reale Einheit erkannt');
+
+  await card.getByRole('button', { name: 'Szenario prüfen' }).first().click();
+  await expect(page.getByTestId('plan-scenario-preview-card')).toBeInViewport();
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Umfang senken');
+
+  await card.getByRole('button', { name: 'Szenario prüfen' }).nth(1).click();
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Verschieben');
+
+  await card.getByRole('button', { name: 'Garmin öffnen' }).click();
+  await expect(page).toHaveURL('/settings?section=garmin');
 });
 
 test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {

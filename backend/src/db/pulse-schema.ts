@@ -5,6 +5,8 @@ import {
 import { sql } from 'drizzle-orm';
 import type {
   EquipmentCategory,
+  PulseAdaptationEventKind,
+  PulseAdaptationRecommendation,
   PulseActivityType,
   PulseCoachCommunicationStyle,
   PulseCapabilityConfidence,
@@ -366,6 +368,23 @@ export const pulseGarminExecutionLedger = pgTable('pulse_garmin_execution_ledger
 }, (t) => [
   index('pulse_garmin_execution_ledger_workout_idx').on(t.plannedWorkoutId, t.attemptedAt),
   index('pulse_garmin_execution_ledger_user_outcome_idx').on(t.userId, t.outcome, t.attemptedAt),
+]);
+
+export const pulseAdaptationEvents = pgTable('pulse_adaptation_events', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  userId:         uuid('user_id').notNull(),
+  eventDate:      date('event_date').notNull(),
+  kind:           varchar('kind', { length: 48 }).notNull().$type<PulseAdaptationEventKind>(),
+  sourceId:       varchar('source_id', { length: 128 }).notNull().default(''),
+  severity:       varchar('severity', { length: 16 }).notNull().$type<'info' | 'watch' | 'action'>(),
+  recommendation: varchar('recommendation', { length: 48 }).notNull().$type<PulseAdaptationRecommendation>(),
+  summary:        text('summary').notNull(),
+  evidence:       jsonb('evidence').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  resolvedAt:     timestamp('resolved_at', { withTimezone: true }),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_adaptation_events_unique_source_idx').on(t.userId, t.eventDate, t.kind, t.sourceId),
+  index('pulse_adaptation_events_open_idx').on(t.userId, t.eventDate, t.resolvedAt),
 ]);
 
 // ─── Plan generation trace ──────────────────────────────────────────────────

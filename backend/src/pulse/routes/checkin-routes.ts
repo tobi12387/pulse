@@ -19,6 +19,7 @@ import {
 import { normalizeCoachMessages } from '../services/coach.js';
 import { getMentalLoadOverlay } from '../services/mental-load-overlay.js';
 import { listMentalThemes } from '../services/mental-themes.js';
+import { refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 
 const checkinSchema = z.object({
   mood:       z.number().int().min(1).max(10),
@@ -55,6 +56,9 @@ export async function registerPulseCheckinRoutes(app: FastifyInstance) {
     }).returning();
 
     await invalidateUser(userId);
+    await refreshAdaptationEventsForUser(db, userId, today).catch((err: unknown) => {
+      app.log.warn(`[checkin] Failed to refresh adaptation events for ${userId}: ${err}`);
+    });
     return reply.status(201).send(checkin);
   });
 
@@ -149,6 +153,9 @@ export async function registerPulseCheckinRoutes(app: FastifyInstance) {
         checkinId = inserted?.id ?? null;
       }
       await invalidateUser(userId);
+      await refreshAdaptationEventsForUser(db, userId, today).catch((err: unknown) => {
+        app.log.warn(`[voice-checkin] Failed to refresh adaptation events for ${userId}: ${err}`);
+      });
     }
 
     const [session] = await db.select({ id: pulseCoachSessions.id, messages: pulseCoachSessions.messages })

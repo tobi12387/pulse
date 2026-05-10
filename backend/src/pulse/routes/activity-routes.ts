@@ -13,6 +13,7 @@ import {
   type GarminActivityLapCache,
 } from '../../db/pulse-schema.js';
 import { invalidateUser } from '../lib/pulse-cache.js';
+import { refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 
 function asGarminLapCache(value: unknown): GarminActivityLapCache[] {
   return Array.isArray(value) ? value as GarminActivityLapCache[] : [];
@@ -296,6 +297,9 @@ export async function registerPulseActivityRoutes(app: FastifyInstance) {
     if (!updated) return reply.status(404).send({ error: 'Not found' });
 
     await invalidateUser(userId);
+    await refreshAdaptationEventsForUser(db, userId, new Date().toISOString().split('T')[0]!).catch((err: unknown) => {
+      app.log.warn(`[activity-feedback] Failed to refresh adaptation events for ${userId}: ${err}`);
+    });
 
     return {
       activity: {

@@ -225,6 +225,13 @@
       "when": 1778344500000,
       "tag": "0031_garmin_execution_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1778345400000,
+      "tag": "0032_adaptation_events",
+      "breakpoints": true
     }
   ]
 }
