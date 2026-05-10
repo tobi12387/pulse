@@ -267,12 +267,30 @@ function buildBefore(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
   return items;
 }
 
-function carbRange(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): { min: number; max: number; text: string } | null {
+function controlledToleranceCarbRange(input: BuildFuelingRecoveryGuidanceInput): { min: number; max: number; text: string; source: 'tolerance_learning' } | null {
+  const { workout } = input;
+  if (!isEnduranceFuelingSport(workout.activityType) || workout.durationMin < 150) return null;
+  const latestIssue = relevantFuelingHistory(input.fuelingHistory)
+    .find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue') ?? null;
+  if (!latestIssue) return null;
+  const cph = carbsPerHour(latestIssue);
+  if (cph == null || cph >= 50) return null;
+  return {
+    min: 50,
+    max: 70,
+    text: '50-70 g Kohlenhydrate pro Stunde',
+    source: 'tolerance_learning',
+  };
+}
+
+function carbRange(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): { min: number; max: number; text: string; source?: 'tolerance_learning' } | null {
   const { workout, preferences } = input;
   if (preferences.carbGuidanceStyle === 'avoid_amounts') return null;
   if (!isEnduranceFuelingSport(workout.activityType)) return null;
   if (workout.durationMin < 60 && workout.zone < 3) return null;
   if (isWeakRecovery) return { min: 30, max: 45, text: '30-45 g Kohlenhydrate pro Stunde' };
+  const controlledRange = controlledToleranceCarbRange(input);
+  if (controlledRange) return controlledRange;
   if (workout.durationMin >= 150) return { min: 60, max: 90, text: '60-90 g Kohlenhydrate pro Stunde' };
   if (workout.durationMin >= 75) return { min: 30, max: 60, text: '30-60 g Kohlenhydrate pro Stunde' };
   return { min: 20, max: 30, text: '20-30 g Kohlenhydrate pro Stunde optional' };
@@ -296,7 +314,7 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
       totalMinG: portion.totalMinG,
       totalMaxG: portion.totalMaxG,
     });
-    const longSessionNote = workout.durationMin >= 150 && !isWeakRecovery
+    const longSessionNote = workout.durationMin >= 150 && !isWeakRecovery && carbs.source !== 'tolerance_learning'
       ? ' Nur mit geübter Glukose-/Fruktose-Strategie Richtung obere Range gehen.'
       : '';
     items.push({

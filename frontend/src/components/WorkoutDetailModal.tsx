@@ -218,6 +218,13 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
   const hrTargetCount = workout.steps?.filter(step => fmtHrTarget(step) != null).length ?? 0;
   const latestLedger = executionLedger.data?.entries?.[0] ?? null;
   const isStrengthWorkout = workout.activityType === 'strength';
+  const fuelingData = fuelingGuidance.data;
+  const fuelingDebt = fuelingData?.fuelingDebt ?? null;
+  const fuelingRecoveryCautions = fuelingData?.recoveryCautions ?? [];
+  const fuelingBefore = fuelingData?.before ?? [];
+  const fuelingDuring = fuelingData?.during ?? [];
+  const fuelingAfter = fuelingData?.after ?? [];
+  const fuelingEvidence = fuelingData?.evidence ?? [];
 
   return (
     <div
@@ -435,7 +442,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
               </div>
             </div>
           )}
-          {fuelingGuidance.data?.shouldShow && (
+          {fuelingData?.shouldShow && (
             <div
               data-testid="fueling-recovery-guidance"
               style={{
@@ -458,7 +465,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                   BEREIT
                 </span>
               </div>
-              {fuelingGuidance.data.fuelingDebt.hasOpenDebt && (
+              {fuelingDebt?.hasOpenDebt && (
                 <div data-testid="workout-fueling-debt" style={{
                   padding: 8,
                   border: '1px solid rgba(251,191,36,0.34)',
@@ -466,28 +473,28 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                   background: 'rgba(251,191,36,0.06)',
                 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: 'var(--amber)', marginBottom: 4 }}>
-                    {fuelingGuidance.data.fuelingDebt.label}
+                    {fuelingDebt.label}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
-                    {fuelingGuidance.data.fuelingDebt.closureCondition}
+                    {fuelingDebt.closureCondition}
                   </div>
                 </div>
               )}
-              {fuelingGuidance.data.recoveryCautions.length > 0 && (
+              {fuelingRecoveryCautions.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {fuelingGuidance.data.recoveryCautions.map((caution, index) => (
+                  {fuelingRecoveryCautions.map((caution, index) => (
                     <div key={index} style={{ fontSize: 11, color: 'var(--amber)', lineHeight: 1.45 }}>
                       {caution}
                     </div>
                   ))}
                 </div>
               )}
-              <GuidanceList title="Vorher" items={fuelingGuidance.data.before} />
-              <GuidanceList title="Während" items={fuelingGuidance.data.during} />
-              <GuidanceList title="Danach" items={fuelingGuidance.data.after} />
-              {fuelingGuidance.data.evidence.length > 0 && (
+              <GuidanceList title="Vorher" items={fuelingBefore} />
+              <GuidanceList title="Während" items={fuelingDuring} />
+              <GuidanceList title="Danach" items={fuelingAfter} />
+              {fuelingEvidence.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {fuelingGuidance.data.evidence.map(item => (
+                  {fuelingEvidence.map(item => (
                     <span
                       key={`${item.label}:${item.value}`}
                       style={{
