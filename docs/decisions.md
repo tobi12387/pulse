@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan erklärt Data-Handoff sichtbar
+
+- **Decision:** Wenn die Plan-Szenario-Vorschau aus der Data `Plan-/Load`-Triage geöffnet wird, zeigt die Karte einen sichtbaren Kontext-Hinweis. Der Hinweis nennt Readiness, TSB und Plan-/Load-Evidenz als Grund für die Prüfung.
+- **Why:** Deep Links dürfen Nutzer nicht kommentarlos in eine Aktionsfläche werfen. Ein kurzer Herkunftshinweis reduziert kognitive Last auf iPhone/PWA und macht klar, warum eine Planprüfung jetzt sinnvoll ist.
+- **Alternatives:** Nur Hash-Fokus ohne Erklärung (zu still); separate Data-Zwischenseite bauen (zu viel Umweg); automatisch Vorschau starten (zu viel Automatik).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Data Plan-/Load führt zur Plan-Aktionsfläche
 
 - **Decision:** Die `Plan-/Load`-Triage im Data-Überblick führt direkt zur Plan-Szenario-Vorschau (`/plan?tab=training#plan-scenario-preview`) statt nur zur Analyse-Ansicht. Plan unterstützt dafür Hash-Fokus auf konkrete Aktionsflächen.
