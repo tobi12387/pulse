@@ -1966,6 +1966,60 @@ describe('PATCH /api/pulse/plan/workout/:id', () => {
     expect(payload.description).toContain('Lauf: Archetyp Steady Endurance');
   });
 
+  it('keeps generated Garmin sync contract when sport change resync fails', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      updatedAt: new Date(),
+    });
+    garminMocks.addWorkout.mockRejectedValueOnce(new Error('Garmin offline'));
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-06',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 90,
+      targetTss: 130,
+      description: 'Rad-Schwellenintervalle',
+      steps: [{ type: 'steady', durationMin: 90, zone: 4, description: 'Alte Rad-Einheit' }],
+      garminWorkoutId: 'old-workout',
+      garminScheduledId: 'old-schedule',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+    }).returning();
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/pulse/plan/workout/${workout!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { activityType: 'run', zone: 2, durationMin: 45 },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ workout: {
+      activityType: string;
+      description: string | null;
+      garminWorkoutId: string | null;
+      garminScheduledId: string | null;
+      garminSyncContract: { payloadReady: boolean; summary: string } | null;
+      steps: Array<{ targetLabel?: string; description?: string }> | null;
+    }; garminSync: { status: string; error?: string } }>();
+    expect(body.garminSync.status).toBe('failed');
+    expect(body.workout.activityType).toBe('run');
+    expect(body.workout.description).toContain('Lauf: Archetyp Steady Endurance');
+    expect(body.workout.steps?.length).toBeGreaterThan(0);
+    expect(body.workout.garminWorkoutId).toBeNull();
+    expect(body.workout.garminScheduledId).toBeNull();
+    expect(body.workout.garminSyncContract).not.toBeNull();
+    expect(body.workout.garminSyncContract?.payloadReady).toBe(true);
+
+    const deletedUrls = garminMocks.delete.mock.calls.map(call => String(call[0]));
+    expect(deletedUrls.some(url => url.includes('/schedule/old-schedule'))).toBe(true);
+    expect(deletedUrls.some(url => url.includes('/workout/old-workout'))).toBe(true);
+  });
+
   it('removes Garmin objects when a planned workout is skipped', async () => {
     const [workout] = await db.insert(pulsePlannedWorkouts).values({
       userId,

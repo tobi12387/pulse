@@ -591,7 +591,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         ...(changesGarminRelevant ? {
           garminWorkoutId: null,
           garminScheduledId: null,
-          garminSyncContract: null,
+          ...(generatedDetail ? {} : { garminSyncContract: null }),
           executionStatus: null,
           executionNotes: null,
           executionMatchConfidence: null,
