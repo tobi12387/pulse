@@ -1688,6 +1688,84 @@ test('Plan surfaces Garmin sync failure after applying a custom tour scenario', 
   await expect(page.getByText(/Garmin Sync fehlgeschlagen/).first()).toBeVisible();
 });
 
+test('Plan custom workout starts neutral and saves duration-only units without tour distance', async ({ page }) => {
+  let createBody: unknown = null;
+  await mockPulseApi(page, {
+    createWorkoutResult: (body) => {
+      createBody = body;
+      const payload = body as { plannedDate?: string; activityType?: string; zone?: number; durationMin?: number; description?: string };
+      return {
+        workout: {
+          id: 'created-duration-workout',
+          userId: 'user-1',
+          plannedDate: payload.plannedDate ?? '2026-05-02',
+          activityType: payload.activityType ?? 'bike',
+          zone: payload.zone ?? 2,
+          durationMin: payload.durationMin ?? 75,
+          distanceKm: null,
+          targetTss: null,
+          archetypeId: 'endurance',
+          difficultyLevel: 3.2,
+          difficultyEnergySystem: 'endurance',
+          capabilityFit: 'productive',
+          description: payload.description ?? null,
+          steps: null,
+          garminWorkoutId: null,
+          garminScheduledId: null,
+          status: 'planned',
+          workoutFeedback: null,
+          complianceScore: null,
+          origin: 'user',
+          userLocked: true,
+          completedActivityId: null,
+          executionStatus: 'local_planned',
+          executionMatchedAt: null,
+          executionMatchConfidence: null,
+          executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+        },
+        garminSync: { status: 'skipped' },
+      };
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('button', { name: '+ Einheit' }).click();
+  const customWorkoutForm = page.getByTestId('custom-workout-form');
+
+  await expect(customWorkoutForm.getByLabel('km optional')).toHaveValue('');
+  await expect(customWorkoutForm.getByLabel('km/h optional')).toHaveValue('');
+  await expect(customWorkoutForm.getByText('Dauer offen')).toBeVisible();
+
+  await customWorkoutForm.getByLabel('Minuten').fill('75');
+  await customWorkoutForm.getByLabel('Notiz').fill('Lockere manuelle Ausdauer.');
+  await customWorkoutForm.getByLabel('Garmin synchronisieren').uncheck();
+  await customWorkoutForm.getByRole('button', { name: 'Einheit speichern' }).click();
+
+  await expect.poll(() => createBody).toMatchObject({
+    activityType: 'bike',
+    durationMin: 75,
+    description: 'Lockere manuelle Ausdauer.',
+    syncGarmin: false,
+    userLocked: true,
+  });
+  expect(createBody).not.toMatchObject({ distanceKm: 155, expectedSpeedKmh: 22 });
+});
+
+test('Plan custom workout keeps the 155-km tour as an explicit preset', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('button', { name: '+ Einheit' }).click();
+  const customWorkoutForm = page.getByTestId('custom-workout-form');
+
+  await customWorkoutForm.getByRole('button', { name: '155-km Tour vorbereiten' }).click();
+
+  await expect(customWorkoutForm.getByLabel('km optional')).toHaveValue('155');
+  await expect(customWorkoutForm.getByLabel('km/h optional')).toHaveValue('22');
+  await expect(customWorkoutForm.getByText('423 min')).toBeVisible();
+  await expect(customWorkoutForm.getByLabel('Notiz')).toHaveValue('Entspannte Rennradtour mit Stops.');
+});
+
 test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {
   let readinessCalls = 0;
   await mockPulseApi(page, {
