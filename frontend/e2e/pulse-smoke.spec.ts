@@ -346,7 +346,9 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   const labels = ['Überblick', 'Abdeckung', 'Schlaf', 'Metriken', 'Gewicht', 'Mental', 'Analysen'];
 
   for (const label of labels) {
-    const box = await page.getByRole('tab', { name: label }).boundingBox();
+    const tab = page.getByRole('tab', { name: label });
+    await tab.scrollIntoViewIfNeeded();
+    const box = await tab.boundingBox();
     expect(box, `${label} tab has a visible box`).not.toBeNull();
     expect(box!.x, `${label} tab left edge`).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width, `${label} tab right edge`).toBeLessThanOrEqual(viewportWidth);

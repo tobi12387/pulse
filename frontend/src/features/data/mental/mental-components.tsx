@@ -719,7 +719,6 @@ export function MentalTab() {
                   color: 'var(--text)',
                   resize: 'vertical',
                   minHeight: 74,
-                  outline: 'none',
                 }}
               />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
@@ -961,7 +960,6 @@ export function MentalTab() {
                 fontSize: 12,
                 color: 'var(--text)',
                 resize: 'none',
-                outline: 'none',
               }}
             />
             <button

@@ -965,6 +965,7 @@ function CustomWorkoutForm({
 
 const fieldStyle: React.CSSProperties = {
   width: '100%',
+  minHeight: 44,
   boxSizing: 'border-box',
   background: 'var(--surface)',
   border: '1px solid var(--border)',
@@ -1396,7 +1397,7 @@ function PlanScenarioPreviewCard({
   ) : null;
 
   return (
-    <section id="plan-scenario-preview" tabIndex={-1} className="card" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+    <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 12 }}>
         <div>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Szenario-Vorschau</div>
@@ -1630,7 +1631,7 @@ function PlanAdaptationReviewCard({
     <section
       id="plan-adaptation-review"
       tabIndex={-1}
-      className="card"
+      className="card evidence-section"
       data-testid="plan-adaptation-review"
       style={{ borderColor: 'rgba(245,158,11,0.22)' }}
     >
@@ -2105,13 +2106,29 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
             <tbody>
               {activities.map((a, i) => (
                 <tr key={a.id}
-                  onClick={() => navigate(`/activity/${a.id}`)}
-                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined, cursor: 'pointer' }}
+                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text)' }}>
-                    {a.name ?? a.activityType}
+                  <td style={{ padding: 0, fontSize: 12, color: 'var(--text)' }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/activity/${a.id}`)}
+                      aria-label={`${a.name ?? a.activityType} Aktivität öffnen`}
+                      style={{
+                        width: '100%',
+                        minHeight: 44,
+                        padding: '8px 12px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        font: 'inherit',
+                      }}
+                    >
+                      {a.name ?? a.activityType}
+                    </button>
                   </td>
                   <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', textAlign: 'right' }}>
                     {new Date(a.startTime).toLocaleDateString('de')}
@@ -2680,6 +2697,14 @@ const TABS = [
   { id: 'statistik', label: 'Statistik' },
 ];
 
+function TabPanel({ tab, children }: { tab: Tab; children: React.ReactNode }) {
+  return (
+    <section role="tabpanel" id={`plan-${tab}-panel`} aria-labelledby={`plan-${tab}-tab`}>
+      {children}
+    </section>
+  );
+}
+
 const TAB_QUERY: Record<Tab, string> = {
   training: 'training',
   ziele: 'goals',
@@ -2759,12 +2784,12 @@ export default function Plan() {
       <PageHeader
         eyebrow="PLAN"
         title="Training, Ziele & Statistik"
-        action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" />}
+        action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
-      {tab === 'training' && <TrainingTab entrySource={entrySource} />}
-      {tab === 'ziele'    && <ZieleTab />}
-      {tab === 'review'   && <ReviewTab />}
-      {tab === 'statistik' && <StatistikTab />}
+      {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} /></TabPanel>}
+      {tab === 'ziele'    && <TabPanel tab="ziele"><ZieleTab /></TabPanel>}
+      {tab === 'review'   && <TabPanel tab="review"><ReviewTab /></TabPanel>}
+      {tab === 'statistik' && <TabPanel tab="statistik"><StatistikTab /></TabPanel>}
     </div>
   );
 }

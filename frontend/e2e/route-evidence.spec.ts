@@ -156,8 +156,15 @@ test.describe('Route evidence screenshot pack', () => {
           visibleText: 'Training, Ziele & Statistik',
         },
         async () => {
-          await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
-          await expect(page.getByTestId('plan-scenario-preview-card')).toContainText('Mobile Quick Decision');
+          const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+          await expect(scenarioCard).toBeVisible();
+          await expect(scenarioCard).toBeInViewport();
+          await expect(page.getByRole('heading', { name: /Training, Ziele|Szenario/i }).first()).toBeVisible();
+          await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
+          await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
+          await expect(scenarioCard).toContainText('Mobile Quick Decision');
+          await expect(scenarioCard).not.toContainText('155 km');
+          await expect(scenarioCard).not.toContainText('423 min');
         },
       );
     }

@@ -26,6 +26,14 @@
 - **Decided by:** Tobi / Codex, PR #271.
 - **Status:** active.
 
+## 2026-05-10 — Fresh Benchmark Roadmap behaelt vier Top-Level-Tabs
+
+- **Decision:** Der naechste Benchmark-/UI-Roadmap-Loop fuegt keinen neuen Top-Level-Tab hinzu. Home, Data, Plan und Settings bleiben die Hauptnavigation; neue Oberflaechen duerfen nur als verschachtelte, zweckgebundene Bereiche entstehen, zuerst Plan `Ausfuehrung` fuer Garmin Remote-Diff/Execution Trust.
+- **Why:** Die frische Route-Evidence und der Benchmark gegen TrainerRoad, TrainingPeaks, Garmin Coach, JOIN, Intervals/WKO und Xert zeigen, dass Pulse weniger Hauptnavigation und mehr Vertrauen im Tagesflow braucht. Ein neuer Top-Level-Tab wuerde die iPhone/PWA-Nutzung schwerer machen; ein verschachtelter Plan-Ausfuehrungsbereich loest dagegen das groesste Vertrauensproblem direkt dort, wo Workouts geplant werden.
+- **Alternatives:** Neuer Top-Level-Tab `Garmin` oder `Device` (zu viel Navigation); Coach wieder als Haupttab (widerspricht der aktiven IA); keine neue Flaeche und nur bestehende Settings-Diagnose nutzen (zu versteckt fuer Plan-Ausfuehrung).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Strength Support bleibt konkrete Blockliste ohne Habit-System
 
 - **Decision:** Pulse erzeugt fuer Strength/Mobility konkrete Mobility/Core/Glutes/Cooldown-Bloecke aus einer lokalen Support-Session-Library. Garmin-Sync fuer Strength wird bewusst als `degraded`/`strength_notes_only` gefuehrt und in der UI als Notiz-/Blocklisten-Handoff erklaert; es gibt keine neue Navigation, keine Streaks und keinen Habit Tracker.
