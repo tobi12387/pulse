@@ -300,6 +300,15 @@ export interface PulsePlanScenarioPreview {
   reasons: string[];
   warnings: string[];
   applySupported: boolean;
+  garminImpact: PulsePlanGarminApplyImpact;
+}
+
+export interface PulsePlanGarminApplyImpact {
+  creates: number;
+  updates: number;
+  deletes: number;
+  unchanged: number;
+  summary: string;
 }
 
 export interface PulsePlanSportMixEntry {
@@ -474,6 +483,7 @@ export interface PulsePlanRefreshPreview {
     tssDelta: number;
     durationDeltaMin: number;
   };
+  garminImpact: PulsePlanGarminApplyImpact;
   applySupported: boolean;
   mutationBoundary: string;
 }

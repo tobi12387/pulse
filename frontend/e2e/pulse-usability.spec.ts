@@ -1603,6 +1603,7 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByText('TSS', { exact: true })).toBeVisible();
   await expect(page.getByText('+296', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('scenario-garmin-impact')).toContainText('Garmin nach Apply: 1 neu');
   await expect(page.getByText(/Fueling und GI-Komfort/)).toBeVisible();
   expect(previewBody).toMatchObject({ type: 'add_custom_tour' });
 });
@@ -1713,6 +1714,7 @@ test('Plan scenario preview lists affected future workouts before applying', asy
           },
         ],
         loadImpact: { tssDelta: -30, durationDeltaMin: -35, nextDayRecoveryDate: null },
+        garminImpact: { creates: 0, updates: 2, deletes: 0, unchanged: 0, summary: 'Garmin nach Apply: 2 Update.' },
         reasons: ['Offene Planlast wird auf 75% reduziert.'],
         warnings: [],
         applySupported: true,
@@ -1805,6 +1807,7 @@ test('Plan refresh preview compares stale workouts without write requests', asyn
           reason: 'Harte Einheit wuerde im Refresh zu kontrollierter Endurance werden.',
         }],
         loadImpact: { tssDelta: -57, durationDeltaMin: -25 },
+        garminImpact: { creates: 0, updates: 1, deletes: 0, unchanged: 0, summary: 'Garmin nach Apply: 1 Workout-Update erwartet.' },
         applySupported: false,
         mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
       },
@@ -1820,6 +1823,7 @@ test('Plan refresh preview compares stale workouts without write requests', asyn
   await expect(refreshCard).toContainText('Jetzt: Radfahren · Z5 · 75 min · bike_vo2_4x4');
   await expect(refreshCard).toContainText('Vorschlag: Radfahren · Z2 · 50 min · bike_vo2_4x4');
   await expect(refreshCard).toContainText('Warum: Schutzsignal aktiv');
+  await expect(refreshCard).toContainText('Garmin nach Apply: 1 Workout-Update erwartet.');
   await expect(refreshCard.getByRole('button', { name: 'Vorschau anwenden' })).toBeDisabled();
 
   await refreshCard.getByRole('button', { name: 'Refresh Preview' }).click();
@@ -1873,9 +1877,9 @@ test('Plan surfaces Garmin sync failure after applying a custom tour scenario', 
   await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await page.getByRole('button', { name: 'Vorschau anwenden' }).click();
-  await expect(page.getByText('Garmin-Sync offen')).toBeVisible();
-  await expect(page.getByText(/Die Einheit ist in Pulse gespeichert/)).toBeVisible();
-  await expect(page.getByText(/Garmin Sync fehlgeschlagen/).first()).toBeVisible();
+  await expect(page).toHaveURL(/tab=execution/);
+  await expect(page.getByText('Garmin-Ausführung prüfen')).toBeVisible();
+  await expect(page.getByTestId('garmin-execution-trust-panel')).toBeVisible();
 });
 
 test('Plan custom workout starts neutral and saves duration-only units without tour distance', async ({ page }) => {

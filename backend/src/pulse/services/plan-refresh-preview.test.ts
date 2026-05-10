@@ -54,6 +54,7 @@ describe('buildPlanRefreshPreview', () => {
     expect(preview.comparisons[0]?.proposed?.zone).toBe(2);
     expect(preview.comparisons[0]?.proposed?.durationMin).toBeLessThan(baseWorkout.durationMin);
     expect(preview.comparisons[0]?.changes).toEqual(expect.arrayContaining(['zone', 'duration', 'why']));
+    expect(preview.garminImpact).toMatchObject({ creates: 0, updates: 1, deletes: 0 });
     expect(preview.mutationBoundary).toContain('keine DB-');
   });
 

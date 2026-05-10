@@ -36,6 +36,8 @@
 
 ## Phase 2: Plan Apply + Garmin Readback Closure
 
+**Status:** Implemented in branch `codex/garmin-readback-closure-v1`.
+
 **Problem:** Applying a plan and trusting it on Garmin are still two mental steps.
 
 **Story:** As Tobi, I want Pulse to show what Garmin will change before apply and then prove that the new workouts are actually present remotely.

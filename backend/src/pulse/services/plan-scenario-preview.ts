@@ -1,4 +1,5 @@
 import type {
+  PulsePlanGarminApplyImpact,
   PulseActivityType,
   PulsePlanScenarioChangedDay,
   PulsePlanScenarioPreview,
@@ -142,6 +143,52 @@ function summarize(type: PulsePlanScenarioRequest['type']): string {
   return 'Event wird als Planungsannahme geprüft; der Kalender bleibt unverändert.';
 }
 
+function workoutChanged(before: PulsePlanScenarioProjectedWorkout | null, after: PulsePlanScenarioProjectedWorkout): boolean {
+  if (!before) return true;
+  return before.plannedDate !== after.plannedDate
+    || before.activityType !== after.activityType
+    || before.zone !== after.zone
+    || before.durationMin !== after.durationMin
+    || before.targetTss !== after.targetTss
+    || before.archetypeId !== after.archetypeId
+    || before.description !== after.description;
+}
+
+function garminImpact(input: PlanScenarioPreviewInput, projectedWorkouts: PulsePlanScenarioProjectedWorkout[]): PulsePlanGarminApplyImpact {
+  const beforeById = new Map(input.workouts.map(workout => [workout.id, workout]));
+  let creates = 0;
+  let updates = 0;
+  let unchanged = 0;
+
+  for (const workout of projectedWorkouts) {
+    const before = beforeById.get(workout.id) ?? null;
+    if (!before || workout.synthetic) {
+      creates += 1;
+    } else if (workoutChanged(before, workout)) {
+      updates += 1;
+    } else {
+      unchanged += 1;
+    }
+  }
+
+  const deleted = input.workouts.filter(workout => !projectedWorkouts.some(projected => projected.id === workout.id)).length;
+  const parts = [
+    creates > 0 ? `${creates} neu` : null,
+    updates > 0 ? `${updates} Update` : null,
+    deleted > 0 ? `${deleted} entfernen` : null,
+  ].filter(Boolean);
+
+  return {
+    creates,
+    updates,
+    deletes: deleted,
+    unchanged,
+    summary: parts.length > 0
+      ? `Garmin nach Apply: ${parts.join(', ')}.`
+      : 'Garmin nach Apply: keine Remote-Aenderung erwartet.',
+  };
+}
+
 export function buildPlanScenarioPreview(input: PlanScenarioPreviewInput): PulsePlanScenarioPreview {
   const projectedWorkouts = project(input)
     .sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
@@ -200,5 +247,6 @@ export function buildPlanScenarioPreview(input: PlanScenarioPreviewInput): Pulse
     applySupported: input.scenario.type === 'add_custom_tour'
       || input.scenario.type === 'move_workout'
       || input.scenario.type === 'reduce_volume',
+    garminImpact: garminImpact(input, projectedWorkouts),
   };
 }
