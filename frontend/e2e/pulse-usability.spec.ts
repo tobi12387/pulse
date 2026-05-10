@@ -2389,6 +2389,40 @@ test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ pag
   await expect(panel).toContainText('Nur in Pulse geplant');
 });
 
+test('Plan workout rows expose Garmin structure before opening detail', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-row-structure',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 62,
+        targetTss: 74,
+        status: 'planned',
+        description: 'Schwellenintervalle mit sauberem Garmin-Repeat.',
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        executionStatus: 'local_planned',
+        steps: [
+          { type: 'warmup', durationMin: 12, zone: 1, description: 'Einrollen', targetLabel: 'Z1 105-125 bpm' },
+          { type: 'interval', durationMin: 8, zone: 4, reps: 4, restMin: 3, description: 'Schwelle', targetLabel: 'Z4 158-172 bpm' },
+          { type: 'cooldown', durationMin: 9, zone: 1, description: 'Ausschwingen', targetLabel: 'Z1 105-125 bpm' },
+        ],
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+
+  const structure = page.getByTestId('plan-workout-structure-summary');
+  await expect(structure).toBeVisible();
+  await expect(structure).toContainText('3 Blöcke');
+  await expect(structure).toContainText('1 Repeat');
+  await expect(structure).toContainText('3 HR-Ziele');
+  await expect(structure).toContainText('62 min');
+});
+
 test('Plan workout detail summarizes the Garmin handoff before syncing', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

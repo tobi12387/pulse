@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUpdateWorkout } from '@/pulse/hooks';
-import type { PulsePlannedWorkout } from '@coaching-os/shared/pulse';
+import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
 
 type PlannedWorkout = PulsePlannedWorkout;
@@ -54,6 +54,40 @@ function ExecutionBadge({ workout }: { workout: PlannedWorkout }) {
       {meta.label}
     </span>
   );
+}
+
+function fmtHrTarget(step: WorkoutStep): string | null {
+  if (step.targetLabel) return step.targetLabel;
+  if (step.targetHrMinBpm != null && step.targetHrMaxBpm != null) return `${step.targetHrMinBpm}-${step.targetHrMaxBpm} bpm`;
+  if (step.targetHrMaxBpm != null) return `<${step.targetHrMaxBpm} bpm`;
+  if (step.targetHrMinBpm != null) return `>${step.targetHrMinBpm} bpm`;
+  return null;
+}
+
+function fmtStepDuration(steps: WorkoutStep[]): number {
+  return steps.reduce((acc, step) => {
+    if (step.type === 'interval' && step.reps) {
+      return acc + step.reps * step.durationMin + (step.restMin ?? 0) * (step.reps - 1);
+    }
+    return acc + step.durationMin;
+  }, 0);
+}
+
+function workoutStructureSummary(workout: PlannedWorkout): string | null {
+  const steps = workout.steps ?? [];
+  if (steps.length === 0) return null;
+
+  const repeatBlocks = steps.filter(step => step.type === 'interval' && (step.reps ?? 0) > 1);
+  const hrTargetCount = steps.filter(step => fmtHrTarget(step) != null).length;
+  const parts = [
+    `${steps.length} ${steps.length === 1 ? 'Block' : 'Blöcke'}`,
+    `${fmtStepDuration(steps)} min`,
+  ];
+
+  if (repeatBlocks.length > 0) parts.push(`${repeatBlocks.length} Repeat`);
+  if (hrTargetCount > 0) parts.push(`${hrTargetCount} HR-Ziele`);
+
+  return parts.join(' · ');
 }
 
 export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
@@ -160,6 +194,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
   const update = useUpdateWorkout();
   const [switching, setSwitching] = useState(false);
   const confidence = garminConfidenceCopy(w);
+  const structureSummary = workoutStructureSummary(w);
 
   function handleTypeChange(type: string) {
     void update.mutateAsync({ id: w.id, data: { activityType: type } });
@@ -229,6 +264,30 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           </div>
           {w.description && !switching && (
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
+          )}
+          {structureSummary && !switching && (
+            <div
+              data-testid="plan-workout-structure-summary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+                maxWidth: '100%',
+                marginTop: 5,
+                padding: '3px 6px',
+                borderRadius: 3,
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--text-2)',
+                lineHeight: 1.2,
+              }}
+            >
+              <span style={{ color: 'var(--accent)' }}>Garmin-Struktur</span>
+              <span>{structureSummary}</span>
+            </div>
           )}
         </button>
         <div style={{
