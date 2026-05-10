@@ -13,6 +13,7 @@ import type {
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
   PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
   PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
+  PulseGarminExecutionDiffResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -363,6 +364,8 @@ export const pulseApi = {
       request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
     executionLedger: (workoutId: string): Promise<{ entries: PulseGarminExecutionLedgerEntry[] }> =>
       request(`/garmin/execution-ledger?workoutId=${encodeURIComponent(workoutId)}`),
+    executionDiff: (days = 15): Promise<PulseGarminExecutionDiffResponse> =>
+      request(`/garmin/execution-diff?days=${encodeURIComponent(String(days))}`),
   },
 
   briefing: {

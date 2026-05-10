@@ -19,6 +19,7 @@ type MockPulseApiOptions = {
   garminCoverage?: unknown;
   garminSignalUsefulness?: unknown;
   garminExecutionLedger?: unknown;
+  garminExecutionDiff?: unknown;
   powerDataQuality?: unknown;
   powerDuration?: unknown;
   adaptationEvents?: unknown;
@@ -763,6 +764,9 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
   if (pathname === '/api/pulse/garmin/execution-ledger') {
     return { entries: [] };
   }
+  if (pathname === '/api/pulse/garmin/execution-diff') {
+    return { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] };
+  }
   if (pathname === '/api/pulse/plan/adaptation-events') {
     return { events: [] };
   }
@@ -1103,6 +1107,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
+    if (url.pathname === '/api/pulse/garmin/execution-diff') {
+      return json(route, options.garminExecutionDiff ?? { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] });
+    }
     if (url.pathname === '/api/pulse/garmin/execution-ledger') {
       return json(route, options.garminExecutionLedger ?? { entries: [] });
     }
