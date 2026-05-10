@@ -39,6 +39,9 @@ export interface PulseTrainingCapabilityLevel {
   energySystem: PulseTrainingEnergySystem;
   label: string;
   level: number;
+  nextRecommendedWorkoutLevel: number;
+  lastProgressionReason: string | null;
+  staleReason: string | null;
   confidence: PulseCapabilityConfidence;
   evidence: string[];
   updatedAt: string | null;

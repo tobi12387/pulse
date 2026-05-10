@@ -26,6 +26,23 @@ function levelColor(level: number): string {
   return 'var(--text-3)';
 }
 
+function progressionTone(level: { level: number; nextRecommendedWorkoutLevel?: number; lastProgressionReason?: string | null; staleReason?: string | null }): string {
+  const next = level.nextRecommendedWorkoutLevel ?? level.level;
+  if (level.lastProgressionReason?.includes('geschützt') || next < level.level) return 'var(--amber)';
+  if (level.staleReason) return 'var(--text-3)';
+  if (next > level.level) return 'var(--green)';
+  return 'var(--accent)';
+}
+
+function progressionCopy(level: { level: number; nextRecommendedWorkoutLevel?: number; lastProgressionReason?: string | null; staleReason?: string | null }): string {
+  const next = level.nextRecommendedWorkoutLevel ?? level.level;
+  if (level.lastProgressionReason?.includes('geschützt')) return `geschützt · nächster Reiz ${next.toFixed(1)}`;
+  if (level.staleReason) return `vorsichtig · nächster Reiz ${next.toFixed(1)}`;
+  if (next > level.level) return `nächster produktiver Reiz ${next.toFixed(1)}`;
+  if (next < level.level) return `reduzieren auf ${next.toFixed(1)}`;
+  return `halten bei ${next.toFixed(1)}`;
+}
+
 export function TrainingCapabilityCard({
   summary,
   loading = false,
@@ -86,6 +103,14 @@ export function TrainingCapabilityCard({
             <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-3)' }}>
               Vertrauen {CONFIDENCE_LABEL[level.confidence]}
             </div>
+            <div style={{ marginTop: 4, fontSize: 10.5, color: progressionTone(level), lineHeight: 1.35 }}>
+              {progressionCopy(level)}
+            </div>
+            {(level.lastProgressionReason || level.staleReason) && (
+              <div style={{ marginTop: 3, fontSize: 10, color: 'var(--text-3)', lineHeight: 1.35 }}>
+                {level.lastProgressionReason ?? level.staleReason}
+              </div>
+            )}
           </div>
         ))}
       </div>
