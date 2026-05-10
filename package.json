@@ -18,6 +18,7 @@
     "test:e2e:install:webkit": "playwright install webkit",
     "qa:ux-evidence": "PULSE_ROUTE_EVIDENCE=true playwright test frontend/e2e/route-evidence.spec.ts --project=desktop-chromium --project=mobile-chromium",
     "qa:ux-evidence:iphone": "PULSE_ROUTE_EVIDENCE=true PULSE_E2E_WEBKIT=true playwright test frontend/e2e/route-evidence.spec.ts --project=desktop-chromium --project=iphone-webkit",
+    "qa:plan:no-garmin-write": "playwright test frontend/e2e/plan-no-garmin-write.spec.ts --project=desktop-chromium --project=mobile-chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:scripts": "node --test scripts/*.test.mjs && npm run test:frontend-logic",
     "test:frontend-logic": "tsx --test scripts/*.test.ts",
