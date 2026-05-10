@@ -26,6 +26,25 @@ export interface PulseDailyOutcomeLearningResponse {
   items: PulseDailyOutcomeLearningItem[];
 }
 
+export type PulseDailyDeltaStatus = 'matched' | 'replaced' | 'missed' | 'off_plan';
+
+export interface PulseDailyDeltaItem {
+  date: string;
+  status: PulseDailyDeltaStatus;
+  title: string;
+  summary: string;
+  score: number | null;
+  loadDeltaTss: number | null;
+  recoveryDelta: string | null;
+  nextPlanEffect: string;
+  evidence: string[];
+  targetPath: string;
+}
+
+export interface PulseDailyDeltaResponse {
+  items: PulseDailyDeltaItem[];
+}
+
 export type PulseDailyDecisionQualityStatus =
   | 'helpful'
   | 'watch'

@@ -35,6 +35,7 @@ type MockPulseApiOptions = {
   raceCommand?: unknown;
   seasonStrategy?: unknown;
   dailyOutcomes?: unknown[];
+  dailyDelta?: unknown[];
   decisionQuality?: unknown;
   goals?: unknown[];
   actions?: unknown[];
@@ -1012,6 +1013,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/outcomes/daily' && options.dailyOutcomes) {
       return json(route, { items: options.dailyOutcomes });
+    }
+    if (url.pathname === '/api/pulse/daily-delta') {
+      return json(route, { items: options.dailyDelta ?? [] });
     }
     if (url.pathname === '/api/pulse/decisions/quality' && options.decisionQuality) {
       return json(route, options.decisionQuality);

@@ -5,7 +5,7 @@ import type {
   RaceDiscipline, RacePriority,
   PulseDataStatus, PulseFitnessLoad, PulseReadiness,
   ActivityFeedbackInput, PulsePlanDecision, PulseRiskSignal, PulseCoachMessage,
-  PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse,
+  PulseDailyDecisionQualityResponse, PulseDailyDeltaResponse, PulseDailyOutcomeLearningResponse, PulseDataCoverageResponse, PulseGarminBackfillRequest, PulseGarminBackfillResponse, PulseGarminCoverageResponse, PulseGarminSignalUsefulnessResponse,
   PulsePlanTrace, PulsePushSettings, PulsePushTopics, PulseRaceCommandResponse, PulseSeasonStrategyResponse, RaceContext,
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
@@ -145,6 +145,9 @@ export const pulseApi = {
     daily: (days = 14): Promise<PulseDailyOutcomeLearningResponse> =>
       request(`/outcomes/daily?days=${encodeURIComponent(String(days))}`),
   },
+
+  dailyDelta: (days = 7): Promise<PulseDailyDeltaResponse> =>
+    request(`/daily-delta?days=${encodeURIComponent(String(days))}`),
 
   decisions: {
     quality: (days = 14): Promise<PulseDailyDecisionQualityResponse> =>

@@ -83,6 +83,7 @@
 | `2026-05-10-ux-task-contract-home-slice.md` | UX Task Contract Home Slice — Home daily decision shows why now, next step, result preview and optional details/evidence | UX Task Contract Home PR |
 | `2026-05-10-home-heute-orientation.md` | Home Heute Orientation — root route stays `/`, visible navigation label becomes `Heute` for daily orientation | Heute Orientation PR |
 | `2026-05-10-plan-action-hierarchy.md` | Plan Action Hierarchy — Plan starts with a primary action, why-now copy and result preview before evidence/tools | Plan Action Hierarchy PR |
+| `2026-05-10-daily-delta-home-v1.md` | Daily Delta Home v1 — Home shows a compact plan-vs-execution loop from existing workouts, activities and daily metrics | Daily Delta PR |
 
 ## Bekannte veraltete Stellen
 

@@ -146,6 +146,30 @@ test('Home renders exactly one main daily decision card', async ({ page }) => {
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toHaveCount(1);
 });
 
+test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
+  await mockPulseApi(page, {
+    dailyDelta: [{
+      date: '2026-05-01',
+      status: 'matched',
+      title: 'Plan und Ausführung passen zusammen',
+      summary: 'Die echte Belastung lag +7 TSS zum Plan.',
+      score: 88,
+      loadDeltaTss: 7,
+      recoveryDelta: 'Recovery seit Vortag: Schlaf +0.6 h',
+      nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln und die nächste Empfehlung darauf aufbauen.',
+      evidence: ['Geplant: Radfahren · Z2 · 75 min', 'Garmin: Radfahren · 80 min · TSS 72'],
+      targetPath: '/activity/activity-planned-bike',
+    }],
+  });
+  await page.goto('/');
+
+  const delta = page.getByTestId('daily-delta-card');
+  await expect(delta).toContainText('Plan vs Ausführung');
+  await expect(delta).toContainText('Match 88%');
+  await expect(delta).toContainText('+7 TSS');
+  await expect(delta).toContainText('Plan kann diesen Reiz als erledigt behandeln');
+});
+
 test('Home no-training daily decision offers local closure before Coach support', async ({ page }) => {
   let actionPatches = 0;
   await mockPulseApi(page, {

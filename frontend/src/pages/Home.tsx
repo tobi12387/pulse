@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -14,7 +14,7 @@ import { resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
-import type { PulseActionState, PulseAdaptationEvent, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseAdaptationEvent, PulseDailyDeltaItem, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -386,6 +386,83 @@ function DailyOutcomeLearningCard({ outcome }: { outcome: PulseDailyOutcomeLearn
         </div>
       )}
     </div>
+  );
+}
+
+function dailyDeltaStatusLabel(status: PulseDailyDeltaItem['status']): string {
+  if (status === 'matched') return 'Passt';
+  if (status === 'replaced') return 'Anders';
+  if (status === 'missed') return 'Offen';
+  return 'Off-plan';
+}
+
+function dailyDeltaStatusColor(status: PulseDailyDeltaItem['status']): string {
+  if (status === 'matched') return 'var(--green)';
+  if (status === 'replaced') return 'var(--amber)';
+  if (status === 'missed') return 'var(--rose)';
+  return 'var(--accent)';
+}
+
+function DailyDeltaCard({ delta, onNavigate }: { delta: PulseDailyDeltaItem | null; onNavigate: (path: string) => void }) {
+  if (!delta) return null;
+  const tone = dailyDeltaStatusColor(delta.status);
+  const load = delta.loadDeltaTss == null ? null : `${delta.loadDeltaTss >= 0 ? '+' : ''}${delta.loadDeltaTss} TSS`;
+
+  return (
+    <section
+      data-testid="daily-delta-card"
+      style={{
+        padding: '10px 12px',
+        background: 'var(--surface-2)',
+        border: `1px solid ${tone}`,
+        borderRadius: 6,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
+        <span className="label-mono" style={{ color: tone }}>Plan vs Ausführung</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: tone }}>
+          {dailyDeltaStatusLabel(delta.status)}
+        </span>
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+        {delta.title}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 7 }}>
+        {delta.score != null && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px' }}>
+            Match {delta.score}%
+          </span>
+        )}
+        {load && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px' }}>
+            {load}
+          </span>
+        )}
+      </div>
+      <p style={{ margin: '7px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+        {delta.nextPlanEffect}
+      </p>
+      <button
+        type="button"
+        onClick={() => onNavigate(delta.targetPath)}
+        style={{
+          marginTop: 9,
+          minHeight: 40,
+          width: '100%',
+          background: 'transparent',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          color: 'var(--text-2)',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: 0,
+          textTransform: 'uppercase',
+        }}
+      >
+        Delta ansehen
+      </button>
+    </section>
   );
 }
 
@@ -815,6 +892,7 @@ export default function Home() {
   const { data, isLoading, error, refetch: refetchHome } = usePulseHome();
   const actionsQuery = usePulseActions({ includeHistory: true });
   const outcomesQuery = useDailyOutcomeLearning(7);
+  const dailyDeltaQuery = useDailyDelta(7);
   const updateAction = useUpdatePulseAction();
   const checkinToday = useCheckinToday();
   const checkinHistory = useCheckinHistory(7);
@@ -864,6 +942,7 @@ export default function Home() {
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
+  const latestDelta = dailyDeltaQuery.data?.items[0] ?? null;
   const primaryAdaptationEvent = primaryAdaptation(
     (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
   );
@@ -1006,6 +1085,8 @@ export default function Home() {
           onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
         />
       )}
+
+      <DailyDeltaCard delta={latestDelta} onNavigate={navigate} />
 
       <div
         data-testid="home-command-summary"

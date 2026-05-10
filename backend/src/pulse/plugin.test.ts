@@ -470,6 +470,54 @@ describe('Daily outcome learning', () => {
   });
 });
 
+describe('Daily delta', () => {
+  it('returns planned-vs-completed deltas from existing Pulse data', async () => {
+    const yesterday = dateDaysAgo(1);
+    const beforeYesterday = dateDaysAgo(2);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      source: 'garmin',
+      startTime: new Date(`${yesterday}T15:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 4_800,
+      tss: 72,
+      rpe: 7,
+    }).returning({ id: pulseActivities.id });
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: yesterday,
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 65,
+      status: 'completed',
+      completedActivityId: activity!.id,
+      complianceScore: 0.88,
+    });
+    await db.insert(pulseDailyMetrics).values([
+      { userId, date: beforeYesterday, sleepHours: 6.8, bodyBatteryMax: 68, stressAvg: 35, source: 'garmin' },
+      { userId, date: yesterday, sleepHours: 7.4, bodyBatteryMax: 74, stressAvg: 30, source: 'garmin' },
+    ]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/daily-delta?days=7',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ items: Array<{ date: string; status: string; score: number | null; loadDeltaTss: number | null; evidence: string[] }> }>();
+    expect(body.items[0]).toMatchObject({
+      date: yesterday,
+      status: 'matched',
+      score: 88,
+      loadDeltaTss: 7,
+    });
+    expect(body.items[0]!.evidence).toContain('Geplant: Radfahren · Z2 · 75 min');
+    expect(body.items[0]!.evidence).toContain('Garmin: Radfahren · 80 min · TSS 72');
+  });
+});
+
 describe('Daily decision quality', () => {
   it('returns a read-only quality signal from closed actions, outcomes and Garmin metrics', async () => {
     const yesterday = dateDaysAgo(1);
