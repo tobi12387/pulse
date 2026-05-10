@@ -273,7 +273,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           onMouseEnter={e => { if (!switching) e.currentTarget.style.background = 'var(--surface-2)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 3, minWidth: 0 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{w.plannedDate}</span>
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',

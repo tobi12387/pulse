@@ -460,6 +460,52 @@ test('Plan mobile week strip keeps workout labels inside a touch scroller', asyn
   expect(containment.hasHorizontalScroller).toBe(true);
 });
 
+test('Plan mobile workout rows wrap status chips without horizontal overflow', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile workout row containment is a narrow viewport affordance');
+
+  await page.setViewportSize({ width: 320, height: 844 });
+  const plannedDate = localIsoDate();
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'mobile-row-run',
+      plannedDate,
+      activityType: 'run',
+      zone: 2,
+      durationMin: 48,
+      targetTss: 39,
+      archetypeId: 'endurance_steady',
+      capabilityFit: 'maintenance',
+      status: 'planned',
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      workoutFeedback: null,
+      complianceScore: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+      description: 'Lockerer Lauf mit sauberer Grenze.',
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+  const workoutRowButton = page.getByRole('button', { name: new RegExp(`${plannedDate}.*Laufen öffnen`) }).first();
+  await expect(workoutRowButton).toBeVisible();
+
+  const rowOverflow = await workoutRowButton.evaluate((element) => {
+    return Array.from(element.querySelectorAll<HTMLElement>('*'))
+      .map((node) => ({
+        text: (node.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60),
+        scrollWidth: node.scrollWidth,
+        clientWidth: node.clientWidth,
+      }))
+      .filter(item => item.scrollWidth > item.clientWidth + 1);
+  });
+
+  expect(rowOverflow).toEqual([]);
+});
+
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'top-level numeric hotkeys are a desktop navigation affordance');
 
