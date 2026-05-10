@@ -24,7 +24,7 @@
 
 ## Task 1: Make Progression Visible
 
-- [ ] **Step 1: Add backend tests for capability language**
+- [x] **Step 1: Add backend tests for capability language**
 
 Extend `training-capabilities.test.ts`:
 
@@ -32,7 +32,7 @@ Extend `training-capabilities.test.ts`:
 - Hard-feeling low-compliance workout marks `reduce_next_intensity`.
 - Long off-plan ride raises long endurance cautiously and triggers recovery protection.
 
-- [ ] **Step 2: Extend shared type**
+- [x] **Step 2: Extend shared type**
 
 Add to each capability level:
 
@@ -42,7 +42,7 @@ lastProgressionReason: string | null;
 staleReason: string | null;
 ```
 
-- [ ] **Step 3: Implement fields**
+- [x] **Step 3: Implement fields**
 
 In `deriveTrainingCapabilities`, compute:
 
@@ -50,7 +50,7 @@ In `deriveTrainingCapabilities`, compute:
 - Hold or reduce if `protect_recovery` or `reduce_next_intensity` is present.
 - `staleReason` if no evidence in that energy system.
 
-- [ ] **Step 4: Surface in UI**
+- [x] **Step 4: Surface in UI**
 
 In `TrainingCapabilityCard`, show compact rows:
 
@@ -58,7 +58,7 @@ In `TrainingCapabilityCard`, show compact rows:
 - `Threshold 3.2 · vorsichtig`.
 - `Long Endurance · geschützt nach langer Tour`.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run:
 
@@ -71,11 +71,11 @@ Expected: progression evidence visible and deterministic.
 
 ## Task 2: Expand Library Where It Reduces Repetition
 
-- [ ] **Step 1: Add repetition tests**
+- [x] **Step 1: Add repetition tests**
 
 In `workout-library.test.ts`, assert that two consecutive weeks with same target energy system choose different archetypes unless constraints force reuse.
 
-- [ ] **Step 2: Add local variants**
+- [x] **Step 2: Add local variants**
 
 Extend `workout-library.ts` with additional Garmin-safe variants:
 
@@ -88,11 +88,11 @@ Extend `workout-library.ts` with additional Garmin-safe variants:
 
 Keep each variant original and local; do not copy third-party workouts.
 
-- [ ] **Step 3: Add rotation memory**
+- [x] **Step 3: Add rotation memory**
 
 Use existing planned workout `archetypeId` history to avoid repeating the same archetype within 14 days when alternatives fit.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -104,7 +104,7 @@ Expected: no repeated archetype unless constraints make it the only safe option.
 
 ## Task 3: Tie RPE, Fueling and Mental State Into Fit
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 Add plan-engine tests:
 
@@ -112,7 +112,7 @@ Add plan-engine tests:
 - GI discomfort on long ride blocks next long/hard recommendation until recovery/fueling action is handled.
 - Mental protect state shifts hard workout to endurance/recovery if no A-race constraint.
 
-- [ ] **Step 2: Implement fit modifiers**
+- [x] **Step 2: Implement fit modifiers**
 
 In `fitWorkoutToCapabilities` or plan-engine selection, apply:
 
@@ -120,7 +120,7 @@ In `fitWorkoutToCapabilities` or plan-engine selection, apply:
 - GI discomfort from fueling log: mark long endurance as `stretch` or `too_hard_today`.
 - Mental protect: prefer recovery/endurance options.
 
-- [ ] **Step 3: Surface "why this variant"**
+- [x] **Step 3: Surface "why this variant"**
 
 In Plan row/detail, show one compact line:
 
@@ -128,7 +128,7 @@ In Plan row/detail, show one compact line:
 Warum diese Einheit: Endurance-Level 4.1, letzte Z2 sauber, GI neutral, Garmin bereit.
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -141,7 +141,7 @@ Expected: variant rationale is visible and matches backend selection.
 
 ## Task 4: Today Options Becomes Progression-Aware
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 In `today-options.test.ts`, assert that Today Options:
 
@@ -149,7 +149,7 @@ In `today-options.test.ts`, assert that Today Options:
 - offers productive endurance when short availability and good readiness.
 - does not offer hard VO2 after GI discomfort or protect mental state.
 
-- [ ] **Step 2: Implement selection**
+- [x] **Step 2: Implement selection**
 
 Use capability fit and daily command state to produce at most three options:
 
@@ -157,7 +157,7 @@ Use capability fit and daily command state to produce at most three options:
 - Alternate: shorter/lighter option.
 - Support: mobility/fueling/feedback if training is not the best next action.
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run:
 
@@ -174,4 +174,3 @@ Expected: options vary by data and do not fill every available day automatically
 - No automatic FTP/profile changes from power-duration estimates.
 - No extra top-level Workout Library tab.
 - No plan mutation without explicit preview/apply.
-

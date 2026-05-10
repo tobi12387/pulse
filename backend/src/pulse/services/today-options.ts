@@ -56,6 +56,8 @@ function highRecoveryRisk(input: TodayOptionsInput): boolean {
     || input.tsb <= -10
     || input.riskSignals.some(signal => signal.severity === 'critical' || signal.severity === 'warn')
     || (input.mental != null && input.mental.energy <= 3 && input.mental.stress >= 7)
+    || (input.fueling.recentGiIssue && (input.plannedToday?.zone ?? 0) >= 4)
+    || (input.capabilitySummary?.signals.includes('protect_recovery') ?? false)
     || input.plannedToday?.capabilityFit === 'too_hard_today';
 }
 
@@ -89,6 +91,25 @@ function mostUsefulEnduranceSport(recentSportMix: RecentSportMix, goals?: TodayO
   return 'run';
 }
 
+function enduranceCapability(input: TodayOptionsInput) {
+  return input.capabilitySummary?.levels.find(level => level.energySystem === 'endurance') ?? null;
+}
+
+function enduranceCapabilityEvidence(input: TodayOptionsInput): string[] {
+  const capability = enduranceCapability(input);
+  if (!capability) return [];
+  return [`Capability: Endurance ${capability.level.toFixed(1)} -> ${capability.nextRecommendedWorkoutLevel.toFixed(1)}`];
+}
+
+function enduranceOptionFit(input: TodayOptionsInput): PulseWorkoutFitLabel {
+  const capability = enduranceCapability(input);
+  if (!capability) return 'maintenance';
+  if (capability.confidence !== 'low' && capability.staleReason == null && capability.nextRecommendedWorkoutLevel > capability.level) {
+    return 'productive';
+  }
+  return 'maintenance';
+}
+
 function planScenarioTargetPath(input: {
   activityType: PulseActivityType;
   zone: number;
@@ -112,7 +133,10 @@ function planScenarioTargetPath(input: {
 function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
   const activityType = mostUsefulEnduranceSport(input.recentSportMix, input.goals);
   const durationMin = input.readinessScore >= 75 && input.tsb >= -2 ? 60 : 45;
-  const detail = `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`;
+  const capabilityFit = enduranceOptionFit(input);
+  const detail = capabilityFit === 'productive'
+    ? `${durationMin} min Z2 als produktiver aerober Reiz. Sinnvoll, weil aktuelle Endurance-Evidenz einen kleinen Fortschritt erlaubt, ohne den Plan vollzustopfen.`
+    : `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`;
   const archetypeId = activityType === 'bike' && input.fueling.recentGiIssue && durationMin >= 150
     ? 'long_endurance_fueling_practice'
     : activityType === 'bike'
@@ -120,6 +144,7 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
     : 'endurance_steady';
   const evidence = [
     ...baseEvidence(input),
+    ...enduranceCapabilityEvidence(input),
     `Sportmix zuletzt: Bike ${input.recentSportMix.bike ?? 0}, Run ${input.recentSportMix.run ?? 0}`,
     ...(input.goals?.activeCount ? [`Ziele aktiv: ${input.goals.activeCount}`] : []),
   ];
@@ -136,7 +161,7 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
     zone: 2,
     durationMin,
     archetypeId,
-    capabilityFit: 'maintenance',
+    capabilityFit,
   };
 }
 

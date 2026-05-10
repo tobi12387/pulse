@@ -36,6 +36,13 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
 
+function localIsoDate(daysFromToday = 0) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 test.beforeEach(async ({ page }) => {
   await mockPulseApi(page);
   await page.addInitScript(() => {
@@ -308,16 +315,49 @@ test('mobile Home free-day intent opens reduce-volume preview without creating a
   expect(requests).not.toContain('POST /api/pulse/plan/workout');
 });
 
-test('mobile Home planned workout state replaces old compact options with availability intents', async ({ page }, testInfo) => {
+test('mobile Home planned workout state shows the concrete plan option without availability intents', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
 
-  await mockPulseApi(page, { todayOptionsState: 'planned_workout' });
+  await mockPulseApi(page, {
+    todayOptionsState: 'planned_workout',
+    home: {
+      todayWorkout: {
+        id: 'workout-planned-smoke',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        distanceKm: null,
+        targetTss: 62,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Aerobe Grundlage.',
+        steps: null,
+        garminWorkoutId: 'garmin-workout-planned',
+        garminScheduledId: 'garmin-scheduled-planned',
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+    },
+  });
 
   await page.goto('/');
-  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
-  await expect(page.getByTestId('today-options-card')).toContainText('Heute möglich');
-  await expect(page.getByText('Plan ausfuehren: Rad')).toHaveCount(0);
-  await expect(page.getByText('Workout oeffnen')).toHaveCount(0);
+  await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+  await expect(page.getByTestId('today-options-card')).toContainText('Heute trainieren');
+  await expect(page.getByTestId('today-options-card')).toContainText('Plan ausfuehren: Rad');
+  await expect(page.getByTestId('today-options-card')).toContainText('Workout oeffnen');
 });
 
 test('/insights redirects to the Data analysis tab', async ({ page }) => {
@@ -353,6 +393,117 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
     expect(box!.x, `${label} tab left edge`).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width, `${label} tab right edge`).toBeLessThanOrEqual(viewportWidth);
   }
+});
+
+test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
+
+  await page.goto('/data?tab=mental');
+  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+
+  const overflow = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return Array.from(document.querySelectorAll('[role="tablist"][aria-label="Data Bereiche"] [role="tab"]'))
+      .map(element => {
+        const rect = element.getBoundingClientRect();
+        return {
+          text: element.textContent?.trim() ?? '',
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+        };
+      })
+      .filter(item => item.left < -1 || item.right > viewportWidth + 1);
+  });
+
+  expect(overflow).toEqual([]);
+});
+
+test('Plan mobile week strip keeps workout labels inside a touch scroller', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile week strip containment is a narrow viewport affordance');
+
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'mobile-weekstrip-run',
+      plannedDate: localIsoDate(),
+      activityType: 'run',
+      zone: 2,
+      durationMin: 48,
+      targetTss: 39,
+      status: 'planned',
+      description: 'Lockerer Lauf mit sauberer Grenze.',
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+  const workoutButton = page.getByRole('button', { name: /Laufen öffnen/ }).first();
+  await expect(workoutButton).toBeVisible();
+
+  const containment = await workoutButton.evaluate((element) => {
+    let current: HTMLElement | null = element as HTMLElement;
+    let hasHorizontalScroller = false;
+    while (current && current !== document.body) {
+      const style = window.getComputedStyle(current);
+      if ((style.overflowX === 'auto' || style.overflowX === 'scroll') && current.scrollWidth > current.clientWidth + 1) {
+        hasHorizontalScroller = true;
+        break;
+      }
+      current = current.parentElement;
+    }
+
+    return {
+      hasHorizontalScroller,
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+
+  expect(containment.documentOverflow).toBeLessThanOrEqual(1);
+  expect(containment.hasHorizontalScroller).toBe(true);
+});
+
+test('Plan mobile workout rows wrap status chips without horizontal overflow', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile workout row containment is a narrow viewport affordance');
+
+  await page.setViewportSize({ width: 320, height: 844 });
+  const plannedDate = localIsoDate();
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'mobile-row-run',
+      plannedDate,
+      activityType: 'run',
+      zone: 2,
+      durationMin: 48,
+      targetTss: 39,
+      archetypeId: 'endurance_steady',
+      capabilityFit: 'maintenance',
+      status: 'planned',
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      workoutFeedback: null,
+      complianceScore: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+      description: 'Lockerer Lauf mit sauberer Grenze.',
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+  const workoutRowButton = page.getByRole('button', { name: new RegExp(`${plannedDate}.*Laufen öffnen`) }).first();
+  await expect(workoutRowButton).toBeVisible();
+
+  const rowOverflow = await workoutRowButton.evaluate((element) => {
+    return Array.from(element.querySelectorAll<HTMLElement>('*'))
+      .map((node) => ({
+        text: (node.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60),
+        scrollWidth: node.scrollWidth,
+        clientWidth: node.clientWidth,
+      }))
+      .filter(item => item.scrollWidth > item.clientWidth + 1);
+  });
+
+  expect(rowOverflow).toEqual([]);
 });
 
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {

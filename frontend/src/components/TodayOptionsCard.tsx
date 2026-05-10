@@ -4,6 +4,7 @@ import type { PulseTodayOption, PulseTodayOptionsResponse } from '@coaching-os/s
 import { useTodayOptions } from '@/pulse/hooks';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { activityLabel } from '@/pulse/activity-labels';
+import { dailyCommandAllowsTodayOptions, type DailyCommandKind } from '@/pulse/daily-command';
 
 type Variant = 'compact' | 'full';
 
@@ -64,9 +65,11 @@ function mobileIntentTarget(option: typeof TODAY_INTENTS[number]): string {
 export function TodayOptionsCard({
   variant = 'compact',
   onNavigate,
+  commandKind,
 }: {
   variant?: Variant;
   onNavigate: (path: string) => void;
+  commandKind?: DailyCommandKind;
 }) {
   const query = useTodayOptions();
   const data = query.data?.todayOptions ?? null;
@@ -85,10 +88,10 @@ export function TodayOptionsCard({
     );
   }
   if (!data) return null;
+  if (variant === 'compact' && !dailyCommandAllowsTodayOptions(commandKind)) return null;
   const showMobileIntent = variant === 'compact'
-    && (data.state === 'unplanned_trainable' || (data.state === 'planned_workout' && data.options.length > 0));
+    && (commandKind === 'free_trainable' || (commandKind == null && data.state === 'unplanned_trainable'));
   if (!showMobileIntent && data.options.length === 0) return null;
-  if (variant === 'compact' && data.state === 'planned_workout' && !showMobileIntent) return null;
 
   const options = variant === 'compact' ? data.options.slice(0, 2) : data.options;
 

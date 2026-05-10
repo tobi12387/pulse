@@ -13,6 +13,7 @@ export const pulseKeys = {
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
   activityDetail: (id: string) => ['pulse', 'activity-detail', id] as const,
   plan:         ['pulse', 'plan'] as const,
+  planRefreshPreview: (weekStart: string) => ['pulse', 'plan', 'refresh-preview', weekStart] as const,
   planScenarioPreview: ['pulse', 'plan', 'scenario-preview'] as const,
   planTrace:    (weekStart: string) => ['pulse', 'plan', 'trace', weekStart] as const,
   adaptationEvents: ['pulse', 'plan', 'adaptation-events'] as const,
@@ -49,6 +50,7 @@ export const pulseKeys = {
   garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
   garminSignalUsefulness: (days: number) => ['pulse', 'garmin-signal-usefulness', days] as const,
   garminExecutionLedger: (workoutId: string | null) => ['pulse', 'garmin-execution-ledger', workoutId] as const,
+  garminExecutionDiff: (days: number) => ['pulse', 'garmin-execution-diff', days] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
   strengthSessions: (days: number, exercise: string | null) =>
     ['pulse', 'strength', 'sessions', days, exercise] as const,
@@ -68,6 +70,7 @@ export function invalidatePulseContextQueries(qc: QueryClient): void {
 
 function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: pulseKeys.plan });
+  void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'refresh-preview'] });
   void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'trace'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
   void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
@@ -274,6 +277,15 @@ export function usePlanTrace(weekStart: string) {
     queryKey: pulseKeys.planTrace(weekStart),
     queryFn: () => pulseApi.plan.trace(weekStart),
     staleTime: 30 * 60_000,
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(weekStart),
+  });
+}
+
+export function usePlanRefreshPreview(weekStart: string) {
+  return useQuery({
+    queryKey: pulseKeys.planRefreshPreview(weekStart),
+    queryFn: () => pulseApi.plan.refreshPreview(weekStart),
+    staleTime: 30_000,
     enabled: /^\d{4}-\d{2}-\d{2}$/.test(weekStart),
   });
 }
@@ -522,6 +534,27 @@ export function useGarminCalendarSync() {
     onSuccess: () => {
       invalidatePulsePlanContextQueries(qc);
       void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-coverage'] });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-execution-diff'] });
+    },
+  });
+}
+
+export function useGarminExecutionDiff(days = 15) {
+  return useQuery({
+    queryKey: pulseKeys.garminExecutionDiff(days),
+    queryFn: () => pulseApi.garmin.executionDiff(days),
+    staleTime: 30_000,
+  });
+}
+
+export function useSyncWorkoutToGarmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (workoutId: string) => pulseApi.plan.syncGarmin(workoutId),
+    onSuccess: (_data, workoutId) => {
+      invalidatePulsePlanContextQueries(qc);
+      void qc.invalidateQueries({ queryKey: pulseKeys.garminExecutionLedger(workoutId) });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-execution-diff'] });
     },
   });
 }

@@ -11,8 +11,9 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
+  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
   PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
+  PulseGarminExecutionDiffResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -251,6 +252,8 @@ export const pulseApi = {
       request(`/plan/trace/${weekStart}`),
     adaptationEvents: (): Promise<{ events: PulseAdaptationEvent[] }> =>
       request('/plan/adaptation-events'),
+    refreshPreview: (weekStart: string): Promise<{ preview: PulsePlanRefreshPreview }> =>
+      request(`/plan/refresh-preview/${weekStart}`),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),
     createWorkout: (data: PlanWorkoutInput): Promise<{ workout: PulsePlannedWorkout; garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } }> =>
@@ -363,6 +366,8 @@ export const pulseApi = {
       request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
     executionLedger: (workoutId: string): Promise<{ entries: PulseGarminExecutionLedgerEntry[] }> =>
       request(`/garmin/execution-ledger?workoutId=${encodeURIComponent(workoutId)}`),
+    executionDiff: (days = 15): Promise<PulseGarminExecutionDiffResponse> =>
+      request(`/garmin/execution-diff?days=${encodeURIComponent(String(days))}`),
   },
 
   briefing: {

@@ -521,6 +521,34 @@ describe('generateScientificWeekPlan', () => {
     expect(enduranceIds.slice(0, 2)).not.toEqual(['endurance_steady', 'endurance_steady']);
   });
 
+  it('avoids archetypes used in the recent 14-day plan history when alternatives fit', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-18',
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 6,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+      recentArchetypeIds: ['endurance_steady', 'threshold_intervals'],
+    });
+
+    const archetypeById = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
+    const rotatedEndurance = workouts
+      .map(workout => workout.archetypeId)
+      .filter((id): id is string => id != null && archetypeById.get(id)?.progressionFamily === 'endurance');
+    const hardIds = workouts
+      .filter(workout => workout.zone >= 4)
+      .map(workout => workout.archetypeId);
+
+    expect(rotatedEndurance[0]).not.toBe('endurance_steady');
+    expect(hardIds).not.toContain('threshold_intervals');
+  });
+
   it('does not reduce density when learning has history but no actual issue flag', async () => {
     const workouts = await generateScientificWeekPlan({
       weekStart: '2026-05-04',
@@ -624,6 +652,111 @@ describe('generateScientificWeekPlan', () => {
 
     expect(Math.max(...workouts.map(workout => workout.durationMin))).toBeLessThanOrEqual(165);
     expect(workouts.map(workout => workout.description).join(' ')).toContain('Fueling-Toleranz');
+  });
+
+  it('treats RPE 9 as a hard-session blocker even when the previous workout was already hard', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 38,
+      tsb: 7,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [{
+        date: '2026-05-08',
+        activityType: 'bike',
+        durationMin: 75,
+        tss: 94,
+        rpe: 9,
+        plannedZone: 4,
+      }],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+    });
+
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('RPE 9/10');
+  });
+
+  it('blocks hard workouts after GI discomfort until the next long dose is controlled fueling practice', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 36,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      fuelingHistory: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 430,
+        carbsG: 300,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'mild_issue',
+        notes: 'Nach 100 km Magenprobleme.',
+      }],
+    });
+
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(Math.max(...workouts.map(workout => workout.durationMin))).toBeLessThanOrEqual(165);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('Fueling-Toleranz');
+  });
+
+  it('uses a mental protect state to shift non-race hard workouts to endurance or recovery', async () => {
+    const input = {
+      weekStart: '2026-05-11',
+      phase: 'build' as const,
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 36,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      mentalState: {
+        date: '2026-05-10',
+        mood: 4,
+        energy: 3,
+        stress: 8,
+        motivation: 4,
+      },
+    } satisfies Parameters<typeof generateScientificWeekPlan>[0] & {
+      mentalState: { date: string; mood: number; energy: number; stress: number; motivation: number };
+    };
+
+    const workouts = await generateScientificWeekPlan(input);
+
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('Mentale Lage');
+  });
+
+  it('keeps the why-this-workout rationale deterministic in generated descriptions', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'base',
+      weeklyHoursTarget: 6,
+      availableDays: [0, 2, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 4,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+    });
+
+    expect(workouts[0]?.description).toContain('Warum diese Einheit:');
   });
 
   it('keeps stable execution weeks dense enough while explaining the stability', () => {

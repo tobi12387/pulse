@@ -1,8 +1,8 @@
 import { Skeleton } from '@/components/Skeleton';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
+import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 import type { PulsePlanDecision, PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
 import { formatPlanDate } from '../plan-utils';
-import { ACTIVITY_LABEL } from '../training/training-components';
 import { buildPlanDecisionEvidence, type PlanDecisionEvidenceTone } from './plan-decision-insights';
 
 function translucent(color: string, percent: number) {

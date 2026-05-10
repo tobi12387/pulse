@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { PulseTrainingCapabilitySummary } from '@coaching-os/shared/pulse';
+import type { PulseTrainingCapabilityLevel, PulseTrainingCapabilitySummary } from '@coaching-os/shared/pulse';
 import { deriveGoalLimiter } from './goal-limiters.js';
+
+function capabilityLevel(input: Omit<PulseTrainingCapabilityLevel, 'nextRecommendedWorkoutLevel' | 'lastProgressionReason' | 'staleReason'>): PulseTrainingCapabilityLevel {
+  return {
+    ...input,
+    nextRecommendedWorkoutLevel: input.level,
+    lastProgressionReason: null,
+    staleReason: null,
+  };
+}
 
 const capabilitySummary: PulseTrainingCapabilitySummary = {
   generatedAt: '2026-05-09T12:00:00.000Z',
@@ -15,10 +24,10 @@ const capabilitySummary: PulseTrainingCapabilitySummary = {
   signals: [],
   recommendations: [],
   levels: [
-    { energySystem: 'endurance', label: 'Endurance', level: 4.6, confidence: 'high', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' },
-    { energySystem: 'long_endurance', label: 'Long Endurance', level: 2.4, confidence: 'medium', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' },
-    { energySystem: 'threshold', label: 'Threshold', level: 3.8, confidence: 'medium', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' },
-    { energySystem: 'vo2', label: 'VO2', level: 3.1, confidence: 'low', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' },
+    capabilityLevel({ energySystem: 'endurance', label: 'Endurance', level: 4.6, confidence: 'high', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' }),
+    capabilityLevel({ energySystem: 'long_endurance', label: 'Long Endurance', level: 2.4, confidence: 'medium', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' }),
+    capabilityLevel({ energySystem: 'threshold', label: 'Threshold', level: 3.8, confidence: 'medium', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' }),
+    capabilityLevel({ energySystem: 'vo2', label: 'VO2', level: 3.1, confidence: 'low', evidence: [], updatedAt: '2026-05-09T12:00:00.000Z' }),
   ],
 };
 

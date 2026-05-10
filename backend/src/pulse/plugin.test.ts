@@ -6,6 +6,7 @@ import {
   pulseActivities,
   pulseActivityStreams,
   pulseActionDecisions,
+  pulseAdaptationEvents,
   pulseCoachPreferences,
   pulseCoachSessions,
   pulseDailyMetrics,
@@ -134,6 +135,7 @@ afterAll(async () => {
   if (userId) {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
     await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    await db.delete(pulseAdaptationEvents).where(eq(pulseAdaptationEvents.userId, userId));
     await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
     await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
     await db.delete(pulseActivityStreams);
@@ -155,6 +157,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
   await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+  await db.delete(pulseAdaptationEvents).where(eq(pulseAdaptationEvents.userId, userId));
   await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
   await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
   await db.delete(pulseActivityStreams);
@@ -1788,6 +1791,111 @@ describe('Pulse profile provenance', () => {
 });
 
 describe('POST /api/pulse/plan/generate', () => {
+  it('returns a read-only refresh preview without touching plan rows or Garmin', async () => {
+    const today = dateDaysFrom(0);
+    const weekStart = dateDaysFrom(1);
+    const traceCreatedAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: weekStart,
+      activityType: 'bike',
+      zone: 5,
+      durationMin: 75,
+      targetTss: 92,
+      status: 'planned',
+      description: 'Warum diese Einheit: VO2-Reiz fuer kurze Anstiege.\n\n4x4 min.',
+      archetypeId: 'bike_vo2_4x4',
+    });
+    await db.insert(pulsePlanGenerations).values({
+      userId,
+      weekStart,
+      inputSnapshot: {
+        phase: 'build',
+        mesocycleWeek: 1,
+        weeklyHoursTarget: 8,
+        availableDays: [1],
+        load: { ctl: 35, atl: 42, tsb: -7, date: weekStart },
+        profile: { ftpWatts: 260, maxHrBpm: 186, lthrBpm: null },
+        goals: [],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        rpeReasons: [],
+        dataWarnings: [],
+        recentSportMix: {},
+      },
+      planDecision: {
+        selectedDays: [1],
+        skippedAvailableDays: [],
+        targetSessionCount: 1,
+        primaryGoal: null,
+        reasons: [],
+      },
+      sportMix: { bike: { sessions: 1, totalMinutes: 75, totalTss: 92 } },
+      hardDays: [{ date: weekStart, activityType: 'bike', zone: 5, durationMin: 75 }],
+      generatedSummary: ['Altplan'],
+      createdAt: traceCreatedAt,
+    });
+    await db.insert(pulseAdaptationEvents).values({
+      userId,
+      eventDate: today,
+      kind: 'high_rpe',
+      sourceId: 'activity-1',
+      severity: 'watch',
+      recommendation: 'reduce_intensity',
+      summary: 'Hohe RPE spricht gegen direktes Nachlegen harter Reize.',
+      evidence: ['RPE 9/10'],
+    });
+    await db.insert(pulseTrainingCapabilityLevels).values({
+      userId,
+      energySystem: 'endurance',
+      label: 'Endurance',
+      level: 3.2,
+      confidence: 'medium',
+      evidence: ['Recent completion'],
+      signals: ['quality_progress'],
+      sourceWindowDays: 90,
+      updatedAt: new Date(),
+    });
+
+    const beforeRows = await db.select().from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/plan/refresh-preview/${weekStart}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const preview = res.json<{
+      preview: {
+        stale: boolean;
+        applySupported: boolean;
+        mutationBoundary: string;
+        triggers: Array<{ kind: string }>;
+        comparisons: Array<{ current: { zone: number }; proposed: { zone: number; durationMin: number }; changes: string[] }>;
+      };
+    }>().preview;
+    expect(preview.stale).toBe(true);
+    expect(preview.applySupported).toBe(false);
+    expect(preview.mutationBoundary).toContain('keine DB-');
+    expect(preview.triggers.map(trigger => trigger.kind)).toEqual(expect.arrayContaining(['high_rpe', 'capability_update', 'stale_engine']));
+    expect(preview.comparisons[0]?.current.zone).toBe(5);
+    expect(preview.comparisons[0]?.proposed.zone).toBe(2);
+    expect(preview.comparisons[0]?.proposed.durationMin).toBeLessThan(75);
+    expect(preview.comparisons[0]?.changes).toContain('why');
+
+    const afterRows = await db.select().from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    expect(afterRows).toHaveLength(beforeRows.length);
+    expect(afterRows[0]).toMatchObject({
+      zone: 5,
+      durationMin: 75,
+      garminWorkoutId: null,
+      garminScheduledId: null,
+    });
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+
   it('generates workouts and returns a persisted trace', async () => {
     const weekStart = dateDaysFrom(1);
     await db.insert(pulseUserProfile).values({
@@ -2570,6 +2678,105 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
     expect(payload.description).toContain('60-90 g Kohlenhydrate pro Stunde');
     expect(payload.description).toContain('400-800 mg Sodium pro Liter');
     expect(payload.description).toContain('Recovery innerhalb von 2 h');
+  });
+});
+
+describe('GET /api/pulse/garmin/execution-diff', () => {
+  it('returns read-only Garmin calendar trust rows without triggering sync writes', async () => {
+    const plannedDate = dateDaysFrom(1);
+    await db.insert(pulsePlannedWorkouts).values([
+      {
+        userId,
+        plannedDate,
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        targetTss: 62,
+        description: 'Garmin bereit',
+        garminWorkoutId: 'gw-ready',
+        garminScheduledId: 'sched-ready',
+        executionStatus: 'garmin_scheduled',
+        executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+        steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+      },
+      {
+        userId,
+        plannedDate: dateDaysFrom(2),
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        description: 'Kalender fehlt',
+        garminWorkoutId: 'gw-missing-calendar',
+        garminScheduledId: 'sched-missing-calendar',
+        executionStatus: 'garmin_template',
+        executionNotes: 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.',
+        steps: [{ type: 'steady', durationMin: 45, zone: 2, description: 'Z2' }],
+      },
+    ]);
+
+    garminMocks.get.mockImplementation(async (url: string) => {
+      if (url.includes('/calendar-service/')) {
+        return {
+          calendarItems: [{
+            itemType: 'workout',
+            id: 'sched-ready',
+            workoutId: 'gw-ready',
+            date: plannedDate,
+          }],
+        };
+      }
+      if (url.includes('/workout-service/workout/gw-ready')) {
+        return { workoutSegments: [{ workoutSteps: [{ type: 'ExecutableStepDTO' }] }] };
+      }
+      return { workoutSegments: [{ workoutSteps: [] }] };
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/execution-diff?days=15',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ rows: Array<{ status: string; workoutId: string; repairActions: string[] }> }>();
+    expect(body.rows.map(row => row.status)).toEqual(['ready', 'missing_calendar']);
+    expect(body.rows[1]!.repairActions).toEqual(['schedule_calendar']);
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+
+  it('returns unknown rows when Garmin login is unavailable', async () => {
+    const plannedDate = dateDaysFrom(1);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate,
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 62,
+      description: 'Readback offen',
+      garminWorkoutId: 'gw-unknown',
+      garminScheduledId: 'sched-unknown',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+      steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+    });
+    const { getGarminClient } = await import('../lib/garmin-client.js');
+    vi.mocked(getGarminClient).mockRejectedValueOnce(new Error('login failed'));
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/execution-diff?days=15',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ rows: Array<{ status: string; summary: string }> }>();
+    expect(body.rows).toHaveLength(1);
+    expect(body.rows[0]).toMatchObject({ status: 'unknown' });
+    expect(body.rows[0]!.summary).toContain('Garmin-Readback');
   });
 });
 

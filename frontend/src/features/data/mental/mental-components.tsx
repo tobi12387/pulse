@@ -479,6 +479,7 @@ export function MentalTab() {
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
   const suggestion = useMemo(() => buildSuggestion(home), [home]);
   const [manualQuickChoices, setManualQuickChoices] = useState<QuickChoices | null>(null);
+  const [describeOpen, setDescribeOpen] = useState(false);
   const [fineTuneOpen, setFineTuneOpen] = useState(false);
   const [fineTuned, setFineTuned] = useState(false);
   const [form, setForm] = useState<CheckinForm>(() => buildInitialForm());
@@ -554,6 +555,7 @@ export function MentalTab() {
 
       if (result.extraction) {
         setFineTuned(true);
+        setDescribeOpen(true);
         setFineTuneOpen(true);
         setForm(f => ({
           ...f,
@@ -606,7 +608,7 @@ export function MentalTab() {
           <div style={{ marginBottom: 14 }}>
             <div className="label-mono" style={{ marginBottom: 6 }}>Quick Check-in</div>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              Kurzer Lageabgleich für Mental Health und Mental Fitness. Starte mit einer menschlichen Beschreibung; Pulse speichert daraus die vertrauten Trendwerte.
+              Wie ist deine mentale Lage? Wähle einen Zustand und speichere direkt; Details bleiben optional.
             </p>
           </div>
           <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -631,36 +633,36 @@ export function MentalTab() {
               <span style={{ fontSize: 11, color: 'var(--text-2)' }}>Mental Fitness: {stateProfileDetails.fitness}</span>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Feinjustieren bleibt optional.</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-              <QuickChoiceGroup
-                title="Wie ist dein Kopf gerade?"
-                ariaPrefix="Kopf"
-                value={quickChoices.head}
-                options={HEAD_OPTIONS}
-                onChange={head => updateQuickChoices({ ...quickChoices, head })}
+            <button
+              type="submit"
+              disabled={checkin.isPending}
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--accent)',
+                borderRadius: 'var(--radius)',
+                minWidth: 44,
+                minHeight: 44,
+                padding: '9px 16px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: checkin.isPending ? 'var(--text-3)' : 'var(--accent)',
+                cursor: checkin.isPending ? 'default' : 'pointer',
+              }}
+            >
+              {checkin.isPending ? 'Speichern…' : 'Heute speichern'}
+            </button>
+            {saveError && (
+              <InlineFeedback
+                title="Check-in speichern"
+                message={saveError}
+                tone="error"
+                actionLabel="Erneut versuchen"
+                onAction={() => void submitCheckin()}
+                actionPending={checkin.isPending}
               />
-              <QuickChoiceGroup
-                title="Wie viel Energie ist verfügbar?"
-                ariaPrefix="Energie"
-                value={quickChoices.energy}
-                options={ENERGY_OPTIONS}
-                onChange={energy => updateQuickChoices({ ...quickChoices, energy })}
-              />
-              <QuickChoiceGroup
-                title="Was zieht gerade mentale Energie?"
-                ariaPrefix="Druck"
-                value={quickChoices.pressure}
-                options={PRESSURE_OPTIONS}
-                onChange={pressure => updateQuickChoices({ ...quickChoices, pressure })}
-              />
-              <QuickChoiceGroup
-                title="Was brauchst du heute?"
-                ariaPrefix="Tagesbedarf"
-                value={quickChoices.need}
-                options={NEED_OPTIONS}
-                onChange={need => updateQuickChoices({ ...quickChoices, need })}
-              />
-            </div>
+            )}
             <div style={{
               padding: '10px 12px',
               background: 'var(--surface-2)',
@@ -668,7 +670,7 @@ export function MentalTab() {
               borderRadius: 5,
             }}>
               <div className="label-mono" style={{ marginBottom: 6 }}>Pulse Vorschlag</div>
-              <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+              <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
                 {suggestion.tone}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -689,165 +691,302 @@ export function MentalTab() {
                 ))}
               </div>
             </div>
-            <div style={{
-              padding: '10px 12px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 9,
-            }}>
-              <div>
-                <div className="label-mono" style={{ marginBottom: 5 }}>Kurz beschreiben</div>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>
-                  Schreib einen Satz, wenn Werte gerade schwer greifbar sind. Pulse macht daraus einen Vorschlag, den du prüfen kannst.
-                </p>
-              </div>
-              <textarea
-                aria-label="Kurz beschreiben"
-                value={freeText}
-                onChange={e => updateFreeText(e.target.value)}
-                rows={3}
-                placeholder="Zum Beispiel: Kopf voll, Energie begrenzt, Druck spürbar."
+            <div>
+              <button
+                type="button"
+                aria-expanded={describeOpen}
+                aria-controls="mental-detail-panel"
+                onClick={() => setDescribeOpen(open => !open)}
                 style={{
-                  background: 'var(--surface)',
+                  minHeight: 44,
+                  padding: '7px 10px',
+                  background: 'transparent',
                   border: '1px solid var(--border)',
                   borderRadius: 5,
-                  padding: '8px 10px',
-                  fontSize: 12,
-                  color: 'var(--text)',
-                  resize: 'vertical',
-                  minHeight: 74,
+                  color: 'var(--text-2)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
                 }}
-              />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => void handleTextPreview()}
-                  disabled={!freeText.trim() || textPreview.isPending}
+              >
+                Mehr beschreiben
+              </button>
+              {describeOpen && (
+                <div
+                  id="mental-detail-panel"
                   style={{
-                    minHeight: 44,
-                    padding: '7px 10px',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--accent)',
-                    borderRadius: 5,
-                    color: !freeText.trim() || textPreview.isPending ? 'var(--text-3)' : 'var(--accent)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    cursor: !freeText.trim() || textPreview.isPending ? 'default' : 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    marginTop: 10,
                   }}
                 >
-                {textPreview.isPending ? 'Wird ausgewertet…' : 'Text auswerten'}
-              </button>
-                {textResult?.extraction && (
-                  <button
-                    type="button"
-                    onClick={() => void submitCheckin()}
-                    disabled={checkin.isPending}
-                    style={{
-                      minHeight: 44,
-                      padding: '7px 10px',
-                      background: 'var(--surface)',
-                      border: '1px solid var(--green)',
-                      borderRadius: 5,
-                      color: checkin.isPending ? 'var(--text-3)' : 'var(--green)',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      cursor: checkin.isPending ? 'default' : 'pointer',
-                    }}
-                  >
-                    {checkin.isPending ? 'Speichern…' : 'Ergebnis speichern'}
-                  </button>
-                )}
-              </div>
-              {textPreviewError && (
-                <InlineFeedback
-                  title="Textanalyse"
-                  message={textPreviewError}
-                  tone="warning"
-                />
-              )}
-              {textResult && !textResult.extraction && (
-                <InlineFeedback
-                  title="Noch kein Check-in"
-                  message={textResult.reply || 'Pulse konnte daraus noch keine Check-in-Werte ableiten. Ergänze einen Satz zu Energie, Druck oder Stimmung.'}
-                  tone="info"
-                />
-              )}
-              {textResult?.extraction && (
-                <div style={{
-                  padding: '9px 10px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 5,
-                }}>
-                  <div className="label-mono" style={{ marginBottom: 8 }}>Erkannte Werte prüfen</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 6 }}>
-                    {(['mood', 'energy', 'stress', 'motivation'] as CheckinScoreKey[]).map(key => (
-                      <span
-                        key={key}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+                    <QuickChoiceGroup
+                      title="Wie ist dein Kopf gerade?"
+                      ariaPrefix="Kopf"
+                      value={quickChoices.head}
+                      options={HEAD_OPTIONS}
+                      onChange={head => updateQuickChoices({ ...quickChoices, head })}
+                    />
+                    <QuickChoiceGroup
+                      title="Wie viel Energie ist verfügbar?"
+                      ariaPrefix="Energie"
+                      value={quickChoices.energy}
+                      options={ENERGY_OPTIONS}
+                      onChange={energy => updateQuickChoices({ ...quickChoices, energy })}
+                    />
+                    <QuickChoiceGroup
+                      title="Was zieht gerade mentale Energie?"
+                      ariaPrefix="Druck"
+                      value={quickChoices.pressure}
+                      options={PRESSURE_OPTIONS}
+                      onChange={pressure => updateQuickChoices({ ...quickChoices, pressure })}
+                    />
+                    <QuickChoiceGroup
+                      title="Was brauchst du heute?"
+                      ariaPrefix="Tagesbedarf"
+                      value={quickChoices.need}
+                      options={NEED_OPTIONS}
+                      onChange={need => updateQuickChoices({ ...quickChoices, need })}
+                    />
+                  </div>
+                  <div style={{
+                    padding: '10px 12px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 5,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 9,
+                  }}>
+                    <div>
+                      <div className="label-mono" style={{ marginBottom: 5 }}>Kurz beschreiben</div>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                        Schreib einen Satz, wenn Werte gerade schwer greifbar sind. Pulse macht daraus einen Vorschlag, den du prüfen kannst.
+                      </p>
+                    </div>
+                    <textarea
+                      aria-label="Kurz beschreiben"
+                      value={freeText}
+                      onChange={e => updateFreeText(e.target.value)}
+                      rows={3}
+                      placeholder="Zum Beispiel: Kopf voll, Energie begrenzt, Druck spürbar."
+                      style={{
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 5,
+                        padding: '8px 10px',
+                        fontSize: 12,
+                        color: 'var(--text)',
+                        resize: 'vertical',
+                        minHeight: 74,
+                      }}
+                    />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => void handleTextPreview()}
+                        disabled={!freeText.trim() || textPreview.isPending}
                         style={{
-                          padding: '6px 7px',
+                          minHeight: 44,
+                          padding: '7px 10px',
+                          background: 'var(--surface)',
+                          border: '1px solid var(--accent)',
+                          borderRadius: 5,
+                          color: !freeText.trim() || textPreview.isPending ? 'var(--text-3)' : 'var(--accent)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10,
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          cursor: !freeText.trim() || textPreview.isPending ? 'default' : 'pointer',
+                        }}
+                      >
+                        {textPreview.isPending ? 'Wird ausgewertet…' : 'Text auswerten'}
+                      </button>
+                      {textResult?.extraction && (
+                        <button
+                          type="button"
+                          onClick={() => void submitCheckin()}
+                          disabled={checkin.isPending}
+                          style={{
+                            minHeight: 44,
+                            padding: '7px 10px',
+                            background: 'var(--surface)',
+                            border: '1px solid var(--green)',
+                            borderRadius: 5,
+                            color: checkin.isPending ? 'var(--text-3)' : 'var(--green)',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 10,
+                            letterSpacing: '0.12em',
+                            textTransform: 'uppercase',
+                            cursor: checkin.isPending ? 'default' : 'pointer',
+                          }}
+                        >
+                          {checkin.isPending ? 'Speichern…' : 'Ergebnis speichern'}
+                        </button>
+                      )}
+                    </div>
+                    {textPreviewError && (
+                      <InlineFeedback
+                        title="Textanalyse"
+                        message={textPreviewError}
+                        tone="warning"
+                      />
+                    )}
+                    {textResult && !textResult.extraction && (
+                      <InlineFeedback
+                        title="Noch kein Check-in"
+                        message={textResult.reply || 'Pulse konnte daraus noch keine Check-in-Werte ableiten. Ergänze einen Satz zu Energie, Druck oder Stimmung.'}
+                        tone="info"
+                      />
+                    )}
+                    {textResult?.extraction && (
+                      <div style={{
+                        padding: '9px 10px',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 5,
+                      }}>
+                        <div className="label-mono" style={{ marginBottom: 8 }}>Erkannte Werte prüfen</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 6 }}>
+                          {(['mood', 'energy', 'stress', 'motivation'] as CheckinScoreKey[]).map(key => (
+                            <span
+                              key={key}
+                              style={{
+                                padding: '6px 7px',
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 4,
+                                color: 'var(--text)',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 10.5,
+                              }}
+                            >
+                              {SCORE_LABELS[key]} {textResult.extraction![key]}/10
+                            </span>
+                          ))}
+                        </div>
+                        {textResult.extraction.themes.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                            {textResult.extraction.themes.map(theme => (
+                              <span
+                                key={theme}
+                                style={{
+                                  padding: '4px 7px',
+                                  background: 'var(--surface-2)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: 4,
+                                  fontSize: 10.5,
+                                  color: 'var(--text-2)',
+                                }}
+                              >
+                                {theme}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {textResult.followUpQuestions.length > 0 && (
+                          <div style={{ marginTop: 8, display: 'grid', gap: 5 }}>
+                            {textResult.followUpQuestions.map(question => (
+                              <button
+                                key={question}
+                                type="button"
+                                onClick={() => appendNote(question)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--text-2)',
+                                  fontSize: 11.5,
+                                  lineHeight: 1.4,
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  minHeight: 44,
+                                  padding: '6px 0',
+                                }}
+                              >
+                                {question}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: 8,
+                    padding: '10px 12px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 5,
+                  }}>
+                    {guidedQuestions.map(question => (
+                      <button
+                        key={question.id}
+                        type="button"
+                        onClick={() => appendNote(question.label)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-2)',
+                          fontSize: 12,
+                          lineHeight: 1.4,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          minHeight: 44,
+                          padding: '6px 0',
+                        }}
+                      >
+                        <span style={{ display: 'block', color: 'var(--text)' }}>{question.label}</span>
+                        <span style={{ display: 'block', marginTop: 3, fontSize: 10.5, color: 'var(--text-3)' }}>
+                          {question.rationale}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {['Mental: ruhig', 'Mental: angespannt', 'Mental: überladen', 'Fokus: klar', 'Fokus: zerstreut', 'Schutz: aktiv einplanen', 'Heute genug: klein halten'].map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => appendNote(tag)}
+                        style={{
+                          minWidth: 44,
+                          minHeight: 44,
+                          padding: '5px 8px',
                           background: 'var(--surface-2)',
                           border: '1px solid var(--border)',
                           borderRadius: 4,
-                          color: 'var(--text)',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 10.5,
+                          color: 'var(--text-2)',
+                          fontSize: 11,
+                          cursor: 'pointer',
                         }}
                       >
-                        {SCORE_LABELS[key]} {textResult.extraction![key]}/10
-                      </span>
+                        {tag}
+                      </button>
                     ))}
                   </div>
-                  {textResult.extraction.themes.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                      {textResult.extraction.themes.map(theme => (
-                        <span
-                          key={theme}
-                          style={{
-                            padding: '4px 7px',
-                            background: 'var(--surface-2)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 4,
-                            fontSize: 10.5,
-                            color: 'var(--text-2)',
-                          }}
-                        >
-                          {theme}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {textResult.followUpQuestions.length > 0 && (
-                    <div style={{ marginTop: 8, display: 'grid', gap: 5 }}>
-                      {textResult.followUpQuestions.map(question => (
-                        <button
-                          key={question}
-                          type="button"
-                          onClick={() => appendNote(question)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-2)',
-                            fontSize: 11.5,
-                            lineHeight: 1.4,
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            minHeight: 44,
-                            padding: '6px 0',
-                          }}
-                        >
-                          {question}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <textarea
+                    aria-label="Mentale Notizen"
+                    value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value.slice(0, CHECKIN_NOTES_MAX_LENGTH) }))}
+                    maxLength={CHECKIN_NOTES_MAX_LENGTH}
+                    rows={4}
+                    placeholder="Was ist mental gerade wichtig? Was belastet, was schützt dich heute, und was wäre ein guter kleiner Abschluss?"
+                    style={{
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      padding: '8px 12px',
+                      fontSize: 12,
+                      color: 'var(--text)',
+                      resize: 'none',
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -882,7 +1021,7 @@ export function MentalTab() {
                   background: 'var(--surface-2)',
                   border: '1px solid var(--border)',
                   borderRadius: 5,
-                }}>
+                  }}>
                   <SegmentedBar label="Stimmung" value={displayedScores.mood} onChange={(v) => updateFineTune('mood', v)} color="var(--accent)" />
                   <SegmentedBar label="Energie" value={displayedScores.energy} onChange={(v) => updateFineTune('energy', v)} color="var(--green)" />
                   <SegmentedBar label="Stress" value={displayedScores.stress} onChange={(v) => updateFineTune('stress', v)} color="var(--amber)" />
@@ -890,108 +1029,6 @@ export function MentalTab() {
                 </div>
               )}
             </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 8,
-              padding: '10px 12px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-            }}>
-              {guidedQuestions.map(question => (
-                <button
-                  key={question.id}
-                  type="button"
-                  onClick={() => appendNote(question.label)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-2)',
-                    fontSize: 12,
-                    lineHeight: 1.4,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    minHeight: 44,
-                    padding: '6px 0',
-                  }}
-                >
-                  <span style={{ display: 'block', color: 'var(--text)' }}>{question.label}</span>
-                  <span style={{ display: 'block', marginTop: 3, fontSize: 10.5, color: 'var(--text-3)' }}>
-                    {question.rationale}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {['Mental: ruhig', 'Mental: angespannt', 'Mental: überladen', 'Fokus: klar', 'Fokus: zerstreut', 'Schutz: aktiv einplanen', 'Heute genug: klein halten'].map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => appendNote(tag)}
-                  style={{
-                    minWidth: 44,
-                    minHeight: 44,
-                    padding: '5px 8px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 4,
-                    color: 'var(--text-2)',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-            <textarea
-              aria-label="Mentale Notizen"
-              value={form.notes}
-              onChange={e => setForm(f => ({ ...f, notes: e.target.value.slice(0, CHECKIN_NOTES_MAX_LENGTH) }))}
-              maxLength={CHECKIN_NOTES_MAX_LENGTH}
-              rows={4}
-              placeholder="Was ist mental gerade wichtig? Was belastet, was schützt dich heute, und was wäre ein guter kleiner Abschluss?"
-              style={{
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '8px 12px',
-                fontSize: 12,
-                color: 'var(--text)',
-                resize: 'none',
-              }}
-            />
-            <button
-              type="submit"
-              disabled={checkin.isPending}
-              style={{
-                background: 'var(--surface-2)',
-                border: '1px solid var(--accent)',
-                borderRadius: 'var(--radius)',
-                minWidth: 44,
-                minHeight: 44,
-                padding: '9px 16px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--accent)',
-                cursor: 'pointer',
-              }}
-            >
-              {checkin.isPending ? 'Speichern…' : 'Check-in senden'}
-            </button>
-            {saveError && (
-              <InlineFeedback
-                title="Check-in speichern"
-                message={saveError}
-                tone="error"
-                actionLabel="Erneut versuchen"
-                onAction={() => void submitCheckin()}
-                actionPending={checkin.isPending}
-              />
-            )}
           </form>
         </div>
       )}

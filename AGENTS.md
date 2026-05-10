@@ -42,12 +42,24 @@ Do not re-read long histories by default. Use:
 Pulse-specific Codex skills live in `.codex/skills/` and are part of this repo's working context:
 
 - `pulse-session-ritual` — session start/end workflow and branch hygiene.
+- `pulse-coding-discipline` — Pulse-adapted coding-agent discipline: explicit assumptions, simplest sufficient change, surgical diffs, and verifiable success criteria.
 - `pulse-migration-guard` — additive-only Drizzle/Postgres migration checks.
 - `pulse-pr-review` — Pulse-specific review risks and non-negotiables.
 - `pulse-frontend-qa` — React/Vite route and responsive QA workflow.
 - `pulse-deploy-readiness` — pre-merge, push and server deploy readiness.
 
 Use these skills when their descriptions match the task before falling back to generic workflows.
+
+## Codex operating discipline
+
+For non-trivial coding, review, refactor, planning, or AI-workflow changes, apply the repo-local `pulse-coding-discipline` skill. The intended adaptation of the Karpathy-inspired agent guidelines is:
+
+- **Think before editing:** surface assumptions, ambiguity, and tradeoffs before choosing an implementation path.
+- **Simplicity first:** solve the requested problem with the smallest local change; do not add speculative scope, configurability, integrations, or abstractions.
+- **Surgical changes:** touch only files needed for the task, match existing style, and clean up only unused code created by your own change.
+- **Goal-driven execution:** define concrete success criteria and verify them with the narrowest relevant checks before claiming completion.
+
+These rules complement, but do not replace, the Pulse hard rules above. When they conflict, the hard rules and explicit user instructions win.
 
 ---
 

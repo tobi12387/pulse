@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUpdateWorkout } from '@/pulse/hooks';
 import { ACTIVITY_LABEL, activityLabel, workoutArchetypeCopy } from '@/pulse/activity-labels';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
+import { DAY_SHORT } from './training-copy';
 
 type PlannedWorkout = PulsePlannedWorkout;
-
-export const DAY_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-export { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 
 const ACTIVITY_TYPES = ['run', 'bike', 'swim', 'strength', 'hike', 'other'] as const;
 
@@ -34,6 +32,19 @@ const EXECUTION_META: Record<NonNullable<PlannedWorkout['executionStatus']>, { l
 
 function translucent(color: string, percent: number) {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
+
+function splitWorkoutRationale(description: string | null): { rationale: string | null; body: string | null } {
+  const trimmed = description?.trim();
+  if (!trimmed) return { rationale: null, body: null };
+  const prefix = 'Warum diese Einheit:';
+  if (!trimmed.startsWith(prefix)) return { rationale: null, body: trimmed };
+  const end = trimmed.indexOf('. ');
+  if (end === -1) return { rationale: trimmed, body: null };
+  return {
+    rationale: trimmed.slice(0, end + 1),
+    body: trimmed.slice(end + 2).trim() || null,
+  };
 }
 
 function ExecutionBadge({ workout }: { workout: PlannedWorkout }) {
@@ -93,6 +104,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
   onChangeWeek: (delta: number) => void;
   onSelectWorkout: (w: PlannedWorkout) => void;
 }) {
+  const dayRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const monday = getMonday(new Date());
   monday.setDate(monday.getDate() + weekOffset * 7);
 
@@ -103,6 +115,14 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
   });
 
   const today = isoDate(new Date());
+  const visibleDate = days.find(day => day.date === today)?.date
+    ?? days.find(day => workouts.some(workout => workout.plannedDate === day.date))?.date
+    ?? days[0]?.date;
+
+  useEffect(() => {
+    if (!visibleDate) return;
+    dayRefs.current[visibleDate]?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [visibleDate, weekOffset]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -124,64 +144,86 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
         }}>→</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-        {days.map(({ date, dayNum, dayIdx }) => {
-          const workout = workouts.find(w => w.plannedDate === date);
-          const isToday = date === today;
-          const isPast  = date < today;
-          const isDone  = workout?.status === 'completed';
-          const isSkipped = workout?.status === 'skipped';
-          const zone = workout?.zone ?? 0;
-          const zoneColor = zone > 0 ? (ZONE_COLOR[zone] ?? 'var(--text-3)') : 'transparent';
+      <div
+        aria-label="Wochenübersicht"
+        data-testid="plan-week-strip-scroller"
+        style={{
+          maxWidth: '100%',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          paddingBottom: 2,
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin',
+        }}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(72px, 1fr))', gap: 6, minWidth: 540 }}>
+          {days.map(({ date, dayNum, dayIdx }) => {
+            const workout = workouts.find(w => w.plannedDate === date);
+            const isToday = date === today;
+            const isPast  = date < today;
+            const isDone  = workout?.status === 'completed';
+            const isSkipped = workout?.status === 'skipped';
+            const zone = workout?.zone ?? 0;
+            const zoneColor = zone > 0 ? (ZONE_COLOR[zone] ?? 'var(--text-3)') : 'transparent';
 
-          return (
-            <button key={date}
-              type="button"
-              disabled={!workout}
-              aria-label={workout ? `${DAY_SHORT[dayIdx]} ${dayNum}: ${ACTIVITY_LABEL[workout.activityType] ?? workout.activityType} öffnen` : `${DAY_SHORT[dayIdx]} ${dayNum}: kein Training`}
-              onClick={() => workout && onSelectWorkout(workout)}
-              style={{
-                appearance: 'none',
-                textAlign: 'left',
-                width: '100%',
-                padding: '10px 10px 12px',
-                background: isToday ? 'var(--surface-2)' : 'var(--surface)',
-                border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
-                borderRadius: 5,
-                opacity: isPast && !isToday ? 0.65 : 1,
-                cursor: workout ? 'pointer' : 'default',
-                color: 'inherit',
-                font: 'inherit',
-              }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {DAY_SHORT[dayIdx]}
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: isToday ? 'var(--accent)' : 'var(--text)' }}>
-                  {dayNum}
-                </span>
-              </div>
-
-              <div style={{
-                marginTop: 8, height: 3, borderRadius: 1,
-                background: workout && !isSkipped ? zoneColor : 'transparent',
-                opacity: isSkipped ? 0.25 : 1,
-              }} />
-
-              <div style={{ marginTop: 6, fontSize: 10, color: zone === 0 ? 'var(--text-3)' : 'var(--text)', lineHeight: 1.3,
-                textDecoration: isSkipped ? 'line-through' : 'none',
-              }}>
-                {workout ? activityLabel(workout.activityType) : <span style={{ color: 'var(--text-3)' }}>–</span>}
-              </div>
-
-              {workout && zone > 0 && (
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)', marginTop: 2 }}>
-                  {isDone ? <span style={{ color: 'var(--green)' }}>✓ </span> : ''}Z{zone} · {workout.durationMin}'
+            return (
+              <button key={date}
+                ref={(node) => {
+                  dayRefs.current[date] = node;
+                }}
+                type="button"
+                disabled={!workout}
+                aria-label={workout ? `${DAY_SHORT[dayIdx]} ${dayNum}: ${ACTIVITY_LABEL[workout.activityType] ?? workout.activityType} öffnen` : `${DAY_SHORT[dayIdx]} ${dayNum}: kein Training`}
+                onClick={() => workout && onSelectWorkout(workout)}
+                style={{
+                  appearance: 'none',
+                  textAlign: 'left',
+                  width: '100%',
+                  minHeight: 92,
+                  padding: '10px 10px 12px',
+                  background: isToday ? 'var(--surface-2)' : 'var(--surface)',
+                  border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: 5,
+                  opacity: isPast && !isToday ? 0.65 : 1,
+                  cursor: workout ? 'pointer' : 'default',
+                  color: 'inherit',
+                  font: 'inherit',
+                }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                    {DAY_SHORT[dayIdx]}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: isToday ? 'var(--accent)' : 'var(--text)' }}>
+                    {dayNum}
+                  </span>
                 </div>
-              )}
-            </button>
-          );
-        })}
+
+                <div style={{
+                  marginTop: 8, height: 3, borderRadius: 1,
+                  background: workout && !isSkipped ? zoneColor : 'transparent',
+                  opacity: isSkipped ? 0.25 : 1,
+                }} />
+
+                <div style={{
+                  marginTop: 6,
+                  fontSize: 10,
+                  color: zone === 0 ? 'var(--text-3)' : 'var(--text)',
+                  lineHeight: 1.3,
+                  overflowWrap: 'anywhere',
+                  textDecoration: isSkipped ? 'line-through' : 'none',
+                }}>
+                  {workout ? activityLabel(workout.activityType) : <span style={{ color: 'var(--text-3)' }}>–</span>}
+                </div>
+
+                {workout && zone > 0 && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)', marginTop: 2, overflowWrap: 'anywhere' }}>
+                    {isDone ? <span style={{ color: 'var(--green)' }}>✓ </span> : ''}Z{zone} · {workout.durationMin}'
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -194,6 +236,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
   const confidence = garminConfidenceCopy(w);
   const structureSummary = workoutStructureSummary(w);
   const archetypeCopy = workoutArchetypeCopy(w.archetypeId);
+  const descriptionParts = splitWorkoutRationale(w.description);
 
   async function handleTypeChange(type: string) {
     if (type === w.activityType) {
@@ -242,7 +285,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
           onMouseEnter={e => { if (!switching) e.currentTarget.style.background = 'var(--surface-2)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 3, minWidth: 0 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>{w.plannedDate}</span>
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
@@ -284,8 +327,36 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
               <span style={{ fontSize: 11, color: 'var(--text-2)' }}>{confidence.title}</span>
             )}
           </div>
-          {w.description && !switching && (
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
+          {(descriptionParts.rationale || descriptionParts.body) && !switching && (
+            <div style={{ marginTop: 4 }}>
+              {descriptionParts.rationale && (
+                <div
+                  data-testid="plan-workout-rationale"
+                  style={{
+                    display: 'inline-flex',
+                    maxWidth: '100%',
+                    padding: '3px 6px',
+                    borderRadius: 3,
+                    border: '1px solid rgba(94,230,207,0.24)',
+                    background: 'rgba(94,230,207,0.07)',
+                    color: 'var(--accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  {descriptionParts.rationale}
+                </div>
+              )}
+              {descriptionParts.body && (
+                <div
+                  data-testid="plan-workout-description-body"
+                  style={{ fontSize: 11, color: 'var(--text-3)', marginTop: descriptionParts.rationale ? 4 : 2, lineHeight: 1.45 }}
+                >
+                  {descriptionParts.body}
+                </div>
+              )}
+            </div>
           )}
           {structureSummary && !switching && (
             <div

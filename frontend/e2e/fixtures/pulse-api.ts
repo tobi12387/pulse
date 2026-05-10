@@ -19,11 +19,15 @@ type MockPulseApiOptions = {
   garminCoverage?: unknown;
   garminSignalUsefulness?: unknown;
   garminExecutionLedger?: unknown;
+  garminExecutionDiff?: unknown;
+  garminCalendarSyncResult?: unknown;
+  planWorkoutSyncResult?: unknown | ((workoutId: string) => unknown);
   powerDataQuality?: unknown;
   powerDuration?: unknown;
   adaptationEvents?: unknown;
   load?: unknown;
   planTrace?: unknown;
+  planRefreshPreview?: unknown;
   planWorkouts?: unknown[];
   generatePlanResult?: unknown | ((body: unknown) => unknown);
   createWorkoutResult?: unknown | ((body: unknown) => unknown);
@@ -88,14 +92,14 @@ function capabilitySummary(days = 90) {
     generatedAt: `${today}T08:00:00.000Z`,
     lookbackDays: days,
     levels: [
-      { energySystem: 'long_endurance', label: 'Long Endurance', level: 4.3, confidence: 'medium', evidence: ['lange Ausdauer erkannt'], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'endurance', label: 'Endurance', level: 3.8, confidence: 'medium', evidence: ['ruhige Ausdauer stabil'], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'tempo', label: 'Tempo', level: 3.1, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'threshold', label: 'Threshold', level: 3.7, confidence: 'medium', evidence: ['Schwelle solide abgeschlossen'], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'vo2', label: 'VO2', level: 2.5, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'anaerobic', label: 'Anaerobic', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'recovery', label: 'Recovery', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'strength', label: 'Strength', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'long_endurance', label: 'Long Endurance', level: 4.3, nextRecommendedWorkoutLevel: 4.3, lastProgressionReason: 'Long Endurance geschützt nach langer Tour.', staleReason: null, confidence: 'medium', evidence: ['lange Ausdauer erkannt'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'endurance', label: 'Endurance', level: 3.8, nextRecommendedWorkoutLevel: 4.1, lastProgressionReason: 'Endurance stabil; nächster produktiver Reiz darf leicht steigen.', staleReason: null, confidence: 'medium', evidence: ['ruhige Ausdauer stabil'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'tempo', label: 'Tempo', level: 3.1, nextRecommendedWorkoutLevel: 3.1, lastProgressionReason: null, staleReason: 'Tempo hat noch keine belastbare Evidenz.', confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'threshold', label: 'Threshold', level: 3.7, nextRecommendedWorkoutLevel: 4.0, lastProgressionReason: 'Threshold sauber abgeschlossen; nächster produktiver Reiz darf leicht steigen.', staleReason: null, confidence: 'medium', evidence: ['Schwelle solide abgeschlossen'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'vo2', label: 'VO2', level: 2.5, nextRecommendedWorkoutLevel: 2.5, lastProgressionReason: null, staleReason: 'VO2 hat noch keine belastbare Evidenz.', confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'anaerobic', label: 'Anaerobic', level: 2, nextRecommendedWorkoutLevel: 2, lastProgressionReason: null, staleReason: 'Anaerobic hat noch keine belastbare Evidenz.', confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'recovery', label: 'Recovery', level: 2, nextRecommendedWorkoutLevel: 2, lastProgressionReason: null, staleReason: null, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'strength', label: 'Strength', level: 2, nextRecommendedWorkoutLevel: 2, lastProgressionReason: null, staleReason: null, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
     ],
     signals: ['quality_progress'],
     recommendations: ['Progression ruhig halten und Ausfuehrung weiter bewerten.'],
@@ -763,6 +767,9 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
   if (pathname === '/api/pulse/garmin/execution-ledger') {
     return { entries: [] };
   }
+  if (pathname === '/api/pulse/garmin/execution-diff') {
+    return { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] };
+  }
   if (pathname === '/api/pulse/plan/adaptation-events') {
     return { events: [] };
   }
@@ -1101,13 +1108,34 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
+    if (url.pathname === '/api/pulse/garmin/calendar/sync' && request.method() === 'POST') {
+      return json(route, options.garminCalendarSyncResult ?? { uploaded: 1, repaired: 0, removed: 0, errors: [] });
+    }
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
+    if (url.pathname === '/api/pulse/garmin/execution-diff') {
+      return json(route, options.garminExecutionDiff ?? { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] });
+    }
     if (url.pathname === '/api/pulse/garmin/execution-ledger') {
       return json(route, options.garminExecutionLedger ?? { entries: [] });
     }
     if (url.pathname === '/api/pulse/plan/adaptation-events') {
       return json(route, options.adaptationEvents ?? { events: [] });
+    }
+    if (url.pathname.startsWith('/api/pulse/plan/refresh-preview/')) {
+      return json(route, options.planRefreshPreview ?? {
+        preview: {
+          weekStart: url.pathname.split('/').at(-1) ?? today,
+          generatedAt: `${today}T08:00:00.000Z`,
+          stale: false,
+          summary: 'Der sichtbare Plan passt zu den aktuell bekannten Signalen.',
+          triggers: [],
+          comparisons: [],
+          loadImpact: { tssDelta: 0, durationDeltaMin: 0 },
+          applySupported: false,
+          mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
+        },
+      });
     }
     if (url.pathname === '/api/pulse/fueling-recovery/guidance') {
       const result = typeof options.fuelingGuidance === 'function'
@@ -1227,6 +1255,18 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           executionMatchConfidence: null,
           executionNotes: 'Workout ist nur lokal in Pulse geplant.',
         },
+      });
+    }
+    if (url.pathname.startsWith('/api/pulse/plan/workout/') && url.pathname.endsWith('/sync-garmin') && request.method() === 'POST') {
+      const workoutId = url.pathname.split('/').at(-2) ?? 'workout-1';
+      const result = typeof options.planWorkoutSyncResult === 'function'
+        ? options.planWorkoutSyncResult(workoutId)
+        : options.planWorkoutSyncResult;
+      return json(route, result ?? {
+        garminWorkoutId: `garmin-${workoutId}`,
+        garminScheduledId: `schedule-${workoutId}`,
+        date: today,
+        workout: null,
       });
     }
     if (url.pathname === '/api/pulse/plan/workout' && request.method() === 'POST') {

@@ -23,7 +23,7 @@
 
 ## Task 1: Build Remote Diff Service
 
-- [ ] **Step 1: Write service tests**
+- [x] **Step 1: Write service tests**
 
 Create `backend/src/pulse/services/garmin-execution-diff.test.ts` with cases:
 
@@ -33,7 +33,7 @@ Create `backend/src/pulse/services/garmin-execution-diff.test.ts` with cases:
 - Strength support contract is degraded but expected -> `degraded_expected`.
 - Past completed workout has matching Garmin activity -> `completed`.
 
-- [ ] **Step 2: Implement service**
+- [x] **Step 2: Implement service**
 
 Create `garmin-execution-diff.ts` with:
 
@@ -54,7 +54,7 @@ Use existing helpers:
 - `buildGarminSyncContract`.
 - `listLatestGarminExecutionEntries`.
 
-- [ ] **Step 3: Run backend test**
+- [x] **Step 3: Run backend test**
 
 Run:
 
@@ -66,7 +66,7 @@ Expected: tests pass without external Garmin calls.
 
 ## Task 2: Add Read-Only Endpoint
 
-- [ ] **Step 1: Add route contract**
+- [x] **Step 1: Add route contract**
 
 In shared Pulse types, add `PulseGarminExecutionDiffResponse` with:
 
@@ -87,7 +87,7 @@ In shared Pulse types, add `PulseGarminExecutionDiffResponse` with:
 }
 ```
 
-- [ ] **Step 2: Implement `/garmin/execution-diff`**
+- [x] **Step 2: Implement `/garmin/execution-diff`**
 
 In `garmin-routes.ts`, add:
 
@@ -100,11 +100,11 @@ app.get('/garmin/execution-diff', { onRequest: [app.authenticate] }, async (req)
 
 Read future planned workouts, fetch remote calendar/workouts through existing Garmin service, and build diff. If Garmin is unavailable, return rows with `unknown` and a clear status instead of 502 where possible.
 
-- [ ] **Step 3: Add route tests**
+- [x] **Step 3: Add route tests**
 
 Use mocked Garmin service data; no live Garmin credentials.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -116,7 +116,7 @@ Expected: all tests pass.
 
 ## Task 3: Add Plan `Ausführung` Panel
 
-- [ ] **Step 1: Add e2e fixture and failing test**
+- [x] **Step 1: Add e2e fixture and failing test**
 
 In `frontend/e2e/fixtures/pulse-api.ts`, return execution diff rows for `/api/pulse/garmin/execution-diff`.
 
@@ -126,7 +126,7 @@ In `pulse-usability.spec.ts`, assert:
 - It shows `Auf Garmin bereit`, `Fehlt im Garmin-Kalender`, `Repeat reparieren`.
 - It does not trigger live sync on page load.
 
-- [ ] **Step 2: Add client API**
+- [x] **Step 2: Add client API**
 
 In `frontend/src/pulse/api-client.ts`:
 
@@ -137,7 +137,7 @@ executionDiff: (days = 15): Promise<PulseGarminExecutionDiffResponse> =>
 
 Add a hook in `frontend/src/pulse/hooks.ts`.
 
-- [ ] **Step 3: Implement panel**
+- [x] **Step 3: Implement panel**
 
 Create `frontend/src/components/GarminExecutionTrustPanel.tsx`:
 
@@ -146,7 +146,7 @@ Create `frontend/src/components/GarminExecutionTrustPanel.tsx`:
 - Repair CTAs route to existing Settings/Plan actions; do not call repair automatically.
 - Copy for strength: `Support-Blockliste: Garmin nur Notiz/Handoff`.
 
-- [ ] **Step 4: Wire Plan nested tab**
+- [x] **Step 4: Wire Plan nested tab**
 
 In `Plan.tsx`, extend:
 
@@ -156,7 +156,7 @@ type Tab = 'training' | 'ausfuehrung' | 'ziele' | 'review' | 'statistik';
 
 Add `Ausführung` after `Training`, keep top-level nav unchanged.
 
-- [ ] **Step 5: Run frontend checks**
+- [x] **Step 5: Run frontend checks**
 
 Run:
 
@@ -169,7 +169,7 @@ Expected: execution panel visible, no live Garmin sync during generic tests.
 
 ## Task 4: Add Repair Flow
 
-- [ ] **Step 1: Write tests for repair actions**
+- [x] **Step 1: Write tests for repair actions**
 
 Test that clicking repair:
 
@@ -177,7 +177,7 @@ Test that clicking repair:
 - updates row status or shows an inline error.
 - records ledger entries via existing non-blocking ledger path.
 
-- [ ] **Step 2: Reuse existing Garmin actions**
+- [x] **Step 2: Reuse existing Garmin actions**
 
 Use existing endpoints:
 
@@ -186,7 +186,7 @@ Use existing endpoints:
 
 Do not add another mutation if existing endpoints can repair the state.
 
-- [ ] **Step 3: Run deploy readiness**
+- [x] **Step 3: Run deploy readiness**
 
 Run:
 
@@ -204,4 +204,3 @@ Expected: migrations pass; backend/frontend tests pass.
 - No generic QA live Garmin writes.
 - No destructive remote delete without explicit confirmation.
 - No attempt to make strength workouts look like native Garmin interval sessions.
-

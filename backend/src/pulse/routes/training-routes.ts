@@ -16,6 +16,7 @@ import {
   pulsePlanGenerations,
   pulsePlannedWorkouts,
   pulsePowerDurationSnapshots,
+  pulseTrainingCapabilityLevels,
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeekAvailability,
@@ -58,6 +59,7 @@ import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildTodayOptions } from '../services/today-options.js';
+import { buildPlanRefreshPreview } from '../services/plan-refresh-preview.js';
 import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
 import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract, summarizeGarminPayloadSnapshot } from '../services/garmin-workout.js';
 import { recordGarminExecution } from '../services/garmin-execution-ledger.js';
@@ -980,7 +982,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart = shiftIsoDate(weekStartStr, -7);
-    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows] = await Promise.all([
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows, recentArchetypeRows, latestMentalRows] = await Promise.all([
       computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
@@ -1046,7 +1048,32 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
           inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
         )),
+      db.select({
+        archetypeId: pulsePlannedWorkouts.archetypeId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, shiftIsoDate(weekStartStr, -14)),
+          lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(12),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), lte(pulseMentalCheckins.date, today)))
+        .orderBy(desc(pulseMentalCheckins.date))
+        .limit(1),
     ]);
+    const latestMental = latestMentalRows[0] ?? null;
+    const recentArchetypeIds = [...new Set(recentArchetypeRows
+      .map(row => row.archetypeId)
+      .filter((id): id is string => Boolean(id)))];
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
     const seasonTss = await loadSeasonTssLast14d(userId, weekStartStr);
@@ -1133,6 +1160,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       riskSignals,
       recentActivities: recentPlanActivities,
       fuelingHistory,
+      mentalState: latestMental,
       planLearning: planLearningWithExecution,
       executionReview,
       seasonStrategy,
@@ -1160,6 +1188,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         executionReview,
         seasonStrategy,
         goalLimiter,
+        recentArchetypeIds,
+        mentalState:         latestMental,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1397,6 +1427,68 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     return { trace: row ? mapPlanTrace(row) : null };
   });
 
+  app.get('/plan/refresh-preview/:weekStart', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { weekStart } = req.params as { weekStart: string };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return reply.status(400).send({ error: 'Ungültiges Datum' });
+
+    const today = new Date().toISOString().split('T')[0]!;
+    const weekEnd = shiftIsoDate(weekStart, 7);
+    const [
+      workouts,
+      [traceRow],
+      openEvents,
+      [latestCapability],
+    ] = await Promise.all([
+      db.select().from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, weekStart),
+          lt(pulsePlannedWorkouts.plannedDate, weekEnd),
+        ))
+        .orderBy(pulsePlannedWorkouts.plannedDate),
+      db.select().from(pulsePlanGenerations)
+        .where(and(
+          eq(pulsePlanGenerations.userId, userId),
+          eq(pulsePlanGenerations.weekStart, weekStart),
+        ))
+        .orderBy(desc(pulsePlanGenerations.createdAt))
+        .limit(1),
+      loadOpenAdaptationEvents(db, userId, today),
+      db.select({ updatedAt: pulseTrainingCapabilityLevels.updatedAt })
+        .from(pulseTrainingCapabilityLevels)
+        .where(eq(pulseTrainingCapabilityLevels.userId, userId))
+        .orderBy(desc(pulseTrainingCapabilityLevels.updatedAt))
+        .limit(1),
+    ]);
+
+    const mappedTrace = traceRow ? mapPlanTrace(traceRow) : null;
+    const preview = buildPlanRefreshPreview({
+      today,
+      weekStart,
+      currentWorkouts: workouts.map(workout => ({
+        id: workout.id,
+        plannedDate: workout.plannedDate,
+        activityType: workout.activityType as PulseActivityType,
+        zone: workout.zone,
+        durationMin: workout.durationMin,
+        targetTss: workout.targetTss,
+        userLocked: workout.userLocked,
+        status: workout.status,
+        description: workout.description,
+        archetypeId: workout.archetypeId,
+      })),
+      adaptationEvents: openEvents,
+      latestTrace: mappedTrace ? {
+        createdAt: mappedTrace.createdAt,
+        engineVersion: mappedTrace.inputSnapshot.engineVersion ?? null,
+      } : null,
+      latestCapabilityUpdatedAt: latestCapability?.updatedAt?.toISOString() ?? null,
+    });
+
+    return { preview };
+  });
+
   app.get('/plan/adaptation-events', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
     const today = new Date().toISOString().split('T')[0]!;
@@ -1423,6 +1515,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       recentNutrition,
       activeGoals,
       fitnessLoad,
+      capabilitySummary,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -1470,6 +1563,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       }).from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active'))),
       computeFitnessLoad(userId, today),
+      loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+        app.log.warn(`[today-options] Training capability summary failed (non-fatal): ${err}`);
+        return null;
+      }),
     ]);
 
     const mentalScore = mental
@@ -1539,7 +1636,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         activeCount: activeGoals.length,
         preferredSports,
       },
-      capabilitySummary: null,
+      capabilitySummary,
     });
 
     return { todayOptions: options };
@@ -1669,7 +1766,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart2 = shiftIsoDate(weekStart, -7);
-    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2] = await Promise.all([
+    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2, recentArchetypeRows2, latestMentalRows2] = await Promise.all([
       computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
@@ -1734,7 +1831,32 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           lt(pulsePlannedWorkouts.plannedDate, weekStart),
           inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
         )),
+      db.select({
+        archetypeId: pulsePlannedWorkouts.archetypeId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, shiftIsoDate(weekStart, -14)),
+          lt(pulsePlannedWorkouts.plannedDate, weekStart),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(12),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), lte(pulseMentalCheckins.date, today)))
+        .orderBy(desc(pulseMentalCheckins.date))
+        .limit(1),
     ]);
+    const latestMental2 = latestMentalRows2[0] ?? null;
+    const recentArchetypeIds2 = [...new Set(recentArchetypeRows2
+      .map(row => row.archetypeId)
+      .filter((id): id is string => Boolean(id)))];
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow2] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
     const seasonTss2 = await loadSeasonTssLast14d(userId, weekStart);
@@ -1821,6 +1943,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       riskSignals: riskSignals2,
       recentActivities: recentPlanActivities2,
       fuelingHistory: fuelingHistory2,
+      mentalState: latestMental2,
       planLearning: planLearningWithExecution2,
       executionReview: executionReview2,
       seasonStrategy: seasonStrategy2,
@@ -1845,6 +1968,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         executionReview: executionReview2,
         seasonStrategy: seasonStrategy2,
         goalLimiter: goalLimiter2,
+        recentArchetypeIds: recentArchetypeIds2,
+        mentalState: latestMental2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
