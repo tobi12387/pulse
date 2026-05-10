@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight, useTrainingCapabilities } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDeepInsight, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { LucideIcon } from 'lucide-react';
-import type { PulseDailyDecisionQualityResponse } from '@coaching-os/shared/pulse';
+import type { PulseDailyDecisionQualityResponse, PulsePowerDataQualitySummary, PulsePowerDurationSummary } from '@coaching-os/shared/pulse';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 type EvidenceStatus = 'available' | 'limited' | 'missing';
@@ -209,6 +209,115 @@ function DecisionQualityEvidenceCard({
   );
 }
 
+function powerDataQualityMeta(status: PulsePowerDataQualitySummary['status']): { label: string; color: string } {
+  if (status === 'trusted') return { label: 'Stream-Daten vertrauenswürdig', color: 'var(--green)' };
+  if (status === 'usable_with_caution') return { label: 'Nur Lap-Approximation', color: 'var(--amber)' };
+  return { label: 'Power-Modell blockiert', color: 'var(--rose)' };
+}
+
+function powerDataSourceLabel(source: PulsePowerDataQualitySummary['source']): string {
+  if (source === 'stream') return '1Hz-Stream';
+  if (source === 'lap_approximation') return 'Lap-Daten';
+  return 'Keine Power-Daten';
+}
+
+function PowerDataQualityCard({
+  quality,
+  loading,
+}: {
+  quality: PulsePowerDataQualitySummary | null | undefined;
+  loading: boolean;
+}) {
+  if (!quality && !loading) return null;
+
+  const meta = quality ? powerDataQualityMeta(quality.status) : { label: 'Power-Daten werden geprüft', color: 'var(--text-3)' };
+  const source = quality ? powerDataSourceLabel(quality.source) : 'Analyse läuft';
+
+  return (
+    <section
+      className="card"
+      data-testid="power-data-quality"
+      aria-label="Power-Datenqualität"
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(245,158,11,0.22)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Power-Daten
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: meta.color }}>
+          {meta.label}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+            Quelle
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0' }}>{source}</p>
+        </div>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+            Coverage
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0' }}>
+            {quality ? `${quality.coveragePct}% · ${quality.spikeCount} Spikes` : 'offen'}
+          </p>
+        </div>
+      </div>
+      {quality?.limitations.length ? (
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+          {quality.limitations[0]}
+        </p>
+      ) : (
+        <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+          Power-basierte Auswertungen können auf echte Stream-Daten gestützt werden.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function PowerDurationSummaryCard({ summary }: { summary: PulsePowerDurationSummary | null | undefined }) {
+  if (!summary) return null;
+  const durabilityColor = summary.durability?.rating === 'limited'
+    ? 'var(--rose)'
+    : summary.durability?.rating === 'watch'
+    ? 'var(--amber)'
+    : 'var(--green)';
+
+  return (
+    <section
+      className="card"
+      data-testid="power-duration-summary"
+      aria-label="Power und Durability"
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Power / Durability
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: durabilityColor }}>
+          {summary.durability ? `Durability ${summary.durability.rating}` : 'Best Efforts'}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 6 }}>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+            Best Effort
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0' }}>{summary.bestEffortLine}</p>
+        </div>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+            Durability
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0' }}>{summary.durabilityLine}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const [expanded, setExpanded] = useState(false);
   const { data, isLoading, isFetching, error, refetch } = useDeepInsight(domain, days, expanded);
@@ -351,6 +460,7 @@ export function DataAnalysenTab() {
   const [days, setDays] = useState(30);
   const { data: decisionQuality } = useDailyDecisionQuality(14);
   const capability = useTrainingCapabilities(90);
+  const trainingAnalytics = useTrainingAnalytics(12);
 
   return (
     <div className="flex flex-col gap-3">
@@ -363,6 +473,11 @@ export function DataAnalysenTab() {
 
       <MentalLoadOverlay />
       <TrainingCapabilityCard summary={capability.data?.capabilitySummary} loading={capability.isLoading} />
+      <PowerDataQualityCard
+        quality={trainingAnalytics.data?.powerDataQuality}
+        loading={trainingAnalytics.isLoading}
+      />
+      <PowerDurationSummaryCard summary={trainingAnalytics.data?.powerDuration} />
       <DecisionQualityEvidenceCard quality={decisionQuality} testId="data-analysis-decision-quality-card" />
 
       {/* Domain cards */}

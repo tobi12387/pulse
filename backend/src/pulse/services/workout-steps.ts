@@ -9,6 +9,7 @@ type WorkoutStepWorkout = {
   zone: number;
   durationMin: number;
   targetTss?: number | null;
+  archetypeId?: string | null;
   description: string | null;
 };
 
@@ -43,7 +44,7 @@ export async function buildWorkoutSteps(
   profile: WorkoutStepProfile | undefined,
   capabilitySummary?: PulseTrainingCapabilitySummary | null,
 ): Promise<{ steps: WorkoutStep[]; updatedDescription: string | null; metadata: WorkoutLibraryMetadata }> {
-  const library = buildWorkoutLibraryPrescription(workout, capabilitySummary);
+  const library = buildWorkoutLibraryPrescription(workout, capabilitySummary, { forcedArchetypeId: workout.archetypeId ?? null });
   return {
     steps: library.steps.map(step => supportsHrStepTargets(workout.activityType) ? addHrTargetToStep(step, profile) : step),
     updatedDescription: library.description,

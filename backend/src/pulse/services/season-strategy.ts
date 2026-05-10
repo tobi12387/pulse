@@ -29,9 +29,12 @@ export interface SeasonStrategyInput {
     preferredLongDays: number[];
     dislikedWorkoutPatterns: string[];
   };
+  plannedTssLast14d?: number;
+  completedTssLast14d?: number;
 }
 
 const PRIORITY_WEIGHT: Record<RacePriority, number> = { A: 0, B: 1, C: 2 };
+const TSS_PER_HOUR_TARGET = 48;
 
 function addWeeks(weekStart: string, weeks: number): string {
   const date = new Date(`${weekStart}T00:00:00.000Z`);
@@ -210,7 +213,31 @@ function noteForLoadKind(kind: PulseSeasonLoadWeekKind): string {
 }
 
 function tssFromHours(hours: number): number {
-  return Math.round(hours * 48);
+  return Math.round(hours * TSS_PER_HOUR_TARGET);
+}
+
+function eventPriorityBias(race: RaceContext | null): PulseSeasonLoadModel['eventPriorityBias'] {
+  if (race?.priority === 'A') return 'a_event';
+  if (race?.priority === 'B') return 'b_event';
+  if (race?.priority === 'C') return 'c_event';
+  return 'maintenance';
+}
+
+function missedLoadCompensation(input: SeasonStrategyInput): PulseSeasonLoadModel['missedLoadCompensation'] {
+  const plannedTssLast14d = Math.max(0, Math.round(input.plannedTssLast14d ?? 0));
+  const completedTssLast14d = Math.max(0, Math.round(input.completedTssLast14d ?? 0));
+  const missedTssLast14d = Math.max(0, plannedTssLast14d - completedTssLast14d);
+  const compensationTssNext14d = Math.min(
+    Math.round(missedTssLast14d * 0.35),
+    Math.round(input.fitnessLoad.ctl * 2),
+  );
+  return {
+    missedTssLast14d,
+    compensationTssNext14d,
+    capReason: missedTssLast14d > 0
+      ? 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.'
+      : 'Keine Nachhol-Last noetig.',
+  };
 }
 
 function loadWeek(params: {
@@ -289,6 +316,10 @@ function buildLoadModel(
     rampRateCapPct,
     deloadEveryWeeks,
     taperWeeks,
+    annualTargetHours: Math.round(input.availability.weeklyHours * 48),
+    annualTargetTss: Math.round(input.availability.weeklyHours * 48 * TSS_PER_HOUR_TARGET),
+    eventPriorityBias: eventPriorityBias(race),
+    missedLoadCompensation: missedLoadCompensation(input),
     currentWeek: forecast[0]!,
     forecast,
     warnings,

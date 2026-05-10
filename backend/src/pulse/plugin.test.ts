@@ -4,13 +4,16 @@ import { db } from '../lib/db.js';
 import { users } from '../db/schema.js';
 import {
   pulseActivities,
+  pulseActivityStreams,
   pulseActionDecisions,
+  pulseAdaptationEvents,
   pulseCoachPreferences,
   pulseCoachSessions,
   pulseDailyMetrics,
   pulseMentalCheckins,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
+  pulsePowerDurationSnapshots,
   pulsePushSubscriptions,
   pulseSleepSessions,
   pulseTrainingCapabilityLevels,
@@ -132,7 +135,10 @@ afterAll(async () => {
   if (userId) {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
     await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    await db.delete(pulseAdaptationEvents).where(eq(pulseAdaptationEvents.userId, userId));
     await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+    await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
+    await db.delete(pulseActivityStreams);
     await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
     await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
     await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -151,7 +157,10 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
   await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+  await db.delete(pulseAdaptationEvents).where(eq(pulseAdaptationEvents.userId, userId));
   await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+  await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
+  await db.delete(pulseActivityStreams);
   await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
   await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
   await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
@@ -1117,6 +1126,43 @@ describe('GET /api/pulse/activities/:id', () => {
     expect(body.hrZones).toEqual(legacyCache.hrZones);
     expect(garminMocks.get).not.toHaveBeenCalled();
   });
+
+  it('persists lap-approximated power-duration snapshots from cached detail laps', async () => {
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: '445566',
+      source: 'garmin',
+      startTime: new Date('2026-05-01T10:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 14_400,
+      garminLaps: [
+        { index: 1, durationSec: 3600, avgHr: 135, avgPowerW: 210 },
+        { index: 2, durationSec: 3600, avgHr: 136, avgPowerW: 208 },
+        { index: 3, durationSec: 3600, avgHr: 138, avgPowerW: 165 },
+        { index: 4, durationSec: 3600, avgHr: 139, avgPowerW: 164 },
+      ],
+    }).returning({ id: pulseActivities.id });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/activities/${activity!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const snapshots = await db.select().from(pulsePowerDurationSnapshots)
+      .where(eq(pulsePowerDurationSnapshots.activityId, activity!.id));
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0]).toMatchObject({
+      activityId: activity!.id,
+      qualitySource: 'lap_approximation',
+      qualityStatus: 'usable_with_caution',
+    });
+    expect(snapshots[0]!.bestEfforts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ durationSec: 300, source: 'lap_approximation' }),
+    ]));
+    expect(snapshots[0]!.durability).toMatchObject({ rating: 'limited' });
+  });
 });
 
 describe('GET /api/pulse/data-coverage', () => {
@@ -1183,6 +1229,147 @@ describe('GET /api/pulse/data-coverage', () => {
     expect(body.days.find(day => day.date === yesterday)).toMatchObject({
       dailyMetrics: { status: 'present' },
       activities: { count: 1, weatherCount: 1 },
+    });
+  });
+});
+
+describe('GET /api/pulse/training-analytics', () => {
+  it('reports lap-approximated power quality without mutating profile values', async () => {
+    const yesterday = dateDaysAgo(1);
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 250,
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 3600,
+      normalizedPowerW: 190,
+      garminLaps: [
+        { index: 1, durationSec: 900, avgPowerW: 180 },
+        { index: 2, durationSec: 900, avgPowerW: 190 },
+        { index: 3, durationSec: 900, avgPowerW: 185 },
+        { index: 4, durationSec: 900, avgPowerW: 175 },
+      ],
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/training-analytics?weeks=4',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      powerDataQuality: {
+        source: string;
+        status: string;
+        limitations: string[];
+        updatedAt: string | null;
+      };
+    }>();
+    expect(body.powerDataQuality).toMatchObject({
+      source: 'lap_approximation',
+      status: 'usable_with_caution',
+      updatedAt: `${yesterday}T08:00:00.000Z`,
+    });
+    expect(body.powerDataQuality.limitations).toContain('Keine 1Hz-Power-Streams im Pulse-Datensatz.');
+
+    const [profile] = await db.select({ ftpWatts: pulseUserProfile.ftpWatts })
+      .from(pulseUserProfile)
+      .where(eq(pulseUserProfile.userId, userId));
+    expect(profile?.ftpWatts).toBe(250);
+  });
+
+  it('reports trusted power quality when a dense stream is available', async () => {
+    const yesterday = dateDaysAgo(1);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 600,
+      normalizedPowerW: 205,
+    }).returning({ id: pulseActivities.id });
+    await db.insert(pulseActivityStreams).values({
+      activityId: activity!.id,
+      durationSec: 600,
+      sampleRateHz: 1,
+      powerStream: Array.from({ length: 600 }, (_, index) => (index % 120 === 0 ? 260 : 210)),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/training-analytics?weeks=4',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      powerDataQuality: { source: string; status: string; coveragePct: number };
+    }>();
+    expect(body.powerDataQuality).toMatchObject({
+      source: 'stream',
+      status: 'trusted',
+      coveragePct: 100,
+    });
+  });
+
+  it('returns the latest power-duration summary with quality provenance', async () => {
+    const yesterday = dateDaysAgo(1);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 14_400,
+      garminLaps: [
+        { index: 1, durationSec: 3600, avgHr: 135, avgPowerW: 210 },
+        { index: 2, durationSec: 3600, avgHr: 136, avgPowerW: 208 },
+      ],
+    }).returning({ id: pulseActivities.id });
+    await db.insert(pulsePowerDurationSnapshots).values({
+      userId,
+      activityId: activity!.id,
+      activityDate: yesterday,
+      bestEfforts: [
+        { durationSec: 300, avgPowerW: 220, startSec: 3600, source: 'lap_approximation' },
+        { durationSec: 1200, avgPowerW: 215, startSec: 3600, source: 'lap_approximation' },
+      ],
+      durability: {
+        rating: 'limited',
+        powerDropPct: -21,
+        hrDriftBpm: 3,
+        evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+      },
+      qualitySource: 'lap_approximation',
+      qualityStatus: 'usable_with_caution',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/training-analytics?weeks=4',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      powerDuration: {
+        bestEffortLine: string;
+        durabilityLine: string;
+        bestEfforts: Array<{ activityId: string; source: string; qualityStatus: string }>;
+        durability: { rating: string; qualitySource: string } | null;
+      };
+    }>();
+    expect(body.powerDuration.bestEffortLine).toContain('20 min 215 W');
+    expect(body.powerDuration.durabilityLine).toContain('Durability limited');
+    expect(body.powerDuration.bestEfforts[0]).toMatchObject({
+      activityId: activity!.id,
+      source: 'lap_approximation',
+      qualityStatus: 'usable_with_caution',
+    });
+    expect(body.powerDuration.durability).toMatchObject({
+      rating: 'limited',
+      qualitySource: 'lap_approximation',
     });
   });
 });
@@ -1604,7 +1791,113 @@ describe('Pulse profile provenance', () => {
 });
 
 describe('POST /api/pulse/plan/generate', () => {
+  it('returns a read-only refresh preview without touching plan rows or Garmin', async () => {
+    const today = dateDaysFrom(0);
+    const weekStart = dateDaysFrom(1);
+    const traceCreatedAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: weekStart,
+      activityType: 'bike',
+      zone: 5,
+      durationMin: 75,
+      targetTss: 92,
+      status: 'planned',
+      description: 'Warum diese Einheit: VO2-Reiz fuer kurze Anstiege.\n\n4x4 min.',
+      archetypeId: 'bike_vo2_4x4',
+    });
+    await db.insert(pulsePlanGenerations).values({
+      userId,
+      weekStart,
+      inputSnapshot: {
+        phase: 'build',
+        mesocycleWeek: 1,
+        weeklyHoursTarget: 8,
+        availableDays: [1],
+        load: { ctl: 35, atl: 42, tsb: -7, date: weekStart },
+        profile: { ftpWatts: 260, maxHrBpm: 186, lthrBpm: null },
+        goals: [],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        rpeReasons: [],
+        dataWarnings: [],
+        recentSportMix: {},
+      },
+      planDecision: {
+        selectedDays: [1],
+        skippedAvailableDays: [],
+        targetSessionCount: 1,
+        primaryGoal: null,
+        reasons: [],
+      },
+      sportMix: { bike: { sessions: 1, totalMinutes: 75, totalTss: 92 } },
+      hardDays: [{ date: weekStart, activityType: 'bike', zone: 5, durationMin: 75 }],
+      generatedSummary: ['Altplan'],
+      createdAt: traceCreatedAt,
+    });
+    await db.insert(pulseAdaptationEvents).values({
+      userId,
+      eventDate: today,
+      kind: 'high_rpe',
+      sourceId: 'activity-1',
+      severity: 'watch',
+      recommendation: 'reduce_intensity',
+      summary: 'Hohe RPE spricht gegen direktes Nachlegen harter Reize.',
+      evidence: ['RPE 9/10'],
+    });
+    await db.insert(pulseTrainingCapabilityLevels).values({
+      userId,
+      energySystem: 'endurance',
+      label: 'Endurance',
+      level: 3.2,
+      confidence: 'medium',
+      evidence: ['Recent completion'],
+      signals: ['quality_progress'],
+      sourceWindowDays: 90,
+      updatedAt: new Date(),
+    });
+
+    const beforeRows = await db.select().from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/plan/refresh-preview/${weekStart}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const preview = res.json<{
+      preview: {
+        stale: boolean;
+        applySupported: boolean;
+        mutationBoundary: string;
+        triggers: Array<{ kind: string }>;
+        comparisons: Array<{ current: { zone: number }; proposed: { zone: number; durationMin: number }; changes: string[] }>;
+      };
+    }>().preview;
+    expect(preview.stale).toBe(true);
+    expect(preview.applySupported).toBe(false);
+    expect(preview.mutationBoundary).toContain('keine DB-');
+    expect(preview.triggers.map(trigger => trigger.kind)).toEqual(expect.arrayContaining(['high_rpe', 'capability_update', 'stale_engine']));
+    expect(preview.comparisons[0]?.current.zone).toBe(5);
+    expect(preview.comparisons[0]?.proposed.zone).toBe(2);
+    expect(preview.comparisons[0]?.proposed.durationMin).toBeLessThan(75);
+    expect(preview.comparisons[0]?.changes).toContain('why');
+
+    const afterRows = await db.select().from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    expect(afterRows).toHaveLength(beforeRows.length);
+    expect(afterRows[0]).toMatchObject({
+      zone: 5,
+      durationMin: 75,
+      garminWorkoutId: null,
+      garminScheduledId: null,
+    });
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+
   it('generates workouts and returns a persisted trace', async () => {
+    const weekStart = dateDaysFrom(1);
     await db.insert(pulseUserProfile).values({
       userId,
       ftpWatts: 260,
@@ -1617,7 +1910,7 @@ describe('POST /api/pulse/plan/generate', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/pulse/plan/generate',
       headers: { Authorization: `Bearer ${token}` },
-      payload: { weekStart: '2026-05-04' },
+      payload: { weekStart },
     });
     expect(res.statusCode).toBe(201);
     const body = res.json<{
@@ -1639,7 +1932,7 @@ describe('POST /api/pulse/plan/generate', () => {
     }>();
     expect(body.workouts.length).toBeGreaterThan(0);
     expect(body.planTrace).toMatchObject({
-      weekStart: '2026-05-04',
+      weekStart,
       inputSnapshot: {
         weeklyHoursTarget: 7,
         profile: {
@@ -1664,14 +1957,52 @@ describe('POST /api/pulse/plan/generate', () => {
 
     const traceRes = await app.inject({
       method: 'GET',
-      url: '/api/pulse/plan/trace/2026-05-04',
+      url: `/api/pulse/plan/trace/${weekStart}`,
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(traceRes.statusCode).toBe(200);
     expect(traceRes.json<{ trace: { id: string; weekStart: string } }>().trace).toMatchObject({
       id: body.planTrace.id,
-      weekStart: '2026-05-04',
+      weekStart,
     });
+  });
+
+  it('uses current load instead of week-start load for the persisted generation trace', async () => {
+    await db.insert(pulseUserProfile).values({
+      userId,
+      ftpWatts: 260,
+      maxHrBpm: 186,
+      weeklyHoursTarget: 7,
+      updatedAt: new Date(),
+    });
+    await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'late-week-long-ride',
+      activityType: 'bike',
+      startTime: new Date('2026-05-09T08:00:00.000Z'),
+      durationSec: 6 * 3600,
+      tss: 275,
+      name: 'Late week long ride',
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/plan/generate',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { weekStart: '2026-05-04' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const load = res.json<{
+      planTrace: {
+        inputSnapshot: {
+          load: { date: string; ctl: number; atl: number; tsb: number };
+        };
+      };
+    }>().planTrace.inputSnapshot.load;
+    expect(load.date).toBe(new Date().toISOString().split('T')[0]);
+    expect(load.atl).toBeGreaterThan(load.ctl);
+    expect(load.tsb).toBeLessThan(-10);
   });
 
   it('includes previous-week learning in the persisted trace', async () => {
@@ -2347,6 +2678,105 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
     expect(payload.description).toContain('60-90 g Kohlenhydrate pro Stunde');
     expect(payload.description).toContain('400-800 mg Sodium pro Liter');
     expect(payload.description).toContain('Recovery innerhalb von 2 h');
+  });
+});
+
+describe('GET /api/pulse/garmin/execution-diff', () => {
+  it('returns read-only Garmin calendar trust rows without triggering sync writes', async () => {
+    const plannedDate = dateDaysFrom(1);
+    await db.insert(pulsePlannedWorkouts).values([
+      {
+        userId,
+        plannedDate,
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        targetTss: 62,
+        description: 'Garmin bereit',
+        garminWorkoutId: 'gw-ready',
+        garminScheduledId: 'sched-ready',
+        executionStatus: 'garmin_scheduled',
+        executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+        steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+      },
+      {
+        userId,
+        plannedDate: dateDaysFrom(2),
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        description: 'Kalender fehlt',
+        garminWorkoutId: 'gw-missing-calendar',
+        garminScheduledId: 'sched-missing-calendar',
+        executionStatus: 'garmin_template',
+        executionNotes: 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.',
+        steps: [{ type: 'steady', durationMin: 45, zone: 2, description: 'Z2' }],
+      },
+    ]);
+
+    garminMocks.get.mockImplementation(async (url: string) => {
+      if (url.includes('/calendar-service/')) {
+        return {
+          calendarItems: [{
+            itemType: 'workout',
+            id: 'sched-ready',
+            workoutId: 'gw-ready',
+            date: plannedDate,
+          }],
+        };
+      }
+      if (url.includes('/workout-service/workout/gw-ready')) {
+        return { workoutSegments: [{ workoutSteps: [{ type: 'ExecutableStepDTO' }] }] };
+      }
+      return { workoutSegments: [{ workoutSteps: [] }] };
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/execution-diff?days=15',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ rows: Array<{ status: string; workoutId: string; repairActions: string[] }> }>();
+    expect(body.rows.map(row => row.status)).toEqual(['ready', 'missing_calendar']);
+    expect(body.rows[1]!.repairActions).toEqual(['schedule_calendar']);
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+
+  it('returns unknown rows when Garmin login is unavailable', async () => {
+    const plannedDate = dateDaysFrom(1);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate,
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 62,
+      description: 'Readback offen',
+      garminWorkoutId: 'gw-unknown',
+      garminScheduledId: 'sched-unknown',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+      steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+    });
+    const { getGarminClient } = await import('../lib/garmin-client.js');
+    vi.mocked(getGarminClient).mockRejectedValueOnce(new Error('login failed'));
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/execution-diff?days=15',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ rows: Array<{ status: string; summary: string }> }>();
+    expect(body.rows).toHaveLength(1);
+    expect(body.rows[0]).toMatchObject({ status: 'unknown' });
+    expect(body.rows[0]!.summary).toContain('Garmin-Readback');
   });
 });
 

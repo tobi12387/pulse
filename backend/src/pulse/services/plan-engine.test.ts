@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateScientificWeekPlan, generateWeekWorkouts, adaptIntensityForReadiness, decidePlanDays } from './plan-engine.js';
 import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulsePlanLearningWeek, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import { trainingArchetypes } from './training-intelligence.js';
 
 vi.mock('../../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('[]'),
@@ -52,6 +53,14 @@ function seasonStrategy(overrides: Partial<PulseSeasonStrategy['guardrails']> = 
       rampRateCapPct: 7,
       deloadEveryWeeks: 4,
       taperWeeks: 2,
+      annualTargetHours: 384,
+      annualTargetTss: 18_432,
+      eventPriorityBias: 'a_event',
+      missedLoadCompensation: {
+        missedTssLast14d: 0,
+        compensationTssNext14d: 0,
+        capReason: 'Keine Nachhol-Last noetig.',
+      },
       currentWeek: {
         weekStart: '2026-05-04',
         kind: 'build',
@@ -190,6 +199,31 @@ describe('decidePlanDays', () => {
 
     expect(decision.targetSessionCount).toBeLessThanOrEqual(3);
     expect(decision.reasons.join(' ')).toContain('Limiter: Schwelle + VO2');
+  });
+
+  it('traces blocked ATP compensation during taper weeks', () => {
+    const decision = decidePlanDays({
+      availableDays: [0, 1, 2, 3, 5],
+      weeklyHoursTarget: 8,
+      tsb: 4,
+      phase: 'taper',
+      mesocycleWeek: 2,
+      goals: [{ title: 'A Race', targetDate: '2026-05-16', category: 'race' }],
+      seasonStrategy: {
+        ...seasonStrategy({ targetSessions: 3, maxHardDays: 1 }),
+        loadModel: {
+          ...seasonStrategy().loadModel,
+          currentWeek: { ...seasonStrategy().loadModel.currentWeek, kind: 'taper' },
+          missedLoadCompensation: {
+            missedTssLast14d: 240,
+            compensationTssNext14d: 80,
+            capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+          },
+        },
+      },
+    });
+
+    expect(decision.reasons.join(' ')).toContain('ATP: Nachhol-Last geblockt');
   });
 });
 
@@ -453,7 +487,66 @@ describe('generateScientificWeekPlan', () => {
     const descriptions = workouts.map(w => w.description).join(' ');
     expect(descriptions).toContain('Archetyp');
     expect(descriptions).toContain('Variation zur Vorwoche');
-    expect(workouts.filter(w => w.zone >= 4).map(w => w.description).join(' ')).toContain('Threshold Intervals');
+    expect(workouts.filter(w => w.zone >= 4).map(w => w.description).join(' ')).toContain('Threshold');
+  });
+
+  it('preserves rotated endurance-family archetypes across generated weeks', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 6,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+      planLearning: planLearning({
+        weekStart: '2026-05-04',
+        sportMix: {
+          bike: { sessions: 3, totalMinutes: 230, totalTss: 170 },
+          run: { sessions: 1, totalMinutes: 45, totalTss: 35 },
+        },
+      }, ['repeated_sport_mix']),
+    });
+
+    const archetypeById = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
+    const enduranceIds = workouts
+      .map(workout => workout.archetypeId)
+      .filter((id): id is string => id != null && archetypeById.get(id)?.progressionFamily === 'endurance');
+
+    expect(new Set(enduranceIds).size).toBeGreaterThanOrEqual(2);
+    expect(enduranceIds.slice(0, 2)).not.toEqual(['endurance_steady', 'endurance_steady']);
+  });
+
+  it('avoids archetypes used in the recent 14-day plan history when alternatives fit', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-18',
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 6,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+      recentArchetypeIds: ['endurance_steady', 'threshold_intervals'],
+    });
+
+    const archetypeById = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
+    const rotatedEndurance = workouts
+      .map(workout => workout.archetypeId)
+      .filter((id): id is string => id != null && archetypeById.get(id)?.progressionFamily === 'endurance');
+    const hardIds = workouts
+      .filter(workout => workout.zone >= 4)
+      .map(workout => workout.archetypeId);
+
+    expect(rotatedEndurance[0]).not.toBe('endurance_steady');
+    expect(hardIds).not.toContain('threshold_intervals');
   });
 
   it('does not reduce density when learning has history but no actual issue flag', async () => {
@@ -561,6 +654,111 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts.map(workout => workout.description).join(' ')).toContain('Fueling-Toleranz');
   });
 
+  it('treats RPE 9 as a hard-session blocker even when the previous workout was already hard', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 38,
+      tsb: 7,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [{
+        date: '2026-05-08',
+        activityType: 'bike',
+        durationMin: 75,
+        tss: 94,
+        rpe: 9,
+        plannedZone: 4,
+      }],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+    });
+
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('RPE 9/10');
+  });
+
+  it('blocks hard workouts after GI discomfort until the next long dose is controlled fueling practice', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 36,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      fuelingHistory: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 430,
+        carbsG: 300,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'mild_issue',
+        notes: 'Nach 100 km Magenprobleme.',
+      }],
+    });
+
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(Math.max(...workouts.map(workout => workout.durationMin))).toBeLessThanOrEqual(165);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('Fueling-Toleranz');
+  });
+
+  it('uses a mental protect state to shift non-race hard workouts to endurance or recovery', async () => {
+    const input = {
+      weekStart: '2026-05-11',
+      phase: 'build' as const,
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 36,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      mentalState: {
+        date: '2026-05-10',
+        mood: 4,
+        energy: 3,
+        stress: 8,
+        motivation: 4,
+      },
+    } satisfies Parameters<typeof generateScientificWeekPlan>[0] & {
+      mentalState: { date: string; mood: number; energy: number; stress: number; motivation: number };
+    };
+
+    const workouts = await generateScientificWeekPlan(input);
+
+    expect(workouts.every(workout => workout.zone <= 2)).toBe(true);
+    expect(workouts.map(workout => workout.description).join(' ')).toContain('Mentale Lage');
+  });
+
+  it('keeps the why-this-workout rationale deterministic in generated descriptions', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'base',
+      weeklyHoursTarget: 6,
+      availableDays: [0, 2, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 4,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+    });
+
+    expect(workouts[0]?.description).toContain('Warum diese Einheit:');
+  });
+
   it('keeps stable execution weeks dense enough while explaining the stability', () => {
     const decision = decidePlanDays({
       availableDays: [0, 1, 2, 3, 5],
@@ -601,6 +799,52 @@ describe('generateScientificWeekPlan', () => {
 
     expect(workouts).toHaveLength(3);
     expect(workouts.filter(workout => workout.zone >= 4)).toHaveLength(1);
+  });
+
+  it('adds safe ATP compensation to generated TSS only outside protected weeks', async () => {
+    const baseInput = {
+      weekStart: '2026-05-04',
+      phase: 'build' as const,
+      weeklyHoursTarget: 8,
+      availableDays: [0, 2, 5],
+      ctl: 42,
+      atl: 38,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'A Race', targetDate: '2026-07-11', category: 'race' as const, racePriority: 'A' as const }],
+      seasonStrategy: {
+        ...seasonStrategy({ targetSessions: 3, maxHardDays: 1 }),
+        loadModel: {
+          ...seasonStrategy().loadModel,
+          missedLoadCompensation: {
+            missedTssLast14d: 240,
+            compensationTssNext14d: 80,
+            capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+          },
+        },
+      },
+    };
+
+    const withComp = await generateScientificWeekPlan(baseInput);
+    const withoutComp = await generateScientificWeekPlan({
+      ...baseInput,
+      seasonStrategy: {
+        ...baseInput.seasonStrategy,
+        loadModel: {
+          ...baseInput.seasonStrategy.loadModel,
+          missedLoadCompensation: {
+            missedTssLast14d: 0,
+            compensationTssNext14d: 0,
+            capReason: 'Keine Nachhol-Last noetig.',
+          },
+        },
+      },
+    });
+
+    const total = (rows: typeof withComp) => rows.reduce((sum, workout) => sum + workout.targetTss, 0);
+    expect(total(withComp)).toBeGreaterThan(total(withoutComp));
   });
 
   it('keeps HR-first descriptions when LLM enrichment returns no items', async () => {

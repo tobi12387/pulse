@@ -6,7 +6,9 @@ import type {
   PulseGarminBackfillDomain,
   PulseGarminBackfillResponse,
   PulseGarminCoverageResponse,
+  PulseGarminExecutionDiffResponse,
   PulseGarminSignalUsefulnessResponse,
+  PulsePlannedWorkout,
 } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { redis } from '../../lib/redis.js';
@@ -32,8 +34,15 @@ import {
   buildGarminSyncContract,
   buildGarminWorkoutJson,
   garminWorkoutHasBrokenRepeatIterations,
+  summarizeGarminPayloadSnapshot,
   workoutHasRepeatSteps,
 } from '../services/garmin-workout.js';
+import {
+  listLatestGarminExecutionEntries,
+  recordGarminExecution,
+} from '../services/garmin-execution-ledger.js';
+import { buildGarminExecutionDiff, type NormalizedGarminCalendarWorkout } from '../services/garmin-execution-diff.js';
+import { refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 import { profileWithProvenance, syncProfileFromGarmin } from '../services/profile-sync.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
@@ -233,10 +242,99 @@ function backfillDayFromReasons(date: string, reasons: string[]): PulseGarminBac
   };
 }
 
+async function recordGarminExecutionSafely(
+  app: FastifyInstance,
+  input: Parameters<typeof recordGarminExecution>[1],
+): Promise<void> {
+  await recordGarminExecution(db, input).then(async () => {
+    const today = new Date().toISOString().split('T')[0]!;
+    await refreshAdaptationEventsForUser(db, input.userId, today).catch((err: unknown) => {
+      app.log.warn(`[calendar-sync] Failed to refresh adaptation events for ${input.userId}: ${err}`);
+    });
+  }).catch((err: unknown) => {
+    app.log.warn(`[calendar-sync] Failed to record Garmin execution ledger for ${input.plannedWorkoutId}: ${err}`);
+  });
+}
+
 export async function registerPulseGarminRoutes(app: FastifyInstance) {
   app.get('/sync/status', { onRequest: [app.authenticate] }, async (req) => {
     const today = new Date().toISOString().split('T')[0]!;
     return getPulseDataStatus(req.user.sub, today);
+  });
+
+  app.get('/garmin/execution-ledger', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const parsed = z.object({ workoutId: z.string().uuid() }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const [workout] = await db.select({ id: pulsePlannedWorkouts.id })
+      .from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.id, parsed.data.workoutId),
+        eq(pulsePlannedWorkouts.userId, userId),
+      ));
+    if (!workout) return reply.status(404).send({ error: 'Workout nicht gefunden' });
+
+    const entries = await listLatestGarminExecutionEntries(db, userId, workout.id);
+    return { entries };
+  });
+
+  app.get('/garmin/execution-diff', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseGarminExecutionDiffResponse | unknown> => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(30).optional().default(15),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const to = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), parsed.data.days - 1));
+    const generatedAt = new Date().toISOString();
+    const localWorkouts = await db.select().from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        gte(pulsePlannedWorkouts.plannedDate, today),
+        lte(pulsePlannedWorkouts.plannedDate, to),
+      ));
+    const ledgerEntries = (await Promise.all(
+      localWorkouts.map(workout => listLatestGarminExecutionEntries(db, userId, workout.id, 1)),
+    )).flat();
+
+    let remoteUnavailable = false;
+    let remoteWorkouts: NormalizedGarminCalendarWorkout[] = [];
+    try {
+      const { getGarminClient } = await import('../../lib/garmin-client.js');
+      const gc = await getGarminClient();
+      const calendarItems = (await fetchGarminCalendarWorkouts(gc, today))
+        .filter(item => item.date <= to);
+      remoteWorkouts = await Promise.all(calendarItems.map(async item => {
+        let workout: unknown | null = null;
+        try {
+          workout = await garminApi.getWorkout(gc, item.workoutId);
+        } catch (err) {
+          app.log.warn(`[garmin-execution-diff] Failed to read remote workout ${item.workoutId}: ${err}`);
+        }
+        return {
+          id: item.id,
+          workoutId: item.workoutId,
+          date: item.date,
+          workout,
+          lastSeenAt: generatedAt,
+        };
+      }));
+    } catch (err) {
+      remoteUnavailable = true;
+      app.log.warn(`[garmin-execution-diff] Garmin readback unavailable: ${err}`);
+    }
+
+    return buildGarminExecutionDiff({
+      localWorkouts: localWorkouts as PulsePlannedWorkout[],
+      remoteWorkouts,
+      ledgerEntries,
+      today,
+      days: parsed.data.days,
+      generatedAt,
+      remoteUnavailable,
+    });
   });
 
   app.get('/data-coverage', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -751,22 +849,43 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
         await garminApi.deleteWorkout(gc, workout.garminWorkoutId!).catch((err: unknown) => {
           app.log.warn(`[calendar-sync] Failed to remove broken repeat workout ${workout.garminWorkoutId}: ${err}`);
         });
+        const repairContract = buildGarminRemoteRepeatRepairContract();
         await db.update(pulsePlannedWorkouts)
           .set({
             garminWorkoutId: null,
             garminScheduledId: null,
-            garminSyncContract: buildGarminRemoteRepeatRepairContract(),
+            garminSyncContract: repairContract,
             executionStatus: null,
             executionNotes: null,
             executionMatchConfidence: null,
             executionMatchedAt: null,
           })
           .where(eq(pulsePlannedWorkouts.id, workout.id));
+        await recordGarminExecutionSafely(app, {
+          userId,
+          plannedWorkoutId: workout.id,
+          operation: 'calendar_repair',
+          outcome: 'degraded',
+          localContract: repairContract,
+          remoteWorkoutId: workout.garminWorkoutId,
+          remoteScheduledId: workout.garminScheduledId,
+          issues: repairContract.issues,
+        });
         workout.garminWorkoutId = null;
         workout.garminScheduledId = null;
         repaired++;
       } catch (err) {
         errors.push(`${workout.plannedDate}: Repeat-Pruefung fehlgeschlagen (${String(err).slice(0, 80)})`);
+        await recordGarminExecutionSafely(app, {
+          userId,
+          plannedWorkoutId: workout.id,
+          operation: 'calendar_repair',
+          outcome: 'failed',
+          localContract: null,
+          remoteWorkoutId: workout.garminWorkoutId,
+          remoteScheduledId: workout.garminScheduledId,
+          errorMessage: String(err).slice(0, 240),
+        });
       }
     }
 
@@ -799,6 +918,15 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
               executionNotes: garminSyncContract.summary,
             })
             .where(eq(pulsePlannedWorkouts.id, w.id));
+          await recordGarminExecutionSafely(app, {
+            userId,
+            plannedWorkoutId: w.id,
+            operation: 'calendar_repair',
+            outcome: 'blocked',
+            localContract: garminSyncContract,
+            payloadSnapshot: summarizeGarminPayloadSnapshot(garminWorkout),
+            issues: garminSyncContract.issues,
+          });
           errors.push(`${workout.plannedDate}: ${garminSyncContract.summary}`);
           continue;
         }
@@ -815,9 +943,31 @@ export async function registerPulseGarminRoutes(app: FastifyInstance) {
         await db.update(pulsePlannedWorkouts)
           .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
           .where(eq(pulsePlannedWorkouts.id, w.id));
+        await recordGarminExecutionSafely(app, {
+          userId,
+          plannedWorkoutId: w.id,
+          operation: 'calendar_repair',
+          outcome: garminSyncContract.status,
+          localContract: garminSyncContract,
+          remoteWorkoutId: garminWorkoutId,
+          remoteScheduledId: garminScheduledId,
+          payloadSnapshot: summarizeGarminPayloadSnapshot(garminWorkout, {
+            workoutId: garminWorkoutId,
+            scheduledId: garminScheduledId,
+          }),
+          issues: garminSyncContract.issues,
+        });
         uploaded++;
       } catch (err) {
         errors.push(`${workout.plannedDate}: ${String(err).slice(0, 80)}`);
+        await recordGarminExecutionSafely(app, {
+          userId,
+          plannedWorkoutId: workout.id,
+          operation: 'calendar_repair',
+          outcome: 'failed',
+          localContract: null,
+          errorMessage: String(err).slice(0, 240),
+        });
       }
     }
 

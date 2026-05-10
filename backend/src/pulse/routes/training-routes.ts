@@ -1,11 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulseGarminExecutionOperation, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
   pulseActivities,
+  pulseActivityStreams,
   pulseCoachPreferences,
   pulseDailyMetrics,
   pulseGoals,
@@ -14,6 +15,8 @@ import {
   pulseNutritionLogs,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
+  pulsePowerDurationSnapshots,
+  pulseTrainingCapabilityLevels,
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeekAvailability,
@@ -51,12 +54,16 @@ import { deriveGoalLimiter } from '../services/goal-limiters.js';
 import { buildRaceCommandSummary } from '../services/race-command.js';
 import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
 import { summarizePlanCapabilityFit } from '../services/training-capabilities.js';
+import { classifyPowerDataQuality } from '../services/power-data-quality.js';
 import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildTodayOptions } from '../services/today-options.js';
+import { buildPlanRefreshPreview } from '../services/plan-refresh-preview.js';
 import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
-import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract } from '../services/garmin-workout.js';
+import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract, summarizeGarminPayloadSnapshot } from '../services/garmin-workout.js';
+import { recordGarminExecution } from '../services/garmin-execution-ledger.js';
+import { loadOpenAdaptationEvents, refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { getActiveRaces } from '../services/race-engine.js';
@@ -82,6 +89,8 @@ import {
   updateEquipment,
   updateStrengthSession,
 } from '../services/strength-equipment.js';
+
+type PowerDurationSnapshot = typeof pulsePowerDurationSnapshots.$inferSelect;
 
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
 
@@ -133,6 +142,122 @@ const equipmentAssignSchema = z.object({
 const equipmentDefaultSchema = z.object({
   equipmentId: z.string().uuid(),
 });
+
+function powerSnapshotDate(value: string | Date): string {
+  return value instanceof Date ? value.toISOString().split('T')[0]! : value;
+}
+
+async function loadLatestPowerDurationSnapshot(userId: string): Promise<PowerDurationSnapshot | null> {
+  const [snapshot] = await db.select()
+    .from(pulsePowerDurationSnapshots)
+    .where(eq(pulsePowerDurationSnapshots.userId, userId))
+    .orderBy(desc(pulsePowerDurationSnapshots.activityDate))
+    .limit(1);
+  return snapshot ?? null;
+}
+
+function isUsablePowerSource(value: string): value is 'stream' | 'lap_approximation' {
+  return value === 'stream' || value === 'lap_approximation';
+}
+
+function isUsablePowerStatus(value: string): value is 'trusted' | 'usable_with_caution' {
+  return value === 'trusted' || value === 'usable_with_caution';
+}
+
+function powerDurationSummary(snapshot: PowerDurationSnapshot | null) {
+  if (!snapshot || !isUsablePowerSource(snapshot.qualitySource) || !isUsablePowerStatus(snapshot.qualityStatus)) {
+    return null;
+  }
+
+  const activityDate = powerSnapshotDate(snapshot.activityDate);
+  const bestEfforts = (snapshot.bestEfforts ?? []).map(effort => ({
+    durationSec: effort.durationSec,
+    avgPowerW: effort.avgPowerW,
+    startSec: effort.startSec ?? null,
+    activityId: snapshot.activityId,
+    activityDate,
+    source: isUsablePowerSource(effort.source) ? effort.source : snapshot.qualitySource,
+    qualityStatus: snapshot.qualityStatus,
+  }));
+  const priorityEffort = bestEfforts.find(effort => effort.durationSec === 1200)
+    ?? bestEfforts.find(effort => effort.durationSec === 300)
+    ?? bestEfforts[0]
+    ?? null;
+  const durability = snapshot.durability
+    ? {
+        ...snapshot.durability,
+        activityId: snapshot.activityId,
+        activityDate,
+        qualitySource: snapshot.qualitySource,
+        qualityStatus: snapshot.qualityStatus,
+      }
+    : null;
+  const sourceLabel = snapshot.qualitySource === 'stream' ? '1Hz-Stream' : 'Lap-Approximation';
+  const bestEffortLine = priorityEffort
+    ? `${Math.round(priorityEffort.durationSec / 60)} min ${priorityEffort.avgPowerW} W (${sourceLabel})`
+    : `Keine Best-Efforts gespeichert (${sourceLabel})`;
+  const durabilityLine = durability
+    ? `Durability ${durability.rating}: ${durability.evidence.join(' · ')} (${sourceLabel})`
+    : `Durability noch nicht belastbar (${sourceLabel})`;
+
+  return {
+    bestEfforts,
+    durability,
+    bestEffortLine,
+    durabilityLine,
+    updatedAt: snapshot.createdAt.toISOString(),
+  };
+}
+
+function durabilityLimiterInput(snapshot: PowerDurationSnapshot | null) {
+  if (!snapshot?.durability || !isUsablePowerSource(snapshot.qualitySource) || !isUsablePowerStatus(snapshot.qualityStatus)) {
+    return null;
+  }
+  return {
+    rating: snapshot.durability.rating,
+    evidence: snapshot.durability.evidence,
+    qualitySource: snapshot.qualitySource,
+    qualityStatus: snapshot.qualityStatus,
+  };
+}
+
+function seasonWindowStart(anchorDate: string): string {
+  return shiftIsoDate(anchorDate, -14);
+}
+
+async function loadSeasonTssLast14d(userId: string, anchorDate: string): Promise<{ plannedTssLast14d: number; completedTssLast14d: number }> {
+  const from = seasonWindowStart(anchorDate);
+  const [plannedRows, completedRows] = await Promise.all([
+    db.select({
+      targetTss: pulsePlannedWorkouts.targetTss,
+      durationMin: pulsePlannedWorkouts.durationMin,
+      zone: pulsePlannedWorkouts.zone,
+    }).from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        gte(pulsePlannedWorkouts.plannedDate, from),
+        lt(pulsePlannedWorkouts.plannedDate, anchorDate),
+        inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+      )),
+    db.select({
+      tss: pulseActivities.tss,
+      durationSec: pulseActivities.durationSec,
+    }).from(pulseActivities)
+      .where(and(
+        eq(pulseActivities.userId, userId),
+        gte(pulseActivities.startTime, new Date(`${from}T00:00:00.000Z`)),
+        lt(pulseActivities.startTime, new Date(`${anchorDate}T00:00:00.000Z`)),
+      )),
+  ]);
+
+  const plannedTssLast14d = plannedRows.reduce((sum, workout) => (
+    sum + Math.round(workout.targetTss ?? tssFromWorkout(workout.durationMin, workout.zone))
+  ), 0);
+  const completedTssLast14d = completedRows.reduce((sum, activity) => (
+    sum + Math.round(activity.tss ?? 0)
+  ), 0);
+  return { plannedTssLast14d, completedTssLast14d };
+}
 
 const isoDateSchema = z.string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -203,6 +328,38 @@ function hasGarminRemote(workout: Pick<PlannedWorkoutRow, 'garminWorkoutId' | 'g
   return Boolean(workout.garminWorkoutId || workout.garminScheduledId);
 }
 
+function garminOperationForContext(context: string): PulseGarminExecutionOperation {
+  if (context === 'sync-garmin') return 'manual_resync';
+  if (context === 'plan-workout-update') return 'update';
+  if (context === 'calendar-sync') return 'calendar_repair';
+  return 'create';
+}
+
+async function recordGarminExecutionSafely(
+  app: FastifyInstance,
+  context: string,
+  input: Parameters<typeof recordGarminExecution>[1],
+): Promise<void> {
+  try {
+    await recordGarminExecution(db, input);
+    const today = new Date().toISOString().split('T')[0]!;
+    await refreshAdaptationEventsSafely(app, input.userId, today, context);
+  } catch (err: unknown) {
+    app.log.warn(`[${context}] Failed to record Garmin execution ledger for ${input.plannedWorkoutId}: ${err}`);
+  }
+}
+
+async function refreshAdaptationEventsSafely(
+  app: FastifyInstance,
+  userId: string,
+  today: string,
+  context: string,
+): Promise<void> {
+  await refreshAdaptationEventsForUser(db, userId, today).catch((err: unknown) => {
+    app.log.warn(`[${context}] Failed to refresh adaptation events for ${userId}: ${err}`);
+  });
+}
+
 function activityLabel(activityType: string): string {
   const labels: Record<string, string> = {
     run: 'Lauf',
@@ -247,19 +404,40 @@ function workoutMetadataUpdate(metadata: WorkoutLibraryMetadata) {
 async function removeGarminRemoteForWorkout(
   app: FastifyInstance,
   gc: GarminClient,
+  userId: string,
   workout: Pick<PlannedWorkoutRow, 'id' | 'garminWorkoutId' | 'garminScheduledId'>,
   context: string,
 ): Promise<void> {
+  if (!hasGarminRemote(workout)) return;
+
+  const errors: string[] = [];
   if (workout.garminScheduledId) {
-    await garminApi.deleteWorkoutSchedule(gc, workout.garminScheduledId).catch((err: unknown) => {
+    try {
+      await garminApi.deleteWorkoutSchedule(gc, workout.garminScheduledId);
+    } catch (err: unknown) {
+      errors.push(String(err));
       app.log.warn(`[${context}] Failed to remove Garmin schedule ${workout.garminScheduledId} for ${workout.id}: ${err}`);
-    });
+    }
   }
   if (workout.garminWorkoutId) {
-    await garminApi.deleteWorkout(gc, workout.garminWorkoutId).catch((err: unknown) => {
+    try {
+      await garminApi.deleteWorkout(gc, workout.garminWorkoutId);
+    } catch (err: unknown) {
+      errors.push(String(err));
       app.log.warn(`[${context}] Failed to remove Garmin workout ${workout.garminWorkoutId} for ${workout.id}: ${err}`);
-    });
+    }
   }
+
+  await recordGarminExecutionSafely(app, context, {
+    userId,
+    plannedWorkoutId: workout.id,
+    operation: 'delete',
+    outcome: errors.length > 0 ? 'failed' : 'deleted',
+    localContract: null,
+    remoteWorkoutId: workout.garminWorkoutId,
+    remoteScheduledId: workout.garminScheduledId,
+    errorMessage: errors.length > 0 ? errors.join('; ').slice(0, 240) : null,
+  });
 }
 
 async function uploadWorkoutToGarmin(
@@ -275,6 +453,8 @@ async function uploadWorkoutToGarmin(
   });
   const garminWorkout = buildGarminWorkoutJson(workout, { fuelingGuidance });
   const garminSyncContract = buildGarminSyncContract(workout, garminWorkout);
+  const operation = garminOperationForContext(context);
+  const payloadSnapshotBase = summarizeGarminPayloadSnapshot(garminWorkout);
   if (!garminSyncContract.payloadReady) {
     await db.update(pulsePlannedWorkouts)
       .set({
@@ -283,23 +463,61 @@ async function uploadWorkoutToGarmin(
         executionNotes: garminSyncContract.summary,
       })
       .where(eq(pulsePlannedWorkouts.id, workout.id));
+    await recordGarminExecutionSafely(app, context, {
+      userId,
+      plannedWorkoutId: workout.id,
+      operation,
+      outcome: 'blocked',
+      localContract: garminSyncContract,
+      payloadSnapshot: payloadSnapshotBase,
+      issues: garminSyncContract.issues,
+    });
     throw new Error(garminSyncContract.summary);
   }
-  const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
-  const garminWorkoutId = String(created.workoutId);
-  const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as unknown;
-  const garminScheduledId = extractGarminScheduledId(scheduled);
-  const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
-  const executionNotes = garminScheduledId
-    ? 'Workout ist auf Garmin im Kalender geplant.'
-    : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
+  try {
+    const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
+    const garminWorkoutId = String(created.workoutId);
+    const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as unknown;
+    const garminScheduledId = extractGarminScheduledId(scheduled);
+    const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
+    const executionNotes = garminScheduledId
+      ? 'Workout ist auf Garmin im Kalender geplant.'
+      : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
 
-  const [updated] = await db.update(pulsePlannedWorkouts)
-    .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
-    .where(eq(pulsePlannedWorkouts.id, workout.id))
-    .returning();
+    const [updated] = await db.update(pulsePlannedWorkouts)
+      .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
+      .where(eq(pulsePlannedWorkouts.id, workout.id))
+      .returning();
 
-  return updated ?? { ...workout, garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes };
+    await recordGarminExecutionSafely(app, context, {
+      userId,
+      plannedWorkoutId: workout.id,
+      operation,
+      outcome: garminSyncContract.status,
+      localContract: garminSyncContract,
+      remoteWorkoutId: garminWorkoutId,
+      remoteScheduledId: garminScheduledId,
+      payloadSnapshot: summarizeGarminPayloadSnapshot(garminWorkout, {
+        workoutId: garminWorkoutId,
+        scheduledId: garminScheduledId,
+      }),
+      issues: garminSyncContract.issues,
+    });
+
+    return updated ?? { ...workout, garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes };
+  } catch (err) {
+    await recordGarminExecutionSafely(app, context, {
+      userId,
+      plannedWorkoutId: workout.id,
+      operation,
+      outcome: 'failed',
+      localContract: garminSyncContract,
+      payloadSnapshot: payloadSnapshotBase,
+      issues: garminSyncContract.issues,
+      errorMessage: String(err).slice(0, 240),
+    });
+    throw err;
+  }
 }
 
 async function replaceGarminRemoteForWorkout(
@@ -311,7 +529,7 @@ async function replaceGarminRemoteForWorkout(
 ): Promise<PlannedWorkoutRow> {
   const gc = await getGarminClient();
   if (hasGarminRemote(previousWorkout)) {
-    await removeGarminRemoteForWorkout(app, gc, previousWorkout, context);
+    await removeGarminRemoteForWorkout(app, gc, userId, previousWorkout, context);
   }
   return uploadWorkoutToGarmin(app, userId, workout, gc, context);
 }
@@ -355,6 +573,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           distanceKm: z.number().min(0.1).max(1000).nullable().optional(),
           expectedSpeedKmh: z.number().min(1).max(80).nullable().optional(),
           description: z.string().trim().max(1000).nullable().optional(),
+          archetypeId: z.string().trim().max(80).nullable().optional(),
         }).refine(value => value.durationMin != null || (value.distanceKm != null && value.expectedSpeedKmh != null), {
           message: 'Dauer oder Distanz plus erwarteter Schnitt erforderlich',
           path: ['durationMin'],
@@ -410,6 +629,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         description: workout.description,
         distanceKm: workout.distanceKm,
         expectedSpeedKmh: null,
+        archetypeId: workout.archetypeId,
       })),
       scenario: parsed.data as PulsePlanScenarioRequest,
     });
@@ -426,6 +646,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       distanceKm: z.number().min(0.1).max(1000).optional(),
       expectedSpeedKmh: z.number().min(1).max(80).optional(),
       description: z.string().trim().max(1000).optional(),
+      archetypeId: z.string().trim().max(80).optional(),
       syncGarmin: z.boolean().optional().default(true),
       userLocked: z.boolean().optional().default(true),
     }).refine(value => value.durationMin != null || (value.distanceKm != null && value.expectedSpeedKmh != null), {
@@ -458,6 +679,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       durationMin,
       distanceKm: parsed.data.distanceKm ?? null,
       targetTss,
+      archetypeId: parsed.data.archetypeId ?? null,
       description,
       origin: 'user',
       userLocked: parsed.data.userLocked,
@@ -610,7 +832,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         if (hasGarminRemote(current)) {
           try {
             const gc = await getGarminClient();
-            await removeGarminRemoteForWorkout(app, gc, current, 'plan-workout-update');
+            await removeGarminRemoteForWorkout(app, gc, userId, current, 'plan-workout-update');
           } catch (err) {
             app.log.warn(`[plan-workout-update] Garmin cleanup failed for skipped workout ${id}: ${err}`);
             garminSync = { status: 'failed', error: String(err).slice(0, 120) };
@@ -628,6 +850,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     }
 
     await invalidateUser(userId);
+    await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'plan-workout-update');
     return { workout: finalWorkout, garminSync };
   });
 
@@ -687,7 +910,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     try {
       const gc = await getGarminClient();
       if (hasGarminRemote(workout)) {
-        await removeGarminRemoteForWorkout(app, gc, workout, 'sync-garmin');
+        await removeGarminRemoteForWorkout(app, gc, userId, workout, 'sync-garmin');
         await db.update(pulsePlannedWorkouts)
           .set({
             garminWorkoutId: null,
@@ -759,8 +982,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart = shiftIsoDate(weekStartStr, -7);
-    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows] = await Promise.all([
-      computeFitnessLoad(userId, weekStartStr),
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows, recentArchetypeRows, latestMentalRows] = await Promise.all([
+      computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
         startTime:    pulseActivities.startTime,
@@ -825,9 +1048,35 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
           inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
         )),
+      db.select({
+        archetypeId: pulsePlannedWorkouts.archetypeId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, shiftIsoDate(weekStartStr, -14)),
+          lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(12),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), lte(pulseMentalCheckins.date, today)))
+        .orderBy(desc(pulseMentalCheckins.date))
+        .limit(1),
     ]);
+    const latestMental = latestMentalRows[0] ?? null;
+    const recentArchetypeIds = [...new Set(recentArchetypeRows
+      .map(row => row.archetypeId)
+      .filter((id): id is string => Boolean(id)))];
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
+    const seasonTss = await loadSeasonTssLast14d(userId, weekStartStr);
     const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
     const recentPlanActivities = recentActs.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -866,6 +1115,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         preferredLongDays: coachPreferences.preferredLongDays,
         dislikedWorkoutPatterns: coachPreferences.dislikedWorkoutPatterns,
       },
+      plannedTssLast14d: seasonTss.plannedTssLast14d,
+      completedTssLast14d: seasonTss.completedTssLast14d,
     });
     const executionReview = buildExecutionReviewForPreviousWeek({
       currentWeekStart: weekStartStr,
@@ -887,11 +1138,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
       return null;
     });
+    const latestPowerDuration = await loadLatestPowerDurationSnapshot(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Power duration snapshot failed (non-fatal): ${err}`);
+      return null;
+    });
     const goalLimiter = deriveGoalLimiter({
       goals: planGoals,
       trainingCapabilities: capabilitySummary,
       recentActivities: recentPlanActivities,
       fuelingHistory,
+      durability: durabilityLimiterInput(latestPowerDuration),
     });
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
     const planDecision = decidePlanDays({
@@ -904,6 +1160,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       riskSignals,
       recentActivities: recentPlanActivities,
       fuelingHistory,
+      mentalState: latestMental,
       planLearning: planLearningWithExecution,
       executionReview,
       seasonStrategy,
@@ -931,6 +1188,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         executionReview,
         seasonStrategy,
         goalLimiter,
+        recentArchetypeIds,
+        mentalState:         latestMental,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1027,6 +1286,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
             zone:         w.zone,
             durationMin:  w.durationMin,
             targetTss:    w.targetTss,
+            archetypeId:   w.archetypeId ?? null,
             description:  w.description,
             adjustedReason: w.adjustedReason ?? null,
             adjustedAt:   w.adjustedReason ? new Date() : null,
@@ -1167,6 +1427,75 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     return { trace: row ? mapPlanTrace(row) : null };
   });
 
+  app.get('/plan/refresh-preview/:weekStart', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { weekStart } = req.params as { weekStart: string };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return reply.status(400).send({ error: 'Ungültiges Datum' });
+
+    const today = new Date().toISOString().split('T')[0]!;
+    const weekEnd = shiftIsoDate(weekStart, 7);
+    const [
+      workouts,
+      [traceRow],
+      openEvents,
+      [latestCapability],
+    ] = await Promise.all([
+      db.select().from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, weekStart),
+          lt(pulsePlannedWorkouts.plannedDate, weekEnd),
+        ))
+        .orderBy(pulsePlannedWorkouts.plannedDate),
+      db.select().from(pulsePlanGenerations)
+        .where(and(
+          eq(pulsePlanGenerations.userId, userId),
+          eq(pulsePlanGenerations.weekStart, weekStart),
+        ))
+        .orderBy(desc(pulsePlanGenerations.createdAt))
+        .limit(1),
+      loadOpenAdaptationEvents(db, userId, today),
+      db.select({ updatedAt: pulseTrainingCapabilityLevels.updatedAt })
+        .from(pulseTrainingCapabilityLevels)
+        .where(eq(pulseTrainingCapabilityLevels.userId, userId))
+        .orderBy(desc(pulseTrainingCapabilityLevels.updatedAt))
+        .limit(1),
+    ]);
+
+    const mappedTrace = traceRow ? mapPlanTrace(traceRow) : null;
+    const preview = buildPlanRefreshPreview({
+      today,
+      weekStart,
+      currentWorkouts: workouts.map(workout => ({
+        id: workout.id,
+        plannedDate: workout.plannedDate,
+        activityType: workout.activityType as PulseActivityType,
+        zone: workout.zone,
+        durationMin: workout.durationMin,
+        targetTss: workout.targetTss,
+        userLocked: workout.userLocked,
+        status: workout.status,
+        description: workout.description,
+        archetypeId: workout.archetypeId,
+      })),
+      adaptationEvents: openEvents,
+      latestTrace: mappedTrace ? {
+        createdAt: mappedTrace.createdAt,
+        engineVersion: mappedTrace.inputSnapshot.engineVersion ?? null,
+      } : null,
+      latestCapabilityUpdatedAt: latestCapability?.updatedAt?.toISOString() ?? null,
+    });
+
+    return { preview };
+  });
+
+  app.get('/plan/adaptation-events', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const today = new Date().toISOString().split('T')[0]!;
+    const events = await loadOpenAdaptationEvents(db, userId, today);
+    return { events };
+  });
+
   // ─── Today-Adjust (Phase 6 Task 4) ────────────────────────────────────────────
   app.get('/plan/today/options', { onRequest: [app.authenticate] }, async (req) => {
     const userId = req.user.sub;
@@ -1186,6 +1515,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       recentNutrition,
       activeGoals,
       fitnessLoad,
+      capabilitySummary,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -1233,6 +1563,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       }).from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active'))),
       computeFitnessLoad(userId, today),
+      loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+        app.log.warn(`[today-options] Training capability summary failed (non-fatal): ${err}`);
+        return null;
+      }),
     ]);
 
     const mentalScore = mental
@@ -1302,7 +1636,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         activeCount: activeGoals.length,
         preferredSports,
       },
-      capabilitySummary: null,
+      capabilitySummary,
     });
 
     return { todayOptions: options };
@@ -1432,8 +1766,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart2 = shiftIsoDate(weekStart, -7);
-    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2] = await Promise.all([
-      computeFitnessLoad(userId, weekStart),
+    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2, recentArchetypeRows2, latestMentalRows2] = await Promise.all([
+      computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
         startTime:    pulseActivities.startTime,
@@ -1497,9 +1831,35 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           lt(pulsePlannedWorkouts.plannedDate, weekStart),
           inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
         )),
+      db.select({
+        archetypeId: pulsePlannedWorkouts.archetypeId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, shiftIsoDate(weekStart, -14)),
+          lt(pulsePlannedWorkouts.plannedDate, weekStart),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(12),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), lte(pulseMentalCheckins.date, today)))
+        .orderBy(desc(pulseMentalCheckins.date))
+        .limit(1),
     ]);
+    const latestMental2 = latestMentalRows2[0] ?? null;
+    const recentArchetypeIds2 = [...new Set(recentArchetypeRows2
+      .map(row => row.archetypeId)
+      .filter((id): id is string => Boolean(id)))];
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow2] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
+    const seasonTss2 = await loadSeasonTssLast14d(userId, weekStart);
     const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
     const recentPlanActivities2 = recentActs2.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -1538,6 +1898,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         preferredLongDays: coachPreferences2.preferredLongDays,
         dislikedWorkoutPatterns: coachPreferences2.dislikedWorkoutPatterns,
       },
+      plannedTssLast14d: seasonTss2.plannedTssLast14d,
+      completedTssLast14d: seasonTss2.completedTssLast14d,
     });
     const executionReview2 = buildExecutionReviewForPreviousWeek({
       currentWeekStart: weekStart,
@@ -1559,11 +1921,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
       return null;
     });
+    const latestPowerDuration2 = await loadLatestPowerDurationSnapshot(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Power duration snapshot failed (non-fatal): ${err}`);
+      return null;
+    });
     const goalLimiter2 = deriveGoalLimiter({
       goals: planGoals2,
       trainingCapabilities: capabilitySummary2,
       recentActivities: recentPlanActivities2,
       fuelingHistory: fuelingHistory2,
+      durability: durabilityLimiterInput(latestPowerDuration2),
     });
     const mesocycleWeek2 = getMesocycleWeek(weekStart);
     const planDecision2 = decidePlanDays({
@@ -1576,6 +1943,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       riskSignals: riskSignals2,
       recentActivities: recentPlanActivities2,
       fuelingHistory: fuelingHistory2,
+      mentalState: latestMental2,
       planLearning: planLearningWithExecution2,
       executionReview: executionReview2,
       seasonStrategy: seasonStrategy2,
@@ -1600,6 +1968,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         executionReview: executionReview2,
         seasonStrategy: seasonStrategy2,
         goalLimiter: goalLimiter2,
+        recentArchetypeIds: recentArchetypeIds2,
+        mentalState: latestMental2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1694,6 +2064,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
             zone: w.zone,
             durationMin: w.durationMin,
             targetTss: w.targetTss,
+            archetypeId: w.archetypeId ?? null,
             description: w.description,
             adjustedReason: w.adjustedReason ?? null,
             adjustedAt: w.adjustedReason ? new Date() : null,
@@ -1938,7 +2309,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const weekStart = currentWeekStartIso();
     const fitnessLoad = await getFitnessLoadCached(userId, today);
 
-    const [races, goals, weekAvail, profile, prefsRow] = await Promise.all([
+    const [races, goals, weekAvail, profile, prefsRow, seasonTss] = await Promise.all([
       getActiveRaces(userId, today, { ctl: fitnessLoad.ctl }),
       db.select({
         id: pulseGoals.id,
@@ -1958,6 +2329,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       db.select().from(pulseCoachPreferences)
         .where(eq(pulseCoachPreferences.userId, userId))
         .limit(1),
+      loadSeasonTssLast14d(userId, weekStart),
     ]);
 
     const preferences = serializeCoachPreferences(prefsRow[0] ?? null);
@@ -1984,6 +2356,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           preferredLongDays: preferences.preferredLongDays,
           dislikedWorkoutPatterns: preferences.dislikedWorkoutPatterns,
         },
+        plannedTssLast14d: seasonTss.plannedTssLast14d,
+        completedTssLast14d: seasonTss.completedTssLast14d,
       }),
     };
   });
@@ -2075,6 +2449,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       notes:       parsed.data.notes       ?? null,
     }).returning();
 
+    await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'nutrition-log');
     return reply.status(201).send(log);
   });
 
@@ -2116,7 +2491,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since = new Date(Date.now() - weeks * 7 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
 
-    const [activities, profileRows, capabilitySummary] = await Promise.all([
+    const [activities, profileRows, capabilitySummary, latestPowerSnapshot] = await Promise.all([
       db.select({
         id:               pulseActivities.id,
         startTime:        pulseActivities.startTime,
@@ -2126,15 +2501,56 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         normalizedPowerW: pulseActivities.normalizedPowerW,
         vo2maxEstimate:   pulseActivities.vo2maxEstimate,
         rpe:              pulseActivities.rpe,
+        garminLaps:       pulseActivities.garminLaps,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since)))
         .orderBy(pulseActivities.startTime),
       db.select({ ftpWatts: pulseUserProfile.ftpWatts })
         .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
       loadTrainingCapabilitySummary(userId, { lookbackDays: Math.max(42, weeks * 7) }),
+      loadLatestPowerDurationSnapshot(userId),
     ]);
 
     const ftp = profileRows[0]?.ftpWatts ?? null;
+    const activityIds = activities.map(a => a.id);
+    const activityStreams = activityIds.length > 0
+      ? await db.select({
+          activityId: pulseActivityStreams.activityId,
+          durationSec: pulseActivityStreams.durationSec,
+          sampleRateHz: pulseActivityStreams.sampleRateHz,
+          powerStream: pulseActivityStreams.powerStream,
+        }).from(pulseActivityStreams)
+          .where(inArray(pulseActivityStreams.activityId, activityIds))
+      : [];
+    const streamByActivityId = new Map(activityStreams.map(stream => [stream.activityId, stream]));
+    const powerQualityActivity = [...activities].reverse().find((activity) => {
+      if (activity.activityType !== 'bike') return false;
+      const stream = streamByActivityId.get(activity.id);
+      const hasStreamPower = (stream?.powerStream?.length ?? 0) > 0;
+      const hasLapPower = (activity.garminLaps ?? []).some(lap => (lap.avgPowerW ?? 0) > 0);
+      return hasStreamPower || hasLapPower;
+    }) ?? null;
+    const powerDataQuality = (() => {
+      if (!powerQualityActivity) {
+        const result = classifyPowerDataQuality({
+          durationSec: 1,
+          sampleRateHz: null,
+          powerStream: null,
+          laps: [],
+        });
+        return { ...result, updatedAt: null };
+      }
+
+      const stream = streamByActivityId.get(powerQualityActivity.id);
+      const powerStream = (stream?.powerStream?.length ?? 0) > 0 ? stream!.powerStream : null;
+      const result = classifyPowerDataQuality({
+        durationSec: stream?.durationSec ?? powerQualityActivity.durationSec ?? 1,
+        sampleRateHz: stream?.sampleRateHz ?? null,
+        powerStream,
+        laps: powerQualityActivity.garminLaps ?? [],
+      });
+      return { ...result, updatedAt: powerQualityActivity.startTime.toISOString() };
+    })();
     const ratedActivityIds = activities.filter(a => a.rpe != null).map(a => a.id);
     const completedPlans = ratedActivityIds.length > 0
       ? await db.select({
@@ -2249,7 +2665,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     });
     const totalRated = [...recentRpe.values()].reduce((sum, z) => sum + z.count, 0);
 
-    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone }, capabilitySummary };
+    return {
+      weeks,
+      tssHeatmap,
+      zoneDistribution,
+      vo2maxTrend,
+      rpeByZone: { totalRated, zones: rpeByZone },
+      capabilitySummary,
+      powerDataQuality,
+      powerDuration: powerDurationSummary(latestPowerSnapshot),
+    };
   });
 
   app.get('/training-capabilities', { onRequest: [app.authenticate] }, async (req) => {

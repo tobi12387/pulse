@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useId, useState } from 'react';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -10,10 +10,11 @@ import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
+import { resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
-import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseAdaptationEvent, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -97,11 +98,12 @@ const TOOLTIPS: Record<string, TooltipDef> = {
 };
 
 function Tooltip({ id, children }: { id: string; children: React.ReactNode }) {
+  const tooltipId = useId();
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const tip = TOOLTIPS[id];
   if (!tip) return <>{children}</>;
 
-  function handleClick(e: React.MouseEvent) {
+  function handleClick(e: React.MouseEvent<HTMLElement>) {
     e.stopPropagation();
     if (pos) { setPos(null); return; }
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -110,13 +112,41 @@ function Tooltip({ id, children }: { id: string; children: React.ReactNode }) {
 
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}>
-      <span onClick={handleClick} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-3)' }}>
+      <button
+        type="button"
+        onClick={handleClick}
+        onKeyDown={event => {
+          if (event.key === 'Escape') {
+            event.stopPropagation();
+            setPos(null);
+          }
+        }}
+        aria-label={`${id} erklären`}
+        aria-expanded={Boolean(pos)}
+        aria-describedby={pos ? tooltipId : undefined}
+        style={{
+          cursor: 'help',
+          border: 'none',
+          borderBottom: '1px dotted var(--text-3)',
+          background: 'transparent',
+          padding: 0,
+          color: 'inherit',
+          font: 'inherit',
+          letterSpacing: 'inherit',
+          textTransform: 'inherit',
+        }}
+      >
         {children}
-      </span>
+      </button>
       {pos && (
         <>
-          <span style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setPos(null)} />
-          <div style={{
+          <button
+            type="button"
+            aria-label="Tooltip schließen"
+            style={{ position: 'fixed', inset: 0, zIndex: 99, background: 'transparent', border: 'none', padding: 0 }}
+            onClick={() => setPos(null)}
+          />
+          <div id={tooltipId} role="tooltip" style={{
             position: 'fixed',
             left: Math.min(pos.x - 120, window.innerWidth - 256),
             top: pos.y - 8,
@@ -218,6 +248,87 @@ function suppressedReasonLabel(reason: PulseSuppressedActionState['suppressedRea
   if (reason === 'dismissed') return 'Bewusst verworfen';
   if (reason === 'resolved_by_activity') return 'Durch Garmin erledigt';
   return 'Nicht mehr aktuell';
+}
+
+function adaptationSeverityRank(event: PulseAdaptationEvent): number {
+  if (event.severity === 'action') return 3;
+  if (event.severity === 'watch') return 2;
+  return 1;
+}
+
+function primaryAdaptation(events: PulseAdaptationEvent[]): PulseAdaptationEvent | null {
+  return [...events].sort((a, b) =>
+    adaptationSeverityRank(b) - adaptationSeverityRank(a)
+    || b.createdAt.localeCompare(a.createdAt)
+  )[0] ?? null;
+}
+
+function adaptationTone(event: PulseAdaptationEvent): string {
+  if (event.severity === 'action') return 'var(--amber)';
+  if (event.severity === 'watch') return 'var(--accent)';
+  return 'var(--green)';
+}
+
+function adaptationTarget(event: PulseAdaptationEvent): { path: string; label: string } {
+  if (event.recommendation === 'sync_garmin') return { path: '/settings?section=garmin', label: 'Garmin öffnen' };
+  if (event.recommendation === 'log_feedback') return { path: '/data?tab=activities', label: 'Feedback öffnen' };
+  if (event.recommendation === 'keep_plan') return { path: '/plan', label: 'Plan ansehen' };
+  return { path: '/plan#plan-adaptation-review', label: 'Im Plan prüfen' };
+}
+
+function HomeAdaptationEventCard({
+  event,
+  onNavigate,
+}: {
+  event: PulseAdaptationEvent;
+  onNavigate: (path: string) => void;
+}) {
+  const tone = adaptationTone(event);
+  const target = adaptationTarget(event);
+
+  return (
+    <section
+      className="card"
+      data-testid="home-adaptation-event"
+      style={{ borderColor: 'color-mix(in srgb, var(--amber) 24%, var(--border))' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 7 }}>
+        <span className="label-mono" style={{ color: tone }}>PLAN GEPRÜFT</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+          {event.recommendation.replaceAll('_', ' ')}
+        </span>
+      </div>
+      <h3 style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+        {event.summary}
+      </h3>
+      {event.evidence.length > 0 && (
+        <p style={{ margin: '6px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+          {event.evidence.slice(0, 2).join(' · ')}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => onNavigate(target.path)}
+        style={{
+          marginTop: 10,
+          minHeight: 42,
+          minWidth: 44,
+          padding: '8px 11px',
+          borderRadius: 'var(--radius)',
+          border: `1px solid ${tone}`,
+          background: 'var(--surface-2)',
+          color: tone,
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: 0,
+          textTransform: 'uppercase',
+        }}
+      >
+        {target.label}
+      </button>
+    </section>
+  );
 }
 
 function outcomeStatusLabel(status: PulseDailyOutcomeLearningItem['status']): string {
@@ -712,7 +823,9 @@ export default function Home() {
   const loadQuery = useFitnessLoad();
   const { data: metricsData } = usePulseMetrics(14);
   const { data: briefingData } = usePulseBriefing();
+  const adaptationEvents = useAdaptationEvents();
   const garminSync = useGarminSync();
+  const todayOptionsQuery = useTodayOptions();
   const navigate = useNavigate();
   const [homeCheckinSubmitted, setHomeCheckinSubmitted] = useState(false);
 
@@ -746,10 +859,14 @@ export default function Home() {
   const fl = loadQuery.data ?? data.fitnessLoad;
   const nw = data.nextWorkout;
   const dailyDecision = deriveDailyDecision(data);
+  const dailyCommand = resolveDailyCommand(data, todayOptionsQuery.data?.todayOptions ?? null);
   const actionStates = actionsQuery.data?.actions ?? [];
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
+  const primaryAdaptationEvent = primaryAdaptation(
+    (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
+  );
   const primaryAction = actionStates[0] ?? null;
   const hasMentalCheckin = homeCheckinSubmitted || checkinToday.data?.checkin != null;
   const todayCheckinDate = checkinToday.data?.checkin?.date ?? data.date;
@@ -890,7 +1007,42 @@ export default function Home() {
         />
       )}
 
-      <TodayOptionsCard variant="compact" onNavigate={navigate} />
+      <div
+        data-testid="home-command-summary"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gap: 6,
+        }}
+      >
+        {[
+          { label: 'Readiness', value: readiness.score, suffix: '/100', color: readinessColor },
+          { label: 'TSB', value: fmtSigned(fl.tsb), suffix: '', color: tsbColor },
+          { label: 'Recovery', value: data.recovery?.recoveryScore ?? '–', suffix: typeof data.recovery?.recoveryScore === 'number' ? '/100' : '', color: 'var(--text)' },
+        ].map(item => (
+          <div
+            key={item.label}
+            style={{
+              padding: '8px 9px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              minWidth: 0,
+            }}
+          >
+            <div className="label-mono" style={{ fontSize: 8.5, color: 'var(--text-3)', marginBottom: 3 }}>{item.label}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: item.color }}>
+              {item.value}{item.suffix}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <TodayOptionsCard variant="compact" commandKind={dailyCommand} onNavigate={navigate} />
+
+      {primaryAdaptationEvent && (
+        <HomeAdaptationEventCard event={primaryAdaptationEvent} onNavigate={navigate} />
+      )}
 
       {mentalDaySignal && (
         <p

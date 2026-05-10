@@ -13,6 +13,7 @@ import { getGarminActivitiesForDate, upsertGarminActivity } from '../../lib/garm
 import { normalizeGarminDailySummary, normalizeGarminSleepData } from '../../lib/garmin-recovery.js';
 import { autoAssignDefaultEquipmentForActivity } from './strength-equipment.js';
 import { matchActivityToWorkout } from './workout-execution-sync.js';
+import { refreshAdaptationEventsForUser } from './adaptation-events.js';
 
 export type GarminSyncDomain = 'dailyMetrics' | 'sleep' | 'activities' | 'weight';
 
@@ -274,5 +275,9 @@ export async function syncGarminDay(
   }
 
   app.log.info(`[garmin-sync] ${dateStr} ✓`);
+  const decisionDate = new Date().toISOString().split('T')[0]!;
+  await refreshAdaptationEventsForUser(db, userId, decisionDate).catch((err: unknown) => {
+    app.log.warn(`[garmin-sync] adaptation refresh failed for ${decisionDate}: ${err}`);
+  });
   return { date: dateStr, dailyMetrics: true, activities: activitiesWritten, weight: weightWritten, errors };
 }

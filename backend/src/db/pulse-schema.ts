@@ -5,11 +5,17 @@ import {
 import { sql } from 'drizzle-orm';
 import type {
   EquipmentCategory,
+  PulseAdaptationEventKind,
+  PulseAdaptationRecommendation,
   PulseActivityType,
   PulseCoachCommunicationStyle,
   PulseCapabilityConfidence,
+  PulseGarminExecutionOperation,
+  PulseGarminExecutionOutcome,
+  PulseGarminPayloadSnapshot,
   PulseFuelingGuidanceStyle,
   PulseGarminSyncContract,
+  PulseGarminSyncContractIssue,
   PulsePlanDecision,
   PulsePlanTrace,
   PulsePushTopics,
@@ -57,6 +63,20 @@ export interface GarminActivityDetailCache {
   splits?: unknown;
   hrTimeInZones?: unknown;
   rawData?: unknown;
+}
+
+export interface PulsePowerDurationBestEffort {
+  durationSec: number;
+  avgPowerW: number;
+  startSec: number;
+  source: 'stream' | 'lap_approximation';
+}
+
+export interface PulsePowerDurationDurability {
+  rating: 'strong' | 'watch' | 'limited';
+  powerDropPct: number;
+  hrDriftBpm: number;
+  evidence: string[];
 }
 
 export const DEFAULT_PUSH_TOPICS: PulsePushTopics = {
@@ -269,6 +289,21 @@ export const pulseActivityAnalytics = pgTable('pulse_activity_analytics', {
   computedAt:        timestamp('computed_at').notNull().defaultNow(),
 });
 
+export const pulsePowerDurationSnapshots = pgTable('pulse_power_duration_snapshots', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  userId:        uuid('user_id').notNull(),
+  activityId:    uuid('activity_id').notNull(),
+  activityDate:  date('activity_date').notNull(),
+  bestEfforts:   jsonb('best_efforts').$type<PulsePowerDurationBestEffort[]>().notNull().default(sql`'[]'::jsonb`),
+  durability:    jsonb('durability').$type<PulsePowerDurationDurability>(),
+  qualitySource: varchar('quality_source', { length: 32 }).notNull().default('unavailable'),
+  qualityStatus: varchar('quality_status', { length: 32 }).notNull().default('blocked'),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_power_duration_activity_uq').on(t.activityId),
+  index('pulse_power_duration_user_date_idx').on(t.userId, t.activityDate),
+]);
+
 // ─── Risk Watch signals ─────────────────────────────────────────────────────
 export const pulseRiskSignals = pgTable('pulse_risk_signals', {
   id:              uuid('id').primaryKey().defaultRandom(),
@@ -344,6 +379,41 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   createdAt:            timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('pulse_planned_workouts_user_date_idx').on(t.userId, t.plannedDate),
+]);
+
+export const pulseGarminExecutionLedger = pgTable('pulse_garmin_execution_ledger', {
+  id:                uuid('id').primaryKey().defaultRandom(),
+  userId:            uuid('user_id').notNull(),
+  plannedWorkoutId:  uuid('planned_workout_id').notNull(),
+  attemptedAt:       timestamp('attempted_at', { withTimezone: true }).notNull().defaultNow(),
+  operation:         varchar('operation', { length: 32 }).notNull().$type<PulseGarminExecutionOperation>(),
+  outcome:           varchar('outcome', { length: 32 }).notNull().$type<PulseGarminExecutionOutcome>(),
+  localContract:     jsonb('local_contract').$type<PulseGarminSyncContract>(),
+  remoteWorkoutId:   varchar('remote_workout_id', { length: 128 }),
+  remoteScheduledId: varchar('remote_scheduled_id', { length: 128 }),
+  payloadSnapshot:   jsonb('payload_snapshot').$type<PulseGarminPayloadSnapshot>(),
+  issues:            jsonb('issues').$type<PulseGarminSyncContractIssue[]>().default([]),
+  errorMessage:      text('error_message'),
+}, (t) => [
+  index('pulse_garmin_execution_ledger_workout_idx').on(t.plannedWorkoutId, t.attemptedAt),
+  index('pulse_garmin_execution_ledger_user_outcome_idx').on(t.userId, t.outcome, t.attemptedAt),
+]);
+
+export const pulseAdaptationEvents = pgTable('pulse_adaptation_events', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  userId:         uuid('user_id').notNull(),
+  eventDate:      date('event_date').notNull(),
+  kind:           varchar('kind', { length: 48 }).notNull().$type<PulseAdaptationEventKind>(),
+  sourceId:       varchar('source_id', { length: 128 }).notNull().default(''),
+  severity:       varchar('severity', { length: 16 }).notNull().$type<'info' | 'watch' | 'action'>(),
+  recommendation: varchar('recommendation', { length: 48 }).notNull().$type<PulseAdaptationRecommendation>(),
+  summary:        text('summary').notNull(),
+  evidence:       jsonb('evidence').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  resolvedAt:     timestamp('resolved_at', { withTimezone: true }),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_adaptation_events_unique_source_idx').on(t.userId, t.eventDate, t.kind, t.sourceId),
+  index('pulse_adaptation_events_open_idx').on(t.userId, t.eventDate, t.resolvedAt),
 ]);
 
 // ─── Plan generation trace ──────────────────────────────────────────────────

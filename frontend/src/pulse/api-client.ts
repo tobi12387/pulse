@@ -11,8 +11,9 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
-  PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
+  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
+  PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
+  PulseGarminExecutionDiffResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -249,6 +250,10 @@ export const pulseApi = {
       request('/plan/generate', { method: 'POST', body: '{}' }),
     trace: (weekStart: string): Promise<{ trace: PulsePlanTrace | null }> =>
       request(`/plan/trace/${weekStart}`),
+    adaptationEvents: (): Promise<{ events: PulseAdaptationEvent[] }> =>
+      request('/plan/adaptation-events'),
+    refreshPreview: (weekStart: string): Promise<{ preview: PulsePlanRefreshPreview }> =>
+      request(`/plan/refresh-preview/${weekStart}`),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),
     createWorkout: (data: PlanWorkoutInput): Promise<{ workout: PulsePlannedWorkout; garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } }> =>
@@ -359,6 +364,10 @@ export const pulseApi = {
       request('/garmin/sync-profile', { method: 'POST', body: JSON.stringify(params ?? {}) }),
     calendarSync: (): Promise<{ uploaded: number; repaired?: number; removed: number; errors?: string[] }> =>
       request('/garmin/calendar/sync', { method: 'POST', body: '{}' }),
+    executionLedger: (workoutId: string): Promise<{ entries: PulseGarminExecutionLedgerEntry[] }> =>
+      request(`/garmin/execution-ledger?workoutId=${encodeURIComponent(workoutId)}`),
+    executionDiff: (days = 15): Promise<PulseGarminExecutionDiffResponse> =>
+      request(`/garmin/execution-diff?days=${encodeURIComponent(String(days))}`),
   },
 
   briefing: {
@@ -367,20 +376,7 @@ export const pulseApi = {
   },
 
   trainingAnalytics: {
-    get: (weeks = 12): Promise<{
-      weeks: number;
-      tssHeatmap: Array<{ date: string; tss: number }>;
-      zoneDistribution: Array<{
-        weekStart: string; totalH: number;
-        zones: { z1: number; z2: number; z3: number; z4: number; z5: number };
-      }>;
-      vo2maxTrend: Array<{ date: string; vo2max: number }>;
-      rpeByZone: {
-        totalRated: number;
-        zones: Array<{ zone: number; avgRpe: number | null; count: number; previousAvgRpe: number | null; drift: number | null }>;
-      };
-      capabilitySummary: PulseTrainingCapabilitySummary;
-    }> =>
+    get: (weeks = 12): Promise<PulseTrainingAnalyticsResponse> =>
       request(`/training-analytics?weeks=${weeks}`),
   },
 
@@ -508,6 +504,7 @@ export interface PlanWorkoutInput {
   distanceKm?: number;
   expectedSpeedKmh?: number;
   description?: string;
+  archetypeId?: string;
   syncGarmin?: boolean;
   userLocked?: boolean;
 }

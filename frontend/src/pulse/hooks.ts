@@ -13,8 +13,10 @@ export const pulseKeys = {
   activities:   (limit: number) => ['pulse', 'activities', limit] as const,
   activityDetail: (id: string) => ['pulse', 'activity-detail', id] as const,
   plan:         ['pulse', 'plan'] as const,
+  planRefreshPreview: (weekStart: string) => ['pulse', 'plan', 'refresh-preview', weekStart] as const,
   planScenarioPreview: ['pulse', 'plan', 'scenario-preview'] as const,
   planTrace:    (weekStart: string) => ['pulse', 'plan', 'trace', weekStart] as const,
+  adaptationEvents: ['pulse', 'plan', 'adaptation-events'] as const,
   availability: ['pulse', 'availability'] as const,
   goals:        ['pulse', 'goals'] as const,
   review:       ['pulse', 'review', 'latest'] as const,
@@ -47,6 +49,8 @@ export const pulseKeys = {
   dataCoverage:     (scope: string) => ['pulse', 'data-coverage', scope] as const,
   garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
   garminSignalUsefulness: (days: number) => ['pulse', 'garmin-signal-usefulness', days] as const,
+  garminExecutionLedger: (workoutId: string | null) => ['pulse', 'garmin-execution-ledger', workoutId] as const,
+  garminExecutionDiff: (days: number) => ['pulse', 'garmin-execution-diff', days] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
   strengthSessions: (days: number, exercise: string | null) =>
     ['pulse', 'strength', 'sessions', days, exercise] as const,
@@ -66,7 +70,9 @@ export function invalidatePulseContextQueries(qc: QueryClient): void {
 
 function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: pulseKeys.plan });
+  void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'refresh-preview'] });
   void qc.invalidateQueries({ queryKey: ['pulse', 'plan', 'trace'] });
+  void qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
   void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
   void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
   void qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
@@ -237,6 +243,7 @@ export function useActivityFeedback(activityId: string) {
       qc.invalidateQueries({ queryKey: ['pulse', 'activities'] });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
       qc.invalidateQueries({ queryKey: pulseKeys.briefing });
+      qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
     },
   });
 }
@@ -271,6 +278,23 @@ export function usePlanTrace(weekStart: string) {
     queryFn: () => pulseApi.plan.trace(weekStart),
     staleTime: 30 * 60_000,
     enabled: /^\d{4}-\d{2}-\d{2}$/.test(weekStart),
+  });
+}
+
+export function usePlanRefreshPreview(weekStart: string) {
+  return useQuery({
+    queryKey: pulseKeys.planRefreshPreview(weekStart),
+    queryFn: () => pulseApi.plan.refreshPreview(weekStart),
+    staleTime: 30_000,
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(weekStart),
+  });
+}
+
+export function useAdaptationEvents() {
+  return useQuery({
+    queryKey: pulseKeys.adaptationEvents,
+    queryFn: pulseApi.plan.adaptationEvents,
+    staleTime: 30_000,
   });
 }
 
@@ -391,6 +415,7 @@ export function usePulseCheckin() {
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'load-overlay'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
     },
   });
 }
@@ -509,7 +534,37 @@ export function useGarminCalendarSync() {
     onSuccess: () => {
       invalidatePulsePlanContextQueries(qc);
       void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-coverage'] });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-execution-diff'] });
     },
+  });
+}
+
+export function useGarminExecutionDiff(days = 15) {
+  return useQuery({
+    queryKey: pulseKeys.garminExecutionDiff(days),
+    queryFn: () => pulseApi.garmin.executionDiff(days),
+    staleTime: 30_000,
+  });
+}
+
+export function useSyncWorkoutToGarmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (workoutId: string) => pulseApi.plan.syncGarmin(workoutId),
+    onSuccess: (_data, workoutId) => {
+      invalidatePulsePlanContextQueries(qc);
+      void qc.invalidateQueries({ queryKey: pulseKeys.garminExecutionLedger(workoutId) });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-execution-diff'] });
+    },
+  });
+}
+
+export function useGarminExecutionLedger(workoutId: string | null | undefined) {
+  return useQuery({
+    queryKey: pulseKeys.garminExecutionLedger(workoutId ?? null),
+    queryFn: () => pulseApi.garmin.executionLedger(workoutId!),
+    enabled: Boolean(workoutId),
+    staleTime: 30_000,
   });
 }
 
@@ -938,6 +993,7 @@ export function useCreateNutritionLog() {
         qc.invalidateQueries({ queryKey: pulseKeys.home });
         qc.invalidateQueries({ queryKey: pulseKeys.plan });
       }
+      qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
     },
   });
 }

@@ -92,10 +92,13 @@ test.describe('Route evidence screenshot pack', () => {
       overflow: Awaited<ReturnType<typeof overflowSummary>>;
     }> = [];
 
-    for (const route of routes) {
+    async function capture(
+      route: { path: string; label: string; visibleText: string },
+      verify?: () => Promise<void>,
+    ) {
       await page.goto(route.path);
       await expect(page.locator('main').getByText(route.visibleText).first()).toBeVisible();
-
+      await verify?.();
       const overflow = await overflowSummary(page);
       const filename = `${String(screenshots.length + 1).padStart(2, '0')}-${route.label}.png`;
       const file = path.join(runDir, filename);
@@ -107,6 +110,149 @@ test.describe('Route evidence screenshot pack', () => {
         file,
         overflow,
       });
+    }
+
+    for (const route of routes) {
+      await capture(route, route.label === 'data-analysen'
+        ? async () => {
+            const qualityCard = page.getByTestId('power-data-quality');
+            await expect(qualityCard).toBeVisible();
+            await expect(qualityCard).toContainText('Nur Lap-Approximation');
+            await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
+          }
+        : undefined);
+    }
+
+    if (testInfo.project.name === 'mobile-chromium') {
+      await mockPulseApi(page, {
+        checkinToday: { checkin: null },
+        todayOptionsState: 'planned_workout',
+        home: {
+          todayWorkout: {
+            id: 'workout-planned-command',
+            userId: 'user-1',
+            plannedDate: MOCK_TODAY,
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 75,
+            distanceKm: null,
+            targetTss: 62,
+            archetypeId: 'endurance_steady',
+            difficultyLevel: 3,
+            difficultyEnergySystem: 'endurance',
+            capabilityFit: 'productive',
+            description: 'Aerobe Grundlage.',
+            steps: null,
+            garminWorkoutId: 'garmin-workout-planned',
+            garminScheduledId: 'garmin-scheduled-planned',
+            garminSyncContract: null,
+            status: 'planned',
+            workoutFeedback: null,
+            complianceScore: null,
+            origin: 'generated',
+            userLocked: false,
+            completedActivityId: null,
+            executionStatus: 'garmin_scheduled',
+            executionMatchedAt: null,
+            executionMatchConfidence: null,
+            executionNotes: null,
+          },
+        },
+      });
+      await capture(
+        { path: '/', label: 'home-planned-command', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-options-card')).toContainText('Plan ausfuehren: Rad');
+          await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'unplanned_trainable' });
+      await capture(
+        { path: '/', label: 'home-free-command', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+        },
+      );
+
+      await mockPulseApi(page, {
+        checkinToday: { checkin: null },
+        todayOptionsState: 'completed_activity',
+        home: {
+          todayActivities: [{
+            id: 'activity-completed-command',
+            userId: 'user-1',
+            externalId: 'garmin-activity-completed-command',
+            source: 'garmin',
+            startTime: `${MOCK_TODAY}T07:30:00.000Z`,
+            activityType: 'bike',
+            name: 'Rennrad Grundlage',
+            durationSec: 4200,
+            distanceM: 26000,
+            avgHr: 136,
+            maxHr: 162,
+            avgPowerW: 178,
+            normalizedPowerW: 188,
+            tss: 58,
+            calories: 690,
+            elevationGainM: 180,
+            trainingEffectAerobic: 3,
+            trainingEffectAnaerobic: 0.2,
+            vo2maxEstimate: null,
+            rpe: 5,
+            rpeNote: null,
+            sorenessAreas: null,
+            feedbackLoggedAt: `${MOCK_TODAY}T09:10:00.000Z`,
+            equipmentIds: [],
+          }],
+        },
+      });
+      await capture(
+        { path: '/', label: 'home-completed-command', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('daily-decision-card')).toContainText('Training heute erledigt');
+          await expect(page.getByTestId('today-options-card')).toHaveCount(0);
+          await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'recovery_protect' });
+      await capture(
+        { path: '/', label: 'home-recovery-no-intent', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null } });
+      await capture(
+        { path: '/data?tab=mental', label: 'data-mental-first-viewport', visibleText: 'Quick Check-in' },
+        async () => {
+          await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+          await expect(page.getByRole('button', { name: 'Mehr beschreiben' })).toBeVisible();
+          await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'unplanned_trainable' });
+      await capture(
+        {
+          path: '/plan?tab=training&source=mobile-intent&scenario=workout&activityType=bike&zone=1&durationMin=60&description=Heute%2060%20min%20moeglich%3B%20Pulse%20prueft%20Auswirkung%20auf%20Woche%20und%20Garmin.#plan-scenario-preview',
+          label: 'plan-mobile-intent-scenario',
+          visibleText: 'Training, Ziele & Statistik',
+        },
+        async () => {
+          const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+          await expect(scenarioCard).toBeVisible();
+          await expect(scenarioCard).toBeInViewport();
+          await expect(page.getByRole('heading', { name: /Training, Ziele|Szenario/i }).first()).toBeVisible();
+          await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
+          await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
+          await expect(scenarioCard).toContainText('Mobile Quick Decision');
+          await expect(scenarioCard).not.toContainText('155 km');
+          await expect(scenarioCard).not.toContainText('423 min');
+        },
+      );
     }
 
     const manifest = {

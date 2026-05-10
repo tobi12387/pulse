@@ -56,6 +56,8 @@ function highRecoveryRisk(input: TodayOptionsInput): boolean {
     || input.tsb <= -10
     || input.riskSignals.some(signal => signal.severity === 'critical' || signal.severity === 'warn')
     || (input.mental != null && input.mental.energy <= 3 && input.mental.stress >= 7)
+    || (input.fueling.recentGiIssue && (input.plannedToday?.zone ?? 0) >= 4)
+    || (input.capabilitySummary?.signals.includes('protect_recovery') ?? false)
     || input.plannedToday?.capabilityFit === 'too_hard_today';
 }
 
@@ -89,11 +91,31 @@ function mostUsefulEnduranceSport(recentSportMix: RecentSportMix, goals?: TodayO
   return 'run';
 }
 
+function enduranceCapability(input: TodayOptionsInput) {
+  return input.capabilitySummary?.levels.find(level => level.energySystem === 'endurance') ?? null;
+}
+
+function enduranceCapabilityEvidence(input: TodayOptionsInput): string[] {
+  const capability = enduranceCapability(input);
+  if (!capability) return [];
+  return [`Capability: Endurance ${capability.level.toFixed(1)} -> ${capability.nextRecommendedWorkoutLevel.toFixed(1)}`];
+}
+
+function enduranceOptionFit(input: TodayOptionsInput): PulseWorkoutFitLabel {
+  const capability = enduranceCapability(input);
+  if (!capability) return 'maintenance';
+  if (capability.confidence !== 'low' && capability.staleReason == null && capability.nextRecommendedWorkoutLevel > capability.level) {
+    return 'productive';
+  }
+  return 'maintenance';
+}
+
 function planScenarioTargetPath(input: {
   activityType: PulseActivityType;
   zone: number;
   durationMin: number;
   description: string;
+  archetypeId?: string | null;
 }): string {
   const params = new URLSearchParams({
     tab: 'training',
@@ -104,15 +126,25 @@ function planScenarioTargetPath(input: {
     durationMin: String(input.durationMin),
     description: input.description,
   });
+  if (input.archetypeId) params.set('archetypeId', input.archetypeId);
   return `/plan?${params.toString()}#plan-scenario-preview`;
 }
 
 function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
   const activityType = mostUsefulEnduranceSport(input.recentSportMix, input.goals);
   const durationMin = input.readinessScore >= 75 && input.tsb >= -2 ? 60 : 45;
-  const detail = `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`;
+  const capabilityFit = enduranceOptionFit(input);
+  const detail = capabilityFit === 'productive'
+    ? `${durationMin} min Z2 als produktiver aerober Reiz. Sinnvoll, weil aktuelle Endurance-Evidenz einen kleinen Fortschritt erlaubt, ohne den Plan vollzustopfen.`
+    : `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`;
+  const archetypeId = activityType === 'bike' && input.fueling.recentGiIssue && durationMin >= 150
+    ? 'long_endurance_fueling_practice'
+    : activityType === 'bike'
+    ? 'endurance_cadence'
+    : 'endurance_steady';
   const evidence = [
     ...baseEvidence(input),
+    ...enduranceCapabilityEvidence(input),
     `Sportmix zuletzt: Bike ${input.recentSportMix.bike ?? 0}, Run ${input.recentSportMix.run ?? 0}`,
     ...(input.goals?.activeCount ? [`Ziele aktiv: ${input.goals.activeCount}`] : []),
   ];
@@ -123,34 +155,38 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
     title: `${SPORT_LABEL[activityType]} locker`,
     detail,
     cta: 'Einheit planen',
-    targetPath: planScenarioTargetPath({ activityType, zone: 2, durationMin, description: detail }),
+    targetPath: planScenarioTargetPath({ activityType, zone: 2, durationMin, description: detail, archetypeId }),
     evidence,
     activityType,
     zone: 2,
     durationMin,
-    archetypeId: durationMin >= 180 ? 'long_endurance' : 'endurance_steady',
-    capabilityFit: 'maintenance',
+    archetypeId,
+    capabilityFit,
   };
 }
 
 function skillsOption(input: TodayOptionsInput): PulseTodayOption {
-  const detail = '20-30 min Technik, Core oder Mobility. Nutzt den Tag, ohne zusätzliche Ausdauerlast zu erzwingen.';
+  const light = input.readinessScore < 60;
+  const detail = light
+    ? '15-20 min Beweglichkeit und Atmung, ohne Trainingsstress.'
+    : '25 min Core, Mobility und Glutes als Unterstuetzung fuer Rad/Lauf.';
+  const durationMin = light ? 20 : 25;
   return {
-    id: 'skills-mobility-25',
+    id: light ? 'mobility-light-20' : 'strength-support-25',
     kind: 'skills',
     priority: 'secondary',
-    title: 'Skills oder Mobility',
+    title: light ? 'Mobility leicht' : 'Strength Support',
     detail,
     cta: 'Im Plan ergänzen',
-    targetPath: planScenarioTargetPath({ activityType: 'strength', zone: 1, durationMin: 25, description: detail }),
+    targetPath: planScenarioTargetPath({ activityType: 'strength', zone: 1, durationMin, description: detail, archetypeId: 'strength_prehab' }),
     evidence: [
       ...baseEvidence(input),
       'Nicht jeder freie Tag muss mit Ausdauer gefüllt werden.',
     ],
     activityType: 'strength',
     zone: 1,
-    durationMin: 25,
-    archetypeId: 'strength_support',
+    durationMin,
+    archetypeId: 'strength_prehab',
     capabilityFit: 'recovery',
   };
 }
@@ -255,6 +291,7 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
         zone: 1,
         durationMin: 20,
         description: recoveryDetail,
+        archetypeId: 'recovery_spin',
       }),
       evidence: [
         ...baseEvidence(input),
@@ -324,12 +361,13 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
         zone: easierZone,
         durationMin: easierDuration,
         description: easierDetail,
+        archetypeId: easierZone <= 1 ? 'recovery_spin' : planned.activityType === 'bike' ? 'endurance_cadence' : 'endurance_steady',
       }),
       evidence: baseEvidence(input),
       activityType: planned.activityType,
       zone: easierZone,
       durationMin: easierDuration,
-      archetypeId: 'endurance_steady',
+      archetypeId: easierZone <= 1 ? 'recovery_spin' : planned.activityType === 'bike' ? 'endurance_cadence' : 'endurance_steady',
       capabilityFit: 'maintenance',
     },
     restOption(input),

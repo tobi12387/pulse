@@ -39,6 +39,9 @@ export interface PulseTrainingCapabilityLevel {
   energySystem: PulseTrainingEnergySystem;
   label: string;
   level: number;
+  nextRecommendedWorkoutLevel: number;
+  lastProgressionReason: string | null;
+  staleReason: string | null;
   confidence: PulseCapabilityConfidence;
   evidence: string[];
   updatedAt: string | null;
@@ -51,4 +54,70 @@ export interface PulseTrainingCapabilitySummary {
   signals: PulseTrainingProgressionSignal[];
   recommendations: string[];
   fitLegend: Record<PulseWorkoutFitLabel, string>;
+}
+
+export type PulsePowerDataQualitySource = 'stream' | 'lap_approximation' | 'unavailable';
+export type PulsePowerDataQualityStatus = 'trusted' | 'usable_with_caution' | 'blocked';
+export type PulseDurabilityRating = 'strong' | 'watch' | 'limited';
+
+export interface PulsePowerDataQualitySummary {
+  source: PulsePowerDataQualitySource;
+  status: PulsePowerDataQualityStatus;
+  coveragePct: number;
+  spikeCount: number;
+  limitations: string[];
+  updatedAt: string | null;
+}
+
+export interface PulsePowerDurationBestEffort {
+  durationSec: number;
+  avgPowerW: number;
+  startSec: number | null;
+  activityId: string;
+  activityDate: string;
+  source: Extract<PulsePowerDataQualitySource, 'stream' | 'lap_approximation'>;
+  qualityStatus: Extract<PulsePowerDataQualityStatus, 'trusted' | 'usable_with_caution'>;
+}
+
+export interface PulseDurabilitySummary {
+  rating: PulseDurabilityRating;
+  powerDropPct: number;
+  hrDriftBpm: number;
+  evidence: string[];
+  activityId: string;
+  activityDate: string;
+  qualitySource: Extract<PulsePowerDataQualitySource, 'stream' | 'lap_approximation'>;
+  qualityStatus: Extract<PulsePowerDataQualityStatus, 'trusted' | 'usable_with_caution'>;
+}
+
+export interface PulsePowerDurationSummary {
+  bestEfforts: PulsePowerDurationBestEffort[];
+  durability: PulseDurabilitySummary | null;
+  bestEffortLine: string;
+  durabilityLine: string;
+  updatedAt: string | null;
+}
+
+export interface PulseTrainingAnalyticsResponse {
+  weeks: number;
+  tssHeatmap: Array<{ date: string; tss: number }>;
+  zoneDistribution: Array<{
+    weekStart: string;
+    totalH: number;
+    zones: { z1: number; z2: number; z3: number; z4: number; z5: number };
+  }>;
+  vo2maxTrend: Array<{ date: string; vo2max: number }>;
+  rpeByZone: {
+    totalRated: number;
+    zones: Array<{
+      zone: number;
+      avgRpe: number | null;
+      count: number;
+      previousAvgRpe: number | null;
+      drift: number | null;
+    }>;
+  };
+  capabilitySummary: PulseTrainingCapabilitySummary;
+  powerDataQuality: PulsePowerDataQualitySummary;
+  powerDuration: PulsePowerDurationSummary | null;
 }

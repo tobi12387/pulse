@@ -36,6 +36,13 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
 
+function localIsoDate(daysFromToday = 0) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 test.beforeEach(async ({ page }) => {
   await mockPulseApi(page);
   await page.addInitScript(() => {
@@ -66,6 +73,87 @@ for (const route of routes) {
   });
 }
 
+test('Data analysis shows power data provenance', async ({ page }) => {
+  await page.goto('/data?tab=analysen');
+  const qualityCard = page.getByTestId('power-data-quality');
+  await expect(qualityCard).toBeVisible();
+  await expect(qualityCard).toContainText('Power-Daten');
+  await expect(qualityCard).toContainText('Nur Lap-Approximation');
+  await expect(qualityCard).toContainText('Keine 1Hz-Power-Streams');
+  await expect(page.getByTestId('power-duration-summary')).toContainText('20 min 215 W');
+  await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
+});
+
+test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
+  await page.goto('/plan');
+  await expect(page.getByText('Saisonlinie')).toBeVisible();
+  await expect(page.getByTestId('season-atp-row')).toContainText('Jahresziel');
+  await expect(page.getByTestId('season-atp-row')).toContainText('384 h / 18432 TSS');
+  await expect(page.getByTestId('season-atp-row')).toContainText('Ramp-Cap');
+});
+
+test('Plan detail shows strength support blocks without misleading Garmin interval copy', async ({ page }) => {
+  const strengthWorkout = {
+    id: 'strength-support-smoke',
+    userId: 'user-1',
+    plannedDate: '2026-05-11',
+    activityType: 'strength',
+    zone: 1,
+    durationMin: 30,
+    distanceKm: null,
+    targetTss: 12,
+    archetypeId: 'strength_prehab',
+    difficultyLevel: 1.8,
+    difficultyEnergySystem: 'strength',
+    capabilityFit: 'maintenance',
+    description: 'Mobility, Core und Prehab als Support-Einheit.',
+    steps: [
+      { type: 'steady', durationMin: 10, zone: 1, description: 'Mobility: Huefte und Brustwirbelsaeule ruhig mobilisieren.' },
+      { type: 'steady', durationMin: 10, zone: 1, description: 'Core/Prehab: kontrollierte Spannung, keine Ermuedung erzwingen.' },
+      { type: 'steady', durationMin: 10, zone: 1, description: 'Glutes und Stabilitaet sauber aktivieren.' },
+    ],
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: {
+      version: 1,
+      status: 'degraded',
+      payloadReady: true,
+      checkedAt: '2026-05-01T08:00:00.000Z',
+      summary: 'Garmin-Upload mit Einschränkung: Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.',
+      issues: [{ code: 'strength_notes_only', severity: 'warning', message: 'Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.' }],
+    },
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'local_planned',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: 'Support-Einheit bleibt bewusst niedrigschwellig.',
+  };
+
+  await mockPulseApi(page, { planWorkouts: [strengthWorkout] });
+
+  await page.goto('/plan');
+  await expect(page.getByRole('button', { name: '2026-05-11 Kraft öffnen' })).toBeVisible();
+  await expect(page.getByTestId('plan-workout-structure-summary')).toContainText('3 Blöcke');
+  await expect(page.getByTestId('plan-workout-structure-summary')).toContainText('30 min');
+
+  await page.getByRole('button', { name: '2026-05-11 Kraft öffnen' }).click();
+
+  await expect(page.getByTestId('support-session-blocks')).toContainText('SUPPORT-SESSION');
+  await expect(page.getByTestId('support-session-blocks')).toContainText('Mobility: Huefte');
+  await expect(page.getByTestId('support-session-blocks')).toContainText('Core/Prehab');
+  await expect(page.getByTestId('support-session-blocks')).toContainText('Glutes und Stabilitaet');
+  const handoff = page.getByTestId('garmin-workout-handoff');
+  await expect(handoff).toContainText('Notiz/Blockliste');
+  await expect(handoff).toContainText('Keine Repeat-Blöcke');
+  await expect(handoff).toContainText('Keine HR-Ziele');
+  await expect(page.getByText('1 Repeat-Block')).toHaveCount(0);
+});
+
 test('primary navigation reaches every Pulse page', async ({ page }) => {
   await page.goto('/');
   await expectHealthyPage(page, 'READINESS');
@@ -86,6 +174,7 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
     durationMin: 45,
     targetTss: 38,
     status: 'planned',
+    archetypeId: 'endurance_steady',
     description: 'Lockerer Lauf mit sauberer Grenze.',
   };
   const visibleWeekWorkout = {
@@ -129,7 +218,146 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
 
   await page.goto('/plan');
   await expect(page.getByRole('button', { name: 'Fr 8: Laufen öffnen' })).toBeVisible();
+  await expect(page.getByText('Archetyp: Steady Endurance').first()).toBeVisible();
+  await expect(page.getByText('endurance_steady', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('endurance steady', { exact: true })).toHaveCount(0);
   await expect(page.getByText('run', { exact: true })).toHaveCount(0);
+});
+
+test('mobile Home availability intent opens a workout scenario preview', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
+  let previewBody: unknown = null;
+
+  await mockPulseApi(page, {
+    todayOptionsState: 'unplanned_trainable',
+    onPlanScenarioPreview: body => { previewBody = body; },
+    planScenarioPreview: body => ({
+      preview: {
+        type: 'add_custom_tour',
+        summary: 'Heute 60 min moeglich: Pulse prueft Wochenlast und Garmin, bevor etwas gespeichert wird.',
+        projectedWorkouts: [],
+        changedDays: [{
+          date: '2026-05-01',
+          before: { sessions: 0, durationMin: 0, tss: 0 },
+          after: { sessions: 1, durationMin: 60, tss: 36 },
+          label: '+1 Einheit, +36 TSS',
+        }],
+        loadImpact: { tssDelta: 36, durationDeltaMin: body.workout?.durationMin ?? 0, nextDayRecoveryDate: null },
+        reasons: ['Mobile Intent bleibt Preview-only bis zur expliziten Anwendung.'],
+        warnings: [],
+        applySupported: true,
+      },
+    }),
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+  await page.getByRole('button', { name: '60 min' }).click();
+  await expect(page).toHaveURL(/source=mobile-intent/);
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard).toContainText('Mobile Quick Decision');
+  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('60');
+  await expect(scenarioCard.getByLabel('Sportart')).toHaveValue('bike');
+  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  expect(previewBody).toMatchObject({
+    type: 'add_custom_tour',
+    workout: {
+      activityType: 'bike',
+      zone: 1,
+      durationMin: 60,
+      description: 'Heute 60 min moeglich; Pulse prueft Auswirkung auf Woche und Garmin.',
+    },
+  });
+});
+
+test('mobile Home free-day intent opens reduce-volume preview without creating a workout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
+  let previewBody: unknown = null;
+  const requests: string[] = [];
+
+  await mockPulseApi(page, {
+    todayOptionsState: 'unplanned_trainable',
+    onRequest: (pathname, method) => requests.push(`${method} ${pathname}`),
+    onPlanScenarioPreview: body => { previewBody = body; },
+    planScenarioPreview: body => ({
+      preview: {
+        type: 'reduce_volume',
+        summary: 'Heute frei: Pulse prueft defensivere offene Planlast.',
+        projectedWorkouts: [],
+        changedDays: [{
+          date: '2026-05-03',
+          before: { sessions: 1, durationMin: 90, tss: 68 },
+          after: { sessions: 1, durationMin: 65, tss: 48 },
+          label: '-25 min',
+        }],
+        loadImpact: { tssDelta: -20, durationDeltaMin: -25, nextDayRecoveryDate: null },
+        reasons: ['Freier Tag bleibt bewusst frei.'],
+        warnings: [],
+        applySupported: true,
+      },
+    }),
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+  await page.getByRole('button', { name: 'Frei' }).click();
+  await expect(page).toHaveURL(/scenario=reduce_volume/);
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard).toContainText('Heute bewusst frei halten.');
+  await expect(scenarioCard).toContainText('Nicht gesperrte Zukunfts-Workouts auf 70%');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.7 });
+  expect(requests).not.toContain('POST /api/pulse/plan/workout');
+});
+
+test('mobile Home planned workout state shows the concrete plan option without availability intents', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
+
+  await mockPulseApi(page, {
+    todayOptionsState: 'planned_workout',
+    home: {
+      todayWorkout: {
+        id: 'workout-planned-smoke',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        distanceKm: null,
+        targetTss: 62,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Aerobe Grundlage.',
+        steps: null,
+        garminWorkoutId: 'garmin-workout-planned',
+        garminScheduledId: 'garmin-scheduled-planned',
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+  await expect(page.getByTestId('today-options-card')).toContainText('Heute trainieren');
+  await expect(page.getByTestId('today-options-card')).toContainText('Plan ausfuehren: Rad');
+  await expect(page.getByTestId('today-options-card')).toContainText('Workout oeffnen');
 });
 
 test('/insights redirects to the Data analysis tab', async ({ page }) => {
@@ -158,11 +386,124 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   const labels = ['Überblick', 'Abdeckung', 'Schlaf', 'Metriken', 'Gewicht', 'Mental', 'Analysen'];
 
   for (const label of labels) {
-    const box = await page.getByRole('tab', { name: label }).boundingBox();
+    const tab = page.getByRole('tab', { name: label });
+    await tab.scrollIntoViewIfNeeded();
+    const box = await tab.boundingBox();
     expect(box, `${label} tab has a visible box`).not.toBeNull();
     expect(box!.x, `${label} tab left edge`).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width, `${label} tab right edge`).toBeLessThanOrEqual(viewportWidth);
   }
+});
+
+test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
+
+  await page.goto('/data?tab=mental');
+  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+
+  const overflow = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return Array.from(document.querySelectorAll('[role="tablist"][aria-label="Data Bereiche"] [role="tab"]'))
+      .map(element => {
+        const rect = element.getBoundingClientRect();
+        return {
+          text: element.textContent?.trim() ?? '',
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+        };
+      })
+      .filter(item => item.left < -1 || item.right > viewportWidth + 1);
+  });
+
+  expect(overflow).toEqual([]);
+});
+
+test('Plan mobile week strip keeps workout labels inside a touch scroller', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile week strip containment is a narrow viewport affordance');
+
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'mobile-weekstrip-run',
+      plannedDate: localIsoDate(),
+      activityType: 'run',
+      zone: 2,
+      durationMin: 48,
+      targetTss: 39,
+      status: 'planned',
+      description: 'Lockerer Lauf mit sauberer Grenze.',
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+  const workoutButton = page.getByRole('button', { name: /Laufen öffnen/ }).first();
+  await expect(workoutButton).toBeVisible();
+
+  const containment = await workoutButton.evaluate((element) => {
+    let current: HTMLElement | null = element as HTMLElement;
+    let hasHorizontalScroller = false;
+    while (current && current !== document.body) {
+      const style = window.getComputedStyle(current);
+      if ((style.overflowX === 'auto' || style.overflowX === 'scroll') && current.scrollWidth > current.clientWidth + 1) {
+        hasHorizontalScroller = true;
+        break;
+      }
+      current = current.parentElement;
+    }
+
+    return {
+      hasHorizontalScroller,
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+
+  expect(containment.documentOverflow).toBeLessThanOrEqual(1);
+  expect(containment.hasHorizontalScroller).toBe(true);
+});
+
+test('Plan mobile workout rows wrap status chips without horizontal overflow', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile workout row containment is a narrow viewport affordance');
+
+  await page.setViewportSize({ width: 320, height: 844 });
+  const plannedDate = localIsoDate();
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'mobile-row-run',
+      plannedDate,
+      activityType: 'run',
+      zone: 2,
+      durationMin: 48,
+      targetTss: 39,
+      archetypeId: 'endurance_steady',
+      capabilityFit: 'maintenance',
+      status: 'planned',
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      workoutFeedback: null,
+      complianceScore: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+      description: 'Lockerer Lauf mit sauberer Grenze.',
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+  const workoutRowButton = page.getByRole('button', { name: new RegExp(`${plannedDate}.*Laufen öffnen`) }).first();
+  await expect(workoutRowButton).toBeVisible();
+
+  const rowOverflow = await workoutRowButton.evaluate((element) => {
+    return Array.from(element.querySelectorAll<HTMLElement>('*'))
+      .map((node) => ({
+        text: (node.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60),
+        scrollWidth: node.scrollWidth,
+        clientWidth: node.clientWidth,
+      }))
+      .filter(item => item.scrollWidth > item.clientWidth + 1);
+  });
+
+  expect(rowOverflow).toEqual([]);
 });
 
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {

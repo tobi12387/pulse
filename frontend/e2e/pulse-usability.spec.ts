@@ -501,6 +501,21 @@ function offPlanActivityHome({ rpe, feedbackLoggedAt }: { rpe: number | null; fe
 test('Home treats completed planned training with feedback as done and stays focused', async ({ page }) => {
   await mockPulseApi(page, {
     home: completedWorkoutHome({ rpe: 5, feedbackLoggedAt: '2026-05-01T09:45:00.000Z' }),
+    adaptationEvents: {
+      events: [{
+        id: 'adapt-1',
+        userId: 'user-1',
+        eventDate: '2026-05-01',
+        kind: 'activity_completed',
+        sourceId: 'activity-done',
+        severity: 'action',
+        recommendation: 'protect_recovery',
+        summary: 'Lange reale Einheit erkannt; Folgetage müssen Belastung absorbieren.',
+        evidence: ['bike 430 min', 'TSB -18.0'],
+        resolvedAt: null,
+        createdAt: '2026-05-01T10:00:00.000Z',
+      }],
+    },
   });
 
   await page.goto('/');
@@ -521,6 +536,8 @@ test('Home treats completed planned training with feedback as done and stays foc
   await expect(page.getByText('RECENT')).toHaveCount(0);
   await expect(page.getByText('Grundlage draußen')).toHaveCount(0);
   await expect(page.getByText(/Mental Health:/)).toHaveCount(0);
+  await expect(page.getByTestId('home-adaptation-event')).toContainText('PLAN GEPRÜFT');
+  await expect(page.getByTestId('home-adaptation-event')).toContainText('Lange reale Einheit erkannt');
 });
 
 test('Home routes to activity feedback only when completed training still misses RPE', async ({ page }) => {
@@ -896,6 +913,8 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   await expect(page.getByText('Quick Check-in')).toBeVisible();
   await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
   await expect(page.getByText('Schlafscore 82')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Energie: begrenzt' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Druck: hoch' })).toBeVisible();
@@ -917,7 +936,7 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Welche Grenze macht diesen freien Tag wirklich erholsam/);
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Mental: angespannt/);
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Schutz: aktiv einplanen/);
-  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await page.getByRole('button', { name: 'Heute speichern' }).click();
   await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
   expect(submitted).toMatchObject({
     mood: 3,
@@ -926,6 +945,17 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
     motivation: 3,
   });
   expect(String((submitted as { notes?: string }).notes)).toContain('Bedarf: Ruhe');
+});
+
+test('Data mental check-in keeps the primary save action in the first mobile viewport', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await expect(page.getByText('Quick Check-in')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Heute speichern|Check-in speichern|Check-in senden/i })).toBeInViewport();
 });
 
 test('Data mental check-in turns free text into editable scores before saving', async ({ page }) => {
@@ -942,6 +972,7 @@ test('Data mental check-in turns free text into editable scores before saving', 
   });
 
   await page.goto('/data?tab=mental');
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
 
   await page.getByRole('textbox', { name: 'Kurz beschreiben' }).fill('Kopf voll, Energie begrenzt, Druck spuerbar.');
   await page.getByRole('button', { name: 'Text auswerten' }).click();
@@ -1409,69 +1440,123 @@ test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) =>
   expect(box!.y).toBeLessThan(260);
 });
 
-test('Home surfaces TrainNow options when no workout is planned', async ({ page }) => {
+test('Tablet navigation and segmented panels expose accessible targets', async ({ page }) => {
+  await page.setViewportSize({ width: 834, height: 1112 });
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  const sidebarTargets = page.locator('aside nav a');
+  await expect(sidebarTargets).toHaveCount(4);
+  for (const index of [0, 1, 2, 3]) {
+    const box = await sidebarTargets.nth(index).boundingBox();
+    expect(box, `sidebar nav target ${index} should render`).not.toBeNull();
+    expect(box!.height, `sidebar nav target ${index} should be at least 44px tall`).toBeGreaterThanOrEqual(44);
+  }
+  const logoutBox = await page.getByRole('button', { name: 'out' }).boundingBox();
+  expect(logoutBox, 'desktop logout should render').not.toBeNull();
+  expect(logoutBox!.height, 'desktop logout should be at least 44px tall').toBeGreaterThanOrEqual(44);
+  expect(logoutBox!.width, 'desktop logout should be at least 44px wide').toBeGreaterThanOrEqual(44);
+
+  await page.goto('/data?tab=mental');
+  const mentalTab = page.getByRole('tab', { name: 'Mental', exact: true });
+  await expect(mentalTab).toHaveAttribute('aria-controls', 'data-mental-panel');
+  const mentalPanel = page.locator('#data-mental-panel[role="tabpanel"]');
+  await expect(mentalPanel).toBeVisible();
+  await expect(mentalPanel).toHaveAttribute('aria-labelledby', 'data-mental-tab');
+
+  await page.goto('/plan?tab=training');
+  const trainingTab = page.getByRole('tab', { name: 'Training', exact: true });
+  await expect(trainingTab).toHaveAttribute('aria-controls', 'plan-training-panel');
+  const trainingPanel = page.locator('#plan-training-panel[role="tabpanel"]');
+  await expect(trainingPanel).toBeVisible();
+  await expect(trainingPanel).toHaveAttribute('aria-labelledby', 'plan-training-tab');
+});
+
+test('Home metric tooltips and Plan activity rows work from keyboard', async ({ page }) => {
+  await mockPulseApi(page, {
+    activities: [
+      {
+        id: 'activity-row-1',
+        startTime: '2026-05-01T07:30:00.000Z',
+        activityType: 'bike',
+        name: 'Rennrad Grundlage',
+        durationSec: 3600,
+        distanceM: 30000,
+        tss: 45,
+      },
+    ],
+  });
+
+  await page.goto('/');
+  const readinessTrigger = page.getByRole('button', { name: /READINESS erklären/i });
+  await readinessTrigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(readinessTrigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('tooltip')).toContainText(/Readiness|Trainingsbereitschaft/i);
+  await page.keyboard.press('Escape');
+  await expect(readinessTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+
+  await page.goto('/plan?tab=training');
+  const activityButton = page.getByRole('button', { name: /Rennrad Grundlage.*Aktivität öffnen/i });
+  await expect(activityButton).toBeVisible();
+  const activityBox = await activityButton.boundingBox();
+  expect(activityBox, 'activity row button should render').not.toBeNull();
+  expect(activityBox!.height, 'activity row button should be at least 44px tall').toBeGreaterThanOrEqual(44);
+  await activityButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/activity\/activity-row-1$/);
+});
+
+test('Home surfaces quick availability intents when no workout is planned', async ({ page }) => {
   let previewBody: unknown = null;
   await mockPulseApi(page, {
-    todayOptions: {
-      todayOptions: {
-        date: '2026-05-01',
-        state: 'unplanned_trainable',
-        summary: 'Kein Pflichttraining heute. Wenn du trainierst, dann gezielt und ohne den Tag automatisch zu fuellen.',
-        signature: '2026-05-01|train-now',
-        options: [
-          {
-            id: 'workout-bike-z2-45',
-            kind: 'workout',
-            priority: 'primary',
-            title: 'Rad locker',
-            detail: '45 min Z2. Sinnvoll, wenn du heute spontan trainieren willst.',
-            cta: 'Einheit planen',
-            targetPath: '/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=2&durationMin=45&description=45%20min%20Z2%20locker#plan-scenario-preview',
-            evidence: ['Readiness 78/100', 'TSB 2.0'],
-            activityType: 'bike',
-            zone: 2,
-            durationMin: 45,
-          },
-          {
-            id: 'rest-protect-recovery',
-            kind: 'rest',
-            priority: 'support',
-            title: 'Bewusst frei lassen',
-            detail: 'Kein Training aus Gewohnheit erzwingen.',
-            cta: 'Tagesentscheidung prüfen',
-            targetPath: '/',
-            evidence: ['Readiness 78/100'],
-          },
-        ],
-      },
-    },
+    todayOptionsState: 'unplanned_trainable',
     onPlanScenarioPreview: body => { previewBody = body; },
   });
 
   await page.goto('/');
   await expect(page.getByTestId('today-options-card')).toBeVisible();
-  await expect(page.getByText('TrainNow')).toBeVisible();
-  await expect(page.getByText('Rad locker')).toBeVisible();
-  await page.getByText('Rad locker').click();
-  await expect(page).toHaveURL('/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=2&durationMin=45&description=45%20min%20Z2%20locker#plan-scenario-preview');
+  await expect(page.getByTestId('today-options-card')).toContainText('Heute möglich');
+  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+  await page.getByRole('button', { name: '60 min' }).click();
+  await expect(page).toHaveURL(/source=mobile-intent/);
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
   await expect(scenarioCard).toBeInViewport();
-  await expect(scenarioCard).toContainText('Aus TrainNow geöffnet');
-  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('45');
+  await expect(scenarioCard).toContainText('Mobile Quick Decision');
+  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('60');
   await expect(scenarioCard.getByLabel('Sportart')).toHaveValue('bike');
-  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('2');
-  await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
+  await expect(scenarioCard).not.toContainText('155 km');
+  await expect(scenarioCard).not.toContainText('423 min');
   expect(previewBody).toMatchObject({
     type: 'add_custom_tour',
     workout: {
       activityType: 'bike',
-      zone: 2,
-      durationMin: 45,
-      description: '45 min Z2 locker',
+      zone: 1,
+      durationMin: 60,
+      description: 'Heute 60 min moeglich; Pulse prueft Auswirkung auf Woche und Garmin.',
     },
   });
+});
+
+test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    todayOptionsState: 'planned_workout',
+    home: { todayWorkout: null, nextWorkout: null },
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByTestId('daily-decision-card')).toContainText('Heute ist kein Training geplant');
+  await expect(page.getByTestId('today-options-card')).toHaveCount(0);
+  await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
 });
 
 test('Plan scenario preview shows long-tour load and recovery impact before applying', async ({ page }) => {
@@ -1509,8 +1594,12 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
   });
 
   await page.goto('/plan?tab=training');
-  await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
-  await page.getByTestId('plan-scenario-preview-card').getByRole('button', { name: 'Szenario prüfen' }).click();
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await scenarioCard.getByLabel('km optional').fill('155');
+  await scenarioCard.getByLabel('km/h optional').fill('22');
+  await scenarioCard.getByLabel('Notiz').fill('Entspannte Rennradtour mit Stops.');
+  await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByText('TSS', { exact: true })).toBeVisible();
   await expect(page.getByText('+296', { exact: true })).toBeVisible();
@@ -1644,6 +1733,102 @@ test('Plan scenario preview lists affected future workouts before applying', asy
   expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.75 });
 });
 
+test('Plan refresh preview compares stale workouts without write requests', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const requests: Array<{ method: string; pathname: string }> = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => { requests.push({ method, pathname }); },
+    planWorkouts: [{
+      id: 'stale-hard-1',
+      userId: 'user-1',
+      plannedDate: '2026-05-03',
+      activityType: 'bike',
+      zone: 5,
+      durationMin: 75,
+      distanceKm: null,
+      targetTss: 92,
+      archetypeId: 'bike_vo2_4x4',
+      difficultyLevel: 4.4,
+      difficultyEnergySystem: 'vo2',
+      capabilityFit: 'stretch',
+      description: 'Warum diese Einheit: VO2-Reiz fuer kurze Anstiege.\n\n4x4 min.',
+      steps: null,
+      garminWorkoutId: null,
+      garminScheduledId: null,
+      status: 'planned',
+      workoutFeedback: null,
+      complianceScore: null,
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: null,
+    }],
+    planRefreshPreview: {
+      preview: {
+        weekStart: '2026-04-27',
+        generatedAt: '2026-05-01T08:00:00.000Z',
+        stale: true,
+        summary: '3 Signal(e) sprechen fuer eine Planpruefung; 1 offene Einheit(en) wuerden sich aendern.',
+        triggers: [
+          { kind: 'high_rpe', label: 'RPE-Schutz', detail: 'RPE 9 spricht gegen harte Reize.', severity: 'watch', evidence: ['RPE 9/10'] },
+          { kind: 'capability_update', label: 'Capability-Update', detail: 'Capabilities neuer als Plan.', severity: 'info', evidence: ['Endurance 3.8 -> 4.1'] },
+          { kind: 'stale_engine', label: 'Planlogik aktualisiert', detail: 'Plan Engine neuer als Trace.', severity: 'info', evidence: ['older-plan-engine'] },
+        ],
+        comparisons: [{
+          date: '2026-05-03',
+          current: {
+            id: 'stale-hard-1',
+            plannedDate: '2026-05-03',
+            activityType: 'bike',
+            zone: 5,
+            durationMin: 75,
+            targetTss: 92,
+            archetypeId: 'bike_vo2_4x4',
+            why: 'VO2-Reiz fuer kurze Anstiege.',
+            userLocked: false,
+          },
+          proposed: {
+            id: 'stale-hard-1',
+            plannedDate: '2026-05-03',
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 50,
+            targetTss: 35,
+            archetypeId: 'bike_vo2_4x4',
+            why: 'Schutzsignal aktiv: harte Reize erst wieder nach Feedback.',
+            userLocked: false,
+          },
+          changes: ['zone', 'duration', 'why'],
+          reason: 'Harte Einheit wuerde im Refresh zu kontrollierter Endurance werden.',
+        }],
+        loadImpact: { tssDelta: -57, durationDeltaMin: -25 },
+        applySupported: false,
+        mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
+      },
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  const refreshCard = page.getByTestId('plan-refresh-preview-card');
+  await expect(refreshCard).toBeVisible();
+  await expect(refreshCard).toContainText('Plan prüfen');
+  await expect(refreshCard).toContainText('RPE-Schutz');
+  await expect(refreshCard).toContainText('Capability-Update');
+  await expect(refreshCard).toContainText('Jetzt: Radfahren · Z5 · 75 min · bike_vo2_4x4');
+  await expect(refreshCard).toContainText('Vorschlag: Radfahren · Z2 · 50 min · bike_vo2_4x4');
+  await expect(refreshCard).toContainText('Warum: Schutzsignal aktiv');
+  await expect(refreshCard.getByRole('button', { name: 'Vorschau anwenden' })).toBeDisabled();
+
+  await refreshCard.getByRole('button', { name: 'Refresh Preview' }).click();
+  expect(requests.some(request => request.method === 'GET' && request.pathname.startsWith('/api/pulse/plan/refresh-preview/'))).toBe(true);
+  expect(requests.filter(request => ['POST', 'PATCH', 'DELETE'].includes(request.method)).map(request => `${request.method} ${request.pathname}`))
+    .not.toContain('POST /api/pulse/plan/generate');
+  expect(requests.filter(request => request.pathname.includes('/sync-garmin'))).toEqual([]);
+});
+
 test('Plan surfaces Garmin sync failure after applying a custom tour scenario', async ({ page }) => {
   await mockPulseApi(page, {
     createWorkoutResult: (body) => ({
@@ -1680,7 +1865,12 @@ test('Plan surfaces Garmin sync failure after applying a custom tour scenario', 
   });
 
   await page.goto('/plan?tab=training');
-  await page.getByTestId('plan-adaptation-review').getByRole('button', { name: 'Szenario prüfen' }).click();
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await scenarioCard.getByLabel('km optional').fill('155');
+  await scenarioCard.getByLabel('km/h optional').fill('22');
+  await scenarioCard.getByLabel('Notiz').fill('Entspannte Rennradtour mit Stops.');
+  await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await page.getByRole('button', { name: 'Vorschau anwenden' }).click();
   await expect(page.getByText('Garmin-Sync offen')).toBeVisible();
@@ -1751,19 +1941,18 @@ test('Plan custom workout starts neutral and saves duration-only units without t
   expect(createBody).not.toMatchObject({ distanceKm: 155, expectedSpeedKmh: 22 });
 });
 
-test('Plan custom workout keeps the 155-km tour as an explicit preset', async ({ page }) => {
+test('Plan custom workout does not expose a fixed 155-km tour preset', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/plan?tab=training');
   await page.getByRole('button', { name: '+ Einheit' }).click();
   const customWorkoutForm = page.getByTestId('custom-workout-form');
 
-  await customWorkoutForm.getByRole('button', { name: '155-km Tour vorbereiten' }).click();
-
-  await expect(customWorkoutForm.getByLabel('km optional')).toHaveValue('155');
-  await expect(customWorkoutForm.getByLabel('km/h optional')).toHaveValue('22');
-  await expect(customWorkoutForm.getByText('423 min')).toBeVisible();
-  await expect(customWorkoutForm.getByLabel('Notiz')).toHaveValue('Entspannte Rennradtour mit Stops.');
+  await expect(customWorkoutForm.getByRole('button', { name: '155-km Tour vorbereiten' })).toHaveCount(0);
+  await expect(customWorkoutForm.getByLabel('km optional')).toHaveValue('');
+  await expect(customWorkoutForm.getByLabel('km/h optional')).toHaveValue('');
+  await expect(customWorkoutForm.getByText('Dauer offen')).toBeVisible();
+  await expect(customWorkoutForm.getByLabel('Notiz')).toHaveValue('');
 });
 
 test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {
@@ -1874,6 +2063,54 @@ test('Plan generation failure keeps the config open with retry', async ({ page }
   await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
 });
 
+test('Plan generation shows the freshly returned trace without requiring reload', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const staleTrace = {
+    weekStart: '2026-04-27',
+    inputSnapshot: {
+      load: { ctl: 42.4, atl: 42.7, tsb: -0.3, date: '2026-04-27' },
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      goals: [],
+      riskSignals: [],
+      healthStates: [],
+      recentRpe: [],
+      dataWarnings: [],
+      recentSportMix: {},
+      learningSnapshot: null,
+    },
+    sportMix: {},
+    generatedSummary: ['Form: CTL 42.4, TSB -0.3, Phase base.'],
+    hardDays: [],
+    planDecision: null,
+  };
+  const freshTrace = {
+    ...staleTrace,
+    inputSnapshot: {
+      ...staleTrace.inputSnapshot,
+      load: { ctl: 16.9, atl: 43.7, tsb: -26.8, date: '2026-05-01' },
+    },
+    generatedSummary: ['Form: CTL 16.9, TSB -26.8, Phase base.'],
+  };
+  await mockPulseApi(page, {
+    planTrace: staleTrace,
+    generatePlanResult: {
+      workouts: [],
+      planDecision: null,
+      planTrace: freshTrace,
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await expect(page.getByText('Form: CTL 42.4, TSB -0.3, Phase base.')).toBeVisible();
+
+  await page.getByRole('button', { name: '+ Plan generieren' }).click();
+  await page.getByRole('button', { name: 'Plan erstellen' }).click();
+
+  await expect(page.getByText('Form: CTL 16.9, TSB -26.8, Phase base.')).toBeVisible();
+  await expect(page.getByText('Form: CTL 42.4, TSB -0.3, Phase base.')).toHaveCount(0);
+});
+
 test('Settings health-state save failure keeps the form open with an inline retry hint', async ({ page }) => {
   await mockPulseApi(page, {
     failEndpoints: {
@@ -1938,6 +2175,7 @@ test('Data Garmin backfill failure shows local recovery', async ({ page }) => {
 });
 
 test('Plan prioritizes the next training decision before tools', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   await mockPulseApi(page, {
     planWorkouts: [
       {
@@ -1956,7 +2194,7 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
   await page.goto('/plan');
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sportart ändern' })).toBeVisible();
-  await expect(page.getByText('Lokal')).toBeVisible();
+  await expect(page.getByText('Lokal', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'wechseln' })).toHaveCount(0);
 
   const decisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
@@ -1971,7 +2209,7 @@ test('Plan prioritizes the next training decision before tools', async ({ page }
 });
 
 test('Plan empty training decision offers direct next actions', async ({ page }) => {
-  await mockPulseApi(page, { planWorkouts: [] });
+  await mockPulseApi(page, { planWorkouts: [], todayOptionsState: 'unplanned_trainable' });
 
   await page.goto('/plan');
   const emptyDecision = page.locator('.card').filter({ hasText: 'Kein offenes Training geplant' }).first();
@@ -2079,6 +2317,14 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
         rampRateCapPct: 7,
         deloadEveryWeeks: 4,
         taperWeeks: 2,
+        annualTargetHours: 384,
+        annualTargetTss: 18432,
+        eventPriorityBias: 'a_event',
+        missedLoadCompensation: {
+          missedTssLast14d: 120,
+          compensationTssNext14d: 42,
+          capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+        },
         currentWeek: {
           weekStart: '2026-05-04',
           kind: 'build',
@@ -2472,6 +2718,70 @@ test('Plan surfaces an adaptation check when recent Garmin execution diverged', 
   await expect(page.getByTestId('plan-adaptation-review')).toHaveCount(0);
 });
 
+test('Plan shows persisted adaptation events with concrete actions', async ({ page }) => {
+  await mockPulseApi(page, {
+    adaptationEvents: {
+      events: [
+        {
+          id: 'adapt-sync',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'sync_debt',
+          sourceId: null,
+          severity: 'action',
+          recommendation: 'sync_garmin',
+          summary: 'Garmin-Sync-Schulden müssen vor Ausführung geschlossen werden.',
+          evidence: ['2 offene Einheiten'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T07:00:00.000Z',
+        },
+        {
+          id: 'adapt-recovery',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'activity_completed',
+          sourceId: 'activity-long',
+          severity: 'watch',
+          recommendation: 'protect_recovery',
+          summary: 'Lange reale Einheit erkannt; Folgetage müssen Belastung absorbieren.',
+          evidence: ['bike 430 min', 'TSS 310'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T06:00:00.000Z',
+        },
+        {
+          id: 'adapt-move',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'planned_workout_missed',
+          sourceId: 'workout-missed',
+          severity: 'watch',
+          recommendation: 'move_workout',
+          summary: 'Mindestens eine geplante Einheit wurde nicht ausgeführt.',
+          evidence: ['2026-04-30: run Z2 45 min'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T05:00:00.000Z',
+        },
+      ],
+    },
+  });
+
+  await page.goto('/plan');
+  const card = page.getByTestId('plan-adaptation-events');
+  await expect(card).toContainText('Adaptionshinweise');
+  await expect(card).toContainText('Garmin-Sync-Schulden');
+  await expect(card).toContainText('Lange reale Einheit erkannt');
+
+  await card.getByRole('button', { name: 'Szenario prüfen' }).first().click();
+  await expect(page.getByTestId('plan-scenario-preview-card')).toBeInViewport();
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Umfang senken');
+
+  await card.getByRole('button', { name: 'Szenario prüfen' }).nth(1).click();
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Verschieben');
+
+  await card.getByRole('button', { name: 'Garmin öffnen' }).click();
+  await expect(page).toHaveURL('/settings?section=garmin');
+});
+
 test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [
@@ -2550,6 +2860,62 @@ test('Plan surfaces Garmin sync contract degradations before execution', async (
   const panel = page.getByTestId('garmin-sync-confidence');
   await expect(panel).toContainText('Garmin mit Einschränkung');
   await expect(panel).toContainText('ohne HR-Zielzonen');
+});
+
+test('Plan workout modal explains latest Garmin execution ledger entry', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-ledger',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 60,
+        status: 'planned',
+        description: 'Ledger-Workout mit Repeat.',
+        garminWorkoutId: 'gw-ledger',
+        garminScheduledId: 'sched-ledger',
+        executionStatus: 'garmin_scheduled',
+        steps: [
+          { type: 'warmup', durationMin: 10, zone: 1, description: 'Einrollen' },
+          { type: 'interval', durationMin: 8, reps: 3, restMin: 3, zone: 4, description: 'Schwelle' },
+          { type: 'cooldown', durationMin: 10, zone: 1, description: 'Ausrollen' },
+        ],
+      },
+    ],
+    garminExecutionLedger: {
+      entries: [{
+        id: 'ledger-1',
+        plannedWorkoutId: 'workout-ledger',
+        attemptedAt: '2026-05-10T10:00:00.000Z',
+        operation: 'manual_resync',
+        outcome: 'ready',
+        summary: 'Garmin-Ausfuehrung bereit und lokal verifiziert.',
+        payloadSnapshot: {
+          workoutId: 'gw-ledger',
+          scheduledId: 'sched-ledger',
+          stepCount: 5,
+          repeatGroupCount: 1,
+          invalidRepeatCount: 0,
+          hrTargetStepCount: 4,
+          durationSec: 3600,
+          checkedAt: '2026-05-10T10:00:00.000Z',
+        },
+        issues: [],
+        errorMessage: null,
+      }],
+    },
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Ledger-Workout mit Repeat.').click();
+
+  const ledger = page.getByTestId('garmin-execution-ledger');
+  await expect(ledger).toBeVisible();
+  await expect(ledger).toContainText('Garmin Ausführung');
+  await expect(ledger).toContainText('1 Wiederholungsblock');
+  await expect(ledger).toContainText('4 HR-Zielschritte');
+  await expect(ledger).toContainText('0 Repeat-Fehler');
 });
 
 test('Plan workout modal shows Fueling and Recovery guidance for long sessions', async ({ page }) => {
@@ -2749,6 +3115,7 @@ test('Plan alternatives adapt the next workout with semantic choices', async ({ 
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const updates: unknown[] = [];
   await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 42.4, atl: 58.2, tsb: -15.8, cached: false },
     planWorkouts: [
       {
         id: 'workout-1',
@@ -2813,6 +3180,7 @@ test('Plan alternatives offer goal-oriented extra endurance only when signals ar
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const updates: unknown[] = [];
   await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 42.4, atl: 36.1, tsb: 8.4, cached: false },
     planWorkouts: [
       {
         id: 'workout-1',
@@ -2865,9 +3233,56 @@ test('Plan alternatives offer goal-oriented extra endurance only when signals ar
   });
 });
 
+test('Plan decision uses current fitness load instead of a stale generation trace', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 16.9, atl: 43.7, tsb: -26.8, cached: false },
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        targetTss: 68,
+        status: 'planned',
+        description: 'Ruhige Grundlage, nur wenn die Tagesform passt.',
+      },
+    ],
+    planTrace: {
+      weekStart: '2026-04-27',
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 42.7, tsb: -0.3 },
+        phase: 'base',
+        weeklyHoursTarget: 8,
+        goals: [{ title: 'Ausdauerbasis ausbauen' }],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        dataWarnings: [],
+        recentSportMix: { bike: 2 },
+        learningSnapshot: null,
+      },
+      sportMix: { bike: 2 },
+      generatedSummary: [],
+      hardDays: [],
+      planDecision: null,
+    },
+  });
+
+  await page.goto('/plan');
+
+  const decision = page.getByTestId('next-training-decision');
+  await expect(decision.getByText('Einbezogen: TSB -26.8')).toBeVisible();
+  await expect(decision.getByText('TSB -0.3')).toHaveCount(0);
+  await expect(decision.getByText('Frei lassen empfohlen')).toBeVisible();
+  await expect(decision.getByRole('button', { name: /Frei lassen/ })).toContainText('Empfohlen');
+});
+
 test('Plan alternatives avoid stale trace context for next-week workouts', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 16.9, atl: 43.7, tsb: -26.8, cached: false },
     planWorkouts: [
       {
         id: 'workout-1',
@@ -2904,7 +3319,7 @@ test('Plan alternatives avoid stale trace context for next-week workouts', async
   await page.goto('/plan');
 
   await expect(page.getByText('Einbezogen: TSB -15.8')).toHaveCount(0);
-  await expect(page.getByText('Einbezogen: aktueller Plan')).toBeVisible();
+  await expect(page.getByText('Einbezogen: TSB -26.8')).toBeVisible();
   await expect(page.getByText('Verfügbarkeit offen')).toBeVisible();
 });
 
@@ -3198,6 +3613,139 @@ test('Settings surfaces blocked Garmin provider state with bounded actions', asy
   await page.getByRole('button', { name: 'Garmin-Kalender synchronisieren' }).click();
   await expect(page.getByText('Garmin Kalender synchronisiert')).toBeVisible();
   expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
+});
+
+test('Plan Ausführung shows Garmin execution trust without live sync on load', async ({ page }) => {
+  const requests: Array<{ method: string; pathname: string }> = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
+    garminExecutionDiff: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      window: { from: '2026-05-01', to: '2026-05-15', days: 15 },
+      rows: [
+        {
+          workoutId: 'workout-ready',
+          plannedDate: '2026-05-02',
+          title: 'Rad · Z2 · 75 min',
+          status: 'ready',
+          summary: 'Auf Garmin bereit: Vorlage und Kalendertermin wurden im Readback gefunden.',
+          local: { garminWorkoutId: 'gw-ready', garminScheduledId: 'sched-ready' },
+          remote: { workoutId: 'gw-ready', scheduledId: 'sched-ready', lastSeenAt: '2026-05-01T08:00:00.000Z' },
+          repairActions: [],
+        },
+        {
+          workoutId: 'workout-missing',
+          plannedDate: '2026-05-03',
+          title: 'Laufen · Z2 · 45 min',
+          status: 'missing_calendar',
+          summary: 'Vorlage bekannt, aber die Einheit fehlt im Garmin-Kalenderfenster.',
+          local: { garminWorkoutId: 'gw-missing', garminScheduledId: 'sched-missing' },
+          remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+          repairActions: ['schedule_calendar'],
+        },
+        {
+          workoutId: 'workout-repeat',
+          plannedDate: '2026-05-04',
+          title: 'Rad · Z4 · 30 min',
+          status: 'broken_repeat',
+          summary: 'Remote-Workout hat defekte Wiederholungen und sollte neu synchronisiert werden.',
+          local: { garminWorkoutId: 'gw-repeat', garminScheduledId: 'sched-repeat' },
+          remote: { workoutId: 'gw-repeat', scheduledId: 'sched-repeat', lastSeenAt: '2026-05-01T08:00:00.000Z' },
+          repairActions: ['repair_repeat'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('tab', { name: 'Ausführung' }).click();
+
+  const panel = page.getByTestId('garmin-execution-trust-panel');
+  await expect(panel).toContainText('Auf Garmin bereit');
+  await expect(panel).toContainText('Fehlt im Garmin-Kalender');
+  await expect(panel).toContainText('Repeat reparieren');
+  expect(requests).toContainEqual({ method: 'GET', pathname: '/api/pulse/garmin/execution-diff' });
+  expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
+  expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout/workout-repeat/sync-garmin' });
+});
+
+test('Plan Ausführung repair actions call existing Garmin repair endpoints only after explicit click', async ({ page }) => {
+  const requests: Array<{ method: string; pathname: string }> = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
+    garminExecutionDiff: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      window: { from: '2026-05-01', to: '2026-05-15', days: 15 },
+      rows: [
+        {
+          workoutId: 'workout-upload',
+          plannedDate: '2026-05-02',
+          title: 'Rad · Z2 · 75 min',
+          status: 'missing_template',
+          summary: 'In Pulse geplant, aber es gibt noch keine Garmin-Workout-Vorlage.',
+          local: { garminWorkoutId: null, garminScheduledId: null },
+          remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+          repairActions: ['upload_template'],
+        },
+        {
+          workoutId: 'workout-calendar',
+          plannedDate: '2026-05-03',
+          title: 'Laufen · Z2 · 45 min',
+          status: 'missing_calendar',
+          summary: 'Vorlage bekannt, aber die Einheit fehlt im Garmin-Kalenderfenster.',
+          local: { garminWorkoutId: 'gw-calendar', garminScheduledId: 'sched-calendar' },
+          remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+          repairActions: ['schedule_calendar'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/plan?tab=execution');
+  const panel = page.getByTestId('garmin-execution-trust-panel');
+  await expect(panel).toContainText('Vorlage hochladen');
+  await expect(panel).toContainText('Kalender syncen');
+  expect(requests.filter(request => request.method === 'POST')).toEqual([]);
+
+  await panel.getByRole('button', { name: 'Vorlage hochladen' }).click();
+  await expect(panel).toContainText('Reparatur ausgeführt');
+  expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout/workout-upload/sync-garmin' });
+
+  await panel.getByRole('button', { name: 'Kalender syncen' }).click();
+  expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
+});
+
+test('Plan Statistik shows progression guidance in capability levels', async ({ page }) => {
+  await mockPulseApi(page);
+  await page.goto('/plan?tab=stats');
+
+  await expect(page.getByText('Capability Levels')).toBeVisible();
+  await expect(page.getByText('nächster produktiver Reiz 4.0')).toBeVisible();
+  await expect(page.getByText('geschützt · nächster Reiz 4.3')).toBeVisible();
+});
+
+test('Plan Training highlights the why-this-workout rationale separately from the body copy', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-rationale',
+        plannedDate: '2026-05-11',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        targetTss: 74,
+        archetypeId: 'endurance_cadence',
+        capabilityFit: 'productive',
+        status: 'planned',
+        description: 'Warum diese Einheit: Cadence Endurance, aerober Reiz passt zur aktuellen Belastung, RPE unauffaellig, GI unauffaellig, mentale Lage ohne harte Bremse. Aerobe Grundlage, primaer ueber Puls steuern.',
+      },
+    ],
+  });
+
+  await page.goto('/plan?tab=training');
+
+  await expect(page.getByTestId('plan-workout-rationale')).toContainText('Warum diese Einheit');
+  await expect(page.getByTestId('plan-workout-description-body')).toContainText('Aerobe Grundlage, primaer ueber Puls steuern.');
 });
 
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
@@ -3531,6 +4079,9 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, 'Verlauf löschen');
 
   await page.goto('/data?tab=mental');
+  await expectTouchTarget(page, 'Heute speichern');
+  await expectTouchTarget(page, 'Mehr beschreiben');
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expectSelectorTouchTarget(page, 'button:has-text("Text auswerten")');
   await expectSelectorTouchTarget(page, 'button:has-text("Feinjustieren")');
   await page.getByRole('button', { name: 'Feinjustieren' }).click();
@@ -3540,7 +4091,6 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectRadioTouchTarget(page, 'Motivation 1/10');
   await expectTouchTarget(page, 'Welche Grenze macht diesen freien Tag wirklich erholsam?');
   await expectTouchTarget(page, 'Mental: ruhig');
-  await expectTouchTarget(page, 'Check-in senden');
 
   await page.goto('/data?tab=analysen');
   await expectTouchTarget(page, '7T');

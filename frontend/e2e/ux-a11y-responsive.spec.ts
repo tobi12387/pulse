@@ -75,15 +75,25 @@ test('keyboard tabbing exposes a strong focus indicator on Home navigation and a
   expectStrongFocusIndicator(actionFocus);
 });
 
-test('mobile Data tabs stay compact without document-level horizontal overflow', async ({ page }, testInfo) => {
+test('mobile Data tabs wrap without document-level horizontal overflow', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab containment check');
 
   await page.goto('/data');
   await expect(page.getByRole('tab', { name: 'Abdeckung' })).toBeVisible();
 
-  const tabControl = await page.getByRole('tab', { name: 'Abdeckung' }).evaluate((element) => {
+  const tabState = await page.getByRole('tab', { name: 'Abdeckung' }).evaluate((element) => {
     const parent = element.parentElement as HTMLElement;
     const rect = parent.getBoundingClientRect();
+    const tabs = Array.from(parent.querySelectorAll<HTMLElement>('[role="tab"]'))
+      .map(tab => {
+        const tabRect = tab.getBoundingClientRect();
+        return {
+          label: tab.textContent?.trim() ?? '',
+          left: Math.round(tabRect.left),
+          right: Math.round(tabRect.right),
+          top: Math.round(tabRect.top),
+        };
+      });
     return {
       height: Math.round(rect.height),
       left: Math.round(rect.left),
@@ -91,15 +101,19 @@ test('mobile Data tabs stay compact without document-level horizontal overflow',
       scrollWidth: parent.scrollWidth,
       clientWidth: parent.clientWidth,
       overflowX: window.getComputedStyle(parent).overflowX,
+      rows: new Set(tabs.map(tab => tab.top)).size,
+      clippedTabs: tabs.filter(tab => tab.left < -1 || tab.right > document.documentElement.clientWidth + 1),
     };
   });
 
   const viewportWidth = page.viewportSize()?.width ?? 0;
-  expect(tabControl.height).toBeLessThanOrEqual(58);
-  expect(tabControl.left).toBeGreaterThanOrEqual(0);
-  expect(tabControl.right).toBeLessThanOrEqual(viewportWidth);
-  expect(tabControl.scrollWidth).toBeGreaterThan(tabControl.clientWidth);
-  expect(['auto', 'scroll']).toContain(tabControl.overflowX);
+  expect(tabState.height).toBeLessThanOrEqual(104);
+  expect(tabState.left).toBeGreaterThanOrEqual(0);
+  expect(tabState.right).toBeLessThanOrEqual(viewportWidth);
+  expect(tabState.scrollWidth).toBeLessThanOrEqual(tabState.clientWidth + 1);
+  expect(['auto', 'visible']).toContain(tabState.overflowX);
+  expect(tabState.rows).toBeLessThanOrEqual(2);
+  expect(tabState.clippedTabs).toEqual([]);
   expect(await documentOverflow(page)).toEqual({ bodyOverflow: 0, documentOverflow: 0 });
 });
 

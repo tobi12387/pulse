@@ -4,6 +4,7 @@ import {
   buildWorkoutLibraryPrescription,
   selectWorkoutArchetype,
 } from './workout-library.js';
+import { previewGarminSyncContract } from './garmin-workout.js';
 
 function stepMinutes(step: { type: string; durationMin: number; reps?: number; restMin?: number }): number {
   return step.type === 'interval'
@@ -78,6 +79,76 @@ describe('workout library', () => {
     expect(prescription.metadata.difficultyEnergySystem).toBe('long_endurance');
     expect(prescription.description).toContain('Fueling');
     expect(prescription.steps.map(step => step.type)).toEqual(['warmup', 'steady', 'cooldown']);
+  });
+
+  it('rotates endurance variants when the previous archetype should be avoided', () => {
+    const next = selectWorkoutArchetype({
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      avoidRepeatArchetypeIds: ['endurance_steady'],
+    });
+
+    expect(next.id).not.toBe('endurance_steady');
+    expect(next.progressionFamily).toBe('endurance');
+  });
+
+  it('uses limiter context to pick long fueling practice when it fits', () => {
+    const next = selectWorkoutArchetype({
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 180,
+      goalLimiterKind: 'long_endurance_fueling',
+    });
+
+    expect(next.id).toBe('long_endurance_fueling_practice');
+  });
+
+  it('builds threshold cruise as Garmin-safe repeat groups', () => {
+    const prescription = buildWorkoutLibraryPrescription({
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 75,
+      targetTss: 88,
+      preferredFamily: 'threshold',
+    }, null, { forcedArchetypeId: 'threshold_cruise' });
+
+    expect(prescription.metadata.archetypeId).toBe('threshold_cruise');
+    expect(prescription.steps.some(step => step.type === 'interval' && (step.reps ?? 0) > 1)).toBe(true);
+    expect(previewGarminSyncContract({
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 75,
+      description: prescription.description,
+      steps: prescription.steps,
+    }).status).toBe('ready');
+  });
+
+  it('keeps strength prehab as support notes without fake interval repeats', () => {
+    const prescription = buildWorkoutLibraryPrescription({
+      activityType: 'strength',
+      zone: 1,
+      durationMin: 35,
+      targetTss: 15,
+    }, null, { forcedArchetypeId: 'strength_prehab' });
+
+    expect(prescription.metadata.archetypeId).toBe('strength_prehab');
+    expect(prescription.steps.every(step => step.type !== 'interval')).toBe(true);
+    expect(prescription.steps.map(step => step.description).join(' ')).toContain('Mobility');
+  });
+
+  it('turns strength support into concrete blocks instead of a generic note', () => {
+    const prescription = buildWorkoutLibraryPrescription({
+      activityType: 'strength',
+      zone: 1,
+      durationMin: 25,
+      targetTss: 15,
+    }, null, { forcedArchetypeId: 'strength_support' });
+
+    expect(prescription.steps.length).toBeGreaterThanOrEqual(3);
+    expect(prescription.steps.every(step => step.type !== 'interval')).toBe(true);
+    expect(prescription.steps.map(step => step.description).join(' ')).toContain('Core');
+    expect(prescription.description).toContain('Unterstuetzt Haltung');
   });
 
   it('keeps short high-intensity activations inside the planned duration', () => {

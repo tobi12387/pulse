@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest verified server runtime recorded in this file: `6de9f86` / PR #227, deployed 2026-05-09. Verify live deploy state with `scripts/verify-server.sh` when it matters.
+- Latest verified server runtime recorded in this file before the current branch: `9a29fe1` / PR #281, deployed 2026-05-10. Verify live deploy state with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
@@ -22,7 +22,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Broad structure work needs a fresh `rg --files` / file-count audit first; the 2026-05-02 structure audit and boundary plan are completed history.
 - Next autonomous UI/UX work should start from fresh route evidence and only implement observed friction; Mobile Field Reliability remains primarily a real-iPhone evidence gate.
 - Fueling & Recovery preference capture, the pure backend guidance engine, read-only Plan modal guidance, Garmin workout-description handoff, generic portion equivalents, confirmed MNSTRY product calibration and practical Activity Fueling Logs are implemented: no dietary restrictions, `POWER CARB Sour Cherry 1:0.8` is the primary during anchor, Tobi-specific MNSTRY guidance uses 750 ml bottles plus approximate powder grams, `PORRIDGE BAR Sour Cherry` and `PROTEIN BAR 8 Peanut & Cranberry` support pre/post guidance, and `BICARB GEL 40 Lemon 1:0.8` stays race-/intensity-specific. Fueling logs now capture 750-ml bottles, powder grams, selected products/snacks and GI comfort.
-- Training-plan intelligence is now controlled by persisted capability levels, deterministic archetypes, TrainNow options, scenario preview/apply, season load modeling, Garmin sync contracts and goal limiter evidence. Plan surfaces weekly decision reasons as signal groups. The 2026-05-09 benchmark/gap plan is completed history in `docs/superpowers/plans/completed/`; next work should rerun the benchmark against TrainerRoad/TrainingPeaks/JOIN/Intervals/WKO patterns and use real Garmin sync QA to find the next gap.
+- Training-plan intelligence is now controlled by persisted capability levels, deterministic archetypes, TrainNow options, scenario preview/apply, season load modeling, Garmin sync contracts and goal limiter evidence. Garmin Execution Ledger, Adaptation Event Queue, Workout Library v2, Mobile Plan Flow, Power Data Quality Foundation, Power Duration/Durability, Season ATP v2 and Strength/Mobility Companion are implemented as benchmark-upgrade foundations: Garmin execution attempts are recorded non-blockingly, adaptation events centralize activity/RPE/mental/fueling/recovery/sync-debt reasons, plan generation preserves richer deterministic workout variants, Home availability intents deep-link into Plan previews, Data > Analysen labels power provenance and compact best-effort/durability summaries, Plan can cite limited Durability, Season Strategy derives annual hours/TSS plus safe missed-load compensation, and strength support now becomes concrete mobility/core/glute block lists with note-based Garmin handoff. Fresh Benchmark UI Roadmap Phase 1 (UI Accessibility Polish v2), Phase 2 (Daily Command Center v2), Garmin Execution Trust v2, Progression Library v2 and Plan Refresh Preview v1 are implemented. Next roadmap phase: Plan Apply + Garmin Readback Closure in `docs/superpowers/plans/2026-05-10-post-progression-next-roadmap.md`.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
 ## Manual Gates
@@ -60,6 +60,8 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - CI is optimized for small PRs: docs-only PRs should skip runtime jobs, runtime PR jobs are path-filtered, PR browser coverage is smoke-only, and full E2E remains on `main`/manual dispatch.
 - For authorized autonomous work, use `gh pr merge --auto --squash --delete-branch` when appropriate instead of blocking the session on green checks; inspect failures and keep runtime deploys after merged `main`.
 - Keep completed plan archives closed unless the user asks for history or regression comparison.
+- Fresh benchmark/UI roadmap lives in `docs/superpowers/plans/2026-05-10-fresh-benchmark-ui-roadmap.md`; its QA evidence lives in `docs/qa/2026-05-10-fresh-benchmark-ui-review.md`.
+- Post-progression benchmark lives in `docs/qa/2026-05-10-post-progression-benchmark-ui-review.md`; next ordered roadmap lives in `docs/superpowers/plans/2026-05-10-post-progression-next-roadmap.md`.
 
 ## Out Of Scope Unless Reversed
 

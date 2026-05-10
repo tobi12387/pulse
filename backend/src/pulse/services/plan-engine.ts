@@ -2,6 +2,7 @@ import { llmComplete, SMART_MODEL } from '../../lib/llm.js';
 import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
 import { trainingArchetypes, type TrainingArchetype } from './training-intelligence.js';
+import { selectWorkoutArchetype } from './workout-library.js';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -67,6 +68,14 @@ interface FuelingPlanHistoryInput {
   notes?: string | null;
 }
 
+interface MentalPlanStateInput {
+  date: string;
+  mood: number;
+  energy: number;
+  stress: number;
+  motivation: number;
+}
+
 interface RpePlanSafety {
   blockHard: boolean;
   reduceSessions: boolean;
@@ -76,8 +85,16 @@ interface RpePlanSafety {
 }
 
 interface FuelingPlanSafety {
+  blockHard: boolean;
   reduceSessions: boolean;
   capLongEnduranceMin: number | null;
+  summary: string | null;
+  descriptionNote: string | null;
+}
+
+interface MentalPlanSafety {
+  blockHard: boolean;
+  reduceSessions: boolean;
   summary: string | null;
   descriptionNote: string | null;
 }
@@ -142,17 +159,22 @@ function summarizeRpeSafety(activities: RecentPlanActivity[] = []): RpePlanSafet
   if (hardFeelingEasy) {
     reasons.push(`RPE-Signal: eine leichte ${hardFeelingEasy.activityType}-Einheit fühlte sich mit RPE ${hardFeelingEasy.rpe}/10 zu hart an.`);
   }
+  if (latest.rpe >= 9) {
+    reasons.push(`RPE-Signal: letzte ${latest.activityType}-Einheit lag bei RPE ${latest.rpe}/10; harte Reize erst wieder nach Erholung.`);
+  }
   if (highRpeCount >= 2) {
     reasons.push(`RPE-Signal: ${highRpeCount} der letzten ${Math.min(5, rated.length)} bewerteten Einheiten lagen bei RPE >= 8.`);
   }
 
-  const blockHard = longOffPlanLoad != null || hardFeelingEasy != null || highRpeCount >= 2;
+  const blockHard = longOffPlanLoad != null || hardFeelingEasy != null || latest.rpe >= 9 || highRpeCount >= 2;
   const reduceSessions = blockHard || latest.rpe >= 9;
   const summary = reasons.length > 0
     ? reasons.join(' ')
     : `Letzte RPE-Bewertung: ${latest.activityType} am ${latest.date} mit RPE ${latest.rpe}/10.`;
   const descriptionNote = longOffPlanLoad
     ? 'lange reale Einheit zuletzt: Erholung schuetzen, keine direkte Wiederholung des langen Reizes.'
+    : latest.rpe >= 9
+    ? `RPE ${latest.rpe}/10 zuletzt: harte Reize heute blocken und zuerst aerobe Kontrolle herstellen.`
     : blockHard
     ? 'Subjektive Ermüdung zuletzt hoch: sauber aerob bleiben, keine Zusatzreize.'
     : null;
@@ -172,7 +194,7 @@ function summarizeFuelingPlanSafety(history: FuelingPlanHistoryInput[] = []): Fu
     .sort((a, b) => b.date.localeCompare(a.date));
   const issue = relevant.find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue');
   if (!issue) {
-    return { reduceSessions: false, capLongEnduranceMin: null, summary: null, descriptionNote: null };
+    return { blockHard: false, reduceSessions: false, capLongEnduranceMin: null, summary: null, descriptionNote: null };
   }
 
   const cph = fuelingCarbsPerHour(issue);
@@ -180,10 +202,44 @@ function summarizeFuelingPlanSafety(history: FuelingPlanHistoryInput[] = []): Fu
   const powder = issue.powderG != null && issue.powderG > 0 ? `, ${Math.round(issue.powderG)}g Pulver` : '';
   const summary = `Fueling-Toleranz: ${issue.date} ${issue.giComfort}${cph != null ? ` bei ${cph}g/h` : ''}${bottle}${powder}.`;
   return {
+    blockHard: true,
     reduceSessions: true,
     capLongEnduranceMin: 165,
     summary,
     descriptionNote: `${summary} Naechste lange Einheit kontrolliert verpflegen, frueh starten und keine maximale Langdistanz direkt wiederholen.`,
+  };
+}
+
+function hasPriorityARace(goals: GoalLite[]): boolean {
+  return goals.some(goal => goal.category === 'race' && goal.racePriority === 'A');
+}
+
+function summarizeMentalPlanSafety(
+  state: MentalPlanStateInput | null | undefined,
+  goals: GoalLite[] = [],
+): MentalPlanSafety {
+  if (!state) {
+    return { blockHard: false, reduceSessions: false, summary: null, descriptionNote: null };
+  }
+
+  const protect = state.energy <= 3 && state.stress >= 7
+    || state.mood <= 3
+    || (state.motivation <= 3 && state.stress >= 7);
+  if (!protect) {
+    return { blockHard: false, reduceSessions: false, summary: null, descriptionNote: null };
+  }
+
+  const raceOverride = hasPriorityARace(goals);
+  const summary = `Mentale Lage: Energie ${state.energy}/10, Stress ${state.stress}/10, Motivation ${state.motivation}/10 am ${state.date}.`;
+  return {
+    blockHard: !raceOverride,
+    reduceSessions: !raceOverride,
+    summary: raceOverride
+      ? `${summary} A-Race bleibt sichtbar, harte Reize aber nur mit sehr klarer Grenze.`
+      : `${summary} Kein A-Race-Zwang: harte Reize in aerobe oder regenerative Arbeit verschieben.`,
+    descriptionNote: raceOverride
+      ? `${summary} Mentale Belastung hoch: Schluesselreiz nur kontrolliert ausfuehren.`
+      : `${summary} Mentale Lage schuetzen: heute keine harte Einheit erzwingen.`,
   };
 }
 
@@ -415,25 +471,18 @@ const BASE_DURATION: Record<ActivityType, Record<number, number>> = {
 const ARCHETYPE_BY_ID = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
 
 function archetypeForWorkout(workout: Pick<WeekWorkout, 'activityType' | 'zone' | 'durationMin'>): TrainingArchetype {
-  const id = workout.activityType === 'strength'
-    ? 'strength_support'
-    : workout.zone <= 1
-    ? 'recovery_spin'
-    : workout.zone === 2 && workout.durationMin >= 150
-    ? 'long_endurance'
-    : workout.zone === 2
-    ? 'endurance_steady'
-    : workout.zone === 3
-    ? workout.activityType === 'bike' && workout.durationMin >= 90
-      ? 'gravel_specificity'
-      : 'tempo_sustained'
-    : workout.zone === 4
-    ? 'threshold_intervals'
-    : workout.durationMin <= 40
-    ? 'anaerobic_sharpening'
-    : 'vo2_repeats';
+  return selectWorkoutArchetype(workout);
+}
 
-  return ARCHETYPE_BY_ID.get(id) ?? ARCHETYPE_BY_ID.get('endurance_steady')!;
+function previousArchetypeAvoidance(learning: PulsePlanLearningSnapshot | null | undefined): string[] {
+  const previousWeek = learning?.previousWeek;
+  if (!previousWeek) return [];
+  const ids: string[] = [];
+  const hasEasyEndurance = Object.entries(previousWeek.sportMix)
+    .some(([sport, summary]) => ['bike', 'run'].includes(sport) && summary.sessions > 0);
+  if (hasEasyEndurance) ids.push('endurance_steady');
+  if (previousWeek.hardDays.some(day => day.zone >= 4)) ids.push('threshold_intervals');
+  return ids.slice(0, 3);
 }
 
 function learningNeedsVariation(
@@ -465,15 +514,21 @@ function withTrainingIntentAnnotations(
   ctx: {
     planLearning?: PulsePlanLearningSnapshot | null | undefined;
     executionReview?: PulseTrainingExecutionReview | null | undefined;
+    goalLimiter?: PulseGoalLimiter | null | undefined;
+    recentArchetypeIds?: string[] | null | undefined;
   },
 ): WeekWorkout[] {
   const needsVariation = learningNeedsVariation(ctx.planLearning, ctx.executionReview);
+  const previousAvoidance = [
+    ...previousArchetypeAvoidance(ctx.planLearning),
+    ...(ctx.recentArchetypeIds ?? []),
+  ];
+  const selectedArchetypes: string[] = [];
+
   return workouts.map((workout, index) => {
-    const archetype = archetypeForWorkout(workout);
     const variationReason = variationReasonForWorkout(workout, ctx.planLearning, ctx.executionReview);
     let next: WeekWorkout = {
       ...workout,
-      archetypeId: archetype.id,
     };
     if (variationReason) next.variationReason = variationReason;
 
@@ -493,7 +548,17 @@ function withTrainingIntentAnnotations(
       });
     }
 
-    return next;
+    const archetype = selectWorkoutArchetype({
+      ...next,
+      avoidRepeatArchetypeIds: [...previousAvoidance, ...selectedArchetypes].slice(-4),
+      goalLimiterKind: ctx.goalLimiter?.kind ?? null,
+    });
+    selectedArchetypes.push(archetype.id);
+
+    return {
+      ...next,
+      archetypeId: archetype.id,
+    };
   });
 }
 
@@ -585,6 +650,7 @@ export function decidePlanDays(params: {
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
   fuelingHistory?: FuelingPlanHistoryInput[];
+  mentalState?: MentalPlanStateInput | null | undefined;
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
   seasonStrategy?: PulseSeasonStrategy | null | undefined;
@@ -595,6 +661,7 @@ export function decidePlanDays(params: {
   const reasons: string[] = [];
   const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
   const fuelingSafety = summarizeFuelingPlanSafety(params.fuelingHistory ?? []);
+  const mentalSafety = summarizeMentalPlanSafety(params.mentalState, params.goals);
 
   let target = params.weeklyHoursTarget <= 3.5 ? 2
     : params.weeklyHoursTarget <= 5.5 ? 3
@@ -638,6 +705,10 @@ export function decidePlanDays(params: {
     target -= 1;
     reasons.push(`${fuelingSafety.summary} Ein verfügbarer Tag bleibt frei, damit der nächste lange Reiz als kontrollierte Fueling-Praxis geplant wird.`);
   }
+  if (mentalSafety.reduceSessions) {
+    target -= 1;
+    reasons.push(`${mentalSafety.summary} Ein verfügbarer Tag bleibt frei, damit mentale Erholung nicht vom Plan überrollt wird.`);
+  }
 
   if (hasLearningFlag(params.planLearning, 'low_compliance') || hasLearningFlag(params.planLearning, 'low_completion')) {
     target -= 1;
@@ -672,6 +743,17 @@ export function decidePlanDays(params: {
     target = Math.min(target, guardrails.targetSessions);
     reasons.push(`Saisonlinie: ${guardrails.freeDayRationale}`);
     reasons.push(`Saisonlast: ${params.seasonStrategy.loadModel.currentWeek.kind} mit Ziel ${params.seasonStrategy.loadModel.currentWeek.targetHours}h / ${params.seasonStrategy.loadModel.currentWeek.targetTss} TSS.`);
+    const compensation = params.seasonStrategy.loadModel.missedLoadCompensation.compensationTssNext14d;
+    if (compensation > 0) {
+      const currentKind = params.seasonStrategy.loadModel.currentWeek.kind;
+      const blockedKind = currentKind === 'taper' || currentKind === 'race_week' || currentKind === 'recovery' || currentKind === 'deload';
+      if (blockedKind || params.tsb <= -8 || criticalRisk) {
+        reasons.push(`ATP: Nachhol-Last geblockt, weil ${currentKind} / TSB ${params.tsb.toFixed(1)} Vorrang hat.`);
+      } else {
+        const safeWeeklyCompensation = Math.round(compensation / 2);
+        reasons.push(`ATP: ${safeWeeklyCompensation} TSS Nachholanteil eingeplant; ${params.seasonStrategy.loadModel.missedLoadCompensation.capReason}`);
+      }
+    }
     if (params.seasonStrategy.loadModel.warnings.length > 0) {
       reasons.push(`Saisonlast-Warnung: ${params.seasonStrategy.loadModel.warnings[0]}`);
     }
@@ -720,6 +802,7 @@ function buildPolarizedWorkouts(params: {
   riskSignals?: RiskSignalLite[];
   recentActivities?: RecentPlanActivity[];
   fuelingHistory?: FuelingPlanHistoryInput[];
+  mentalState?: MentalPlanStateInput | null | undefined;
   planLearning?: PulsePlanLearningSnapshot | null | undefined;
   executionReview?: PulseTrainingExecutionReview | null | undefined;
   seasonStrategy?: PulseSeasonStrategy | null | undefined;
@@ -733,12 +816,13 @@ function buildPolarizedWorkouts(params: {
   const profile = goalWorkoutProfile(goals, phase);
   const rpeSafety = summarizeRpeSafety(params.recentActivities ?? []);
   const fuelingSafety = summarizeFuelingPlanSafety(params.fuelingHistory ?? []);
+  const mentalSafety = summarizeMentalPlanSafety(params.mentalState, goals);
   const rotationShift = rotationShiftForLearning(params.planLearning);
 
   // 80/20 polarization: ~22% of sessions are hard (Z4-5), 0 if very fatigued
   const hasBlockingRisk = riskSignals.some(r => r.severity === 'critical' || r.ruleId === 'rhr_drift_7d' || r.ruleId === 'hrv_trend_decline' || r.ruleId === 'sleep_debt_5d');
   const executionBlocksHard = executionReviewNeedsRecoveryProtection(params.executionReview);
-  const baseHardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || executionBlocksHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
+  const baseHardCount = tsb < -20 || hasBlockingRisk || rpeSafety.blockHard || fuelingSafety.blockHard || mentalSafety.blockHard || executionBlocksHard || (primaryGoal === 'weight' && tsb < 5) || primaryGoal === 'volume'
     ? 0
     : Math.min(primaryGoal === 'weight' ? 1 : 2, Math.max(1, Math.round(n * 0.22)));
   const hardCount = Math.min(baseHardCount, params.seasonStrategy?.guardrails.maxHardDays ?? baseHardCount);
@@ -889,6 +973,7 @@ function withHrFirstDescriptions(
     goals: GoalLite[];
     rpeSafety: RpePlanSafety;
     fuelingSafety: FuelingPlanSafety;
+    mentalSafety: MentalPlanSafety;
     executionReview?: PulseTrainingExecutionReview | null | undefined;
     goalLimiter?: PulseGoalLimiter | null | undefined;
   },
@@ -908,6 +993,9 @@ function withHrFirstDescriptions(
     const safety = ctx.rpeSafety.descriptionNote
       ? ` ${ctx.rpeSafety.descriptionNote}`
       : '';
+    const mental = ctx.mentalSafety.descriptionNote
+      ? ` ${ctx.mentalSafety.descriptionNote}`
+      : '';
     const executionNote = executionReviewNeedsRecoveryProtection(ctx.executionReview)
       ? ' Ausführung der Vorwoche: Erholung schützen, Umfang und harte Reize konservativ halten.'
       : hasExecutionSignal(ctx.executionReview, 'maintain_structure')
@@ -923,9 +1011,16 @@ function withHrFirstDescriptions(
       : w.zone === 1
       ? 'Regeneration und Bewegungsqualität'
       : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
+    const rationaleSignals = [
+      w.zone >= 4 ? 'Qualitaetsreiz passt nur mit freien Schutzsignalen' : w.zone === 1 ? 'Regeneration hat Vorrang' : 'aerober Reiz passt zur aktuellen Belastung',
+      ctx.rpeSafety.descriptionNote ? 'RPE-Schutz aktiv' : 'RPE unauffaellig',
+      ctx.fuelingSafety.descriptionNote && isEnduranceFuelingActivity(w.activityType) ? 'Fueling kontrollieren' : 'GI unauffaellig',
+      ctx.mentalSafety.descriptionNote ? 'Mental Protect aktiv' : 'mentale Lage ohne harte Bremse',
+    ];
+    const rationale = `Warum diese Einheit: ${archetype.label}, ${rationaleSignals.join(', ')}.`;
     return {
       ...w,
-      description: `${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${fueling}${safety}${executionNote}${limiterNote}`,
+      description: `${rationale} ${goalPrefix}${archetypeText} ${purpose}. ${w.durationMin} min in Z${w.zone}, primär über Puls steuern (${hr}); Watt nur als Sekundärkontrolle nutzen.${variation}${fueling}${safety}${mental}${executionNote}${limiterNote}`,
     };
   });
 }
@@ -1028,6 +1123,24 @@ function aggregateHistory(activities: Array<{
 }
 
 // ─── LLM description enrichment ──────────────────────────────────────────────
+
+const WORKOUT_RATIONALE_PREFIX = 'Warum diese Einheit:';
+
+function extractWorkoutRationale(description: string): string | null {
+  const trimmed = description.trim();
+  if (!trimmed.startsWith(WORKOUT_RATIONALE_PREFIX)) return null;
+  const nextSentenceIndex = trimmed.indexOf('. ');
+  if (nextSentenceIndex === -1) return trimmed;
+  return trimmed.slice(0, nextSentenceIndex + 1);
+}
+
+function preserveWorkoutRationale(baseDescription: string, enrichedDescription: string | null | undefined): string {
+  const rationale = extractWorkoutRationale(baseDescription);
+  const enriched = enrichedDescription?.trim();
+  if (!rationale || !enriched) return enriched || baseDescription;
+  if (enriched.startsWith(WORKOUT_RATIONALE_PREFIX)) return enriched;
+  return `${rationale} ${enriched}`;
+}
 
 async function enrichDescriptions(
   workouts: WeekWorkout[],
@@ -1182,7 +1295,7 @@ Antworte NUR mit JSON-Array (gleiche Reihenfolge wie oben):
   const items = JSON.parse(jsonMatch[0]) as Array<{ index: number; description: string }>;
   return workouts.map((w, i) => ({
     ...w,
-    description: items.find(it => it.index === i)?.description ?? w.description,
+    description: preserveWorkoutRationale(w.description, items.find(it => it.index === i)?.description),
   }));
 }
 
@@ -1207,6 +1320,8 @@ export interface ScientificPlanInput {
   executionReview?: PulseTrainingExecutionReview | null;
   seasonStrategy?: PulseSeasonStrategy | null;
   goalLimiter?: PulseGoalLimiter | null;
+  recentArchetypeIds?: string[];
+  mentalState?: MentalPlanStateInput | null;
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -1230,13 +1345,25 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
   const mesocycleWeek = getMesocycleWeek(input.weekStart);
   const phase = input.phase as Phase;
 
-  const weeklyTss = computeWeeklyTssTarget({
+  const baseWeeklyTss = computeWeeklyTssTarget({
     ctl: input.ctl,
     tsb: input.tsb,
     weeklyHoursTarget: input.weeklyHoursTarget,
     mesocycleWeek,
     phase,
   });
+  const seasonCompensation = input.seasonStrategy?.loadModel.missedLoadCompensation.compensationTssNext14d ?? 0;
+  const currentKind = input.seasonStrategy?.loadModel.currentWeek.kind ?? null;
+  const compensationBlocked = currentKind === 'taper'
+    || currentKind === 'race_week'
+    || currentKind === 'recovery'
+    || currentKind === 'deload'
+    || input.tsb <= -8
+    || (input.riskSignals ?? []).some(signal => signal.severity === 'critical');
+  const safeWeeklyCompensation = seasonCompensation > 0 && !compensationBlocked
+    ? Math.round(seasonCompensation / 2)
+    : 0;
+  const weeklyTss = baseWeeklyTss + safeWeeklyCompensation;
 
   const dayDecision = decidePlanDays({
     availableDays: input.availableDays,
@@ -1248,6 +1375,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
     fuelingHistory: input.fuelingHistory ?? [],
+    mentalState: input.mentalState,
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     seasonStrategy: input.seasonStrategy,
@@ -1266,6 +1394,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     riskSignals: input.riskSignals ?? [],
     recentActivities: input.recentActivities,
     fuelingHistory: input.fuelingHistory ?? [],
+    mentalState: input.mentalState,
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     seasonStrategy: input.seasonStrategy,
@@ -1281,6 +1410,8 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
   workouts = withTrainingIntentAnnotations(workouts, {
     planLearning: input.planLearning,
     executionReview: input.executionReview,
+    goalLimiter: input.goalLimiter,
+    recentArchetypeIds: input.recentArchetypeIds,
   });
 
   const rpeSafety = summarizeRpeSafety(input.recentActivities);
@@ -1292,6 +1423,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     goals: input.goals,
     rpeSafety,
     fuelingSafety,
+    mentalSafety: summarizeMentalPlanSafety(input.mentalState, input.goals),
     executionReview: input.executionReview,
     goalLimiter: input.goalLimiter,
   });
@@ -1374,12 +1506,14 @@ export function generateWeekWorkouts(params: {
     const durationMin = Math.round(t.durationMin * scale);
     const plannedDate = new Date(startDate);
     plannedDate.setUTCDate(startDate.getUTCDate() + sorted[i]!);
+    const archetype = selectWorkoutArchetype({ ...t, durationMin });
     return {
       plannedDate: plannedDate.toISOString().split('T')[0]!,
       activityType: t.activityType,
       zone: t.zone,
       durationMin,
       targetTss: tssFromWorkout(durationMin, t.zone),
+      archetypeId: archetype.id,
       description: t.description,
     };
   });

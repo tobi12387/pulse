@@ -6,13 +6,23 @@ import { db } from '../../lib/db.js';
 import { garminApi } from '../../lib/garmin-client.js';
 import {
   pulseActivities,
+  pulseActivityStreams,
   pulseEquipmentActivity,
+  pulsePowerDurationSnapshots,
   pulseSleepSessions,
   type GarminActivityDetailCache,
   type GarminActivityHrZoneCache,
   type GarminActivityLapCache,
 } from '../../db/pulse-schema.js';
 import { invalidateUser } from '../lib/pulse-cache.js';
+import { refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
+import { classifyPowerDataQuality } from '../services/power-data-quality.js';
+import {
+  bestPowerEfforts,
+  bestPowerEffortsFromLaps,
+  deriveDurabilityFromLaps,
+  deriveDurabilityFromStreams,
+} from '../services/power-duration.js';
 
 function asGarminLapCache(value: unknown): GarminActivityLapCache[] {
   return Array.isArray(value) ? value as GarminActivityLapCache[] : [];
@@ -56,6 +66,8 @@ const activityFeedbackSchema = z.object({
   rpeNote: z.string().trim().max(500).nullable().optional(),
   sorenessAreas: z.array(z.enum(RPE_SORENESS_AREAS)).max(8).nullable().optional(),
 });
+
+const POWER_DURATION_EFFORTS_SEC = [60, 300, 1200, 3600] as const;
 
 export async function registerPulseActivityRoutes(app: FastifyInstance) {
   app.get('/sleep', { onRequest: [app.authenticate] }, async (req) => {
@@ -261,6 +273,67 @@ export async function registerPulseActivityRoutes(app: FastifyInstance) {
       app.log.warn(`[activity-analytics] failed for ${id}: ${err}`);
     }
 
+    try {
+      const [stream] = await db.select({
+        durationSec: pulseActivityStreams.durationSec,
+        sampleRateHz: pulseActivityStreams.sampleRateHz,
+        powerStream: pulseActivityStreams.powerStream,
+        hrStream: pulseActivityStreams.hrStream,
+      }).from(pulseActivityStreams)
+        .where(eq(pulseActivityStreams.activityId, id))
+        .limit(1);
+
+      const powerStream = (stream?.powerStream?.length ?? 0) > 0 ? stream!.powerStream! : null;
+      const quality = classifyPowerDataQuality({
+        durationSec: stream?.durationSec ?? activity.durationSec ?? 1,
+        sampleRateHz: stream?.sampleRateHz ?? null,
+        powerStream,
+        laps,
+      });
+
+      if (quality.status === 'blocked' || quality.source === 'unavailable') {
+        await db.delete(pulsePowerDurationSnapshots)
+          .where(eq(pulsePowerDurationSnapshots.activityId, id));
+      } else {
+        const source = quality.source;
+        const efforts = source === 'stream' && powerStream
+          ? bestPowerEfforts(powerStream, POWER_DURATION_EFFORTS_SEC).map(effort => ({ ...effort, source }))
+          : bestPowerEffortsFromLaps(laps, POWER_DURATION_EFFORTS_SEC);
+        const durability = source === 'stream' && powerStream
+          ? deriveDurabilityFromStreams({
+              durationSec: stream?.durationSec ?? activity.durationSec ?? 1,
+              powerStream,
+              hrStream: stream?.hrStream ?? null,
+            })
+          : deriveDurabilityFromLaps(laps);
+        const activityDate = activity.startTime.toISOString().split('T')[0]!;
+        const now = new Date();
+
+        await db.insert(pulsePowerDurationSnapshots).values({
+          userId,
+          activityId: id,
+          activityDate,
+          bestEfforts: efforts,
+          durability,
+          qualitySource: source,
+          qualityStatus: quality.status,
+          createdAt: now,
+        }).onConflictDoUpdate({
+          target: pulsePowerDurationSnapshots.activityId,
+          set: {
+            activityDate,
+            bestEfforts: efforts,
+            durability,
+            qualitySource: source,
+            qualityStatus: quality.status,
+            createdAt: now,
+          },
+        });
+      }
+    } catch (err) {
+      app.log.warn(`[power-duration] snapshot failed for ${id}: ${err}`);
+    }
+
     return {
       activity: {
         ...activity,
@@ -296,6 +369,9 @@ export async function registerPulseActivityRoutes(app: FastifyInstance) {
     if (!updated) return reply.status(404).send({ error: 'Not found' });
 
     await invalidateUser(userId);
+    await refreshAdaptationEventsForUser(db, userId, new Date().toISOString().split('T')[0]!).catch((err: unknown) => {
+      app.log.warn(`[activity-feedback] Failed to refresh adaptation events for ${userId}: ${err}`);
+    });
 
     return {
       activity: {

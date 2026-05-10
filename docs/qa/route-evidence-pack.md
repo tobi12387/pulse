@@ -40,11 +40,24 @@ Compatibility route still captured while old links and push targets can open it:
 
 - `/coach`
 
+Mobile Daily Command evidence routes:
+
+- `/` with planned workout command and no generic availability intent
+- `/` with `today-availability-intent` under `unplanned_trainable`
+- `/` with completed Garmin activity and no `today-availability-intent`
+- `/` with `recovery_protect` and no `today-availability-intent`
+- `/data?tab=mental` with the primary `Heute speichern` action in the first viewport
+- `/plan?tab=training&source=mobile-intent&scenario=workout...#plan-scenario-preview`
+
 Each project directory contains:
 
 - `01-home.png` through `07-settings.png`
 - `manifest.json`
 - `README.md`
+
+The `mobile-chromium` project additionally contains:
+
+- `08-home-planned-command.png` through `13-plan-mobile-intent-scenario.png`
 
 ## Manifest Fields
 

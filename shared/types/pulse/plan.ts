@@ -30,6 +30,7 @@ export type PulseGarminSyncContractIssueCode =
   | 'repeat_iterations_invalid'
   | 'repeat_group_missing'
   | 'unsupported_hr_target'
+  | 'strength_notes_only'
   | 'empty_steps'
   | 'invalid_step_duration'
   | 'remote_repeat_repair';
@@ -48,6 +49,117 @@ export interface PulseGarminSyncContract {
   checkedAt: string;
   summary: string;
   issues: PulseGarminSyncContractIssue[];
+}
+
+export type PulseGarminExecutionOperation =
+  | 'create'
+  | 'update'
+  | 'manual_resync'
+  | 'calendar_repair'
+  | 'delete';
+
+export type PulseGarminExecutionOutcome =
+  | 'ready'
+  | 'degraded'
+  | 'blocked'
+  | 'failed'
+  | 'deleted';
+
+export interface PulseGarminPayloadSnapshot {
+  workoutId: string | null;
+  scheduledId: string | null;
+  stepCount: number;
+  repeatGroupCount: number;
+  invalidRepeatCount: number;
+  hrTargetStepCount: number;
+  durationSec: number | null;
+  checkedAt: string;
+}
+
+export interface PulseGarminExecutionLedgerEntry {
+  id: string;
+  plannedWorkoutId: string;
+  attemptedAt: string;
+  operation: PulseGarminExecutionOperation;
+  outcome: PulseGarminExecutionOutcome;
+  summary: string;
+  payloadSnapshot: PulseGarminPayloadSnapshot | null;
+  issues: PulseGarminSyncContractIssue[];
+  errorMessage: string | null;
+}
+
+export type PulseGarminExecutionDiffStatus =
+  | 'ready'
+  | 'missing_calendar'
+  | 'missing_template'
+  | 'broken_repeat'
+  | 'degraded_expected'
+  | 'completed'
+  | 'stale'
+  | 'unknown';
+
+export type PulseGarminExecutionRepairAction =
+  | 'upload_template'
+  | 'schedule_calendar'
+  | 'repair_repeat'
+  | 'delete_stale_remote';
+
+export interface PulseGarminExecutionDiffRow {
+  workoutId: string;
+  plannedDate: string;
+  title: string;
+  status: PulseGarminExecutionDiffStatus;
+  summary: string;
+  local: {
+    garminWorkoutId: string | null;
+    garminScheduledId: string | null;
+  };
+  remote: {
+    workoutId: string | null;
+    scheduledId: string | null;
+    lastSeenAt: string | null;
+  };
+  repairActions: PulseGarminExecutionRepairAction[];
+}
+
+export interface PulseGarminExecutionDiffResponse {
+  generatedAt: string;
+  window: { from: string; to: string; days: number };
+  rows: PulseGarminExecutionDiffRow[];
+}
+
+export type PulseAdaptationEventKind =
+  | 'activity_completed'
+  | 'planned_workout_missed'
+  | 'workout_replaced'
+  | 'high_rpe'
+  | 'mental_load'
+  | 'fueling_limiter'
+  | 'sync_debt'
+  | 'recovery_risk';
+
+export type PulseAdaptationRecommendation =
+  | 'keep_plan'
+  | 'reduce_intensity'
+  | 'reduce_volume'
+  | 'protect_recovery'
+  | 'move_workout'
+  | 'regenerate_week'
+  | 'sync_garmin'
+  | 'log_feedback';
+
+export interface PulseAdaptationEvent {
+  id: string;
+  userId: string;
+  eventDate: string;
+  kind: PulseAdaptationEventKind;
+  sourceId: string | null;
+  severity: 'info' | 'watch' | 'action';
+  recommendation: PulseAdaptationRecommendation;
+  summary: string;
+  evidence: string[];
+  resolvedAt: string | null;
+  createdAt: string;
 }
 
 export interface PulsePlannedWorkout {
@@ -144,6 +256,7 @@ export type PulsePlanScenarioRequest =
         distanceKm?: number | null;
         expectedSpeedKmh?: number | null;
         description?: string | null;
+        archetypeId?: string | null;
       };
     }
   | { type: 'move_workout'; workoutId: string; targetDate: string }
@@ -164,6 +277,7 @@ export interface PulsePlanScenarioProjectedWorkout {
   description?: string | null;
   distanceKm?: number | null;
   expectedSpeedKmh?: number | null;
+  archetypeId?: string | null;
 }
 
 export interface PulsePlanScenarioChangedDay {
@@ -252,7 +366,9 @@ export interface PulsePlanTraceAdaptation {
 
 export type PulseGoalLimiterKind =
   | 'long_endurance_fueling'
-  | 'threshold_vo2';
+  | 'threshold_vo2'
+  | 'durability'
+  | 'anaerobic_repeatability';
 
 export interface PulseGoalLimiter {
   kind: PulseGoalLimiterKind;
@@ -269,6 +385,7 @@ export interface PulsePlanTrace {
   weekStart: string;
   createdAt: string;
   inputSnapshot: {
+    engineVersion?: string;
     phase: string;
     mesocycleWeek: number;
     weeklyHoursTarget: number;
@@ -307,6 +424,58 @@ export interface PulsePlanTrace {
   generatedSummary: string[];
   adaptation?: PulsePlanTraceAdaptation | null;
   restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
+}
+
+export type PulsePlanRefreshTriggerKind =
+  | 'new_activity'
+  | 'high_rpe'
+  | 'gi_issue'
+  | 'mental_protect'
+  | 'capability_update'
+  | 'missed_or_replaced'
+  | 'stale_engine';
+
+export interface PulsePlanRefreshTrigger {
+  kind: PulsePlanRefreshTriggerKind;
+  label: string;
+  detail: string;
+  severity: 'info' | 'watch' | 'action';
+  evidence: string[];
+}
+
+export interface PulsePlanRefreshWorkoutSnapshot {
+  id: string;
+  plannedDate: string;
+  activityType: PulseActivityType;
+  zone: number;
+  durationMin: number;
+  targetTss: number | null;
+  archetypeId: string | null;
+  why: string | null;
+  userLocked: boolean;
+}
+
+export interface PulsePlanRefreshComparison {
+  date: string;
+  current: PulsePlanRefreshWorkoutSnapshot | null;
+  proposed: PulsePlanRefreshWorkoutSnapshot | null;
+  changes: Array<'date' | 'sport' | 'zone' | 'duration' | 'archetype' | 'why'>;
+  reason: string;
+}
+
+export interface PulsePlanRefreshPreview {
+  weekStart: string;
+  generatedAt: string;
+  stale: boolean;
+  summary: string;
+  triggers: PulsePlanRefreshTrigger[];
+  comparisons: PulsePlanRefreshComparison[];
+  loadImpact: {
+    tssDelta: number;
+    durationDeltaMin: number;
+  };
+  applySupported: boolean;
+  mutationBoundary: string;
 }
 export type GoalCategory = 'race' | 'weight' | 'ftp' | 'vo2max' | 'volume';
 
@@ -448,6 +617,14 @@ export interface PulseSeasonLoadModel {
   rampRateCapPct: number;
   deloadEveryWeeks: number;
   taperWeeks: number;
+  annualTargetHours: number | null;
+  annualTargetTss: number | null;
+  eventPriorityBias: 'a_event' | 'b_event' | 'c_event' | 'maintenance';
+  missedLoadCompensation: {
+    missedTssLast14d: number;
+    compensationTssNext14d: number;
+    capReason: string;
+  };
   currentWeek: PulseSeasonLoadWeek;
   forecast: PulseSeasonLoadWeek[];
   warnings: string[];

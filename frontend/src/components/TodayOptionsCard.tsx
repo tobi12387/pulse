@@ -4,8 +4,16 @@ import type { PulseTodayOption, PulseTodayOptionsResponse } from '@coaching-os/s
 import { useTodayOptions } from '@/pulse/hooks';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { activityLabel } from '@/pulse/activity-labels';
+import { dailyCommandAllowsTodayOptions, type DailyCommandKind } from '@/pulse/daily-command';
 
 type Variant = 'compact' | 'full';
+
+const TODAY_INTENTS = [
+  { id: 'none', label: 'Frei', durationMin: 0, activityType: null },
+  { id: 'short', label: '30 min', durationMin: 30, activityType: 'bike' },
+  { id: 'medium', label: '60 min', durationMin: 60, activityType: 'bike' },
+  { id: 'long', label: '2h+', durationMin: 120, activityType: 'bike' },
+] as const;
 
 const KIND_ICON: Record<PulseTodayOption['kind'], LucideIcon> = {
   workout: Dumbbell,
@@ -39,12 +47,29 @@ function optionTone(option: PulseTodayOption): string {
   return 'var(--border)';
 }
 
+function mobileIntentTarget(option: typeof TODAY_INTENTS[number]): string {
+  const params = new URLSearchParams({
+    tab: 'training',
+    source: 'mobile-intent',
+    scenario: option.id === 'none' ? 'reduce_volume' : 'workout',
+    activityType: option.activityType ?? 'bike',
+    durationMin: String(option.durationMin),
+    zone: option.id === 'long' ? '2' : '1',
+    description: option.id === 'none'
+      ? 'Heute bewusst frei halten.'
+      : `Heute ${option.label} moeglich; Pulse prueft Auswirkung auf Woche und Garmin.`,
+  });
+  return `/plan?${params.toString()}#plan-scenario-preview`;
+}
+
 export function TodayOptionsCard({
   variant = 'compact',
   onNavigate,
+  commandKind,
 }: {
   variant?: Variant;
   onNavigate: (path: string) => void;
+  commandKind?: DailyCommandKind;
 }) {
   const query = useTodayOptions();
   const data = query.data?.todayOptions ?? null;
@@ -62,8 +87,11 @@ export function TodayOptionsCard({
       />
     );
   }
-  if (!data || data.options.length === 0) return null;
-  if (variant === 'compact' && data.state === 'planned_workout') return null;
+  if (!data) return null;
+  if (variant === 'compact' && !dailyCommandAllowsTodayOptions(commandKind)) return null;
+  const showMobileIntent = variant === 'compact'
+    && (commandKind === 'free_trainable' || (commandKind == null && data.state === 'unplanned_trainable'));
+  if (!showMobileIntent && data.options.length === 0) return null;
 
   const options = variant === 'compact' ? data.options.slice(0, 2) : data.options;
 
@@ -79,7 +107,7 @@ export function TodayOptionsCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
         <div style={{ minWidth: 0 }}>
           <div className="label-mono" style={{ color: data.state === 'recovery_protect' ? 'var(--green)' : 'var(--accent)', marginBottom: 5 }}>
-            {STATE_LABEL[data.state]}
+            {showMobileIntent ? 'Heute möglich' : STATE_LABEL[data.state]}
           </div>
           <p style={{ margin: 0, fontSize: variant === 'compact' ? 12 : 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
             {data.summary}
@@ -91,9 +119,9 @@ export function TodayOptionsCard({
           aria-label="Tagesoptionen aktualisieren"
           title="Tagesoptionen aktualisieren"
           style={{
-            width: 34,
-            minWidth: 34,
-            height: 34,
+            width: 44,
+            minWidth: 44,
+            height: 44,
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',
             background: 'var(--surface-2)',
@@ -108,6 +136,51 @@ export function TodayOptionsCard({
         </button>
       </div>
 
+      {showMobileIntent ? (
+        <section
+          data-testid="today-availability-intent"
+          style={{
+            display: 'grid',
+            gap: 8,
+            border: '1px solid rgba(94,230,207,0.22)',
+            borderRadius: 'var(--radius)',
+            background: 'rgba(94,230,207,0.05)',
+            padding: 10,
+          }}
+        >
+          <span className="label-mono" style={{ color: 'var(--accent)' }}>
+            HEUTE MOEGLICH
+          </span>
+          <div
+            role="group"
+            aria-label="Heute moegliche Trainingszeit"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}
+          >
+            {TODAY_INTENTS.map(option => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onNavigate(mobileIntentTarget(option))}
+                style={{
+                  minHeight: 44,
+                  minWidth: 44,
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  background: option.id === 'none' ? 'var(--surface-2)' : 'rgba(94,230,207,0.08)',
+                  color: option.id === 'none' ? 'var(--text-2)' : 'var(--accent)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0,
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : (
       <div style={{ display: 'grid', gap: 8, gridTemplateColumns: variant === 'full' ? 'repeat(auto-fit, minmax(190px, 1fr))' : '1fr' }}>
         {options.map(option => {
           const Icon = KIND_ICON[option.kind];
@@ -166,6 +239,7 @@ export function TodayOptionsCard({
           );
         })}
       </div>
+      )}
     </section>
   );
 }

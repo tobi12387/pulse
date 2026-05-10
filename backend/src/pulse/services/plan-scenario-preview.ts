@@ -56,6 +56,7 @@ function project(input: PlanScenarioPreviewInput): PulsePlanScenarioProjectedWor
       description: scenario.workout.description ?? null,
       distanceKm: scenario.workout.distanceKm ?? null,
       expectedSpeedKmh: scenario.workout.expectedSpeedKmh ?? null,
+      archetypeId: scenario.workout.archetypeId ?? null,
     });
   }
 
@@ -134,7 +135,7 @@ function changedDays(
 }
 
 function summarize(type: PulsePlanScenarioRequest['type']): string {
-  if (type === 'add_custom_tour') return 'Custom-Tour wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.';
+  if (type === 'add_custom_tour') return 'Eigene Einheit wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.';
   if (type === 'move_workout') return 'Workout wird im Preview verschoben; andere Einheiten bleiben unverändert.';
   if (type === 'reduce_volume') return 'Offene, nicht gesperrte Workouts werden im Preview reduziert.';
   if (type === 'change_availability') return 'Verfügbarkeitsänderung wird als Planungsannahme vorgemerkt; bestehende Workouts bleiben im Preview erhalten.';
@@ -157,7 +158,7 @@ export function buildPlanScenarioPreview(input: PlanScenarioPreviewInput): Pulse
   if (input.scenario.type === 'add_custom_tour') {
     const durationMin = durationFromTour(input.scenario);
     const distanceKm = input.scenario.workout.distanceKm ?? null;
-    reasons.push('Custom-Tour bleibt user-locked und wird nicht von der Wochenlogik ueberschrieben.');
+    reasons.push('Eigene Einheit bleibt user-locked und wird nicht von der Wochenlogik ueberschrieben.');
     if (durationMin >= 240 || (distanceKm ?? 0) >= 100) {
       nextDayRecoveryDate = addDays(input.scenario.workout.plannedDate, 1);
       extraDates.push(nextDayRecoveryDate);

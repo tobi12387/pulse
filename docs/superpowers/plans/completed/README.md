@@ -64,6 +64,14 @@
 | `2026-05-05-mobile-a11y-controls-polish.md` | Mobile/A11y Controls Polish — 44px touch targets, tab semantics and Mental radio keyboard support | PR #184, PR #186 |
 | `2026-05-05-data-decision-evidence-trail.md` | Data Decision Evidence Trail — Home/Plan evidence chips deep-link into Data anchors with hash tab selection and visible focus | PR #188 |
 | `2026-05-09-training-benchmark-gap-plan.md` | Training Benchmark Gap Plan — capability levels, workout library fit, TrainNow, scenario preview, season load model, Garmin sync contract and goal limiter evidence | `8a384ab`-`6de9f86` |
+| `2026-05-10-garmin-execution-ledger.md` | Garmin Execution Ledger — durable Garmin upload/delete ledger, payload snapshots, Plan modal visibility and Settings Plan link | PR #261 |
+| `2026-05-10-adaptation-event-queue.md` | Adaptation Event Queue — persisted write-triggered adaptation events for activity/RPE/mental/fueling/recovery/sync debt with Home and Plan visibility | PR #262 |
+| `2026-05-10-workout-library-v2.md` | Workout Library v2 — 20 deterministic workout variants, scored selection, Garmin-safe steps and preserved archetypes through Plan/Today Options | Workout Library v2 PR |
+| `2026-05-10-mobile-plan-flow.md` | Mobile Plan Flow — Home availability intents, auto-computed Plan scenario preview and mobile route evidence for iPhone/PWA planning | Mobile Plan Flow PR |
+| `2026-05-10-power-data-quality-foundation.md` | Power Data Quality Foundation — stream/lap/unavailable provenance for training analytics with compact Data evidence before future durability claims | Power Data Quality PR |
+| `2026-05-10-power-duration-durability.md` | Power Duration/Durability — quality-gated best efforts, durability snapshots, Data summary and Plan durability limiter | Power Duration PR |
+| `2026-05-10-season-atp-v2.md` | Season ATP v2 — annual hours/TSS, A/B/C event bias, safe missed-load compensation and compact Plan ATP guardrail row | Season ATP PR |
+| `2026-05-10-strength-mobility-companion.md` | Strength Mobility Companion — concrete support block lists, clearer Today Options and note-based Garmin handoff for strength | Strength Mobility PR |
 
 ## Bekannte veraltete Stellen
 

@@ -18,8 +18,18 @@ type MockPulseApiOptions = {
   coverage?: unknown;
   garminCoverage?: unknown;
   garminSignalUsefulness?: unknown;
+  garminExecutionLedger?: unknown;
+  garminExecutionDiff?: unknown;
+  garminCalendarSyncResult?: unknown;
+  planWorkoutSyncResult?: unknown | ((workoutId: string) => unknown);
+  powerDataQuality?: unknown;
+  powerDuration?: unknown;
+  adaptationEvents?: unknown;
+  load?: unknown;
   planTrace?: unknown;
+  planRefreshPreview?: unknown;
   planWorkouts?: unknown[];
+  generatePlanResult?: unknown | ((body: unknown) => unknown);
   createWorkoutResult?: unknown | ((body: unknown) => unknown);
   planScenarioPreview?: unknown | ((body: unknown) => unknown);
   raceCommand?: unknown;
@@ -33,6 +43,7 @@ type MockPulseApiOptions = {
   coachHistory?: unknown[];
   coachPreferences?: unknown;
   todayOptions?: unknown;
+  todayOptionsState?: 'completed_activity' | 'planned_workout' | 'unplanned_trainable' | 'recovery_protect';
   todayProposal?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
@@ -50,6 +61,7 @@ type MockPulseApiOptions = {
   onTextCheckinSubmit?: (body: unknown) => void;
   metrics?: unknown[];
   sleepSessions?: unknown[];
+  activities?: unknown[];
   activityDetail?: unknown;
   nutritionLogs?: unknown[];
   onNutritionCreate?: (body: unknown) => void;
@@ -80,14 +92,14 @@ function capabilitySummary(days = 90) {
     generatedAt: `${today}T08:00:00.000Z`,
     lookbackDays: days,
     levels: [
-      { energySystem: 'long_endurance', label: 'Long Endurance', level: 4.3, confidence: 'medium', evidence: ['lange Ausdauer erkannt'], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'endurance', label: 'Endurance', level: 3.8, confidence: 'medium', evidence: ['ruhige Ausdauer stabil'], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'tempo', label: 'Tempo', level: 3.1, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'threshold', label: 'Threshold', level: 3.7, confidence: 'medium', evidence: ['Schwelle solide abgeschlossen'], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'vo2', label: 'VO2', level: 2.5, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'anaerobic', label: 'Anaerobic', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'recovery', label: 'Recovery', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
-      { energySystem: 'strength', label: 'Strength', level: 2, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'long_endurance', label: 'Long Endurance', level: 4.3, nextRecommendedWorkoutLevel: 4.3, lastProgressionReason: 'Long Endurance geschützt nach langer Tour.', staleReason: null, confidence: 'medium', evidence: ['lange Ausdauer erkannt'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'endurance', label: 'Endurance', level: 3.8, nextRecommendedWorkoutLevel: 4.1, lastProgressionReason: 'Endurance stabil; nächster produktiver Reiz darf leicht steigen.', staleReason: null, confidence: 'medium', evidence: ['ruhige Ausdauer stabil'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'tempo', label: 'Tempo', level: 3.1, nextRecommendedWorkoutLevel: 3.1, lastProgressionReason: null, staleReason: 'Tempo hat noch keine belastbare Evidenz.', confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'threshold', label: 'Threshold', level: 3.7, nextRecommendedWorkoutLevel: 4.0, lastProgressionReason: 'Threshold sauber abgeschlossen; nächster produktiver Reiz darf leicht steigen.', staleReason: null, confidence: 'medium', evidence: ['Schwelle solide abgeschlossen'], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'vo2', label: 'VO2', level: 2.5, nextRecommendedWorkoutLevel: 2.5, lastProgressionReason: null, staleReason: 'VO2 hat noch keine belastbare Evidenz.', confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'anaerobic', label: 'Anaerobic', level: 2, nextRecommendedWorkoutLevel: 2, lastProgressionReason: null, staleReason: 'Anaerobic hat noch keine belastbare Evidenz.', confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'recovery', label: 'Recovery', level: 2, nextRecommendedWorkoutLevel: 2, lastProgressionReason: null, staleReason: null, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
+      { energySystem: 'strength', label: 'Strength', level: 2, nextRecommendedWorkoutLevel: 2, lastProgressionReason: null, staleReason: null, confidence: 'low', evidence: [], updatedAt: `${today}T08:00:00.000Z` },
     ],
     signals: ['quality_progress'],
     recommendations: ['Progression ruhig halten und Ausfuehrung weiter bewerten.'],
@@ -317,6 +329,120 @@ const checkinGuidance = {
   action: null,
 };
 
+function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOptionsState']>) {
+  if (state === 'unplanned_trainable') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Kein Pflichttraining heute. Wenn du trainierst, dann gezielt und ohne den Tag automatisch zu fuellen.',
+        signature: `${today}|unplanned-trainable`,
+        options: [
+          {
+            id: 'workout-bike-z2-45',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Rad locker',
+            detail: '45 min Z2. Sinnvoll, wenn du heute spontan trainieren willst.',
+            cta: 'Einheit planen',
+            targetPath: '/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=2&durationMin=45&description=45%20min%20Z2%20locker#plan-scenario-preview',
+            evidence: ['Readiness 78/100', 'TSB 2.0'],
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 45,
+            archetypeId: 'endurance_steady',
+            capabilityFit: 'productive',
+          },
+          {
+            id: 'strength-support-25',
+            kind: 'skills',
+            priority: 'secondary',
+            title: 'Strength Support',
+            detail: '25 min Core, Mobility und Glutes als Unterstuetzung fuer Rad/Lauf.',
+            cta: 'Im Plan ergänzen',
+            targetPath: '/plan?tab=training&source=today-options&scenario=workout&activityType=strength&zone=1&durationMin=25&description=25%20min%20Core%2C%20Mobility%20und%20Glutes&archetypeId=strength_prehab#plan-scenario-preview',
+            evidence: ['Nicht jeder freie Tag muss mit Ausdauer gefüllt werden.'],
+            activityType: 'strength',
+            zone: 1,
+            durationMin: 25,
+            archetypeId: 'strength_prehab',
+            capabilityFit: 'recovery',
+          },
+        ],
+      },
+    };
+  }
+
+  if (state === 'completed_activity') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Die geplante Einheit ist erledigt. Jetzt zaehlen Feedback, Fueling und Erholung.',
+        signature: `${today}|completed-activity`,
+        options: [{
+          id: 'feedback-after-workout',
+          kind: 'feedback',
+          priority: 'primary',
+          title: 'Feedback erfassen',
+          detail: 'RPE, Beine und Fueling sichern, bevor Pulse Folgetage bewertet.',
+          cta: 'Feedback oeffnen',
+          targetPath: '/data?tab=analysen',
+          evidence: ['Aktivitaet erkannt'],
+        }],
+      },
+    };
+  }
+
+  if (state === 'recovery_protect') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Recovery ist heute wichtiger als zusaetzliches Training.',
+        signature: `${today}|recovery-protect`,
+        options: [{
+          id: 'recovery-protect',
+          kind: 'recovery',
+          priority: 'primary',
+          title: 'Erholung schuetzen',
+          detail: 'Nur locker bewegen, wenn es dich wirklich erholt.',
+          cta: 'Recovery pruefen',
+          targetPath: '/data',
+          evidence: ['Recovery protect'],
+          activityType: 'bike',
+          zone: 1,
+          durationMin: 20,
+        }],
+      },
+    };
+  }
+
+  return {
+    todayOptions: {
+      date: today,
+      state,
+      summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+      signature: `${today}|planned-workout`,
+      options: [{
+        id: 'planned-default',
+        kind: 'workout',
+        priority: 'primary',
+        title: 'Plan ausfuehren: Rad',
+        detail: '75 min Z2. Passt heute, solange Check-in und Warm-up unauffaellig bleiben.',
+        cta: 'Workout oeffnen',
+        targetPath: '/plan?tab=training',
+        evidence: ['Readiness 82/100', 'TSB 3.0'],
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        archetypeId: 'endurance_steady',
+        capabilityFit: 'productive',
+      }],
+    },
+  };
+}
+
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
     status,
@@ -353,7 +479,7 @@ function defaultProfileResponse() {
   };
 }
 
-function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown {
+function pulseResponse(pathname: string, searchParams: URLSearchParams, options: MockPulseApiOptions = {}): unknown {
   if (pathname === '/api/pulse/home') return home;
   if (pathname === '/api/pulse/readiness') return readiness;
   if (pathname === '/api/pulse/load') return load;
@@ -478,6 +604,14 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
           rampRateCapPct: 7,
           deloadEveryWeeks: 4,
           taperWeeks: 2,
+          annualTargetHours: 384,
+          annualTargetTss: 18432,
+          eventPriorityBias: 'a_event',
+          missedLoadCompensation: {
+            missedTssLast14d: 120,
+            compensationTssNext14d: 42,
+            capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+          },
           currentWeek: {
             weekStart: today,
             kind: 'build',
@@ -528,7 +662,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       ],
     };
   }
-  if (pathname === '/api/pulse/activities') return { activities: [] };
+  if (pathname === '/api/pulse/activities') return { activities: options.activities ?? [] };
   if (pathname.startsWith('/api/pulse/activities/')) {
     return {
       activity: {
@@ -630,6 +764,15 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       items: [],
     };
   }
+  if (pathname === '/api/pulse/garmin/execution-ledger') {
+    return { entries: [] };
+  }
+  if (pathname === '/api/pulse/garmin/execution-diff') {
+    return { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] };
+  }
+  if (pathname === '/api/pulse/plan/adaptation-events') {
+    return { events: [] };
+  }
   if (pathname === '/api/pulse/coach/history') return { messages: [] };
   if (pathname === '/api/pulse/coach/preferences') {
     return {
@@ -656,6 +799,38 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       vo2maxTrend: [],
       rpeByZone: { totalRated: 0, zones: [] },
       capabilitySummary: capabilitySummary(Number(searchParams.get('weeks') ?? 12) * 7),
+      powerDataQuality: options.powerDataQuality ?? {
+        source: 'lap_approximation',
+        status: 'usable_with_caution',
+        coveragePct: 0,
+        spikeCount: 0,
+        limitations: ['Keine 1Hz-Power-Streams im Pulse-Datensatz.'],
+        updatedAt: `${today}T06:00:00.000Z`,
+      },
+      powerDuration: options.powerDuration ?? {
+        bestEfforts: [{
+          durationSec: 1200,
+          avgPowerW: 215,
+          startSec: 3600,
+          activityId: 'activity-power-duration',
+          activityDate: today,
+          source: 'lap_approximation',
+          qualityStatus: 'usable_with_caution',
+        }],
+        durability: {
+          rating: 'limited',
+          powerDropPct: -21,
+          hrDriftBpm: 3,
+          evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+          activityId: 'activity-power-duration',
+          activityDate: today,
+          qualitySource: 'lap_approximation',
+          qualityStatus: 'usable_with_caution',
+        },
+        bestEffortLine: '20 min 215 W (Lap-Approximation)',
+        durabilityLine: 'Durability limited: Power -21% · HR +3 bpm · 240 min (Lap-Approximation)',
+        updatedAt: `${today}T06:00:00.000Z`,
+      },
     };
   }
   if (pathname === '/api/pulse/training-capabilities') return { capabilitySummary: capabilitySummary(Number(searchParams.get('days') ?? 90)) };
@@ -867,8 +1042,10 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/health-state' && 'healthState' in options) return json(route, options.healthState);
     if (url.pathname === '/api/pulse/plan/today/options' && 'todayOptions' in options) return json(route, options.todayOptions);
+    if (url.pathname === '/api/pulse/plan/today/options' && options.todayOptionsState) return json(route, todayOptionsFixture(options.todayOptionsState));
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
+    if (url.pathname === '/api/pulse/load' && 'load' in options) return json(route, options.load);
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname.startsWith('/api/pulse/activities/') && options.activityDetail) return json(route, options.activityDetail);
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
@@ -931,8 +1108,35 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
+    if (url.pathname === '/api/pulse/garmin/calendar/sync' && request.method() === 'POST') {
+      return json(route, options.garminCalendarSyncResult ?? { uploaded: 1, repaired: 0, removed: 0, errors: [] });
+    }
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
+    if (url.pathname === '/api/pulse/garmin/execution-diff') {
+      return json(route, options.garminExecutionDiff ?? { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] });
+    }
+    if (url.pathname === '/api/pulse/garmin/execution-ledger') {
+      return json(route, options.garminExecutionLedger ?? { entries: [] });
+    }
+    if (url.pathname === '/api/pulse/plan/adaptation-events') {
+      return json(route, options.adaptationEvents ?? { events: [] });
+    }
+    if (url.pathname.startsWith('/api/pulse/plan/refresh-preview/')) {
+      return json(route, options.planRefreshPreview ?? {
+        preview: {
+          weekStart: url.pathname.split('/').at(-1) ?? today,
+          generatedAt: `${today}T08:00:00.000Z`,
+          stale: false,
+          summary: 'Der sichtbare Plan passt zu den aktuell bekannten Signalen.',
+          triggers: [],
+          comparisons: [],
+          loadImpact: { tssDelta: 0, durationDeltaMin: 0 },
+          applySupported: false,
+          mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
+        },
+      });
+    }
     if (url.pathname === '/api/pulse/fueling-recovery/guidance') {
       const result = typeof options.fuelingGuidance === 'function'
         ? options.fuelingGuidance(url.searchParams.get('workoutId'))
@@ -952,6 +1156,17 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       const result = typeof options.backfillResult === 'function' ? options.backfillResult(body) : options.backfillResult;
       return json(route, result);
     }
+    if (url.pathname === '/api/pulse/plan/generate' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      const result = typeof options.generatePlanResult === 'function'
+        ? options.generatePlanResult(body)
+        : options.generatePlanResult;
+      return json(route, result ?? {
+        workouts: [],
+        planDecision: null,
+        planTrace: options.planTrace ?? null,
+      }, 201);
+    }
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
     if (url.pathname === '/api/pulse/plan/scenario/preview' && request.method() === 'POST') {
       const body = request.postDataJSON();
@@ -959,23 +1174,50 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       const result = typeof options.planScenarioPreview === 'function'
         ? options.planScenarioPreview(body)
         : options.planScenarioPreview;
+      const workout = body.workout ?? {};
+      const distanceKm = Number(workout.distanceKm ?? 0);
+      const expectedSpeedKmh = Number(workout.expectedSpeedKmh ?? 0);
+      const isExplicitLongTour = body.type === 'add_custom_tour' && distanceKm >= 120 && expectedSpeedKmh > 0;
+      if (!result && isExplicitLongTour) {
+        const durationMin = Math.round((distanceKm / expectedSpeedKmh) * 60);
+        return json(route, {
+          preview: {
+            type: body.type,
+            summary: 'Eigene lange Einheit wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
+            projectedWorkouts: [],
+            changedDays: [{
+              date: workout.plannedDate ?? today,
+              before: { sessions: 0, durationMin: 0, tss: 0 },
+              after: { sessions: 1, durationMin, tss: 296 },
+              label: '+1 Einheit, +296 TSS',
+            }],
+            loadImpact: { tssDelta: 296, durationDeltaMin: durationMin, nextDayRecoveryDate: '2026-05-02' },
+            reasons: [
+              'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
+              'Folgetag als Recovery/Feedback-Fenster schützen.',
+            ],
+            warnings: ['Lange Tour simuliert: danach keine harte Einheit erzwingen.'],
+            applySupported: true,
+          },
+        });
+      }
       return json(route, result ?? {
         preview: {
           type: body.type ?? 'add_custom_tour',
-          summary: 'Custom-Tour wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
+          summary: 'Mobile Vorschau simuliert die Einheit, ohne den Plan oder Garmin zu verändern.',
           projectedWorkouts: [],
           changedDays: [{
             date: body.workout?.plannedDate ?? today,
             before: { sessions: 0, durationMin: 0, tss: 0 },
-            after: { sessions: 1, durationMin: 423, tss: 296 },
-            label: '+1 Einheit, +296 TSS',
+            after: { sessions: 1, durationMin: body.workout?.durationMin ?? 60, tss: 42 },
+            label: `+1 Einheit, +${body.workout?.durationMin ?? 60} min`,
           }],
-          loadImpact: { tssDelta: 296, durationDeltaMin: 423, nextDayRecoveryDate: '2026-05-02' },
+          loadImpact: { tssDelta: 42, durationDeltaMin: body.workout?.durationMin ?? 60, nextDayRecoveryDate: null },
           reasons: [
-            'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
-            'Folgetag als Recovery/Feedback-Fenster schützen.',
+            'Mobile Vorschau: erst Wochenlast, Recovery und Garmin-Auswirkung prüfen.',
+            'Plan oder Garmin werden erst nach Apply verändert.',
           ],
-          warnings: ['155 km simuliert: danach keine harte Einheit erzwingen.'],
+          warnings: [],
           applySupported: true,
         },
       });
@@ -1015,6 +1257,18 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
         },
       });
     }
+    if (url.pathname.startsWith('/api/pulse/plan/workout/') && url.pathname.endsWith('/sync-garmin') && request.method() === 'POST') {
+      const workoutId = url.pathname.split('/').at(-2) ?? 'workout-1';
+      const result = typeof options.planWorkoutSyncResult === 'function'
+        ? options.planWorkoutSyncResult(workoutId)
+        : options.planWorkoutSyncResult;
+      return json(route, result ?? {
+        garminWorkoutId: `garmin-${workoutId}`,
+        garminScheduledId: `schedule-${workoutId}`,
+        date: today,
+        workout: null,
+      });
+    }
     if (url.pathname === '/api/pulse/plan/workout' && request.method() === 'POST') {
       const body = request.postDataJSON();
       const result = typeof options.createWorkoutResult === 'function'
@@ -1030,7 +1284,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           durationMin: body.durationMin ?? 423,
           distanceKm: body.distanceKm ?? null,
           targetTss: null,
-          archetypeId: 'long_endurance',
+          archetypeId: body.archetypeId ?? 'long_endurance',
           difficultyLevel: 4.2,
           difficultyEnergySystem: 'long_endurance',
           capabilityFit: 'stretch',
@@ -1081,7 +1335,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/push/settings' && options.pushSettings) return json(route, options.pushSettings);
-    if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams));
+    if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams, options));
     if (url.pathname === '/api/auth/me') return json(route, { id: 'user-1', name: 'Tobi', email: 'tobi@example.test' });
     if (url.pathname === '/api/auth/logout') return json(route, {}, 204);
     if (url.pathname === '/api/auth/login') {

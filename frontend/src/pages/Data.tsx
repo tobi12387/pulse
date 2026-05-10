@@ -74,6 +74,14 @@ function EvidenceSection({ id, children }: { id: string; children: ReactNode }) 
   );
 }
 
+function TabPanel({ tab, children }: { tab: Tab; children: ReactNode }) {
+  return (
+    <section role="tabpanel" id={`data-${tab}-panel`} aria-labelledby={`data-${tab}-tab`}>
+      {children}
+    </section>
+  );
+}
+
 function fmtMetric(value: number | null | undefined, decimals = 0): string {
   return value == null ? '–' : value.toFixed(decimals);
 }
@@ -390,14 +398,14 @@ export default function Data() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
-      <SegmentedControl items={TABS} active={tab} onChange={setTab} wrap ariaLabel="Data Bereiche" />
-      {tab === 'ueberblick' && <DataOverviewTab onOpen={setTab} />}
-      {tab === 'abdeckung' && <EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection>}
-      {tab === 'schlaf' && <SchlafTab />}
-      {tab === 'metriken' && <EvidenceSection id="data-recovery"><MetrikenTab /></EvidenceSection>}
-      {tab === 'gewicht' && <GewichtTab />}
-      {tab === 'mental' && <EvidenceSection id="data-mental"><MentalTab /></EvidenceSection>}
-      {tab === 'analysen' && <EvidenceSection id="data-plan-trace"><DataAnalysenTab /></EvidenceSection>}
+      <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Data Bereiche" idPrefix="data" wrap />
+      {tab === 'ueberblick' && <TabPanel tab="ueberblick"><DataOverviewTab onOpen={setTab} /></TabPanel>}
+      {tab === 'abdeckung' && <TabPanel tab="abdeckung"><EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection></TabPanel>}
+      {tab === 'schlaf' && <TabPanel tab="schlaf"><SchlafTab /></TabPanel>}
+      {tab === 'metriken' && <TabPanel tab="metriken"><EvidenceSection id="data-recovery"><MetrikenTab /></EvidenceSection></TabPanel>}
+      {tab === 'gewicht' && <TabPanel tab="gewicht"><GewichtTab /></TabPanel>}
+      {tab === 'mental' && <TabPanel tab="mental"><EvidenceSection id="data-mental"><MentalTab /></EvidenceSection></TabPanel>}
+      {tab === 'analysen' && <TabPanel tab="analysen"><EvidenceSection id="data-plan-trace"><DataAnalysenTab /></EvidenceSection></TabPanel>}
     </div>
   );
 }

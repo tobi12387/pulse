@@ -16,7 +16,7 @@ export default function Layout() {
   const location = useLocation();
   useNavHotkeys();
 
-  const isOperationalRoute = location.pathname.startsWith('/data') || location.pathname.startsWith('/plan');
+  const isOperationalRoute = location.pathname === '/' || location.pathname.startsWith('/data') || location.pathname.startsWith('/plan');
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1120 } : undefined;
 
   async function handleLogout() {
@@ -57,7 +57,7 @@ export default function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center justify-between rounded px-3 py-2 text-[13px] transition-colors ${
+                `flex min-h-[44px] items-center justify-between rounded px-3 py-2 text-[13px] transition-colors ${
                   isActive
                     ? 'bg-[var(--surface-2)] text-[var(--text)]'
                     : 'text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'
@@ -89,7 +89,7 @@ export default function Layout() {
           </span>
           <button
             onClick={handleLogout}
-            style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}
+            style={{ minHeight: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}
             className="hover:text-[var(--text)] transition-colors uppercase tracking-widest"
           >
             out
