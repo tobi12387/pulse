@@ -73,10 +73,12 @@ export function TodayOptionsCard({
   variant = 'compact',
   onNavigate,
   commandKind,
+  showPlanActionContract = false,
 }: {
   variant?: Variant;
   onNavigate: (path: string) => void;
   commandKind?: DailyCommandKind;
+  showPlanActionContract?: boolean;
 }) {
   const query = useTodayOptions();
   const data = query.data?.todayOptions ?? null;
@@ -101,6 +103,10 @@ export function TodayOptionsCard({
   if (!showMobileIntent && data.options.length === 0) return null;
 
   const options = variant === 'compact' ? data.options.slice(0, 2) : data.options;
+  const primaryOption = options.find(option => option.priority === 'primary') ?? options[0] ?? null;
+  const visibleOptions = showPlanActionContract && primaryOption
+    ? options.filter(option => option.id !== primaryOption.id)
+    : options;
 
   return (
     <section
@@ -173,6 +179,52 @@ export function TodayOptionsCard({
         </button>
       </div>
 
+      {showPlanActionContract && primaryOption && (
+        <div
+          data-testid="plan-primary-action"
+          style={{
+            display: 'grid',
+            gap: 7,
+            marginBottom: visibleOptions.length > 0 ? 10 : 0,
+            padding: '10px 11px',
+            border: '1px solid rgba(94,230,207,0.26)',
+            borderRadius: 6,
+            background: 'rgba(94,230,207,0.05)',
+          }}
+        >
+          <div className="label-mono" style={{ color: 'var(--accent)' }}>Plan-Aktion</div>
+          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+            {primaryOption.title}
+          </div>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
+            Warum jetzt: {data.summary}
+          </p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
+            Nach dem Klick: Pulse öffnet die Einheit oder den passenden Plan-Schritt; Änderungen bleiben bewusst, bevor Garmin betroffen ist.
+          </p>
+          <button
+            type="button"
+            onClick={() => onNavigate(primaryOption.targetPath)}
+            style={{
+              minHeight: 42,
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius)',
+              color: '#04110f',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0,
+              padding: '9px 10px',
+              textTransform: 'uppercase',
+            }}
+          >
+            {primaryOption.cta}
+          </button>
+        </div>
+      )}
+
       {showMobileIntent ? (
         <section
           data-testid="today-availability-intent"
@@ -217,9 +269,9 @@ export function TodayOptionsCard({
             ))}
           </div>
         </section>
-      ) : (
+      ) : visibleOptions.length > 0 ? (
       <div style={{ display: 'grid', gap: 8, gridTemplateColumns: variant === 'full' ? 'repeat(auto-fit, minmax(190px, 1fr))' : '1fr' }}>
-        {options.map(option => {
+        {visibleOptions.map(option => {
           const Icon = KIND_ICON[option.kind];
           const meta = optionMeta(option);
           return (
@@ -303,7 +355,7 @@ export function TodayOptionsCard({
           );
         })}
       </div>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -92,6 +92,41 @@ test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await expect(page.getByTestId('season-atp-row')).toContainText('Ramp-Cap');
 });
 
+test('Plan starts with the current action contract', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-action-contract',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+    }],
+    todayOptionsState: 'unplanned_trainable',
+  });
+  await page.goto('/plan');
+  const action = page.getByTestId('plan-primary-action');
+
+  await expect(action).toBeVisible();
+  await expect(action).toContainText('Plan-Aktion');
+  await expect(action).toContainText('Nach dem Klick');
+  await expect(action.getByRole('button', { name: /Einheit öffnen/i })).toBeVisible();
+});
+
+test('Plan keeps the action contract when only Today Options has the planned workout', async ({ page }) => {
+  await page.goto('/plan');
+  const action = page.getByTestId('plan-primary-action');
+
+  await expect(action).toBeVisible();
+  await expect(action).toContainText('Plan-Aktion');
+  await expect(action).toContainText('Warum jetzt');
+  await expect(action).toContainText('Nach dem Klick');
+  await expect(action.getByRole('button', { name: /Workout öffnen/i })).toBeVisible();
+});
+
 test('Plan detail shows strength support blocks without misleading Garmin interval copy', async ({ page }) => {
   const strengthWorkout = {
     id: 'strength-support-smoke',

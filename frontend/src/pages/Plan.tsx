@@ -328,9 +328,51 @@ function NextTrainingDecisionCard({
         <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
           Prüfe deine Verfügbarkeit oder erstelle einen neuen Wochenplan, wenn du diese Woche trainieren willst.
         </p>
+        <div
+          data-testid="plan-primary-action"
+          style={{
+            marginTop: 12,
+            padding: '10px 11px',
+            border: '1px solid rgba(94,230,207,0.26)',
+            borderRadius: 6,
+            background: 'rgba(94,230,207,0.05)',
+          }}
+        >
+          <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Plan-Aktion</div>
+          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}>
+            Verfügbarkeit klären
+          </div>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
+            Warum jetzt: Ohne verfügbare Tage kann Pulse keinen sinnvollen Wochenplan statt nur freie Slots erzeugen.
+          </p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: '6px 0 0' }}>
+            Nach dem Klick: Du setzt die Trainingsfenster; danach kann Pulse Planvorschlag und Garmin-Handoff konkreter prüfen.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenAvailability}
+            style={{
+              marginTop: 10,
+              minHeight: 42,
+              width: '100%',
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius)',
+              color: '#04110f',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0,
+              padding: '9px 10px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Verfügbarkeit prüfen
+          </button>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginTop: 12 }}>
           {[
-            { label: 'Verfügbarkeit prüfen', onClick: onOpenAvailability, accent: false },
             { label: 'Einheit hinzufügen', onClick: onOpenCustom, accent: false },
             { label: 'Plan generieren', onClick: onOpenGenerator, accent: false },
             {
@@ -455,6 +497,13 @@ function NextTrainingDecisionCard({
       border: 'rgba(52,211,153,0.28)',
       background: 'rgba(52,211,153,0.08)',
     };
+  const primaryActionTitle = isToday ? 'Einheit öffnen und ausführen' : 'Nächste Einheit prüfen';
+  const primaryActionReason = recommendedOption
+    ? `${recommendedOption.label} ist als Alternative markiert; prüfe erst Zweck und Garmin-Handoff, bevor du den Plan änderst.`
+    : 'Diese Einheit passt aktuell zu Load, Risiko, mentaler Lage und deinen aktiven Zielen.';
+  const primaryActionResult = isToday
+    ? 'Du siehst Struktur, Garmin-Status und Feedback direkt an der Einheit, ohne den Plan automatisch zu verändern.'
+    : 'Du öffnest Struktur, Garmin-Handoff und Feedback. Änderungen bleiben bewusst, bevor Garmin betroffen ist.';
 
   async function applyAlternative(id: PlanAlternativeId) {
     const workout = nextWorkout;
@@ -511,6 +560,68 @@ function NextTrainingDecisionCard({
           Mentale Lage: {mentalPlanImpact}
         </p>
       )}
+      <div
+        data-testid="plan-primary-action"
+        style={{
+          marginBottom: 12,
+          padding: '10px 11px',
+          border: '1px solid rgba(94,230,207,0.26)',
+          borderRadius: 6,
+          background: 'rgba(94,230,207,0.05)',
+        }}
+      >
+        <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Plan-Aktion</div>
+        <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}>
+          {primaryActionTitle}
+        </div>
+        <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
+          Warum jetzt: {primaryActionReason}
+        </p>
+        <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: '6px 0 0' }}>
+          Nach dem Klick: {primaryActionResult}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 7, marginTop: 10 }}>
+          <button
+            type="button"
+            onClick={() => onOpen(nextWorkout)}
+            style={{
+              minHeight: 42,
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius)',
+              color: '#04110f',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0,
+              padding: '9px 10px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Einheit öffnen
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('/plan?tab=execution')}
+            style={{
+              minHeight: 42,
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: 0,
+              padding: '9px 10px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Garmin prüfen
+          </button>
+        </div>
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {sourceChips.map(chip => (
           chip.targetPath ? (
@@ -2090,7 +2201,11 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         onOpenGenerator={() => setShowConfig(true)}
       />
 
-      <TodayOptionsCard variant="full" onNavigate={navigate} />
+      <TodayOptionsCard
+        variant="full"
+        onNavigate={navigate}
+        showPlanActionContract={!nextDecisionWorkout && todayOptions.data?.todayOptions.state === 'planned_workout'}
+      />
 
       <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
 

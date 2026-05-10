@@ -82,6 +82,7 @@
 | `2026-05-10-post-progression-next-roadmap.md` | Post-Progression Next Roadmap — Plan refresh preview, Garmin readback closure, signal labels, fueling debt and no-write QA | Implemented 2026-05-10 |
 | `2026-05-10-ux-task-contract-home-slice.md` | UX Task Contract Home Slice — Home daily decision shows why now, next step, result preview and optional details/evidence | UX Task Contract Home PR |
 | `2026-05-10-home-heute-orientation.md` | Home Heute Orientation — root route stays `/`, visible navigation label becomes `Heute` for daily orientation | Heute Orientation PR |
+| `2026-05-10-plan-action-hierarchy.md` | Plan Action Hierarchy — Plan starts with a primary action, why-now copy and result preview before evidence/tools | Plan Action Hierarchy PR |
 
 ## Bekannte veraltete Stellen
 
