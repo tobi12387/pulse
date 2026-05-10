@@ -36,6 +36,13 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
 
+function localIsoDate(daysFromToday = 0) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 test.beforeEach(async ({ page }) => {
   await mockPulseApi(page);
   await page.addInitScript(() => {
@@ -409,6 +416,48 @@ test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo
   });
 
   expect(overflow).toEqual([]);
+});
+
+test('Plan mobile week strip keeps workout labels inside a touch scroller', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile week strip containment is a narrow viewport affordance');
+
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'mobile-weekstrip-run',
+      plannedDate: localIsoDate(),
+      activityType: 'run',
+      zone: 2,
+      durationMin: 48,
+      targetTss: 39,
+      status: 'planned',
+      description: 'Lockerer Lauf mit sauberer Grenze.',
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+  const workoutButton = page.getByRole('button', { name: /Laufen öffnen/ }).first();
+  await expect(workoutButton).toBeVisible();
+
+  const containment = await workoutButton.evaluate((element) => {
+    let current: HTMLElement | null = element as HTMLElement;
+    let hasHorizontalScroller = false;
+    while (current && current !== document.body) {
+      const style = window.getComputedStyle(current);
+      if ((style.overflowX === 'auto' || style.overflowX === 'scroll') && current.scrollWidth > current.clientWidth + 1) {
+        hasHorizontalScroller = true;
+        break;
+      }
+      current = current.parentElement;
+    }
+
+    return {
+      hasHorizontalScroller,
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+
+  expect(containment.documentOverflow).toBeLessThanOrEqual(1);
+  expect(containment.hasHorizontalScroller).toBe(true);
 });
 
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {

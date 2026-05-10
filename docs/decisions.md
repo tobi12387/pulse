@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan WeekStrip wird auf Mobile ein Touch-Scroller
+
+- **Decision:** Die Plan-Wochenleiste kapselt die sieben Tageskacheln in einem horizontalen Touch-Scroller mit stabiler Mindestbreite und scrollt die relevante Tageskachel automatisch in den sichtbaren Bereich.
+- **Why:** Der Live-Browsercheck auf iPhone-Breite zeigte, dass Workout-Labels in einem starren 7-Spalten-Grid seitlich aus dem Viewport laufen koennen. Die Wochenuebersicht ist ein kalenderartiger Dense-Control; horizontaler Touch-Scroll ist hier verlaesslicher als weiter verkleinerte Labels.
+- **Alternatives:** Labels weiter kuerzen (zu wenig Information); Tageskacheln zweizeilig umbrechen (zerstoert Kalendervergleich); den Live-Checker nur lockern (verdeckt einen echten Mobile-Containment-Fehler).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Data Mobile Tabs umbrechen statt seitlich clippen
 
 - **Decision:** Die Data-Subnavigation nutzt den vorhandenen `SegmentedControl`-Wrap-Modus, damit Deep-Links wie `data?tab=mental` auf iPhone/PWA keine Tab-Labels seitlich abschneiden.
