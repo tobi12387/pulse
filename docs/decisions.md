@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Season ATP bleibt Guardrail statt eigener Kalender
+
+- **Decision:** Pulse erweitert Season Strategy um Jahresstunden/Jahres-TSS, A/B/C-Event-Bias und letzte-14-Tage-Nachhol-Last, aber Plan Engine nutzt nur eine konservative, halbierte Kompensation und blockt sie in Taper, Race Week, Deload/Recovery, bei TSB <= -8 oder kritischem Risiko. Die UI zeigt das als eine kompakte Zeile in der Saisonlinie.
+- **Why:** Der Benchmark-Gap zu TrainingPeaks/TrainerRoad liegt in besserer Langfristlogik, nicht in einer weiteren schweren Planoberflaeche. Tobi braucht nachvollziehbare Jahresrichtung und sichere Anpassung, ohne verpasste Last blind in die naechste Woche zu stopfen.
+- **Alternatives:** Ein separates ATP-Kalender-Feature bauen (zu gross und fuer den Alltag zu schwer); verpasste TSS voll in die naechste Woche addieren (zu riskant); ATP nur im UI anzeigen ohne Plan-Engine-Wirkung (nicht handlungsrelevant).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Power-Duration bleibt qualitaetsgegated und veraendert keine FTP-Werte
 
 - **Decision:** Pulse persistiert Power-Duration- und Durability-Snapshots nur aus vertrauenswuerdigen Streams oder vorsichtig markierten Lap-Approximationen. Data zeigt die kompakte Zusammenfassung, und Plan bekommt nur bei `limited` Durability einen Goal-Limiter; FTP-/Profilwerte bleiben unveraendert.

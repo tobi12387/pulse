@@ -678,6 +678,17 @@ export function decidePlanDays(params: {
     target = Math.min(target, guardrails.targetSessions);
     reasons.push(`Saisonlinie: ${guardrails.freeDayRationale}`);
     reasons.push(`Saisonlast: ${params.seasonStrategy.loadModel.currentWeek.kind} mit Ziel ${params.seasonStrategy.loadModel.currentWeek.targetHours}h / ${params.seasonStrategy.loadModel.currentWeek.targetTss} TSS.`);
+    const compensation = params.seasonStrategy.loadModel.missedLoadCompensation.compensationTssNext14d;
+    if (compensation > 0) {
+      const currentKind = params.seasonStrategy.loadModel.currentWeek.kind;
+      const blockedKind = currentKind === 'taper' || currentKind === 'race_week' || currentKind === 'recovery' || currentKind === 'deload';
+      if (blockedKind || params.tsb <= -8 || criticalRisk) {
+        reasons.push(`ATP: Nachhol-Last geblockt, weil ${currentKind} / TSB ${params.tsb.toFixed(1)} Vorrang hat.`);
+      } else {
+        const safeWeeklyCompensation = Math.round(compensation / 2);
+        reasons.push(`ATP: ${safeWeeklyCompensation} TSS Nachholanteil eingeplant; ${params.seasonStrategy.loadModel.missedLoadCompensation.capReason}`);
+      }
+    }
     if (params.seasonStrategy.loadModel.warnings.length > 0) {
       reasons.push(`Saisonlast-Warnung: ${params.seasonStrategy.loadModel.warnings[0]}`);
     }
@@ -1236,13 +1247,25 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
   const mesocycleWeek = getMesocycleWeek(input.weekStart);
   const phase = input.phase as Phase;
 
-  const weeklyTss = computeWeeklyTssTarget({
+  const baseWeeklyTss = computeWeeklyTssTarget({
     ctl: input.ctl,
     tsb: input.tsb,
     weeklyHoursTarget: input.weeklyHoursTarget,
     mesocycleWeek,
     phase,
   });
+  const seasonCompensation = input.seasonStrategy?.loadModel.missedLoadCompensation.compensationTssNext14d ?? 0;
+  const currentKind = input.seasonStrategy?.loadModel.currentWeek.kind ?? null;
+  const compensationBlocked = currentKind === 'taper'
+    || currentKind === 'race_week'
+    || currentKind === 'recovery'
+    || currentKind === 'deload'
+    || input.tsb <= -8
+    || (input.riskSignals ?? []).some(signal => signal.severity === 'critical');
+  const safeWeeklyCompensation = seasonCompensation > 0 && !compensationBlocked
+    ? Math.round(seasonCompensation / 2)
+    : 0;
+  const weeklyTss = baseWeeklyTss + safeWeeklyCompensation;
 
   const dayDecision = decidePlanDays({
     availableDays: input.availableDays,

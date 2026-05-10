@@ -105,4 +105,28 @@ describe('buildSeasonStrategy', () => {
     expect(strategy.loadModel.forecast[0]?.targetTss).toBeLessThan(strategy.loadModel.forecast[3]?.targetTss ?? 0);
     expect(strategy.loadModel.warnings.join(' ')).toContain('ATL-CTL');
   });
+
+  it('uses A-event bias and caps missed load during taper', () => {
+    const strategy = buildSeasonStrategy(input({
+      races: [race({ priority: 'A', daysUntil: 10, title: 'A Race', distanceKm: 120, date: '2026-05-12', phase: 'taper' })],
+      plannedTssLast14d: 500,
+      completedTssLast14d: 260,
+    }));
+
+    expect(strategy.loadModel.eventPriorityBias).toBe('a_event');
+    expect(strategy.loadModel.currentWeek.kind).toBe('taper');
+    expect(strategy.loadModel.missedLoadCompensation.compensationTssNext14d).toBeLessThan(100);
+    expect(strategy.loadModel.missedLoadCompensation.capReason).toContain('Ramp-Cap');
+  });
+
+  it('keeps annual targets simple during maintenance', () => {
+    const strategy = buildSeasonStrategy(input({
+      races: [],
+      availability: { availableDays: [0, 1, 2, 3], weeklyHours: 6 },
+    }));
+
+    expect(strategy.loadModel.eventPriorityBias).toBe('maintenance');
+    expect(strategy.loadModel.annualTargetHours).toBe(288);
+    expect(strategy.loadModel.annualTargetTss).toBe(13_824);
+  });
 });

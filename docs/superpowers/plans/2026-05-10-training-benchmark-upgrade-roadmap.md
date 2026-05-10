@@ -22,9 +22,7 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
 
 ## Active Plan Order
 
-1. `2026-05-10-season-atp-v2.md`
-   - Upgrades season planning once workout/adaptation/load signals are stronger.
-2. `2026-05-10-strength-mobility-companion.md`
+1. `2026-05-10-strength-mobility-companion.md`
    - Adds concrete support sessions after the main endurance loop is more trustworthy.
 
 ## Completed In This Wave
@@ -41,6 +39,8 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
   - Power provenance foundation: `/training-analytics` reports stream/lap/unavailable quality and Data > Analysen shows whether power model claims are trusted, cautious or blocked without changing FTP/profile.
 - `completed/2026-05-10-power-duration-durability.md`
   - Power-duration foundation: activity detail persists quality-gated best efforts and durability snapshots; Data > Analysen shows the compact summary and Plan can cite limited Durability as a goal limiter.
+- `completed/2026-05-10-season-atp-v2.md`
+  - Season ATP foundation: annual hours/TSS, A/B/C event bias and safe missed-load compensation now feed Season Strategy, Plan Engine traces and one compact Plan UI row.
 
 ## Implementation Rule
 

@@ -77,6 +77,14 @@ test('Data analysis shows power data provenance', async ({ page }) => {
   await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
 });
 
+test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
+  await page.goto('/plan');
+  await expect(page.getByText('Saisonlinie')).toBeVisible();
+  await expect(page.getByTestId('season-atp-row')).toContainText('Jahresziel');
+  await expect(page.getByTestId('season-atp-row')).toContainText('384 h / 18432 TSS');
+  await expect(page.getByTestId('season-atp-row')).toContainText('Ramp-Cap');
+});
+
 test('primary navigation reaches every Pulse page', async ({ page }) => {
   await page.goto('/');
   await expectHealthyPage(page, 'READINESS');

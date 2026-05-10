@@ -523,6 +523,14 @@ export interface PulseSeasonLoadModel {
   rampRateCapPct: number;
   deloadEveryWeeks: number;
   taperWeeks: number;
+  annualTargetHours: number | null;
+  annualTargetTss: number | null;
+  eventPriorityBias: 'a_event' | 'b_event' | 'c_event' | 'maintenance';
+  missedLoadCompensation: {
+    missedTssLast14d: number;
+    compensationTssNext14d: number;
+    capReason: string;
+  };
   currentWeek: PulseSeasonLoadWeek;
   forecast: PulseSeasonLoadWeek[];
   warnings: string[];

@@ -23,7 +23,7 @@
 
 ## Task 1: Add ATP Fields To Season Strategy
 
-- [ ] **Step 1: Extend shared type**
+- [x] **Step 1: Extend shared type**
 
 Add to `PulseSeasonLoadModel`:
 
@@ -38,7 +38,7 @@ missedLoadCompensation: {
 };
 ```
 
-- [ ] **Step 2: Update backend builders**
+- [x] **Step 2: Update backend builders**
 
 In `backend/src/pulse/services/season-strategy.ts`, calculate:
 
@@ -69,7 +69,7 @@ Service defaults are allowed only for tests that do not care about missed-load c
 
 ## Task 2: Add ATP Tests
 
-- [ ] **Step 1: Test A-event taper protection**
+- [x] **Step 1: Test A-event taper protection**
 
 In `season-strategy.test.ts`:
 
@@ -88,7 +88,7 @@ it('uses A-event bias and caps missed load during taper', () => {
 });
 ```
 
-- [ ] **Step 2: Test maintenance without race**
+- [x] **Step 2: Test maintenance without race**
 
 ```ts
 it('keeps annual targets simple during maintenance', () => {
@@ -103,7 +103,7 @@ it('keeps annual targets simple during maintenance', () => {
 });
 ```
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run:
 
@@ -115,7 +115,7 @@ Expected: PASS.
 
 ## Task 3: Feed Plan Engine Conservatively
 
-- [ ] **Step 1: Cap weekly target**
+- [x] **Step 1: Cap weekly target**
 
 In `plan-engine.ts`, when season strategy includes compensation:
 
@@ -130,7 +130,7 @@ Add only `safeWeeklyCompensation` to target TSS if:
 - TSB is greater than `-8`;
 - no critical risk signal exists.
 
-- [ ] **Step 2: Trace the decision**
+- [x] **Step 2: Trace the decision**
 
 Add to plan reasons:
 
@@ -146,7 +146,7 @@ reasons.push(`ATP: Nachhol-Last geblockt, weil ${currentKind} / TSB ${params.loa
 
 ## Task 4: Keep UI Simple
 
-- [ ] **Step 1: Add a compact ATP row**
+- [x] **Step 1: Add a compact ATP row**
 
 In `frontend/src/features/plan/strategy/strategy-components.tsx`, inside the Season Strategy card:
 
@@ -158,11 +158,11 @@ In `frontend/src/features/plan/strategy/strategy-components.tsx`, inside the Sea
 </div>
 ```
 
-- [ ] **Step 2: Hide when fields are absent**
+- [x] **Step 2: Hide when fields are absent**
 
 Keep `loadModel` optional as decided earlier. If `annualTargetHours` is null, do not render the row.
 
-- [ ] **Step 3: Verification**
+- [x] **Step 3: Verification**
 
 Run:
 
@@ -180,3 +180,10 @@ Expected: PASS.
 - A events create stronger taper protection than B/C events.
 - Plan trace explains season/ATP influence.
 - UI remains one season lane, not a TrainingPeaks clone.
+
+## Implementation Notes
+
+- Implemented in branch `codex/season-atp-v2`.
+- Season Strategy now derives annual hours/TSS, event priority bias and last-14-day missed-load compensation from planned workouts plus completed Garmin activities.
+- Plan Engine only adds half of the safe compensation and blocks it during taper, race week, deload/recovery, low TSB or critical risk.
+- Plan UI keeps the ATP signal as one compact season-lane row instead of adding a separate annual calendar surface.

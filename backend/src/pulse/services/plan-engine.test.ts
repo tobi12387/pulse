@@ -53,6 +53,14 @@ function seasonStrategy(overrides: Partial<PulseSeasonStrategy['guardrails']> = 
       rampRateCapPct: 7,
       deloadEveryWeeks: 4,
       taperWeeks: 2,
+      annualTargetHours: 384,
+      annualTargetTss: 18_432,
+      eventPriorityBias: 'a_event',
+      missedLoadCompensation: {
+        missedTssLast14d: 0,
+        compensationTssNext14d: 0,
+        capReason: 'Keine Nachhol-Last noetig.',
+      },
       currentWeek: {
         weekStart: '2026-05-04',
         kind: 'build',
@@ -191,6 +199,31 @@ describe('decidePlanDays', () => {
 
     expect(decision.targetSessionCount).toBeLessThanOrEqual(3);
     expect(decision.reasons.join(' ')).toContain('Limiter: Schwelle + VO2');
+  });
+
+  it('traces blocked ATP compensation during taper weeks', () => {
+    const decision = decidePlanDays({
+      availableDays: [0, 1, 2, 3, 5],
+      weeklyHoursTarget: 8,
+      tsb: 4,
+      phase: 'taper',
+      mesocycleWeek: 2,
+      goals: [{ title: 'A Race', targetDate: '2026-05-16', category: 'race' }],
+      seasonStrategy: {
+        ...seasonStrategy({ targetSessions: 3, maxHardDays: 1 }),
+        loadModel: {
+          ...seasonStrategy().loadModel,
+          currentWeek: { ...seasonStrategy().loadModel.currentWeek, kind: 'taper' },
+          missedLoadCompensation: {
+            missedTssLast14d: 240,
+            compensationTssNext14d: 80,
+            capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+          },
+        },
+      },
+    });
+
+    expect(decision.reasons.join(' ')).toContain('ATP: Nachhol-Last geblockt');
   });
 });
 
@@ -633,6 +666,52 @@ describe('generateScientificWeekPlan', () => {
 
     expect(workouts).toHaveLength(3);
     expect(workouts.filter(workout => workout.zone >= 4)).toHaveLength(1);
+  });
+
+  it('adds safe ATP compensation to generated TSS only outside protected weeks', async () => {
+    const baseInput = {
+      weekStart: '2026-05-04',
+      phase: 'build' as const,
+      weeklyHoursTarget: 8,
+      availableDays: [0, 2, 5],
+      ctl: 42,
+      atl: 38,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'A Race', targetDate: '2026-07-11', category: 'race' as const, racePriority: 'A' as const }],
+      seasonStrategy: {
+        ...seasonStrategy({ targetSessions: 3, maxHardDays: 1 }),
+        loadModel: {
+          ...seasonStrategy().loadModel,
+          missedLoadCompensation: {
+            missedTssLast14d: 240,
+            compensationTssNext14d: 80,
+            capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+          },
+        },
+      },
+    };
+
+    const withComp = await generateScientificWeekPlan(baseInput);
+    const withoutComp = await generateScientificWeekPlan({
+      ...baseInput,
+      seasonStrategy: {
+        ...baseInput.seasonStrategy,
+        loadModel: {
+          ...baseInput.seasonStrategy.loadModel,
+          missedLoadCompensation: {
+            missedTssLast14d: 0,
+            compensationTssNext14d: 0,
+            capReason: 'Keine Nachhol-Last noetig.',
+          },
+        },
+      },
+    });
+
+    const total = (rows: typeof withComp) => rows.reduce((sum, workout) => sum + workout.targetTss, 0);
+    expect(total(withComp)).toBeGreaterThan(total(withoutComp));
   });
 
   it('keeps HR-first descriptions when LLM enrichment returns no items', async () => {

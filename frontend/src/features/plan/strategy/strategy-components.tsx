@@ -467,6 +467,29 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
         )}
       </div>
 
+      {loadModel?.annualTargetHours != null && (
+        <div
+          data-testid="season-atp-row"
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: '8px 10px',
+            background: 'var(--surface-2)',
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <span className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>Jahresziel</span>
+            <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>
+              {loadModel.annualTargetHours} h / {loadModel.annualTargetTss ?? 0} TSS
+            </strong>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
+            {loadModel.missedLoadCompensation.capReason}
+          </p>
+        </div>
+      )}
+
       {loadModel && loadModel.forecast.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
           {loadModel.forecast.slice(0, 4).map(week => (
