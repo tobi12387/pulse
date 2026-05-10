@@ -12,6 +12,7 @@ Use this map to load the smallest useful context for a task.
 | Roadmap / active plans | `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`, then concrete plan |
 | Decisions | `docs/decisions.md` newest entries only when needed |
 | Concrete feature | Matching file in `docs/superpowers/plans/` |
+| Coding discipline | `.codex/skills/pulse-coding-discipline/SKILL.md` for non-trivial coding, review, refactor, planning, or AI-workflow changes |
 | Structure refactors | Fresh `rg --files` / file counts first; historical only: `docs/ai/project-structure-audit.md`, `docs/superpowers/plans/completed/2026-05-02-structure-boundary-cleanup.md` |
 | UI/UX evidence | `docs/qa/route-evidence-pack.md`, then focused route/e2e files |
 | Prompt template | `docs/codex-system-prompt.md` |

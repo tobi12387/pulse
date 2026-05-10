@@ -20,8 +20,10 @@ Pflichtlektüre in dieser Reihenfolge — bevor du irgendetwas implementierst:
   3. docs/ai/current-focus.md
   4. docs/ai/non-negotiables.md
   5. docs/ai/context-map.md
-  6. das konkrete Plan-Doc zu deiner Aufgabe in docs/superpowers/plans/
-  7. docs/decisions.md nur fuer aktuelle, strittige oder architektonische Historie
+  6. relevante .codex/skills/ fuer die Aufgabe, insbesondere pulse-session-ritual
+     und pulse-coding-discipline bei nicht-trivialen Code-/Review-/Workflow-Aenderungen
+  7. das konkrete Plan-Doc zu deiner Aufgabe in docs/superpowers/plans/
+  8. docs/decisions.md nur fuer aktuelle, strittige oder architektonische Historie
 
 Pläne unter docs/superpowers/plans/completed/ sind bereits implementiert —
 NICHTS aus diesem Ordner erneut bauen.
