@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Data-Überblick wird zur täglichen Evidence-Triage
+
+- **Decision:** Der Data-Überblick zeigt zuerst eine kompakte Triage aus Readiness/TSB, Mental Check-in, Garmin-Frische und Plan-/Load-Evidenz. Die Detailkarten bleiben bestehen, aber der Einstieg beantwortet zuerst, welche Daten heute entscheidungsrelevant sind.
+- **Why:** Browser-Review zeigte, dass Data bisher sauber, aber zu sehr wie eine Sammlung von Launchern wirkte. Für die tägliche Pulse-Nutzung ist wichtiger, sofort die relevanten Signale und deren Prüfrouten zu sehen.
+- **Alternatives:** Nur bestehende Provenance-Buttons behalten (zu wenig signalstark); alle Detailbereiche direkt auf dem Überblick ausrollen (zu bulky auf iPhone/PWA); Data komplett in Home integrieren (zu großer IA-Schnitt für diesen Loop).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Execution Review nutzt Garmin-HR-Zonen für Ausführungsqualität
 
 - **Decision:** Die Plan-Execution-Review wertet gecachte Garmin-HR-Zonen aus, wenn sie vorhanden sind. Pulse unterscheidet damit nicht nur `completed`, sondern erkennt grob, ob lockere Einheiten zu hart ausgeführt wurden oder harte Einheiten das Intensitätsziel kaum getroffen haben.

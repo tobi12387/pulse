@@ -1343,7 +1343,22 @@ test('Data overview exposes provenance shortcuts', async ({ page }) => {
 
   await page.goto('/data');
   await expect(page.getByText('DATA · ÜBERBLICK')).toBeVisible();
+  const triage = page.getByTestId('data-evidence-triage');
+  await expect(triage).toContainText('Readiness 78/100');
+  await expect(triage).toContainText('TSB -5.7');
+  await expect(triage).toContainText('Mental Check-in');
+  await expect(triage).toContainText('Garmin bereit');
 
+  await page.getByTestId('data-triage-readiness').click();
+  await expect(page).toHaveURL('/data?tab=metrics#data-recovery');
+  await expect(page.locator('#data-recovery')).toBeVisible();
+
+  await page.goto('/data');
+  await page.getByTestId('data-triage-garmin').click();
+  await expect(page).toHaveURL('/data?tab=coverage#data-garmin-quality');
+  await expect(page.locator('#data-garmin-quality')).toBeVisible();
+
+  await page.goto('/data');
   await page.getByRole('button', { name: 'Plan-/Load-Analyse prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=analysen#data-plan-trace');
   await expect(page.locator('#data-plan-trace')).toBeVisible();
