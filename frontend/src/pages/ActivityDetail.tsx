@@ -9,6 +9,7 @@ import {
   useAssignActivityEquipment,
   useDeleteNutritionLog,
   useEquipment,
+  useFuelingDebt,
   useNutritionLogs,
   pulseKeys,
 } from '@/pulse/hooks';
@@ -639,8 +640,10 @@ function FuelingSection({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const { data } = useNutritionLogs(null, activityId);
+  const fuelingDebtQuery = useFuelingDebt();
   const deleteMut = useDeleteNutritionLog();
   const logs = data?.logs ?? [];
+  const fuelingDebt = fuelingDebtQuery.data?.fuelingDebt ?? null;
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -747,6 +750,37 @@ function FuelingSection({
                 >×</button>
               </div>
             ))}
+          </div>
+        )}
+
+        {fuelingDebt && (fuelingDebt.hasOpenDebt || fuelingDebt.status === 'tolerated_follow_up') && (
+          <div
+            data-testid="activity-fueling-debt"
+            style={{
+              marginTop: 10,
+              padding: 10,
+              borderRadius: 'var(--radius)',
+              border: `1px solid ${fuelingDebt.hasOpenDebt ? 'rgba(251,191,36,0.34)' : 'rgba(74,222,128,0.32)'}`,
+              background: fuelingDebt.hasOpenDebt ? 'rgba(251,191,36,0.06)' : 'rgba(74,222,128,0.06)',
+            }}
+          >
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 700,
+              color: fuelingDebt.hasOpenDebt ? 'var(--amber)' : 'var(--green)',
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+              marginBottom: 5,
+            }}>
+              {fuelingDebt.label}
+            </div>
+            <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
+              {fuelingDebt.summary}
+            </p>
+            <p style={{ margin: '5px 0 0', fontSize: 11, lineHeight: 1.45, color: fuelingDebt.hasOpenDebt ? 'var(--amber)' : 'var(--text-3)' }}>
+              {fuelingDebt.closureCondition}
+            </p>
           </div>
         )}
       </div>

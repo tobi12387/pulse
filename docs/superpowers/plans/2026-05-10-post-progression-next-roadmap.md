@@ -84,6 +84,8 @@
 
 ## Phase 4: Fueling Debt Closure
 
+**Status:** Implemented in branch `codex/fueling-debt-closure-v1`.
+
 **Problem:** GI discomfort can block hard work, but the UI does not yet explain what resolves the protection.
 
 **Story:** As Tobi, I want Pulse to tell me exactly what to log or observe after a GI issue, so the next hard or long session feels justified again.

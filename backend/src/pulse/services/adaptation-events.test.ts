@@ -24,6 +24,18 @@ describe('classifyAdaptationEvents', () => {
         durationMin: 430,
         carbsG: 360,
       }],
+      fuelingDebt: {
+        status: 'open_gi_issue',
+        hasOpenDebt: true,
+        label: 'GI-Schutz offen',
+        summary: 'GI-/Magenhinweis ist offen.',
+        closureCondition: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+        evidence: ['GI-Hinweis: 2026-05-09'],
+        openIssueDate: '2026-05-09',
+        controlledWorkoutId: null,
+        followUpActivityId: null,
+        updatedAt: '2026-05-10T12:00:00.000Z',
+      },
       syncDebtCount: 0,
     });
 
@@ -35,6 +47,41 @@ describe('classifyAdaptationEvents', () => {
       'activity_completed',
       'fueling_limiter',
     ]));
+    expect(events.find(event => event.kind === 'fueling_limiter')?.evidence).toContain(
+      'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+    );
+  });
+
+  it('does not keep a fueling limiter after a tolerated follow-up closes the debt', () => {
+    const events = classifyAdaptationEvents({
+      today: '2026-05-13',
+      completedActivities: [],
+      missedWorkouts: [],
+      mental: { energy: 7, stress: 3, mood: 7, motivation: 7 },
+      readinessScore: 82,
+      tsb: 4,
+      fuelingHistory: [{
+        date: '2026-05-09',
+        giComfort: 'mild_issue',
+        durationMin: 430,
+        carbsG: 300,
+      }],
+      fuelingDebt: {
+        status: 'tolerated_follow_up',
+        hasOpenDebt: false,
+        label: 'Toleranz bestätigt',
+        summary: 'GI-Hinweis ist geschlossen.',
+        closureCondition: 'Blocker geschlossen.',
+        evidence: ['Follow-up ok'],
+        openIssueDate: '2026-05-09',
+        controlledWorkoutId: null,
+        followUpActivityId: 'activity-follow-up',
+        updatedAt: '2026-05-13T12:00:00.000Z',
+      },
+      syncDebtCount: 0,
+    });
+
+    expect(events.some(event => event.kind === 'fueling_limiter')).toBe(false);
   });
 
   it('keeps the plan when signals are green and no sync debt exists', () => {

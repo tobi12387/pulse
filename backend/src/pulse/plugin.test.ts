@@ -1564,8 +1564,9 @@ describe('GET /api/pulse/fueling-recovery/guidance', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ shouldShow: boolean; during: Array<{ text: string }> }>();
+    const body = res.json<{ shouldShow: boolean; during: Array<{ text: string }>; fuelingDebt: { status: string; hasOpenDebt: boolean } }>();
     expect(body.shouldShow).toBe(true);
+    expect(body.fuelingDebt).toMatchObject({ status: 'resolved', hasOpenDebt: false });
     expect(body.during.map(item => item.text).join(' ')).toContain('60-90 g Kohlenhydrate pro Stunde');
     expect(body.during.map(item => item.text).join(' ')).toContain('Ministry');
   });

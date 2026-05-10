@@ -3,6 +3,7 @@ import { hrTargetRangeForZone } from '@coaching-os/shared/pulse-thresholds';
 import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulseSeasonStrategy, PulseTrainingExecutionReview } from '@coaching-os/shared/pulse';
 import { trainingArchetypes, type TrainingArchetype } from './training-intelligence.js';
 import { selectWorkoutArchetype } from './workout-library.js';
+import { summarizeFuelingDebt } from './fueling-debt.js';
 
 type Phase = 'base' | 'build' | 'peak' | 'taper';
 type ActivityType = 'run' | 'bike' | 'swim' | 'strength';
@@ -192,15 +193,29 @@ function summarizeFuelingPlanSafety(history: FuelingPlanHistoryInput[] = []): Fu
     .filter(log => log.context === 'during' || log.context == null)
     .filter(log => (log.durationMin ?? 0) >= 180 || (log.carbsG ?? 0) > 0 || (log.powderG ?? 0) > 0)
     .sort((a, b) => b.date.localeCompare(a.date));
-  const issue = relevant.find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue');
+  const debt = summarizeFuelingDebt({
+    today: relevant[0]?.date ?? new Date().toISOString().split('T')[0]!,
+    logs: relevant,
+  });
+  const issue = relevant.find(log => log.date === debt.openIssueDate && (log.giComfort === 'mild_issue' || log.giComfort === 'issue'))
+    ?? relevant.find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue');
   if (!issue) {
     return { blockHard: false, reduceSessions: false, capLongEnduranceMin: null, summary: null, descriptionNote: null };
+  }
+  if (!debt.hasOpenDebt) {
+    return {
+      blockHard: false,
+      reduceSessions: false,
+      capLongEnduranceMin: null,
+      summary: debt.summary,
+      descriptionNote: null,
+    };
   }
 
   const cph = fuelingCarbsPerHour(issue);
   const bottle = issue.bottles750Ml != null && issue.bottles750Ml > 0 ? `, ${issue.bottles750Ml}x750 ml` : '';
   const powder = issue.powderG != null && issue.powderG > 0 ? `, ${Math.round(issue.powderG)}g Pulver` : '';
-  const summary = `Fueling-Toleranz: ${issue.date} ${issue.giComfort}${cph != null ? ` bei ${cph}g/h` : ''}${bottle}${powder}.`;
+  const summary = `Fueling-Toleranz: ${issue.date} ${issue.giComfort}${cph != null ? ` bei ${cph}g/h` : ''}${bottle}${powder}. ${debt.closureCondition}`;
   return {
     blockHard: true,
     reduceSessions: true,

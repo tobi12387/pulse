@@ -1,5 +1,6 @@
 import type { PulseFitnessLoad } from './daily-loop.js';
 import type { PulseActivityType } from './activity.js';
+import type { PulseFuelingDebtSummary } from './fueling.js';
 import type { PulseProfileProvenanceView } from './profile.js';
 import type { PulseCapabilityConfidence, PulseTrainingCapabilitySummary, PulseTrainingEnergySystem, PulseWorkoutFitLabel } from './training.js';
 
@@ -252,6 +253,7 @@ export interface PulseTodayOptionsResponse {
   summary: string;
   options: PulseTodayOption[];
   signature: string;
+  fuelingDebt?: PulseFuelingDebtSummary | null;
 }
 
 export type PulsePlanScenarioType =

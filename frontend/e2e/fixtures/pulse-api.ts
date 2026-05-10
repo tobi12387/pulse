@@ -68,6 +68,7 @@ type MockPulseApiOptions = {
   profile?: unknown | (() => unknown);
   onProfilePatch?: (body: unknown) => void;
   fuelingGuidance?: unknown | ((workoutId: string | null) => unknown);
+  fuelingDebt?: unknown;
   profileSyncResult?: unknown | ((body: unknown) => unknown);
   onProfileSync?: (body: unknown) => void;
   onRequest?: (pathname: string, method: string) => void;
@@ -329,6 +330,32 @@ const checkinGuidance = {
   action: null,
 };
 
+const resolvedFuelingDebt = {
+  status: 'resolved',
+  hasOpenDebt: false,
+  label: 'Fueling frei',
+  summary: 'Kein offener GI-/Fueling-Blocker.',
+  closureCondition: 'Weiterhin lange oder harte Einheiten mit Fueling-Log schließen.',
+  evidence: ['Stand heute: kein offener GI-Hinweis'],
+  openIssueDate: null,
+  controlledWorkoutId: null,
+  followUpActivityId: null,
+  updatedAt: `${today}T08:00:00.000Z`,
+};
+
+const openFuelingDebt = {
+  status: 'open_gi_issue',
+  hasOpenDebt: true,
+  label: 'GI-Schutz offen',
+  summary: 'GI-/Magenhinweis vom 2026-04-29 ist noch nicht durch eine kontrollierte Folgeeinheit geschlossen.',
+  closureCondition: 'Schließen: 75-120 min locker mit frühem, gleichmäßigem Fueling absolvieren und danach GI-Komfort "Magen ok" loggen.',
+  evidence: ['GI-Hinweis: 2026-04-29 (42 g/h, 4x750 ml, 300g Pulver)'],
+  openIssueDate: '2026-04-29',
+  controlledWorkoutId: null,
+  followUpActivityId: null,
+  updatedAt: `${today}T08:00:00.000Z`,
+};
+
 function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOptionsState']>) {
   if (state === 'unplanned_trainable') {
     return {
@@ -413,6 +440,7 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
         state,
         summary: 'Recovery ist heute wichtiger als zusaetzliches Training.',
         signature: `${today}|recovery-protect`,
+        fuelingDebt: openFuelingDebt,
         options: [{
           id: 'recovery-protect',
           kind: 'recovery',
@@ -438,11 +466,12 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
 
   return {
     todayOptions: {
-      date: today,
-      state,
-      summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
-      signature: `${today}|planned-workout`,
-      options: [{
+        date: today,
+        state,
+        summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+        signature: `${today}|planned-workout`,
+        fuelingDebt: resolvedFuelingDebt,
+        options: [{
         id: 'planned-default',
         kind: 'workout',
         priority: 'primary',
@@ -901,10 +930,12 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
   }
   if (pathname === '/api/pulse/equipment') return { equipment: [], defaults: [] };
   if (pathname === '/api/pulse/nutrition') return { logs: [] };
+  if (pathname === '/api/pulse/fueling/debt') return { fuelingDebt: resolvedFuelingDebt };
   if (pathname === '/api/pulse/fueling-recovery/guidance') {
     return {
       shouldShow: false,
       preferenceStatus: 'ready',
+      fuelingDebt: resolvedFuelingDebt,
       before: [],
       during: [],
       after: [],
@@ -1075,6 +1106,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
       return json(route, { logs: options.nutritionLogs });
     }
+    if (url.pathname === '/api/pulse/fueling/debt' && 'fuelingDebt' in options) {
+      return json(route, { fuelingDebt: options.fuelingDebt ?? resolvedFuelingDebt });
+    }
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'POST') {
       const body = request.postDataJSON();
       options.onNutritionCreate?.(body);
@@ -1169,6 +1203,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, result ?? {
         shouldShow: false,
         preferenceStatus: 'ready',
+        fuelingDebt: resolvedFuelingDebt,
         before: [],
         during: [],
         after: [],

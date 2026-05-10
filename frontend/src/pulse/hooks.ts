@@ -59,6 +59,7 @@ export const pulseKeys = {
     ['pulse', 'nutrition', workoutId, activityId] as const,
   fuelingRecoveryGuidance: (workoutId: string | null) =>
     ['pulse', 'fueling-recovery', 'guidance', workoutId] as const,
+  fuelingDebt: ['pulse', 'fueling-recovery', 'debt'] as const,
 };
 
 export function invalidatePulseContextQueries(qc: QueryClient): void {
@@ -192,6 +193,14 @@ export function useFuelingRecoveryGuidance(workoutId: string | null | undefined)
     queryFn: () => pulseApi.fuelingRecovery.guidance(workoutId!),
     enabled: Boolean(workoutId),
     staleTime: 10 * 60_000,
+  });
+}
+
+export function useFuelingDebt() {
+  return useQuery({
+    queryKey: pulseKeys.fuelingDebt,
+    queryFn: pulseApi.fuelingRecovery.debt,
+    staleTime: 2 * 60_000,
   });
 }
 
@@ -989,7 +998,13 @@ export function useCreateNutritionLog() {
     mutationFn: (data: NutritionLogInput) => pulseApi.nutrition.create(data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       if (variables.workoutId) {
+        qc.invalidateQueries({ queryKey: pulseKeys.home });
+        qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      }
+      if (variables.activityId) {
         qc.invalidateQueries({ queryKey: pulseKeys.home });
         qc.invalidateQueries({ queryKey: pulseKeys.plan });
       }
@@ -1004,6 +1019,11 @@ export function useDeleteNutritionLog() {
     mutationFn: (id: string) => pulseApi.nutrition.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
     },
   });
 }

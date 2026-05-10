@@ -75,6 +75,7 @@ import {
   buildFuelingRecoveryGuidanceForPlannedWorkout,
   loadRecentFuelingHistory,
 } from '../services/fueling-recovery-planned-workout.js';
+import { loadFuelingDebtSummary } from '../services/fueling-debt.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -1513,6 +1514,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       recentActivities,
       activeRiskSignals,
       recentNutrition,
+      fuelingDebt,
       activeGoals,
       fitnessLoad,
       capabilitySummary,
@@ -1558,6 +1560,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         .where(and(eq(pulseNutritionLogs.userId, userId), gte(pulseNutritionLogs.date, sinceRecent)))
         .orderBy(desc(pulseNutritionLogs.date))
         .limit(30),
+      loadFuelingDebtSummary(userId, today).catch((err: unknown) => {
+        app.log.warn(`[today-options] Fueling debt summary failed (non-fatal): ${err}`);
+        return null;
+      }),
       db.select({
         raceDiscipline: pulseGoals.raceDiscipline,
       }).from(pulseGoals)
@@ -1629,8 +1635,9 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         motivation: mental.motivation,
       } : null,
       fueling: {
-        recentGiIssue: recentNutrition.some(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue'),
+        recentGiIssue: fuelingDebt?.hasOpenDebt ?? recentNutrition.some(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue'),
         loggedToday: recentNutrition.some(log => log.date === today),
+        debtSummary: fuelingDebt,
       },
       goals: {
         activeCount: activeGoals.length,
@@ -2396,6 +2403,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     return buildFuelingRecoveryGuidanceForPlannedWorkout(userId, workout);
   });
 
+  app.get('/fueling/debt', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { date?: string };
+    const today = q.date && /^\d{4}-\d{2}-\d{2}$/.test(q.date)
+      ? q.date
+      : new Date().toISOString().split('T')[0]!;
+    const fuelingDebt = await loadFuelingDebtSummary(userId, today);
+    return { fuelingDebt };
+  });
+
   app.post('/nutrition', { onRequest: [app.authenticate] }, async (req, reply) => {
     const schema = z.object({
       date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -2449,6 +2466,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       notes:       parsed.data.notes       ?? null,
     }).returning();
 
+    await invalidateUser(userId);
     await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'nutrition-log');
     return reply.status(201).send(log);
   });
@@ -2460,6 +2478,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .where(and(eq(pulseNutritionLogs.id, id), eq(pulseNutritionLogs.userId, userId)))
       .returning({ id: pulseNutritionLogs.id });
     if (!deleted) return reply.status(404).send({ error: 'Nicht gefunden' });
+    await invalidateUser(userId);
+    await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'nutrition-delete');
     return reply.status(204).send();
   });
 
