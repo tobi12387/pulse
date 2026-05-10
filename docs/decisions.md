@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Power-Modellclaims brauchen zuerst Datenqualitaets-Provenienz
+
+- **Decision:** Pulse meldet in `/training-analytics` fuer Powerdaten zuerst `stream`, `lap_approximation` oder `unavailable` plus Status `trusted`, `usable_with_caution` oder `blocked`; Data > Analysen zeigt diese Provenienz sichtbar. FTP-/Profilwerte werden dadurch nicht automatisch veraendert.
+- **Why:** WKO-/Intervals-aehnliche Power-Duration- und Durability-Funktionen waeren fachlich irrefuehrend, wenn Pulse nicht unterscheiden kann, ob echte Streams, nur Garmin-Laps oder gar keine belastbaren Powerdaten vorliegen. Die sichtbare Provenienz macht spaetere Modellgrenzen nachvollziehbar und verhindert falsches Vertrauen.
+- **Alternatives:** Direkt Power-Duration-Modelle bauen (zu riskant ohne Qualitaetsgate); Lap-Daten stillschweigend wie Streams behandeln (zu optimistisch); FTP/Profile automatisch aus Powerdaten ableiten (zu grosser Scope und nicht ausreichend abgesichert).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Mobile Plan Flow bleibt Preview-first und Apply-only
 
 - **Decision:** Home ersetzt kompakte geplante oder freie Tagesoptionen durch eine einzige `Heute möglich`-Intent-Reihe (`Frei`, `30 min`, `60 min`, `2h+`). Diese Deep-Links berechnen in Plan automatisch eine Szenario-Vorschau, aber Plan oder Garmin werden erst nach explizitem `Vorschau anwenden` verändert.

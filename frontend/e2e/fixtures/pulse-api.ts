@@ -19,6 +19,7 @@ type MockPulseApiOptions = {
   garminCoverage?: unknown;
   garminSignalUsefulness?: unknown;
   garminExecutionLedger?: unknown;
+  powerDataQuality?: unknown;
   adaptationEvents?: unknown;
   load?: unknown;
   planTrace?: unknown;
@@ -455,7 +456,7 @@ function defaultProfileResponse() {
   };
 }
 
-function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown {
+function pulseResponse(pathname: string, searchParams: URLSearchParams, options: MockPulseApiOptions = {}): unknown {
   if (pathname === '/api/pulse/home') return home;
   if (pathname === '/api/pulse/readiness') return readiness;
   if (pathname === '/api/pulse/load') return load;
@@ -764,6 +765,14 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       vo2maxTrend: [],
       rpeByZone: { totalRated: 0, zones: [] },
       capabilitySummary: capabilitySummary(Number(searchParams.get('weeks') ?? 12) * 7),
+      powerDataQuality: options.powerDataQuality ?? {
+        source: 'lap_approximation',
+        status: 'usable_with_caution',
+        coveragePct: 0,
+        spikeCount: 0,
+        limitations: ['Keine 1Hz-Power-Streams im Pulse-Datensatz.'],
+        updatedAt: `${today}T06:00:00.000Z`,
+      },
     };
   }
   if (pathname === '/api/pulse/training-capabilities') return { capabilitySummary: capabilitySummary(Number(searchParams.get('days') ?? 90)) };
@@ -1208,7 +1217,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/push/settings' && options.pushSettings) return json(route, options.pushSettings);
-    if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams));
+    if (url.pathname.startsWith('/api/pulse/')) return json(route, pulseResponse(url.pathname, url.searchParams, options));
     if (url.pathname === '/api/auth/me') return json(route, { id: 'user-1', name: 'Tobi', email: 'tobi@example.test' });
     if (url.pathname === '/api/auth/logout') return json(route, {}, 204);
     if (url.pathname === '/api/auth/login') {

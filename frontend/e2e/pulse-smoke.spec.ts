@@ -66,6 +66,15 @@ for (const route of routes) {
   });
 }
 
+test('Data analysis shows power data provenance', async ({ page }) => {
+  await page.goto('/data?tab=analysen');
+  const qualityCard = page.getByTestId('power-data-quality');
+  await expect(qualityCard).toBeVisible();
+  await expect(qualityCard).toContainText('Power-Daten');
+  await expect(qualityCard).toContainText('Nur Lap-Approximation');
+  await expect(qualityCard).toContainText('Keine 1Hz-Power-Streams');
+});
+
 test('primary navigation reaches every Pulse page', async ({ page }) => {
   await page.goto('/');
   await expectHealthyPage(page, 'READINESS');

@@ -52,3 +52,35 @@ export interface PulseTrainingCapabilitySummary {
   recommendations: string[];
   fitLegend: Record<PulseWorkoutFitLabel, string>;
 }
+
+export interface PulsePowerDataQualitySummary {
+  source: 'stream' | 'lap_approximation' | 'unavailable';
+  status: 'trusted' | 'usable_with_caution' | 'blocked';
+  coveragePct: number;
+  spikeCount: number;
+  limitations: string[];
+  updatedAt: string | null;
+}
+
+export interface PulseTrainingAnalyticsResponse {
+  weeks: number;
+  tssHeatmap: Array<{ date: string; tss: number }>;
+  zoneDistribution: Array<{
+    weekStart: string;
+    totalH: number;
+    zones: { z1: number; z2: number; z3: number; z4: number; z5: number };
+  }>;
+  vo2maxTrend: Array<{ date: string; vo2max: number }>;
+  rpeByZone: {
+    totalRated: number;
+    zones: Array<{
+      zone: number;
+      avgRpe: number | null;
+      count: number;
+      previousAvgRpe: number | null;
+      drift: number | null;
+    }>;
+  };
+  capabilitySummary: PulseTrainingCapabilitySummary;
+  powerDataQuality: PulsePowerDataQualitySummary;
+}
