@@ -157,7 +157,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const todayWorkout = workoutLabel(home);
   const boundary = readinessBoundary(home.readiness?.score, home.fitnessLoad?.tsb);
   if (completedWorkout) {
-    const completedLabel = `${completedWorkout.activityType} · Z${completedWorkout.zone} · ${completedWorkout.durationMin} min`;
+    const completedLabel = `${activityLabel(completedWorkout.activityType)} · Z${completedWorkout.zone} · ${completedWorkout.durationMin} min`;
     const feedbackDone = hasCompletedWorkoutFeedback(home, completedWorkout);
     const feedbackTargetPath = completedWorkout.completedActivityId
       ? `/activity/${completedWorkout.completedActivityId}`
