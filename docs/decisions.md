@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Adaptions-Check führt direkt in die passende Szenario-Prüfung
+
+- **Decision:** Der Plan-Adaptions-Check öffnet die Szenario-Vorschau nicht mehr im generischen `155-km Tour`-Modus, sondern bereitet `Umfang senken` mit einem sichtbaren Hinweis vor. Nutzer prüfen damit direkt, ob die kommenden Workouts nach verpassten oder anders ausgeführten Einheiten defensiver werden sollten.
+- **Why:** Ein Adaptions-Review muss wie bei etablierten Trainingsplattformen zur passenden Planänderung führen, nicht zu einer zufälligen Standard-Vorschau. Der Nutzer soll sofort verstehen, welche Anpassungsfrage Pulse beantworten will.
+- **Alternatives:** Nur zur Karte scrollen (zu unpräzise); automatisch Vorschau berechnen und Plan ändern (zu viel Automatik); neue Adaptions-Inbox bauen (zu groß für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Erledigte geplante Workouts schließen die Tagesoptionen mit geplantem Kontext
 
 - **Decision:** `TodayOptions` behalten den geplanten Workout-Kontext auch dann, wenn die Einheit am selben Tag bereits als completed/matched gilt. Pulse zeigt dann `Geplantes Training erledigt`, listet geplante und abgeschlossene Einheit als Evidence und bietet nur Feedback, Fueling und Recovery statt weiterer Workout-CTAs.
