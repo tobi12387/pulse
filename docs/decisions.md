@@ -34,6 +34,14 @@
 - **Decided by:** Codex.
 - **Status:** active.
 
+## 2026-05-10 — Pulse bleibt proprietaer lizenziert
+
+- **Decision:** Pulse wird als proprietaere Codebasis mit `All rights reserved`-Lizenzdatei gefuehrt; das Root-`package.json` markiert das Monorepo zusaetzlich als `UNLICENSED`.
+- **Why:** Pulse enthaelt persoenliche Coaching-, Trainings-, Garmin-, Mental- und Betriebslogik und soll nicht stillschweigend als frei wiederverwendbare Open-Source-Codebasis erscheinen. Wiederverwendbare generische Bausteine koennen spaeter separat und bewusst unter einer offenen Lizenz veroeffentlicht werden.
+- **Alternatives:** MIT oder Apache-2.0 fuer maximale Wiederverwendung (zu offen fuer die aktuelle Produkt-/Datendomaene); AGPL-3.0 fuer Open-Source-SaaS-Schutz (zu viel Open-Source-Signal fuer ein persoenliches Produkt); keine Lizenzdatei beibehalten (rechtlich restriktiv, aber auf GitHub zu implizit).
+- **Decided by:** Tobi / Codex, PR #271.
+- **Status:** active.
+
 ## 2026-05-10 — Karpathy-Agentenregeln werden als Pulse-Codex-Disziplin geführt
 
 - **Decision:** Die Karpathy-inspirierten Agentenregeln aus `forrestchang/andrej-karpathy-skills` werden nicht als generische `CLAUDE.md` kopiert, sondern als Pulse-spezifische Codex-Skill `pulse-coding-discipline` plus knappe Pointer in `AGENTS.md`, `docs/ai/context-map.md` und `docs/codex-system-prompt.md` gepflegt.

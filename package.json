@@ -2,6 +2,7 @@
   "name": "pulse",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "workspaces": ["shared", "backend", "frontend"],
   "scripts": {
     "build": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
