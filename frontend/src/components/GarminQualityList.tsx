@@ -29,6 +29,12 @@ export function GarminQualityPill({ status }: { status: PulseGarminCoverageStatu
   );
 }
 
+function repairButtonLabel(action: PulseGarminCoverageRepairAction): string {
+  if (action.type === 'calendar_sync') return 'Sync';
+  if (action.type === 'plan') return 'Plan';
+  return 'Öffnen';
+}
+
 export function GarminQualityList({
   domains,
   limit,
@@ -76,6 +82,7 @@ export function GarminQualityList({
             domain.repairAction ? (
               <button
                 type="button"
+                aria-label={domain.repairAction.label}
                 onClick={() => onRepairAction?.(domain.repairAction!)}
                 style={{
                   background: 'var(--surface-2)',
@@ -90,7 +97,7 @@ export function GarminQualityList({
                   textTransform: 'uppercase',
                 }}
               >
-                Öffnen
+                {repairButtonLabel(domain.repairAction)}
               </button>
             ) : (
               <span style={{ width: 48 }} />

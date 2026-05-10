@@ -2860,7 +2860,9 @@ test('Data shows Garmin signal usefulness priorities', async ({ page }) => {
 });
 
 test('Settings surfaces blocked Garmin provider state with bounded actions', async ({ page }) => {
+  const requests: Array<{ method: string; pathname: string }> = [];
   await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
     garminCoverage: {
       range: { from: '2026-04-02', to: '2026-05-01', days: 30 },
       generatedAt: '2026-05-01T08:00:00.000Z',
@@ -2901,7 +2903,11 @@ test('Settings surfaces blocked Garmin provider state with bounded actions', asy
   await expect(page.getByText('Domainqualität')).toBeVisible();
   await expect(page.getByTestId('garmin-quality-daily_metrics')).toContainText('BLOCKIERT');
   await expect(page.getByTestId('garmin-quality-daily_metrics')).toContainText('Garmin rate limit');
-  await expect(page.getByTestId('garmin-quality-calendar')).toContainText('Öffnen');
+  await expect(page.getByTestId('garmin-quality-calendar')).toContainText('Sync');
+
+  await page.getByRole('button', { name: 'Garmin-Kalender synchronisieren' }).click();
+  await expect(page.getByText('Garmin Kalender synchronisiert')).toBeVisible();
+  expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
 });
 
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {

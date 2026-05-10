@@ -145,7 +145,11 @@ export default function Settings() {
   }
 
   function openGarminRepair(action: PulseGarminCoverageRepairAction) {
-    navigate(action.route.startsWith('/data') ? '/data' : action.route);
+    if (action.type === 'calendar_sync') {
+      void handleCalendarSync();
+      return;
+    }
+    navigate(action.route);
   }
 
   async function handleCalendarSync() {
