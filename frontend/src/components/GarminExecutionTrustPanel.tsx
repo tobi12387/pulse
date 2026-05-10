@@ -13,7 +13,7 @@ const STATUS_UI: Record<PulseGarminExecutionDiffStatus, { label: string; tone: s
   completed: { label: 'Erledigt', tone: 'var(--green)', group: 'ready' },
   missing_calendar: { label: 'Fehlt im Garmin-Kalender', tone: 'var(--amber)', group: 'attention' },
   missing_template: { label: 'Vorlage fehlt', tone: 'var(--amber)', group: 'attention' },
-  broken_repeat: { label: 'Repeat reparieren', tone: 'var(--rose)', group: 'attention' },
+  broken_repeat: { label: 'Wiederholungen prüfen', tone: 'var(--rose)', group: 'attention' },
   stale: { label: 'Kalender abweichend', tone: 'var(--amber)', group: 'attention' },
   degraded_expected: { label: 'Support-Blockliste', tone: 'var(--accent)', group: 'info' },
   unknown: { label: 'Readback unbekannt', tone: 'var(--text-3)', group: 'info' },
@@ -22,7 +22,7 @@ const STATUS_UI: Record<PulseGarminExecutionDiffStatus, { label: string; tone: s
 const ACTION_LABEL: Record<PulseGarminExecutionRepairAction, string> = {
   upload_template: 'Vorlage hochladen',
   schedule_calendar: 'Kalender syncen',
-  repair_repeat: 'Repeat reparieren',
+  repair_repeat: 'Wiederholungen reparieren',
   delete_stale_remote: 'Alttermin entfernen',
 };
 
@@ -79,6 +79,51 @@ function LoadingRows() {
   );
 }
 
+function RepeatAudit({ row }: { row: PulseGarminExecutionDiffRow }) {
+  if (!row.repeatAudit) return null;
+  const tone = row.repeatAudit.status === 'ok'
+    ? 'var(--green)'
+    : row.repeatAudit.status === 'repair_needed'
+      ? 'var(--rose)'
+      : 'var(--amber)';
+
+  return (
+    <div
+      data-testid={`garmin-repeat-audit-${row.workoutId}`}
+      style={{
+        border: `1px solid ${tone}`,
+        borderRadius: 4,
+        color: 'var(--text-2)',
+        fontSize: 10.5,
+        lineHeight: 1.45,
+        marginTop: 7,
+        padding: '6px 8px',
+      }}
+    >
+      <span style={{ color: tone, fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase' }}>
+        Wiederholungen
+      </span>
+      <span style={{ marginLeft: 6 }}>{row.repeatAudit.summary}</span>
+    </div>
+  );
+}
+
+function MetadataLine({
+  label,
+  workoutId,
+  scheduledId,
+}: {
+  label: string;
+  workoutId: string | null;
+  scheduledId: string | null;
+}) {
+  return (
+    <span style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 9 }}>
+      {label}: Vorlage {workoutId ?? 'fehlt'} · Kalender {scheduledId ?? 'fehlt'}
+    </span>
+  );
+}
+
 function GarminExecutionRow({
   row,
   onRepair,
@@ -109,14 +154,19 @@ function GarminExecutionRow({
         <p style={{ color: 'var(--text-2)', fontSize: 11.5, lineHeight: 1.45, margin: '5px 0 0' }}>
           {row.summary}
         </p>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-          <span style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 9 }}>
-            Vorlage {row.local.garminWorkoutId ?? 'fehlt'}
-          </span>
-          <span style={{ color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 9 }}>
-            Kalender {row.remote.scheduledId ?? row.local.garminScheduledId ?? 'fehlt'}
-          </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6 }}>
+          <MetadataLine
+            label="Pulse bekannt"
+            workoutId={row.local.garminWorkoutId}
+            scheduledId={row.local.garminScheduledId}
+          />
+          <MetadataLine
+            label="Garmin Readback"
+            workoutId={row.remote.workoutId}
+            scheduledId={row.remote.scheduledId}
+          />
         </div>
+        <RepeatAudit row={row} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
         {statusPill(row.status)}
@@ -211,10 +261,11 @@ export function GarminExecutionTrustPanel({
         <div style={{ minWidth: 0 }}>
           <div className="label-mono" style={{ marginBottom: 5 }}>Garmin Ausführung</div>
           <h2 style={{ color: 'var(--text)', fontSize: 16, fontWeight: 500, margin: 0 }}>
-            Kalender-Readback für die nächsten {days} Tage
+            Geräte-Check abschließen
           </h2>
           <p style={{ color: 'var(--text-3)', fontSize: 11.5, lineHeight: 1.45, margin: '6px 0 0', maxWidth: 660 }}>
-            Pulse prüft hier nur lesend, ob geplante Einheiten als Garmin-Vorlage und Kalendertermin wiedergefunden werden.
+            Kalender-Readback für die nächsten {days} Tage: Pulse prüft lesend, ob geplante Einheiten als Garmin-Vorlage,
+            Kalendertermin und Wiederholungsstruktur wiedergefunden werden.
           </p>
         </div>
         <button
@@ -237,6 +288,28 @@ export function GarminExecutionTrustPanel({
         >
           {query.isFetching ? 'Prüft' : 'Neu prüfen'}
         </button>
+      </div>
+
+      <div
+        data-testid="garmin-execution-contract"
+        style={{
+          display: 'grid',
+          gap: 8,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        }}
+      >
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '9px 10px' }}>
+          <div className="label-mono" style={{ color: 'var(--text-3)', marginBottom: 4 }}>Warum jetzt</div>
+          <p style={{ color: 'var(--text-2)', fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>
+            Planänderungen sind erst fertig, wenn Uhr oder Edge Vorlage, Kalender und Wiederholungen sauber sehen.
+          </p>
+        </div>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '9px 10px' }}>
+          <div className="label-mono" style={{ color: 'var(--text-3)', marginBottom: 4 }}>Nach dem Klick</div>
+          <p style={{ color: 'var(--text-2)', fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>
+            Neu prüfen liest Garmin nur. Reparatur-Buttons schreiben erst nach deinem Klick die betroffene Einheit neu.
+          </p>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

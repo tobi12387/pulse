@@ -105,6 +105,18 @@ export type PulseGarminExecutionRepairAction =
   | 'repair_repeat'
   | 'delete_stale_remote';
 
+export type PulseGarminRepeatReadbackStatus = 'ok' | 'repair_needed' | 'unverified';
+
+export interface PulseGarminRepeatReadbackAudit {
+  status: PulseGarminRepeatReadbackStatus;
+  summary: string;
+  localRepeatGroups: number;
+  localRepeatIterations: number;
+  remoteRepeatGroups: number | null;
+  remoteRepeatIterations: number | null;
+  remoteInvalidRepeatGroups: number | null;
+}
+
 export interface PulseGarminExecutionDiffRow {
   workoutId: string;
   plannedDate: string;
@@ -120,6 +132,7 @@ export interface PulseGarminExecutionDiffRow {
     scheduledId: string | null;
     lastSeenAt: string | null;
   };
+  repeatAudit?: PulseGarminRepeatReadbackAudit | null;
   repairActions: PulseGarminExecutionRepairAction[];
 }
 

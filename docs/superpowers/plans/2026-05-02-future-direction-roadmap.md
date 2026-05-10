@@ -90,7 +90,7 @@ These come first because they reduce daily friction before adding more intellige
 | 4 | Plan action hierarchy | Implemented: Plan starts with the current job, why-now copy, result preview and a primary action before evidence/tools. | Completed Plan Action Hierarchy PR |
 | 5 | Daily Delta Coach | Implemented v1 on Home: Pulse shows latest plan-vs-execution status, load delta and next plan effect from existing data. | Completed Daily Delta Home v1 PR |
 | 6 | Planned-vs-Completed Score | Implemented v1 on Home with match score and TSS delta; Plan/Data echoes remain optional polish. | Completed Daily Delta Home v1 PR |
-| 7 | Garmin execution closure polish | Apply/regenerate flows end with expected Garmin operations and readback/repair status. | Plan `Ausfuehrung` slice |
+| 7 | Garmin execution closure polish | Implemented v1: Plan `Ausfuehrung` verifies readback repeat counts, separates Pulse-known from Garmin-readback IDs and routes Settings directly to the execution check. | Completed Garmin Closure Polish PR |
 
 ### Medium Term: Make The Intelligence Understandable
 
@@ -129,10 +129,10 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Garmin execution closure polish:** ensure plan changes end with visible device/readback confidence.
-2. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
-3. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
-4. **Optional Daily Delta echoes:** add compact Plan/Data mirrors only if route evidence shows the Home v1 card is insufficient.
+1. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
+2. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
+3. **Optional Daily Delta echoes:** add compact Plan/Data mirrors only if route evidence shows the Home v1 card is insufficient.
+4. **Optional Garmin modal polish:** refine workout-detail copy only if route evidence shows `vor Upload`/readback wording still confuses execution.
 
 ## Manual Gates
 

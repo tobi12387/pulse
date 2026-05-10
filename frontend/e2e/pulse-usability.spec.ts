@@ -3743,7 +3743,7 @@ test('Plan Ausführung shows Garmin execution trust without live sync on load', 
   const panel = page.getByTestId('garmin-execution-trust-panel');
   await expect(panel).toContainText('Auf Garmin bereit');
   await expect(panel).toContainText('Fehlt im Garmin-Kalender');
-  await expect(panel).toContainText('Repeat reparieren');
+  await expect(panel).toContainText('Wiederholungen prüfen');
   expect(requests).toContainEqual({ method: 'GET', pathname: '/api/pulse/garmin/execution-diff' });
   expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
   expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout/workout-repeat/sync-garmin' });

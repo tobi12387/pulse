@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Garmin-Readback verifiziert Wiederholungen explizit
+
+- **Decision:** Der Garmin-Ausführungsdiff enthält einen optionalen `repeatAudit`, der Pulse-erwartete Repeat-Blöcke und Wiederholungen mit dem Garmin-Readback vergleicht. Repeat-Workouts mit fehlenden Garmin-Details werden nicht mehr als `ready`, sondern als `unknown` angezeigt.
+- **Why:** Wiederholungen mit `0`/`null` waren ein konkreter Vertrauensbruch. Planung ist erst abgeschlossen, wenn die Uhr-/Edge-Struktur nicht nur als Kalendertermin, sondern auch als Wiederholungsstruktur verständlich geprüft oder reparierbar ist.
+- **Alternatives:** Nur UI-Copy schärfen (behebt falsche Ready-Zustände nicht); automatisch reparieren, sobald ein Repeat auffällt (zu viel versteckte Garmin-Mutation); einen eigenen Ausführungs-Top-Level-Tab sofort bauen (größerer IA-Scope als nötig).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Daily Delta startet als read-only Home-Loop
 
 - **Decision:** Pulse fuehrt einen read-only `GET /api/pulse/daily-delta` Contract ein und zeigt den neuesten Plan-vs-Ausfuehrung-Status zuerst auf Home direkt nach der Tagesentscheidung. Der Contract nutzt vorhandene Plan-, Aktivitaets- und Tagesmetriken-Daten und erfordert keine Migration.
