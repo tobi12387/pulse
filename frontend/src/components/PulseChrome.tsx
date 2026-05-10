@@ -42,9 +42,10 @@ type SegmentedControlProps = {
   compact?: boolean;
   wrap?: boolean;
   ariaLabel?: string;
+  idPrefix?: string;
 };
 
-export function SegmentedControl({ items, active, onChange, compact = false, wrap = false, ariaLabel = 'Bereiche' }: SegmentedControlProps) {
+export function SegmentedControl({ items, active, onChange, compact = false, wrap = false, ariaLabel = 'Bereiche', idPrefix }: SegmentedControlProps) {
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => {
@@ -95,42 +96,48 @@ export function SegmentedControl({ items, active, onChange, compact = false, wra
         scrollbarWidth: wrap ? 'none' : 'thin',
       }}
     >
-      {items.map((item, index) => (
-        <button
-          key={item.id}
-          ref={(node) => {
-            tabRefs.current[item.id] = node;
-          }}
-          type="button"
-          role="tab"
-          onClick={() => onChange(item.id)}
-          onKeyDown={(event) => handleKeyDown(event, index)}
-          aria-selected={active === item.id}
-          tabIndex={active === item.id ? 0 : -1}
-          style={{
-            flex: '0 0 auto',
-            minWidth: 44,
-            minHeight: 44,
-            padding: compact ? '7px 10px' : '8px 10px',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: 0,
-            background: active === item.id ? 'var(--surface-2)' : 'transparent',
-            color: active === item.id ? 'var(--accent)' : 'var(--text-2)',
-            borderRadius: 3,
-            textTransform: 'uppercase',
-            border: 'none',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            transition: 'background 0.12s, color 0.12s',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {item.label}
-        </button>
-      ))}
+      {items.map((item, index) => {
+        const tabId = idPrefix ? `${idPrefix}-${item.id}-tab` : undefined;
+        const panelId = idPrefix ? `${idPrefix}-${item.id}-panel` : undefined;
+        return (
+          <button
+            key={item.id}
+            id={tabId}
+            aria-controls={panelId}
+            ref={(node) => {
+              tabRefs.current[item.id] = node;
+            }}
+            type="button"
+            role="tab"
+            onClick={() => onChange(item.id)}
+            onKeyDown={(event) => handleKeyDown(event, index)}
+            aria-selected={active === item.id}
+            tabIndex={active === item.id ? 0 : -1}
+            style={{
+              flex: '0 0 auto',
+              minWidth: 44,
+              minHeight: 44,
+              padding: compact ? '7px 10px' : '8px 10px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: 0,
+              background: active === item.id ? 'var(--surface-2)' : 'transparent',
+              color: active === item.id ? 'var(--accent)' : 'var(--text-2)',
+              borderRadius: 3,
+              textTransform: 'uppercase',
+              border: 'none',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'background 0.12s, color 0.12s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {item.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

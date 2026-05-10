@@ -57,6 +57,7 @@ type MockPulseApiOptions = {
   onTextCheckinSubmit?: (body: unknown) => void;
   metrics?: unknown[];
   sleepSessions?: unknown[];
+  activities?: unknown[];
   activityDetail?: unknown;
   nutritionLogs?: unknown[];
   onNutritionCreate?: (body: unknown) => void;
@@ -657,7 +658,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
       ],
     };
   }
-  if (pathname === '/api/pulse/activities') return { activities: [] };
+  if (pathname === '/api/pulse/activities') return { activities: options.activities ?? [] };
   if (pathname.startsWith('/api/pulse/activities/')) {
     return {
       activity: {
@@ -1145,23 +1146,50 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       const result = typeof options.planScenarioPreview === 'function'
         ? options.planScenarioPreview(body)
         : options.planScenarioPreview;
+      const workout = body.workout ?? {};
+      const distanceKm = Number(workout.distanceKm ?? 0);
+      const expectedSpeedKmh = Number(workout.expectedSpeedKmh ?? 0);
+      const isExplicitLongTour = body.type === 'add_custom_tour' && distanceKm >= 120 && expectedSpeedKmh > 0;
+      if (!result && isExplicitLongTour) {
+        const durationMin = Math.round((distanceKm / expectedSpeedKmh) * 60);
+        return json(route, {
+          preview: {
+            type: body.type,
+            summary: 'Eigene lange Einheit wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
+            projectedWorkouts: [],
+            changedDays: [{
+              date: workout.plannedDate ?? today,
+              before: { sessions: 0, durationMin: 0, tss: 0 },
+              after: { sessions: 1, durationMin, tss: 296 },
+              label: '+1 Einheit, +296 TSS',
+            }],
+            loadImpact: { tssDelta: 296, durationDeltaMin: durationMin, nextDayRecoveryDate: '2026-05-02' },
+            reasons: [
+              'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
+              'Folgetag als Recovery/Feedback-Fenster schützen.',
+            ],
+            warnings: ['Lange Tour simuliert: danach keine harte Einheit erzwingen.'],
+            applySupported: true,
+          },
+        });
+      }
       return json(route, result ?? {
         preview: {
           type: body.type ?? 'add_custom_tour',
-          summary: 'Eigene Einheit wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
+          summary: 'Mobile Vorschau simuliert die Einheit, ohne den Plan oder Garmin zu verändern.',
           projectedWorkouts: [],
           changedDays: [{
             date: body.workout?.plannedDate ?? today,
             before: { sessions: 0, durationMin: 0, tss: 0 },
-            after: { sessions: 1, durationMin: 423, tss: 296 },
-            label: '+1 Einheit, +296 TSS',
+            after: { sessions: 1, durationMin: body.workout?.durationMin ?? 60, tss: 42 },
+            label: `+1 Einheit, +${body.workout?.durationMin ?? 60} min`,
           }],
-          loadImpact: { tssDelta: 296, durationDeltaMin: 423, nextDayRecoveryDate: '2026-05-02' },
+          loadImpact: { tssDelta: 42, durationDeltaMin: body.workout?.durationMin ?? 60, nextDayRecoveryDate: null },
           reasons: [
-            'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
-            'Folgetag als Recovery/Feedback-Fenster schützen.',
+            'Mobile Vorschau: erst Wochenlast, Recovery und Garmin-Auswirkung prüfen.',
+            'Plan oder Garmin werden erst nach Apply verändert.',
           ],
-          warnings: ['155 km simuliert: danach keine harte Einheit erzwingen.'],
+          warnings: [],
           applySupported: true,
         },
       });
