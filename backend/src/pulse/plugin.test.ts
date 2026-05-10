@@ -263,6 +263,59 @@ describe('GET /api/pulse/home', () => {
   });
 });
 
+describe('GET /api/pulse/plan/today/options', () => {
+  it('keeps planned workout context after the planned activity is completed', async () => {
+    const today = dateDaysAgo(0);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: 'today-options-completed-planned-training',
+      source: 'garmin',
+      startTime: new Date(`${today}T08:00:00.000Z`),
+      activityType: 'bike',
+      name: 'Grundlage draussen',
+      durationSec: 4_920,
+      distanceM: 33_200,
+      tss: 68,
+      rpe: 5,
+      feedbackLoggedAt: new Date(`${today}T10:00:00.000Z`),
+    }).returning({ id: pulseActivities.id });
+
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: today,
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 80,
+      targetTss: 65,
+      status: 'completed',
+      completedActivityId: activity!.id,
+      executionStatus: 'completed_matched',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/plan/today/options',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      todayOptions: {
+        state: string;
+        summary: string;
+        options: Array<{ kind: string; evidence: string[] }>;
+      };
+    }>();
+    expect(body.todayOptions.state).toBe('completed_activity');
+    expect(body.todayOptions.summary).toContain('Geplantes Training erledigt');
+    expect(body.todayOptions.options.every(option => option.kind !== 'workout')).toBe(true);
+    expect(body.todayOptions.options[0]?.evidence).toEqual(expect.arrayContaining([
+      'Geplant: Rad 80 min Z2',
+      'Abgeschlossen: Rad 82 min · 33 km',
+    ]));
+  });
+});
+
 describe('Pulse action closure', () => {
   it('returns current actions with persisted open decision ids', async () => {
     const res = await app.inject({

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Erledigte geplante Workouts schließen die Tagesoptionen mit geplantem Kontext
+
+- **Decision:** `TodayOptions` behalten den geplanten Workout-Kontext auch dann, wenn die Einheit am selben Tag bereits als completed/matched gilt. Pulse zeigt dann `Geplantes Training erledigt`, listet geplante und abgeschlossene Einheit als Evidence und bietet nur Feedback, Fueling und Recovery statt weiterer Workout-CTAs.
+- **Why:** Tagesentscheidungen sollen wie bei führenden Trainingsapps nach Ausführung eine klare Plan-Closure herstellen: erledigte Workouts sind kein weiterer Trainingsentscheid, sondern ein Anlass für Feedback, Versorgung, Recovery und nächste Anpassung.
+- **Alternatives:** Completed-Aktivitäten generisch behandeln (zu wenig planbezogen); nur Home-Daily-Decision anpassen (Plan/Coach-Kontext bleibt widersprüchlich); weiterhin nur `status=planned` in `/plan/today/options` laden (verliert completed Workouts mit gespeicherter Planverknüpfung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan bekommt einen sichtbaren Adaptions-Check statt stiller Ausführungsabweichungen
 
 - **Decision:** Pulse zeigt im Plan eine `Adaptions-Check`-Karte, wenn geplante Workouts laut Garmin-Ausführung verpasst oder durch andere Aktivitäten ersetzt wurden. Die Karte bietet `Szenario prüfen` als Review-Einstieg und `Plan beibehalten` als bewusste Ablehnung, statt automatisch umzubauen.

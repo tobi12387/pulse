@@ -31,6 +31,59 @@ test('Plan evidence does not show an empty decision beside a planned-workout tod
   await expect(page.getByText('Kein offenes Training geplant')).toHaveCount(0);
 });
 
+test('Plan renders completed planned workout today options as a closed decision', async ({ page }) => {
+  await mockPulseApi(page, {
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'completed_activity',
+        summary: 'Geplantes Training erledigt: Rad 82 min · 33 km. Pulse schliesst die Trainingsentscheidung und priorisiert Feedback, Fueling und Regeneration.',
+        signature: 'completed-planned-training',
+        options: [
+          {
+            id: 'feedback-completed-activity',
+            kind: 'feedback',
+            priority: 'primary',
+            title: 'Feedback ist erledigt',
+            detail: 'Die Einheit hat bereits Feedback. Pulse kann die Belastung fuer die naechste Planung einordnen.',
+            cta: 'Aktivität ansehen',
+            targetPath: '/activity/activity-planned-bike',
+            evidence: ['Geplant: Rad 80 min Z2', 'Abgeschlossen: Rad 82 min · 33 km'],
+          },
+          {
+            id: 'fueling-after-activity',
+            kind: 'fueling',
+            priority: 'secondary',
+            title: 'Fueling-Log prüfen',
+            detail: 'Lange Belastung: Flaschen, Pulver, Snacks und GI-Komfort festhalten.',
+            cta: 'Fueling öffnen',
+            targetPath: '/activity/activity-planned-bike',
+            evidence: ['Fueling heute bereits geloggt'],
+          },
+          {
+            id: 'recovery-after-activity',
+            kind: 'recovery',
+            priority: 'support',
+            title: 'Resttag schützen',
+            detail: 'Heute nicht nachlegen. Essen, Trinken, lockere Bewegung und Schlaf bestimmen den Nutzen der Einheit.',
+            cta: 'Recovery ansehen',
+            targetPath: '/data#data-recovery',
+            evidence: ['Readiness 76/100'],
+          },
+        ],
+      },
+    },
+  });
+  await page.goto('/plan');
+
+  const todayOptions = page.getByTestId('today-options-card-full');
+  await expect(todayOptions).toContainText('Nach der Einheit');
+  await expect(todayOptions).toContainText('Geplantes Training erledigt');
+  await expect(todayOptions).toContainText('Feedback ist erledigt');
+  await expect(todayOptions).toContainText('Fueling-Log prüfen');
+  await expect(todayOptions).not.toContainText('Plan ausführen');
+});
+
 test('Home renders exactly one main daily decision card', async ({ page }) => {
   await page.goto('/');
 

@@ -31,6 +31,44 @@ describe('buildTodayOptions', () => {
     expect(result.summary).toContain('abgeschlossen');
   });
 
+  it('closes the planned workout decision after the planned activity is completed', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 76,
+      tsb: 1,
+      plannedToday: {
+        id: 'planned-bike',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 80,
+        targetTss: 65,
+        capabilityFit: 'productive',
+      },
+      completedTodayActivities: [{
+        id: 'activity-planned-bike',
+        activityType: 'bike',
+        durationMin: 82,
+        distanceKm: 33,
+        tss: 68,
+        rpe: 5,
+        feedbackLoggedAt: '2026-05-09T10:00:00.000Z',
+      }],
+      recentSportMix: { bike: 2, run: 1 },
+      riskSignals: [],
+      mental: { mood: 7, energy: 7, stress: 3, motivation: 8 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: null,
+    });
+
+    expect(result.state).toBe('completed_activity');
+    expect(result.summary).toContain('Geplantes Training erledigt');
+    expect(result.options.every(option => option.kind !== 'workout')).toBe(true);
+    expect(result.options[0]?.evidence).toEqual(expect.arrayContaining([
+      'Geplant: Rad 80 min Z2',
+      'Abgeschlossen: Rad 82 min · 33 km',
+    ]));
+  });
+
   it('makes rest the first-class option when recovery risk is high', () => {
     const result = buildTodayOptions({
       date: '2026-05-09',
