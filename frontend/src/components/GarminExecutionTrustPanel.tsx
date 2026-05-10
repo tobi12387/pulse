@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useGarminExecutionDiff } from '@/pulse/hooks';
+import { useMemo, useState } from 'react';
+import { useGarminCalendarSync, useGarminExecutionDiff, useSyncWorkoutToGarmin } from '@/pulse/hooks';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { Skeleton } from '@/components/Skeleton';
 import type {
@@ -81,10 +81,12 @@ function LoadingRows() {
 
 function GarminExecutionRow({
   row,
-  onNavigate,
+  onRepair,
+  pendingAction,
 }: {
   row: PulseGarminExecutionDiffRow;
-  onNavigate?: (path: string) => void;
+  onRepair: (row: PulseGarminExecutionDiffRow, action: PulseGarminExecutionRepairAction) => void;
+  pendingAction: string | null;
 }) {
   const ui = STATUS_UI[row.status];
   return (
@@ -124,14 +126,15 @@ function GarminExecutionRow({
               <button
                 key={action}
                 type="button"
-                onClick={() => onNavigate?.('/settings?section=garmin')}
+                onClick={() => onRepair(row, action)}
+                disabled={pendingAction != null}
                 style={{
                   minHeight: 36,
                   border: `1px solid ${ui.tone}`,
                   borderRadius: 4,
                   background: 'transparent',
-                  color: ui.tone,
-                  cursor: 'pointer',
+                  color: pendingAction === `${row.workoutId}:${action}` ? 'var(--text-3)' : ui.tone,
+                  cursor: pendingAction == null ? 'pointer' : 'default',
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: 0,
@@ -139,7 +142,7 @@ function GarminExecutionRow({
                   textTransform: 'uppercase',
                 }}
               >
-                {ACTION_LABEL[action]}
+                {pendingAction === `${row.workoutId}:${action}` ? 'Läuft' : ACTION_LABEL[action]}
               </button>
             ))}
           </div>
@@ -151,12 +154,14 @@ function GarminExecutionRow({
 
 export function GarminExecutionTrustPanel({
   days = 15,
-  onNavigate,
 }: {
   days?: number;
-  onNavigate?: (path: string) => void;
 }) {
   const query = useGarminExecutionDiff(days);
+  const syncWorkout = useSyncWorkoutToGarmin();
+  const calendarSync = useGarminCalendarSync();
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [repairNotice, setRepairNotice] = useState<{ tone: 'info' | 'warning'; title: string; message: string } | null>(null);
   const rows = useMemo(() => query.data?.rows ?? [], [query.data?.rows]);
   const counts = useMemo(() => {
     return rows.reduce(
@@ -168,6 +173,33 @@ export function GarminExecutionTrustPanel({
       { total: 0, ready: 0, attention: 0, info: 0 },
     );
   }, [rows]);
+
+  async function handleRepair(row: PulseGarminExecutionDiffRow, action: PulseGarminExecutionRepairAction) {
+    const actionKey = `${row.workoutId}:${action}`;
+    setPendingAction(actionKey);
+    setRepairNotice(null);
+    try {
+      if (action === 'upload_template' || action === 'repair_repeat') {
+        await syncWorkout.mutateAsync(row.workoutId);
+      } else {
+        await calendarSync.mutateAsync();
+      }
+      await query.refetch();
+      setRepairNotice({
+        tone: 'info',
+        title: 'Reparatur ausgeführt',
+        message: `${ACTION_LABEL[action]} wurde gestartet. Pulse prüft den Garmin-Readback erneut.`,
+      });
+    } catch (err) {
+      setRepairNotice({
+        tone: 'warning',
+        title: 'Reparatur fehlgeschlagen',
+        message: errorMessage(err, 'Garmin konnte gerade nicht repariert werden.'),
+      });
+    } finally {
+      setPendingAction(null);
+    }
+  }
 
   return (
     <section
@@ -214,6 +246,13 @@ export function GarminExecutionTrustPanel({
       </div>
 
       {query.isLoading && <LoadingRows />}
+      {repairNotice && (
+        <InlineFeedback
+          tone={repairNotice.tone}
+          title={repairNotice.title}
+          message={repairNotice.message}
+        />
+      )}
       {query.isError && (
         <InlineFeedback
           tone="warning"
@@ -234,7 +273,7 @@ export function GarminExecutionTrustPanel({
       {!query.isLoading && !query.isError && rows.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map(row => (
-            <GarminExecutionRow key={row.workoutId} row={row} onNavigate={onNavigate} />
+            <GarminExecutionRow key={row.workoutId} row={row} onRepair={handleRepair} pendingAction={pendingAction} />
           ))}
         </div>
       )}

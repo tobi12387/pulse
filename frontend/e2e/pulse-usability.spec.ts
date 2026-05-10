@@ -3573,6 +3573,52 @@ test('Plan Ausführung shows Garmin execution trust without live sync on load', 
   expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout/workout-repeat/sync-garmin' });
 });
 
+test('Plan Ausführung repair actions call existing Garmin repair endpoints only after explicit click', async ({ page }) => {
+  const requests: Array<{ method: string; pathname: string }> = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
+    garminExecutionDiff: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      window: { from: '2026-05-01', to: '2026-05-15', days: 15 },
+      rows: [
+        {
+          workoutId: 'workout-upload',
+          plannedDate: '2026-05-02',
+          title: 'Rad · Z2 · 75 min',
+          status: 'missing_template',
+          summary: 'In Pulse geplant, aber es gibt noch keine Garmin-Workout-Vorlage.',
+          local: { garminWorkoutId: null, garminScheduledId: null },
+          remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+          repairActions: ['upload_template'],
+        },
+        {
+          workoutId: 'workout-calendar',
+          plannedDate: '2026-05-03',
+          title: 'Laufen · Z2 · 45 min',
+          status: 'missing_calendar',
+          summary: 'Vorlage bekannt, aber die Einheit fehlt im Garmin-Kalenderfenster.',
+          local: { garminWorkoutId: 'gw-calendar', garminScheduledId: 'sched-calendar' },
+          remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+          repairActions: ['schedule_calendar'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/plan?tab=execution');
+  const panel = page.getByTestId('garmin-execution-trust-panel');
+  await expect(panel).toContainText('Vorlage hochladen');
+  await expect(panel).toContainText('Kalender syncen');
+  expect(requests.filter(request => request.method === 'POST')).toEqual([]);
+
+  await panel.getByRole('button', { name: 'Vorlage hochladen' }).click();
+  await expect(panel).toContainText('Reparatur ausgeführt');
+  expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout/workout-upload/sync-garmin' });
+
+  await panel.getByRole('button', { name: 'Kalender syncen' }).click();
+  expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
+});
+
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
   const coverage = {
     range: { from: '2026-05-01', to: '2026-05-02', days: 2, year: null },

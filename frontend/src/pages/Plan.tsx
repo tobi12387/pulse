@@ -2792,7 +2792,7 @@ export default function Plan() {
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
       {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} /></TabPanel>}
-      {tab === 'ausfuehrung' && <TabPanel tab="ausfuehrung"><GarminExecutionTrustPanel onNavigate={navigate} /></TabPanel>}
+      {tab === 'ausfuehrung' && <TabPanel tab="ausfuehrung"><GarminExecutionTrustPanel /></TabPanel>}
       {tab === 'ziele'    && <TabPanel tab="ziele"><ZieleTab /></TabPanel>}
       {tab === 'review'   && <TabPanel tab="review"><ReviewTab /></TabPanel>}
       {tab === 'statistik' && <TabPanel tab="statistik"><StatistikTab /></TabPanel>}

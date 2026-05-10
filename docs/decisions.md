@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan-Ausführung repariert Garmin nur nach explizitem Klick
+
+- **Decision:** Die Reparaturbuttons im Plan-Tab `Ausführung` nutzen ausschließlich bestehende Endpunkte: `sync-garmin` für Vorlage/Repeat und `garmin/calendar/sync` für Kalender/Stale. Die Liste wird danach erneut gelesen; es gibt weiterhin keine Schreibaktion beim Laden des Tabs.
+- **Why:** Pulse soll direkt dort reparieren können, wo die Garmin-Lücke sichtbar wird, aber die sichere Grenze zwischen Readback und Write bleibt klar. Bestehende Endpunkte behalten Ledger, Fehlerpfade und Sync-Semantik an einer Stelle.
+- **Alternatives:** Neue spezifische Repair-Endpunkte bauen (mehr Backend-Scope ohne Mehrwert); weiter nur nach Settings verlinken (zu wenig alltagstauglich); automatische Reparatur nach Readback (zu riskant).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Garmin Execution Trust startet read-only im Plan
 
 - **Decision:** Plan bekommt einen verschachtelten Tab `Ausführung`, der Garmin-Vorlagen, Kalendertermine und defekte Wiederholungen per Readback prüft, aber auf Load keine Garmin-Schreibaktionen ausführt. Reparatur-CTAs führen zunächst zu Settings/Garmin; konkrete Reparaturklicks bleiben die nächste separate Aufgabe.
