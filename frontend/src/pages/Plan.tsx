@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useCheckinHistory, useCheckinToday,
   usePulseActivities, usePulsePlan, usePulseGoals,
@@ -942,7 +942,7 @@ function PlanScenarioPreviewCard({
   }
 
   return (
-    <section className="card" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+    <section id="plan-scenario-preview" tabIndex={-1} className="card" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 12 }}>
         <div>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Szenario-Vorschau</div>
@@ -1185,6 +1185,8 @@ function PlanAdaptationReviewCard({
 
   return (
     <section
+      id="plan-adaptation-review"
+      tabIndex={-1}
       className="card"
       data-testid="plan-adaptation-review"
       style={{ borderColor: 'rgba(245,158,11,0.22)' }}
@@ -2144,8 +2146,25 @@ function tabFromQuery(value: string | null): Tab {
   return value ? QUERY_TAB[value] ?? 'training' : 'training';
 }
 
+const HASH_TAB: Record<string, Tab> = {
+  'plan-scenario-preview': 'training',
+  'plan-adaptation-review': 'training',
+};
+
+function hashFromLocation(hash: string): string {
+  const value = hash.replace(/^#/, '');
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export default function Plan() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchKey = searchParams.toString();
   const tab = tabFromQuery(searchParams.get('tab'));
 
   function setTab(tabId: string) {
@@ -2154,6 +2173,31 @@ export default function Plan() {
     next.set('tab', TAB_QUERY[nextTab]);
     setSearchParams(next);
   }
+
+  useEffect(() => {
+    const hash = hashFromLocation(location.hash);
+    if (!hash) return;
+
+    const targetTab = HASH_TAB[hash];
+    if (targetTab && targetTab !== tab) {
+      const next = new URLSearchParams(searchKey);
+      next.set('tab', TAB_QUERY[targetTab]);
+      navigate({
+        pathname: location.pathname,
+        search: `?${next.toString()}`,
+        hash: location.hash,
+      }, { replace: true });
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(hash);
+      if (!target) return;
+      target.scrollIntoView({ block: 'start' });
+      target.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location.hash, location.pathname, navigate, searchKey, tab]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

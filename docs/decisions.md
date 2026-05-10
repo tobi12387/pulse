@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Data Plan-/Load führt zur Plan-Aktionsfläche
+
+- **Decision:** Die `Plan-/Load`-Triage im Data-Überblick führt direkt zur Plan-Szenario-Vorschau (`/plan?tab=training#plan-scenario-preview`) statt nur zur Analyse-Ansicht. Plan unterstützt dafür Hash-Fokus auf konkrete Aktionsflächen.
+- **Why:** Data soll nicht nur Evidenz erklären, sondern den täglichen Flow zur nächsten sinnvollen Handlung schließen. Gerade auf iPhone/PWA ist der Schritt von Load-/Plan-Signal zur Planprüfung sonst zu indirekt.
+- **Alternatives:** Weiter nur zur Data-Analyse verlinken (zu wenig handlungsorientiert); automatisch Szenario berechnen (zu viel Automatik); neuen Action-Router bauen (zu groß für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Szenario-Vorschau zeigt betroffene Workouts vor dem Anwenden
 
 - **Decision:** Die Plan-Szenario-Vorschau zeigt konkrete betroffene Zukunftseinheiten mit Dauer- und TSS-Änderung, bevor ein Szenario angewendet wird. Tagesdeltas bleiben sichtbar, werden aber durch Workout-spezifische Auswirkungen ergänzt.

@@ -1364,6 +1364,20 @@ test('Data overview exposes provenance shortcuts', async ({ page }) => {
   await expect(page.locator('#data-plan-trace')).toBeVisible();
 });
 
+test('Data Plan Load triage hands off to the actionable Plan scenario surface', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/data');
+  await page.getByTestId('data-triage-plan-load').click();
+
+  await expect(page).toHaveURL('/plan?tab=training#plan-scenario-preview');
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard).toBeInViewport();
+  await expect(scenarioCard).toBeFocused();
+  await expect(scenarioCard).toContainText('Szenario-Vorschau');
+});
+
 test('Data ignores malformed hashes and stays usable', async ({ page }) => {
   await mockPulseApi(page);
 
