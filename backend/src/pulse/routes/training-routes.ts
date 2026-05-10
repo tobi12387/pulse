@@ -769,6 +769,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         tss:          pulseActivities.tss,
         rpe:          pulseActivities.rpe,
         sorenessAreas: pulseActivities.sorenessAreas,
+        garminHrZones: pulseActivities.garminHrZones,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime))
@@ -1441,6 +1442,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         tss:          pulseActivities.tss,
         rpe:          pulseActivities.rpe,
         sorenessAreas: pulseActivities.sorenessAreas,
+        garminHrZones: pulseActivities.garminHrZones,
       }).from(pulseActivities)
         .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, since42d)))
         .orderBy(desc(pulseActivities.startTime)).limit(80),

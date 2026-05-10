@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Execution Review nutzt Garmin-HR-Zonen für Ausführungsqualität
+
+- **Decision:** Die Plan-Execution-Review wertet gecachte Garmin-HR-Zonen aus, wenn sie vorhanden sind. Pulse unterscheidet damit nicht nur `completed`, sondern erkennt grob, ob lockere Einheiten zu hart ausgeführt wurden oder harte Einheiten das Intensitätsziel kaum getroffen haben.
+- **Why:** Für planadaptive Qualität reicht ein Datums-/Dauer-Match nicht aus. Top-Trainingssysteme behandeln die tatsächliche Ausführung als Planinput; HR-Zonen sind in Pulse bereits gecacht und können deterministisch ohne neue Tabellen genutzt werden.
+- **Alternatives:** Nur RPE/Soreness verwenden (subjektiv und oft leer); komplette Power-/Lap-Analyse bauen (größerer Slice); HR-Zonen erst live von Garmin laden (zu langsam/riskant für Plan-Generierung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Adaptions-Check führt direkt in die passende Szenario-Prüfung
 
 - **Decision:** Der Plan-Adaptions-Check öffnet die Szenario-Vorschau nicht mehr im generischen `155-km Tour`-Modus, sondern bereitet `Umfang senken` mit einem sichtbaren Hinweis vor. Nutzer prüfen damit direkt, ob die kommenden Workouts nach verpassten oder anders ausgeführten Einheiten defensiver werden sollten.

@@ -87,6 +87,53 @@ describe('buildTrainingExecutionReview', () => {
     expect(review.recommendedHardDayAvoidance).toEqual([1]);
   });
 
+  it('uses cached Garmin HR zones to detect an easy workout that was executed too hard', () => {
+    const review = buildTrainingExecutionReview({
+      weekStart,
+      plannedWorkouts: [workout({ zone: 2, durationMin: 75 })],
+      activities: [activity({
+        durationSec: 75 * 60,
+        rpe: 5,
+        hrZones: [
+          { zone: 1, secsInZone: 600 },
+          { zone: 2, secsInZone: 1_000 },
+          { zone: 3, secsInZone: 900 },
+          { zone: 4, secsInZone: 1_500 },
+          { zone: 5, secsInZone: 500 },
+        ],
+      })],
+      today: '2026-05-04',
+    });
+
+    expect(review.signals).toEqual(expect.arrayContaining(['matched', 'reduce_next_intensity']));
+    expect(review.intents).toContain('reduce');
+    expect(review.learnedFromLastWeek.join(' ')).toContain('zu hart');
+  });
+
+  it('uses cached Garmin HR zones to detect a hard workout that missed intensity', () => {
+    const review = buildTrainingExecutionReview({
+      weekStart,
+      plannedWorkouts: [workout({ zone: 4, durationMin: 60 })],
+      activities: [activity({
+        durationSec: 60 * 60,
+        rpe: 5,
+        hrZones: [
+          { zone: 1, secsInZone: 900 },
+          { zone: 2, secsInZone: 2_200 },
+          { zone: 3, secsInZone: 300 },
+          { zone: 4, secsInZone: 200 },
+          { zone: 5, secsInZone: 0 },
+        ],
+      })],
+      today: '2026-05-04',
+    });
+
+    expect(review.signals).toEqual(expect.arrayContaining(['matched', 'reduce_next_intensity']));
+    expect(review.intents).toContain('reduce');
+    expect(review.learnedFromLastWeek.join(' ')).toContain('Intensitätsziel');
+    expect(review.recommendedHardDayAvoidance).toEqual([1]);
+  });
+
   it('explains stable execution, good recovery, and deliberate free days instead of forcing variation', () => {
     const review = buildTrainingExecutionReview({
       weekStart,
