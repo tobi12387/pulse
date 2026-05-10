@@ -3795,6 +3795,49 @@ test('Plan Ausführung repair actions call existing Garmin repair endpoints only
   expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
 });
 
+test('Plan explains Athlete-Level fit and recommends the safer stretch alternative', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'stretch-level-workout',
+      userId: 'user-1',
+      plannedDate: '2026-05-11',
+      activityType: 'bike',
+      zone: 4,
+      durationMin: 75,
+      distanceKm: null,
+      targetTss: 92,
+      archetypeId: 'bike_threshold_cruise',
+      difficultyLevel: 4.4,
+      difficultyEnergySystem: 'threshold',
+      capabilityFit: 'stretch',
+      description: 'Warum diese Einheit: Threshold-Reiz, aber Athlete-Level ist Stretch. Sauber entscheiden, nicht blind ausführen.',
+      steps: [{ type: 'steady', durationMin: 75, zone: 4 }],
+      garminWorkoutId: null,
+      garminScheduledId: null,
+      garminSyncContract: null,
+      status: 'planned',
+      workoutFeedback: null,
+      complianceScore: null,
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: null,
+    }],
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const level = page.getByTestId('plan-athlete-level-summary');
+  await expect(level).toContainText('Athlete-Level');
+  await expect(level).toContainText('Stretch');
+  await expect(level).toContainText('Workout-Level 4.4');
+  await expect(page.getByTestId('plan-adaptation-status')).toContainText('Athlete-Level: Stretch kontrollieren');
+  await expect(page.getByText('Level-Wirkung: Zielreiz bleibt, Belastung sinkt')).toBeVisible();
+});
+
 test('Plan Statistik shows progression guidance in capability levels', async ({ page }) => {
   await mockPulseApi(page);
   await page.goto('/plan?tab=stats');

@@ -85,6 +85,7 @@
 | `2026-05-10-plan-action-hierarchy.md` | Plan Action Hierarchy — Plan starts with a primary action, why-now copy and result preview before evidence/tools | Plan Action Hierarchy PR |
 | `2026-05-10-daily-delta-home-v1.md` | Daily Delta Home v1 — Home shows a compact plan-vs-execution loop from existing workouts, activities and daily metrics | Daily Delta PR |
 | `2026-05-10-garmin-execution-closure-polish.md` | Garmin Execution Closure Polish — Plan Ausführung verifies repeat counts, separates Pulse-known from Garmin-readback IDs and routes Settings directly to execution readback | Garmin Closure Polish PR |
+| `2026-05-10-athlete-level-decision-language-v1.md` | Athlete-Level Decision Language v1 — Today Options and Plan translate capability fit into Machbar/Produktiv/Stretch/Zu hart heute action language | Athlete Level Decision Language PR |
 
 ## Bekannte veraltete Stellen
 

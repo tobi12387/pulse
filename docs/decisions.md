@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Athlete-Level-Fit wird zur Tagesentscheidungs-Sprache
+
+- **Decision:** Pulse uebersetzt `capabilityFit` zuerst in alltagstaugliche Tages- und Plan-Sprache (`Machbar`, `Produktiv`, `Stretch`, `Zu hart heute`) und nutzt diese Sprache, um kuerzere oder leichtere Alternativen sichtbar zu begruenden.
+- **Why:** Tobi braucht vor einer Plananpassung keine weitere Kennzahlenflaeche, sondern eine klare Antwort, ob die Einheit heute passt und welche Alternative den Trainingsreiz oder die Belastung veraendert. Der kleinste nutzbare Schritt ist deshalb die vorhandene Fit-Einschaetzung im Daily-Flow, bevor Scenario Preview und Workout-Bibliothek noch tiefer angereichert werden.
+- **Alternatives:** Fit nur als Badge in Tabellen belassen (zu wenig handlungsleitend); sofort einen neuen Progression-Tab bauen (mehr Oberflaeche ohne Tagesnutzen); Scenario Preview zuerst erweitern (wertvoll, aber weniger direkt fuer die naechste Entscheidung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Garmin-Readback verifiziert Wiederholungen explizit
 
 - **Decision:** Der Garmin-Ausführungsdiff enthält einen optionalen `repeatAudit`, der Pulse-erwartete Repeat-Blöcke und Wiederholungen mit dem Garmin-Readback vergleicht. Repeat-Workouts mit fehlenden Garmin-Details werden nicht mehr als `ready`, sondern als `unknown` angezeigt.

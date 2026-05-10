@@ -98,7 +98,7 @@ These build on the calmer daily UI.
 
 | Theme | Outcome | Benchmark Link |
 |---|---|---|
-| Pulse Athlete Levels | Energy-system capability becomes user-facing as `machbar`, `produktiv`, `stretch`, `schuetzen` or `zu hart heute`. | TrainerRoad Workout/Progression Levels |
+| Pulse Athlete Levels | Implemented daily language v1: energy-system capability is visible as `Machbar`, `Produktiv`, `Stretch` or `Zu hart heute`; next slice extends this explanation into scenario previews. | TrainerRoad Workout/Progression Levels |
 | Workout Alternatives v2 | Every relevant workout can offer shorter, easier, same-purpose, outside/indoor, group/solo or recovery alternatives. | TrainerRoad TrainNow, JOIN availability |
 | Data IA Compression | Data becomes `Heute relevant`, `Trends`, `Datenqualitaet` and `Analyse`, instead of many equal tabs. | Oura Trends, Intervals analytics |
 | Settings Status First | Settings starts with `Alles bereit` or `Problem beheben`, then details. | Garmin/WHOOP app diagnostics |
@@ -129,7 +129,7 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
+1. **Scenario Preview Capability Fit:** projected workouts in preview/apply explain archetype, level and fit before a plan change or Garmin write.
 2. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
 3. **Optional Daily Delta echoes:** add compact Plan/Data mirrors only if route evidence shows the Home v1 card is insufficient.
 4. **Optional Garmin modal polish:** refine workout-detail copy only if route evidence shows `vor Upload`/readback wording still confuses execution.
