@@ -1451,6 +1451,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       recentNutrition,
       activeGoals,
       fitnessLoad,
+      capabilitySummary,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -1498,6 +1499,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       }).from(pulseGoals)
         .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active'))),
       computeFitnessLoad(userId, today),
+      loadTrainingCapabilitySummary(userId).catch((err: unknown) => {
+        app.log.warn(`[today-options] Training capability summary failed (non-fatal): ${err}`);
+        return null;
+      }),
     ]);
 
     const mentalScore = mental
@@ -1567,7 +1572,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         activeCount: activeGoals.length,
         preferredSports,
       },
-      capabilitySummary: null,
+      capabilitySummary,
     });
 
     return { todayOptions: options };

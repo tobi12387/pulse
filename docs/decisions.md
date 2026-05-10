@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-10 — Today Options nutzt Capability-Fortschritt und offene GI-Schutzsignale
+
+- **Decision:** Today Options liest die aktuelle Training-Capability-Zusammenfassung und markiert freie Endurance-Optionen als produktiv, wenn Endurance-Evidenz einen kleinen naechsten Reiz erlaubt. Gleichzeitig werden harte geplante Einheiten bei offenem GI-/Fueling-Hinweis in den Recovery-Protect-Pfad verschoben.
+- **Why:** Home soll nicht nur einen generischen lockeren Vorschlag zeigen, sondern erklaeren, warum ein kurzer freier Tag gerade sinnvoll ist. Umgekehrt duerfen bekannte Magen-/Fueling-Probleme nicht gleichzeitig mit einem harten VO2-/Schwellen-CTA konkurrieren.
+- **Alternatives:** Capability weiter nur im Plan-Statistik-Tab zeigen (zu weit weg vom Tagesflow); GI-Hinweis nur als Evidence-Chip belassen (zu schwach fuer echte Entscheidung); Today Options um neue Top-Level-Flows erweitern (zu schwer fuer iPhone/PWA).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-10 — Plan-Fit nutzt RPE, GI und Mental Protect als harte Schutzsignale
 
 - **Decision:** Die Plan Engine blockt harte Einheiten deterministisch, wenn die letzte RPE-Bewertung bei 9/10 lag, eine relevante Fueling-/GI-Beschwerde offen ist oder der aktuelle Mental Check-in Protect-Signale zeigt und kein A-Race-Zwang vorliegt. Jede generierte Einheit beginnt zudem mit einer stabilen `Warum diese Einheit:`-Begründung, die auch nach LLM-Beschreibungsanreicherung erhalten bleibt und in der Plan-Zeile separat sichtbar ist.
