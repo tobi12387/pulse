@@ -1459,7 +1459,7 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
 
   await page.goto('/plan?tab=training');
   await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
-  await page.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await page.getByTestId('plan-adaptation-review').getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByText('TSS', { exact: true })).toBeVisible();
   await expect(page.getByText('+296', { exact: true })).toBeVisible();
@@ -1503,7 +1503,7 @@ test('Plan surfaces Garmin sync failure after applying a custom tour scenario', 
   });
 
   await page.goto('/plan?tab=training');
-  await page.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await page.getByTestId('plan-adaptation-review').getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await page.getByRole('button', { name: 'Vorschau anwenden' }).click();
   await expect(page.getByText('Garmin-Sync offen')).toBeVisible();
@@ -2007,6 +2007,62 @@ test('Plan shows Garmin execution states and match explanations', async ({ page 
   await page.getByText('Durchgeführt.').click();
   await expect(page.getByText('Erledigt').last()).toBeVisible();
   await expect(page.getByText('Mit Garmin-Aktivität activity-1 abgeglichen.')).toBeVisible();
+});
+
+test('Plan surfaces an adaptation check when recent Garmin execution diverged', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-missed-review',
+        plannedDate: '2026-04-30',
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        status: 'planned',
+        description: 'Nicht erledigt.',
+        executionStatus: 'missed',
+        executionNotes: 'Plantag ist vorbei und keine passende Garmin-Aktivität ist zugeordnet.',
+      },
+      {
+        id: 'workout-replaced-review',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 3,
+        durationMin: 75,
+        targetTss: 70,
+        status: 'planned',
+        description: 'Durch anderes Training ersetzt.',
+        executionStatus: 'replaced_or_off_plan',
+        executionNotes: 'Am Plantag wurde eine andere Aktivität gefunden.',
+      },
+      {
+        id: 'workout-future-review',
+        plannedDate: '2026-05-03',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        targetTss: 68,
+        status: 'planned',
+        description: 'Zukunftsgrundlage.',
+        executionStatus: 'garmin_scheduled',
+        garminWorkoutId: 'gw-1',
+        garminScheduledId: 'sched-1',
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  await expect(page.getByTestId('plan-adaptation-review')).toContainText('Adaptions-Check');
+  await expect(page.getByTestId('plan-adaptation-review')).toContainText('Verpasste Einheit');
+  await expect(page.getByTestId('plan-adaptation-review')).toContainText('Andere Garmin-Ausführung');
+
+  const adaptationReview = page.getByTestId('plan-adaptation-review');
+  await adaptationReview.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await expect(page.getByTestId('plan-scenario-preview-card')).toBeInViewport();
+
+  await adaptationReview.getByRole('button', { name: 'Plan beibehalten' }).click();
+  await expect(page.getByTestId('plan-adaptation-review')).toHaveCount(0);
 });
 
 test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {

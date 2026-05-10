@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan bekommt einen sichtbaren Adaptions-Check statt stiller Ausführungsabweichungen
+
+- **Decision:** Pulse zeigt im Plan eine `Adaptions-Check`-Karte, wenn geplante Workouts laut Garmin-Ausführung verpasst oder durch andere Aktivitäten ersetzt wurden. Die Karte bietet `Szenario prüfen` als Review-Einstieg und `Plan beibehalten` als bewusste Ablehnung, statt automatisch umzubauen.
+- **Why:** Benchmark gegen TrainerRoads Adaptation-Preview zeigt: Anpassungen sollten sichtbar geprüft und akzeptiert/abgelehnt werden. Für Pulse ist das besonders wichtig, weil Garmin-Ausführung, Kalender-Sync und Planvertrauen zusammenhängen.
+- **Alternatives:** Nur Badges in Workout-Zeilen belassen (zu versteckt); direkt automatisch regenerieren (zu wenig Kontrolle); komplette Adaptations-Inbox mit Persistenz bauen (zu groß für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-09 — Plan zeigt fehlgeschlagenen Garmin-Sync nach lokalen Planänderungen sofort an
 
 - **Decision:** Wenn eine eigene Einheit, ein angewendetes Szenario oder eine Planänderung lokal gespeichert wird, der Garmin-Upload aber fehlschlägt, zeigt Plan einen sichtbaren Warnhinweis (`Garmin-Sync offen`) im Flow und im Workout-Modal. Die Einheit bleibt in Pulse gespeichert; der Nutzer soll später über Workout oder Settings erneut synchronisieren können.
