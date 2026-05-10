@@ -1610,10 +1610,10 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const workouts   = plan.data?.workouts ?? [];
   const activities = acts.data?.activities ?? [];
   const generatedTrace = generate.data?.planTrace ?? null;
-  const planTrace = traceQuery.data?.trace
-    ?? (generatedTrace?.weekStart === selectedWeekStart ? generatedTrace : null);
+  const generatedTraceForSelectedWeek = generatedTrace?.weekStart === selectedWeekStart ? generatedTrace : null;
+  const planTrace = generatedTraceForSelectedWeek ?? traceQuery.data?.trace ?? null;
   const planDecision = planTrace?.planDecision
-    ?? (generatedTrace?.weekStart === selectedWeekStart ? generate.data?.planDecision : undefined);
+    ?? (generatedTraceForSelectedWeek ? generate.data?.planDecision : undefined);
   const weekAvailability = availability.data?.weeks.find(w => w.weekStart === selectedWeekStart);
   const availableDays = weekAvailability?.availableDays ?? [0, 2, 4, 5];
   const weeklyHours = weekAvailability?.weeklyHours ?? planTrace?.inputSnapshot.weeklyHoursTarget ?? 8;

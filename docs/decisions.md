@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan-UI bevorzugt frisch generierte Trace-Daten
+
+- **Decision:** Nach `Plan erstellen` zeigt der Plan-Tab den im Mutationsergebnis gelieferten `planTrace` sofort an, wenn er zur ausgewählten Woche gehört. Der ältere Query-Trace bleibt nur Fallback für Reloads oder andere Wochen.
+- **Why:** Nach der Live-Generierung war der neue Plan zwar persistiert, aber die UI zeigte bis zum Reload weiterhin den alten Trace. Ein Planungsflow muss direkt nach der Aktion konsistent wirken, sonst sieht es so aus, als hätte die Generierung die falschen Daten verwendet.
+- **Alternatives:** Nur Query invalidieren und auf Refetch warten (langsamer und flake-anfälliger); Reload verlangen (schlechter Daily Flow); alten Query-Trace weiter priorisieren (stale UI).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan-Generierung schreibt aktuelle Fitnesslast in den Trace
 
 - **Decision:** Wochenplan-Generierung und automatische Regeneration nach Verfügbarkeitsänderungen verwenden die Fitnesslast des aktuellen Tages als Plan-/Trace-Eingabe, auch wenn die Zielwoche am vergangenen oder kommenden Montag beginnt.
