@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Planalternativen dürfen bei grünen Signalen auch Wachstum anbieten
+
+- **Decision:** Die nächste Trainingsentscheidung bietet `Länger` als zielorientierte Alternative nur an, wenn keine Risiko- oder Mental-Warnung aktiv ist, ein Ziel vorhanden ist, die Einheit locker bleibt, die Dauer nicht bereits sehr lang ist und TSB positiv ist. In diesem Fall kann `Länger` als Empfehlung markiert werden.
+- **Why:** Benchmark-Muster aus TrainerRoad Alternates zeigen, dass gute Alternativen nicht nur defensiv sein dürfen. Tobi will, dass Pulse Daten und Ziele einbezieht; bei grünen Signalen soll Pulse kontrollierten Ausdauer-Zusatzumfang anbieten, statt immer nur zu kürzen.
+- **Alternatives:** Immer `Länger` zeigen (zu riskant); `Härter` ergänzen (ohne Leistungsziel-/FTP-Kontext zu grob); defensive Alternativen beibehalten (zu wenig zielorientiert).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan öffnet mit sichtbarem Adaptionscheck
 
 - **Decision:** Die nächste Trainingsentscheidung zeigt einen kompakten `ADAPTIONS-CHECK`, der entweder `Plan aktuell` oder eine konkrete Empfehlung wie `Leichter empfohlen` benennt. Die Empfehlung bleibt ein Review-/Apply-Flow und ändert den Plan erst nach explizitem Klick auf die Alternative.
