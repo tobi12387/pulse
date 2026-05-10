@@ -2186,6 +2186,118 @@ test('Plan shows Garmin execution states and match explanations', async ({ page 
   await expect(page.getByText('Mit Garmin-Aktivität activity-1 abgeglichen.')).toBeVisible();
 });
 
+test('Plan summarizes Garmin sync debt before opening individual workouts', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-local',
+        userId: 'user-1',
+        plannedDate: '2026-05-04',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        distanceKm: null,
+        targetTss: 42,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 2.1,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Noch nicht auf Garmin.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      {
+        id: 'workout-template',
+        userId: 'user-1',
+        plannedDate: '2026-05-05',
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        distanceKm: null,
+        targetTss: 35,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 2,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'maintenance',
+        description: 'Vorlage ohne Kalender.',
+        steps: null,
+        garminWorkoutId: 'gw-template',
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_template',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      {
+        id: 'workout-degraded',
+        userId: 'user-1',
+        plannedDate: '2026-05-06',
+        activityType: 'swim',
+        zone: 3,
+        durationMin: 50,
+        distanceKm: null,
+        targetTss: 50,
+        archetypeId: 'threshold',
+        difficultyLevel: 3,
+        difficultyEnergySystem: 'threshold',
+        capabilityFit: 'stretch',
+        description: 'Mit Einschränkung.',
+        steps: null,
+        garminWorkoutId: 'gw-degraded',
+        garminScheduledId: 'sched-degraded',
+        garminSyncContract: {
+          version: 1,
+          status: 'degraded',
+          payloadReady: true,
+          checkedAt: '2026-05-01T08:00:00.000Z',
+          summary: 'Garmin-Upload mit Einschränkung: Schwimmen ohne HR-Zielzonen.',
+          issues: [],
+        },
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  const card = page.getByTestId('plan-garmin-sync-debt');
+  await expect(card).toContainText('Garmin Sync-Check');
+  await expect(card).toContainText('1 lokal');
+  await expect(card).toContainText('1 nur Vorlage');
+  await expect(card).toContainText('1 Einschränkung');
+
+  await card.getByRole('button', { name: 'Garmin öffnen' }).click();
+  await expect(page).toHaveURL('/settings?section=garmin');
+});
+
 test('Plan surfaces an adaptation check when recent Garmin execution diverged', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

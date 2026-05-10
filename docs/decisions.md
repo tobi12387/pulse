@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan zeigt Garmin-Sync-Schulden als Übersicht
+
+- **Decision:** Der Plan-Tab zeigt bei zukünftigen Workouts mit lokalem Status, nur Garmin-Vorlage oder degradiertem/blockiertem Sync-Vertrag eine kompakte `Garmin Sync-Check`-Karte. Die Karte fasst die Kategorien zusammen und führt nach Settings → Garmin, statt Nutzer erst einzelne Workout-Rows öffnen zu lassen.
+- **Why:** Uhr-/Edge-Vertrauen ist ein eigener täglicher Flow. Sync-Schulden müssen vor der Ausführung sichtbar sein, besonders auf iPhone/PWA, damit Tobi nicht erst während der Einheit merkt, dass Kalender oder Struktur fehlen.
+- **Alternatives:** Nur Row-/Modal-Badges beibehalten (zu kleinteilig); direkten Calendar-Sync aus dem Plan starten (zu viel Mutation im Trainingsscreen); separate Sync-Debt-Seite bauen (zu schwer für diesen Schritt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Garmin-Reparaturaktionen müssen direkt ausführbar sein
 
 - **Decision:** Garmin-Quality-Aktionen zeigen ihren konkreten Aktionstyp und führen `calendar_sync` direkt aus, statt generisch auf eine Seite zu verlinken. Backfill- und Plan-Aktionen behalten ihre vollständige Zielroute inklusive Query-Parametern.
