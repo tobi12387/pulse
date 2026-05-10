@@ -31,7 +31,7 @@ import {
 } from '@/features/plan/plan-utils';
 import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
 import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
-import { WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
+import { PlanLimiterWorkoutSummary, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { DAY_SHORT } from '@/features/plan/training/training-copy';
 import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
@@ -2124,6 +2124,11 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         weekOffset={weekOffset}
         onChangeWeek={d => setWeekOffset(o => o + d)}
         onSelectWorkout={openWorkout}
+      />
+
+      <PlanLimiterWorkoutSummary
+        workouts={workouts}
+        goalLimiter={planTrace?.inputSnapshot.goalLimiter ?? null}
       />
 
       <PlanScenarioPreviewCard

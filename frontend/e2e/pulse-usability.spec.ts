@@ -101,6 +101,66 @@ function localIsoDateDaysFrom(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function limiterPlanTraceFixture() {
+  return {
+    id: 'trace-limiter',
+    userId: 'user-1',
+    weekStart: '2026-04-27',
+    createdAt: '2026-05-01T06:00:00.000Z',
+    inputSnapshot: {
+      load: { ctl: 42.4, atl: 40.1, tsb: 6.2, date: '2026-05-01' },
+      phase: 'build',
+      mesocycleWeek: 2,
+      weeklyHoursTarget: 8,
+      availableDays: [0, 2, 5],
+      profile: { ftpWatts: 260, maxHrBpm: 185, lthrBpm: 170 },
+      goals: [{ title: 'Lange Radform', category: 'race', targetDate: '2026-08-01', raceDiscipline: 'century', raceDistanceKm: 160, racePriority: 'A' }],
+      riskSignals: [],
+      healthStates: [],
+      recentRpe: [],
+      rpeReasons: [],
+      dataWarnings: [],
+      recentSportMix: { bike: { sessions: 2, totalMinutes: 260, totalTss: 180 } },
+      learningSnapshot: null,
+      trainingCapabilities: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        lookbackDays: 90,
+        levels: [
+          { energySystem: 'long_endurance', label: 'Long Endurance', level: 3.1, nextRecommendedWorkoutLevel: 3.4, lastProgressionReason: null, staleReason: null, confidence: 'medium', evidence: ['letzte lange Einheit 4 h'], updatedAt: '2026-05-01T06:00:00.000Z' },
+          { energySystem: 'endurance', label: 'Endurance', level: 3.8, nextRecommendedWorkoutLevel: 4.1, lastProgressionReason: 'Endurance stabil.', staleReason: null, confidence: 'medium', evidence: ['ruhige Ausdauer stabil'], updatedAt: '2026-05-01T06:00:00.000Z' },
+        ],
+        signals: ['quality_progress'],
+        recommendations: [],
+        fitLegend: {
+          recovery: 'Aktive Erholung',
+          maintenance: 'Erhaltung',
+          productive: 'Produktiv',
+          stretch: 'Stretch',
+          too_hard_today: 'Zu hart heute',
+        },
+      },
+      goalLimiter: {
+        kind: 'long_endurance_fueling',
+        label: 'Long Endurance + Fueling',
+        confidence: 'medium',
+        evidence: ['160 km Zieldistanz', 'Long-Endurance-Level 3.1'],
+        planBias: 'lange Ausdauer kontrolliert aufbauen und Fueling-Verträglichkeit absichern',
+        workoutFocus: ['long_endurance', 'endurance'],
+      },
+    },
+    sportMix: { bike: { sessions: 2, totalMinutes: 210, totalTss: 150 } },
+    hardDays: [],
+    generatedSummary: ['Limiter: Long Endurance + Fueling — lange Ausdauer kontrolliert aufbauen.'],
+    planDecision: {
+      selectedDays: [0, 2, 5],
+      skippedAvailableDays: [],
+      targetSessionCount: 3,
+      primaryGoal: 'race',
+      reasons: ['Limiter: Long Endurance + Fueling — lange Ausdauer kontrolliert aufbauen.'],
+    },
+  };
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -3743,7 +3803,9 @@ test('Plan Statistik shows progression guidance in capability levels', async ({ 
 });
 
 test('Plan Training highlights the why-this-workout rationale separately from the body copy', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   await mockPulseApi(page, {
+    planTrace: limiterPlanTraceFixture(),
     planWorkouts: [
       {
         id: 'workout-rationale',
@@ -3755,7 +3817,7 @@ test('Plan Training highlights the why-this-workout rationale separately from th
         archetypeId: 'endurance_cadence',
         capabilityFit: 'productive',
         status: 'planned',
-        description: 'Warum diese Einheit: Cadence Endurance, aerober Reiz passt zur aktuellen Belastung, RPE unauffaellig, GI unauffaellig, mentale Lage ohne harte Bremse. Aerobe Grundlage, primaer ueber Puls steuern.',
+        description: 'Warum diese Einheit: Cadence Endurance, Limiter Long Endurance + Fueling, aerober Reiz passt zur aktuellen Belastung, RPE unauffaellig, Fueling kontrollieren, mentale Lage ohne harte Bremse. Aerobe Grundlage, primaer ueber Puls steuern.',
       },
     ],
   });
@@ -3763,7 +3825,23 @@ test('Plan Training highlights the why-this-workout rationale separately from th
   await page.goto('/plan?tab=training');
 
   await expect(page.getByTestId('plan-workout-rationale')).toContainText('Warum diese Einheit');
+  await expect(page.getByTestId('plan-workout-rationale')).toContainText('Limiter Long Endurance + Fueling');
   await expect(page.getByTestId('plan-workout-description-body')).toContainText('Aerobe Grundlage, primaer ueber Puls steuern.');
+  await expect(page.getByTestId('plan-limiter-workout-summary')).toContainText('Limiter: Long Endurance + Fueling');
+  await expect(page.getByTestId('plan-limiter-workout-summary')).toContainText('Fueling');
+});
+
+test('Data analyses show limiter evidence freshness from the plan trace', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planTrace: limiterPlanTraceFixture(),
+  });
+
+  await page.goto('/data?tab=analysen');
+
+  await expect(page.getByTestId('data-limiter-evidence-card')).toContainText('Limiter-Evidenz');
+  await expect(page.getByTestId('data-limiter-evidence-card')).toContainText('Long Endurance + Fueling');
+  await expect(page.getByTestId('data-limiter-evidence-card')).toContainText('letzte lange Einheit 4 h');
 });
 
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {

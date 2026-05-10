@@ -994,6 +994,19 @@ function withHrFirstDescriptions(
   },
 ): WeekWorkout[] {
   const profile = goalWorkoutProfile(ctx.goals, ctx.phase);
+  function limiterRationaleSignal(w: WeekWorkout): string | null {
+    const limiter = ctx.goalLimiter;
+    if (!limiter) return null;
+    const archetype = (w.archetypeId ? ARCHETYPE_BY_ID.get(w.archetypeId) : null) ?? archetypeForWorkout(w);
+    const focusMatches = limiter.workoutFocus.includes(archetype.energySystem);
+    const enduranceMatch = limiter.kind === 'long_endurance_fueling' && w.zone <= 2 && isEnduranceFuelingActivity(w.activityType);
+    const intensityMatch = limiter.kind === 'threshold_vo2' && w.zone >= 4;
+    const durabilityMatch = limiter.kind === 'durability' && w.zone <= 2 && w.durationMin >= 60;
+
+    if (!focusMatches && !enduranceMatch && !intensityMatch && !durabilityMatch) return null;
+    return `Limiter ${limiter.label}`;
+  }
+
   return workouts.map((w): WeekWorkout => {
     const hr = hrTargetForZone(w.zone, ctx.maxHrBpm, ctx.lthrBpm);
     const goalPrefix = profile.label.endsWith('-Standard') ? '' : `${profile.label}: `;
@@ -1027,11 +1040,12 @@ function withHrFirstDescriptions(
       ? 'Regeneration und Bewegungsqualität'
       : 'aerobe Grundlage und effiziente Fettstoffwechselarbeit';
     const rationaleSignals = [
+      limiterRationaleSignal(w),
       w.zone >= 4 ? 'Qualitaetsreiz passt nur mit freien Schutzsignalen' : w.zone === 1 ? 'Regeneration hat Vorrang' : 'aerober Reiz passt zur aktuellen Belastung',
       ctx.rpeSafety.descriptionNote ? 'RPE-Schutz aktiv' : 'RPE unauffaellig',
       ctx.fuelingSafety.descriptionNote && isEnduranceFuelingActivity(w.activityType) ? 'Fueling kontrollieren' : 'GI unauffaellig',
       ctx.mentalSafety.descriptionNote ? 'Mental Protect aktiv' : 'mentale Lage ohne harte Bremse',
-    ];
+    ].filter((signal): signal is string => signal != null);
     const rationale = `Warum diese Einheit: ${archetype.label}, ${rationaleSignals.join(', ')}.`;
     return {
       ...w,

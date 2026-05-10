@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUpdateWorkout } from '@/pulse/hooks';
 import { ACTIVITY_LABEL, activityLabel, workoutArchetypeCopy } from '@/pulse/activity-labels';
-import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
+import type { PulseGoalLimiter, PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
 import { DAY_SHORT } from './training-copy';
 
@@ -96,6 +96,113 @@ function workoutStructureSummary(workout: PlannedWorkout): string | null {
   if (hrTargetCount > 0) parts.push(`${hrTargetCount} HR-Ziele`);
 
   return parts.join(' · ');
+}
+
+function workoutLimiterLabel(workout: PlannedWorkout, goalLimiter: PulseGoalLimiter | null | undefined): string | null {
+  const description = workout.description ?? '';
+  if (!description) return null;
+  if (goalLimiter && (
+    description.includes(`Limiter ${goalLimiter.label}`)
+    || description.includes(`Limiter: ${goalLimiter.label}`)
+  )) {
+    return goalLimiter.label;
+  }
+
+  const match = description.match(/Limiter[: ]+([^(.]+)/);
+  return match?.[1]?.trim() || null;
+}
+
+function protectedSignalsFor(workout: PlannedWorkout): string[] {
+  const text = (workout.description ?? '').toLowerCase();
+  const signals: string[] = [];
+  if (text.includes('fueling kontrollieren') || text.includes('fueling schuetzen') || text.includes('fueling schützen')) signals.push('Fueling');
+  if (text.includes('mental protect aktiv') || (text.includes('mentale lage') && (text.includes('schützen') || text.includes('schuetzen')))) signals.push('Mental');
+  if (text.includes('rpe-schutz aktiv')) signals.push('RPE');
+  if (text.includes('regeneration hat vorrang') || text.includes('erholung schützen') || text.includes('erholung schuetzen')) signals.push('Recovery');
+  return signals;
+}
+
+export function PlanLimiterWorkoutSummary({
+  workouts,
+  goalLimiter,
+}: {
+  workouts: PlannedWorkout[];
+  goalLimiter: PulseGoalLimiter | null | undefined;
+}) {
+  const limiterGroups = workouts.reduce<Map<string, PlannedWorkout[]>>((groups, workout) => {
+    const label = workoutLimiterLabel(workout, goalLimiter);
+    if (!label) return groups;
+    groups.set(label, [...(groups.get(label) ?? []), workout]);
+    return groups;
+  }, new Map());
+  const protectedGroups = workouts.reduce<Map<string, PlannedWorkout[]>>((groups, workout) => {
+    for (const signal of protectedSignalsFor(workout)) {
+      groups.set(signal, [...(groups.get(signal) ?? []), workout]);
+    }
+    return groups;
+  }, new Map());
+
+  if (limiterGroups.size === 0 && protectedGroups.size === 0) return null;
+
+  const renderGroup = ([label, items]: [string, PlannedWorkout[]], tone: string) => (
+    <div key={`${label}-${tone}`} style={{
+      border: '1px solid var(--border)',
+      borderRadius: 5,
+      padding: '9px 10px',
+      background: 'var(--surface)',
+      minWidth: 0,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: tone, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {label}
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          {items.length}x
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+        {items.slice(0, 4).map(item => (
+          <span key={`${label}-${item.id}`} style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: '3px 6px',
+            maxWidth: '100%',
+            overflowWrap: 'anywhere',
+          }}>
+            {item.plannedDate} · {ACTIVITY_LABEL[item.activityType] ?? item.activityType} Z{item.zone}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <section
+      className="card"
+      data-testid="plan-limiter-workout-summary"
+      aria-label="Wochenfokus nach Limiter und Schutzsystem"
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(245,158,11,0.22)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <span className="label-mono" style={{ color: 'var(--amber)' }}>Woche · Zielbezug</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', maxWidth: '100%', overflowWrap: 'anywhere' }}>
+          {goalLimiter ? `Limiter: ${goalLimiter.label}` : 'Schutzsignale aktiv'}
+        </span>
+      </div>
+      {goalLimiter && (
+        <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
+          {goalLimiter.planBias}
+        </p>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+        {Array.from(limiterGroups.entries()).map(group => renderGroup(group, 'var(--amber)'))}
+        {Array.from(protectedGroups.entries()).map(group => renderGroup(group, 'var(--blue)'))}
+      </div>
+    </section>
+  );
 }
 
 export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout }: {
