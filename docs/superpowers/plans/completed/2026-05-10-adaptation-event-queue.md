@@ -1,12 +1,14 @@
 # Adaptation Event Queue Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Centralize how completed activities, missed workouts, RPE, mental state, fueling tolerance, readiness and Garmin sync debt adapt the plan.
 
 **Architecture:** Add a pure adaptation-event classifier first, then a small persisted event queue. The queue does not auto-edit the plan by default; it produces explainable recommendations that Home/Plan can show and that Plan scenario apply can consume explicitly.
 
 **Tech Stack:** Fastify, Drizzle/Postgres, shared Pulse types, Vitest, React/Vite.
+
+**Implementation note:** Completed via a narrow runtime PR. Events are refreshed from write paths only; `/plan/adaptation-events` is read-only and returns the current open queue.
 
 ---
 
@@ -28,7 +30,7 @@
 
 ## Task 1: Define Adaptation Signals
 
-- [ ] **Step 1: Extend shared types**
+- [x] **Step 1: Extend shared types**
 
 Add to `shared/types/pulse/plan.ts`:
 
@@ -68,7 +70,7 @@ export interface PulseAdaptationEvent {
 }
 ```
 
-- [ ] **Step 2: Create a pure classifier test**
+- [x] **Step 2: Create a pure classifier test**
 
 Create `backend/src/pulse/services/adaptation-events.test.ts`:
 
@@ -112,7 +114,7 @@ describe('classifyAdaptationEvents', () => {
 });
 ```
 
-- [ ] **Step 3: Run test and confirm failure**
+- [x] **Step 3: Run test and confirm failure**
 
 Run:
 
@@ -124,7 +126,7 @@ Expected: FAIL because `adaptation-events.ts` does not exist.
 
 ## Task 2: Implement The Pure Classifier
 
-- [ ] **Step 1: Create `backend/src/pulse/services/adaptation-events.ts`**
+- [x] **Step 1: Create `backend/src/pulse/services/adaptation-events.ts`**
 
 ```ts
 import type { PulseAdaptationEvent, PulseAdaptationEventKind, PulseAdaptationRecommendation } from '@coaching-os/shared/pulse';
@@ -287,7 +289,7 @@ export function classifyAdaptationEvents(input: ClassifyAdaptationEventsInput): 
 }
 ```
 
-- [ ] **Step 2: Run focused test**
+- [x] **Step 2: Run focused test**
 
 Run:
 
@@ -299,7 +301,7 @@ Expected: PASS.
 
 ## Task 3: Persist Adaptation Events
 
-- [ ] **Step 1: Create migration**
+- [x] **Step 1: Create migration**
 
 Create `backend/src/db/migrations/0032_adaptation_events.sql`:
 
@@ -325,11 +327,11 @@ CREATE INDEX IF NOT EXISTS "pulse_adaptation_events_open_idx"
   ON "pulse_adaptation_events" ("user_id", "event_date", "resolved_at");
 ```
 
-- [ ] **Step 2: Add schema table**
+- [x] **Step 2: Add schema table**
 
 Add `pulseAdaptationEvents` to `backend/src/db/pulse-schema.ts` using the same columns. Keep `sourceId` non-null with default `''` in the DB model and map `''` back to `null` in API responses. Append a matching `backend/src/db/migrations/meta/_journal.json` entry with the next `idx`, matching `tag`, `version: "7"` and `breakpoints: true`; run `npm run check:migrations` before schema work continues.
 
-- [ ] **Step 3: Add store helpers**
+- [x] **Step 3: Add store helpers**
 
 Add to `backend/src/pulse/services/adaptation-events.ts`:
 
@@ -396,7 +398,7 @@ export async function loadOpenAdaptationEvents(
 }
 ```
 
-- [ ] **Step 4: Run checks**
+- [x] **Step 4: Run checks**
 
 Run:
 
@@ -409,7 +411,7 @@ Expected: PASS.
 
 ## Task 4: Feed Home And Plan
 
-- [ ] **Step 1: Add read endpoint**
+- [x] **Step 1: Add read endpoint**
 
 In `backend/src/pulse/routes/training-routes.ts`, add:
 
@@ -424,7 +426,7 @@ app.get('/plan/adaptation-events', { onRequest: [app.authenticate] }, async (req
 });
 ```
 
-- [ ] **Step 2: Hook classifier into existing sync/reconciliation paths**
+- [x] **Step 2: Hook classifier into existing sync/reconciliation paths**
 
 Call `classifyAdaptationEvents` after:
 
@@ -435,11 +437,11 @@ Call `classifyAdaptationEvents` after:
 
 Only persist events; do not auto-apply plan changes in this plan.
 
-- [ ] **Step 3: Add frontend hook**
+- [x] **Step 3: Add frontend hook**
 
 Add `pulseApi.adaptationEvents()` and `useAdaptationEvents()` in `frontend/src/pulse/api-client.ts` and `frontend/src/pulse/hooks.ts`.
 
-- [ ] **Step 4: Show a compact adaptation strip on Home**
+- [x] **Step 4: Show a compact adaptation strip on Home**
 
 In `frontend/src/pages/Home.tsx`, show only the highest severity event:
 
@@ -454,11 +456,11 @@ In `frontend/src/pages/Home.tsx`, show only the highest severity event:
 )}
 ```
 
-- [ ] **Step 5: Show full list on Plan**
+- [x] **Step 5: Show full list on Plan**
 
 In `frontend/src/pages/Plan.tsx`, place a compact `Adaptionshinweise` card near the current plan decision and map events to actions: `sync_garmin` opens Settings, `protect_recovery` opens reduce-volume scenario, `move_workout` opens scenario preview.
 
-- [ ] **Step 6: Verification**
+- [x] **Step 6: Verification**
 
 Run:
 

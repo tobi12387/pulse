@@ -65,6 +65,7 @@
 | `2026-05-05-data-decision-evidence-trail.md` | Data Decision Evidence Trail — Home/Plan evidence chips deep-link into Data anchors with hash tab selection and visible focus | PR #188 |
 | `2026-05-09-training-benchmark-gap-plan.md` | Training Benchmark Gap Plan — capability levels, workout library fit, TrainNow, scenario preview, season load model, Garmin sync contract and goal limiter evidence | `8a384ab`-`6de9f86` |
 | `2026-05-10-garmin-execution-ledger.md` | Garmin Execution Ledger — durable Garmin upload/delete ledger, payload snapshots, Plan modal visibility and Settings Plan link | PR #261 |
+| `2026-05-10-adaptation-event-queue.md` | Adaptation Event Queue — persisted write-triggered adaptation events for activity/RPE/mental/fueling/recovery/sync debt with Home and Plan visibility | PR #262 |
 
 ## Bekannte veraltete Stellen
 

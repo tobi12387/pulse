@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-10 — Adaptation Events entstehen aus Write-Pfaden, nicht aus Reads
+
+- **Decision:** Die Adaptation Event Queue wird über bestehende Write-Pfade aktualisiert (Garmin-Sync, RPE-Feedback, Mental Check-in, Fueling-Log, Garmin-Sync-Debt) und der neue Read-Endpoint `/plan/adaptation-events` liest nur offene Events.
+- **Why:** Home und Plan sollen dieselbe Adaptionsbegründung sehen, ohne dass ein Seitenaufruf heimlich Plan- oder Event-State verändert. Das hält Read-Pfade billig und vermeidet überraschende Persistenz durch reine UI-Navigation.
+- **Alternatives:** Events bei jedem Home-/Plan-GET neu berechnen und speichern (bequem, aber versteckte Writes); nur live berechnen ohne Tabelle (keine Historie und keine gemeinsamen Auslöser); Adaptation direkt auf Planmutation koppeln (zu aggressiv für Alltag, weil Tobi explizit prüfen soll).
+- **Decided by:** Codex mit Subagent-Review.
+- **Status:** active.
+
+---
+
 ## 2026-05-10 — Garmin Execution Ledger ist nicht-blockierend
 
 - **Decision:** Garmin Upload-, Kalender-Reparatur- und Delete-Pfade schreiben einen lokalen Execution Ledger, aber ein Ledger-Schreibfehler darf den eigentlichen Garmin-Sync nicht in einen 502 verwandeln.

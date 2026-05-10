@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -13,7 +13,7 @@ import { coachPromptPath } from '@/pulse/coach-link';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
-import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
+import type { PulseActionState, PulseAdaptationEvent, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
@@ -218,6 +218,87 @@ function suppressedReasonLabel(reason: PulseSuppressedActionState['suppressedRea
   if (reason === 'dismissed') return 'Bewusst verworfen';
   if (reason === 'resolved_by_activity') return 'Durch Garmin erledigt';
   return 'Nicht mehr aktuell';
+}
+
+function adaptationSeverityRank(event: PulseAdaptationEvent): number {
+  if (event.severity === 'action') return 3;
+  if (event.severity === 'watch') return 2;
+  return 1;
+}
+
+function primaryAdaptation(events: PulseAdaptationEvent[]): PulseAdaptationEvent | null {
+  return [...events].sort((a, b) =>
+    adaptationSeverityRank(b) - adaptationSeverityRank(a)
+    || b.createdAt.localeCompare(a.createdAt)
+  )[0] ?? null;
+}
+
+function adaptationTone(event: PulseAdaptationEvent): string {
+  if (event.severity === 'action') return 'var(--amber)';
+  if (event.severity === 'watch') return 'var(--accent)';
+  return 'var(--green)';
+}
+
+function adaptationTarget(event: PulseAdaptationEvent): { path: string; label: string } {
+  if (event.recommendation === 'sync_garmin') return { path: '/settings?section=garmin', label: 'Garmin öffnen' };
+  if (event.recommendation === 'log_feedback') return { path: '/data?tab=activities', label: 'Feedback öffnen' };
+  if (event.recommendation === 'keep_plan') return { path: '/plan', label: 'Plan ansehen' };
+  return { path: '/plan#plan-adaptation-review', label: 'Im Plan prüfen' };
+}
+
+function HomeAdaptationEventCard({
+  event,
+  onNavigate,
+}: {
+  event: PulseAdaptationEvent;
+  onNavigate: (path: string) => void;
+}) {
+  const tone = adaptationTone(event);
+  const target = adaptationTarget(event);
+
+  return (
+    <section
+      className="card"
+      data-testid="home-adaptation-event"
+      style={{ borderColor: 'color-mix(in srgb, var(--amber) 24%, var(--border))' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 7 }}>
+        <span className="label-mono" style={{ color: tone }}>PLAN GEPRÜFT</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+          {event.recommendation.replaceAll('_', ' ')}
+        </span>
+      </div>
+      <h3 style={{ margin: 0, fontSize: 14, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+        {event.summary}
+      </h3>
+      {event.evidence.length > 0 && (
+        <p style={{ margin: '6px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+          {event.evidence.slice(0, 2).join(' · ')}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => onNavigate(target.path)}
+        style={{
+          marginTop: 10,
+          minHeight: 42,
+          minWidth: 44,
+          padding: '8px 11px',
+          borderRadius: 'var(--radius)',
+          border: `1px solid ${tone}`,
+          background: 'var(--surface-2)',
+          color: tone,
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: 0,
+          textTransform: 'uppercase',
+        }}
+      >
+        {target.label}
+      </button>
+    </section>
+  );
 }
 
 function outcomeStatusLabel(status: PulseDailyOutcomeLearningItem['status']): string {
@@ -712,6 +793,7 @@ export default function Home() {
   const loadQuery = useFitnessLoad();
   const { data: metricsData } = usePulseMetrics(14);
   const { data: briefingData } = usePulseBriefing();
+  const adaptationEvents = useAdaptationEvents();
   const garminSync = useGarminSync();
   const navigate = useNavigate();
   const [homeCheckinSubmitted, setHomeCheckinSubmitted] = useState(false);
@@ -750,6 +832,9 @@ export default function Home() {
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
+  const primaryAdaptationEvent = primaryAdaptation(
+    (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
+  );
   const primaryAction = actionStates[0] ?? null;
   const hasMentalCheckin = homeCheckinSubmitted || checkinToday.data?.checkin != null;
   const todayCheckinDate = checkinToday.data?.checkin?.date ?? data.date;
@@ -891,6 +976,10 @@ export default function Home() {
       )}
 
       <TodayOptionsCard variant="compact" onNavigate={navigate} />
+
+      {primaryAdaptationEvent && (
+        <HomeAdaptationEventCard event={primaryAdaptationEvent} onNavigate={navigate} />
+      )}
 
       {mentalDaySignal && (
         <p

@@ -12,7 +12,7 @@ import type {
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
   PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
-  PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
+  PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingCapabilitySummary,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -249,6 +249,8 @@ export const pulseApi = {
       request('/plan/generate', { method: 'POST', body: '{}' }),
     trace: (weekStart: string): Promise<{ trace: PulsePlanTrace | null }> =>
       request(`/plan/trace/${weekStart}`),
+    adaptationEvents: (): Promise<{ events: PulseAdaptationEvent[] }> =>
+      request('/plan/adaptation-events'),
     getWorkout: (id: string): Promise<{ workout: PulsePlannedWorkout }> =>
       request(`/plan/workout/${id}`),
     createWorkout: (data: PlanWorkoutInput): Promise<{ workout: PulsePlannedWorkout; garminSync: { status: 'skipped' | 'synced' | 'failed'; error?: string } }> =>

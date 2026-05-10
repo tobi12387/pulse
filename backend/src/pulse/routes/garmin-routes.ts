@@ -39,6 +39,7 @@ import {
   listLatestGarminExecutionEntries,
   recordGarminExecution,
 } from '../services/garmin-execution-ledger.js';
+import { refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 import { profileWithProvenance, syncProfileFromGarmin } from '../services/profile-sync.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
@@ -242,7 +243,12 @@ async function recordGarminExecutionSafely(
   app: FastifyInstance,
   input: Parameters<typeof recordGarminExecution>[1],
 ): Promise<void> {
-  await recordGarminExecution(db, input).catch((err: unknown) => {
+  await recordGarminExecution(db, input).then(async () => {
+    const today = new Date().toISOString().split('T')[0]!;
+    await refreshAdaptationEventsForUser(db, input.userId, today).catch((err: unknown) => {
+      app.log.warn(`[calendar-sync] Failed to refresh adaptation events for ${input.userId}: ${err}`);
+    });
+  }).catch((err: unknown) => {
     app.log.warn(`[calendar-sync] Failed to record Garmin execution ledger for ${input.plannedWorkoutId}: ${err}`);
   });
 }

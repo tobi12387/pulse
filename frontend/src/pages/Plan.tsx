@@ -5,7 +5,7 @@ import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
-  useTodayOptions, useFitnessLoad,
+  useTodayOptions, useFitnessLoad, useAdaptationEvents,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -33,7 +33,7 @@ import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } 
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
-import type { PulseActivityType, PulseFitnessLoad, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseAdaptationEvent, PulseFitnessLoad, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -65,6 +65,7 @@ type PlannedWorkout = PulsePlannedWorkout;
 type SourceChip = { label: string; targetPath?: string };
 const CUSTOM_ACTIVITY_TYPES: PulseActivityType[] = ['bike', 'run', 'hike', 'swim', 'strength', 'other'];
 type ScenarioPreviewMode = 'tour' | 'move' | 'reduce' | 'availability';
+type AdaptationScenarioMode = Extract<ScenarioPreviewMode, 'move' | 'reduce'>;
 
 type GarminSyncOutcome = {
   status: 'skipped' | 'synced' | 'failed' | 'unchanged' | 'removed';
@@ -1051,7 +1052,7 @@ function PlanScenarioPreviewCard({
   workouts: PlannedWorkout[];
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
-  reviewRequest: number;
+  reviewRequest: { seq: number; mode: AdaptationScenarioMode };
   entrySource: string | null;
   onApplied: (workout: PlannedWorkout | null, notice: PlanMutationNotice | null) => void;
 }) {
@@ -1107,13 +1108,15 @@ function PlanScenarioPreviewCard({
   }, [activityTypeParam, descriptionParam, durationParam, entrySource, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
-    if (reviewRequest <= 0) return;
-    setMode('reduce');
+    if (reviewRequest.seq <= 0) return;
+    setMode(reviewRequest.mode);
     setPreview(null);
     setError(null);
     setApplyError(null);
-    setReviewHint('Adaptions-Check vorbereitet: Umfang senken prueft, ob die naechsten Workouts nach verpassten oder anders ausgefuehrten Einheiten defensiver werden sollten.');
-  }, [reviewRequest]);
+    setReviewHint(reviewRequest.mode === 'move'
+      ? 'Adaptions-Check vorbereitet: Verschieben prueft, ob die naechste offene Einheit sinnvoller auf einen anderen verfuegbaren Tag passt.'
+      : 'Adaptions-Check vorbereitet: Umfang senken prueft, ob die naechsten Workouts nach verpassten oder anders ausgefuehrten Einheiten defensiver werden sollten.');
+  }, [reviewRequest.mode, reviewRequest.seq]);
 
   function scenario(): PulsePlanScenarioRequest {
     if (mode === 'move' && nextWorkout) {
@@ -1493,7 +1496,7 @@ function PlanAdaptationReviewCard({
   onKeep,
 }: {
   signals: PlanAdaptationSignal[];
-  onReview: () => void;
+  onReview: (mode?: AdaptationScenarioMode) => void;
   onKeep: () => void;
 }) {
   if (signals.length === 0) return null;
@@ -1535,7 +1538,7 @@ function PlanAdaptationReviewCard({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
         <button
           type="button"
-          onClick={onReview}
+          onClick={() => onReview('reduce')}
           style={{
             minHeight: 42,
             minWidth: 44,
@@ -1578,6 +1581,104 @@ function PlanAdaptationReviewCard({
   );
 }
 
+function adaptationEventTone(event: PulseAdaptationEvent): string {
+  if (event.severity === 'action') return 'var(--amber)';
+  if (event.severity === 'watch') return 'var(--accent)';
+  return 'var(--green)';
+}
+
+function adaptationEventAction(event: PulseAdaptationEvent): { label: string; target: 'settings' | 'scenario' | 'data' | 'plan' } {
+  if (event.recommendation === 'sync_garmin') return { label: 'Garmin öffnen', target: 'settings' };
+  if (event.recommendation === 'log_feedback') return { label: 'Feedback öffnen', target: 'data' };
+  if (event.recommendation === 'keep_plan') return { label: 'Plan beibehalten', target: 'plan' };
+  return { label: 'Szenario prüfen', target: 'scenario' };
+}
+
+function PlanAdaptationEventsCard({
+  events,
+  onReview,
+  onNavigate,
+}: {
+  events: PulseAdaptationEvent[];
+  onReview: (mode?: AdaptationScenarioMode) => void;
+  onNavigate: (path: string) => void;
+}) {
+  if (events.length === 0) return null;
+  const sorted = [...events].sort((a, b) => {
+    const rank = (event: PulseAdaptationEvent) => event.severity === 'action' ? 3 : event.severity === 'watch' ? 2 : 1;
+    return rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt);
+  });
+
+  function handleAction(event: PulseAdaptationEvent) {
+    const action = adaptationEventAction(event);
+    if (action.target === 'settings') {
+      onNavigate('/settings?section=garmin');
+      return;
+    }
+    if (action.target === 'data') {
+      onNavigate('/data?tab=activities');
+      return;
+    }
+    if (action.target === 'scenario') {
+      onReview(event.recommendation === 'move_workout' ? 'move' : 'reduce');
+    }
+  }
+
+  return (
+    <section className="card" data-testid="plan-adaptation-events" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+        <span className="label-mono" style={{ color: 'var(--accent)' }}>Adaptionshinweise</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {sorted.length} offen
+        </span>
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {sorted.slice(0, 4).map(event => {
+          const tone = adaptationEventTone(event);
+          const action = adaptationEventAction(event);
+          return (
+            <div key={event.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'center', border: `1px solid ${translucent(tone, 28)}`, borderRadius: 5, padding: '9px 10px', background: 'var(--surface)' }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="label-mono" style={{ fontSize: 9, color: tone, marginBottom: 5 }}>
+                  {event.kind.replaceAll('_', ' ')}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+                  {event.summary}
+                </div>
+                {event.evidence.length > 0 && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                    {event.evidence.slice(0, 2).join(' · ')}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAction(event)}
+                style={{
+                  minHeight: 42,
+                  minWidth: 44,
+                  padding: '8px 10px',
+                  background: 'var(--surface-2)',
+                  border: `1px solid ${tone}`,
+                  borderRadius: 'var(--radius)',
+                  color: tone,
+                  cursor: action.target === 'plan' ? 'default' : 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: 0,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {action.label}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab({ entrySource }: { entrySource: string | null }) {
@@ -1591,6 +1692,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const todayOptions = useTodayOptions();
   const fitnessLoad = useFitnessLoad();
   const availability = useWeekAvailability();
+  const adaptationEvents = useAdaptationEvents();
   const generate  = useGeneratePlan();
   const navigate  = useNavigate();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -1601,7 +1703,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [planNotice, setPlanNotice] = useState<PlanMutationNotice | null>(null);
   const [adaptationDismissed, setAdaptationDismissed] = useState(false);
-  const [scenarioReviewRequest, setScenarioReviewRequest] = useState(0);
+  const [scenarioReviewRequest, setScenarioReviewRequest] = useState<{ seq: number; mode: AdaptationScenarioMode }>({ seq: 0, mode: 'reduce' });
 
   const selectedWeekDate = getMonday(new Date());
   selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
@@ -1648,6 +1750,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const adaptationSignals = adaptationDismissed
     ? []
     : buildPlanAdaptationSignals(workouts, planTrace, today);
+  const openAdaptationEvents = (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info');
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -1671,8 +1774,8 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
     setPlanNotice(null);
   }
 
-  function reviewAdaptations() {
-    setScenarioReviewRequest(request => request + 1);
+  function reviewAdaptations(mode: AdaptationScenarioMode = 'reduce') {
+    setScenarioReviewRequest(request => ({ seq: request.seq + 1, mode }));
     const target = document.querySelector<HTMLElement>('[data-testid="plan-scenario-preview-card"]');
     target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
@@ -1699,6 +1802,12 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
       <TodayOptionsCard variant="full" onNavigate={navigate} />
 
       <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
+
+      <PlanAdaptationEventsCard
+        events={openAdaptationEvents}
+        onReview={reviewAdaptations}
+        onNavigate={navigate}
+      />
 
       <PlanAdaptationReviewCard
         signals={adaptationSignals}

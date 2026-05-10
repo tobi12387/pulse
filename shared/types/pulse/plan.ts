@@ -87,6 +87,40 @@ export interface PulseGarminExecutionLedgerEntry {
   errorMessage: string | null;
 }
 
+export type PulseAdaptationEventKind =
+  | 'activity_completed'
+  | 'planned_workout_missed'
+  | 'workout_replaced'
+  | 'high_rpe'
+  | 'mental_load'
+  | 'fueling_limiter'
+  | 'sync_debt'
+  | 'recovery_risk';
+
+export type PulseAdaptationRecommendation =
+  | 'keep_plan'
+  | 'reduce_intensity'
+  | 'reduce_volume'
+  | 'protect_recovery'
+  | 'move_workout'
+  | 'regenerate_week'
+  | 'sync_garmin'
+  | 'log_feedback';
+
+export interface PulseAdaptationEvent {
+  id: string;
+  userId: string;
+  eventDate: string;
+  kind: PulseAdaptationEventKind;
+  sourceId: string | null;
+  severity: 'info' | 'watch' | 'action';
+  recommendation: PulseAdaptationRecommendation;
+  summary: string;
+  evidence: string[];
+  resolvedAt: string | null;
+  createdAt: string;
+}
+
 export interface PulsePlannedWorkout {
   id: string;
   userId: string;
