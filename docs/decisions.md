@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan startet mit einer sichtbaren Aktionsvereinbarung
+
+- **Decision:** Der Plan-Tab zeigt vor Evidenz, Alternativen und Tools eine `Plan-Aktion` mit konkreter Primaerhandlung, `Warum jetzt` und `Nach dem Klick`; bei offener Einheit fuehrt die Primaerhandlung in die Einheit, bei fehlender Einheit zuerst in die Verfuegbarkeit, und Today Options uebernimmt den Vertrag, wenn nur dort die geplante Tagesaktion sichtbar ist.
+- **Why:** Der UI/UX-Benchmark und die Roadmap verlangen, dass Plan nicht als Maschinenraum startet, sondern die aktuelle Aufgabe erklaert. Garmin-, Load-, Ziel- und Alternativ-Evidenz bleibt erhalten, wird aber nach der Handlungsvereinbarung einsortiert.
+- **Alternatives:** Today Options allein als erste Karte nutzen (zu wenig Plan-/Garmin-Vertrag); Alternativen weiterhin vor die Hauptaktion stellen (zu viel Entscheidungsdruck); neuen Top-Level-Tab fuer Ausfuehrung sofort einfuehren (groesserer IA-Scope als dieser Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Root-Navigation heißt sichtbar `Heute`, Route bleibt `/`
 
 - **Decision:** Die primäre Navigation zeigt fuer den Root-Einstieg `Heute` statt `Home`; die Route `/`, Hotkey `1`, PWA-Launch-URL und bestehende Deep-Links bleiben unveraendert.
