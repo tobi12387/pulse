@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { pulseApi } from '@/pulse/api-client';
-import { pulseKeys, useFuelingRecoveryGuidance } from '@/pulse/hooks';
+import { pulseKeys, useFuelingRecoveryGuidance, useGarminExecutionLedger } from '@/pulse/hooks';
 import { executionStatusFor, garminConfidenceCopy, type GarminConfidenceTone } from '@/features/plan/plan-utils';
 import { InlineFeedback } from '@/components/Feedback';
 
@@ -182,6 +182,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
   const [workout, setWorkout] = useState(initial);
   const qc = useQueryClient();
   const fuelingGuidance = useFuelingRecoveryGuidance(workout.id);
+  const executionLedger = useGarminExecutionLedger(workout.id);
 
   const generateDetail = useMutation({
     mutationFn: () => pulseApi.plan.generateDetail(workout.id),
@@ -199,6 +200,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
       setWorkout(updated);
       onUpdate(updated);
       qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      qc.invalidateQueries({ queryKey: pulseKeys.garminExecutionLedger(workout.id) });
     },
   });
 
@@ -214,6 +216,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
   const repeatBlocks = workout.steps?.filter(step => step.type === 'interval' && (step.reps ?? 0) > 1) ?? [];
   const repeatCount = repeatBlocks.reduce((sum, step) => sum + (step.reps ?? 0), 0);
   const hrTargetCount = workout.steps?.filter(step => fmtHrTarget(step) != null).length ?? 0;
+  const latestLedger = executionLedger.data?.entries?.[0] ?? null;
 
   return (
     <div
@@ -336,6 +339,47 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
               </span>
             </div>
           </div>
+          {latestLedger && (
+            <div
+              data-testid="garmin-execution-ledger"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 7,
+                padding: '10px 12px',
+                marginBottom: 12,
+                background: latestLedger.outcome === 'failed' || latestLedger.outcome === 'blocked'
+                  ? 'rgba(248,113,113,0.07)'
+                  : 'rgba(74,222,128,0.06)',
+                border: `1px solid ${latestLedger.outcome === 'failed' || latestLedger.outcome === 'blocked'
+                  ? 'rgba(248,113,113,0.28)'
+                  : 'rgba(74,222,128,0.22)'}`,
+                borderLeft: `3px solid ${latestLedger.outcome === 'failed' || latestLedger.outcome === 'blocked'
+                  ? 'var(--rose)'
+                  : latestLedger.outcome === 'degraded'
+                    ? 'var(--amber)'
+                    : 'var(--green)'}`,
+                borderRadius: 5,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                <strong style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.35 }}>
+                  Garmin Ausführung
+                </strong>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                  {latestLedger.operation}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                {latestLedger.summary}
+              </p>
+              {latestLedger.payloadSnapshot && (
+                <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+                  {latestLedger.payloadSnapshot.repeatGroupCount} Wiederholungsblock(e), {latestLedger.payloadSnapshot.hrTargetStepCount} HR-Zielschritte, {latestLedger.payloadSnapshot.invalidRepeatCount} Repeat-Fehler.
+                </p>
+              )}
+            </div>
+          )}
           {workout.steps && workout.steps.length > 0 && (
             <div
               data-testid="garmin-workout-handoff"

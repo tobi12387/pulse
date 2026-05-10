@@ -22,22 +22,25 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
 
 ## Active Plan Order
 
-1. `2026-05-10-garmin-execution-ledger.md`
-   - Trust foundation. Do this first because plan quality does not matter if workouts arrive wrong on Garmin.
-2. `2026-05-10-adaptation-event-queue.md`
+1. `2026-05-10-adaptation-event-queue.md`
    - Centralizes post-activity, missed-workout, RPE, mental, fueling and sync-triggered plan adaptation.
-3. `2026-05-10-workout-library-v2.md`
+2. `2026-05-10-workout-library-v2.md`
    - Expands deterministic workout building blocks after the adaptation contract is clear.
-4. `2026-05-10-mobile-plan-flow.md`
+3. `2026-05-10-mobile-plan-flow.md`
    - Slims the real iPhone/PWA planning flow after the backend decisions are explainable.
-5. `2026-05-10-power-data-quality-foundation.md`
+4. `2026-05-10-power-data-quality-foundation.md`
    - Establishes stream coverage, power-source quality, spike filtering and lap-vs-stream provenance before Pulse makes WKO/Intervals-style claims.
-6. `2026-05-10-power-duration-durability.md`
+5. `2026-05-10-power-duration-durability.md`
    - Adds WKO/Intervals-style performance depth after the data-quality foundation can prove whether a signal is stream-derived or only lap-approximated.
-7. `2026-05-10-season-atp-v2.md`
+6. `2026-05-10-season-atp-v2.md`
    - Upgrades season planning once workout/adaptation/load signals are stronger.
-8. `2026-05-10-strength-mobility-companion.md`
+7. `2026-05-10-strength-mobility-companion.md`
    - Adds concrete support sessions after the main endurance loop is more trustworthy.
+
+## Completed In This Wave
+
+- `completed/2026-05-10-garmin-execution-ledger.md`
+  - Trust foundation: upload/delete attempts now have a durable local ledger and Plan can explain the latest execution state.
 
 ## Implementation Rule
 

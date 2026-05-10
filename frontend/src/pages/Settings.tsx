@@ -289,6 +289,31 @@ export default function Settings() {
               <Row label="Backfill-Regel">
                 <Val>31 Tage max.</Val>
               </Row>
+              <Row label="Ausführung">
+                <button
+                  type="button"
+                  onClick={() => navigate('/plan')}
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    color: 'var(--text-2)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.12em',
+                    minWidth: 44,
+                    minHeight: 44,
+                    padding: '4px 8px',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  Plan prüfen
+                </button>
+              </Row>
               <Row label="Letzter Backfill">
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: lastBackfill ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'right', overflowWrap: 'anywhere', minWidth: 0, maxWidth: '62%', lineHeight: 1.35 }}>
                   {lastBackfill

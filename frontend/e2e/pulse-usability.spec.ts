@@ -2603,6 +2603,62 @@ test('Plan surfaces Garmin sync contract degradations before execution', async (
   await expect(panel).toContainText('ohne HR-Zielzonen');
 });
 
+test('Plan workout modal explains latest Garmin execution ledger entry', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-ledger',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 60,
+        status: 'planned',
+        description: 'Ledger-Workout mit Repeat.',
+        garminWorkoutId: 'gw-ledger',
+        garminScheduledId: 'sched-ledger',
+        executionStatus: 'garmin_scheduled',
+        steps: [
+          { type: 'warmup', durationMin: 10, zone: 1, description: 'Einrollen' },
+          { type: 'interval', durationMin: 8, reps: 3, restMin: 3, zone: 4, description: 'Schwelle' },
+          { type: 'cooldown', durationMin: 10, zone: 1, description: 'Ausrollen' },
+        ],
+      },
+    ],
+    garminExecutionLedger: {
+      entries: [{
+        id: 'ledger-1',
+        plannedWorkoutId: 'workout-ledger',
+        attemptedAt: '2026-05-10T10:00:00.000Z',
+        operation: 'manual_resync',
+        outcome: 'ready',
+        summary: 'Garmin-Ausfuehrung bereit und lokal verifiziert.',
+        payloadSnapshot: {
+          workoutId: 'gw-ledger',
+          scheduledId: 'sched-ledger',
+          stepCount: 5,
+          repeatGroupCount: 1,
+          invalidRepeatCount: 0,
+          hrTargetStepCount: 4,
+          durationSec: 3600,
+          checkedAt: '2026-05-10T10:00:00.000Z',
+        },
+        issues: [],
+        errorMessage: null,
+      }],
+    },
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Ledger-Workout mit Repeat.').click();
+
+  const ledger = page.getByTestId('garmin-execution-ledger');
+  await expect(ledger).toBeVisible();
+  await expect(ledger).toContainText('Garmin Ausführung');
+  await expect(ledger).toContainText('1 Wiederholungsblock');
+  await expect(ledger).toContainText('4 HR-Zielschritte');
+  await expect(ledger).toContainText('0 Repeat-Fehler');
+});
+
 test('Plan workout modal shows Fueling and Recovery guidance for long sessions', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

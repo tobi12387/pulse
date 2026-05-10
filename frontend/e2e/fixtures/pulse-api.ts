@@ -18,6 +18,7 @@ type MockPulseApiOptions = {
   coverage?: unknown;
   garminCoverage?: unknown;
   garminSignalUsefulness?: unknown;
+  garminExecutionLedger?: unknown;
   load?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
@@ -632,6 +633,9 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams): unknown
       items: [],
     };
   }
+  if (pathname === '/api/pulse/garmin/execution-ledger') {
+    return { entries: [] };
+  }
   if (pathname === '/api/pulse/coach/history') return { messages: [] };
   if (pathname === '/api/pulse/coach/preferences') {
     return {
@@ -936,6 +940,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
+    if (url.pathname === '/api/pulse/garmin/execution-ledger') {
+      return json(route, options.garminExecutionLedger ?? { entries: [] });
+    }
     if (url.pathname === '/api/pulse/fueling-recovery/guidance') {
       const result = typeof options.fuelingGuidance === 'function'
         ? options.fuelingGuidance(url.searchParams.get('workoutId'))

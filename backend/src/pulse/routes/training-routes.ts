@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulseGarminExecutionOperation, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
@@ -56,7 +56,8 @@ import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildTodayOptions } from '../services/today-options.js';
 import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
-import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract } from '../services/garmin-workout.js';
+import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract, summarizeGarminPayloadSnapshot } from '../services/garmin-workout.js';
+import { recordGarminExecution } from '../services/garmin-execution-ledger.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { getActiveRaces } from '../services/race-engine.js';
@@ -203,6 +204,23 @@ function hasGarminRemote(workout: Pick<PlannedWorkoutRow, 'garminWorkoutId' | 'g
   return Boolean(workout.garminWorkoutId || workout.garminScheduledId);
 }
 
+function garminOperationForContext(context: string): PulseGarminExecutionOperation {
+  if (context === 'sync-garmin') return 'manual_resync';
+  if (context === 'plan-workout-update') return 'update';
+  if (context === 'calendar-sync') return 'calendar_repair';
+  return 'create';
+}
+
+async function recordGarminExecutionSafely(
+  app: FastifyInstance,
+  context: string,
+  input: Parameters<typeof recordGarminExecution>[1],
+): Promise<void> {
+  await recordGarminExecution(db, input).catch((err: unknown) => {
+    app.log.warn(`[${context}] Failed to record Garmin execution ledger for ${input.plannedWorkoutId}: ${err}`);
+  });
+}
+
 function activityLabel(activityType: string): string {
   const labels: Record<string, string> = {
     run: 'Lauf',
@@ -247,19 +265,40 @@ function workoutMetadataUpdate(metadata: WorkoutLibraryMetadata) {
 async function removeGarminRemoteForWorkout(
   app: FastifyInstance,
   gc: GarminClient,
+  userId: string,
   workout: Pick<PlannedWorkoutRow, 'id' | 'garminWorkoutId' | 'garminScheduledId'>,
   context: string,
 ): Promise<void> {
+  if (!hasGarminRemote(workout)) return;
+
+  const errors: string[] = [];
   if (workout.garminScheduledId) {
-    await garminApi.deleteWorkoutSchedule(gc, workout.garminScheduledId).catch((err: unknown) => {
+    try {
+      await garminApi.deleteWorkoutSchedule(gc, workout.garminScheduledId);
+    } catch (err: unknown) {
+      errors.push(String(err));
       app.log.warn(`[${context}] Failed to remove Garmin schedule ${workout.garminScheduledId} for ${workout.id}: ${err}`);
-    });
+    }
   }
   if (workout.garminWorkoutId) {
-    await garminApi.deleteWorkout(gc, workout.garminWorkoutId).catch((err: unknown) => {
+    try {
+      await garminApi.deleteWorkout(gc, workout.garminWorkoutId);
+    } catch (err: unknown) {
+      errors.push(String(err));
       app.log.warn(`[${context}] Failed to remove Garmin workout ${workout.garminWorkoutId} for ${workout.id}: ${err}`);
-    });
+    }
   }
+
+  await recordGarminExecutionSafely(app, context, {
+    userId,
+    plannedWorkoutId: workout.id,
+    operation: 'delete',
+    outcome: errors.length > 0 ? 'failed' : 'deleted',
+    localContract: null,
+    remoteWorkoutId: workout.garminWorkoutId,
+    remoteScheduledId: workout.garminScheduledId,
+    errorMessage: errors.length > 0 ? errors.join('; ').slice(0, 240) : null,
+  });
 }
 
 async function uploadWorkoutToGarmin(
@@ -275,6 +314,8 @@ async function uploadWorkoutToGarmin(
   });
   const garminWorkout = buildGarminWorkoutJson(workout, { fuelingGuidance });
   const garminSyncContract = buildGarminSyncContract(workout, garminWorkout);
+  const operation = garminOperationForContext(context);
+  const payloadSnapshotBase = summarizeGarminPayloadSnapshot(garminWorkout);
   if (!garminSyncContract.payloadReady) {
     await db.update(pulsePlannedWorkouts)
       .set({
@@ -283,23 +324,61 @@ async function uploadWorkoutToGarmin(
         executionNotes: garminSyncContract.summary,
       })
       .where(eq(pulsePlannedWorkouts.id, workout.id));
+    await recordGarminExecutionSafely(app, context, {
+      userId,
+      plannedWorkoutId: workout.id,
+      operation,
+      outcome: 'blocked',
+      localContract: garminSyncContract,
+      payloadSnapshot: payloadSnapshotBase,
+      issues: garminSyncContract.issues,
+    });
     throw new Error(garminSyncContract.summary);
   }
-  const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
-  const garminWorkoutId = String(created.workoutId);
-  const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as unknown;
-  const garminScheduledId = extractGarminScheduledId(scheduled);
-  const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
-  const executionNotes = garminScheduledId
-    ? 'Workout ist auf Garmin im Kalender geplant.'
-    : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
+  try {
+    const created = await gc.addWorkout(garminWorkout) as { workoutId: number };
+    const garminWorkoutId = String(created.workoutId);
+    const scheduled = await garminApi.scheduleWorkout(gc, garminWorkoutId, workout.plannedDate) as unknown;
+    const garminScheduledId = extractGarminScheduledId(scheduled);
+    const executionStatus = garminScheduledId ? 'garmin_scheduled' : 'garmin_template';
+    const executionNotes = garminScheduledId
+      ? 'Workout ist auf Garmin im Kalender geplant.'
+      : 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.';
 
-  const [updated] = await db.update(pulsePlannedWorkouts)
-    .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
-    .where(eq(pulsePlannedWorkouts.id, workout.id))
-    .returning();
+    const [updated] = await db.update(pulsePlannedWorkouts)
+      .set({ garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes })
+      .where(eq(pulsePlannedWorkouts.id, workout.id))
+      .returning();
 
-  return updated ?? { ...workout, garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes };
+    await recordGarminExecutionSafely(app, context, {
+      userId,
+      plannedWorkoutId: workout.id,
+      operation,
+      outcome: garminSyncContract.status,
+      localContract: garminSyncContract,
+      remoteWorkoutId: garminWorkoutId,
+      remoteScheduledId: garminScheduledId,
+      payloadSnapshot: summarizeGarminPayloadSnapshot(garminWorkout, {
+        workoutId: garminWorkoutId,
+        scheduledId: garminScheduledId,
+      }),
+      issues: garminSyncContract.issues,
+    });
+
+    return updated ?? { ...workout, garminWorkoutId, garminScheduledId, garminSyncContract, executionStatus, executionNotes };
+  } catch (err) {
+    await recordGarminExecutionSafely(app, context, {
+      userId,
+      plannedWorkoutId: workout.id,
+      operation,
+      outcome: 'failed',
+      localContract: garminSyncContract,
+      payloadSnapshot: payloadSnapshotBase,
+      issues: garminSyncContract.issues,
+      errorMessage: String(err).slice(0, 240),
+    });
+    throw err;
+  }
 }
 
 async function replaceGarminRemoteForWorkout(
@@ -311,7 +390,7 @@ async function replaceGarminRemoteForWorkout(
 ): Promise<PlannedWorkoutRow> {
   const gc = await getGarminClient();
   if (hasGarminRemote(previousWorkout)) {
-    await removeGarminRemoteForWorkout(app, gc, previousWorkout, context);
+    await removeGarminRemoteForWorkout(app, gc, userId, previousWorkout, context);
   }
   return uploadWorkoutToGarmin(app, userId, workout, gc, context);
 }
@@ -610,7 +689,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         if (hasGarminRemote(current)) {
           try {
             const gc = await getGarminClient();
-            await removeGarminRemoteForWorkout(app, gc, current, 'plan-workout-update');
+            await removeGarminRemoteForWorkout(app, gc, userId, current, 'plan-workout-update');
           } catch (err) {
             app.log.warn(`[plan-workout-update] Garmin cleanup failed for skipped workout ${id}: ${err}`);
             garminSync = { status: 'failed', error: String(err).slice(0, 120) };
@@ -687,7 +766,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     try {
       const gc = await getGarminClient();
       if (hasGarminRemote(workout)) {
-        await removeGarminRemoteForWorkout(app, gc, workout, 'sync-garmin');
+        await removeGarminRemoteForWorkout(app, gc, userId, workout, 'sync-garmin');
         await db.update(pulsePlannedWorkouts)
           .set({
             garminWorkoutId: null,
