@@ -8,6 +8,8 @@
 
 **Tech Stack:** TypeScript analytics services, Drizzle/Postgres, Garmin detail cache, React Data/Plan surfaces, Vitest.
 
+**Implementation note:** Implemented as a quality-gated v1. Activity detail persists compact power-duration snapshots from trusted streams or cautious lap approximations; `/training-analytics` exposes a summary for Data > Analysen; Plan receives a Durability limiter only when the latest usable snapshot is actually `limited`. FTP/profile values remain unchanged.
+
 ---
 
 ## Files
@@ -26,7 +28,7 @@
 
 ## Task 1: Pure Power-Duration Functions
 
-- [ ] **Step 1: Create tests**
+- [x] **Step 1: Create tests**
 
 Create `backend/src/pulse/services/power-duration.test.ts`:
 
@@ -58,7 +60,7 @@ describe('power-duration analytics', () => {
 });
 ```
 
-- [ ] **Step 2: Implement rolling best efforts**
+- [x] **Step 2: Implement rolling best efforts**
 
 Create `backend/src/pulse/services/power-duration.ts`:
 
@@ -120,7 +122,7 @@ export function deriveDurabilitySignal(input: {
 }
 ```
 
-- [ ] **Step 3: Run test**
+- [x] **Step 3: Run test**
 
 Run:
 
@@ -132,7 +134,7 @@ Expected: PASS.
 
 ## Task 2: Persist Compact Metrics
 
-- [ ] **Step 1: Migration**
+- [x] **Step 1: Migration**
 
 Create `backend/src/db/migrations/0033_power_duration_durability.sql`:
 
@@ -156,11 +158,11 @@ CREATE INDEX IF NOT EXISTS "pulse_power_duration_user_date_idx"
   ON "pulse_power_duration_snapshots" ("user_id", "activity_date" DESC);
 ```
 
-- [ ] **Step 2: Add schema table**
+- [x] **Step 2: Add schema table**
 
 Add `pulsePowerDurationSnapshots` in `backend/src/db/pulse-schema.ts`. Append a matching `backend/src/db/migrations/meta/_journal.json` entry with the next `idx`, matching `tag`, `version: "7"` and `breakpoints: true`; run `npm run check:migrations` before schema work continues.
 
-- [ ] **Step 3: Fill after activity detail cache**
+- [x] **Step 3: Fill after activity detail cache**
 
 In `backend/src/pulse/routes/activity-routes.ts`, after Garmin detail streams/laps are cached, load the quality result from `classifyPowerDataQuality`.
 
@@ -170,7 +172,7 @@ In `backend/src/pulse/routes/activity-routes.ts`, after Garmin detail streams/la
 
 If current Garmin detail routes do not populate `pulse_activity_streams`, keep v1 lap-only and record that limitation in `quality_source`; do not pretend rolling 60s/300s/1200s best efforts are stream-derived.
 
-- [ ] **Step 4: Test route behavior**
+- [x] **Step 4: Test route behavior**
 
 Extend `backend/src/pulse/plugin.test.ts` activity detail test:
 
@@ -186,7 +188,7 @@ expect(await db.select().from(pulsePowerDurationSnapshots)).toEqual(expect.array
 
 ## Task 3: Feed Goal Limiters
 
-- [ ] **Step 1: Extend limiter kinds**
+- [x] **Step 1: Extend limiter kinds**
 
 In `shared/types/pulse/plan.ts`, extend `PulseGoalLimiterKind`:
 
@@ -198,7 +200,7 @@ export type PulseGoalLimiterKind =
   | 'anaerobic_repeatability';
 ```
 
-- [ ] **Step 2: Extend limiter input and route wiring**
+- [x] **Step 2: Extend limiter input and route wiring**
 
 In `backend/src/pulse/services/goal-limiters.ts`, extend `DeriveGoalLimiterInput`:
 
@@ -213,7 +215,7 @@ durability: {
 
 In `backend/src/pulse/routes/training-routes.ts`, query the latest `pulsePowerDurationSnapshots` row for the user, map it into `deriveGoalLimiter`, and include the durability limiter in the plan trace/API response. If the latest quality status is `blocked`, pass `durability: null`.
 
-- [ ] **Step 3: Update `goal-limiters.ts`**
+- [x] **Step 3: Update `goal-limiters.ts`**
 
 Add logic:
 
@@ -230,7 +232,7 @@ if (input.durability?.rating === 'limited') {
 }
 ```
 
-- [ ] **Step 4: Show compact evidence**
+- [x] **Step 4: Show compact evidence**
 
 In `frontend/src/pages/Data.tsx`, add a small performance card in the existing training/analytics area:
 
@@ -244,7 +246,7 @@ In `frontend/src/pages/Data.tsx`, add a small performance card in the existing t
 
 In `frontend/src/pages/Plan.tsx`, show the active limiter only if it changes the plan bias.
 
-- [ ] **Step 5: Verification**
+- [x] **Step 5: Verification**
 
 Run:
 

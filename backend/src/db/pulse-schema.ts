@@ -65,6 +65,20 @@ export interface GarminActivityDetailCache {
   rawData?: unknown;
 }
 
+export interface PulsePowerDurationBestEffort {
+  durationSec: number;
+  avgPowerW: number;
+  startSec: number;
+  source: 'stream' | 'lap_approximation';
+}
+
+export interface PulsePowerDurationDurability {
+  rating: 'strong' | 'watch' | 'limited';
+  powerDropPct: number;
+  hrDriftBpm: number;
+  evidence: string[];
+}
+
 export const DEFAULT_PUSH_TOPICS: PulsePushTopics = {
   briefing: true,
   checkin_reminder: true,
@@ -274,6 +288,21 @@ export const pulseActivityAnalytics = pgTable('pulse_activity_analytics', {
   hrDriftBpm:        real('hr_drift_bpm'),
   computedAt:        timestamp('computed_at').notNull().defaultNow(),
 });
+
+export const pulsePowerDurationSnapshots = pgTable('pulse_power_duration_snapshots', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  userId:        uuid('user_id').notNull(),
+  activityId:    uuid('activity_id').notNull(),
+  activityDate:  date('activity_date').notNull(),
+  bestEfforts:   jsonb('best_efforts').$type<PulsePowerDurationBestEffort[]>().notNull().default(sql`'[]'::jsonb`),
+  durability:    jsonb('durability').$type<PulsePowerDurationDurability>(),
+  qualitySource: varchar('quality_source', { length: 32 }).notNull().default('unavailable'),
+  qualityStatus: varchar('quality_status', { length: 32 }).notNull().default('blocked'),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pulse_power_duration_activity_uq').on(t.activityId),
+  index('pulse_power_duration_user_date_idx').on(t.userId, t.activityDate),
+]);
 
 // ─── Risk Watch signals ─────────────────────────────────────────────────────
 export const pulseRiskSignals = pgTable('pulse_risk_signals', {

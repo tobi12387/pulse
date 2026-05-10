@@ -325,7 +325,9 @@ export interface PulsePlanTraceAdaptation {
 
 export type PulseGoalLimiterKind =
   | 'long_endurance_fueling'
-  | 'threshold_vo2';
+  | 'threshold_vo2'
+  | 'durability'
+  | 'anaerobic_repeatability';
 
 export interface PulseGoalLimiter {
   kind: PulseGoalLimiterKind;

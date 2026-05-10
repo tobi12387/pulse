@@ -77,6 +77,34 @@ describe('deriveGoalLimiter', () => {
     expect(limiter?.evidence.join(' ')).toContain('Schwelle/VO2');
   });
 
+  it('uses limited durability as a goal limiter when power quality is usable', () => {
+    const limiter = deriveGoalLimiter({
+      goals: [{
+        title: 'Radmarathon stark finishen',
+        category: 'race',
+        targetDate: '2026-07-01',
+        raceDiscipline: 'bike',
+        raceDistanceKm: 155,
+        racePriority: 'A',
+      }],
+      trainingCapabilities: capabilitySummary,
+      recentActivities: [
+        { date: '2026-05-07', activityType: 'bike', durationMin: 240, tss: 180, rpe: 7, plannedZone: 2 },
+      ],
+      fuelingHistory: [],
+      durability: {
+        rating: 'limited',
+        evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+        qualitySource: 'lap_approximation',
+        qualityStatus: 'usable_with_caution',
+      },
+    });
+
+    expect(limiter?.kind).toBe('durability');
+    expect(limiter?.confidence).toBe('medium');
+    expect(limiter?.evidence.join(' ')).toContain('Quelle: lap_approximation');
+  });
+
   it('stays quiet when there is no goal or capability evidence', () => {
     const limiter = deriveGoalLimiter({
       goals: [],
