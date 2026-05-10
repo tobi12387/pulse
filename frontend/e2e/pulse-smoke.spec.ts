@@ -136,6 +136,109 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
   await expect(page.getByText('run', { exact: true })).toHaveCount(0);
 });
 
+test('mobile Home availability intent opens a workout scenario preview', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
+  let previewBody: unknown = null;
+
+  await mockPulseApi(page, {
+    todayOptionsState: 'unplanned_trainable',
+    onPlanScenarioPreview: body => { previewBody = body; },
+    planScenarioPreview: body => ({
+      preview: {
+        type: 'add_custom_tour',
+        summary: 'Heute 60 min moeglich: Pulse prueft Wochenlast und Garmin, bevor etwas gespeichert wird.',
+        projectedWorkouts: [],
+        changedDays: [{
+          date: '2026-05-01',
+          before: { sessions: 0, durationMin: 0, tss: 0 },
+          after: { sessions: 1, durationMin: 60, tss: 36 },
+          label: '+1 Einheit, +36 TSS',
+        }],
+        loadImpact: { tssDelta: 36, durationDeltaMin: body.workout?.durationMin ?? 0, nextDayRecoveryDate: null },
+        reasons: ['Mobile Intent bleibt Preview-only bis zur expliziten Anwendung.'],
+        warnings: [],
+        applySupported: true,
+      },
+    }),
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+  await page.getByRole('button', { name: '60 min' }).click();
+  await expect(page).toHaveURL(/source=mobile-intent/);
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard).toContainText('Mobile Quick Decision');
+  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('60');
+  await expect(scenarioCard.getByLabel('Sportart')).toHaveValue('bike');
+  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  expect(previewBody).toMatchObject({
+    type: 'add_custom_tour',
+    workout: {
+      activityType: 'bike',
+      zone: 1,
+      durationMin: 60,
+      description: 'Heute 60 min moeglich; Pulse prueft Auswirkung auf Woche und Garmin.',
+    },
+  });
+});
+
+test('mobile Home free-day intent opens reduce-volume preview without creating a workout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
+  let previewBody: unknown = null;
+  const requests: string[] = [];
+
+  await mockPulseApi(page, {
+    todayOptionsState: 'unplanned_trainable',
+    onRequest: (pathname, method) => requests.push(`${method} ${pathname}`),
+    onPlanScenarioPreview: body => { previewBody = body; },
+    planScenarioPreview: body => ({
+      preview: {
+        type: 'reduce_volume',
+        summary: 'Heute frei: Pulse prueft defensivere offene Planlast.',
+        projectedWorkouts: [],
+        changedDays: [{
+          date: '2026-05-03',
+          before: { sessions: 1, durationMin: 90, tss: 68 },
+          after: { sessions: 1, durationMin: 65, tss: 48 },
+          label: '-25 min',
+        }],
+        loadImpact: { tssDelta: -20, durationDeltaMin: -25, nextDayRecoveryDate: null },
+        reasons: ['Freier Tag bleibt bewusst frei.'],
+        warnings: [],
+        applySupported: true,
+      },
+    }),
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+  await page.getByRole('button', { name: 'Frei' }).click();
+  await expect(page).toHaveURL(/scenario=reduce_volume/);
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard).toContainText('Heute bewusst frei halten.');
+  await expect(scenarioCard).toContainText('Nicht gesperrte Zukunfts-Workouts auf 70%');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.7 });
+  expect(requests).not.toContain('POST /api/pulse/plan/workout');
+});
+
+test('mobile Home planned workout state replaces old compact options with availability intents', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
+
+  await mockPulseApi(page, { todayOptionsState: 'planned_workout' });
+
+  await page.goto('/');
+  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+  await expect(page.getByTestId('today-options-card')).toContainText('Heute möglich');
+  await expect(page.getByText('Plan ausfuehren: Rad')).toHaveCount(0);
+  await expect(page.getByText('Workout oeffnen')).toHaveCount(0);
+});
+
 test('/insights redirects to the Data analysis tab', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/data?tab=analysen');

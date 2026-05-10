@@ -1,6 +1,7 @@
 # Mobile Plan Flow Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status:** Completed 2026-05-10 by Codex on `codex/mobile-plan-flow`.
+> **Implementation note:** The compact Home slot now renders one `Heute möglich` intent row for planned or unplanned trainable days, while completed-activity and recovery-protect states keep their non-workout guidance. Mobile/today scenario links auto-compute the Plan preview before any write; Garmin remains untouched until explicit Apply.
 
 **Goal:** Make daily iPhone/PWA planning feel closer to JOIN's low-friction flow: choose today/time/intent, review impact, apply explicitly, and understand Garmin status.
 
@@ -24,7 +25,7 @@
 
 ## Task 1: Add A Compact Availability Intent Mode
 
-- [ ] **Step 1: Define the UI states**
+- [x] **Step 1: Define the UI states**
 
 Use these options only:
 
@@ -37,7 +38,7 @@ const TODAY_INTENTS = [
 ] as const;
 ```
 
-- [ ] **Step 2: Render it by reusing the existing Today Options slot**
+- [x] **Step 2: Render it by reusing the existing Today Options slot**
 
 In `frontend/src/pages/Home.tsx` and `frontend/src/components/TodayOptionsCard.tsx`, render the intent row in the existing Today Options/TrainNow area when:
 
@@ -62,7 +63,7 @@ UI inside the existing card:
 </section>
 ```
 
-- [ ] **Step 3: Deep-link to scenario preview**
+- [x] **Step 3: Deep-link to scenario preview**
 
 `openIntent` should navigate to:
 
@@ -83,7 +84,7 @@ navigate(`/plan?${params.toString()}#plan-scenario-preview`);
 
 ## Task 2: Make Plan Scenario Preview Mobile-First
 
-- [ ] **Step 1: Teach Plan to hydrate mobile-intent query params**
+- [x] **Step 1: Teach Plan to hydrate mobile-intent query params**
 
 Current `frontend/src/pages/Plan.tsx` hydrates scenario params for `source=today-options` and `scenario=workout`. Extend the parser to accept `source=mobile-intent` and both:
 
@@ -92,7 +93,7 @@ Current `frontend/src/pages/Plan.tsx` hydrates scenario params for `source=today
 
 Add a frontend/E2E test that clicking `60 min` fills the preview as a workout scenario and clicking `Frei` fills a reduce-volume preview without writing to Garmin.
 
-- [ ] **Step 2: Put the decision summary first**
+- [x] **Step 2: Put the decision summary first**
 
 In `frontend/src/pages/Plan.tsx`, when `source=mobile-intent` or `source=today-options`, the scenario preview card should order content as:
 
@@ -101,7 +102,7 @@ In `frontend/src/pages/Plan.tsx`, when `source=mobile-intent` or `source=today-o
 3. Load/Garmin impact chips.
 4. Detailed changed days.
 
-- [ ] **Step 3: Keep buttons within 44px baseline**
+- [x] **Step 3: Keep buttons within 44px baseline**
 
 Use existing touch classes or inline styles:
 
@@ -111,7 +112,7 @@ style={{ minHeight: 44, minWidth: 44 }}
 
 No text button should become narrower than 44px on mobile.
 
-- [ ] **Step 4: Add a Garmin impact chip**
+- [x] **Step 4: Add a Garmin impact chip**
 
 Display:
 
@@ -125,7 +126,7 @@ If the Garmin execution ledger plan has already landed, replace this static chip
 
 ## Task 3: Browser Evidence
 
-- [ ] **Step 1: Add route evidence markers**
+- [x] **Step 1: Add route evidence markers**
 
 In `frontend/e2e/route-evidence.spec.ts`, ensure screenshots include:
 
@@ -133,7 +134,7 @@ In `frontend/e2e/route-evidence.spec.ts`, ensure screenshots include:
 - Plan mobile with `plan-scenario-preview-card`.
 - Negative evidence for `completed_activity` and `recovery_protect`: the intent row is not visible.
 
-- [ ] **Step 2: Add smoke assertions**
+- [x] **Step 2: Add smoke assertions**
 
 In `frontend/e2e/pulse-smoke.spec.ts`:
 
@@ -149,7 +150,7 @@ await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
 
 Add deterministic fixture overrides in `frontend/e2e/fixtures/pulse-api.ts`; do not rely on the default fixture because it may be `planned_workout` and intentionally suppress compact options.
 
-- [ ] **Step 3: Run UI verification**
+- [x] **Step 3: Run UI verification**
 
 Run:
 

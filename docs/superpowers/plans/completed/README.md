@@ -67,6 +67,7 @@
 | `2026-05-10-garmin-execution-ledger.md` | Garmin Execution Ledger — durable Garmin upload/delete ledger, payload snapshots, Plan modal visibility and Settings Plan link | PR #261 |
 | `2026-05-10-adaptation-event-queue.md` | Adaptation Event Queue — persisted write-triggered adaptation events for activity/RPE/mental/fueling/recovery/sync debt with Home and Plan visibility | PR #262 |
 | `2026-05-10-workout-library-v2.md` | Workout Library v2 — 20 deterministic workout variants, scored selection, Garmin-safe steps and preserved archetypes through Plan/Today Options | Workout Library v2 PR |
+| `2026-05-10-mobile-plan-flow.md` | Mobile Plan Flow — Home availability intents, auto-computed Plan scenario preview and mobile route evidence for iPhone/PWA planning | Mobile Plan Flow PR |
 
 ## Bekannte veraltete Stellen
 

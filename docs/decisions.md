@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Mobile Plan Flow bleibt Preview-first und Apply-only
+
+- **Decision:** Home ersetzt kompakte geplante oder freie Tagesoptionen durch eine einzige `Heute möglich`-Intent-Reihe (`Frei`, `30 min`, `60 min`, `2h+`). Diese Deep-Links berechnen in Plan automatisch eine Szenario-Vorschau, aber Plan oder Garmin werden erst nach explizitem `Vorschau anwenden` verändert.
+- **Why:** Der iPhone/PWA-Alltagsflow soll JOIN-ähnlich schnell sein, ohne heimliche Planmutationen oder den Druck, jeden freien Tag zu füllen. Die automatische Vorschau reduziert Klicks und macht Wochenlast/Garmin-Auswirkung sichtbar, während Apply die bewusste Sicherheitsgrenze bleibt.
+- **Alternatives:** Alte TrainNow-Karten zusätzlich anzeigen (doppelte Entscheidung und mehr kognitive Last); Vorschau erst nach zusätzlichem Button-Klick berechnen (zu schwerfällig für Mobile); direkt beim Home-Klick speichern oder Garmin synchronisieren (zu riskant und widerspricht Preview-first).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Workout Library Varianten werden lokal gewählt und per Archetype-ID erzwungen
 
 - **Decision:** Pulse erweitert die Trainingsbibliothek als lokale, Tobi-spezifische Variantensammlung und bewahrt den gewählten `archetypeId` über Wochenplan-Generierung, Today-Options-Deep-Link, Szenario-Vorschau und Custom-Workout-Erstellung. `buildWorkoutSteps()` nutzt den persistierten Archetyp als Forced-Archetype, damit Beschreibung, Steps, Difficulty-Metadaten und Garmin-Sync-Vertrag aus derselben Library-Quelle stammen.
