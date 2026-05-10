@@ -913,6 +913,8 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   await expect(page.getByText('Quick Check-in')).toBeVisible();
   await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
   await expect(page.getByText('Schlafscore 82')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Energie: begrenzt' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Druck: hoch' })).toBeVisible();
@@ -934,7 +936,7 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Welche Grenze macht diesen freien Tag wirklich erholsam/);
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Mental: angespannt/);
   await expect(page.getByPlaceholder(/Was ist mental gerade wichtig/)).toHaveValue(/Schutz: aktiv einplanen/);
-  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await page.getByRole('button', { name: 'Heute speichern' }).click();
   await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
   expect(submitted).toMatchObject({
     mood: 3,
@@ -943,6 +945,17 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
     motivation: 3,
   });
   expect(String((submitted as { notes?: string }).notes)).toContain('Bedarf: Ruhe');
+});
+
+test('Data mental check-in keeps the primary save action in the first mobile viewport', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  await expect(page.getByText('Quick Check-in')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Heute speichern|Check-in speichern|Check-in senden/i })).toBeInViewport();
 });
 
 test('Data mental check-in turns free text into editable scores before saving', async ({ page }) => {
@@ -959,6 +972,7 @@ test('Data mental check-in turns free text into editable scores before saving', 
   });
 
   await page.goto('/data?tab=mental');
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
 
   await page.getByRole('textbox', { name: 'Kurz beschreiben' }).fill('Kopf voll, Energie begrenzt, Druck spuerbar.');
   await page.getByRole('button', { name: 'Text auswerten' }).click();
@@ -1529,6 +1543,20 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
       description: 'Heute 60 min moeglich; Pulse prueft Auswirkung auf Woche und Garmin.',
     },
   });
+});
+
+test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    todayOptionsState: 'planned_workout',
+    home: { todayWorkout: null, nextWorkout: null },
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByTestId('daily-decision-card')).toContainText('Heute ist kein Training geplant');
+  await expect(page.getByTestId('today-options-card')).toHaveCount(0);
+  await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
 });
 
 test('Plan scenario preview shows long-tour load and recovery impact before applying', async ({ page }) => {
@@ -3822,6 +3850,9 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, 'Verlauf löschen');
 
   await page.goto('/data?tab=mental');
+  await expectTouchTarget(page, 'Heute speichern');
+  await expectTouchTarget(page, 'Mehr beschreiben');
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expectSelectorTouchTarget(page, 'button:has-text("Text auswerten")');
   await expectSelectorTouchTarget(page, 'button:has-text("Feinjustieren")');
   await page.getByRole('button', { name: 'Feinjustieren' }).click();
@@ -3831,7 +3862,6 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectRadioTouchTarget(page, 'Motivation 1/10');
   await expectTouchTarget(page, 'Welche Grenze macht diesen freien Tag wirklich erholsam?');
   await expectTouchTarget(page, 'Mental: ruhig');
-  await expectTouchTarget(page, 'Check-in senden');
 
   await page.goto('/data?tab=analysen');
   await expectTouchTarget(page, '7T');

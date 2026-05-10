@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
@@ -10,6 +10,7 @@ import { RecoveryStrip } from '@/components/RecoveryStrip';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
+import { resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
@@ -824,6 +825,7 @@ export default function Home() {
   const { data: briefingData } = usePulseBriefing();
   const adaptationEvents = useAdaptationEvents();
   const garminSync = useGarminSync();
+  const todayOptionsQuery = useTodayOptions();
   const navigate = useNavigate();
   const [homeCheckinSubmitted, setHomeCheckinSubmitted] = useState(false);
 
@@ -857,6 +859,7 @@ export default function Home() {
   const fl = loadQuery.data ?? data.fitnessLoad;
   const nw = data.nextWorkout;
   const dailyDecision = deriveDailyDecision(data);
+  const dailyCommand = resolveDailyCommand(data, todayOptionsQuery.data?.todayOptions ?? null);
   const actionStates = actionsQuery.data?.actions ?? [];
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
@@ -1004,7 +1007,38 @@ export default function Home() {
         />
       )}
 
-      <TodayOptionsCard variant="compact" onNavigate={navigate} />
+      <div
+        data-testid="home-command-summary"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gap: 6,
+        }}
+      >
+        {[
+          { label: 'Readiness', value: readiness.score, suffix: '/100', color: readinessColor },
+          { label: 'TSB', value: fmtSigned(fl.tsb), suffix: '', color: tsbColor },
+          { label: 'Recovery', value: data.recovery?.recoveryScore ?? '–', suffix: typeof data.recovery?.recoveryScore === 'number' ? '/100' : '', color: 'var(--text)' },
+        ].map(item => (
+          <div
+            key={item.label}
+            style={{
+              padding: '8px 9px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              minWidth: 0,
+            }}
+          >
+            <div className="label-mono" style={{ fontSize: 8.5, color: 'var(--text-3)', marginBottom: 3 }}>{item.label}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: item.color }}>
+              {item.value}{item.suffix}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <TodayOptionsCard variant="compact" commandKind={dailyCommand} onNavigate={navigate} />
 
       {primaryAdaptationEvent && (
         <HomeAdaptationEventCard event={primaryAdaptationEvent} onNavigate={navigate} />

@@ -308,16 +308,49 @@ test('mobile Home free-day intent opens reduce-volume preview without creating a
   expect(requests).not.toContain('POST /api/pulse/plan/workout');
 });
 
-test('mobile Home planned workout state replaces old compact options with availability intents', async ({ page }, testInfo) => {
+test('mobile Home planned workout state shows the concrete plan option without availability intents', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
 
-  await mockPulseApi(page, { todayOptionsState: 'planned_workout' });
+  await mockPulseApi(page, {
+    todayOptionsState: 'planned_workout',
+    home: {
+      todayWorkout: {
+        id: 'workout-planned-smoke',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        distanceKm: null,
+        targetTss: 62,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Aerobe Grundlage.',
+        steps: null,
+        garminWorkoutId: 'garmin-workout-planned',
+        garminScheduledId: 'garmin-scheduled-planned',
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+    },
+  });
 
   await page.goto('/');
-  await expect(page.getByTestId('today-availability-intent')).toBeVisible();
-  await expect(page.getByTestId('today-options-card')).toContainText('Heute möglich');
-  await expect(page.getByText('Plan ausfuehren: Rad')).toHaveCount(0);
-  await expect(page.getByText('Workout oeffnen')).toHaveCount(0);
+  await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+  await expect(page.getByTestId('today-options-card')).toContainText('Heute trainieren');
+  await expect(page.getByTestId('today-options-card')).toContainText('Plan ausfuehren: Rad');
+  await expect(page.getByTestId('today-options-card')).toContainText('Workout oeffnen');
 });
 
 test('/insights redirects to the Data analysis tab', async ({ page }) => {

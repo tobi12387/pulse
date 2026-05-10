@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-10 — Home Today Options folgen einem Daily Command State
+
+- **Decision:** Home leitet einen einzigen `DailyCommandKind` aus geplantem Training, erledigten Garmin-Aktivitaeten und Today-Options-Zustand ab. Die kompakte Today-Options-Karte erscheint nur noch bei `planned` oder `free_trainable`; generische mobile Verfuegbarkeitsbuttons erscheinen nur bei freien, trainierbaren Tagen.
+- **Why:** Home darf nicht gleichzeitig sagen, dass kein Training geplant ist, und darunter Plantraining oder generische Trainingsbuttons anbieten. Der gemeinsame Resolver macht die Tageswahrheit testbar und reduziert die iPhone/PWA-Entscheidung auf eine konsistente Handlung.
+- **Alternatives:** Nur Copy im Today-Options-Widget anpassen (Symptomfix); Today Options komplett von Home entfernen (verliert den schnellen freien Tagesflow); Backend-Contract sofort erweitern (groesserer Scope als fuer die UI-Widerspruchsbehebung noetig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-10 — Mental Check-in wird One-Tap-First
+
+- **Decision:** Der Data-Mental-Check-in zeigt zuerst Zustandskarten, abgeleitete Mental-Health/Fitness-Sprache und den Primaerbutton `Heute speichern`; Detailfragen, Freitext, Tags und Notizen liegen hinter `Mehr beschreiben`, Feinjustierung bleibt optional.
+- **Why:** Tobi hatte wiederholt beschrieben, dass Zahlenwerte und zu viele Startfragen schwer fallen. Der wichtigste Alltagsflow ist ein schneller, mental-health-sensibler Check-in ohne Zahlenzwang, waehrend tiefere Beschreibung weiterhin erreichbar und testbar bleibt.
+- **Alternatives:** Alle bisherigen Detailcontrols sichtbar lassen (zu schwer im ersten Viewport); nur Freitext als Primaerweg machen (zu langsam und fehleranfaellig); Mental Check-in weiter in Home duplizieren (mehr Zustandsdrift).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Fresh Benchmark Roadmap behaelt vier Top-Level-Tabs
 
 - **Decision:** Der naechste Benchmark-/UI-Roadmap-Loop fuegt keinen neuen Top-Level-Tab hinzu. Home, Data, Plan und Settings bleiben die Hauptnavigation; neue Oberflaechen duerfen nur als verschachtelte, zweckgebundene Bereiche entstehen, zuerst Plan `Ausfuehrung` fuer Garmin Remote-Diff/Execution Trust.

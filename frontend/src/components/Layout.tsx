@@ -16,7 +16,7 @@ export default function Layout() {
   const location = useLocation();
   useNavHotkeys();
 
-  const isOperationalRoute = location.pathname.startsWith('/data') || location.pathname.startsWith('/plan');
+  const isOperationalRoute = location.pathname === '/' || location.pathname.startsWith('/data') || location.pathname.startsWith('/plan');
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1120 } : undefined;
 
   async function handleLogout() {

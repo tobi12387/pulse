@@ -36,7 +36,7 @@ test('/data?tab=coverage still opens the coverage tab', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'false');
 });
 
-test('Mental check-in presents quick choices before optional detail entry', async ({ page }) => {
+test('Mental check-in keeps quick choices behind optional detail entry', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
   });
@@ -44,6 +44,9 @@ test('Mental check-in presents quick choices before optional detail entry', asyn
   await page.goto('/data?tab=mental');
 
   await expect(page.getByText('Quick Check-in')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+  await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Kopf: gemischt' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toBeVisible();
@@ -51,13 +54,13 @@ test('Mental check-in presents quick choices before optional detail entry', asyn
   await expect(page.getByRole('radio', { name: 'Druck: ruhig' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Tagesbedarf: Struktur' })).toBeVisible();
 
-  const quickChoiceTop = await page.getByRole('radio', { name: 'Kopf: klar' }).evaluate(element =>
+  const saveTop = await page.getByRole('button', { name: 'Heute speichern' }).evaluate(element =>
     element.getBoundingClientRect().top,
   );
   const detailTop = await page.getByRole('textbox', { name: 'Kurz beschreiben' }).evaluate(element =>
     element.getBoundingClientRect().top,
   );
-  expect(quickChoiceTop).toBeLessThan(detailTop);
+  expect(saveTop).toBeLessThan(detailTop);
 });
 
 test('Mental button-radio groups support arrow-key selection', async ({ page }) => {
@@ -73,6 +76,7 @@ test('Mental button-radio groups support arrow-key selection', async ({ page }) 
   await expect(dosiert).toBeFocused();
   await expect(dosiert).toHaveAttribute('aria-checked', 'true');
 
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await page.getByRole('radio', { name: 'Kopf: klar' }).focus();
   await page.keyboard.press('ArrowRight');
   const gemischt = page.getByRole('radio', { name: 'Kopf: gemischt' });
@@ -105,16 +109,16 @@ test('Mental check-in can be saved from mental-health and mental-fitness state c
   const stateTop = await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).evaluate(element =>
     element.getBoundingClientRect().top,
   );
-  const detailTop = await page.getByRole('textbox', { name: 'Kurz beschreiben' }).evaluate(element =>
+  const saveTop = await page.getByRole('button', { name: 'Heute speichern' }).evaluate(element =>
     element.getBoundingClientRect().top,
   );
-  expect(stateTop).toBeLessThan(detailTop);
+  expect(stateTop).toBeLessThan(saveTop);
 
   await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
   await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Health: schützen');
   await expect(page.getByTestId('mental-derived-summary')).toContainText('Mental Fitness: schonen');
 
-  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await page.getByRole('button', { name: 'Heute speichern' }).click();
   await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
   expect(submitted).toMatchObject({
     mood: 3,
@@ -150,7 +154,7 @@ test('saved Schutzmodus check-in uses the same mental impact language across Dat
 
   await page.goto('/data?tab=mental');
   await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
-  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await page.getByRole('button', { name: 'Heute speichern' }).click();
   await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
   expect(submitted).not.toBeNull();
 
@@ -227,6 +231,7 @@ test('Mental check-in auto labels follow extracted scores and stay within the no
 
   await page.goto('/data?tab=mental');
 
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await page.getByRole('textbox', { name: 'Kurz beschreiben' }).fill('Kopf voll, Energie begrenzt, Druck spuerbar.');
   await page.getByRole('button', { name: 'Text auswerten' }).click();
   await expect(page.getByText('Stimmung 5/10')).toBeVisible();
@@ -259,8 +264,9 @@ test('Mental check-in hidden auto labels cannot push notes past the backend limi
   await page.goto('/data?tab=mental');
 
   await page.getByRole('radio', { name: 'Mentale Lage: Schutzmodus' }).click();
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await page.getByRole('textbox', { name: 'Mentale Notizen' }).fill('x'.repeat(495));
-  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await page.getByRole('button', { name: 'Heute speichern' }).click();
 
   await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
   const notes = String((submitted as { notes?: string }).notes);
@@ -280,13 +286,14 @@ test('failed Mental check-in save shows inline recovery and keeps inputs availab
   });
 
   await page.goto('/data?tab=mental');
+  await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await page.getByRole('radio', { name: 'Kopf: schwer' }).click();
   await page.getByRole('radio', { name: 'Energie: leer' }).click();
-  await page.getByRole('button', { name: 'Check-in senden' }).click();
+  await page.getByRole('button', { name: 'Heute speichern' }).click();
 
   await expect(page.getByRole('alert')).toContainText('Check-in konnte nicht gespeichert werden.');
   await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toBeEnabled();
   await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByRole('button', { name: 'Check-in senden' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeEnabled();
 });
