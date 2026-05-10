@@ -5,6 +5,7 @@ import { pulseApi } from '@/pulse/api-client';
 import { pulseKeys, useFuelingRecoveryGuidance, useGarminExecutionLedger } from '@/pulse/hooks';
 import { executionStatusFor, garminConfidenceCopy, type GarminConfidenceTone } from '@/features/plan/plan-utils';
 import { InlineFeedback } from '@/components/Feedback';
+import { FuelingOutcomeBaselineBlock } from '@/components/FuelingOutcomeBaseline';
 
 const ZONE_COLOR: Record<number, string> = {
   1: 'var(--blue)', 2: 'var(--blue)', 3: 'var(--green)', 4: 'var(--amber)', 5: 'var(--rose)',
@@ -225,6 +226,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
   const fuelingDuring = fuelingData?.during ?? [];
   const fuelingAfter = fuelingData?.after ?? [];
   const fuelingEvidence = fuelingData?.evidence ?? [];
+  const fuelingOutcomeBaseline = fuelingData?.outcomeBaseline ?? null;
 
   return (
     <div
@@ -489,6 +491,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                   ))}
                 </div>
               )}
+              <FuelingOutcomeBaselineBlock baseline={fuelingOutcomeBaseline} testId="workout-fueling-baseline" />
               <GuidanceList title="Vorher" items={fuelingBefore} />
               <GuidanceList title="Während" items={fuelingDuring} />
               <GuidanceList title="Danach" items={fuelingAfter} />

@@ -70,6 +70,7 @@ type MockPulseApiOptions = {
   onProfilePatch?: (body: unknown) => void;
   fuelingGuidance?: unknown | ((workoutId: string | null) => unknown);
   fuelingDebt?: unknown;
+  outcomeBaseline?: unknown;
   profileSyncResult?: unknown | ((body: unknown) => unknown);
   onProfileSync?: (body: unknown) => void;
   onRequest?: (pathname: string, method: string) => void;
@@ -342,6 +343,20 @@ const resolvedFuelingDebt = {
   controlledWorkoutId: null,
   followUpActivityId: null,
   updatedAt: `${today}T08:00:00.000Z`,
+};
+
+const insufficientFuelingBaseline = {
+  status: 'insufficient_data',
+  label: 'Fueling-Baseline offen',
+  summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
+  latestLogDate: null,
+  observedCarbsPerHour: null,
+  targetCarbsPerHour: null,
+  bottles750Ml: null,
+  powderG: null,
+  fluidMlPerHour: null,
+  sodiumMgPerHour: null,
+  evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
 };
 
 const openFuelingDebt = {
@@ -931,12 +946,16 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
   }
   if (pathname === '/api/pulse/equipment') return { equipment: [], defaults: [] };
   if (pathname === '/api/pulse/nutrition') return { logs: [] };
-  if (pathname === '/api/pulse/fueling/debt') return { fuelingDebt: resolvedFuelingDebt };
+  if (pathname === '/api/pulse/fueling/debt') return {
+    fuelingDebt: resolvedFuelingDebt,
+    outcomeBaseline: insufficientFuelingBaseline,
+  };
   if (pathname === '/api/pulse/fueling-recovery/guidance') {
     return {
       shouldShow: false,
       preferenceStatus: 'ready',
       fuelingDebt: resolvedFuelingDebt,
+      outcomeBaseline: insufficientFuelingBaseline,
       before: [],
       during: [],
       after: [],
@@ -1110,8 +1129,11 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
       return json(route, { logs: options.nutritionLogs });
     }
-    if (url.pathname === '/api/pulse/fueling/debt' && 'fuelingDebt' in options) {
-      return json(route, { fuelingDebt: options.fuelingDebt ?? resolvedFuelingDebt });
+    if (url.pathname === '/api/pulse/fueling/debt' && ('fuelingDebt' in options || 'outcomeBaseline' in options)) {
+      return json(route, {
+        fuelingDebt: options.fuelingDebt ?? resolvedFuelingDebt,
+        outcomeBaseline: options.outcomeBaseline ?? insufficientFuelingBaseline,
+      });
     }
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'POST') {
       const body = request.postDataJSON();
@@ -1208,6 +1230,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
         shouldShow: false,
         preferenceStatus: 'ready',
         fuelingDebt: resolvedFuelingDebt,
+        outcomeBaseline: insufficientFuelingBaseline,
         before: [],
         during: [],
         after: [],

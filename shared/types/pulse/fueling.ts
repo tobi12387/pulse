@@ -28,10 +28,36 @@ export interface PulseFuelingDebtSummary {
   updatedAt: string;
 }
 
+export type PulseFuelingOutcomeBaselineStatus =
+  | 'insufficient_data'
+  | 'learning'
+  | 'stable'
+  | 'caution';
+
+export interface PulseFuelingCarbRange {
+  min: number;
+  max: number;
+}
+
+export interface PulseFuelingOutcomeBaseline {
+  status: PulseFuelingOutcomeBaselineStatus;
+  label: string;
+  summary: string;
+  latestLogDate: string | null;
+  observedCarbsPerHour: number | null;
+  targetCarbsPerHour: PulseFuelingCarbRange | null;
+  bottles750Ml: number | null;
+  powderG: number | null;
+  fluidMlPerHour: number | null;
+  sodiumMgPerHour: number | null;
+  evidence: string[];
+}
+
 export interface PulseFuelingRecoveryGuidanceResponse {
   shouldShow: boolean;
   preferenceStatus: 'ready' | 'disabled';
   fuelingDebt: PulseFuelingDebtSummary;
+  outcomeBaseline: PulseFuelingOutcomeBaseline;
   before: PulseFuelingRecoveryGuidanceItem[];
   during: PulseFuelingRecoveryGuidanceItem[];
   after: PulseFuelingRecoveryGuidanceItem[];

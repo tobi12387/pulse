@@ -14,6 +14,7 @@ import {
   pulseKeys,
 } from '@/pulse/hooks';
 import { NutritionLogModal } from '@/components/NutritionLogModal';
+import { FuelingOutcomeBaselineBlock } from '@/components/FuelingOutcomeBaseline';
 import { RpeBar } from '@/components/RpeBar';
 import { rpeColor } from '@/lib/rpe';
 import { RPE_SORENESS_AREAS, type PulseActivityType, type RpeSorenessArea } from '@coaching-os/shared/pulse';
@@ -644,6 +645,7 @@ function FuelingSection({
   const deleteMut = useDeleteNutritionLog();
   const logs = data?.logs ?? [];
   const fuelingDebt = fuelingDebtQuery.data?.fuelingDebt ?? null;
+  const fuelingOutcomeBaseline = fuelingDebtQuery.data?.outcomeBaseline ?? null;
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -752,6 +754,8 @@ function FuelingSection({
             ))}
           </div>
         )}
+
+        <FuelingOutcomeBaselineBlock baseline={fuelingOutcomeBaseline} testId="activity-fueling-baseline" />
 
         {fuelingDebt && (fuelingDebt.hasOpenDebt || fuelingDebt.status === 'tolerated_follow_up') && (
           <div

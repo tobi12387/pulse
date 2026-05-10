@@ -1,0 +1,238 @@
+import type {
+  PulseFuelingCarbRange,
+  PulseFuelingOutcomeBaseline,
+} from '@coaching-os/shared/pulse';
+import { and, desc, eq, gte, inArray, isNull, or } from 'drizzle-orm';
+import { pulseActivities, pulseNutritionLogs } from '../../db/pulse-schema.js';
+import { db } from '../../lib/db.js';
+
+type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
+
+export interface FuelingOutcomeBaselineLogInput {
+  date: string;
+  context?: string | null;
+  activityId?: string | null;
+  activityType?: FuelingActivityType | string | null;
+  durationMin?: number | null;
+  carbsG?: number | null;
+  drinksMl?: number | null;
+  bottles750Ml?: number | null;
+  powderG?: number | null;
+  sodiumMg?: number | null;
+  giComfort?: 'ok' | 'mild_issue' | 'issue' | string | null;
+  notes?: string | null;
+}
+
+export interface BuildFuelingOutcomeBaselineInput {
+  logs?: FuelingOutcomeBaselineLogInput[];
+}
+
+function shiftIsoDate(date: string, days: number): string {
+  const current = new Date(`${date}T00:00:00Z`);
+  current.setUTCDate(current.getUTCDate() + days);
+  return current.toISOString().split('T')[0]!;
+}
+
+function isEnduranceFuelingSport(activityType: string | null | undefined): boolean {
+  return activityType === 'bike' || activityType === 'run' || activityType === 'hike';
+}
+
+function isGiIssue(log: FuelingOutcomeBaselineLogInput): boolean {
+  return log.giComfort === 'mild_issue' || log.giComfort === 'issue';
+}
+
+function roundToFive(value: number): number {
+  return Math.round(value / 5) * 5;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function perHour(value: number | null | undefined, durationMin: number | null | undefined): number | null {
+  if (value == null || durationMin == null || durationMin <= 0) return null;
+  return Math.round(value / (durationMin / 60));
+}
+
+function carbsPerHour(log: FuelingOutcomeBaselineLogInput): number | null {
+  return perHour(log.carbsG, log.durationMin);
+}
+
+function fluidMl(log: FuelingOutcomeBaselineLogInput): number | null {
+  if (log.drinksMl != null && log.drinksMl > 0) return log.drinksMl;
+  if (log.bottles750Ml != null && log.bottles750Ml > 0) return Math.round(log.bottles750Ml * 750);
+  return null;
+}
+
+function targetRange(log: FuelingOutcomeBaselineLogInput, observedCarbsPerHour: number | null): PulseFuelingCarbRange | null {
+  if (isGiIssue(log)) {
+    return observedCarbsPerHour != null && observedCarbsPerHour < 50
+      ? { min: 50, max: 70 }
+      : { min: 50, max: 70 };
+  }
+  if (log.giComfort === 'ok' && observedCarbsPerHour != null) {
+    const min = clamp(roundToFive(observedCarbsPerHour), 40, 75);
+    return { min, max: Math.min(90, min + 15) };
+  }
+  return observedCarbsPerHour != null ? { min: clamp(roundToFive(observedCarbsPerHour), 40, 70), max: 75 } : null;
+}
+
+function relevantLogs(logs: FuelingOutcomeBaselineLogInput[]): FuelingOutcomeBaselineLogInput[] {
+  return logs
+    .filter(log => log.context === 'during' || log.context == null)
+    .filter(log => isEnduranceFuelingSport(log.activityType))
+    .filter(log =>
+      (log.durationMin ?? 0) >= 75
+      || isGiIssue(log)
+      || (log.carbsG ?? 0) > 0
+      || (log.powderG ?? 0) > 0
+      || (log.bottles750Ml ?? 0) > 0,
+    )
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function formatObserved(log: FuelingOutcomeBaselineLogInput, observedCarbsPerHour: number | null): string {
+  const parts = [
+    observedCarbsPerHour != null ? `${observedCarbsPerHour} g/h` : null,
+    log.bottles750Ml != null && log.bottles750Ml > 0 ? `${log.bottles750Ml} x 750 ml` : null,
+    log.powderG != null && log.powderG > 0 ? `${Math.round(log.powderG)} g Pulver` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : 'Fueling unvollstaendig geloggt';
+}
+
+function rangeText(range: PulseFuelingCarbRange | null): string | null {
+  return range ? `${range.min}-${range.max} g/h` : null;
+}
+
+export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaselineInput): PulseFuelingOutcomeBaseline {
+  const latest = relevantLogs(input.logs ?? [])[0] ?? null;
+  if (!latest) {
+    return {
+      status: 'insufficient_data',
+      label: 'Fueling-Baseline offen',
+      summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
+      latestLogDate: null,
+      observedCarbsPerHour: null,
+      targetCarbsPerHour: null,
+      bottles750Ml: null,
+      powderG: null,
+      fluidMlPerHour: null,
+      sodiumMgPerHour: null,
+      evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
+    };
+  }
+
+  const observedCarbsPerHour = carbsPerHour(latest);
+  const targetCarbsPerHour = targetRange(latest, observedCarbsPerHour);
+  const fluidMlPerHour = perHour(fluidMl(latest), latest.durationMin);
+  const sodiumMgPerHour = perHour(latest.sodiumMg, latest.durationMin);
+  const observed = formatObserved(latest, observedCarbsPerHour);
+  const target = rangeText(targetCarbsPerHour);
+  const evidence = [
+    `Letzter Log: ${latest.date}, ${observed}`,
+    fluidMlPerHour != null ? `Fluid ca. ${fluidMlPerHour} ml/h` : 'Fluid nicht geloggt',
+    sodiumMgPerHour != null ? `Sodium ca. ${sodiumMgPerHour} mg/h` : 'Sodium nicht geloggt',
+  ];
+
+  if (isGiIssue(latest)) {
+    return {
+      status: 'learning',
+      label: 'Fueling-Baseline lernen',
+      summary: `Letzter langer Log: ${observed}; naechste Teststufe ${target ?? 'kontrolliert steigern'}.`,
+      latestLogDate: latest.date,
+      observedCarbsPerHour,
+      targetCarbsPerHour,
+      bottles750Ml: latest.bottles750Ml ?? null,
+      powderG: latest.powderG ?? null,
+      fluidMlPerHour,
+      sodiumMgPerHour,
+      evidence,
+    };
+  }
+
+  if (latest.giComfort === 'ok') {
+    return {
+      status: 'stable',
+      label: 'Fueling-Baseline vertraeglich',
+      summary: `Letzter vertraeglicher Log: ${observed}; naechste kleine Stufe ${target ?? 'nur leicht veraendern'}.`,
+      latestLogDate: latest.date,
+      observedCarbsPerHour,
+      targetCarbsPerHour,
+      bottles750Ml: latest.bottles750Ml ?? null,
+      powderG: latest.powderG ?? null,
+      fluidMlPerHour,
+      sodiumMgPerHour,
+      evidence,
+    };
+  }
+
+  return {
+    status: 'caution',
+    label: 'Fueling-Baseline unvollstaendig',
+    summary: `Letzter langer Log: ${observed}; Verträglichkeit fehlt, deshalb nur vorsichtig veraendern.`,
+    latestLogDate: latest.date,
+    observedCarbsPerHour,
+    targetCarbsPerHour,
+    bottles750Ml: latest.bottles750Ml ?? null,
+    powderG: latest.powderG ?? null,
+    fluidMlPerHour,
+    sodiumMgPerHour,
+    evidence,
+  };
+}
+
+export async function loadFuelingOutcomeBaseline(userId: string, today: string): Promise<PulseFuelingOutcomeBaseline> {
+  const since = shiftIsoDate(today, -120);
+  const logs = await db.select({
+    date: pulseNutritionLogs.date,
+    context: pulseNutritionLogs.context,
+    activityId: pulseNutritionLogs.activityId,
+    carbsG: pulseNutritionLogs.carbsG,
+    drinksMl: pulseNutritionLogs.drinksMl,
+    bottles750Ml: pulseNutritionLogs.bottles750Ml,
+    powderG: pulseNutritionLogs.powderG,
+    sodiumMg: pulseNutritionLogs.sodiumMg,
+    giComfort: pulseNutritionLogs.giComfort,
+    notes: pulseNutritionLogs.notes,
+  }).from(pulseNutritionLogs)
+    .where(and(
+      eq(pulseNutritionLogs.userId, userId),
+      gte(pulseNutritionLogs.date, since),
+      or(eq(pulseNutritionLogs.context, 'during'), isNull(pulseNutritionLogs.context)),
+    ))
+    .orderBy(desc(pulseNutritionLogs.date), desc(pulseNutritionLogs.createdAt))
+    .limit(20);
+
+  const activityIds = logs
+    .map(log => log.activityId)
+    .filter((id): id is string => id != null);
+  const activities = activityIds.length > 0
+    ? await db.select({
+        id: pulseActivities.id,
+        activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), inArray(pulseActivities.id, activityIds)))
+    : [];
+  const activityById = new Map(activities.map(activity => [activity.id, activity]));
+
+  return summarizeFuelingOutcomeBaseline({
+    logs: logs.map(log => {
+      const activity = log.activityId ? activityById.get(log.activityId) : null;
+      return {
+        date: log.date,
+        context: log.context,
+        activityId: log.activityId,
+        activityType: activity?.activityType ?? null,
+        durationMin: activity?.durationSec != null ? Math.round(activity.durationSec / 60) : null,
+        carbsG: log.carbsG,
+        drinksMl: log.drinksMl,
+        bottles750Ml: log.bottles750Ml,
+        powderG: log.powderG,
+        sodiumMg: log.sodiumMg,
+        giComfort: log.giComfort,
+        notes: log.notes,
+      };
+    }),
+  });
+}

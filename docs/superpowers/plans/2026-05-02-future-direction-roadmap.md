@@ -102,7 +102,7 @@ These build on the calmer daily UI.
 | Workout Alternatives v2 | Every relevant workout can offer shorter, easier, same-purpose, outside/indoor, group/solo or recovery alternatives. | TrainerRoad TrainNow, JOIN availability |
 | Data IA Compression | Data becomes `Heute relevant`, `Trends`, `Datenqualitaet` and `Analyse`, instead of many equal tabs. | Oura Trends, Intervals analytics |
 | Settings Status First | Settings starts with `Alles bereit` or `Problem beheben`, then details. | Garmin/WHOOP app diagnostics |
-| Nutrition Intelligence | Implemented v1: low-intake GI logs now change the concrete next long-session target to a controlled `50-70 g/h` with 750 ml bottle and MNSTRY powder math. Future slices should add outcome baselines, heat/fluid/sodium context and weekly coaching summaries. | MacroFactor coaching update pattern |
+| Nutrition Intelligence | Implemented: low-intake GI logs change the concrete next long-session target to a controlled `50-70 g/h`, and outcome baselines now structure carb target, bottles, powder, fluid and sodium evidence gaps in Activity and Plan. Future slices should add repeated-log trend summaries and real heat/sweat-rate context. | MacroFactor coaching update pattern |
 | iPhone/PWA Field Reliability | Real device evidence decides whether PWA fixes are enough or whether a native/wrapper path is worth planning. | WHOOP/Oura mobile-first reliability |
 
 ### Long Term: Become A Personal Coach, Not A Dashboard
@@ -129,9 +129,9 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Nutrition Intelligence v2 / Fueling Outcome Baseline:** structure repeated ride outcomes, sodium/heat/fluid context and tolerance progression before adding more UI surface.
-2. **Optional Daily Delta echoes:** add compact Plan/Data mirrors only if route evidence shows the Home v1 card is insufficient.
-3. **Optional Garmin modal polish:** refine workout-detail copy only if route evidence shows `vor Upload`/readback wording still confuses execution.
+1. **Optional Daily Delta echoes:** add compact Plan/Data mirrors only if route evidence shows the Home v1 card is insufficient.
+2. **Optional Garmin modal polish:** refine workout-detail copy only if route evidence shows `vor Upload`/readback wording still confuses execution.
+3. **Nutrition trend summaries:** only after more repeated fueling logs exist, summarize stable/learning trends and heat/sodium gaps without medical claims.
 
 ## Manual Gates
 

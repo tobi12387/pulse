@@ -76,6 +76,7 @@ import {
   loadRecentFuelingHistory,
 } from '../services/fueling-recovery-planned-workout.js';
 import { loadFuelingDebtSummary } from '../services/fueling-debt.js';
+import { loadFuelingOutcomeBaseline } from '../services/fueling-outcome-baseline.js';
 import {
   assignEquipmentToActivity,
   createEquipment,
@@ -2417,8 +2418,11 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const today = q.date && /^\d{4}-\d{2}-\d{2}$/.test(q.date)
       ? q.date
       : new Date().toISOString().split('T')[0]!;
-    const fuelingDebt = await loadFuelingDebtSummary(userId, today);
-    return { fuelingDebt };
+    const [fuelingDebt, outcomeBaseline] = await Promise.all([
+      loadFuelingDebtSummary(userId, today),
+      loadFuelingOutcomeBaseline(userId, today),
+    ]);
+    return { fuelingDebt, outcomeBaseline };
   });
 
   app.post('/nutrition', { onRequest: [app.authenticate] }, async (req, reply) => {

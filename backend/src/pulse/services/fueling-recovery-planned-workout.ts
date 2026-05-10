@@ -30,6 +30,7 @@ export async function loadRecentFuelingHistory(userId: string, plannedDate: stri
     drinksMl: pulseNutritionLogs.drinksMl,
     bottles750Ml: pulseNutritionLogs.bottles750Ml,
     powderG: pulseNutritionLogs.powderG,
+    sodiumMg: pulseNutritionLogs.sodiumMg,
     giComfort: pulseNutritionLogs.giComfort,
     notes: pulseNutritionLogs.notes,
   }).from(pulseNutritionLogs)
@@ -65,6 +66,7 @@ export async function loadRecentFuelingHistory(userId: string, plannedDate: stri
       drinksMl: log.drinksMl,
       bottles750Ml: log.bottles750Ml,
       powderG: log.powderG,
+      sodiumMg: log.sodiumMg,
       giComfort: log.giComfort,
       notes: log.notes,
     };
