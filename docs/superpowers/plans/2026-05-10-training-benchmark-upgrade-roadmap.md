@@ -22,11 +22,9 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
 
 ## Active Plan Order
 
-1. `2026-05-10-power-duration-durability.md`
-   - Adds WKO/Intervals-style performance depth after the data-quality foundation can prove whether a signal is stream-derived or only lap-approximated.
-2. `2026-05-10-season-atp-v2.md`
+1. `2026-05-10-season-atp-v2.md`
    - Upgrades season planning once workout/adaptation/load signals are stronger.
-3. `2026-05-10-strength-mobility-companion.md`
+2. `2026-05-10-strength-mobility-companion.md`
    - Adds concrete support sessions after the main endurance loop is more trustworthy.
 
 ## Completed In This Wave
@@ -41,6 +39,8 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
   - iPhone/PWA planning foundation: Home availability intents deep-link into an auto-computed Plan scenario preview with explicit Apply and Garmin-impact context.
 - `completed/2026-05-10-power-data-quality-foundation.md`
   - Power provenance foundation: `/training-analytics` reports stream/lap/unavailable quality and Data > Analysen shows whether power model claims are trusted, cautious or blocked without changing FTP/profile.
+- `completed/2026-05-10-power-duration-durability.md`
+  - Power-duration foundation: activity detail persists quality-gated best efforts and durability snapshots; Data > Analysen shows the compact summary and Plan can cite limited Durability as a goal limiter.
 
 ## Implementation Rule
 

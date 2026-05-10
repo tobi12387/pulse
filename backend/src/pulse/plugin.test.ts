@@ -12,6 +12,7 @@ import {
   pulseMentalCheckins,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
+  pulsePowerDurationSnapshots,
   pulsePushSubscriptions,
   pulseSleepSessions,
   pulseTrainingCapabilityLevels,
@@ -134,6 +135,7 @@ afterAll(async () => {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
     await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
     await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+    await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
     await db.delete(pulseActivityStreams);
     await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
     await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
@@ -154,6 +156,7 @@ beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
   await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
   await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
+  await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
   await db.delete(pulseActivityStreams);
   await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
   await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
@@ -1120,6 +1123,43 @@ describe('GET /api/pulse/activities/:id', () => {
     expect(body.hrZones).toEqual(legacyCache.hrZones);
     expect(garminMocks.get).not.toHaveBeenCalled();
   });
+
+  it('persists lap-approximated power-duration snapshots from cached detail laps', async () => {
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      externalId: '445566',
+      source: 'garmin',
+      startTime: new Date('2026-05-01T10:00:00.000Z'),
+      activityType: 'bike',
+      durationSec: 14_400,
+      garminLaps: [
+        { index: 1, durationSec: 3600, avgHr: 135, avgPowerW: 210 },
+        { index: 2, durationSec: 3600, avgHr: 136, avgPowerW: 208 },
+        { index: 3, durationSec: 3600, avgHr: 138, avgPowerW: 165 },
+        { index: 4, durationSec: 3600, avgHr: 139, avgPowerW: 164 },
+      ],
+    }).returning({ id: pulseActivities.id });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/activities/${activity!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const snapshots = await db.select().from(pulsePowerDurationSnapshots)
+      .where(eq(pulsePowerDurationSnapshots.activityId, activity!.id));
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0]).toMatchObject({
+      activityId: activity!.id,
+      qualitySource: 'lap_approximation',
+      qualityStatus: 'usable_with_caution',
+    });
+    expect(snapshots[0]!.bestEfforts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ durationSec: 300, source: 'lap_approximation' }),
+    ]));
+    expect(snapshots[0]!.durability).toMatchObject({ rating: 'limited' });
+  });
 });
 
 describe('GET /api/pulse/data-coverage', () => {
@@ -1269,6 +1309,64 @@ describe('GET /api/pulse/training-analytics', () => {
       source: 'stream',
       status: 'trusted',
       coveragePct: 100,
+    });
+  });
+
+  it('returns the latest power-duration summary with quality provenance', async () => {
+    const yesterday = dateDaysAgo(1);
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      startTime: new Date(`${yesterday}T08:00:00.000Z`),
+      activityType: 'bike',
+      durationSec: 14_400,
+      garminLaps: [
+        { index: 1, durationSec: 3600, avgHr: 135, avgPowerW: 210 },
+        { index: 2, durationSec: 3600, avgHr: 136, avgPowerW: 208 },
+      ],
+    }).returning({ id: pulseActivities.id });
+    await db.insert(pulsePowerDurationSnapshots).values({
+      userId,
+      activityId: activity!.id,
+      activityDate: yesterday,
+      bestEfforts: [
+        { durationSec: 300, avgPowerW: 220, startSec: 3600, source: 'lap_approximation' },
+        { durationSec: 1200, avgPowerW: 215, startSec: 3600, source: 'lap_approximation' },
+      ],
+      durability: {
+        rating: 'limited',
+        powerDropPct: -21,
+        hrDriftBpm: 3,
+        evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+      },
+      qualitySource: 'lap_approximation',
+      qualityStatus: 'usable_with_caution',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/training-analytics?weeks=4',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      powerDuration: {
+        bestEffortLine: string;
+        durabilityLine: string;
+        bestEfforts: Array<{ activityId: string; source: string; qualityStatus: string }>;
+        durability: { rating: string; qualitySource: string } | null;
+      };
+    }>();
+    expect(body.powerDuration.bestEffortLine).toContain('20 min 215 W');
+    expect(body.powerDuration.durabilityLine).toContain('Durability limited');
+    expect(body.powerDuration.bestEfforts[0]).toMatchObject({
+      activityId: activity!.id,
+      source: 'lap_approximation',
+      qualityStatus: 'usable_with_caution',
+    });
+    expect(body.powerDuration.durability).toMatchObject({
+      rating: 'limited',
+      qualitySource: 'lap_approximation',
     });
   });
 });

@@ -73,6 +73,8 @@ test('Data analysis shows power data provenance', async ({ page }) => {
   await expect(qualityCard).toContainText('Power-Daten');
   await expect(qualityCard).toContainText('Nur Lap-Approximation');
   await expect(qualityCard).toContainText('Keine 1Hz-Power-Streams');
+  await expect(page.getByTestId('power-duration-summary')).toContainText('20 min 215 W');
+  await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
 });
 
 test('primary navigation reaches every Pulse page', async ({ page }) => {

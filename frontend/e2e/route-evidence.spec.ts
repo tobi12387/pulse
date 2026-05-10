@@ -118,6 +118,7 @@ test.describe('Route evidence screenshot pack', () => {
             const qualityCard = page.getByTestId('power-data-quality');
             await expect(qualityCard).toBeVisible();
             await expect(qualityCard).toContainText('Nur Lap-Approximation');
+            await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
           }
         : undefined);
     }

@@ -7,7 +7,7 @@ import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { LucideIcon } from 'lucide-react';
-import type { PulseDailyDecisionQualityResponse, PulsePowerDataQualitySummary } from '@coaching-os/shared/pulse';
+import type { PulseDailyDecisionQualityResponse, PulsePowerDataQualitySummary, PulsePowerDurationSummary } from '@coaching-os/shared/pulse';
 
 type Domain = 'overall' | 'sleep' | 'hrv' | 'load' | 'weight' | 'mental';
 type EvidenceStatus = 'available' | 'limited' | 'missing';
@@ -277,6 +277,47 @@ function PowerDataQualityCard({
   );
 }
 
+function PowerDurationSummaryCard({ summary }: { summary: PulsePowerDurationSummary | null | undefined }) {
+  if (!summary) return null;
+  const durabilityColor = summary.durability?.rating === 'limited'
+    ? 'var(--rose)'
+    : summary.durability?.rating === 'watch'
+    ? 'var(--amber)'
+    : 'var(--green)';
+
+  return (
+    <section
+      className="card"
+      data-testid="power-duration-summary"
+      aria-label="Power und Durability"
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Power / Durability
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: durabilityColor }}>
+          {summary.durability ? `Durability ${summary.durability.rating}` : 'Best Efforts'}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 6 }}>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+            Best Effort
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0' }}>{summary.bestEffortLine}</p>
+        </div>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '7px 8px', background: 'var(--surface-2)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+            Durability
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '4px 0 0' }}>{summary.durabilityLine}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   const [expanded, setExpanded] = useState(false);
   const { data, isLoading, isFetching, error, refetch } = useDeepInsight(domain, days, expanded);
@@ -436,6 +477,7 @@ export function DataAnalysenTab() {
         quality={trainingAnalytics.data?.powerDataQuality}
         loading={trainingAnalytics.isLoading}
       />
+      <PowerDurationSummaryCard summary={trainingAnalytics.data?.powerDuration} />
       <DecisionQualityEvidenceCard quality={decisionQuality} testId="data-analysis-decision-quality-card" />
 
       {/* Domain cards */}

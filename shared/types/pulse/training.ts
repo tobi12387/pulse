@@ -53,12 +53,45 @@ export interface PulseTrainingCapabilitySummary {
   fitLegend: Record<PulseWorkoutFitLabel, string>;
 }
 
+export type PulsePowerDataQualitySource = 'stream' | 'lap_approximation' | 'unavailable';
+export type PulsePowerDataQualityStatus = 'trusted' | 'usable_with_caution' | 'blocked';
+export type PulseDurabilityRating = 'strong' | 'watch' | 'limited';
+
 export interface PulsePowerDataQualitySummary {
-  source: 'stream' | 'lap_approximation' | 'unavailable';
-  status: 'trusted' | 'usable_with_caution' | 'blocked';
+  source: PulsePowerDataQualitySource;
+  status: PulsePowerDataQualityStatus;
   coveragePct: number;
   spikeCount: number;
   limitations: string[];
+  updatedAt: string | null;
+}
+
+export interface PulsePowerDurationBestEffort {
+  durationSec: number;
+  avgPowerW: number;
+  startSec: number | null;
+  activityId: string;
+  activityDate: string;
+  source: Extract<PulsePowerDataQualitySource, 'stream' | 'lap_approximation'>;
+  qualityStatus: Extract<PulsePowerDataQualityStatus, 'trusted' | 'usable_with_caution'>;
+}
+
+export interface PulseDurabilitySummary {
+  rating: PulseDurabilityRating;
+  powerDropPct: number;
+  hrDriftBpm: number;
+  evidence: string[];
+  activityId: string;
+  activityDate: string;
+  qualitySource: Extract<PulsePowerDataQualitySource, 'stream' | 'lap_approximation'>;
+  qualityStatus: Extract<PulsePowerDataQualityStatus, 'trusted' | 'usable_with_caution'>;
+}
+
+export interface PulsePowerDurationSummary {
+  bestEfforts: PulsePowerDurationBestEffort[];
+  durability: PulseDurabilitySummary | null;
+  bestEffortLine: string;
+  durabilityLine: string;
   updatedAt: string | null;
 }
 
@@ -83,4 +116,5 @@ export interface PulseTrainingAnalyticsResponse {
   };
   capabilitySummary: PulseTrainingCapabilitySummary;
   powerDataQuality: PulsePowerDataQualitySummary;
+  powerDuration: PulsePowerDurationSummary | null;
 }

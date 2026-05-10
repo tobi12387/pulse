@@ -20,6 +20,7 @@ type MockPulseApiOptions = {
   garminSignalUsefulness?: unknown;
   garminExecutionLedger?: unknown;
   powerDataQuality?: unknown;
+  powerDuration?: unknown;
   adaptationEvents?: unknown;
   load?: unknown;
   planTrace?: unknown;
@@ -771,6 +772,30 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
         coveragePct: 0,
         spikeCount: 0,
         limitations: ['Keine 1Hz-Power-Streams im Pulse-Datensatz.'],
+        updatedAt: `${today}T06:00:00.000Z`,
+      },
+      powerDuration: options.powerDuration ?? {
+        bestEfforts: [{
+          durationSec: 1200,
+          avgPowerW: 215,
+          startSec: 3600,
+          activityId: 'activity-power-duration',
+          activityDate: today,
+          source: 'lap_approximation',
+          qualityStatus: 'usable_with_caution',
+        }],
+        durability: {
+          rating: 'limited',
+          powerDropPct: -21,
+          hrDriftBpm: 3,
+          evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+          activityId: 'activity-power-duration',
+          activityDate: today,
+          qualitySource: 'lap_approximation',
+          qualityStatus: 'usable_with_caution',
+        },
+        bestEffortLine: '20 min 215 W (Lap-Approximation)',
+        durabilityLine: 'Durability limited: Power -21% · HR +3 bpm · 240 min (Lap-Approximation)',
         updatedAt: `${today}T06:00:00.000Z`,
       },
     };

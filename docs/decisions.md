@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Power-Duration bleibt qualitaetsgegated und veraendert keine FTP-Werte
+
+- **Decision:** Pulse persistiert Power-Duration- und Durability-Snapshots nur aus vertrauenswuerdigen Streams oder vorsichtig markierten Lap-Approximationen. Data zeigt die kompakte Zusammenfassung, und Plan bekommt nur bei `limited` Durability einen Goal-Limiter; FTP-/Profilwerte bleiben unveraendert.
+- **Why:** Best Efforts und Durability sind wertvoll, aber ohne echte 1Hz-Streams oft nur approximiert. Die Qualitaetsquelle muss deshalb in jedem abgeleiteten Wert mitreisen, damit Pulse hilfreich wird, ohne WKO-/Intervals-Genauigkeit vorzutäuschen.
+- **Alternatives:** FTP automatisch aus Best Efforts ableiten (zu riskant und anderer Scope); Lap-Daten wie echte Streams behandeln (fachlich irrefuehrend); Home mit weiteren Power-Charts belasten (nicht alltagstauglich).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Power-Modellclaims brauchen zuerst Datenqualitaets-Provenienz
 
 - **Decision:** Pulse meldet in `/training-analytics` fuer Powerdaten zuerst `stream`, `lap_approximation` oder `unavailable` plus Status `trusted`, `usable_with_caution` oder `blocked`; Data > Analysen zeigt diese Provenienz sichtbar. FTP-/Profilwerte werden dadurch nicht automatisch veraendert.

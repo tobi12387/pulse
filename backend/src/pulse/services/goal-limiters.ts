@@ -36,6 +36,12 @@ export interface DeriveGoalLimiterInput {
   trainingCapabilities: PulseTrainingCapabilitySummary | null;
   recentActivities: GoalLimiterRecentActivity[];
   fuelingHistory: GoalLimiterFuelingHistory[];
+  durability?: {
+    rating: 'strong' | 'watch' | 'limited';
+    evidence: string[];
+    qualitySource: 'stream' | 'lap_approximation';
+    qualityStatus: 'trusted' | 'usable_with_caution';
+  } | null;
 }
 
 function capabilityLevel(summary: PulseTrainingCapabilitySummary | null, system: PulseTrainingEnergySystem): number | null {
@@ -103,6 +109,17 @@ export function deriveGoalLimiter(input: DeriveGoalLimiterInput): PulseGoalLimit
   const longestRecent = input.recentActivities.reduce((max, activity) => Math.max(max, activity.durationMin), 0);
   const hardRpe = input.recentActivities.some(activity => (activity.plannedZone ?? 0) >= 4 && (activity.rpe ?? 0) >= 8);
   const fuelingIssue = hasFuelingIssue(input.fuelingHistory);
+
+  if (input.durability?.rating === 'limited') {
+    return {
+      kind: 'durability',
+      label: 'Durability',
+      confidence: input.durability.qualitySource === 'stream' ? 'high' : 'medium',
+      evidence: [...input.durability.evidence, `Quelle: ${input.durability.qualitySource}`],
+      planBias: 'lange Ausdauer progressiv verlaengern und Spaetleistungsabfall reduzieren',
+      workoutFocus: ['long_endurance', 'endurance'],
+    };
+  }
 
   if (isLongEvent(goal) && ((longEndurance ?? 0) < 3.5 || fuelingIssue || longestRecent >= 180)) {
     const evidence = [

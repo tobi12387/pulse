@@ -69,6 +69,7 @@
 | `2026-05-10-workout-library-v2.md` | Workout Library v2 — 20 deterministic workout variants, scored selection, Garmin-safe steps and preserved archetypes through Plan/Today Options | Workout Library v2 PR |
 | `2026-05-10-mobile-plan-flow.md` | Mobile Plan Flow — Home availability intents, auto-computed Plan scenario preview and mobile route evidence for iPhone/PWA planning | Mobile Plan Flow PR |
 | `2026-05-10-power-data-quality-foundation.md` | Power Data Quality Foundation — stream/lap/unavailable provenance for training analytics with compact Data evidence before future durability claims | Power Data Quality PR |
+| `2026-05-10-power-duration-durability.md` | Power Duration/Durability — quality-gated best efforts, durability snapshots, Data summary and Plan durability limiter | Power Duration PR |
 
 ## Bekannte veraltete Stellen
 

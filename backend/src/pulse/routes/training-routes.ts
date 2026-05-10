@@ -15,6 +15,7 @@ import {
   pulseNutritionLogs,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
+  pulsePowerDurationSnapshots,
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeekAvailability,
@@ -87,6 +88,8 @@ import {
   updateStrengthSession,
 } from '../services/strength-equipment.js';
 
+type PowerDurationSnapshot = typeof pulsePowerDurationSnapshots.$inferSelect;
+
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
 
 const strengthSetSchema = z.object({
@@ -137,6 +140,84 @@ const equipmentAssignSchema = z.object({
 const equipmentDefaultSchema = z.object({
   equipmentId: z.string().uuid(),
 });
+
+function powerSnapshotDate(value: string | Date): string {
+  return value instanceof Date ? value.toISOString().split('T')[0]! : value;
+}
+
+async function loadLatestPowerDurationSnapshot(userId: string): Promise<PowerDurationSnapshot | null> {
+  const [snapshot] = await db.select()
+    .from(pulsePowerDurationSnapshots)
+    .where(eq(pulsePowerDurationSnapshots.userId, userId))
+    .orderBy(desc(pulsePowerDurationSnapshots.activityDate))
+    .limit(1);
+  return snapshot ?? null;
+}
+
+function isUsablePowerSource(value: string): value is 'stream' | 'lap_approximation' {
+  return value === 'stream' || value === 'lap_approximation';
+}
+
+function isUsablePowerStatus(value: string): value is 'trusted' | 'usable_with_caution' {
+  return value === 'trusted' || value === 'usable_with_caution';
+}
+
+function powerDurationSummary(snapshot: PowerDurationSnapshot | null) {
+  if (!snapshot || !isUsablePowerSource(snapshot.qualitySource) || !isUsablePowerStatus(snapshot.qualityStatus)) {
+    return null;
+  }
+
+  const activityDate = powerSnapshotDate(snapshot.activityDate);
+  const bestEfforts = (snapshot.bestEfforts ?? []).map(effort => ({
+    durationSec: effort.durationSec,
+    avgPowerW: effort.avgPowerW,
+    startSec: effort.startSec ?? null,
+    activityId: snapshot.activityId,
+    activityDate,
+    source: isUsablePowerSource(effort.source) ? effort.source : snapshot.qualitySource,
+    qualityStatus: snapshot.qualityStatus,
+  }));
+  const priorityEffort = bestEfforts.find(effort => effort.durationSec === 1200)
+    ?? bestEfforts.find(effort => effort.durationSec === 300)
+    ?? bestEfforts[0]
+    ?? null;
+  const durability = snapshot.durability
+    ? {
+        ...snapshot.durability,
+        activityId: snapshot.activityId,
+        activityDate,
+        qualitySource: snapshot.qualitySource,
+        qualityStatus: snapshot.qualityStatus,
+      }
+    : null;
+  const sourceLabel = snapshot.qualitySource === 'stream' ? '1Hz-Stream' : 'Lap-Approximation';
+  const bestEffortLine = priorityEffort
+    ? `${Math.round(priorityEffort.durationSec / 60)} min ${priorityEffort.avgPowerW} W (${sourceLabel})`
+    : `Keine Best-Efforts gespeichert (${sourceLabel})`;
+  const durabilityLine = durability
+    ? `Durability ${durability.rating}: ${durability.evidence.join(' · ')} (${sourceLabel})`
+    : `Durability noch nicht belastbar (${sourceLabel})`;
+
+  return {
+    bestEfforts,
+    durability,
+    bestEffortLine,
+    durabilityLine,
+    updatedAt: snapshot.createdAt.toISOString(),
+  };
+}
+
+function durabilityLimiterInput(snapshot: PowerDurationSnapshot | null) {
+  if (!snapshot?.durability || !isUsablePowerSource(snapshot.qualitySource) || !isUsablePowerStatus(snapshot.qualityStatus)) {
+    return null;
+  }
+  return {
+    rating: snapshot.durability.rating,
+    evidence: snapshot.durability.evidence,
+    qualitySource: snapshot.qualitySource,
+    qualityStatus: snapshot.qualityStatus,
+  };
+}
 
 const isoDateSchema = z.string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -989,11 +1070,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
       return null;
     });
+    const latestPowerDuration = await loadLatestPowerDurationSnapshot(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Power duration snapshot failed (non-fatal): ${err}`);
+      return null;
+    });
     const goalLimiter = deriveGoalLimiter({
       goals: planGoals,
       trainingCapabilities: capabilitySummary,
       recentActivities: recentPlanActivities,
       fuelingHistory,
+      durability: durabilityLimiterInput(latestPowerDuration),
     });
     const mesocycleWeek = getMesocycleWeek(weekStartStr);
     const planDecision = decidePlanDays({
@@ -1669,11 +1755,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       app.log.warn(`[plan] Training capability summary failed (non-fatal): ${err}`);
       return null;
     });
+    const latestPowerDuration2 = await loadLatestPowerDurationSnapshot(userId).catch((err: unknown) => {
+      app.log.warn(`[plan] Power duration snapshot failed (non-fatal): ${err}`);
+      return null;
+    });
     const goalLimiter2 = deriveGoalLimiter({
       goals: planGoals2,
       trainingCapabilities: capabilitySummary2,
       recentActivities: recentPlanActivities2,
       fuelingHistory: fuelingHistory2,
+      durability: durabilityLimiterInput(latestPowerDuration2),
     });
     const mesocycleWeek2 = getMesocycleWeek(weekStart);
     const planDecision2 = decidePlanDays({
@@ -2228,7 +2319,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since = new Date(Date.now() - weeks * 7 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
 
-    const [activities, profileRows, capabilitySummary] = await Promise.all([
+    const [activities, profileRows, capabilitySummary, latestPowerSnapshot] = await Promise.all([
       db.select({
         id:               pulseActivities.id,
         startTime:        pulseActivities.startTime,
@@ -2245,6 +2336,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       db.select({ ftpWatts: pulseUserProfile.ftpWatts })
         .from(pulseUserProfile).where(eq(pulseUserProfile.userId, userId)).limit(1),
       loadTrainingCapabilitySummary(userId, { lookbackDays: Math.max(42, weeks * 7) }),
+      loadLatestPowerDurationSnapshot(userId),
     ]);
 
     const ftp = profileRows[0]?.ftpWatts ?? null;
@@ -2401,7 +2493,16 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     });
     const totalRated = [...recentRpe.values()].reduce((sum, z) => sum + z.count, 0);
 
-    return { weeks, tssHeatmap, zoneDistribution, vo2maxTrend, rpeByZone: { totalRated, zones: rpeByZone }, capabilitySummary, powerDataQuality };
+    return {
+      weeks,
+      tssHeatmap,
+      zoneDistribution,
+      vo2maxTrend,
+      rpeByZone: { totalRated, zones: rpeByZone },
+      capabilitySummary,
+      powerDataQuality,
+      powerDuration: powerDurationSummary(latestPowerSnapshot),
+    };
   });
 
   app.get('/training-capabilities', { onRequest: [app.authenticate] }, async (req) => {
