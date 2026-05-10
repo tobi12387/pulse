@@ -5,6 +5,7 @@ import type {
   PulseAdaptationEventKind,
   PulseAdaptationRecommendation,
   PulseActivityType,
+  PulseFuelingDebtSummary,
 } from '@coaching-os/shared/pulse';
 import {
   pulseActivities,
@@ -17,6 +18,7 @@ import {
 } from '../../db/pulse-schema.js';
 import { computeFitnessLoad, computeReadinessScore } from './load-engine.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from './workout-reconciliation.js';
+import { loadFuelingDebtSummary, summarizeFuelingDebt } from './fueling-debt.js';
 
 interface ClassifierActivity {
   id: string;
@@ -43,6 +45,7 @@ export interface ClassifyAdaptationEventsInput {
   readinessScore: number;
   tsb: number;
   fuelingHistory: ClassifierFuelingLog[];
+  fuelingDebt?: PulseFuelingDebtSummary | null;
   syncDebtCount: number;
 }
 
@@ -80,7 +83,10 @@ export function classifyAdaptationEvents(input: ClassifyAdaptationEventsInput): 
     activity.durationMin >= 240 || (activity.tss ?? 0) >= 250
   );
   const highRpe = input.completedActivities.find(activity => (activity.rpe ?? 0) >= 8);
-  const giLog = input.fuelingHistory.find(hasGiIssue);
+  const fuelingDebt = input.fuelingDebt ?? summarizeFuelingDebt({ today: input.today, logs: input.fuelingHistory });
+  const giLog = fuelingDebt.hasOpenDebt
+    ? input.fuelingHistory.find(log => log.date === fuelingDebt.openIssueDate && hasGiIssue(log)) ?? input.fuelingHistory.find(hasGiIssue)
+    : null;
 
   if (longCompleted) {
     events.push(adaptationEvent({
@@ -105,10 +111,11 @@ export function classifyAdaptationEvents(input: ClassifyAdaptationEventsInput): 
       sourceId: giLog.date,
       severity: 'watch',
       recommendation: 'reduce_volume',
-      summary: 'Fueling-Vertraeglichkeit begrenzt die naechste lange Einheit.',
+      summary: fuelingDebt.summary,
       evidence: [
         `GI-Komfort ${giLog.giComfort}`,
         giLog.carbsG != null ? `${giLog.carbsG} g Carbs` : 'Carbs nicht geloggt',
+        fuelingDebt.closureCondition,
       ],
     }));
   }
@@ -297,6 +304,7 @@ export async function refreshAdaptationEventsForUser(
     [mental],
     [metrics],
     fuelingHistory,
+    fuelingDebt,
     syncDebt,
     fitnessLoad,
   ] = await Promise.all([
@@ -371,6 +379,7 @@ export async function refreshAdaptationEventsForUser(
       .where(and(eq(pulseNutritionLogs.userId, userId), gte(pulseNutritionLogs.date, recentSince)))
       .orderBy(desc(pulseNutritionLogs.date))
       .limit(12),
+    loadFuelingDebtSummary(userId, today).catch(() => null),
     db.select({ id: pulseGarminExecutionLedger.id }).from(pulseGarminExecutionLedger)
       .where(and(
         eq(pulseGarminExecutionLedger.userId, userId),
@@ -426,6 +435,7 @@ export async function refreshAdaptationEventsForUser(
     readinessScore: readiness.score,
     tsb: fitnessLoad.tsb,
     fuelingHistory: fuelingHistory.map(log => ({ ...log, durationMin: null })),
+    fuelingDebt,
     syncDebtCount: syncDebt.length,
   });
 

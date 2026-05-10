@@ -711,6 +711,49 @@ describe('generateScientificWeekPlan', () => {
     expect(workouts.map(workout => workout.description).join(' ')).toContain('Fueling-Toleranz');
   });
 
+  it('releases the GI fueling blocker after a controlled tolerated follow-up', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-18',
+      phase: 'build',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 42,
+      atl: 36,
+      tsb: 6,
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'FTP: 280 W', targetDate: '2026-08-01', category: 'ftp' }],
+      fuelingHistory: [
+        {
+          date: '2026-05-12',
+          context: 'during',
+          activityType: 'bike',
+          durationMin: 105,
+          carbsG: 85,
+          bottles750Ml: 2,
+          powderG: 80,
+          giComfort: 'ok',
+          notes: 'Kontrollierte Fueling-Praxis, Magen ok.',
+        },
+        {
+          date: '2026-05-09',
+          context: 'during',
+          activityType: 'bike',
+          durationMin: 430,
+          carbsG: 300,
+          bottles750Ml: 4,
+          powderG: 300,
+          giComfort: 'mild_issue',
+          notes: 'Nach 100 km Magenprobleme.',
+        },
+      ],
+    });
+
+    expect(workouts.some(workout => workout.zone >= 3)).toBe(true);
+    expect(workouts.map(workout => workout.description).join(' ')).not.toContain('Schließen: 75-120 min locker');
+  });
+
   it('uses a mental protect state to shift non-race hard workouts to endurance or recovery', async () => {
     const input = {
       weekStart: '2026-05-11',

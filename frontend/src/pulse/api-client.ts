@@ -11,7 +11,7 @@ import type {
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
-  PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
+  PulseFuelingDebtSummary, PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
   PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
   PulseGarminExecutionDiffResponse,
 } from '@coaching-os/shared/pulse';
@@ -98,6 +98,8 @@ export const pulseApi = {
   fuelingRecovery: {
     guidance: (workoutId: string): Promise<PulseFuelingRecoveryGuidanceResponse> =>
       request(`/fueling-recovery/guidance?workoutId=${encodeURIComponent(workoutId)}`),
+    debt: (): Promise<{ fuelingDebt: PulseFuelingDebtSummary }> =>
+      request('/fueling/debt'),
   },
 
   coach: {

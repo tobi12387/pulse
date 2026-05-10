@@ -119,6 +119,36 @@ export function TodayOptionsCard({
           <p style={{ margin: 0, fontSize: variant === 'compact' ? 12 : 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
             {data.summary}
           </p>
+          {data.fuelingDebt?.hasOpenDebt && (
+            <div
+              data-testid="today-options-fueling-debt"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+                marginTop: 8,
+                alignItems: 'center',
+              }}
+            >
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                fontWeight: 700,
+                color: 'var(--amber)',
+                border: '1px solid rgba(251,191,36,0.34)',
+                borderRadius: 4,
+                background: 'rgba(251,191,36,0.08)',
+                padding: '3px 5px',
+              }}>
+                {data.fuelingDebt.label}
+              </span>
+              {variant === 'full' && (
+                <span style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>
+                  {data.fuelingDebt.closureCondition}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <button
           type="button"

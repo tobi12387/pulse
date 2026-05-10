@@ -1,5 +1,6 @@
 import type {
   PulseActivityType,
+  PulseFuelingDebtSummary,
   PulseTodayOption,
   PulseTodayOptionSignalLabel,
   PulseTodayOptionsResponse,
@@ -34,7 +35,7 @@ export interface TodayOptionsInput {
   recentSportMix: RecentSportMix;
   riskSignals: Array<{ severity: 'info' | 'warn' | 'critical' | string; title: string }>;
   mental: { mood: number; energy: number; stress: number; motivation: number } | null;
-  fueling: { recentGiIssue: boolean; loggedToday: boolean };
+  fueling: { recentGiIssue: boolean; loggedToday: boolean; debtSummary?: PulseFuelingDebtSummary | null };
   goals?: { activeCount: number; preferredSports: PulseActivityType[] };
   capabilitySummary: PulseTrainingCapabilitySummary | null;
 }
@@ -57,7 +58,7 @@ function highRecoveryRisk(input: TodayOptionsInput): boolean {
     || input.tsb <= -10
     || input.riskSignals.some(signal => signal.severity === 'critical' || signal.severity === 'warn')
     || (input.mental != null && input.mental.energy <= 3 && input.mental.stress >= 7)
-    || (input.fueling.recentGiIssue && (input.plannedToday?.zone ?? 0) >= 4)
+    || (hasOpenFuelingDebt(input) && (input.plannedToday?.zone ?? 0) >= 4)
     || (input.capabilitySummary?.signals.includes('protect_recovery') ?? false)
     || input.plannedToday?.capabilityFit === 'too_hard_today';
 }
@@ -66,8 +67,12 @@ function mentalProtectActive(input: TodayOptionsInput): boolean {
   return input.mental != null && input.mental.energy <= 3 && input.mental.stress >= 7;
 }
 
+function hasOpenFuelingDebt(input: TodayOptionsInput): boolean {
+  return input.fueling.debtSummary?.hasOpenDebt ?? input.fueling.recentGiIssue;
+}
+
 function fuelingProtectActive(input: TodayOptionsInput): boolean {
-  return input.fueling.recentGiIssue && (input.plannedToday?.zone ?? 0) >= 4;
+  return hasOpenFuelingDebt(input) && (input.plannedToday?.zone ?? 0) >= 4;
 }
 
 function compactSignals(
@@ -133,8 +138,10 @@ function baseEvidence(input: TodayOptionsInput): string[] {
   if (input.mental) {
     evidence.push(`Mental: Energie ${input.mental.energy}/10, Stress ${input.mental.stress}/10`);
   }
-  if (input.fueling.recentGiIssue) {
-    evidence.push('Fueling: letzte Einheit mit GI-Hinweis');
+  if (hasOpenFuelingDebt(input)) {
+    evidence.push(input.fueling.debtSummary?.label
+      ? `Fueling: ${input.fueling.debtSummary.label}`
+      : 'Fueling: letzte Einheit mit GI-Hinweis');
   }
   return evidence;
 }
@@ -201,7 +208,7 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
   const detail = capabilityFit === 'productive'
     ? `${durationMin} min Z2 als produktiver aerober Reiz. Sinnvoll, weil aktuelle Endurance-Evidenz einen kleinen Fortschritt erlaubt, ohne den Plan vollzustopfen.`
     : `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`;
-  const archetypeId = activityType === 'bike' && input.fueling.recentGiIssue && durationMin >= 150
+  const archetypeId = activityType === 'bike' && hasOpenFuelingDebt(input) && durationMin >= 150
     ? 'long_endurance_fueling_practice'
     : activityType === 'bike'
     ? 'endurance_cadence'
@@ -262,12 +269,17 @@ function restOption(input: TodayOptionsInput, priority: PulseTodayOption['priori
     ...baseEvidence(input),
     ...riskEvidence(input),
   ];
+  const debtClosure = input.fueling.debtSummary?.hasOpenDebt ? input.fueling.debtSummary.closureCondition : null;
   return {
     id: 'rest-protect-recovery',
     kind: 'rest',
     priority,
     title: priority === 'primary' ? 'Heute bewusst pausieren' : 'Bewusst frei lassen',
-    detail: priority === 'primary'
+    detail: debtClosure
+      ? priority === 'primary'
+        ? `Erholung ist heute die bessere Trainingsentscheidung. Fueling wieder freigeben: ${debtClosure}`
+        : `Wenn du heute ausweichst: ${debtClosure}`
+      : priority === 'primary'
       ? 'Erholung ist heute die bessere Trainingsentscheidung. Keine Intensität nachschieben.'
       : 'Wenn Training nur aus Gewohnheit entsteht, ist ein sauber geschlossener Ruhetag wertvoller.',
     cta: 'Tagesentscheidung prüfen',
@@ -319,7 +331,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
         ...evidence,
         input.fueling.loggedToday ? 'Fueling heute bereits geloggt' : 'Fueling heute noch offen',
       ],
-      signalLabels: compactSignals(input, { fueling: !input.fueling.loggedToday || input.fueling.recentGiIssue }),
+      signalLabels: compactSignals(input, { fueling: !input.fueling.loggedToday || hasOpenFuelingDebt(input) }),
     },
     {
       id: 'recovery-after-activity',
@@ -342,6 +354,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
       : `${activityLine} abgeschlossen. Pulse priorisiert jetzt Feedback, Fueling und Regeneration statt weiterer Trainingsvorschläge.`,
     options,
     signature: signature(input, options),
+    fuelingDebt: input.fueling.debtSummary ?? null,
   };
 }
 
@@ -379,13 +392,15 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
       kind: 'fueling',
       priority: 'support',
       title: 'Versorgung und Schlaf schließen',
-      detail: input.fueling.recentGiIssue
+      detail: input.fueling.debtSummary?.hasOpenDebt
+        ? input.fueling.debtSummary.closureCondition
+        : hasOpenFuelingDebt(input)
         ? 'Magenhinweis berücksichtigen: heute simpel essen/trinken und keine harte Einheit erzwingen.'
         : 'Heute Versorgung, Hydration und Schlaf absichern, damit morgen wieder entschieden werden kann.',
       cta: 'Daten ansehen',
       targetPath: '/data#data-recovery',
       evidence: baseEvidence(input),
-      signalLabels: compactSignals(input, { fueling: input.fueling.recentGiIssue, recovery: true }),
+      signalLabels: compactSignals(input, { fueling: hasOpenFuelingDebt(input), recovery: true }),
     },
   ];
   return {
@@ -394,6 +409,7 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
     summary: 'Heute spricht die Evidenz fuer Erholung. Rest ist hier eine aktive Trainingsentscheidung.',
     options,
     signature: signature(input, options),
+    fuelingDebt: input.fueling.debtSummary ?? null,
   };
 }
 
@@ -452,6 +468,7 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
     summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
     options,
     signature: signature(input, options),
+    fuelingDebt: input.fueling.debtSummary ?? null,
   };
 }
 
@@ -467,6 +484,7 @@ function unplannedTrainableOptions(input: TodayOptionsInput): PulseTodayOptionsR
     summary: 'Kein Pflichttraining heute. Wenn du trainierst, dann gezielt und ohne den Tag automatisch zu fuellen.',
     options,
     signature: signature(input, options),
+    fuelingDebt: input.fueling.debtSummary ?? null,
   };
 }
 

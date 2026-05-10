@@ -578,6 +578,18 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   let createdLog: unknown = null;
   await mockPulseApi(page, {
     nutritionLogs: [],
+    fuelingDebt: {
+      status: 'open_gi_issue',
+      hasOpenDebt: true,
+      label: 'GI-Schutz offen',
+      summary: 'GI-/Magenhinweis vom 2026-04-29 ist noch nicht durch eine kontrollierte Folgeeinheit geschlossen.',
+      closureCondition: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+      evidence: ['GI-Hinweis: 2026-04-29'],
+      openIssueDate: '2026-04-29',
+      controlledWorkoutId: null,
+      followUpActivityId: null,
+      updatedAt: '2026-05-01T08:00:00.000Z',
+    },
     onNutritionCreate: body => {
       createdLog = body;
     },
@@ -615,6 +627,8 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   });
 
   await page.goto('/activity/activity-fueling');
+  await expect(page.getByTestId('activity-fueling-debt')).toContainText('GI-Schutz offen');
+  await expect(page.getByTestId('activity-fueling-debt')).toContainText('75-120 min locker');
   await page.getByRole('button', { name: '+ Fueling-Log' }).click();
 
   await expect(page.getByText('750-ml-Flaschen')).toBeVisible();

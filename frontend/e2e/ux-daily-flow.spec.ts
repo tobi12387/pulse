@@ -39,12 +39,24 @@ test('Today options show compact signal labels for the strongest reason', async 
         state: 'recovery_protect',
         summary: 'Fueling-Schutz ist heute wichtiger als Intensität.',
         signature: 'fueling-protect-label',
+        fuelingDebt: {
+          status: 'open_gi_issue',
+          hasOpenDebt: true,
+          label: 'GI-Schutz offen',
+          summary: 'GI-/Magenhinweis ist noch offen.',
+          closureCondition: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+          evidence: ['GI-Hinweis: 2026-04-29'],
+          openIssueDate: '2026-04-29',
+          controlledWorkoutId: null,
+          followUpActivityId: null,
+          updatedAt: '2026-05-01T08:00:00.000Z',
+        },
         options: [{
           id: 'rest-fueling-protect',
           kind: 'rest',
           priority: 'primary',
           title: 'Heute bewusst pausieren',
-          detail: 'Magenhinweis berücksichtigen und keine harte Einheit erzwingen.',
+          detail: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
           cta: 'Tagesentscheidung prüfen',
           targetPath: '/',
           evidence: ['Fueling: letzte Einheit mit GI-Hinweis'],
@@ -69,9 +81,10 @@ test('Today options show compact signal labels for the strongest reason', async 
 
   await page.goto('/plan');
   const todayOptions = page.getByTestId('today-options-card-full');
+  await expect(page.getByTestId('today-options-fueling-debt')).toContainText('GI-Schutz offen');
   await expect(todayOptions).toContainText('Fueling schützen');
   await expect(todayOptions).toContainText('Recovery');
-  await expect(todayOptions).toContainText('Magenhinweis berücksichtigen');
+  await expect(todayOptions).toContainText('75-120 min locker');
 });
 
 test('Plan renders completed planned workout today options as a closed decision', async ({ page }) => {

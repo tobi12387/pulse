@@ -80,7 +80,7 @@ describe('buildFuelingRecoveryGuidance', () => {
 
   it('uses prior GI and bottle logs to shape the next long-ride fueling guidance', () => {
     const guidance = buildFuelingRecoveryGuidance({
-      workout: workout({ durationMin: 240, zone: 2, targetTss: 196 }),
+      workout: workout({ plannedDate: '2026-05-12', durationMin: 240, zone: 2, targetTss: 196 }),
       preferences,
       profile: { weightKg: 80 },
       fuelingHistory: [{
@@ -105,6 +105,11 @@ describe('buildFuelingRecoveryGuidance', () => {
       label: 'Fueling-Toleranz',
       status: 'caution',
     }));
+    expect(guidance.fuelingDebt).toMatchObject({
+      status: 'controlled_practice_planned',
+      hasOpenDebt: true,
+    });
+    expect(guidance.fuelingDebt.closureCondition).toContain('Magen ok');
   });
 
   it('treats GI discomfort at low carb intake as timing and distribution learning instead of lowering carbs', () => {

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Fueling-Schutz wird als explizite Debt Closure modelliert
+
+- **Decision:** Pulse fuehrt fuer GI-/Fueling-Schutz einen expliziten `PulseFuelingDebtSummary` mit den Zustaenden `open_gi_issue`, `controlled_practice_planned`, `tolerated_follow_up` und `resolved`. Plan-Engine, Today Options, Adaptation Events und Activity-Fueling-UI nutzen diesen Status statt eines rohen `recentGiIssue`-Booleans.
+- **Why:** Ein alter GI-Hinweis darf harte oder lange Einheiten nicht dauerhaft blockieren, wenn eine kontrollierte Folgeeinheit mit `Magen ok` geloggt wurde. Gleichzeitig muss Tobi unmittelbar sehen, welche konkrete Folgeaktion den Schutz wieder schliesst.
+- **Alternatives:** Nur `recentGiIssue` kuerzer betrachten (willkuerlich und nicht fachlich geschlossen); neues DB-Feld fuer resolved-by einfuehren (nicht noetig fuer v1, vorhandene Logs reichen); nur UI-Hilfetext ergaenzen (behebt die Planlogik nicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Today Options bekommen kompakte Signal-Labels
 
 - **Decision:** Today Options tragen optionale `signalLabels` im Shared Contract und zeigen pro Option kompakte Gründe wie `Produktiv`, `Recovery`, `Fueling schützen` oder `Mental schützen`. Das stärkste Schutzsignal wird vor produktiven oder generischen Recovery-Hinweisen angezeigt.

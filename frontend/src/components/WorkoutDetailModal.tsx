@@ -458,6 +458,21 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                   BEREIT
                 </span>
               </div>
+              {fuelingGuidance.data.fuelingDebt.hasOpenDebt && (
+                <div data-testid="workout-fueling-debt" style={{
+                  padding: 8,
+                  border: '1px solid rgba(251,191,36,0.34)',
+                  borderRadius: 4,
+                  background: 'rgba(251,191,36,0.06)',
+                }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: 'var(--amber)', marginBottom: 4 }}>
+                    {fuelingGuidance.data.fuelingDebt.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                    {fuelingGuidance.data.fuelingDebt.closureCondition}
+                  </div>
+                </div>
+              )}
               {fuelingGuidance.data.recoveryCautions.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {fuelingGuidance.data.recoveryCautions.map((caution, index) => (

@@ -137,6 +137,47 @@ describe('buildTodayOptions', () => {
     ]);
   });
 
+  it('shows the closure condition when a GI fueling debt is open', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 82,
+      tsb: 4,
+      plannedToday: {
+        id: 'vo2-bike',
+        activityType: 'bike',
+        zone: 5,
+        durationMin: 55,
+        targetTss: 92,
+        capabilityFit: 'productive',
+      },
+      completedTodayActivities: [],
+      recentSportMix: { bike: 2, run: 1 },
+      riskSignals: [],
+      mental: { mood: 8, energy: 8, stress: 2, motivation: 8 },
+      fueling: {
+        recentGiIssue: true,
+        loggedToday: false,
+        debtSummary: {
+          status: 'open_gi_issue',
+          hasOpenDebt: true,
+          label: 'GI-Schutz offen',
+          summary: 'GI-Hinweis offen.',
+          closureCondition: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+          evidence: ['GI-Hinweis: 2026-05-08'],
+          openIssueDate: '2026-05-08',
+          controlledWorkoutId: null,
+          followUpActivityId: null,
+          updatedAt: '2026-05-09T06:00:00.000Z',
+        },
+      },
+      capabilitySummary: null,
+    });
+
+    expect(result.state).toBe('recovery_protect');
+    expect(result.options[0]?.detail).toContain('Schließen: 75-120 min locker');
+    expect(result.options[0]?.evidence).toContain('Fueling: GI-Schutz offen');
+  });
+
   it('returns stable explainable workout options on unplanned trainable days', () => {
     const input = {
       date: '2026-05-09',
@@ -231,6 +272,46 @@ describe('buildTodayOptions', () => {
       kind: 'fueling_protect',
       label: 'Fueling schützen',
     });
+  });
+
+  it('does not block a planned workout when the fueling debt is resolved', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 82,
+      tsb: 4,
+      plannedToday: {
+        id: 'tempo-bike',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 55,
+        targetTss: 82,
+        capabilityFit: 'productive',
+      },
+      completedTodayActivities: [],
+      recentSportMix: { bike: 2, run: 1 },
+      riskSignals: [],
+      mental: { mood: 8, energy: 8, stress: 2, motivation: 8 },
+      fueling: {
+        recentGiIssue: true,
+        loggedToday: true,
+        debtSummary: {
+          status: 'tolerated_follow_up',
+          hasOpenDebt: false,
+          label: 'Toleranz bestätigt',
+          summary: 'GI-Hinweis geschlossen.',
+          closureCondition: 'Blocker geschlossen.',
+          evidence: ['Follow-up ok'],
+          openIssueDate: '2026-05-06',
+          controlledWorkoutId: null,
+          followUpActivityId: 'activity-ok',
+          updatedAt: '2026-05-09T06:00:00.000Z',
+        },
+      },
+      capabilitySummary: capabilitySummary({ energySystem: 'tempo', label: 'Tempo', level: 3.2, nextRecommendedWorkoutLevel: 3.4 }),
+    });
+
+    expect(result.state).toBe('planned_workout');
+    expect(result.options[0]?.title).toBe('Plan ausführen: Rad');
   });
 
   it('does not turn a short GI-aware spontaneous option into long fueling practice', () => {

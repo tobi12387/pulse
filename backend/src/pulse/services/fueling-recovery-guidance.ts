@@ -15,6 +15,7 @@ import {
   buildMnstryPreWorkoutProductText,
   buildMnstrySodiumProductText,
 } from './fueling-products.js';
+import { summarizeFuelingDebt } from './fueling-debt.js';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 
@@ -371,6 +372,19 @@ function buildAfter(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: bo
 
 export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidanceInput): FuelingRecoveryGuidance {
   const { workout, preferences, recovery, race } = input;
+  const fuelingDebt = summarizeFuelingDebt({
+    today: workout.plannedDate,
+    logs: input.fuelingHistory ?? [],
+    plannedWorkouts: [{
+      id: workout.id ?? 'planned-workout',
+      plannedDate: workout.plannedDate,
+      activityType: workout.activityType,
+      zone: workout.zone,
+      durationMin: workout.durationMin,
+      description: workout.description ?? null,
+      status: 'planned',
+    }],
+  });
   const fuelingTolerance = summarizeFuelingTolerance(input.fuelingHistory);
   const evidence: FuelingRecoveryEvidence[] = [{
     label: 'Workout',
@@ -392,6 +406,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
     return {
       shouldShow: false,
       preferenceStatus: 'disabled',
+      fuelingDebt,
       before: [],
       during: [],
       after: [],
@@ -406,6 +421,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
     return {
       shouldShow: false,
       preferenceStatus: 'ready',
+      fuelingDebt,
       before: [],
       during: [],
       after: [],
@@ -429,6 +445,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
   return {
     shouldShow: true,
     preferenceStatus: 'ready',
+    fuelingDebt,
     before,
     during,
     after,
