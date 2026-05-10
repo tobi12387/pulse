@@ -107,6 +107,32 @@ describe('buildFuelingRecoveryGuidance', () => {
     }));
   });
 
+  it('treats GI discomfort at low carb intake as timing and distribution learning instead of lowering carbs', () => {
+    const guidance = buildFuelingRecoveryGuidance({
+      workout: workout({ durationMin: 240, zone: 2, targetTss: 196 }),
+      preferences,
+      profile: { weightKg: 80 },
+      fuelingHistory: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 430,
+        carbsG: 300,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'mild_issue',
+        notes: 'Nach 100 km etwas Magenprobleme; Mars half nach ein paar Minuten.',
+      }],
+    });
+
+    const during = guidance.during.map(item => item.text).join(' ');
+    expect(during).toContain('nicht pauschal senken');
+    expect(during).toContain('50-70 g/h');
+    expect(during).toContain('früher und gleichmäßiger');
+    expect(during).toContain('Mars-Hinweis');
+    expect(during).not.toContain('unterer bis mittlerer Range starten');
+  });
+
   it('calibrates Ministry anchors to Tobi confirmed MNSTRY products without treating BICARB as an everyday gel', () => {
     const guidance = buildFuelingRecoveryGuidance({
       workout: workout({ durationMin: 180, zone: 3, targetTss: 145 }),

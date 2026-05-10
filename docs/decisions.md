@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Fueling-Toleranz unterscheidet niedrige Zufuhr von Überlastung
+
+- **Decision:** GI-/Magenprobleme bei niedriger Carb-Zufuhr unter 50 g/h werden nicht mehr pauschal als Signal für weniger Carbs interpretiert. Pulse empfiehlt dann früheres, gleichmäßigeres Fueling und einen kontrollierten 50-70-g/h-Schritt, besonders wenn ein später Snack wie Mars geholfen hat.
+- **Why:** Tobis 155-km-Log spricht eher für Timing, Verteilung oder niedrige Energiezufuhr als für zu aggressive Carb-Mengen. Alltagsnutzen entsteht nur, wenn Pulse solche Logdetails fachlich differenziert statt jede GI-Notiz gleich zu behandeln.
+- **Alternatives:** Jede GI-Notiz auf untere Range senken (zu grob); sofort aggressiv 90 g/h empfehlen (zu riskant); Mars als Standardprodukt empfehlen (nicht gewünscht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Garmin-Resync-Fehler behalten lokalen Sync-Vertrag
 
 - **Decision:** Wenn eine Prescription-Änderung wie Sportart, Zone oder Dauer neue Workout-Details erzeugt, bleibt der frisch berechnete Garmin-Sync-Vertrag erhalten, auch wenn der anschließende Garmin-Reupload fehlschlägt.
