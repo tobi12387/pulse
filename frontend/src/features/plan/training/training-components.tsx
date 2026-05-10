@@ -1,16 +1,13 @@
 import { useState } from 'react';
 import { useUpdateWorkout } from '@/pulse/hooks';
+import { ACTIVITY_LABEL, activityLabel } from '@/pulse/activity-labels';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
 
 type PlannedWorkout = PulsePlannedWorkout;
 
 export const DAY_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-
-export const ACTIVITY_LABEL: Record<string, string> = {
-  run: 'Laufen', bike: 'Radfahren', swim: 'Schwimmen',
-  strength: 'Kraft', hike: 'Wandern', other: 'Sonstiges',
-};
+export { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 
 const ACTIVITY_TYPES = ['run', 'bike', 'swim', 'strength', 'hike', 'other'] as const;
 
@@ -174,7 +171,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
               <div style={{ marginTop: 6, fontSize: 10, color: zone === 0 ? 'var(--text-3)' : 'var(--text)', lineHeight: 1.3,
                 textDecoration: isSkipped ? 'line-through' : 'none',
               }}>
-                {workout ? workout.activityType : <span style={{ color: 'var(--text-3)' }}>–</span>}
+                {workout ? activityLabel(workout.activityType) : <span style={{ color: 'var(--text-3)' }}>–</span>}
               </div>
 
               {workout && zone > 0 && (

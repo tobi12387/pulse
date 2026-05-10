@@ -2,6 +2,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTodayProposal, useAcceptTodayAdjustment } from '@/pulse/hooks';
 import type { AdjustProposal } from '@/pulse/api-client';
+import { activityLabel } from '@/pulse/activity-labels';
 
 const REASON_LABEL: Record<AdjustProposal['reason'], string> = {
   low_readiness: 'Tagesform niedrig',
@@ -11,17 +12,9 @@ const REASON_LABEL: Record<AdjustProposal['reason'], string> = {
   travel:        'Reise',
 };
 
-const SPORT_LABEL: Record<string, string> = {
-  bike:     'Bike',
-  run:      'Run',
-  swim:     'Swim',
-  strength: 'Strength',
-  hike:     'Hike',
-};
-
 function workoutLine(w: { activityType: string; zone: number; durationMin: number }): string {
   if (w.durationMin === 0) return 'Ruhetag';
-  return `${SPORT_LABEL[w.activityType] ?? w.activityType} · Z${w.zone} · ${w.durationMin}min`;
+  return `${activityLabel(w.activityType)} · Z${w.zone} · ${w.durationMin}min`;
 }
 
 const DISMISSED_ADJUSTMENT_KEY = 'pulse-today-adjust-dismissed-signature';

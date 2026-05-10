@@ -11,6 +11,7 @@ import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
+import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import type { PulseActionState, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
@@ -1037,7 +1038,7 @@ export default function Home() {
               {new Date(nw.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
             </span>
           </div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{nw.activityType}</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{activityLabel(nw.activityType)}</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', marginTop: 3 }}>
             Zone {nw.zone} · {nw.durationMin} min{nw.targetTss ? ` · TSS ${nw.targetTss}` : ''}
           </div>

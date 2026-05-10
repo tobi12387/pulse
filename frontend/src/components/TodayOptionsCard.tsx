@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { PulseTodayOption, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 import { useTodayOptions } from '@/pulse/hooks';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { activityLabel } from '@/pulse/activity-labels';
 
 type Variant = 'compact' | 'full';
 
@@ -25,7 +26,7 @@ const STATE_LABEL: Record<PulseTodayOptionsResponse['state'], string> = {
 function optionMeta(option: PulseTodayOption): string | null {
   if (option.kind !== 'workout' && option.kind !== 'recovery' && option.kind !== 'skills') return null;
   const parts = [
-    option.activityType,
+    activityLabel(option.activityType),
     option.zone ? `Z${option.zone}` : null,
     option.durationMin ? `${option.durationMin} min` : null,
   ].filter(Boolean);
