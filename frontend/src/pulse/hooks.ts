@@ -536,6 +536,18 @@ export function useGarminExecutionDiff(days = 15) {
   });
 }
 
+export function useSyncWorkoutToGarmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (workoutId: string) => pulseApi.plan.syncGarmin(workoutId),
+    onSuccess: (_data, workoutId) => {
+      invalidatePulsePlanContextQueries(qc);
+      void qc.invalidateQueries({ queryKey: pulseKeys.garminExecutionLedger(workoutId) });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-execution-diff'] });
+    },
+  });
+}
+
 export function useGarminExecutionLedger(workoutId: string | null | undefined) {
   return useQuery({
     queryKey: pulseKeys.garminExecutionLedger(workoutId ?? null),

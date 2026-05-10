@@ -20,6 +20,8 @@ type MockPulseApiOptions = {
   garminSignalUsefulness?: unknown;
   garminExecutionLedger?: unknown;
   garminExecutionDiff?: unknown;
+  garminCalendarSyncResult?: unknown;
+  planWorkoutSyncResult?: unknown | ((workoutId: string) => unknown);
   powerDataQuality?: unknown;
   powerDuration?: unknown;
   adaptationEvents?: unknown;
@@ -1105,6 +1107,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       });
     }
     if (url.pathname === '/api/pulse/data-coverage' && options.coverage) return json(route, options.coverage);
+    if (url.pathname === '/api/pulse/garmin/calendar/sync' && request.method() === 'POST') {
+      return json(route, options.garminCalendarSyncResult ?? { uploaded: 1, repaired: 0, removed: 0, errors: [] });
+    }
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
     if (url.pathname === '/api/pulse/garmin/execution-diff') {
@@ -1234,6 +1239,18 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           executionMatchConfidence: null,
           executionNotes: 'Workout ist nur lokal in Pulse geplant.',
         },
+      });
+    }
+    if (url.pathname.startsWith('/api/pulse/plan/workout/') && url.pathname.endsWith('/sync-garmin') && request.method() === 'POST') {
+      const workoutId = url.pathname.split('/').at(-2) ?? 'workout-1';
+      const result = typeof options.planWorkoutSyncResult === 'function'
+        ? options.planWorkoutSyncResult(workoutId)
+        : options.planWorkoutSyncResult;
+      return json(route, result ?? {
+        garminWorkoutId: `garmin-${workoutId}`,
+        garminScheduledId: `schedule-${workoutId}`,
+        date: today,
+        workout: null,
       });
     }
     if (url.pathname === '/api/pulse/plan/workout' && request.method() === 'POST') {

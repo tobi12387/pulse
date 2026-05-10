@@ -169,7 +169,7 @@ Expected: execution panel visible, no live Garmin sync during generic tests.
 
 ## Task 4: Add Repair Flow
 
-- [ ] **Step 1: Write tests for repair actions**
+- [x] **Step 1: Write tests for repair actions**
 
 Test that clicking repair:
 
@@ -177,7 +177,7 @@ Test that clicking repair:
 - updates row status or shows an inline error.
 - records ledger entries via existing non-blocking ledger path.
 
-- [ ] **Step 2: Reuse existing Garmin actions**
+- [x] **Step 2: Reuse existing Garmin actions**
 
 Use existing endpoints:
 
@@ -186,7 +186,7 @@ Use existing endpoints:
 
 Do not add another mutation if existing endpoints can repair the state.
 
-- [ ] **Step 3: Run deploy readiness**
+- [x] **Step 3: Run deploy readiness**
 
 Run:
 
