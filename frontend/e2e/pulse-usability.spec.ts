@@ -1509,8 +1509,12 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
   });
 
   await page.goto('/plan?tab=training');
-  await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
-  await page.getByTestId('plan-scenario-preview-card').getByRole('button', { name: 'Szenario prüfen' }).click();
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await scenarioCard.getByLabel('km optional').fill('155');
+  await scenarioCard.getByLabel('km/h optional').fill('22');
+  await scenarioCard.getByLabel('Notiz').fill('Entspannte Rennradtour mit Stops.');
+  await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByText('TSS', { exact: true })).toBeVisible();
   await expect(page.getByText('+296', { exact: true })).toBeVisible();
@@ -1751,19 +1755,18 @@ test('Plan custom workout starts neutral and saves duration-only units without t
   expect(createBody).not.toMatchObject({ distanceKm: 155, expectedSpeedKmh: 22 });
 });
 
-test('Plan custom workout keeps the 155-km tour as an explicit preset', async ({ page }) => {
+test('Plan custom workout does not expose a fixed 155-km tour preset', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/plan?tab=training');
   await page.getByRole('button', { name: '+ Einheit' }).click();
   const customWorkoutForm = page.getByTestId('custom-workout-form');
 
-  await customWorkoutForm.getByRole('button', { name: '155-km Tour vorbereiten' }).click();
-
-  await expect(customWorkoutForm.getByLabel('km optional')).toHaveValue('155');
-  await expect(customWorkoutForm.getByLabel('km/h optional')).toHaveValue('22');
-  await expect(customWorkoutForm.getByText('423 min')).toBeVisible();
-  await expect(customWorkoutForm.getByLabel('Notiz')).toHaveValue('Entspannte Rennradtour mit Stops.');
+  await expect(customWorkoutForm.getByRole('button', { name: '155-km Tour vorbereiten' })).toHaveCount(0);
+  await expect(customWorkoutForm.getByLabel('km optional')).toHaveValue('');
+  await expect(customWorkoutForm.getByLabel('km/h optional')).toHaveValue('');
+  await expect(customWorkoutForm.getByText('Dauer offen')).toBeVisible();
+  await expect(customWorkoutForm.getByLabel('Notiz')).toHaveValue('');
 });
 
 test('Home stays usable when the readiness endpoint fails locally', async ({ page }) => {
@@ -2749,6 +2752,7 @@ test('Plan alternatives adapt the next workout with semantic choices', async ({ 
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const updates: unknown[] = [];
   await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 42.4, atl: 58.2, tsb: -15.8, cached: false },
     planWorkouts: [
       {
         id: 'workout-1',
@@ -2813,6 +2817,7 @@ test('Plan alternatives offer goal-oriented extra endurance only when signals ar
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const updates: unknown[] = [];
   await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 42.4, atl: 36.1, tsb: 8.4, cached: false },
     planWorkouts: [
       {
         id: 'workout-1',
@@ -2865,9 +2870,56 @@ test('Plan alternatives offer goal-oriented extra endurance only when signals ar
   });
 });
 
+test('Plan decision uses current fitness load instead of a stale generation trace', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 16.9, atl: 43.7, tsb: -26.8, cached: false },
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        targetTss: 68,
+        status: 'planned',
+        description: 'Ruhige Grundlage, nur wenn die Tagesform passt.',
+      },
+    ],
+    planTrace: {
+      weekStart: '2026-04-27',
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 42.7, tsb: -0.3 },
+        phase: 'base',
+        weeklyHoursTarget: 8,
+        goals: [{ title: 'Ausdauerbasis ausbauen' }],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        dataWarnings: [],
+        recentSportMix: { bike: 2 },
+        learningSnapshot: null,
+      },
+      sportMix: { bike: 2 },
+      generatedSummary: [],
+      hardDays: [],
+      planDecision: null,
+    },
+  });
+
+  await page.goto('/plan');
+
+  const decision = page.getByTestId('next-training-decision');
+  await expect(decision.getByText('Einbezogen: TSB -26.8')).toBeVisible();
+  await expect(decision.getByText('TSB -0.3')).toHaveCount(0);
+  await expect(decision.getByText('Frei lassen empfohlen')).toBeVisible();
+  await expect(decision.getByRole('button', { name: /Frei lassen/ })).toContainText('Empfohlen');
+});
+
 test('Plan alternatives avoid stale trace context for next-week workouts', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   await mockPulseApi(page, {
+    load: { date: '2026-05-01', ctl: 16.9, atl: 43.7, tsb: -26.8, cached: false },
     planWorkouts: [
       {
         id: 'workout-1',
@@ -2904,7 +2956,7 @@ test('Plan alternatives avoid stale trace context for next-week workouts', async
   await page.goto('/plan');
 
   await expect(page.getByText('Einbezogen: TSB -15.8')).toHaveCount(0);
-  await expect(page.getByText('Einbezogen: aktueller Plan')).toBeVisible();
+  await expect(page.getByText('Einbezogen: TSB -26.8')).toBeVisible();
   await expect(page.getByText('Verfügbarkeit offen')).toBeVisible();
 });
 

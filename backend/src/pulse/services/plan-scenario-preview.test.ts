@@ -32,8 +32,10 @@ describe('buildPlanScenarioPreview', () => {
     });
 
     expect(preview.changedDays.map(day => day.date)).toEqual(['2026-05-11', '2026-05-12']);
+    expect(preview.summary).toBe('Eigene Einheit wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.');
     expect(preview.loadImpact.tssDelta).toBeGreaterThan(250);
     expect(preview.reasons).toEqual(expect.arrayContaining([
+      'Eigene Einheit bleibt user-locked und wird nicht von der Wochenlogik ueberschrieben.',
       'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
       'Folgetag als Recovery/Feedback-Fenster schützen.',
     ]));

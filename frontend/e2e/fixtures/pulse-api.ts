@@ -18,6 +18,7 @@ type MockPulseApiOptions = {
   coverage?: unknown;
   garminCoverage?: unknown;
   garminSignalUsefulness?: unknown;
+  load?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
   createWorkoutResult?: unknown | ((body: unknown) => unknown);
@@ -869,6 +870,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/plan/today/options' && 'todayOptions' in options) return json(route, options.todayOptions);
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
+    if (url.pathname === '/api/pulse/load' && 'load' in options) return json(route, options.load);
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
     if (url.pathname.startsWith('/api/pulse/activities/') && options.activityDetail) return json(route, options.activityDetail);
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
@@ -962,7 +964,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, result ?? {
         preview: {
           type: body.type ?? 'add_custom_tour',
-          summary: 'Custom-Tour wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
+          summary: 'Eigene Einheit wird als user-locked Workout simuliert, ohne den Plan oder Garmin zu verändern.',
           projectedWorkouts: [],
           changedDays: [{
             date: body.workout?.plannedDate ?? today,
