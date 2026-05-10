@@ -47,6 +47,13 @@ function optionTone(option: PulseTodayOption): string {
   return 'var(--border)';
 }
 
+function signalToneStyle(tone: NonNullable<PulseTodayOption['signalLabels']>[number]['tone']) {
+  if (tone === 'green') return { color: 'var(--green)', borderColor: 'rgba(74,222,128,0.32)', background: 'rgba(74,222,128,0.08)' };
+  if (tone === 'amber') return { color: 'var(--amber)', borderColor: 'rgba(251,191,36,0.34)', background: 'rgba(251,191,36,0.08)' };
+  if (tone === 'rose') return { color: 'var(--rose)', borderColor: 'rgba(248,113,113,0.34)', background: 'rgba(248,113,113,0.08)' };
+  return { color: 'var(--accent)', borderColor: 'rgba(94,230,207,0.34)', background: 'rgba(94,230,207,0.08)' };
+}
+
 function mobileIntentTarget(option: typeof TODAY_INTENTS[number]): string {
   const params = new URLSearchParams({
     tab: 'training',
@@ -211,6 +218,33 @@ export function TodayOptionsCard({
               {meta && (
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
                   {meta}
+                </span>
+              )}
+              {option.signalLabels && option.signalLabels.length > 0 && (
+                <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {option.signalLabels.slice(0, 2).map(label => {
+                    const tone = signalToneStyle(label.tone);
+                    return (
+                      <span
+                        key={`${option.id}-${label.kind}`}
+                        title={label.detail}
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                          color: tone.color,
+                          border: `1px solid ${tone.borderColor}`,
+                          borderRadius: 4,
+                          background: tone.background,
+                          padding: '3px 5px',
+                          maxWidth: '100%',
+                        }}
+                      >
+                        {label.label}
+                      </span>
+                    );
+                  })}
                 </span>
               )}
               <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>

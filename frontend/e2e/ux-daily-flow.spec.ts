@@ -31,6 +31,49 @@ test('Plan evidence does not show an empty decision beside a planned-workout tod
   await expect(page.getByText('Kein offenes Training geplant')).toHaveCount(0);
 });
 
+test('Today options show compact signal labels for the strongest reason', async ({ page }) => {
+  await mockPulseApi(page, {
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'recovery_protect',
+        summary: 'Fueling-Schutz ist heute wichtiger als Intensität.',
+        signature: 'fueling-protect-label',
+        options: [{
+          id: 'rest-fueling-protect',
+          kind: 'rest',
+          priority: 'primary',
+          title: 'Heute bewusst pausieren',
+          detail: 'Magenhinweis berücksichtigen und keine harte Einheit erzwingen.',
+          cta: 'Tagesentscheidung prüfen',
+          targetPath: '/',
+          evidence: ['Fueling: letzte Einheit mit GI-Hinweis'],
+          signalLabels: [
+            {
+              kind: 'fueling_protect',
+              label: 'Fueling schützen',
+              detail: 'Magenhinweis begrenzt Intensität',
+              tone: 'amber',
+            },
+            {
+              kind: 'recovery',
+              label: 'Recovery',
+              detail: 'Erholung hat heute Vorrang',
+              tone: 'green',
+            },
+          ],
+        }],
+      },
+    },
+  });
+
+  await page.goto('/plan');
+  const todayOptions = page.getByTestId('today-options-card-full');
+  await expect(todayOptions).toContainText('Fueling schützen');
+  await expect(todayOptions).toContainText('Recovery');
+  await expect(todayOptions).toContainText('Magenhinweis berücksichtigen');
+});
+
 test('Plan renders completed planned workout today options as a closed decision', async ({ page }) => {
   await mockPulseApi(page, {
     todayOptions: {

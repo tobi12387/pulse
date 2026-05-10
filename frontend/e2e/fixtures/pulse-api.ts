@@ -352,6 +352,12 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
             durationMin: 45,
             archetypeId: 'endurance_steady',
             capabilityFit: 'productive',
+            signalLabels: [{
+              kind: 'productive',
+              label: 'Produktiv',
+              detail: 'Capability erlaubt kleinen Fortschritt',
+              tone: 'accent',
+            }],
           },
           {
             id: 'strength-support-25',
@@ -367,6 +373,12 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
             durationMin: 25,
             archetypeId: 'strength_prehab',
             capabilityFit: 'recovery',
+            signalLabels: [{
+              kind: 'recovery',
+              label: 'Recovery',
+              detail: 'Erholung bleibt geschützt',
+              tone: 'green',
+            }],
           },
         ],
       },
@@ -413,6 +425,12 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
           activityType: 'bike',
           zone: 1,
           durationMin: 20,
+          signalLabels: [{
+            kind: 'recovery',
+            label: 'Recovery',
+            detail: 'Erholung hat heute Vorrang',
+            tone: 'green',
+          }],
         }],
       },
     };
@@ -438,6 +456,12 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
         durationMin: 75,
         archetypeId: 'endurance_steady',
         capabilityFit: 'productive',
+        signalLabels: [{
+          kind: 'productive',
+          label: 'Produktiv',
+          detail: 'Capability erlaubt kleinen Fortschritt',
+          tone: 'accent',
+        }],
       }],
     },
   };
