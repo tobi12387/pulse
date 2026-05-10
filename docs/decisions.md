@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Planalternativen bekommen eine datenbasierte Empfehlung
+
+- **Decision:** Die nächste Trainingsentscheidung markiert eine Alternative als `Empfohlen`, wenn Load, Risiko oder mentale Lage gegen das unveränderte Training sprechen. Bei moderatem Risiko priorisiert Pulse `Leichter`; bei sehr negativer TSB kann `Frei lassen` empfohlen werden; ohne Warnsignale kann ein kürzerer Zielreiz empfohlen werden.
+- **Why:** Alternativen dürfen nicht wie vier gleichwertige Knöpfe wirken. Tobi will, dass aktuelle Daten und Ziele in die Planung eingehen; eine sichtbare Empfehlung reduziert Entscheidungsarbeit und macht die Datenwirkung im täglichen Flow greifbar.
+- **Alternatives:** Alle Alternativen gleichrangig lassen (zu generisch); automatisch ändern (zu viel versteckte Mutation); Empfehlung nur im Coach-Text verstecken (zu indirekt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan zeigt Garmin-Sync-Schulden als Übersicht
 
 - **Decision:** Der Plan-Tab zeigt bei zukünftigen Workouts mit lokalem Status, nur Garmin-Vorlage oder degradiertem/blockiertem Sync-Vertrag eine kompakte `Garmin Sync-Check`-Karte. Die Karte fasst die Kategorien zusammen und führt nach Settings → Garmin, statt Nutzer erst einzelne Workout-Rows öffnen zu lassen.
