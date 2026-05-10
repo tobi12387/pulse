@@ -3,11 +3,9 @@ import { useUpdateWorkout } from '@/pulse/hooks';
 import { ACTIVITY_LABEL, activityLabel, workoutArchetypeCopy } from '@/pulse/activity-labels';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
+import { DAY_SHORT } from './training-copy';
 
 type PlannedWorkout = PulsePlannedWorkout;
-
-export const DAY_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-export { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 
 const ACTIVITY_TYPES = ['run', 'bike', 'swim', 'strength', 'hike', 'other'] as const;
 
@@ -34,6 +32,19 @@ const EXECUTION_META: Record<NonNullable<PlannedWorkout['executionStatus']>, { l
 
 function translucent(color: string, percent: number) {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
+
+function splitWorkoutRationale(description: string | null): { rationale: string | null; body: string | null } {
+  const trimmed = description?.trim();
+  if (!trimmed) return { rationale: null, body: null };
+  const prefix = 'Warum diese Einheit:';
+  if (!trimmed.startsWith(prefix)) return { rationale: null, body: trimmed };
+  const end = trimmed.indexOf('. ');
+  if (end === -1) return { rationale: trimmed, body: null };
+  return {
+    rationale: trimmed.slice(0, end + 1),
+    body: trimmed.slice(end + 2).trim() || null,
+  };
 }
 
 function ExecutionBadge({ workout }: { workout: PlannedWorkout }) {
@@ -225,6 +236,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
   const confidence = garminConfidenceCopy(w);
   const structureSummary = workoutStructureSummary(w);
   const archetypeCopy = workoutArchetypeCopy(w.archetypeId);
+  const descriptionParts = splitWorkoutRationale(w.description);
 
   async function handleTypeChange(type: string) {
     if (type === w.activityType) {
@@ -315,8 +327,36 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
               <span style={{ fontSize: 11, color: 'var(--text-2)' }}>{confidence.title}</span>
             )}
           </div>
-          {w.description && !switching && (
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{w.description}</div>
+          {(descriptionParts.rationale || descriptionParts.body) && !switching && (
+            <div style={{ marginTop: 4 }}>
+              {descriptionParts.rationale && (
+                <div
+                  data-testid="plan-workout-rationale"
+                  style={{
+                    display: 'inline-flex',
+                    maxWidth: '100%',
+                    padding: '3px 6px',
+                    borderRadius: 3,
+                    border: '1px solid rgba(94,230,207,0.24)',
+                    background: 'rgba(94,230,207,0.07)',
+                    color: 'var(--accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  {descriptionParts.rationale}
+                </div>
+              )}
+              {descriptionParts.body && (
+                <div
+                  data-testid="plan-workout-description-body"
+                  style={{ fontSize: 11, color: 'var(--text-3)', marginTop: descriptionParts.rationale ? 4 : 2, lineHeight: 1.45 }}
+                >
+                  {descriptionParts.body}
+                </div>
+              )}
+            </div>
           )}
           {structureSummary && !switching && (
             <div

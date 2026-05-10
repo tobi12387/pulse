@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-10 — Plan-Fit nutzt RPE, GI und Mental Protect als harte Schutzsignale
+
+- **Decision:** Die Plan Engine blockt harte Einheiten deterministisch, wenn die letzte RPE-Bewertung bei 9/10 lag, eine relevante Fueling-/GI-Beschwerde offen ist oder der aktuelle Mental Check-in Protect-Signale zeigt und kein A-Race-Zwang vorliegt. Jede generierte Einheit beginnt zudem mit einer stabilen `Warum diese Einheit:`-Begründung, die auch nach LLM-Beschreibungsanreicherung erhalten bleibt und in der Plan-Zeile separat sichtbar ist.
+- **Why:** Tobi hatte wiederholt beobachtet, dass geplante Workouts zu gleich wirken und aktuelle Daten/Gefühl nicht sichtbar genug einfließen. Harte Schutzsignale müssen vor der Beschreibung und vor Garmin-Sync wirken, damit Pulse nicht nur erklärt, sondern wirklich anders plant.
+- **Alternatives:** Die Signale nur in Copy erwähnen (würde die Einheit nicht verändern); Mental-State weiter nur in Today Options nutzen (zu spät im Wochenplan); ein neues Rationale-Feld mit Migration einführen (größerer Scope, für diese PR nicht nötig).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-10 — Workout-Rotation nutzt echte 14-Tage-Archetyp-Historie
 
 - **Decision:** Die Plan Engine vermeidet kuerzlich geplante Archetypen aus den letzten 14 Tagen, wenn passende Alternativen derselben Trainingsfamilie existieren. Die vorhandene lokale Garmin-sichere Library bleibt die Variantenquelle; es wird kein fremder Workout-Katalog importiert.

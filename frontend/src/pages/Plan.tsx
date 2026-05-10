@@ -31,7 +31,9 @@ import {
 } from '@/features/plan/plan-utils';
 import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
 import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
-import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
+import { WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
+import { DAY_SHORT } from '@/features/plan/training/training-copy';
+import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { PulseActivityType, PulseAdaptationEvent, PulseFitnessLoad, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';

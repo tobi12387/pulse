@@ -3628,6 +3628,30 @@ test('Plan Statistik shows progression guidance in capability levels', async ({ 
   await expect(page.getByText('geschützt · nächster Reiz 4.3')).toBeVisible();
 });
 
+test('Plan Training highlights the why-this-workout rationale separately from the body copy', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-rationale',
+        plannedDate: '2026-05-11',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        targetTss: 74,
+        archetypeId: 'endurance_cadence',
+        capabilityFit: 'productive',
+        status: 'planned',
+        description: 'Warum diese Einheit: Cadence Endurance, aerober Reiz passt zur aktuellen Belastung, RPE unauffaellig, GI unauffaellig, mentale Lage ohne harte Bremse. Aerobe Grundlage, primaer ueber Puls steuern.',
+      },
+    ],
+  });
+
+  await page.goto('/plan?tab=training');
+
+  await expect(page.getByTestId('plan-workout-rationale')).toContainText('Warum diese Einheit');
+  await expect(page.getByTestId('plan-workout-description-body')).toContainText('Aerobe Grundlage, primaer ueber Puls steuern.');
+});
+
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
   const coverage = {
     range: { from: '2026-05-01', to: '2026-05-02', days: 2, year: null },

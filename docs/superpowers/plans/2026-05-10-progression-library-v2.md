@@ -104,7 +104,7 @@ Expected: no repeated archetype unless constraints make it the only safe option.
 
 ## Task 3: Tie RPE, Fueling and Mental State Into Fit
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 Add plan-engine tests:
 
@@ -112,7 +112,7 @@ Add plan-engine tests:
 - GI discomfort on long ride blocks next long/hard recommendation until recovery/fueling action is handled.
 - Mental protect state shifts hard workout to endurance/recovery if no A-race constraint.
 
-- [ ] **Step 2: Implement fit modifiers**
+- [x] **Step 2: Implement fit modifiers**
 
 In `fitWorkoutToCapabilities` or plan-engine selection, apply:
 
@@ -120,7 +120,7 @@ In `fitWorkoutToCapabilities` or plan-engine selection, apply:
 - GI discomfort from fueling log: mark long endurance as `stretch` or `too_hard_today`.
 - Mental protect: prefer recovery/endurance options.
 
-- [ ] **Step 3: Surface "why this variant"**
+- [x] **Step 3: Surface "why this variant"**
 
 In Plan row/detail, show one compact line:
 
@@ -128,7 +128,7 @@ In Plan row/detail, show one compact line:
 Warum diese Einheit: Endurance-Level 4.1, letzte Z2 sauber, GI neutral, Garmin bereit.
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
