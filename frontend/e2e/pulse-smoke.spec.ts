@@ -85,6 +85,68 @@ test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await expect(page.getByTestId('season-atp-row')).toContainText('Ramp-Cap');
 });
 
+test('Plan detail shows strength support blocks without misleading Garmin interval copy', async ({ page }) => {
+  const strengthWorkout = {
+    id: 'strength-support-smoke',
+    userId: 'user-1',
+    plannedDate: '2026-05-11',
+    activityType: 'strength',
+    zone: 1,
+    durationMin: 30,
+    distanceKm: null,
+    targetTss: 12,
+    archetypeId: 'strength_prehab',
+    difficultyLevel: 1.8,
+    difficultyEnergySystem: 'strength',
+    capabilityFit: 'maintenance',
+    description: 'Mobility, Core und Prehab als Support-Einheit.',
+    steps: [
+      { type: 'steady', durationMin: 10, zone: 1, description: 'Mobility: Huefte und Brustwirbelsaeule ruhig mobilisieren.' },
+      { type: 'steady', durationMin: 10, zone: 1, description: 'Core/Prehab: kontrollierte Spannung, keine Ermuedung erzwingen.' },
+      { type: 'steady', durationMin: 10, zone: 1, description: 'Glutes und Stabilitaet sauber aktivieren.' },
+    ],
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: {
+      version: 1,
+      status: 'degraded',
+      payloadReady: true,
+      checkedAt: '2026-05-01T08:00:00.000Z',
+      summary: 'Garmin-Upload mit Einschränkung: Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.',
+      issues: [{ code: 'strength_notes_only', severity: 'warning', message: 'Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.' }],
+    },
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'local_planned',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: 'Support-Einheit bleibt bewusst niedrigschwellig.',
+  };
+
+  await mockPulseApi(page, { planWorkouts: [strengthWorkout] });
+
+  await page.goto('/plan');
+  await expect(page.getByRole('button', { name: '2026-05-11 Kraft öffnen' })).toBeVisible();
+  await expect(page.getByTestId('plan-workout-structure-summary')).toContainText('3 Blöcke');
+  await expect(page.getByTestId('plan-workout-structure-summary')).toContainText('30 min');
+
+  await page.getByRole('button', { name: '2026-05-11 Kraft öffnen' }).click();
+
+  await expect(page.getByTestId('support-session-blocks')).toContainText('SUPPORT-SESSION');
+  await expect(page.getByTestId('support-session-blocks')).toContainText('Mobility: Huefte');
+  await expect(page.getByTestId('support-session-blocks')).toContainText('Core/Prehab');
+  await expect(page.getByTestId('support-session-blocks')).toContainText('Glutes und Stabilitaet');
+  const handoff = page.getByTestId('garmin-workout-handoff');
+  await expect(handoff).toContainText('Notiz/Blockliste');
+  await expect(handoff).toContainText('Keine Repeat-Blöcke');
+  await expect(handoff).toContainText('Keine HR-Ziele');
+  await expect(page.getByText('1 Repeat-Block')).toHaveCount(0);
+});
+
 test('primary navigation reaches every Pulse page', async ({ page }) => {
   await page.goto('/');
   await expectHealthyPage(page, 'READINESS');

@@ -405,6 +405,14 @@ export function buildGarminSyncContract(
     }
   });
 
+  if (workout.activityType === 'strength') {
+    issues.push(contractIssue({
+      code: 'strength_notes_only',
+      severity: 'warning',
+      message: 'Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.',
+    }));
+  }
+
   if (!supportsGarminHrTargets(workout.activityType) && steps.some(step => step.zone > 1)) {
     issues.push(contractIssue({
       code: 'unsupported_hr_target',

@@ -141,22 +141,26 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
 }
 
 function skillsOption(input: TodayOptionsInput): PulseTodayOption {
-  const detail = '20-30 min Technik, Core oder Mobility. Nutzt den Tag, ohne zusätzliche Ausdauerlast zu erzwingen.';
+  const light = input.readinessScore < 60;
+  const detail = light
+    ? '15-20 min Beweglichkeit und Atmung, ohne Trainingsstress.'
+    : '25 min Core, Mobility und Glutes als Unterstuetzung fuer Rad/Lauf.';
+  const durationMin = light ? 20 : 25;
   return {
-    id: 'skills-mobility-25',
+    id: light ? 'mobility-light-20' : 'strength-support-25',
     kind: 'skills',
     priority: 'secondary',
-    title: 'Skills oder Mobility',
+    title: light ? 'Mobility leicht' : 'Strength Support',
     detail,
-      cta: 'Im Plan ergänzen',
-    targetPath: planScenarioTargetPath({ activityType: 'strength', zone: 1, durationMin: 25, description: detail, archetypeId: 'strength_prehab' }),
+    cta: 'Im Plan ergänzen',
+    targetPath: planScenarioTargetPath({ activityType: 'strength', zone: 1, durationMin, description: detail, archetypeId: 'strength_prehab' }),
     evidence: [
       ...baseEvidence(input),
       'Nicht jeder freie Tag muss mit Ausdauer gefüllt werden.',
     ],
     activityType: 'strength',
     zone: 1,
-      durationMin: 25,
+    durationMin,
     archetypeId: 'strength_prehab',
     capabilityFit: 'recovery',
   };

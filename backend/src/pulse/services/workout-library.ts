@@ -12,6 +12,7 @@ import {
   type WorkoutDifficultyInput,
 } from './training-intelligence.js';
 import { fitWorkoutToCapabilities } from './training-capabilities.js';
+import { buildSupportSession, type SupportSession } from './support-session-library.js';
 
 export interface WorkoutLibraryInput extends WorkoutDifficultyInput {
   description?: string | null;
@@ -169,20 +170,33 @@ function buildSweetSpotSteps(duration: number): WorkoutStep[] {
   ], duration);
 }
 
-function buildStrengthPrehabSteps(duration: number): WorkoutStep[] {
-  return normalizeStepDurations([
-    { type: 'steady', durationMin: Math.max(8, Math.round(duration * 0.35)), zone: 1, description: 'Mobility: Huefte, Sprunggelenk und Brustwirbelsaeule ruhig mobilisieren.' },
-    { type: 'steady', durationMin: Math.max(8, Math.round(duration * 0.35)), zone: 1, description: 'Core/Prehab: kontrollierte Spannung, keine Ermuedung erzwingen.' },
-    { type: 'steady', durationMin: Math.max(5, Math.round(duration * 0.3)), zone: 1, description: 'Glutes und Stabilitaet sauber aktivieren, dann locker beenden.' },
-  ], duration);
+function supportSessionForArchetype(archetype: TrainingArchetype, durationMin: number): SupportSession | null {
+  if (archetype.id !== 'strength_support' && archetype.id !== 'strength_prehab') return null;
+  return buildSupportSession({
+    focus: 'cycling_prehab',
+    durationMin,
+    fatigue: 'normal',
+  });
+}
+
+function supportSessionSteps(session: SupportSession): WorkoutStep[] {
+  return session.blocks.map(block => ({
+    type: 'steady',
+    durationMin: block.minutes,
+    zone: 1,
+    description: `${block.label}: ${block.examples.join(', ')}`,
+  }));
 }
 
 export function buildWorkoutLibrarySteps(workout: WorkoutLibraryInput, archetype = selectWorkoutArchetype(workout)): WorkoutStep[] {
   const duration = Math.max(5, workout.durationMin);
   const zone = clampZone(workout.zone);
+  const supportSession = supportSessionForArchetype(archetype, duration);
   let steps: WorkoutStep[];
 
-  if (duration <= 20) {
+  if (supportSession) {
+    steps = supportSessionSteps(supportSession);
+  } else if (duration <= 20) {
     steps = [{ type: 'steady', durationMin: duration, zone, description: 'Kurze Aktivierung kontrolliert ausfuehren; keine zusaetzlichen Bloecke erzwingen.' }];
   } else if (archetype.id === 'endurance_cadence') {
     steps = buildCadenceSteps(duration);
@@ -192,10 +206,6 @@ export function buildWorkoutLibrarySteps(workout: WorkoutLibraryInput, archetype
     steps = buildThresholdCruiseSteps(duration);
   } else if (archetype.id === 'sweet_spot_builder') {
     steps = buildSweetSpotSteps(duration);
-  } else if (archetype.id === 'strength_prehab') {
-    steps = buildStrengthPrehabSteps(duration);
-  } else if (archetype.id === 'strength_support') {
-    steps = [{ type: 'steady', durationMin: duration, zone: 1, description: 'Kraft, Core und Stabilitaet kontrolliert ausfuehren.' }];
   } else if (archetype.id === 'recovery_spin') {
     steps = [{ type: 'steady', durationMin: duration, zone: 1, description: 'Sehr locker, keine Druckphasen.' }];
   } else if (archetype.id === 'long_endurance') {
@@ -267,9 +277,11 @@ function buildLibraryDescription(input: WorkoutLibraryInput, archetype: Training
   const purpose = `${sport}: Archetyp ${archetype.label}. ${archetype.description}`;
   const prescription = `${input.durationMin} min in Z${clampZone(input.zone)}; Trainingszweck bleibt ${archetype.energySystem}.`;
   const fit = fitLabel ? ` Fit: ${fitLabel}.` : '';
+  const supportNote = supportSessionForArchetype(archetype, Math.max(5, input.durationMin))?.planNote;
+  const note = supportNote ? ` ${supportNote}` : '';
   return base
-    ? `${purpose} ${prescription}${fit}\n\n${base}`
-    : `${purpose} ${prescription}${fit}`;
+    ? `${purpose} ${prescription}${fit}${note}\n\n${base}`
+    : `${purpose} ${prescription}${fit}${note}`;
 }
 
 export function buildWorkoutLibraryPrescription(

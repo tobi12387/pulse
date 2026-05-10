@@ -217,6 +217,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
   const repeatCount = repeatBlocks.reduce((sum, step) => sum + (step.reps ?? 0), 0);
   const hrTargetCount = workout.steps?.filter(step => fmtHrTarget(step) != null).length ?? 0;
   const latestLedger = executionLedger.data?.entries?.[0] ?? null;
+  const isStrengthWorkout = workout.activityType === 'strength';
 
   return (
     <div
@@ -397,10 +398,10 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
                 <strong style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.35 }}>
-                  Garmin Workout-Inhalt
+                  {isStrengthWorkout ? 'Garmin Notiz/Blockliste' : 'Garmin Workout-Inhalt'}
                 </strong>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
-                  vor Upload
+                  {isStrengthWorkout ? 'notiz' : 'vor Upload'}
                 </span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -428,7 +429,9 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                 ))}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
-                Prüfe hier, was auf Uhr oder Edge landet, bevor du hochlädst.
+                {isStrengthWorkout
+                  ? 'Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.'
+                  : 'Prüfe hier, was auf Uhr oder Edge landet, bevor du hochlädst.'}
               </div>
             </div>
           )}
@@ -491,9 +494,13 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
           )}
           {workout.steps && workout.steps.length > 0 ? (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div
+                data-testid={isStrengthWorkout ? 'support-session-blocks' : undefined}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+              >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', color: 'var(--text-3)', textTransform: 'uppercase' }}>
-                  Trainingsplan
+                  {isStrengthWorkout ? 'SUPPORT-SESSION' : 'Trainingsplan'}
                 </span>
                 {totalMin != null && (
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
@@ -501,8 +508,14 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                   </span>
                 )}
               </div>
+              {isStrengthWorkout && (
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                  Nicht als Garmin-Intervallstruktur gedacht; Fokus liegt auf sauberer Ausführung.
+                </p>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {workout.steps.map((step, i) => <StepRow key={i} step={step} />)}
+              </div>
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
                 <button
@@ -532,7 +545,13 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                     textTransform: 'uppercase',
                   }}
                 >
-                  {syncGarmin.isPending ? '● Lade hoch…' : syncGarmin.isSuccess ? '✓ Auf Garmin' : workout.garminWorkoutId ? '✓ Erneut laden' : '⇪ Auf Garmin'}
+                  {syncGarmin.isPending
+                    ? '● Lade hoch…'
+                    : syncGarmin.isSuccess
+                      ? '✓ Auf Garmin'
+                      : isStrengthWorkout
+                        ? '⇪ Als Notiz laden'
+                        : workout.garminWorkoutId ? '✓ Erneut laden' : '⇪ Auf Garmin'}
                 </button>
               </div>
               {syncGarmin.isError && (
