@@ -6,6 +6,7 @@ import {
   pulseActivities,
   pulseActivityStreams,
   pulseActionDecisions,
+  pulseAdaptationEvents,
   pulseCoachPreferences,
   pulseCoachSessions,
   pulseDailyMetrics,
@@ -134,6 +135,7 @@ afterAll(async () => {
   if (userId) {
     await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
     await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    await db.delete(pulseAdaptationEvents).where(eq(pulseAdaptationEvents.userId, userId));
     await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
     await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
     await db.delete(pulseActivityStreams);
@@ -155,6 +157,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.delete(pulseWeightLog).where(eq(pulseWeightLog.userId, userId));
   await db.delete(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+  await db.delete(pulseAdaptationEvents).where(eq(pulseAdaptationEvents.userId, userId));
   await db.delete(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
   await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
   await db.delete(pulseActivityStreams);
@@ -1788,6 +1791,111 @@ describe('Pulse profile provenance', () => {
 });
 
 describe('POST /api/pulse/plan/generate', () => {
+  it('returns a read-only refresh preview without touching plan rows or Garmin', async () => {
+    const today = dateDaysFrom(0);
+    const weekStart = dateDaysFrom(1);
+    const traceCreatedAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: weekStart,
+      activityType: 'bike',
+      zone: 5,
+      durationMin: 75,
+      targetTss: 92,
+      status: 'planned',
+      description: 'Warum diese Einheit: VO2-Reiz fuer kurze Anstiege.\n\n4x4 min.',
+      archetypeId: 'bike_vo2_4x4',
+    });
+    await db.insert(pulsePlanGenerations).values({
+      userId,
+      weekStart,
+      inputSnapshot: {
+        phase: 'build',
+        mesocycleWeek: 1,
+        weeklyHoursTarget: 8,
+        availableDays: [1],
+        load: { ctl: 35, atl: 42, tsb: -7, date: weekStart },
+        profile: { ftpWatts: 260, maxHrBpm: 186, lthrBpm: null },
+        goals: [],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        rpeReasons: [],
+        dataWarnings: [],
+        recentSportMix: {},
+      },
+      planDecision: {
+        selectedDays: [1],
+        skippedAvailableDays: [],
+        targetSessionCount: 1,
+        primaryGoal: null,
+        reasons: [],
+      },
+      sportMix: { bike: { sessions: 1, totalMinutes: 75, totalTss: 92 } },
+      hardDays: [{ date: weekStart, activityType: 'bike', zone: 5, durationMin: 75 }],
+      generatedSummary: ['Altplan'],
+      createdAt: traceCreatedAt,
+    });
+    await db.insert(pulseAdaptationEvents).values({
+      userId,
+      eventDate: today,
+      kind: 'high_rpe',
+      sourceId: 'activity-1',
+      severity: 'watch',
+      recommendation: 'reduce_intensity',
+      summary: 'Hohe RPE spricht gegen direktes Nachlegen harter Reize.',
+      evidence: ['RPE 9/10'],
+    });
+    await db.insert(pulseTrainingCapabilityLevels).values({
+      userId,
+      energySystem: 'endurance',
+      label: 'Endurance',
+      level: 3.2,
+      confidence: 'medium',
+      evidence: ['Recent completion'],
+      signals: ['quality_progress'],
+      sourceWindowDays: 90,
+      updatedAt: new Date(),
+    });
+
+    const beforeRows = await db.select().from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/plan/refresh-preview/${weekStart}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const preview = res.json<{
+      preview: {
+        stale: boolean;
+        applySupported: boolean;
+        mutationBoundary: string;
+        triggers: Array<{ kind: string }>;
+        comparisons: Array<{ current: { zone: number }; proposed: { zone: number; durationMin: number }; changes: string[] }>;
+      };
+    }>().preview;
+    expect(preview.stale).toBe(true);
+    expect(preview.applySupported).toBe(false);
+    expect(preview.mutationBoundary).toContain('keine DB-');
+    expect(preview.triggers.map(trigger => trigger.kind)).toEqual(expect.arrayContaining(['high_rpe', 'capability_update', 'stale_engine']));
+    expect(preview.comparisons[0]?.current.zone).toBe(5);
+    expect(preview.comparisons[0]?.proposed.zone).toBe(2);
+    expect(preview.comparisons[0]?.proposed.durationMin).toBeLessThan(75);
+    expect(preview.comparisons[0]?.changes).toContain('why');
+
+    const afterRows = await db.select().from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    expect(afterRows).toHaveLength(beforeRows.length);
+    expect(afterRows[0]).toMatchObject({
+      zone: 5,
+      durationMin: 75,
+      garminWorkoutId: null,
+      garminScheduledId: null,
+    });
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+
   it('generates workouts and returns a persisted trace', async () => {
     const weekStart = dateDaysFrom(1);
     await db.insert(pulseUserProfile).values({

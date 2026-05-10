@@ -1733,6 +1733,102 @@ test('Plan scenario preview lists affected future workouts before applying', asy
   expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.75 });
 });
 
+test('Plan refresh preview compares stale workouts without write requests', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const requests: Array<{ method: string; pathname: string }> = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => { requests.push({ method, pathname }); },
+    planWorkouts: [{
+      id: 'stale-hard-1',
+      userId: 'user-1',
+      plannedDate: '2026-05-03',
+      activityType: 'bike',
+      zone: 5,
+      durationMin: 75,
+      distanceKm: null,
+      targetTss: 92,
+      archetypeId: 'bike_vo2_4x4',
+      difficultyLevel: 4.4,
+      difficultyEnergySystem: 'vo2',
+      capabilityFit: 'stretch',
+      description: 'Warum diese Einheit: VO2-Reiz fuer kurze Anstiege.\n\n4x4 min.',
+      steps: null,
+      garminWorkoutId: null,
+      garminScheduledId: null,
+      status: 'planned',
+      workoutFeedback: null,
+      complianceScore: null,
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: null,
+    }],
+    planRefreshPreview: {
+      preview: {
+        weekStart: '2026-04-27',
+        generatedAt: '2026-05-01T08:00:00.000Z',
+        stale: true,
+        summary: '3 Signal(e) sprechen fuer eine Planpruefung; 1 offene Einheit(en) wuerden sich aendern.',
+        triggers: [
+          { kind: 'high_rpe', label: 'RPE-Schutz', detail: 'RPE 9 spricht gegen harte Reize.', severity: 'watch', evidence: ['RPE 9/10'] },
+          { kind: 'capability_update', label: 'Capability-Update', detail: 'Capabilities neuer als Plan.', severity: 'info', evidence: ['Endurance 3.8 -> 4.1'] },
+          { kind: 'stale_engine', label: 'Planlogik aktualisiert', detail: 'Plan Engine neuer als Trace.', severity: 'info', evidence: ['older-plan-engine'] },
+        ],
+        comparisons: [{
+          date: '2026-05-03',
+          current: {
+            id: 'stale-hard-1',
+            plannedDate: '2026-05-03',
+            activityType: 'bike',
+            zone: 5,
+            durationMin: 75,
+            targetTss: 92,
+            archetypeId: 'bike_vo2_4x4',
+            why: 'VO2-Reiz fuer kurze Anstiege.',
+            userLocked: false,
+          },
+          proposed: {
+            id: 'stale-hard-1',
+            plannedDate: '2026-05-03',
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 50,
+            targetTss: 35,
+            archetypeId: 'bike_vo2_4x4',
+            why: 'Schutzsignal aktiv: harte Reize erst wieder nach Feedback.',
+            userLocked: false,
+          },
+          changes: ['zone', 'duration', 'why'],
+          reason: 'Harte Einheit wuerde im Refresh zu kontrollierter Endurance werden.',
+        }],
+        loadImpact: { tssDelta: -57, durationDeltaMin: -25 },
+        applySupported: false,
+        mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
+      },
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  const refreshCard = page.getByTestId('plan-refresh-preview-card');
+  await expect(refreshCard).toBeVisible();
+  await expect(refreshCard).toContainText('Plan prüfen');
+  await expect(refreshCard).toContainText('RPE-Schutz');
+  await expect(refreshCard).toContainText('Capability-Update');
+  await expect(refreshCard).toContainText('Jetzt: Radfahren · Z5 · 75 min · bike_vo2_4x4');
+  await expect(refreshCard).toContainText('Vorschlag: Radfahren · Z2 · 50 min · bike_vo2_4x4');
+  await expect(refreshCard).toContainText('Warum: Schutzsignal aktiv');
+  await expect(refreshCard.getByRole('button', { name: 'Vorschau anwenden' })).toBeDisabled();
+
+  await refreshCard.getByRole('button', { name: 'Refresh Preview' }).click();
+  expect(requests.some(request => request.method === 'GET' && request.pathname.startsWith('/api/pulse/plan/refresh-preview/'))).toBe(true);
+  expect(requests.filter(request => ['POST', 'PATCH', 'DELETE'].includes(request.method)).map(request => `${request.method} ${request.pathname}`))
+    .not.toContain('POST /api/pulse/plan/generate');
+  expect(requests.filter(request => request.pathname.includes('/sync-garmin'))).toEqual([]);
+});
+
 test('Plan surfaces Garmin sync failure after applying a custom tour scenario', async ({ page }) => {
   await mockPulseApi(page, {
     createWorkoutResult: (body) => ({

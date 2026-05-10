@@ -27,6 +27,7 @@ type MockPulseApiOptions = {
   adaptationEvents?: unknown;
   load?: unknown;
   planTrace?: unknown;
+  planRefreshPreview?: unknown;
   planWorkouts?: unknown[];
   generatePlanResult?: unknown | ((body: unknown) => unknown);
   createWorkoutResult?: unknown | ((body: unknown) => unknown);
@@ -1120,6 +1121,21 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/plan/adaptation-events') {
       return json(route, options.adaptationEvents ?? { events: [] });
+    }
+    if (url.pathname.startsWith('/api/pulse/plan/refresh-preview/')) {
+      return json(route, options.planRefreshPreview ?? {
+        preview: {
+          weekStart: url.pathname.split('/').at(-1) ?? today,
+          generatedAt: `${today}T08:00:00.000Z`,
+          stale: false,
+          summary: 'Der sichtbare Plan passt zu den aktuell bekannten Signalen.',
+          triggers: [],
+          comparisons: [],
+          loadImpact: { tssDelta: 0, durationDeltaMin: 0 },
+          applySupported: false,
+          mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
+        },
+      });
     }
     if (url.pathname === '/api/pulse/fueling-recovery/guidance') {
       const result = typeof options.fuelingGuidance === 'function'

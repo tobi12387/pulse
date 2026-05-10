@@ -4,7 +4,7 @@ import {
   useCheckinHistory, useCheckinToday,
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
-  usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
+  usePlanRefreshPreview, usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
   useTodayOptions, useFitnessLoad, useAdaptationEvents,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
@@ -36,7 +36,7 @@ import { DAY_SHORT } from '@/features/plan/training/training-copy';
 import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
-import type { PulseActivityType, PulseAdaptationEvent, PulseFitnessLoad, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseAdaptationEvent, PulseFitnessLoad, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ausfuehrung' | 'ziele' | 'review' | 'statistik';
 
@@ -1045,6 +1045,158 @@ function scenarioAffectedWorkouts(workouts: PlannedWorkout[], preview: PulsePlan
     .slice(0, 5);
 }
 
+type PlanRefreshComparison = PulsePlanRefreshPreview['comparisons'][number];
+
+function refreshWorkoutLine(workout: NonNullable<PlanRefreshComparison['current']>): string {
+  const sport = ACTIVITY_LABEL[workout.activityType] ?? workout.activityType;
+  const archetype = workout.archetypeId ? ` · ${workout.archetypeId}` : '';
+  return `${sport} · Z${workout.zone} · ${workout.durationMin} min${archetype}`;
+}
+
+function PlanRefreshPreviewCard({ weekStart }: { weekStart: string }) {
+  const refreshPreview = usePlanRefreshPreview(weekStart);
+  const preview = refreshPreview.data?.preview ?? null;
+  const shouldShow = preview
+    ? preview.stale || preview.triggers.length > 0 || preview.comparisons.length > 0
+    : refreshPreview.isError;
+
+  if (!shouldShow) return null;
+
+  if (refreshPreview.isError) {
+    return (
+      <InlineFeedback
+        title="Planprüfung nicht geladen"
+        message={errorMessage(refreshPreview.error, 'Die Refresh-Vorschau konnte nicht gelesen werden.')}
+        actionLabel="Erneut prüfen"
+        onAction={() => { void refreshPreview.refetch(); }}
+      />
+    );
+  }
+
+  if (!preview) return null;
+
+  return (
+    <section className="card evidence-section" data-testid="plan-refresh-preview-card" style={{ borderColor: 'rgba(94,230,207,0.26)' }}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0, flex: '1 1 240px' }}>
+            <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Plan prüfen</div>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{preview.summary}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { void refreshPreview.refetch(); }}
+            disabled={refreshPreview.isFetching}
+            style={{
+              minHeight: 44,
+              minWidth: 44,
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius)',
+              background: refreshPreview.isFetching ? 'var(--surface-2)' : 'rgba(94,230,207,0.08)',
+              color: 'var(--accent)',
+              cursor: refreshPreview.isFetching ? 'wait' : 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              padding: '0 12px',
+            }}
+          >
+            {refreshPreview.isFetching ? '● Prüfe…' : 'Refresh Preview'}
+          </button>
+        </div>
+
+        {preview.triggers.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {preview.triggers.map(trigger => (
+              <span
+                key={trigger.kind}
+                className="chip"
+                title={[trigger.detail, ...trigger.evidence].filter(Boolean).join(' · ')}
+                style={{
+                  borderColor: trigger.severity === 'action' ? 'rgba(244,63,94,0.45)' : trigger.severity === 'watch' ? 'rgba(245,158,11,0.45)' : 'var(--border)',
+                  color: trigger.severity === 'action' ? 'var(--rose)' : trigger.severity === 'watch' ? 'var(--amber)' : 'var(--text-2)',
+                }}
+              >
+                {trigger.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(116px, 1fr))', gap: 6 }}>
+          {[
+            ['TSS', `${preview.loadImpact.tssDelta >= 0 ? '+' : ''}${preview.loadImpact.tssDelta}`],
+            ['Dauer', `${preview.loadImpact.durationDeltaMin >= 0 ? '+' : ''}${preview.loadImpact.durationDeltaMin} min`],
+            ['Apply', preview.applySupported ? 'bereit' : 'read-only'],
+          ].map(([label, value]) => (
+            <div key={label} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 4, padding: 9 }}>
+              <div className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>{label}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)', marginTop: 4 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {preview.comparisons.length > 0 && (
+          <div style={{ display: 'grid', gap: 8 }} data-testid="plan-refresh-comparisons">
+            {preview.comparisons.slice(0, 4).map(comparison => (
+              <div
+                key={`${comparison.date}-${comparison.current?.id ?? 'new'}`}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderLeft: '3px solid var(--accent)',
+                  borderRadius: 4,
+                  background: 'var(--surface-2)',
+                  padding: '9px 10px',
+                  display: 'grid',
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>{comparison.date}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)' }}>{comparison.changes.join(' / ')}</span>
+                </div>
+                {comparison.current && <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>Jetzt: {refreshWorkoutLine(comparison.current)}</div>}
+                {comparison.proposed && <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>Vorschlag: {refreshWorkoutLine(comparison.proposed)}</div>}
+                {comparison.proposed?.why && (
+                  <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                    Warum: {comparison.proposed.why}
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45 }}>{comparison.reason}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(136px, auto)', gap: 8, alignItems: 'center' }}>
+          <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-3)', lineHeight: 1.45 }}>{preview.mutationBoundary}</p>
+          <button
+            type="button"
+            disabled
+            style={{
+              minHeight: 44,
+              minWidth: 44,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              background: 'var(--surface-2)',
+              color: 'var(--text-3)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Vorschau anwenden
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PlanScenarioPreviewCard({
   workouts,
   nextWorkout,
@@ -1069,6 +1221,7 @@ function PlanScenarioPreviewCard({
   const descriptionParam = searchParams.get('description');
   const archetypeParam = searchParams.get('archetypeId');
   const previewScenario = usePlanScenarioPreview();
+  const previewScenarioMutateAsync = previewScenario.mutateAsync;
   const createWorkout = useCreateWorkout();
   const updateWorkout = useUpdateWorkout();
   const today = isoDateLocal(new Date());
@@ -1099,7 +1252,7 @@ function PlanScenarioPreviewCard({
       if (autoPreviewKeyRef.current === searchKey) return;
       autoPreviewKeyRef.current = searchKey;
       try {
-        const result = await previewScenario.mutateAsync(request);
+        const result = await previewScenarioMutateAsync(request);
         setPreview(result.preview);
       } catch (err) {
         setError(errorMessage(err, 'Die Vorschau konnte nicht berechnet werden.'));
@@ -1108,13 +1261,15 @@ function PlanScenarioPreviewCard({
 
     if (scenarioParam === 'reduce_volume' && entrySource === 'mobile-intent') {
       const request: PulsePlanScenarioRequest = { type: 'reduce_volume', factor: 0.7 };
-      setMode('reduce');
-      setReduceFactor(70);
-      setWorkoutArchetypeId(null);
-      setPreview(null);
-      setError(null);
-      setApplyError(null);
-      setReviewHint(descriptionParam || 'Heute bewusst frei halten.');
+      queueMicrotask(() => {
+        setMode('reduce');
+        setReduceFactor(70);
+        setWorkoutArchetypeId(null);
+        setPreview(null);
+        setError(null);
+        setApplyError(null);
+        setReviewHint(descriptionParam || 'Heute bewusst frei halten.');
+      });
       void runAutoPreview(request);
       return;
     }
@@ -1138,33 +1293,37 @@ function PlanScenarioPreviewCard({
       },
     };
 
-    setMode('tour');
-    setWorkoutActivityType(activityType);
-    setWorkoutZone(zone);
-    setWorkoutDuration(String(durationMin));
-    setWorkoutArchetypeId(archetypeParam);
-    setTourDate(today);
-    setTourDistance('');
-    setTourSpeed('');
-    setTourDescription(description);
-    setPreview(null);
-    setError(null);
-    setApplyError(null);
-    setReviewHint(entrySource === 'mobile-intent'
-      ? 'Mobile Quick Decision vorbereitet: Pulse prueft erst Wochenlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
-      : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
+    queueMicrotask(() => {
+      setMode('tour');
+      setWorkoutActivityType(activityType);
+      setWorkoutZone(zone);
+      setWorkoutDuration(String(durationMin));
+      setWorkoutArchetypeId(archetypeParam);
+      setTourDate(today);
+      setTourDistance('');
+      setTourSpeed('');
+      setTourDescription(description);
+      setPreview(null);
+      setError(null);
+      setApplyError(null);
+      setReviewHint(entrySource === 'mobile-intent'
+        ? 'Mobile Quick Decision vorbereitet: Pulse prueft erst Wochenlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+        : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
+    });
     void runAutoPreview(request);
-  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isQuickScenarioEntry, scenarioParam, searchKey, today, zoneParam]);
+  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isQuickScenarioEntry, previewScenarioMutateAsync, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
     if (reviewRequest.seq <= 0) return;
-    setMode(reviewRequest.mode);
-    setPreview(null);
-    setError(null);
-    setApplyError(null);
-    setReviewHint(reviewRequest.mode === 'move'
-      ? 'Adaptions-Check vorbereitet: Verschieben prueft, ob die naechste offene Einheit sinnvoller auf einen anderen verfuegbaren Tag passt.'
-      : 'Adaptions-Check vorbereitet: Umfang senken prueft, ob die naechsten Workouts nach verpassten oder anders ausgefuehrten Einheiten defensiver werden sollten.');
+    queueMicrotask(() => {
+      setMode(reviewRequest.mode);
+      setPreview(null);
+      setError(null);
+      setApplyError(null);
+      setReviewHint(reviewRequest.mode === 'move'
+        ? 'Adaptions-Check vorbereitet: Verschieben prueft, ob die naechste offene Einheit sinnvoller auf einen anderen verfuegbaren Tag passt.'
+        : 'Adaptions-Check vorbereitet: Umfang senken prueft, ob die naechsten Workouts nach verpassten oder anders ausgefuehrten Einheiten defensiver werden sollten.');
+    });
   }, [reviewRequest.mode, reviewRequest.seq]);
 
   function scenario(): PulsePlanScenarioRequest {
@@ -1204,7 +1363,7 @@ function PlanScenarioPreviewCard({
     setError(null);
     setApplyError(null);
     try {
-      const result = await previewScenario.mutateAsync(scenario());
+      const result = await previewScenarioMutateAsync(scenario());
       setPreview(result.preview);
     } catch (err) {
       setError(errorMessage(err, 'Die Vorschau konnte nicht berechnet werden.'));
@@ -1937,6 +2096,8 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         onReview={reviewAdaptations}
         onNavigate={navigate}
       />
+
+      <PlanRefreshPreviewCard weekStart={selectedWeekStart} />
 
       <PlanAdaptationReviewCard
         signals={adaptationSignals}

@@ -8,6 +8,7 @@ import type {
   PulseTrainingCapabilitySummary,
   PulseTrainingExecutionReview,
 } from '@coaching-os/shared/pulse';
+import { PLAN_ENGINE_VERSION } from './plan-engine-version.js';
 import { evaluatePlanQuality, type PlanQualityWorkout } from './training-intelligence.js';
 
 type SportMix = Record<string, PulsePlanTrace['sportMix'][string]>;
@@ -397,6 +398,7 @@ export function buildPlanTrace(input: BuildPlanTraceInput): PlanTracePayload {
 
   return {
     inputSnapshot: {
+      engineVersion: PLAN_ENGINE_VERSION,
       phase: input.phase,
       mesocycleWeek: input.mesocycleWeek,
       weeklyHoursTarget: input.weeklyHoursTarget,
