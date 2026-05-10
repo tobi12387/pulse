@@ -157,6 +157,13 @@ describe('buildFuelingRecoveryGuidance', () => {
     });
 
     const carbsItem = guidance.during.find(item => item.id === 'during-carbs')?.text ?? '';
+    expect(guidance.outcomeBaseline).toMatchObject({
+      status: 'learning',
+      observedCarbsPerHour: 42,
+      targetCarbsPerHour: { min: 50, max: 70 },
+      bottles750Ml: 4,
+      powderG: 300,
+    });
     expect(carbsItem).toContain('50-70 g Kohlenhydrate pro Stunde');
     expect(carbsItem).toContain('200-280 g gesamt');
     expect(carbsItem).toContain('3-4 x 750-ml-Flaschen');

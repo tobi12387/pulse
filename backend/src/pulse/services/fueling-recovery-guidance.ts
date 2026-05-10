@@ -16,6 +16,7 @@ import {
   buildMnstrySodiumProductText,
 } from './fueling-products.js';
 import { summarizeFuelingDebt } from './fueling-debt.js';
+import { summarizeFuelingOutcomeBaseline } from './fueling-outcome-baseline.js';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 
@@ -55,6 +56,7 @@ export interface FuelingToleranceLogInput {
   drinksMl?: number | null;
   bottles750Ml?: number | null;
   powderG?: number | null;
+  sodiumMg?: number | null;
   giComfort?: 'ok' | 'mild_issue' | 'issue' | string | null;
   notes?: string | null;
 }
@@ -267,39 +269,47 @@ function buildBefore(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
   return items;
 }
 
-function controlledToleranceCarbRange(input: BuildFuelingRecoveryGuidanceInput): { min: number; max: number; text: string; source: 'tolerance_learning' } | null {
+function outcomeBaselineCarbRange(
+  input: BuildFuelingRecoveryGuidanceInput,
+  outcomeBaseline: ReturnType<typeof summarizeFuelingOutcomeBaseline>,
+): { min: number; max: number; text: string; source: 'outcome_baseline' } | null {
   const { workout } = input;
   if (!isEnduranceFuelingSport(workout.activityType) || workout.durationMin < 150) return null;
-  const latestIssue = relevantFuelingHistory(input.fuelingHistory)
-    .find(log => log.giComfort === 'mild_issue' || log.giComfort === 'issue') ?? null;
-  if (!latestIssue) return null;
-  const cph = carbsPerHour(latestIssue);
-  if (cph == null || cph >= 50) return null;
+  if (outcomeBaseline.status === 'insufficient_data' || outcomeBaseline.targetCarbsPerHour == null) return null;
+  const { min, max } = outcomeBaseline.targetCarbsPerHour;
   return {
-    min: 50,
-    max: 70,
-    text: '50-70 g Kohlenhydrate pro Stunde',
-    source: 'tolerance_learning',
+    min,
+    max,
+    text: `${min}-${max} g Kohlenhydrate pro Stunde`,
+    source: 'outcome_baseline',
   };
 }
 
-function carbRange(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): { min: number; max: number; text: string; source?: 'tolerance_learning' } | null {
+function carbRange(
+  input: BuildFuelingRecoveryGuidanceInput,
+  isWeakRecovery: boolean,
+  outcomeBaseline: ReturnType<typeof summarizeFuelingOutcomeBaseline>,
+): { min: number; max: number; text: string; source?: 'outcome_baseline' } | null {
   const { workout, preferences } = input;
   if (preferences.carbGuidanceStyle === 'avoid_amounts') return null;
   if (!isEnduranceFuelingSport(workout.activityType)) return null;
   if (workout.durationMin < 60 && workout.zone < 3) return null;
   if (isWeakRecovery) return { min: 30, max: 45, text: '30-45 g Kohlenhydrate pro Stunde' };
-  const controlledRange = controlledToleranceCarbRange(input);
-  if (controlledRange) return controlledRange;
+  const baselineRange = outcomeBaselineCarbRange(input, outcomeBaseline);
+  if (baselineRange) return baselineRange;
   if (workout.durationMin >= 150) return { min: 60, max: 90, text: '60-90 g Kohlenhydrate pro Stunde' };
   if (workout.durationMin >= 75) return { min: 30, max: 60, text: '30-60 g Kohlenhydrate pro Stunde' };
   return { min: 20, max: 30, text: '20-30 g Kohlenhydrate pro Stunde optional' };
 }
 
-function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: boolean): FuelingRecoveryGuidanceItem[] {
+function buildDuring(
+  input: BuildFuelingRecoveryGuidanceInput,
+  isWeakRecovery: boolean,
+  outcomeBaseline: ReturnType<typeof summarizeFuelingOutcomeBaseline>,
+): FuelingRecoveryGuidanceItem[] {
   const { workout, preferences, race } = input;
   const items: FuelingRecoveryGuidanceItem[] = [];
-  const carbs = carbRange(input, isWeakRecovery);
+  const carbs = carbRange(input, isWeakRecovery, outcomeBaseline);
   const tolerance = summarizeFuelingTolerance(input.fuelingHistory);
 
   if (carbs) {
@@ -314,7 +324,7 @@ function buildDuring(input: BuildFuelingRecoveryGuidanceInput, isWeakRecovery: b
       totalMinG: portion.totalMinG,
       totalMaxG: portion.totalMaxG,
     });
-    const longSessionNote = workout.durationMin >= 150 && !isWeakRecovery && carbs.source !== 'tolerance_learning'
+    const longSessionNote = workout.durationMin >= 150 && !isWeakRecovery && carbs.source !== 'outcome_baseline'
       ? ' Nur mit geübter Glukose-/Fruktose-Strategie Richtung obere Range gehen.'
       : '';
     items.push({
@@ -403,6 +413,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
       status: 'planned',
     }],
   });
+  const outcomeBaseline = summarizeFuelingOutcomeBaseline({ logs: input.fuelingHistory ?? [] });
   const fuelingTolerance = summarizeFuelingTolerance(input.fuelingHistory);
   const evidence: FuelingRecoveryEvidence[] = [{
     label: 'Workout',
@@ -425,6 +436,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
       shouldShow: false,
       preferenceStatus: 'disabled',
       fuelingDebt,
+      outcomeBaseline,
       before: [],
       during: [],
       after: [],
@@ -440,6 +452,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
       shouldShow: false,
       preferenceStatus: 'ready',
       fuelingDebt,
+      outcomeBaseline,
       before: [],
       during: [],
       after: [],
@@ -449,7 +462,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
   }
 
   const before = buildBefore(input, isWeakRecovery);
-  const during = buildDuring(input, isWeakRecovery);
+  const during = buildDuring(input, isWeakRecovery, outcomeBaseline);
   const after = buildAfter(input, isWeakRecovery);
 
   if (workout.durationMin >= 150 && isEnduranceFuelingSport(workout.activityType)) {
@@ -464,6 +477,7 @@ export function buildFuelingRecoveryGuidance(input: BuildFuelingRecoveryGuidance
     shouldShow: true,
     preferenceStatus: 'ready',
     fuelingDebt,
+    outcomeBaseline,
     before,
     during,
     after,

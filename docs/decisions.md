@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Fueling Outcome Baseline bleibt in vorhandenen Flows
+
+- **Decision:** Pulse modelliert Fueling-Lernen als `PulseFuelingOutcomeBaseline` und zeigt diese kompakt in bestehenden Activity- und Plan-Fueling-Flaechen statt einen neuen Nutrition-Tab zu bauen.
+- **Why:** Die naechste Verbesserung soll Tobi direkt beim Loggen und Planen helfen: was wurde vertragen, welche g/h-Stufe ist der naechste Schritt, und welche Evidenz fehlt noch wie Sodium. Ein neuer Bereich wuerde die UI jetzt verbreitern, bevor genug wiederholte Logs fuer eine eigene Nutrition-Arbeitsflaeche existieren.
+- **Alternatives:** Baseline nur als Freitext in Guidance belassen (schwer wiederzuverwenden); sofort einen Nutrition-Tab bauen (mehr Navigation ohne wiederkehrenden Flow-Beweis); Heat/Sweat/Sodium inferieren (zu wenig Daten, deshalb als Evidenzluecke markieren).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Nutrition Intelligence nutzt GI-Learning als konkrete Zielrange
 
 - **Decision:** Wenn eine aktuelle lange Ausdauereinheit mit niedrigem Carb-Intake und GI-/Magenproblem geloggt wurde, nutzt Pulse fuer die naechste lange Einheit eine kontrollierte `50-70 g/h`-Zielrange und rechnet 750-ml-Flaschen sowie MNSTRY-Pulver daraus neu.

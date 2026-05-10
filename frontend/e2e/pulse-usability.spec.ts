@@ -652,6 +652,19 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
       followUpActivityId: null,
       updatedAt: '2026-05-01T08:00:00.000Z',
     },
+    outcomeBaseline: {
+      status: 'learning',
+      label: 'Fueling-Baseline lernen',
+      summary: 'Letzter langer Log: 42 g/h, 4 x 750 ml, 300 g Pulver; naechste Teststufe 50-70 g/h.',
+      latestLogDate: '2026-04-29',
+      observedCarbsPerHour: 42,
+      targetCarbsPerHour: { min: 50, max: 70 },
+      bottles750Ml: 4,
+      powderG: 300,
+      fluidMlPerHour: 419,
+      sodiumMgPerHour: null,
+      evidence: ['Letzter Log: 2026-04-29, 42 g/h, 4 x 750 ml, 300 g Pulver', 'Sodium nicht geloggt'],
+    },
     onNutritionCreate: body => {
       createdLog = body;
     },
@@ -691,6 +704,11 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   await page.goto('/activity/activity-fueling');
   await expect(page.getByTestId('activity-fueling-debt')).toContainText('GI-Schutz offen');
   await expect(page.getByTestId('activity-fueling-debt')).toContainText('75-120 min locker');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Fueling-Baseline lernen');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('42 g/h');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('50-70 g/h');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('4x750 ml');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Sodium: offen');
   await page.getByRole('button', { name: '+ Fueling-Log' }).click();
 
   await expect(page.getByText('750-ml-Flaschen')).toBeVisible();
@@ -3049,6 +3067,19 @@ test('Plan workout modal shows Fueling and Recovery guidance for long sessions',
     fuelingGuidance: (workoutId) => ({
       shouldShow: workoutId === 'workout-fuel',
       preferenceStatus: 'ready',
+      outcomeBaseline: {
+        status: 'learning',
+        label: 'Fueling-Baseline lernen',
+        summary: 'Letzter langer Log: 42 g/h, 4 x 750 ml, 300 g Pulver; naechste Teststufe 50-70 g/h.',
+        latestLogDate: '2026-04-29',
+        observedCarbsPerHour: 42,
+        targetCarbsPerHour: { min: 50, max: 70 },
+        bottles750Ml: 4,
+        powderG: 300,
+        fluidMlPerHour: 419,
+        sodiumMgPerHour: null,
+        evidence: ['Letzter Log: 2026-04-29, 42 g/h, 4 x 750 ml, 300 g Pulver', 'Sodium nicht geloggt'],
+      },
       before: [{ id: 'before', text: '2-3 h vorher ca. 80-160 g Kohlenhydrate.' }],
       during: [
         { id: 'carbs', text: '60-90 g Kohlenhydrate pro Stunde; Ministry als Produktanker nutzen.' },
@@ -3069,6 +3100,9 @@ test('Plan workout modal shows Fueling and Recovery guidance for long sessions',
   const card = page.getByTestId('fueling-recovery-guidance');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Fueling & Recovery');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Baseline lernen');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('42 g/h');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('50-70 g/h');
   await expect(card).toContainText('60-90 g Kohlenhydrate pro Stunde');
   await expect(card).toContainText('400-800 mg Sodium pro Liter');
   await expect(card).toContainText('Recovery innerhalb von 2 h');
