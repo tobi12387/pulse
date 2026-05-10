@@ -21,6 +21,7 @@ type MockPulseApiOptions = {
   load?: unknown;
   planTrace?: unknown;
   planWorkouts?: unknown[];
+  generatePlanResult?: unknown | ((body: unknown) => unknown);
   createWorkoutResult?: unknown | ((body: unknown) => unknown);
   planScenarioPreview?: unknown | ((body: unknown) => unknown);
   raceCommand?: unknown;
@@ -953,6 +954,17 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       const body = request.postDataJSON();
       const result = typeof options.backfillResult === 'function' ? options.backfillResult(body) : options.backfillResult;
       return json(route, result);
+    }
+    if (url.pathname === '/api/pulse/plan/generate' && request.method() === 'POST') {
+      const body = request.postDataJSON();
+      const result = typeof options.generatePlanResult === 'function'
+        ? options.generatePlanResult(body)
+        : options.generatePlanResult;
+      return json(route, result ?? {
+        workouts: [],
+        planDecision: null,
+        planTrace: options.planTrace ?? null,
+      }, 201);
     }
     if (url.pathname === '/api/pulse/plan') return json(route, { workouts: options.planWorkouts ?? [] });
     if (url.pathname === '/api/pulse/plan/scenario/preview' && request.method() === 'POST') {

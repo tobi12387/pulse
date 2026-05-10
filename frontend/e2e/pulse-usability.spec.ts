@@ -1877,6 +1877,54 @@ test('Plan generation failure keeps the config open with retry', async ({ page }
   await expect(page.getByRole('button', { name: 'Erneut versuchen' })).toBeVisible();
 });
 
+test('Plan generation shows the freshly returned trace without requiring reload', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const staleTrace = {
+    weekStart: '2026-04-27',
+    inputSnapshot: {
+      load: { ctl: 42.4, atl: 42.7, tsb: -0.3, date: '2026-04-27' },
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      goals: [],
+      riskSignals: [],
+      healthStates: [],
+      recentRpe: [],
+      dataWarnings: [],
+      recentSportMix: {},
+      learningSnapshot: null,
+    },
+    sportMix: {},
+    generatedSummary: ['Form: CTL 42.4, TSB -0.3, Phase base.'],
+    hardDays: [],
+    planDecision: null,
+  };
+  const freshTrace = {
+    ...staleTrace,
+    inputSnapshot: {
+      ...staleTrace.inputSnapshot,
+      load: { ctl: 16.9, atl: 43.7, tsb: -26.8, date: '2026-05-01' },
+    },
+    generatedSummary: ['Form: CTL 16.9, TSB -26.8, Phase base.'],
+  };
+  await mockPulseApi(page, {
+    planTrace: staleTrace,
+    generatePlanResult: {
+      workouts: [],
+      planDecision: null,
+      planTrace: freshTrace,
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await expect(page.getByText('Form: CTL 42.4, TSB -0.3, Phase base.')).toBeVisible();
+
+  await page.getByRole('button', { name: '+ Plan generieren' }).click();
+  await page.getByRole('button', { name: 'Plan erstellen' }).click();
+
+  await expect(page.getByText('Form: CTL 16.9, TSB -26.8, Phase base.')).toBeVisible();
+  await expect(page.getByText('Form: CTL 42.4, TSB -0.3, Phase base.')).toHaveCount(0);
+});
+
 test('Settings health-state save failure keeps the form open with an inline retry hint', async ({ page }) => {
   await mockPulseApi(page, {
     failEndpoints: {
