@@ -1137,6 +1137,9 @@ function PlanRefreshPreviewCard({ weekStart }: { weekStart: string }) {
             </div>
           ))}
         </div>
+        <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+          {preview.garminImpact?.summary ?? 'Garmin nach Apply: keine Remote-Aenderung erwartet.'}
+        </div>
 
         {preview.comparisons.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }} data-testid="plan-refresh-comparisons">
@@ -1500,7 +1503,7 @@ function PlanScenarioPreviewCard({
             lineHeight: 1.35,
           }}
         >
-          Garmin: {preview.applySupported ? 'nach Apply synchronisierbar' : 'keine Aenderung'}
+          {preview.garminImpact?.summary ?? `Garmin: ${preview.applySupported ? 'nach Apply synchronisierbar' : 'keine Aenderung'}`}
         </span>
       </div>
       {affectedWorkouts.length > 0 && (
@@ -2131,7 +2134,11 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         entrySource={entrySource}
         onApplied={(workout, notice) => {
           setPlanNotice(notice);
-          if (workout) setSelectedWorkout(workout);
+          setSelectedWorkout(null);
+          const next = new URLSearchParams();
+          next.set('tab', 'execution');
+          next.set('source', notice?.tone === 'warning' || !workout ? 'plan-apply-attention' : 'plan-apply');
+          navigate({ pathname: '/plan', search: `?${next.toString()}` });
         }}
       />
 
@@ -2955,7 +2962,20 @@ export default function Plan() {
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
       {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} /></TabPanel>}
-      {tab === 'ausfuehrung' && <TabPanel tab="ausfuehrung"><GarminExecutionTrustPanel /></TabPanel>}
+      {tab === 'ausfuehrung' && (
+        <TabPanel tab="ausfuehrung">
+          {entrySource?.startsWith('plan-apply') && (
+            <InlineFeedback
+              title={entrySource === 'plan-apply-attention' ? 'Garmin-Ausführung prüfen' : 'Plan angewendet'}
+              message={entrySource === 'plan-apply-attention'
+                ? 'Pulse hat die Änderung gespeichert, aber Garmin braucht jetzt Readback oder Reparatur.'
+                : 'Pulse lädt jetzt den Garmin-Readback, damit Vorlage, Kalender und Wiederholungen sichtbar geprüft werden.'}
+              tone={entrySource === 'plan-apply-attention' ? 'warning' : 'info'}
+            />
+          )}
+          <GarminExecutionTrustPanel />
+        </TabPanel>
+      )}
       {tab === 'ziele'    && <TabPanel tab="ziele"><ZieleTab /></TabPanel>}
       {tab === 'review'   && <TabPanel tab="review"><ReviewTab /></TabPanel>}
       {tab === 'statistik' && <TabPanel tab="statistik"><StatistikTab /></TabPanel>}

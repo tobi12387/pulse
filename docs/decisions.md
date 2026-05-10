@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-10 — Plan-Apply fuehrt direkt in Garmin-Ausfuehrungsreadback
+
+- **Decision:** Plan- und Szenario-Vorschauen zeigen erwartete Garmin-Create/Update/Delete-Zaehler. Nach einem Apply wechselt Pulse automatisch in den Plan-Tab `Ausfuehrung`, wo der bestehende Garmin-Readback Vorlage, Kalender, Repeat-Status und explizite Reparaturaktionen prueft.
+- **Why:** Apply und Garmin-Vertrauen duerfen kein mental getrennter Folgeprozess sein. Der Wechsel zum Readback macht sichtbar, was auf Uhr/Edge angekommen ist oder repariert werden muss, ohne dass normale Browser-QA selbst Garmin-Schreibaktionen ausloest.
+- **Alternatives:** Nach Apply im Training-Tab bleiben (zu wenig Trust Closure); automatische Reparatur ohne Klick ausloesen (zu riskant); separaten Top-Level-Garmin-Tab bauen (mehr Navigation statt besserem Planfluss).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-10 — Plan Refresh Preview bleibt read-only bis Garmin-Diff/Apply geschlossen ist
+
+- **Decision:** Pulse zeigt im Plan-Tab eine `Plan prüfen`-Vorschau fuer stale Wochen, offene Adaptionssignale, Capability-Updates und alte Plan-Engine-Versionen. Die Vorschau vergleicht aktuelle und vorgeschlagene Workouts, aber `Vorschau anwenden` bleibt in dieser Phase bewusst deaktiviert.
+- **Why:** Tobi braucht vor einer Regeneration erst Klarheit, ob RPE/GI/Mental/Garmin-/Capability-Signale den sichtbaren Plan wirklich aendern wuerden. Ein read-only GET mit Tests gegen DB- und Garmin-Schreibzugriffe haelt Browser-QA sicher und bereitet die naechste Apply-/Readback-Phase sauber vor.
+- **Alternatives:** Direkt `/plan/generate` aus der UI triggern (zu riskant wegen Garmin-Schreibpfaden); Apply sofort mitbauen (zu grosser Scope ohne Garmin-Diff); nur Adaptionskarten anzeigen (kein konkreter Workout-Vergleich).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Pulse bleibt proprietaer lizenziert
 
 - **Decision:** Pulse wird als proprietaere Codebasis mit `All rights reserved`-Lizenzdatei gefuehrt; das Root-`package.json` markiert das Monorepo zusaetzlich als `UNLICENSED`.
@@ -26,7 +42,7 @@
 - **Decided by:** Tobi / Codex, PR #271.
 - **Status:** active.
 
-## 2026-05-10 — Fresh Benchmark Roadmap behaelt vier Top-Level-Tabs
+## 2026-05-10 — Karpathy-Agentenregeln werden als Pulse-Codex-Disziplin geführt
 
 - **Decision:** Die Karpathy-inspirierten Agentenregeln aus `forrestchang/andrej-karpathy-skills` werden nicht als generische `CLAUDE.md` kopiert, sondern als Pulse-spezifische Codex-Skill `pulse-coding-discipline` plus knappe Pointer in `AGENTS.md`, `docs/ai/context-map.md` und `docs/codex-system-prompt.md` gepflegt.
 - **Why:** Pulse hat bereits harte Repo-Regeln, Session-Rituale und Produktentscheidungen. Eine angepasste Codex-Skill hält die vier nützlichen Prinzipien (Annahmen sichtbar machen, einfachste ausreichende Lösung, chirurgische Diffs, verifizierbare Ziele) auffindbar, ohne Claude-/Cursor-spezifische Installationslogik oder doppelte Prompt-Regeln einzuschleppen.

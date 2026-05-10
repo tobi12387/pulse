@@ -1132,6 +1132,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           triggers: [],
           comparisons: [],
           loadImpact: { tssDelta: 0, durationDeltaMin: 0 },
+          garminImpact: { creates: 0, updates: 0, deletes: 0, unchanged: 0, summary: 'Garmin nach Apply: keine Remote-Aenderung erwartet.' },
           applySupported: false,
           mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
         },
@@ -1192,6 +1193,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
               label: '+1 Einheit, +296 TSS',
             }],
             loadImpact: { tssDelta: 296, durationDeltaMin: durationMin, nextDayRecoveryDate: '2026-05-02' },
+            garminImpact: { creates: 1, updates: 0, deletes: 0, unchanged: 0, summary: 'Garmin nach Apply: 1 neu.' },
             reasons: [
               'Lange Tour: Fueling und GI-Komfort werden zur Akzeptanzbedingung.',
               'Folgetag als Recovery/Feedback-Fenster schützen.',
@@ -1213,6 +1215,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
             label: `+1 Einheit, +${body.workout?.durationMin ?? 60} min`,
           }],
           loadImpact: { tssDelta: 42, durationDeltaMin: body.workout?.durationMin ?? 60, nextDayRecoveryDate: null },
+          garminImpact: { creates: 1, updates: 0, deletes: 0, unchanged: 0, summary: 'Garmin nach Apply: 1 neu.' },
           reasons: [
             'Mobile Vorschau: erst Wochenlast, Recovery und Garmin-Auswirkung prüfen.',
             'Plan oder Garmin werden erst nach Apply verändert.',

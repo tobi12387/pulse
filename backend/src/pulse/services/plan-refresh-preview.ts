@@ -1,6 +1,7 @@
 import type {
   PulseAdaptationEvent,
   PulseActivityType,
+  PulsePlanGarminApplyImpact,
   PulsePlanRefreshComparison,
   PulsePlanRefreshPreview,
   PulsePlanRefreshTrigger,
@@ -243,6 +244,19 @@ function summarize(input: {
   return `${input.triggers.length} Signal(e) sprechen fuer eine Planpruefung; ${input.comparisons.length} offene Einheit(en) wuerden sich aendern.${lockedSuffix}`;
 }
 
+function garminImpact(totalWorkouts: number, comparisons: PulsePlanRefreshComparison[]): PulsePlanGarminApplyImpact {
+  const updates = comparisons.length;
+  return {
+    creates: 0,
+    updates,
+    deletes: 0,
+    unchanged: Math.max(0, totalWorkouts - updates),
+    summary: updates > 0
+      ? `Garmin nach Apply: ${updates} Workout-Update(s) erwartet; keine Loeschung in der Vorschau.`
+      : 'Garmin nach Apply: keine Remote-Aenderung erwartet.',
+  };
+}
+
 export function buildPlanRefreshPreview(input: PlanRefreshPreviewInput): PulsePlanRefreshPreview {
   const generatedAt = input.generatedAt ?? new Date().toISOString();
   const triggers = deriveTriggers(input);
@@ -288,6 +302,7 @@ export function buildPlanRefreshPreview(input: PlanRefreshPreviewInput): PulsePl
       tssDelta: afterTss - beforeTss,
       durationDeltaMin: afterDuration - beforeDuration,
     },
+    garminImpact: garminImpact(snapshots.length, comparisons),
     applySupported: false,
     mutationBoundary: 'Read-only: diese Vorschau fuehrt keine DB- oder Garmin-Schreibaktion aus.',
   };

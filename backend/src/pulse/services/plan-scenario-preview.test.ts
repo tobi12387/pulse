@@ -41,6 +41,7 @@ describe('buildPlanScenarioPreview', () => {
     ]));
     expect(preview.warnings.join(' ')).toContain('155');
     expect(preview.applySupported).toBe(true);
+    expect(preview.garminImpact).toMatchObject({ creates: 1, updates: 0, deletes: 0 });
   });
 
   it('moves a workout without creating or deleting other workouts in preview', () => {
@@ -58,6 +59,7 @@ describe('buildPlanScenarioPreview', () => {
     expect(preview.projectedWorkouts[0]?.plannedDate).toBe('2026-05-12');
     expect(preview.changedDays.map(day => day.date)).toEqual(['2026-05-10', '2026-05-12']);
     expect(preview.loadImpact.tssDelta).toBe(0);
+    expect(preview.garminImpact).toMatchObject({ creates: 0, updates: 1, deletes: 0 });
   });
 
   it('reduces non-locked future workouts but preserves user-locked workouts', () => {
@@ -76,5 +78,6 @@ describe('buildPlanScenarioPreview', () => {
     expect(normal?.durationMin).toBe(70);
     expect(locked?.durationMin).toBe(240);
     expect(preview.reasons).toContain('User-locked Workouts bleiben unverändert.');
+    expect(preview.garminImpact).toMatchObject({ creates: 0, updates: 1, deletes: 0 });
   });
 });
