@@ -2389,6 +2389,43 @@ test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ pag
   await expect(panel).toContainText('Nur in Pulse geplant');
 });
 
+test('Plan workout detail summarizes the Garmin handoff before syncing', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-garmin-handoff',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 62,
+        targetTss: 74,
+        status: 'planned',
+        description: 'Schwellenintervalle mit sauberem Garmin-Repeat.',
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        executionStatus: 'local_planned',
+        steps: [
+          { type: 'warmup', durationMin: 12, zone: 1, description: 'Einrollen', targetLabel: 'Z1 105-125 bpm' },
+          { type: 'interval', durationMin: 8, zone: 4, reps: 4, restMin: 3, description: 'Schwelle', targetLabel: 'Z4 158-172 bpm' },
+          { type: 'cooldown', durationMin: 9, zone: 1, description: 'Ausschwingen', targetLabel: 'Z1 105-125 bpm' },
+        ],
+      },
+    ],
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Schwellenintervalle mit sauberem Garmin-Repeat.').click();
+
+  const handoff = page.getByTestId('garmin-workout-handoff');
+  await expect(handoff).toBeVisible();
+  await expect(handoff).toContainText('Garmin Workout-Inhalt');
+  await expect(handoff).toContainText('3 Blöcke');
+  await expect(handoff).toContainText('1 Repeat-Block');
+  await expect(handoff).toContainText('4 Wiederholungen');
+  await expect(handoff).toContainText('3 HR-Ziele');
+  await expect(handoff).toContainText('Prüfe hier, was auf Uhr oder Edge landet');
+});
+
 test('Plan alternatives adapt the next workout with semantic choices', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const updates: unknown[] = [];

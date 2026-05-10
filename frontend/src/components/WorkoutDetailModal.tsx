@@ -81,6 +81,10 @@ function fmtHrTarget(step: WorkoutStep): string | null {
   return null;
 }
 
+function plural(value: number, singular: string, pluralValue: string): string {
+  return `${value} ${value === 1 ? singular : pluralValue}`;
+}
+
 function StepRow({ step }: { step: WorkoutStep }) {
   const zoneColor = ZONE_COLOR[step.zone] ?? 'var(--text-2)';
   const isInterval = step.type === 'interval';
@@ -207,6 +211,9 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
         return acc + s.durationMin;
       }, 0)
     : null;
+  const repeatBlocks = workout.steps?.filter(step => step.type === 'interval' && (step.reps ?? 0) > 1) ?? [];
+  const repeatCount = repeatBlocks.reduce((sum, step) => sum + (step.reps ?? 0), 0);
+  const hrTargetCount = workout.steps?.filter(step => fmtHrTarget(step) != null).length ?? 0;
 
   return (
     <div
@@ -329,6 +336,58 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
               </span>
             </div>
           </div>
+          {workout.steps && workout.steps.length > 0 && (
+            <div
+              data-testid="garmin-workout-handoff"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                padding: '10px 12px',
+                marginBottom: 12,
+                background: 'rgba(94,230,207,0.06)',
+                border: '1px solid rgba(94,230,207,0.22)',
+                borderLeft: '3px solid var(--accent)',
+                borderRadius: 5,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                <strong style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.35 }}>
+                  Garmin Workout-Inhalt
+                </strong>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                  vor Upload
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {[
+                  plural(workout.steps.length, 'Block', 'Blöcke'),
+                  totalMin != null ? `~${fmtDuration(totalMin)}` : null,
+                  repeatBlocks.length > 0 ? plural(repeatBlocks.length, 'Repeat-Block', 'Repeat-Blöcke') : 'Keine Repeat-Blöcke',
+                  repeatCount > 0 ? plural(repeatCount, 'Wiederholung', 'Wiederholungen') : null,
+                  hrTargetCount > 0 ? plural(hrTargetCount, 'HR-Ziel', 'HR-Ziele') : 'Keine HR-Ziele',
+                ].filter(Boolean).map(item => (
+                  <span
+                    key={item}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      color: 'var(--text-2)',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 3,
+                      padding: '2px 5px',
+                    }}
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                Prüfe hier, was auf Uhr oder Edge landet, bevor du hochlädst.
+              </div>
+            </div>
+          )}
           {fuelingGuidance.data?.shouldShow && (
             <div
               data-testid="fueling-recovery-guidance"

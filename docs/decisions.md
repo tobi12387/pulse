@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Workout-Detail zeigt Garmin-Handoff-Inhalt vor Upload
+
+- **Decision:** Das Workout-Detailmodal zeigt bei strukturierten Workouts eine kompakte `Garmin Workout-Inhalt`-Zusammenfassung mit Blockanzahl, Dauer, Repeat-Blöcken, Wiederholungen und HR-Zielen, bevor die Einheit auf Garmin geladen wird.
+- **Why:** Top-Workout-Builder machen vor dem Geräteexport sichtbar, was tatsächlich ausgeführt wird. Pulse soll besonders bei Repeat-/HR-Ziel-Workouts Vertrauen schaffen, bevor Uhr oder Edge synchronisiert werden.
+- **Alternatives:** Nur die Schritteliste behalten (zu schwer zu scannen); die Zusammenfassung erst nach Upload zeigen (zu spät); Backend-DTO erweitern (nicht nötig, da alle Daten im Workout vorhanden sind).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan erklärt Data-Handoff sichtbar
 
 - **Decision:** Wenn die Plan-Szenario-Vorschau aus der Data `Plan-/Load`-Triage geöffnet wird, zeigt die Karte einen sichtbaren Kontext-Hinweis. Der Hinweis nennt Readiness, TSB und Plan-/Load-Evidenz als Grund für die Prüfung.
