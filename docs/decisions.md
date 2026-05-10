@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan Refresh Preview bleibt read-only bis Garmin-Diff/Apply geschlossen ist
+
+- **Decision:** Pulse zeigt im Plan-Tab eine `Plan prüfen`-Vorschau fuer stale Wochen, offene Adaptionssignale, Capability-Updates und alte Plan-Engine-Versionen. Die Vorschau vergleicht aktuelle und vorgeschlagene Workouts, aber `Vorschau anwenden` bleibt in dieser Phase bewusst deaktiviert.
+- **Why:** Tobi braucht vor einer Regeneration erst Klarheit, ob RPE/GI/Mental/Garmin-/Capability-Signale den sichtbaren Plan wirklich aendern wuerden. Ein read-only GET mit Tests gegen DB- und Garmin-Schreibzugriffe haelt Browser-QA sicher und bereitet die naechste Apply-/Readback-Phase sauber vor.
+- **Alternatives:** Direkt `/plan/generate` aus der UI triggern (zu riskant wegen Garmin-Schreibpfaden); Apply sofort mitbauen (zu grosser Scope ohne Garmin-Diff); nur Adaptionskarten anzeigen (kein konkreter Workout-Vergleich).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Naechste Roadmap fokussiert Plan-Aktivierung statt neue Tabs
 
 - **Decision:** Nach Abschluss der Progression Library v2 priorisiert Pulse Plan Refresh Preview, Garmin Readback Closure, Today Options Signal Labels, Fueling Debt Closure, Limiter-to-Workout Mapping und eine No-Garmin-Write QA Harness. Es wird kein neuer Top-Level-Tab eingefuehrt.

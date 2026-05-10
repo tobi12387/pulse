@@ -10,6 +10,8 @@
 
 ## Phase 1: Plan Refresh Preview v1
 
+**Status:** Implemented in branch `codex/plan-refresh-preview-v1`.
+
 **Problem:** New planning intelligence only appears after regeneration. Users need to know when the visible week is stale relative to new Garmin/RPE/GI/Mental/Capability evidence.
 
 **Story:** As Tobi, I want Pulse to show a preview of how my current week would change before anything is saved or synced, so I can understand whether a refresh is worth applying.

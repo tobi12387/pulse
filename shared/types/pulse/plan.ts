@@ -385,6 +385,7 @@ export interface PulsePlanTrace {
   weekStart: string;
   createdAt: string;
   inputSnapshot: {
+    engineVersion?: string;
     phase: string;
     mesocycleWeek: number;
     weeklyHoursTarget: number;
@@ -423,6 +424,58 @@ export interface PulsePlanTrace {
   generatedSummary: string[];
   adaptation?: PulsePlanTraceAdaptation | null;
   restDayRationale?: PulseTrainingExecutionReview['restDayRationale'];
+}
+
+export type PulsePlanRefreshTriggerKind =
+  | 'new_activity'
+  | 'high_rpe'
+  | 'gi_issue'
+  | 'mental_protect'
+  | 'capability_update'
+  | 'missed_or_replaced'
+  | 'stale_engine';
+
+export interface PulsePlanRefreshTrigger {
+  kind: PulsePlanRefreshTriggerKind;
+  label: string;
+  detail: string;
+  severity: 'info' | 'watch' | 'action';
+  evidence: string[];
+}
+
+export interface PulsePlanRefreshWorkoutSnapshot {
+  id: string;
+  plannedDate: string;
+  activityType: PulseActivityType;
+  zone: number;
+  durationMin: number;
+  targetTss: number | null;
+  archetypeId: string | null;
+  why: string | null;
+  userLocked: boolean;
+}
+
+export interface PulsePlanRefreshComparison {
+  date: string;
+  current: PulsePlanRefreshWorkoutSnapshot | null;
+  proposed: PulsePlanRefreshWorkoutSnapshot | null;
+  changes: Array<'date' | 'sport' | 'zone' | 'duration' | 'archetype' | 'why'>;
+  reason: string;
+}
+
+export interface PulsePlanRefreshPreview {
+  weekStart: string;
+  generatedAt: string;
+  stale: boolean;
+  summary: string;
+  triggers: PulsePlanRefreshTrigger[];
+  comparisons: PulsePlanRefreshComparison[];
+  loadImpact: {
+    tssDelta: number;
+    durationDeltaMin: number;
+  };
+  applySupported: boolean;
+  mutationBoundary: string;
 }
 export type GoalCategory = 'race' | 'weight' | 'ftp' | 'vo2max' | 'volume';
 

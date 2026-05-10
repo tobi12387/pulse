@@ -16,6 +16,7 @@ import {
   pulsePlanGenerations,
   pulsePlannedWorkouts,
   pulsePowerDurationSnapshots,
+  pulseTrainingCapabilityLevels,
   pulseUserProfile,
   pulseWeeklyReviews,
   pulseWeekAvailability,
@@ -58,6 +59,7 @@ import { serializeCoachPreferences } from '../services/coach.js';
 import { buildWorkoutSteps } from '../services/workout-steps.js';
 import type { WorkoutLibraryMetadata } from '../services/workout-library.js';
 import { buildTodayOptions } from '../services/today-options.js';
+import { buildPlanRefreshPreview } from '../services/plan-refresh-preview.js';
 import { buildPlanScenarioPreview } from '../services/plan-scenario-preview.js';
 import { buildGarminSyncContract, buildGarminWorkoutJson, previewGarminSyncContract, summarizeGarminPayloadSnapshot } from '../services/garmin-workout.js';
 import { recordGarminExecution } from '../services/garmin-execution-ledger.js';
@@ -1423,6 +1425,68 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .limit(1);
 
     return { trace: row ? mapPlanTrace(row) : null };
+  });
+
+  app.get('/plan/refresh-preview/:weekStart', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { weekStart } = req.params as { weekStart: string };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return reply.status(400).send({ error: 'Ungültiges Datum' });
+
+    const today = new Date().toISOString().split('T')[0]!;
+    const weekEnd = shiftIsoDate(weekStart, 7);
+    const [
+      workouts,
+      [traceRow],
+      openEvents,
+      [latestCapability],
+    ] = await Promise.all([
+      db.select().from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, weekStart),
+          lt(pulsePlannedWorkouts.plannedDate, weekEnd),
+        ))
+        .orderBy(pulsePlannedWorkouts.plannedDate),
+      db.select().from(pulsePlanGenerations)
+        .where(and(
+          eq(pulsePlanGenerations.userId, userId),
+          eq(pulsePlanGenerations.weekStart, weekStart),
+        ))
+        .orderBy(desc(pulsePlanGenerations.createdAt))
+        .limit(1),
+      loadOpenAdaptationEvents(db, userId, today),
+      db.select({ updatedAt: pulseTrainingCapabilityLevels.updatedAt })
+        .from(pulseTrainingCapabilityLevels)
+        .where(eq(pulseTrainingCapabilityLevels.userId, userId))
+        .orderBy(desc(pulseTrainingCapabilityLevels.updatedAt))
+        .limit(1),
+    ]);
+
+    const mappedTrace = traceRow ? mapPlanTrace(traceRow) : null;
+    const preview = buildPlanRefreshPreview({
+      today,
+      weekStart,
+      currentWorkouts: workouts.map(workout => ({
+        id: workout.id,
+        plannedDate: workout.plannedDate,
+        activityType: workout.activityType as PulseActivityType,
+        zone: workout.zone,
+        durationMin: workout.durationMin,
+        targetTss: workout.targetTss,
+        userLocked: workout.userLocked,
+        status: workout.status,
+        description: workout.description,
+        archetypeId: workout.archetypeId,
+      })),
+      adaptationEvents: openEvents,
+      latestTrace: mappedTrace ? {
+        createdAt: mappedTrace.createdAt,
+        engineVersion: mappedTrace.inputSnapshot.engineVersion ?? null,
+      } : null,
+      latestCapabilityUpdatedAt: latestCapability?.updatedAt?.toISOString() ?? null,
+    });
+
+    return { preview };
   });
 
   app.get('/plan/adaptation-events', { onRequest: [app.authenticate] }, async (req) => {
