@@ -37,6 +37,7 @@ type MockPulseApiOptions = {
   coachHistory?: unknown[];
   coachPreferences?: unknown;
   todayOptions?: unknown;
+  todayOptionsState?: 'completed_activity' | 'planned_workout' | 'unplanned_trainable' | 'recovery_protect';
   todayProposal?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
@@ -320,6 +321,103 @@ const checkinGuidance = {
   ],
   action: null,
 };
+
+function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOptionsState']>) {
+  if (state === 'unplanned_trainable') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Kein Pflichttraining heute. Wenn du trainierst, dann gezielt und ohne den Tag automatisch zu fuellen.',
+        signature: `${today}|unplanned-trainable`,
+        options: [{
+          id: 'workout-bike-z2-45',
+          kind: 'workout',
+          priority: 'primary',
+          title: 'Rad locker',
+          detail: '45 min Z2. Sinnvoll, wenn du heute spontan trainieren willst.',
+          cta: 'Einheit planen',
+          targetPath: '/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=2&durationMin=45&description=45%20min%20Z2%20locker#plan-scenario-preview',
+          evidence: ['Readiness 78/100', 'TSB 2.0'],
+          activityType: 'bike',
+          zone: 2,
+          durationMin: 45,
+          archetypeId: 'endurance_steady',
+          capabilityFit: 'productive',
+        }],
+      },
+    };
+  }
+
+  if (state === 'completed_activity') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Die geplante Einheit ist erledigt. Jetzt zaehlen Feedback, Fueling und Erholung.',
+        signature: `${today}|completed-activity`,
+        options: [{
+          id: 'feedback-after-workout',
+          kind: 'feedback',
+          priority: 'primary',
+          title: 'Feedback erfassen',
+          detail: 'RPE, Beine und Fueling sichern, bevor Pulse Folgetage bewertet.',
+          cta: 'Feedback oeffnen',
+          targetPath: '/data?tab=analysen',
+          evidence: ['Aktivitaet erkannt'],
+        }],
+      },
+    };
+  }
+
+  if (state === 'recovery_protect') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Recovery ist heute wichtiger als zusaetzliches Training.',
+        signature: `${today}|recovery-protect`,
+        options: [{
+          id: 'recovery-protect',
+          kind: 'recovery',
+          priority: 'primary',
+          title: 'Erholung schuetzen',
+          detail: 'Nur locker bewegen, wenn es dich wirklich erholt.',
+          cta: 'Recovery pruefen',
+          targetPath: '/data',
+          evidence: ['Recovery protect'],
+          activityType: 'bike',
+          zone: 1,
+          durationMin: 20,
+        }],
+      },
+    };
+  }
+
+  return {
+    todayOptions: {
+      date: today,
+      state,
+      summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+      signature: `${today}|planned-workout`,
+      options: [{
+        id: 'planned-default',
+        kind: 'workout',
+        priority: 'primary',
+        title: 'Plan ausfuehren: Rad',
+        detail: '75 min Z2. Passt heute, solange Check-in und Warm-up unauffaellig bleiben.',
+        cta: 'Workout oeffnen',
+        targetPath: '/plan?tab=training',
+        evidence: ['Readiness 82/100', 'TSB 3.0'],
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        archetypeId: 'endurance_steady',
+        capabilityFit: 'productive',
+      }],
+    },
+  };
+}
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -877,6 +975,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/health-state' && 'healthState' in options) return json(route, options.healthState);
     if (url.pathname === '/api/pulse/plan/today/options' && 'todayOptions' in options) return json(route, options.todayOptions);
+    if (url.pathname === '/api/pulse/plan/today/options' && options.todayOptionsState) return json(route, todayOptionsFixture(options.todayOptionsState));
     if (url.pathname === '/api/pulse/plan/today/proposal' && 'todayProposal' in options) return json(route, options.todayProposal);
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/load' && 'load' in options) return json(route, options.load);

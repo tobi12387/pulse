@@ -92,10 +92,13 @@ test.describe('Route evidence screenshot pack', () => {
       overflow: Awaited<ReturnType<typeof overflowSummary>>;
     }> = [];
 
-    for (const route of routes) {
+    async function capture(
+      route: { path: string; label: string; visibleText: string },
+      verify?: () => Promise<void>,
+    ) {
       await page.goto(route.path);
       await expect(page.locator('main').getByText(route.visibleText).first()).toBeVisible();
-
+      await verify?.();
       const overflow = await overflowSummary(page);
       const filename = `${String(screenshots.length + 1).padStart(2, '0')}-${route.label}.png`;
       const file = path.join(runDir, filename);
@@ -107,6 +110,49 @@ test.describe('Route evidence screenshot pack', () => {
         file,
         overflow,
       });
+    }
+
+    for (const route of routes) {
+      await capture(route);
+    }
+
+    if (testInfo.project.name === 'mobile-chromium') {
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'unplanned_trainable' });
+      await capture(
+        { path: '/', label: 'home-mobile-intent', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-availability-intent')).toBeVisible();
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'completed_activity' });
+      await capture(
+        { path: '/', label: 'home-completed-no-intent', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'recovery_protect' });
+      await capture(
+        { path: '/', label: 'home-recovery-no-intent', visibleText: 'READINESS' },
+        async () => {
+          await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'unplanned_trainable' });
+      await capture(
+        {
+          path: '/plan?tab=training&source=mobile-intent&scenario=workout&activityType=bike&zone=1&durationMin=60&description=Heute%2060%20min%20moeglich%3B%20Pulse%20prueft%20Auswirkung%20auf%20Woche%20und%20Garmin.#plan-scenario-preview',
+          label: 'plan-mobile-intent-scenario',
+          visibleText: 'Training, Ziele & Statistik',
+        },
+        async () => {
+          await expect(page.getByTestId('plan-scenario-preview-card')).toBeVisible();
+          await expect(page.getByTestId('plan-scenario-preview-card')).toContainText('Mobile Quick Decision');
+        },
+      );
     }
 
     const manifest = {

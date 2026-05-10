@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useCheckinHistory, useCheckinToday,
@@ -1083,17 +1083,56 @@ function PlanScenarioPreviewCard({
   const [applyError, setApplyError] = useState<string | null>(null);
   const [reviewHint, setReviewHint] = useState<string | null>(null);
   const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
+  const autoPreviewKeyRef = useRef<string | null>(null);
   const pending = previewScenario.isPending || createWorkout.isPending || updateWorkout.isPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
+  const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent';
 
   useEffect(() => {
-    if (entrySource !== 'today-options' || scenarioParam !== 'workout') return;
+    if (!isQuickScenarioEntry) return;
+    async function runAutoPreview(request: PulsePlanScenarioRequest) {
+      if (autoPreviewKeyRef.current === searchKey) return;
+      autoPreviewKeyRef.current = searchKey;
+      try {
+        const result = await previewScenario.mutateAsync(request);
+        setPreview(result.preview);
+      } catch (err) {
+        setError(errorMessage(err, 'Die Vorschau konnte nicht berechnet werden.'));
+      }
+    }
+
+    if (scenarioParam === 'reduce_volume' && entrySource === 'mobile-intent') {
+      const request: PulsePlanScenarioRequest = { type: 'reduce_volume', factor: 0.7 };
+      setMode('reduce');
+      setReduceFactor(70);
+      setWorkoutArchetypeId(null);
+      setPreview(null);
+      setError(null);
+      setApplyError(null);
+      setReviewHint(descriptionParam || 'Heute bewusst frei halten.');
+      void runAutoPreview(request);
+      return;
+    }
+    if (scenarioParam !== 'workout') return;
     const activityType = activityTypeFromParam(activityTypeParam);
     const zone = numberFromParam(zoneParam, 2, 1, 5);
     const durationMin = numberFromParam(durationParam, 45, 5, 900);
     const description = descriptionParam
-      || `${ACTIVITY_LABEL[activityType] ?? activityType} ${durationMin} min Z${zone} aus TrainNow.`;
+      || `${ACTIVITY_LABEL[activityType] ?? activityType} ${durationMin} min Z${zone} aus ${entrySource === 'mobile-intent' ? 'Mobile Quick Decision' : 'TrainNow'}.`;
+    const request: PulsePlanScenarioRequest = {
+      type: 'add_custom_tour',
+      workout: {
+        plannedDate: today,
+        activityType,
+        zone,
+        durationMin,
+        distanceKm: null,
+        expectedSpeedKmh: null,
+        description,
+        archetypeId: archetypeParam,
+      },
+    };
 
     setMode('tour');
     setWorkoutActivityType(activityType);
@@ -1107,8 +1146,11 @@ function PlanScenarioPreviewCard({
     setPreview(null);
     setError(null);
     setApplyError(null);
-    setReviewHint('TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
-  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, scenarioParam, searchKey, today, zoneParam]);
+    setReviewHint(entrySource === 'mobile-intent'
+      ? 'Mobile Quick Decision vorbereitet: Pulse prueft erst Wochenlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+      : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
+    void runAutoPreview(request);
+  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isQuickScenarioEntry, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
     if (reviewRequest.seq <= 0) return;
@@ -1210,6 +1252,149 @@ function PlanScenarioPreviewCard({
     }
   }
 
+  function renderPreviewActions() {
+    if (!preview) return null;
+    const applyEnabled = preview.applySupported && mode !== 'availability';
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(96px, auto)', gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => { void handleApply(); }}
+          disabled={pending || !applyEnabled}
+          style={{
+            minHeight: 44,
+            minWidth: 44,
+            background: applyEnabled ? 'var(--accent)' : 'var(--surface-2)',
+            color: applyEnabled ? 'var(--bg)' : 'var(--text-3)',
+            border: 'none',
+            borderRadius: 'var(--radius)',
+            cursor: applyEnabled ? 'pointer' : 'default',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {mode === 'availability' ? 'Im Verfügbarkeitsbereich speichern' : pending ? '● Wende an…' : 'Vorschau anwenden'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setPreview(null);
+            setApplyError(null);
+          }}
+          style={{
+            minHeight: 44,
+            minWidth: 44,
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Abbrechen
+        </button>
+      </div>
+    );
+  }
+
+  const previewResult = preview ? (
+    <div style={{ marginTop: 12, display: 'grid', gap: 10 }} data-testid="plan-scenario-preview-result">
+      <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{preview.summary}</div>
+      {isQuickScenarioEntry && renderPreviewActions()}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(116px, 1fr))', gap: 6 }}>
+        {[
+          ['TSS', `${preview.loadImpact.tssDelta >= 0 ? '+' : ''}${preview.loadImpact.tssDelta}`],
+          ['Dauer', `${preview.loadImpact.durationDeltaMin >= 0 ? '+' : ''}${preview.loadImpact.durationDeltaMin} min`],
+          ['Recovery', preview.loadImpact.nextDayRecoveryDate ?? 'kein extra Tag'],
+        ].map(([label, value]) => (
+          <div key={label} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 4, padding: 9 }}>
+            <div className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>{label}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)', marginTop: 4 }}>{value}</div>
+          </div>
+        ))}
+        <span
+          className="chip"
+          data-testid="scenario-garmin-impact"
+          style={{
+            display: 'grid',
+            alignContent: 'center',
+            minHeight: 48,
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: 9,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            color: preview.applySupported ? 'var(--accent)' : 'var(--text-3)',
+            lineHeight: 1.35,
+          }}
+        >
+          Garmin: {preview.applySupported ? 'nach Apply synchronisierbar' : 'keine Aenderung'}
+        </span>
+      </div>
+      {affectedWorkouts.length > 0 && (
+        <div style={{ display: 'grid', gap: 7 }}>
+          <div className="label-mono" style={{ color: 'var(--accent)' }}>Betroffene Einheiten</div>
+          {affectedWorkouts.map(workout => (
+            <div
+              key={workout.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(72px, auto)',
+                gap: 8,
+                alignItems: 'center',
+                border: '1px solid var(--border)',
+                borderLeft: `3px solid ${workout.tone}`,
+                borderRadius: 4,
+                padding: '8px 9px',
+                background: 'var(--surface-2)',
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{workout.title}</div>
+                <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>{workout.detail}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', textAlign: 'right', lineHeight: 1.55 }}>
+                <div>{workout.durationLine}</div>
+                <div>{workout.tssLine}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {preview.changedDays.length > 0 && (
+        <div style={{ display: 'grid', gap: 6 }}>
+          {preview.changedDays.slice(0, 5).map(day => (
+            <div key={day.date} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, border: '1px solid var(--border)', borderRadius: 4, padding: '7px 8px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)' }}>{day.date}</span>
+              <span style={{ fontSize: 11, color: 'var(--text)' }}>{day.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {preview.reasons.length > 0 && (
+        <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.55 }}>
+          {preview.reasons.slice(0, 3).map(reason => <div key={reason}>- {reason}</div>)}
+        </div>
+      )}
+      {preview.warnings.map(warning => (
+        <div key={warning} style={{ fontSize: 11.5, color: 'var(--amber)', lineHeight: 1.5 }}>
+          {warning}
+        </div>
+      ))}
+      {applyError && <InlineFeedback title="Szenario nicht angewendet" message={applyError} />}
+      {!isQuickScenarioEntry && renderPreviewActions()}
+    </div>
+  ) : null;
+
   return (
     <section id="plan-scenario-preview" tabIndex={-1} className="card" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 12 }}>
@@ -1258,6 +1443,25 @@ function PlanScenarioPreviewCard({
           Aus TrainNow geöffnet: Prüfe hier zuerst Planlast, Recovery und Garmin-Auswirkung, bevor Pulse die Einheit speichert.
         </p>
       )}
+      {entrySource === 'mobile-intent' && (
+        <p
+          data-testid="plan-scenario-entry-context"
+          style={{
+            margin: '0 0 10px',
+            padding: '8px 10px',
+            border: '1px solid rgba(94,230,207,0.24)',
+            borderRadius: 5,
+            background: 'rgba(94,230,207,0.07)',
+            color: 'var(--text-2)',
+            fontSize: 11.5,
+            lineHeight: 1.45,
+          }}
+        >
+          Mobile Quick Decision: Prüfe hier zuerst Planlast, Recovery und Garmin-Auswirkung. Pulse schreibt erst nach dem Anwenden.
+        </p>
+      )}
+
+      {isQuickScenarioEntry && previewResult}
 
       <form onSubmit={handlePreview} style={{ display: 'grid', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
@@ -1276,7 +1480,8 @@ function PlanScenarioPreviewCard({
                 setReviewHint(null);
               }}
               style={{
-                minHeight: 38,
+                minHeight: 44,
+                minWidth: 44,
                 border: `1px solid ${mode === id ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 'var(--radius)',
                 background: mode === id ? 'rgba(94,230,207,0.08)' : 'var(--surface-2)',
@@ -1383,7 +1588,8 @@ function PlanScenarioPreviewCard({
         )}
 
         <button type="submit" disabled={pending || (mode === 'move' && !nextWorkout)} style={{
-          minHeight: 42,
+          minHeight: 44,
+          minWidth: 44,
           background: 'var(--surface-2)',
           border: '1px solid var(--accent)',
           borderRadius: 'var(--radius)',
@@ -1404,94 +1610,7 @@ function PlanScenarioPreviewCard({
         </div>
       )}
 
-      {preview && (
-        <div style={{ marginTop: 12, display: 'grid', gap: 10 }} data-testid="plan-scenario-preview-result">
-          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{preview.summary}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
-            {[
-              ['TSS', `${preview.loadImpact.tssDelta >= 0 ? '+' : ''}${preview.loadImpact.tssDelta}`],
-              ['Dauer', `${preview.loadImpact.durationDeltaMin >= 0 ? '+' : ''}${preview.loadImpact.durationDeltaMin} min`],
-              ['Recovery', preview.loadImpact.nextDayRecoveryDate ?? 'kein extra Tag'],
-            ].map(([label, value]) => (
-              <div key={label} style={{ background: 'var(--surface-2)', padding: 9 }}>
-                <div className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>{label}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)', marginTop: 4 }}>{value}</div>
-              </div>
-            ))}
-          </div>
-          {affectedWorkouts.length > 0 && (
-            <div style={{ display: 'grid', gap: 7 }}>
-              <div className="label-mono" style={{ color: 'var(--accent)' }}>Betroffene Einheiten</div>
-              {affectedWorkouts.map(workout => (
-                <div
-                  key={workout.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(0, 1fr) auto',
-                    gap: 8,
-                    alignItems: 'center',
-                    border: '1px solid var(--border)',
-                    borderLeft: `3px solid ${workout.tone}`,
-                    borderRadius: 4,
-                    padding: '8px 9px',
-                    background: 'var(--surface-2)',
-                  }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{workout.title}</div>
-                    <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>{workout.detail}</div>
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', textAlign: 'right', lineHeight: 1.55, whiteSpace: 'nowrap' }}>
-                    <div>{workout.durationLine}</div>
-                    <div>{workout.tssLine}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {preview.changedDays.length > 0 && (
-            <div style={{ display: 'grid', gap: 6 }}>
-              {preview.changedDays.slice(0, 5).map(day => (
-                <div key={day.date} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, border: '1px solid var(--border)', borderRadius: 4, padding: '7px 8px' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)' }}>{day.date}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text)' }}>{day.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {preview.reasons.length > 0 && (
-            <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.55 }}>
-              {preview.reasons.slice(0, 3).map(reason => <div key={reason}>- {reason}</div>)}
-            </div>
-          )}
-          {preview.warnings.map(warning => (
-            <div key={warning} style={{ fontSize: 11.5, color: 'var(--amber)', lineHeight: 1.5 }}>
-              {warning}
-            </div>
-          ))}
-          {applyError && <InlineFeedback title="Szenario nicht angewendet" message={applyError} />}
-          <button
-            type="button"
-            onClick={() => { void handleApply(); }}
-            disabled={pending || !preview.applySupported || mode === 'availability'}
-            style={{
-              minHeight: 42,
-              background: preview.applySupported && mode !== 'availability' ? 'var(--accent)' : 'var(--surface-2)',
-              color: preview.applySupported && mode !== 'availability' ? 'var(--bg)' : 'var(--text-3)',
-              border: 'none',
-              borderRadius: 'var(--radius)',
-              cursor: preview.applySupported && mode !== 'availability' ? 'pointer' : 'default',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {mode === 'availability' ? 'Im Verfügbarkeitsbereich speichern' : pending ? '● Wende an…' : 'Vorschau anwenden'}
-          </button>
-        </div>
-      )}
+      {!isQuickScenarioEntry && previewResult}
     </section>
   );
 }

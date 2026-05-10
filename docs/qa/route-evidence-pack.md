@@ -40,11 +40,22 @@ Compatibility route still captured while old links and push targets can open it:
 
 - `/coach`
 
+Mobile Plan Flow evidence routes:
+
+- `/` with `today-availability-intent` under `unplanned_trainable`
+- `/` with `completed_activity` and no `today-availability-intent`
+- `/` with `recovery_protect` and no `today-availability-intent`
+- `/plan?tab=training&source=mobile-intent&scenario=workout...#plan-scenario-preview`
+
 Each project directory contains:
 
 - `01-home.png` through `07-settings.png`
 - `manifest.json`
 - `README.md`
+
+The `mobile-chromium` project additionally contains:
+
+- `08-home-mobile-intent.png` through `11-plan-mobile-intent-scenario.png`
 
 ## Manifest Fields
 
