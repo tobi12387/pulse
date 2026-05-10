@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan öffnet mit sichtbarem Adaptionscheck
+
+- **Decision:** Die nächste Trainingsentscheidung zeigt einen kompakten `ADAPTIONS-CHECK`, der entweder `Plan aktuell` oder eine konkrete Empfehlung wie `Leichter empfohlen` benennt. Die Empfehlung bleibt ein Review-/Apply-Flow und ändert den Plan erst nach explizitem Klick auf die Alternative.
+- **Why:** Benchmark-Muster aus TrainerRoad zeigen, dass Nutzer beim Öffnen verstehen wollen, ob der Plan geprüft wurde und ob eine Anpassung ansteht. Pulse hatte Alternativen, aber der Status war zu implizit; Tobi soll direkt sehen, ob aktuelle Daten den Plan beeinflussen.
+- **Alternatives:** Nur die `Empfohlen`-Marke auf dem Button belassen (zu leicht zu übersehen); automatische Anpassung beim Öffnen (zu viel versteckte Mutation); eigene Adaptionsseite bauen (zu groß für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Smoke-Route-Ready-Checks bekommen realistische Browser-Zeit
 
 - **Decision:** Die Smoke-Suite wartet bei Route-Ready-Texten bis zu 15 Sekunden statt des Playwright-Defaults von 5 Sekunden. Der Runtime-Error-Check bleibt separat, aber sichtbare Route-Anker dürfen beim parallelen Desktop-Start länger brauchen.
