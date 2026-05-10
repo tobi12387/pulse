@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Root-Navigation heißt sichtbar `Heute`, Route bleibt `/`
+
+- **Decision:** Die primäre Navigation zeigt fuer den Root-Einstieg `Heute` statt `Home`; die Route `/`, Hotkey `1`, PWA-Launch-URL und bestehende Deep-Links bleiben unveraendert.
+- **Why:** Nach der Daily-Decision-Vereinfachung ist der Root-Screen fachlich ein Tagesfokus, nicht eine generische Startseite. Die Umbenennung reduziert Orientierungsarbeit, ohne technische Routen oder Browser-/Push-Ziele zu brechen.
+- **Alternatives:** Route auf `/heute` migrieren (zu viel Kompatibilitaetsrisiko fuer diesen Slice); Label `Home` behalten (weniger passend zur deutschen Daily-Flow-Sprache); alle Tabs gleichzeitig eindeutschen (groesserer IA-Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Home Daily Decision nutzt den UX-Task-Contract als erste UI-Schicht
 
 - **Decision:** Die Home-Tagesentscheidung zeigt standardmaessig `Warum jetzt`, einen kompakten naechsten Schritt und `Nach dem Klick`; detaillierte Schritte und Evidenz sind per `Details & Evidenz` optional aufklappbar.
