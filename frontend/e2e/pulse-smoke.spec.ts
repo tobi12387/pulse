@@ -388,6 +388,29 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   }
 });
 
+test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
+
+  await page.goto('/data?tab=mental');
+  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+
+  const overflow = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return Array.from(document.querySelectorAll('[role="tablist"][aria-label="Data Bereiche"] [role="tab"]'))
+      .map(element => {
+        const rect = element.getBoundingClientRect();
+        return {
+          text: element.textContent?.trim() ?? '',
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+        };
+      })
+      .filter(item => item.left < -1 || item.right > viewportWidth + 1);
+  });
+
+  expect(overflow).toEqual([]);
+});
+
 test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'top-level numeric hotkeys are a desktop navigation affordance');
 
