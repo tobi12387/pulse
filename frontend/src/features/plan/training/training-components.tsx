@@ -15,10 +15,10 @@ const ZONE_COLOR: Record<number, string> = {
 
 const FIT_META: Record<NonNullable<PlannedWorkout['capabilityFit']>, { label: string; color: string }> = {
   recovery: { label: 'Recovery', color: 'var(--blue)' },
-  maintenance: { label: 'Erhaltung', color: 'var(--text-3)' },
+  maintenance: { label: 'Machbar', color: 'var(--text-3)' },
   productive: { label: 'Produktiv', color: 'var(--green)' },
   stretch: { label: 'Stretch', color: 'var(--amber)' },
-  too_hard_today: { label: 'Zu hart', color: 'var(--rose)' },
+  too_hard_today: { label: 'Zu hart heute', color: 'var(--rose)' },
 };
 
 const EXECUTION_META: Record<NonNullable<PlannedWorkout['executionStatus']>, { label: string; color: string }> = {

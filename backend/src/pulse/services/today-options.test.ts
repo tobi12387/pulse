@@ -314,6 +314,63 @@ describe('buildTodayOptions', () => {
     expect(result.options[0]?.title).toBe('Plan ausführen: Rad');
   });
 
+  it('turns planned workout capability fit into understandable daily signal labels', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 78,
+      tsb: 1,
+      plannedToday: {
+        id: 'stretch-threshold',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 70,
+        targetTss: 88,
+        capabilityFit: 'stretch',
+      },
+      completedTodayActivities: [],
+      recentSportMix: { bike: 2, run: 1 },
+      riskSignals: [],
+      mental: { mood: 7, energy: 7, stress: 3, motivation: 7 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: capabilitySummary({ energySystem: 'threshold', label: 'Threshold', level: 3.4, nextRecommendedWorkoutLevel: 3.6 }),
+    });
+
+    expect(result.state).toBe('planned_workout');
+    expect(result.options[0]?.signalLabels?.[0]).toMatchObject({
+      kind: 'fit_stretch',
+      label: 'Stretch',
+      tone: 'amber',
+    });
+    expect(result.options[0]?.evidence).toContain('Level-Fit: Stretch');
+  });
+
+  it('marks too-hard planned workouts with a clear daily signal label before recovery blocks', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 74,
+      tsb: 0,
+      plannedToday: {
+        id: 'too-hard-vo2',
+        activityType: 'bike',
+        zone: 5,
+        durationMin: 75,
+        targetTss: 112,
+        capabilityFit: 'too_hard_today',
+      },
+      completedTodayActivities: [],
+      recentSportMix: { bike: 2 },
+      riskSignals: [],
+      mental: { mood: 7, energy: 7, stress: 3, motivation: 7 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: capabilitySummary({ energySystem: 'vo2', label: 'VO2', level: 3.1, nextRecommendedWorkoutLevel: 3.1 }),
+    });
+
+    expect(result.state).toBe('recovery_protect');
+    expect(result.options.some(option => option.kind === 'workout' && (option.zone ?? 0) >= 3)).toBe(false);
+    expect(result.options[0]?.evidence).toContain('Level-Fit: Zu hart heute');
+    expect(result.options[0]?.signalLabels?.map(label => label.label)).toContain('Zu hart heute');
+  });
+
   it('does not turn a short GI-aware spontaneous option into long fueling practice', () => {
     const result = buildTodayOptions({
       date: '2026-05-09',
@@ -336,7 +393,10 @@ describe('buildTodayOptions', () => {
     });
     expect(result.options[0]?.targetPath).toContain('archetypeId=endurance_cadence');
     expect(result.options[0]?.evidence).toContain('Fueling: letzte Einheit mit GI-Hinweis');
-    expect(result.options[0]?.signalLabels ?? []).toHaveLength(0);
+    expect(result.options[0]?.signalLabels?.[0]).toMatchObject({
+      kind: 'fit_maintenance',
+      label: 'Machbar',
+    });
   });
 
   it('makes the support option concrete and downshifts near recovery risk', () => {

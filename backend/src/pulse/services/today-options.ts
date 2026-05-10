@@ -53,6 +53,35 @@ function fixed(value: number): string {
   return value.toFixed(1);
 }
 
+const FIT_SIGNAL: Partial<Record<PulseWorkoutFitLabel, PulseTodayOptionSignalLabel>> = {
+  maintenance: {
+    kind: 'fit_maintenance',
+    label: 'Machbar',
+    detail: 'Erhaltung oder Technik statt Progression',
+    tone: 'green',
+  },
+  stretch: {
+    kind: 'fit_stretch',
+    label: 'Stretch',
+    detail: 'Nur mit guter Tagesform und sauberem Warm-up',
+    tone: 'amber',
+  },
+  too_hard_today: {
+    kind: 'fit_too_hard_today',
+    label: 'Zu hart heute',
+    detail: 'Alternative oder Pause wählen',
+    tone: 'rose',
+  },
+};
+
+const FIT_EVIDENCE_LABEL: Record<PulseWorkoutFitLabel, string> = {
+  recovery: 'Recovery',
+  maintenance: 'Machbar',
+  productive: 'Produktiv',
+  stretch: 'Stretch',
+  too_hard_today: 'Zu hart heute',
+};
+
 function highRecoveryRisk(input: TodayOptionsInput): boolean {
   return input.readinessScore < 55
     || input.tsb <= -10
@@ -104,6 +133,11 @@ function compactSignals(
     });
   }
 
+  const fitSignal = options.capabilityFit ? FIT_SIGNAL[options.capabilityFit] : undefined;
+  if (fitSignal) {
+    labels.push(fitSignal);
+  }
+
   if (options.capabilityFit === 'productive') {
     labels.push({
       kind: 'productive',
@@ -135,6 +169,9 @@ function baseEvidence(input: TodayOptionsInput): string[] {
     `Readiness ${input.readinessScore}/100`,
     `TSB ${fixed(input.tsb)}`,
   ];
+  if (input.plannedToday?.capabilityFit) {
+    evidence.push(`Level-Fit: ${FIT_EVIDENCE_LABEL[input.plannedToday.capabilityFit]}`);
+  }
   if (input.mental) {
     evidence.push(`Mental: Energie ${input.mental.energy}/10, Stress ${input.mental.stress}/10`);
   }
@@ -270,6 +307,9 @@ function restOption(input: TodayOptionsInput, priority: PulseTodayOption['priori
     ...riskEvidence(input),
   ];
   const debtClosure = input.fueling.debtSummary?.hasOpenDebt ? input.fueling.debtSummary.closureCondition : null;
+  const capabilityFit = input.plannedToday?.capabilityFit === 'too_hard_today'
+    ? input.plannedToday.capabilityFit
+    : null;
   return {
     id: 'rest-protect-recovery',
     kind: 'rest',
@@ -285,7 +325,7 @@ function restOption(input: TodayOptionsInput, priority: PulseTodayOption['priori
     cta: 'Tagesentscheidung prüfen',
     targetPath: '/',
     evidence,
-    signalLabels: compactSignals(input, { recovery: true }),
+    signalLabels: compactSignals(input, { capabilityFit, recovery: true }),
   };
 }
 
@@ -429,7 +469,7 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
       targetPath: '/plan?tab=training',
       evidence: [
         ...baseEvidence(input),
-        planned.capabilityFit ? `Level-Fit: ${planned.capabilityFit}` : 'Level-Fit: noch nicht bewertet',
+        ...(!planned.capabilityFit ? ['Level-Fit: noch nicht bewertet'] : []),
       ],
       activityType: planned.activityType,
       zone: planned.zone,

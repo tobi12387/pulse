@@ -230,6 +230,9 @@ export type PulseTodayOptionKind =
 
 export type PulseTodayOptionSignalLabelKind =
   | 'productive'
+  | 'fit_maintenance'
+  | 'fit_stretch'
+  | 'fit_too_hard_today'
   | 'recovery'
   | 'fueling_protect'
   | 'mental_protect';

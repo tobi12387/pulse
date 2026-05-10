@@ -102,9 +102,70 @@ type PlanAlternativeOption = {
   id: PlanAlternativeId;
   label: string;
   detail: string;
+  levelEffect?: string;
   recommended?: boolean;
   recommendationReason?: string;
 };
+
+const FIT_DECISION_META: Record<NonNullable<PlannedWorkout['capabilityFit']>, {
+  label: string;
+  tone: string;
+  nextAction: string;
+  recommendation: string | null;
+  recommendedAlternative: PlanAlternativeId | null;
+}> = {
+  recovery: {
+    label: 'Recovery',
+    tone: 'var(--green)',
+    nextAction: 'Sehr leicht. Ausführen, wenn Bewegung dich frischer macht.',
+    recommendation: null,
+    recommendedAlternative: null,
+  },
+  maintenance: {
+    label: 'Machbar',
+    tone: 'var(--green)',
+    nextAction: 'Machbar, eher Erhaltung oder Technik als echter Fortschritt.',
+    recommendation: null,
+    recommendedAlternative: null,
+  },
+  productive: {
+    label: 'Produktiv',
+    tone: 'var(--green)',
+    nextAction: 'Guter Fortschrittsreiz, wenn Warm-up und Fueling passen.',
+    recommendation: null,
+    recommendedAlternative: null,
+  },
+  stretch: {
+    label: 'Stretch',
+    tone: 'var(--amber)',
+    nextAction: 'Kontrollieren: nur mit guter Tagesform, sauberem Warm-up und ausreichend Fueling.',
+    recommendation: 'Athlete-Level: Stretch kontrollieren',
+    recommendedAlternative: 'shorter',
+  },
+  too_hard_today: {
+    label: 'Zu hart heute',
+    tone: 'var(--rose)',
+    nextAction: 'Heute besser entschärfen, verschieben oder bewusst frei lassen.',
+    recommendation: 'Athlete-Level: zu hart heute',
+    recommendedAlternative: 'easier',
+  },
+};
+
+function athleteLevelSummary(workout: PlannedWorkout): {
+  label: string;
+  tone: string;
+  workoutLevel: string | null;
+  nextAction: string;
+} | null {
+  if (!workout.capabilityFit && workout.difficultyLevel == null) return null;
+  const meta = workout.capabilityFit ? FIT_DECISION_META[workout.capabilityFit] : null;
+  return {
+    label: meta?.label ?? 'Noch nicht bewertet',
+    tone: meta?.tone ?? 'var(--text-3)',
+    workoutLevel: workout.difficultyLevel != null ? `Workout-Level ${workout.difficultyLevel.toFixed(1)}` : null,
+    nextAction: meta?.nextAction ?? 'Noch keine belastbare Level-Einschätzung. Erst Ausführung und Feedback sammeln.',
+  };
+}
 
 function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMessage: string): PlanMutationNotice | null {
   if (outcome?.status !== 'failed') return null;
@@ -419,6 +480,8 @@ function NextTrainingDecisionCard({
   const load = currentLoad;
   const riskCount = planTrace?.inputSnapshot.riskSignals.length ?? 0;
   const goalsCount = activeGoalsCount || planTrace?.inputSnapshot.goals.length || 0;
+  const fitDecision = nextWorkout.capabilityFit ? FIT_DECISION_META[nextWorkout.capabilityFit] : null;
+  const levelSummary = athleteLevelSummary(nextWorkout);
   const sourceChips: SourceChip[] = [
     load
       ? { label: `Einbezogen: TSB ${load.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' }
@@ -440,25 +503,37 @@ function NextTrainingDecisionCard({
     && nextWorkout.durationMin <= 180
     && load != null
     && load.tsb >= 5;
-  const recommendedAlternative: { id: PlanAlternativeId; reason: string } | null = riskCount > 0 || mentalPlanImpact || fatigueAlternativeNeeded
+  const protectiveAlternative: { id: PlanAlternativeId; reason: string } | null = riskCount > 0 || mentalPlanImpact || fatigueAlternativeNeeded
     ? ((load?.tsb ?? 0) <= -20
       ? { id: 'rest', reason: 'Empfohlen wegen TSB/Risiko' }
       : { id: 'easier', reason: 'Empfohlen wegen TSB/Risiko' })
-    : growthAlternativeAllowed
+    : null;
+  const levelAlternative: { id: PlanAlternativeId; reason: string } | null = fitDecision?.recommendedAlternative
+    ? { id: fitDecision.recommendedAlternative, reason: fitDecision.recommendation ?? `Athlete-Level: ${fitDecision.label}` }
+    : null;
+  const recommendedAlternative: { id: PlanAlternativeId; reason: string } | null = protectiveAlternative
+    ?? (growthAlternativeAllowed
       ? { id: 'longer', reason: 'Ziel + grüne Signale' }
-      : goalsCount > 0 && nextWorkout.zone >= 3
+      : levelAlternative
+      ?? (goalsCount > 0 && nextWorkout.zone >= 3
         ? { id: 'shorter', reason: 'Zielreiz behalten, Tageslast senken' }
-        : null;
+        : null));
   const baseAlternatives: PlanAlternativeOption[] = [
     {
       id: 'shorter',
       label: 'Kürzer',
       detail: `${roundToFive(nextWorkout.durationMin * 0.65)} min, Intensität bleibt`,
+      levelEffect: ['stretch', 'too_hard_today'].includes(nextWorkout.capabilityFit ?? '')
+        ? 'Level-Wirkung: Zielreiz bleibt, Belastung sinkt'
+        : undefined,
     },
     {
       id: 'easier',
       label: 'Leichter',
       detail: `Z${Math.max(1, Math.min(2, nextWorkout.zone - 1))}, ${roundToFive(nextWorkout.durationMin * 0.85)} min`,
+      levelEffect: ['stretch', 'too_hard_today'].includes(nextWorkout.capabilityFit ?? '')
+        ? 'Level-Wirkung: Intensität fällt in einen machbareren Bereich'
+        : undefined,
     },
     ...(growthAlternativeAllowed ? [{
       id: 'longer' as const,
@@ -542,6 +617,31 @@ function NextTrainingDecisionCard({
         <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: '0 0 12px' }}>
           {nextWorkout.description.split('\n')[0]}
         </p>
+      )}
+      {levelSummary && (
+        <div
+          data-testid="plan-athlete-level-summary"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 5,
+            margin: '0 0 12px',
+            padding: '9px 10px',
+            border: `1px solid color-mix(in srgb, ${levelSummary.tone} 34%, transparent)`,
+            borderRadius: 5,
+            background: `color-mix(in srgb, ${levelSummary.tone} 8%, transparent)`,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <span className="label-mono" style={{ color: levelSummary.tone }}>Athlete-Level</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: levelSummary.tone, textTransform: 'uppercase' }}>
+              {levelSummary.label}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            {levelSummary.workoutLevel ? `${levelSummary.workoutLevel}: ` : ''}{levelSummary.nextAction}
+          </p>
+        </div>
       )}
       {mentalPlanImpact && (
         <p
@@ -757,6 +857,11 @@ function NextTrainingDecisionCard({
             {option.recommendationReason && (
               <span style={{ display: 'block', marginTop: 4, fontSize: 10.5, color: 'var(--text-2)', lineHeight: 1.35 }}>
                 {option.recommendationReason}
+              </span>
+            )}
+            {option.levelEffect && (
+              <span style={{ display: 'block', marginTop: 4, fontSize: 10.5, color: 'var(--amber)', lineHeight: 1.35 }}>
+                {option.levelEffect}
               </span>
             )}
           </button>
