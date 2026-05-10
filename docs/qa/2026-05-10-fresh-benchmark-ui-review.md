@@ -50,7 +50,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** The user wants workouts on watch/Edge. TrainingPeaks and JOIN set the expectation that sync status is boring and explicit.
 - **Recommendation:** Add a Plan-level `Ausführung` panel/tab with remote readback, mismatch reasons, broken-repeat detection, repair actions and last real-device proof.
 - **Files likely touched:** `backend/src/pulse/routes/garmin-routes.ts`, `backend/src/pulse/services/garmin-calendar-workouts.ts`, `backend/src/pulse/services/garmin-execution-ledger.ts`, `frontend/src/pages/Plan.tsx`, `frontend/src/pulse/api-client.ts`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-garmin-execution-trust-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-garmin-execution-trust-v2.md`.
 
 ### Hoch - Home still has split daily truth
 
@@ -59,7 +59,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** This is the exact kind of contradiction that makes a coaching app feel untrustworthy.
 - **Recommendation:** Introduce a single daily command state that resolves completed/planned/recovery/free-day/intent before rendering DailyDecision and TodayOptions.
 - **Files:** `frontend/src/pulse/daily-decision.ts`, `frontend/src/components/TodayOptionsCard.tsx`, `frontend/src/pages/Home.tsx`, `frontend/e2e/fixtures/pulse-api.ts`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-daily-command-center-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-daily-command-center-v2.md`.
 
 ### Hoch - Mobile first viewport is still too heavy
 
@@ -68,7 +68,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** Pulse is meant to work on iPhone/PWA over VPN; the useful action must be reachable in seconds.
 - **Recommendation:** Make Home answer "what now?" in one viewport, make Mental Check-in one-tap-first, and move optional details behind disclosure.
 - **Files:** `frontend/src/pages/Home.tsx`, `frontend/src/features/data/mental/mental-components.tsx`, `frontend/src/pages/Settings.tsx`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-daily-command-center-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-daily-command-center-v2.md`.
 
 ### Hoch - Capability/progression is not visible enough
 
@@ -77,7 +77,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** TrainerRoad wins trust because workout difficulty is an explicit progression language, not hidden scoring.
 - **Recommendation:** Surface energy-system progression and variant rationale in Plan/Data; expand library depth only where RPE/completion history supports it.
 - **Files:** `backend/src/pulse/services/training-capabilities.ts`, `backend/src/pulse/services/workout-library.ts`, `frontend/src/features/training/TrainingCapabilityCard.tsx`, `frontend/src/pages/Plan.tsx`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-progression-library-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-progression-library-v2.md`.
 
 ### Mittel - Plan mobile-intent hash target clips under mobile chrome
 
@@ -86,7 +86,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** This is a high-frequency iPhone flow. Landing in the middle of the decision increases uncertainty.
 - **Recommendation:** Add shared scroll margins/focus behavior for `#plan-scenario-preview` and cover it in route evidence.
 - **Files:** `frontend/src/pages/Plan.tsx`, `frontend/src/index.css`, `frontend/e2e/route-evidence.spec.ts`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-ui-accessibility-polish-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-ui-accessibility-polish-v2.md`.
 
 ### Mittel - 155 km sample still leaks into generic scenario evidence
 
@@ -95,7 +95,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** QA screenshots can keep resurrecting a concept the user explicitly rejected as a fixed feature.
 - **Recommendation:** Make route evidence defaults reflect generic 60-min mobile intent and keep long-tour cases only in specific tests.
 - **Files:** `frontend/e2e/fixtures/pulse-api.ts`, `frontend/e2e/route-evidence.spec.ts`, `frontend/e2e/pulse-usability.spec.ts`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-ui-accessibility-polish-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-ui-accessibility-polish-v2.md`.
 
 ### Mittel - Accessibility polish needs one dedicated pass
 
@@ -104,7 +104,7 @@ Das größte Produkt-Risiko ist nicht fehlende Feature-Breite, sondern Vertrauen
 - **Why it matters:** These issues rarely break screenshots, but they degrade real iPhone/iPad and keyboard use.
 - **Recommendation:** Close these as a focused accessibility PR before larger UI restructuring.
 - **Files:** `frontend/src/index.css`, `frontend/src/components/Layout.tsx`, `frontend/src/components/PulseChrome.tsx`, `frontend/src/pages/Home.tsx`, `frontend/src/pages/Plan.tsx`, `frontend/src/features/data/mental/mental-components.tsx`.
-- **Roadmap:** `docs/superpowers/plans/2026-05-10-ui-accessibility-polish-v2.md`.
+- **Roadmap:** `docs/superpowers/plans/completed/2026-05-10-ui-accessibility-polish-v2.md`.
 
 ## Navigation Decision
 
@@ -123,13 +123,13 @@ New navigation can be added as nested surfaces where it reduces confusion:
 
 ## Recommended Roadmap Order
 
-1. `2026-05-10-ui-accessibility-polish-v2.md`
+1. `completed/2026-05-10-ui-accessibility-polish-v2.md`
    - Fix clipping, focus, tablet touch, stale route-evidence defaults.
-2. `2026-05-10-daily-command-center-v2.md`
+2. `completed/2026-05-10-daily-command-center-v2.md`
    - Make Home and Mental Check-in faster and internally consistent.
-3. `2026-05-10-garmin-execution-trust-v2.md`
+3. `completed/2026-05-10-garmin-execution-trust-v2.md`
    - Add remote readback/diff/repair and Plan `Ausführung` surface.
-4. `2026-05-10-progression-library-v2.md`
+4. `completed/2026-05-10-progression-library-v2.md`
    - Make workout difficulty/progression visible and extend library depth where supported.
 
 ## What Is Already Good
@@ -139,4 +139,3 @@ New navigation can be added as nested surfaces where it reduces confusion:
 - Mental Check-in has the right direction: human-language choices first, numeric fine-tune optional.
 - Plan scenario preview is correctly preview-first and apply-only.
 - Settings already centralizes PWA, Push, Garmin and profile diagnostics.
-

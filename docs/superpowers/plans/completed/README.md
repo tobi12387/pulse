@@ -72,6 +72,14 @@
 | `2026-05-10-power-duration-durability.md` | Power Duration/Durability — quality-gated best efforts, durability snapshots, Data summary and Plan durability limiter | Power Duration PR |
 | `2026-05-10-season-atp-v2.md` | Season ATP v2 — annual hours/TSS, A/B/C event bias, safe missed-load compensation and compact Plan ATP guardrail row | Season ATP PR |
 | `2026-05-10-strength-mobility-companion.md` | Strength Mobility Companion — concrete support block lists, clearer Today Options and note-based Garmin handoff for strength | Strength Mobility PR |
+| `2026-05-02-fueling-recovery-companion.md` | Fueling & Recovery Companion — MNSTRY-aware guidance, 750 ml bottle math, Garmin description handoff and activity fueling logs | Fueling companion wave |
+| `2026-05-10-training-benchmark-upgrade-roadmap.md` | Training Benchmark Upgrade Roadmap — benchmark-derived sequence for device trust, adaptation, library depth and modeling | Superseded by canonical product roadmap |
+| `2026-05-10-fresh-benchmark-ui-roadmap.md` | Fresh Benchmark UI Roadmap — UI/accessibility, Daily Command Center, Garmin trust and progression execution order | Completed 2026-05-10 wave |
+| `2026-05-10-ui-accessibility-polish-v2.md` | UI Accessibility Polish v2 — route evidence artifacts, focus, touch targets, tab semantics and contrast cleanup | Fresh Benchmark UI Roadmap Phase 1 |
+| `2026-05-10-daily-command-center-v2.md` | Daily Command Center v2 — one daily truth on Home, compact mental entry and calmer desktop/mobile layout | Fresh Benchmark UI Roadmap Phase 2 |
+| `2026-05-10-garmin-execution-trust-v2.md` | Garmin Execution Trust v2 — Garmin readback/diff, broken repeat visibility and explicit repair actions | Fresh Benchmark UI Roadmap Phase 3 |
+| `2026-05-10-progression-library-v2.md` | Progression Library v2 — capability language, rotation memory, fit modifiers and safer workout selection | Fresh Benchmark UI Roadmap Phase 4 |
+| `2026-05-10-post-progression-next-roadmap.md` | Post-Progression Next Roadmap — Plan refresh preview, Garmin readback closure, signal labels, fueling debt and no-write QA | Implemented 2026-05-10 |
 
 ## Bekannte veraltete Stellen
 
