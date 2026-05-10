@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Pulse bleibt proprietaer lizenziert
+
+- **Decision:** Pulse wird als proprietaere Codebasis mit `All rights reserved`-Lizenzdatei gefuehrt; das Root-`package.json` markiert das Monorepo zusaetzlich als `UNLICENSED`.
+- **Why:** Pulse enthaelt persoenliche Coaching-, Trainings-, Garmin-, Mental- und Betriebslogik und soll nicht stillschweigend als frei wiederverwendbare Open-Source-Codebasis erscheinen. Wiederverwendbare generische Bausteine koennen spaeter separat und bewusst unter einer offenen Lizenz veroeffentlicht werden.
+- **Alternatives:** MIT oder Apache-2.0 fuer maximale Wiederverwendung (zu offen fuer die aktuelle Produkt-/Datendomaene); AGPL-3.0 fuer Open-Source-SaaS-Schutz (zu viel Open-Source-Signal fuer ein persoenliches Produkt); keine Lizenzdatei beibehalten (rechtlich restriktiv, aber auf GitHub zu implizit).
+- **Decided by:** Tobi / Codex, PR #271.
+- **Status:** active.
+
 ## 2026-05-10 — Strength Support bleibt konkrete Blockliste ohne Habit-System
 
 - **Decision:** Pulse erzeugt fuer Strength/Mobility konkrete Mobility/Core/Glutes/Cooldown-Bloecke aus einer lokalen Support-Session-Library. Garmin-Sync fuer Strength wird bewusst als `degraded`/`strength_notes_only` gefuehrt und in der UI als Notiz-/Blocklisten-Handoff erklaert; es gibt keine neue Navigation, keine Streaks und keinen Habit Tracker.
