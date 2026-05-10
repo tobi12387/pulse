@@ -16,9 +16,11 @@ const primaryNavRoutes = [
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
 
+const routeReadyTimeoutMs = 15_000;
+
 async function expectHealthyPage(page: Page, visibleText: string) {
   await expect(page.getByText('RUNTIME ERROR')).toHaveCount(0);
-  await expect(page.locator('main').getByText(visibleText).first()).toBeVisible();
+  await expect(page.locator('main').getByText(visibleText).first()).toBeVisible({ timeout: routeReadyTimeoutMs });
 }
 
 async function expectPrimaryNavigationWithoutCoach(page: Page) {

@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-10 — Smoke-Route-Ready-Checks bekommen realistische Browser-Zeit
+
+- **Decision:** Die Smoke-Suite wartet bei Route-Ready-Texten bis zu 15 Sekunden statt des Playwright-Defaults von 5 Sekunden. Der Runtime-Error-Check bleibt separat, aber sichtbare Route-Anker dürfen beim parallelen Desktop-Start länger brauchen.
+- **Why:** Die Failure-Snapshots zeigten die erwarteten Inhalte sichtbar nach dem Timeout. Ein zu knapper Browser-Ready-Check macht autonome PR- und Deploy-Loops langsam und unzuverlässig, ohne echte Produktfehler zu finden.
+- **Alternatives:** Smoke-Suite mehrfach manuell wiederholen (verschleiert Flakes); Parallelität global senken (langsamer); Produktcode ändern (falsche Ebene).
+- **Decided by:** Codex.
+- **Status:** active.
+
+## 2026-05-10 — Manuelle Einheiten starten neutral statt als 155-km-Tour
+
+- **Decision:** Das manuelle `+ Einheit`-Formular startet ohne Distanz- und Schnittwerte. Die 155-km-Rennradtour bleibt als expliziter Preset verfügbar, wird aber nicht mehr automatisch in jede neue manuelle Einheit übernommen.
+- **Why:** Tobi braucht sowohl kurze manuelle Einträge als auch lange freie Touren. Ein versteckter 155-km-Default lässt neue Einheiten wieder gleich aussehen und verwischt, ob Pulse wirklich die konkrete Trainingsabsicht berücksichtigt.
+- **Alternatives:** Den 155-km-Default beibehalten (zu viel ungewollte Vorprägung); das Distanz/Schnitt-Feature entfernen (verliert die lange Tour als echten Use Case); einen größeren Wizard bauen (zu schwer für diesen PR).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Planalternativen bekommen eine datenbasierte Empfehlung
 
 - **Decision:** Die nächste Trainingsentscheidung markiert eine Alternative als `Empfohlen`, wenn Load, Risiko oder mentale Lage gegen das unveränderte Training sprechen. Bei moderatem Risiko priorisiert Pulse `Leichter`; bei sehr negativer TSB kann `Frei lassen` empfohlen werden; ohne Warnsignale kann ein kürzerer Zielreiz empfohlen werden.

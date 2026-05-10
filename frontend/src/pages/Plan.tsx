@@ -770,8 +770,8 @@ function CustomWorkoutForm({
   const [plannedDate, setPlannedDate] = useState(isoDateLocal(new Date()));
   const [activityType, setActivityType] = useState<PulseActivityType>('bike');
   const [zone, setZone] = useState(2);
-  const [distanceKm, setDistanceKm] = useState('155');
-  const [expectedSpeedKmh, setExpectedSpeedKmh] = useState('22');
+  const [distanceKm, setDistanceKm] = useState('');
+  const [expectedSpeedKmh, setExpectedSpeedKmh] = useState('');
   const [durationMin, setDurationMin] = useState('');
   const [description, setDescription] = useState('');
   const [syncGarmin, setSyncGarmin] = useState(true);
@@ -784,6 +784,15 @@ function CustomWorkoutForm({
     ? Math.round((distance / speed) * 60)
     : null;
   const effectiveDuration = Number.isFinite(explicitDuration) && explicitDuration > 0 ? explicitDuration : inferredDuration;
+
+  function applyLongTourPreset() {
+    setActivityType('bike');
+    setZone(2);
+    setDistanceKm('155');
+    setExpectedSpeedKmh('22');
+    setDurationMin('');
+    setDescription('Entspannte Rennradtour mit Stops.');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -812,7 +821,7 @@ function CustomWorkoutForm({
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit} style={{ borderColor: 'rgba(94,230,207,0.22)' }}>
+    <form data-testid="custom-workout-form" className="card" onSubmit={handleSubmit} style={{ borderColor: 'rgba(94,230,207,0.22)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 12 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Eigene Einheit</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
@@ -838,18 +847,39 @@ function CustomWorkoutForm({
           <input type="number" min={1} max={5} value={zone} onChange={e => setZone(Number(e.target.value))} style={fieldStyle} />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
-          km
-          <input inputMode="decimal" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} style={fieldStyle} />
+          km optional
+          <input inputMode="decimal" value={distanceKm} onChange={e => setDistanceKm(e.target.value)} placeholder="z.B. 155" style={fieldStyle} />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
-          km/h
-          <input inputMode="decimal" value={expectedSpeedKmh} onChange={e => setExpectedSpeedKmh(e.target.value)} style={fieldStyle} />
+          km/h optional
+          <input inputMode="decimal" value={expectedSpeedKmh} onChange={e => setExpectedSpeedKmh(e.target.value)} placeholder="z.B. 22" style={fieldStyle} />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
           Minuten
           <input inputMode="numeric" value={durationMin} onChange={e => setDurationMin(e.target.value)} placeholder={inferredDuration ? String(inferredDuration) : ''} style={fieldStyle} />
         </label>
       </div>
+
+      <button
+        type="button"
+        onClick={applyLongTourPreset}
+        style={{
+          minHeight: 42,
+          marginTop: 10,
+          background: 'rgba(94,230,207,0.06)',
+          border: '1px solid rgba(94,230,207,0.28)',
+          borderRadius: 'var(--radius)',
+          color: 'var(--accent)',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          padding: '0 12px',
+        }}
+      >
+        155-km Tour vorbereiten
+      </button>
 
       <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)', marginTop: 10 }}>
         Notiz
