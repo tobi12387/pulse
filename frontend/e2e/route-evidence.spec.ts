@@ -70,6 +70,7 @@ async function overflowSummary(page: Page) {
 
 test.describe('Route evidence screenshot pack', () => {
   test.skip(process.env.PULSE_ROUTE_EVIDENCE !== 'true', 'set PULSE_ROUTE_EVIDENCE=true to capture route screenshots');
+  test.setTimeout(60_000);
 
   test('captures core routes with manifest metadata', async ({ page, baseURL }, testInfo) => {
     await page.clock.setFixedTime(new Date(`${MOCK_TODAY}T08:00:00+02:00`));

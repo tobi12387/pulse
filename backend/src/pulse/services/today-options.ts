@@ -89,9 +89,28 @@ function mostUsefulEnduranceSport(recentSportMix: RecentSportMix, goals?: TodayO
   return 'run';
 }
 
+function planScenarioTargetPath(input: {
+  activityType: PulseActivityType;
+  zone: number;
+  durationMin: number;
+  description: string;
+}): string {
+  const params = new URLSearchParams({
+    tab: 'training',
+    source: 'today-options',
+    scenario: 'workout',
+    activityType: input.activityType,
+    zone: String(input.zone),
+    durationMin: String(input.durationMin),
+    description: input.description,
+  });
+  return `/plan?${params.toString()}#plan-scenario-preview`;
+}
+
 function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
   const activityType = mostUsefulEnduranceSport(input.recentSportMix, input.goals);
   const durationMin = input.readinessScore >= 75 && input.tsb >= -2 ? 60 : 45;
+  const detail = `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`;
   const evidence = [
     ...baseEvidence(input),
     `Sportmix zuletzt: Bike ${input.recentSportMix.bike ?? 0}, Run ${input.recentSportMix.run ?? 0}`,
@@ -102,9 +121,9 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
     kind: 'workout',
     priority: 'primary',
     title: `${SPORT_LABEL[activityType]} locker`,
-    detail: `${durationMin} min Z2. Sinnvoll, wenn du heute spontan trainieren willst, ohne den Plan vollzustopfen.`,
+    detail,
     cta: 'Einheit planen',
-    targetPath: '/plan?tab=training',
+    targetPath: planScenarioTargetPath({ activityType, zone: 2, durationMin, description: detail }),
     evidence,
     activityType,
     zone: 2,
@@ -115,14 +134,15 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
 }
 
 function skillsOption(input: TodayOptionsInput): PulseTodayOption {
+  const detail = '20-30 min Technik, Core oder Mobility. Nutzt den Tag, ohne zusätzliche Ausdauerlast zu erzwingen.';
   return {
     id: 'skills-mobility-25',
     kind: 'skills',
     priority: 'secondary',
     title: 'Skills oder Mobility',
-    detail: '20-30 min Technik, Core oder Mobility. Nutzt den Tag, ohne zusätzliche Ausdauerlast zu erzwingen.',
+    detail,
     cta: 'Im Plan ergänzen',
-    targetPath: '/plan?tab=training',
+    targetPath: planScenarioTargetPath({ activityType: 'strength', zone: 1, durationMin: 25, description: detail }),
     evidence: [
       ...baseEvidence(input),
       'Nicht jeder freie Tag muss mit Ausdauer gefüllt werden.',
@@ -220,6 +240,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
 }
 
 function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResponse {
+  const recoveryDetail = 'Nur wenn du dich nach Bewegung besser fühlst: sehr locker, keine Intervalle, kein Zusatzumfang.';
   const options: PulseTodayOption[] = [
     restOption(input, 'primary'),
     {
@@ -227,9 +248,14 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
       kind: 'recovery',
       priority: 'secondary',
       title: 'Optional 20 min Z1',
-      detail: 'Nur wenn du dich nach Bewegung besser fühlst: sehr locker, keine Intervalle, kein Zusatzumfang.',
+      detail: recoveryDetail,
       cta: 'Leichte Option planen',
-      targetPath: '/plan?tab=training',
+      targetPath: planScenarioTargetPath({
+        activityType: input.plannedToday?.activityType ?? 'bike',
+        zone: 1,
+        durationMin: 20,
+        description: recoveryDetail,
+      }),
       evidence: [
         ...baseEvidence(input),
         ...riskEvidence(input),
@@ -264,6 +290,9 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
 
 function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsResponse {
   const planned = input.plannedToday!;
+  const easierDuration = Math.round(planned.durationMin * 0.75);
+  const easierZone = Math.max(1, Math.min(2, planned.zone - 1));
+  const easierDetail = `${easierDuration} min Z${easierZone}, falls Warm-up oder Kopf nicht passen.`;
   const options: PulseTodayOption[] = [
     {
       id: `planned-${planned.id}`,
@@ -288,13 +317,18 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
       kind: 'workout',
       priority: 'secondary',
       title: 'Leichtere Alternative',
-      detail: `${Math.round(planned.durationMin * 0.75)} min Z${Math.max(1, Math.min(2, planned.zone - 1))}, falls Warm-up oder Kopf nicht passen.`,
+      detail: easierDetail,
       cta: 'Plan anpassen',
-      targetPath: '/plan?tab=training',
+      targetPath: planScenarioTargetPath({
+        activityType: planned.activityType,
+        zone: easierZone,
+        durationMin: easierDuration,
+        description: easierDetail,
+      }),
       evidence: baseEvidence(input),
       activityType: planned.activityType,
-      zone: Math.max(1, Math.min(2, planned.zone - 1)),
-      durationMin: Math.round(planned.durationMin * 0.75),
+      zone: easierZone,
+      durationMin: easierDuration,
       archetypeId: 'endurance_steady',
       capabilityFit: 'maintenance',
     },

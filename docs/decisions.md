@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — TrainNow führt in eine schreibfreie Plan-Vorschau
+
+- **Decision:** Today-/TrainNow-Optionen verlinken mit `source=today-options` und konkreten Szenario-Parametern in die Plan-Szenario-Vorschau. Die Plan-Karte übernimmt Sportart, Zone, Dauer und Beschreibung, speichert aber erst nach expliziter Prüfung und Anwendung.
+- **Why:** Der tägliche iPhone/PWA-Flow soll von einer Empfehlung direkt in eine prüfbare Planentscheidung führen, ohne heimlich neue Workouts oder Garmin-Syncs auszulösen. Benchmark-Muster aus TrainNow-/Structured-Workout-Flows sprechen dafür, Empfehlung, Planlast und Gerätewirkung in einem sicheren Review-Schritt zu verbinden.
+- **Alternatives:** Direkt aus Home speichern (zu viel versteckte Mutation); weiter nur generisch auf den Plan-Tab verlinken (zu wenig Handlung); eigene TrainNow-Unterseite bauen (zu großer IA-Sprung für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Fueling-Toleranz unterscheidet niedrige Zufuhr von Überlastung
 
 - **Decision:** GI-/Magenprobleme bei niedriger Carb-Zufuhr unter 50 g/h werden nicht mehr pauschal als Signal für weniger Carbs interpretiert. Pulse empfiehlt dann früheres, gleichmäßigeres Fueling und einen kontrollierten 50-70-g/h-Schritt, besonders wenn ein später Snack wie Mars geholfen hat.

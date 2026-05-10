@@ -1410,6 +1410,7 @@ test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) =>
 });
 
 test('Home surfaces TrainNow options when no workout is planned', async ({ page }) => {
+  let previewBody: unknown = null;
   await mockPulseApi(page, {
     todayOptions: {
       todayOptions: {
@@ -1425,7 +1426,7 @@ test('Home surfaces TrainNow options when no workout is planned', async ({ page 
             title: 'Rad locker',
             detail: '45 min Z2. Sinnvoll, wenn du heute spontan trainieren willst.',
             cta: 'Einheit planen',
-            targetPath: '/plan?tab=training',
+            targetPath: '/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=2&durationMin=45&description=45%20min%20Z2%20locker#plan-scenario-preview',
             evidence: ['Readiness 78/100', 'TSB 2.0'],
             activityType: 'bike',
             zone: 2,
@@ -1444,6 +1445,7 @@ test('Home surfaces TrainNow options when no workout is planned', async ({ page 
         ],
       },
     },
+    onPlanScenarioPreview: body => { previewBody = body; },
   });
 
   await page.goto('/');
@@ -1451,7 +1453,25 @@ test('Home surfaces TrainNow options when no workout is planned', async ({ page 
   await expect(page.getByText('TrainNow')).toBeVisible();
   await expect(page.getByText('Rad locker')).toBeVisible();
   await page.getByText('Rad locker').click();
-  await expect(page).toHaveURL(/\/plan\?tab=training/);
+  await expect(page).toHaveURL('/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=2&durationMin=45&description=45%20min%20Z2%20locker#plan-scenario-preview');
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard).toBeInViewport();
+  await expect(scenarioCard).toContainText('Aus TrainNow geöffnet');
+  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('45');
+  await expect(scenarioCard.getByLabel('Sportart')).toHaveValue('bike');
+  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('2');
+  await scenarioCard.getByRole('button', { name: 'Szenario prüfen' }).click();
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  expect(previewBody).toMatchObject({
+    type: 'add_custom_tour',
+    workout: {
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 45,
+      description: '45 min Z2 locker',
+    },
+  });
 });
 
 test('Plan scenario preview shows long-tour load and recovery impact before applying', async ({ page }) => {

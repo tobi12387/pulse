@@ -64,6 +64,7 @@ function Loading({ rows = 3 }: { rows?: number }) {
 type PlannedWorkout = PulsePlannedWorkout;
 type SourceChip = { label: string; targetPath?: string };
 const CUSTOM_ACTIVITY_TYPES: PulseActivityType[] = ['bike', 'run', 'hike', 'swim', 'strength', 'other'];
+type ScenarioPreviewMode = 'tour' | 'move' | 'reduce' | 'availability';
 
 type GarminSyncOutcome = {
   status: 'skipped' | 'synced' | 'failed' | 'unchanged' | 'removed';
@@ -91,6 +92,16 @@ function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMe
     message: `${savedMessage}, aber Garmin wurde nicht aktualisiert${detail} Später im Workout oder in Settings erneut synchronisieren.`,
     tone: 'warning',
   };
+}
+
+function activityTypeFromParam(value: string | null): PulseActivityType {
+  return CUSTOM_ACTIVITY_TYPES.includes(value as PulseActivityType) ? value as PulseActivityType : 'bike';
+}
+
+function numberFromParam(value: string | null, fallback: number, min: number, max: number): number {
+  const parsed = Number(value ?? '');
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(parsed)));
 }
 
 function buildPlanAdaptationSignals(
@@ -831,11 +842,21 @@ function PlanScenarioPreviewCard({
   entrySource: string | null;
   onApplied: (workout: PlannedWorkout | null, notice: PlanMutationNotice | null) => void;
 }) {
+  const [searchParams] = useSearchParams();
+  const searchKey = searchParams.toString();
+  const scenarioParam = searchParams.get('scenario');
+  const activityTypeParam = searchParams.get('activityType');
+  const zoneParam = searchParams.get('zone');
+  const durationParam = searchParams.get('durationMin');
+  const descriptionParam = searchParams.get('description');
   const previewScenario = usePlanScenarioPreview();
   const createWorkout = useCreateWorkout();
   const updateWorkout = useUpdateWorkout();
   const today = isoDateLocal(new Date());
-  const [mode, setMode] = useState<'tour' | 'move' | 'reduce' | 'availability'>('tour');
+  const [mode, setMode] = useState<ScenarioPreviewMode>('tour');
+  const [workoutActivityType, setWorkoutActivityType] = useState<PulseActivityType>('bike');
+  const [workoutZone, setWorkoutZone] = useState(2);
+  const [workoutDuration, setWorkoutDuration] = useState('');
   const [tourDate, setTourDate] = useState(isoDateLocal(addLocalDays(new Date(), 1)));
   const [tourDistance, setTourDistance] = useState('155');
   const [tourSpeed, setTourSpeed] = useState('22');
@@ -849,6 +870,28 @@ function PlanScenarioPreviewCard({
   const pending = previewScenario.isPending || createWorkout.isPending || updateWorkout.isPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
+
+  useEffect(() => {
+    if (entrySource !== 'today-options' || scenarioParam !== 'workout') return;
+    const activityType = activityTypeFromParam(activityTypeParam);
+    const zone = numberFromParam(zoneParam, 2, 1, 5);
+    const durationMin = numberFromParam(durationParam, 45, 5, 900);
+    const description = descriptionParam
+      || `${ACTIVITY_LABEL[activityType] ?? activityType} ${durationMin} min Z${zone} aus TrainNow.`;
+
+    setMode('tour');
+    setWorkoutActivityType(activityType);
+    setWorkoutZone(zone);
+    setWorkoutDuration(String(durationMin));
+    setTourDate(today);
+    setTourDistance('');
+    setTourSpeed('');
+    setTourDescription(description);
+    setPreview(null);
+    setError(null);
+    setApplyError(null);
+    setReviewHint('TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
+  }, [activityTypeParam, descriptionParam, durationParam, entrySource, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
     if (reviewRequest <= 0) return;
@@ -875,12 +918,14 @@ function PlanScenarioPreviewCard({
     }
     const distanceKm = Number(tourDistance.replace(',', '.'));
     const expectedSpeedKmh = Number(tourSpeed.replace(',', '.'));
+    const durationMin = Number(workoutDuration.replace(',', '.'));
     return {
       type: 'add_custom_tour',
       workout: {
         plannedDate: tourDate,
-        activityType: 'bike',
-        zone: 2,
+        activityType: workoutActivityType,
+        zone: workoutZone,
+        durationMin: Number.isFinite(durationMin) && durationMin > 0 ? Math.round(durationMin) : undefined,
         distanceKm: Number.isFinite(distanceKm) && distanceKm > 0 ? distanceKm : null,
         expectedSpeedKmh: Number.isFinite(expectedSpeedKmh) && expectedSpeedKmh > 0 ? expectedSpeedKmh : null,
         description: tourDescription.trim() || null,
@@ -974,11 +1019,28 @@ function PlanScenarioPreviewCard({
           Aus Data geöffnet: Prüfe hier, ob Readiness, TSB und Plan-/Load-Evidenz eine konkrete Planänderung rechtfertigen.
         </p>
       )}
+      {entrySource === 'today-options' && (
+        <p
+          data-testid="plan-scenario-entry-context"
+          style={{
+            margin: '0 0 10px',
+            padding: '8px 10px',
+            border: '1px solid rgba(94,230,207,0.24)',
+            borderRadius: 5,
+            background: 'rgba(94,230,207,0.07)',
+            color: 'var(--text-2)',
+            fontSize: 11.5,
+            lineHeight: 1.45,
+          }}
+        >
+          Aus TrainNow geöffnet: Prüfe hier zuerst Planlast, Recovery und Garmin-Auswirkung, bevor Pulse die Einheit speichert.
+        </p>
+      )}
 
       <form onSubmit={handlePreview} style={{ display: 'grid', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
           {[
-            ['tour', '155-km Tour'],
+            ['tour', 'Eigene Einheit'],
             ['move', 'Verschieben'],
             ['reduce', 'Umfang senken'],
             ['availability', 'Verfügbarkeit'],
@@ -1030,15 +1092,35 @@ function PlanScenarioPreviewCard({
         {mode === 'tour' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 10 }}>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              Sportart
+              <select value={workoutActivityType} onChange={e => setWorkoutActivityType(e.target.value as PulseActivityType)} style={fieldStyle}>
+                {CUSTOM_ACTIVITY_TYPES.map(type => (
+                  <option key={type} value={type}>{ACTIVITY_LABEL[type] ?? type}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              Zone
+              <select value={String(workoutZone)} onChange={e => setWorkoutZone(Number(e.target.value))} style={fieldStyle}>
+                {[1, 2, 3, 4, 5].map(zone => (
+                  <option key={zone} value={zone}>Z{zone}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
               Datum
               <input type="date" value={tourDate} onChange={e => setTourDate(e.target.value)} style={fieldStyle} />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
-              km
+              Dauer min
+              <input inputMode="numeric" value={workoutDuration} onChange={e => setWorkoutDuration(e.target.value)} placeholder="optional" style={fieldStyle} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
+              km optional
               <input inputMode="decimal" value={tourDistance} onChange={e => setTourDistance(e.target.value)} style={fieldStyle} />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
-              km/h
+              km/h optional
               <input inputMode="decimal" value={tourSpeed} onChange={e => setTourSpeed(e.target.value)} style={fieldStyle} />
             </label>
           </div>
