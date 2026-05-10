@@ -2060,6 +2060,9 @@ test('Plan surfaces an adaptation check when recent Garmin execution diverged', 
   const adaptationReview = page.getByTestId('plan-adaptation-review');
   await adaptationReview.getByRole('button', { name: 'Szenario prüfen' }).click();
   await expect(page.getByTestId('plan-scenario-preview-card')).toBeInViewport();
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Adaptions-Check vorbereitet');
+  await expect(page.getByTestId('plan-scenario-preview-card')).toContainText('Nicht gesperrte Zukunfts-Workouts');
+  await expect(page.getByTestId('plan-scenario-preview-card')).not.toContainText('Entspannte Rennradtour mit Stops.');
 
   await adaptationReview.getByRole('button', { name: 'Plan beibehalten' }).click();
   await expect(page.getByTestId('plan-adaptation-review')).toHaveCount(0);

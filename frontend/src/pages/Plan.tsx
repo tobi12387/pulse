@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useCheckinHistory, useCheckinToday,
@@ -759,11 +759,13 @@ function PlanScenarioPreviewCard({
   workouts,
   nextWorkout,
   availableDays,
+  reviewRequest,
   onApplied,
 }: {
   workouts: PlannedWorkout[];
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
+  reviewRequest: number;
   onApplied: (workout: PlannedWorkout | null, notice: PlanMutationNotice | null) => void;
 }) {
   const previewScenario = usePlanScenarioPreview();
@@ -779,9 +781,19 @@ function PlanScenarioPreviewCard({
   const [reduceFactor, setReduceFactor] = useState(75);
   const [error, setError] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [reviewHint, setReviewHint] = useState<string | null>(null);
   const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
   const pending = previewScenario.isPending || createWorkout.isPending || updateWorkout.isPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
+
+  useEffect(() => {
+    if (reviewRequest <= 0) return;
+    setMode('reduce');
+    setPreview(null);
+    setError(null);
+    setApplyError(null);
+    setReviewHint('Adaptions-Check vorbereitet: Umfang senken prueft, ob die naechsten Workouts nach verpassten oder anders ausgefuehrten Einheiten defensiver werden sollten.');
+  }, [reviewRequest]);
 
   function scenario(): PulsePlanScenarioRequest {
     if (mode === 'move' && nextWorkout) {
@@ -895,6 +907,7 @@ function PlanScenarioPreviewCard({
               onClick={() => {
                 setMode(id as typeof mode);
                 setPreview(null);
+                setReviewHint(null);
               }}
               style={{
                 minHeight: 38,
@@ -913,6 +926,24 @@ function PlanScenarioPreviewCard({
             </button>
           ))}
         </div>
+
+        {reviewHint && (
+          <p
+            data-testid="plan-scenario-review-hint"
+            style={{
+              margin: 0,
+              padding: '8px 10px',
+              border: '1px solid rgba(245,158,11,0.28)',
+              borderRadius: 5,
+              background: 'rgba(245,158,11,0.08)',
+              color: 'var(--text-2)',
+              fontSize: 11.5,
+              lineHeight: 1.45,
+            }}
+          >
+            {reviewHint}
+          </p>
+        )}
 
         {mode === 'tour' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 10 }}>
@@ -1160,6 +1191,7 @@ function TrainingTab() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [planNotice, setPlanNotice] = useState<PlanMutationNotice | null>(null);
   const [adaptationDismissed, setAdaptationDismissed] = useState(false);
+  const [scenarioReviewRequest, setScenarioReviewRequest] = useState(0);
 
   const selectedWeekDate = getMonday(new Date());
   selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
@@ -1230,6 +1262,7 @@ function TrainingTab() {
   }
 
   function reviewAdaptations() {
+    setScenarioReviewRequest(request => request + 1);
     const target = document.querySelector<HTMLElement>('[data-testid="plan-scenario-preview-card"]');
     target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
@@ -1282,6 +1315,7 @@ function TrainingTab() {
         workouts={workouts}
         nextWorkout={nextDecisionWorkout}
         availableDays={decisionAvailableDays}
+        reviewRequest={scenarioReviewRequest}
         onApplied={(workout, notice) => {
           setPlanNotice(notice);
           if (workout) setSelectedWorkout(workout);
