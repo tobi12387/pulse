@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Plan-/Garmin-QA bekommt einen read-only Harness
+
+- **Decision:** Pulse fuehrt `npm run qa:plan:no-garmin-write` als dedizierten Playwright-Harness fuer Plan Refresh Preview, Today Options Signal Labels und Garmin Execution Readback. Der Harness nutzt ausschliesslich gemockte Pulse-API-Fixtures und asserted, dass keine Garmin- oder Plan-Mutationsendpunkte aufgerufen werden.
+- **Why:** Browser-QA soll die kritischen Plan-/Garmin-Vertrauensflaechen schnell und deterministisch pruefen, ohne reale Garmin-Schreibzugriffe oder Plan-Apply-Seiteneffekte ausloesen zu koennen. Damit bleibt die Live-Server-Pruefung read-only, waehrend echte Garmin-Reparaturen explizite manuelle Aktionen bleiben.
+- **Alternatives:** Bestehende grosse E2E-Suite weiter per grep kombinieren (weniger klarer Sicherheitsvertrag); Live-Garmin-Smoke automatisieren (zu riskant); nur Dokumentation ohne Test-Harness (zu schwach gegen Regressionen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Limiter-Zuordnung bleibt beschreibungs- und Trace-basiert
 
 - **Decision:** Pulse macht den aktiven Ziel-Limiter in `Warum diese Einheit`, der Plan-Wochenzusammenfassung und Data > Analysen sichtbar, ohne dafuer neue Workout-DB-Spalten einzufuehren. Die UI nutzt die vorhandene Plan-Trace-`goalLimiter`-Evidenz und die deterministisch erzeugten Beschreibungen.

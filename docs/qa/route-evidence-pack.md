@@ -17,6 +17,14 @@ npm run test:e2e:install:webkit
 npm run qa:ux-evidence:iphone
 ```
 
+Plan/Garmin read-only harness:
+
+```bash
+npm run qa:plan:no-garmin-write
+```
+
+This harness uses mocked Pulse API fixtures to exercise Plan Refresh Preview, Today Options signal labels and Garmin Execution Readback together. It must stay free of Garmin or plan mutation calls. Real Garmin-write browser tests must be manually invoked, must not run in the default smoke/evidence commands, and should include `live-write` in the filename, test title or npm script name.
+
 Use `PULSE_ROUTE_EVIDENCE_DIR=/path/to/output` to override the output directory. By default the pack writes to:
 
 ```text

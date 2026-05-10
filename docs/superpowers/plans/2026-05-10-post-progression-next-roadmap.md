@@ -133,6 +133,8 @@
 
 ## Phase 6: No-Garmin-Write Plan QA Harness
 
+**Status:** Implemented in branch `codex/no-garmin-write-qa-harness-v1`.
+
 **Problem:** Browser QA should verify generation, rationale and Garmin UI without touching real Garmin.
 
 **Story:** As a maintainer, I want a deterministic QA mode that generates preview plans and Garmin diff fixtures without live writes.
