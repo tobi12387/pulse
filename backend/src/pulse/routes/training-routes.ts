@@ -760,7 +760,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart = shiftIsoDate(weekStartStr, -7);
     const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows] = await Promise.all([
-      computeFitnessLoad(userId, weekStartStr),
+      computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
         startTime:    pulseActivities.startTime,
@@ -1433,7 +1433,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart2 = shiftIsoDate(weekStart, -7);
     const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2] = await Promise.all([
-      computeFitnessLoad(userId, weekStart),
+      computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
         startTime:    pulseActivities.startTime,
