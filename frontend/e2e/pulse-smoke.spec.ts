@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
-  { path: '/', label: 'Home', navHref: '/', visibleText: 'READINESS' },
+  { path: '/', label: 'Heute', navHref: '/', visibleText: 'READINESS' },
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
   { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
@@ -10,7 +10,7 @@ const routes = [
 ] as const;
 
 const primaryNavRoutes = [
-  { path: '/', label: 'Home', navHref: '/', visibleText: 'READINESS' },
+  { path: '/', label: 'Heute', navHref: '/', visibleText: 'READINESS' },
   { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
@@ -27,7 +27,7 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   const primaryNav = page.getByRole('navigation');
   await expect(primaryNav).toHaveCount(1);
   await expect(primaryNav.locator('a')).toHaveCount(primaryNavRoutes.length);
-  await expect(primaryNav.locator('a[href="/"]')).toContainText('Home');
+  await expect(primaryNav.locator('a[href="/"]')).toContainText('Heute');
   await expect(primaryNav.locator('a[href="/data"]')).toContainText('Data');
   await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
   await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Settings');
@@ -367,7 +367,7 @@ test('/insights redirects to the Data analysis tab', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
 });
 
-test('primary navigation exposes only Home, Data, Plan and Settings', async ({ page }) => {
+test('primary navigation exposes only Heute, Data, Plan and Settings', async ({ page }) => {
   await page.goto('/');
   await expectPrimaryNavigationWithoutCoach(page);
 

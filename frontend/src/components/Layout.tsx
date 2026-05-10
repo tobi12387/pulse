@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Home',      mobileLabel: 'Home',     key: '1', end: true  },
+  { to: '/',          label: 'Heute',     mobileLabel: 'Heute',    key: '1', end: true  },
   { to: '/data',      label: 'Data',      mobileLabel: 'Data',     key: '2', end: false },
   { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',     key: '3', end: false },
   { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '4', end: false },
