@@ -582,6 +582,14 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
           rampRateCapPct: 7,
           deloadEveryWeeks: 4,
           taperWeeks: 2,
+          annualTargetHours: 384,
+          annualTargetTss: 18432,
+          eventPriorityBias: 'a_event',
+          missedLoadCompensation: {
+            missedTssLast14d: 120,
+            compensationTssNext14d: 42,
+            capReason: 'Nur ein Teil verpasster Last wird nachgeholt; Recovery und Ramp-Cap bleiben wichtiger.',
+          },
           currentWeek: {
             weekStart: today,
             kind: 'build',

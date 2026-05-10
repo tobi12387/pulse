@@ -219,6 +219,44 @@ function durabilityLimiterInput(snapshot: PowerDurationSnapshot | null) {
   };
 }
 
+function seasonWindowStart(anchorDate: string): string {
+  return shiftIsoDate(anchorDate, -14);
+}
+
+async function loadSeasonTssLast14d(userId: string, anchorDate: string): Promise<{ plannedTssLast14d: number; completedTssLast14d: number }> {
+  const from = seasonWindowStart(anchorDate);
+  const [plannedRows, completedRows] = await Promise.all([
+    db.select({
+      targetTss: pulsePlannedWorkouts.targetTss,
+      durationMin: pulsePlannedWorkouts.durationMin,
+      zone: pulsePlannedWorkouts.zone,
+    }).from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        gte(pulsePlannedWorkouts.plannedDate, from),
+        lt(pulsePlannedWorkouts.plannedDate, anchorDate),
+        inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+      )),
+    db.select({
+      tss: pulseActivities.tss,
+      durationSec: pulseActivities.durationSec,
+    }).from(pulseActivities)
+      .where(and(
+        eq(pulseActivities.userId, userId),
+        gte(pulseActivities.startTime, new Date(`${from}T00:00:00.000Z`)),
+        lt(pulseActivities.startTime, new Date(`${anchorDate}T00:00:00.000Z`)),
+      )),
+  ]);
+
+  const plannedTssLast14d = plannedRows.reduce((sum, workout) => (
+    sum + Math.round(workout.targetTss ?? tssFromWorkout(workout.durationMin, workout.zone))
+  ), 0);
+  const completedTssLast14d = completedRows.reduce((sum, activity) => (
+    sum + Math.round(activity.tss ?? 0)
+  ), 0);
+  return { plannedTssLast14d, completedTssLast14d };
+}
+
 const isoDateSchema = z.string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine((value) => {
@@ -1011,6 +1049,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     ]);
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
+    const seasonTss = await loadSeasonTssLast14d(userId, weekStartStr);
     const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(a => a.id));
     const recentPlanActivities = recentActs.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -1049,6 +1088,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         preferredLongDays: coachPreferences.preferredLongDays,
         dislikedWorkoutPatterns: coachPreferences.dislikedWorkoutPatterns,
       },
+      plannedTssLast14d: seasonTss.plannedTssLast14d,
+      completedTssLast14d: seasonTss.completedTssLast14d,
     });
     const executionReview = buildExecutionReviewForPreviousWeek({
       currentWeekStart: weekStartStr,
@@ -1696,6 +1737,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     ]);
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow2] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
+    const seasonTss2 = await loadSeasonTssLast14d(userId, weekStart);
     const plannedZoneByActivityId2 = await getPlannedZoneByActivityId(userId, recentActs2.map(a => a.id));
     const recentPlanActivities2 = recentActs2.map(a => ({
       date:         a.startTime.toISOString().split('T')[0]!,
@@ -1734,6 +1776,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         preferredLongDays: coachPreferences2.preferredLongDays,
         dislikedWorkoutPatterns: coachPreferences2.dislikedWorkoutPatterns,
       },
+      plannedTssLast14d: seasonTss2.plannedTssLast14d,
+      completedTssLast14d: seasonTss2.completedTssLast14d,
     });
     const executionReview2 = buildExecutionReviewForPreviousWeek({
       currentWeekStart: weekStart,
@@ -2140,7 +2184,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const weekStart = currentWeekStartIso();
     const fitnessLoad = await getFitnessLoadCached(userId, today);
 
-    const [races, goals, weekAvail, profile, prefsRow] = await Promise.all([
+    const [races, goals, weekAvail, profile, prefsRow, seasonTss] = await Promise.all([
       getActiveRaces(userId, today, { ctl: fitnessLoad.ctl }),
       db.select({
         id: pulseGoals.id,
@@ -2160,6 +2204,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       db.select().from(pulseCoachPreferences)
         .where(eq(pulseCoachPreferences.userId, userId))
         .limit(1),
+      loadSeasonTssLast14d(userId, weekStart),
     ]);
 
     const preferences = serializeCoachPreferences(prefsRow[0] ?? null);
@@ -2186,6 +2231,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           preferredLongDays: preferences.preferredLongDays,
           dislikedWorkoutPatterns: preferences.dislikedWorkoutPatterns,
         },
+        plannedTssLast14d: seasonTss.plannedTssLast14d,
+        completedTssLast14d: seasonTss.completedTssLast14d,
       }),
     };
   });
