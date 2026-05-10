@@ -2423,6 +2423,44 @@ test('Plan workout rows expose Garmin structure before opening detail', async ({
   await expect(structure).toContainText('62 min');
 });
 
+test('Plan sport switch explains detail rebuild and Garmin resync', async ({ page }) => {
+  const updates: Array<{ id: string; body: Record<string, unknown> }> = [];
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-sport-switch',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 62,
+        targetTss: 74,
+        status: 'planned',
+        description: 'Rad-Schwellenintervalle.',
+        garminWorkoutId: 'old-garmin-workout',
+        garminScheduledId: 'old-garmin-schedule',
+        executionStatus: 'garmin_scheduled',
+        steps: [
+          { type: 'interval', durationMin: 8, zone: 4, reps: 4, restMin: 3, description: 'Schwelle', targetLabel: 'Z4 158-172 bpm' },
+        ],
+      },
+    ],
+    onPlanWorkoutUpdate: (id, body) => updates.push({ id, body: body as Record<string, unknown> }),
+  });
+
+  await page.goto('/plan');
+  await page.getByRole('button', { name: 'Sportart ändern' }).click();
+  await page.getByRole('button', { name: 'Laufen' }).click();
+
+  await expect.poll(() => updates).toEqual([
+    { id: 'workout-sport-switch', body: { activityType: 'run' } },
+  ]);
+  const notice = page.getByTestId('plan-workout-update-notice');
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText('Sportart aktualisiert');
+  await expect(notice).toContainText('Beschreibung');
+  await expect(notice).toContainText('Garmin');
+});
+
 test('Plan workout detail summarizes the Garmin handoff before syncing', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [
