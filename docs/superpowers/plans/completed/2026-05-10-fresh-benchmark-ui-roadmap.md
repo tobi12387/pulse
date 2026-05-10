@@ -15,13 +15,13 @@
 - QA report: `docs/qa/2026-05-10-fresh-benchmark-ui-review.md`.
 - Route evidence: `test-results/route-evidence/fresh-benchmark-ui-review/2026-05-10-c1af5b9/`.
 - Existing product direction: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
-- Completed benchmark foundations: `docs/superpowers/plans/2026-05-10-training-benchmark-upgrade-roadmap.md`.
+- Completed benchmark foundations: `2026-05-10-training-benchmark-upgrade-roadmap.md`.
 
 ## Roadmap Order
 
 ### Phase 1: UI Accessibility Polish v2
 
-- Plan: `docs/superpowers/plans/2026-05-10-ui-accessibility-polish-v2.md`.
+- Plan: `2026-05-10-ui-accessibility-polish-v2.md`.
 - Why first: fixes route-evidence artifacts, focus, hash clipping, tablet targets and stale 155-km QA leakage before larger UI changes.
 - PR size: small frontend/QA PR.
 - Exit criteria:
@@ -31,7 +31,7 @@
 
 ### Phase 2: Daily Command Center v2
 
-- Plan: `docs/superpowers/plans/2026-05-10-daily-command-center-v2.md`.
+- Plan: `2026-05-10-daily-command-center-v2.md`.
 - Why second: resolves Home contradiction and makes the iPhone/PWA daily flow faster.
 - PR size: one or two frontend PRs.
 - Exit criteria:
@@ -41,7 +41,7 @@
 
 ### Phase 3: Garmin Execution Trust v2
 
-- Plan: `docs/superpowers/plans/2026-05-10-garmin-execution-trust-v2.md`.
+- Plan: `2026-05-10-garmin-execution-trust-v2.md`.
 - Why third: closes the largest benchmark trust gap against TrainingPeaks/JOIN/Garmin Coach.
 - PR size: backend service/route PR, then frontend Plan `Ausführung` PR if needed.
 - Exit criteria:
@@ -51,7 +51,7 @@
 
 ### Phase 4: Progression Library v2
 
-- Plan: `docs/superpowers/plans/2026-05-10-progression-library-v2.md`.
+- Plan: `2026-05-10-progression-library-v2.md`.
 - Why fourth: once execution and daily UX are trusted, make workouts feel less repetitive and more capability-driven.
 - PR size: backend logic PR plus frontend visibility PR if needed.
 - Exit criteria:
@@ -61,7 +61,9 @@
 
 ## Tab / IA Decision
 
-No new top-level tab is added in this roadmap. The only recommended new tab-like surface is a nested Plan `Ausführung` area for Garmin device trust. This keeps the top-level set stable:
+Historical note: this plan kept the top-level set stable while executing the 2026-05-10 wave. The active product rule now lives in `../2026-05-02-future-direction-roadmap.md`: new tabs, areas or modes are allowed when they make recurring flows clearer, faster or calmer.
+
+No new top-level tab was added in this roadmap. The only recommended new tab-like surface was a nested Plan `Ausführung` area for Garmin device trust. This kept the top-level set stable during the wave:
 
 - Home.
 - Data.
@@ -85,4 +87,3 @@ npm run test:e2e -- --project=mobile-chromium --grep "Home|Data|Plan|Settings|Me
 ```
 
 For backend phases, add the relevant backend service tests and `npm run check:migrations`.
-

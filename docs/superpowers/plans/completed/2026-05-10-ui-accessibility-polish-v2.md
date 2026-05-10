@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Archive status 2026-05-10:** Implemented as Fresh Benchmark UI Roadmap Phase 1 and moved to `completed/`. The checkbox list below is retained as the original execution plan and should not be treated as open backlog.
+
 **Goal:** Close the concrete responsive/accessibility issues found in the 2026-05-10 route evidence before larger UI restructuring.
 
 **Architecture:** This is a narrow frontend QA slice. It changes shared chrome/focus behavior and test fixtures without changing backend behavior, live Garmin sync, or primary navigation.
@@ -193,4 +195,3 @@ Expected: keyboard tests pass; fresh route evidence has no horizontal overflow.
 - No backend or DB migration.
 - No live Garmin sync.
 - No visual redesign beyond accessibility/responsive fixes.
-

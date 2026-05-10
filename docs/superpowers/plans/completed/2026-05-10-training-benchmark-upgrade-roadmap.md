@@ -22,7 +22,7 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
 
 ## Active Plan Order
 
-The 2026-05-10 fresh benchmark and browser-evidence review is now captured in [`2026-05-10-fresh-benchmark-ui-roadmap.md`](2026-05-10-fresh-benchmark-ui-roadmap.md) and [`../../qa/2026-05-10-fresh-benchmark-ui-review.md`](../../qa/2026-05-10-fresh-benchmark-ui-review.md).
+The 2026-05-10 fresh benchmark and browser-evidence review is now captured in [`2026-05-10-fresh-benchmark-ui-roadmap.md`](2026-05-10-fresh-benchmark-ui-roadmap.md) and [`../../../qa/2026-05-10-fresh-benchmark-ui-review.md`](../../../qa/2026-05-10-fresh-benchmark-ui-review.md).
 
 Next implementation order:
 
@@ -33,21 +33,21 @@ Next implementation order:
 
 ## Completed In This Wave
 
-- `completed/2026-05-10-garmin-execution-ledger.md`
+- `2026-05-10-garmin-execution-ledger.md`
   - Trust foundation: upload/delete attempts now have a durable local ledger and Plan can explain the latest execution state.
-- `completed/2026-05-10-adaptation-event-queue.md`
+- `2026-05-10-adaptation-event-queue.md`
   - Daily adaptation foundation: write-triggered adaptation events now centralize activity, RPE, mental, fueling, recovery and sync-debt reasons for Home/Plan.
-- `completed/2026-05-10-workout-library-v2.md`
+- `2026-05-10-workout-library-v2.md`
   - Workout depth foundation: 20 local deterministic variants, scored selection, Garmin-safe step generation and archetype preservation through plan generation, Today Options and custom workout creation.
-- `completed/2026-05-10-mobile-plan-flow.md`
+- `2026-05-10-mobile-plan-flow.md`
   - iPhone/PWA planning foundation: Home availability intents deep-link into an auto-computed Plan scenario preview with explicit Apply and Garmin-impact context.
-- `completed/2026-05-10-power-data-quality-foundation.md`
+- `2026-05-10-power-data-quality-foundation.md`
   - Power provenance foundation: `/training-analytics` reports stream/lap/unavailable quality and Data > Analysen shows whether power model claims are trusted, cautious or blocked without changing FTP/profile.
-- `completed/2026-05-10-power-duration-durability.md`
+- `2026-05-10-power-duration-durability.md`
   - Power-duration foundation: activity detail persists quality-gated best efforts and durability snapshots; Data > Analysen shows the compact summary and Plan can cite limited Durability as a goal limiter.
-- `completed/2026-05-10-season-atp-v2.md`
+- `2026-05-10-season-atp-v2.md`
   - Season ATP foundation: annual hours/TSS, A/B/C event bias and safe missed-load compensation now feed Season Strategy, Plan Engine traces and one compact Plan UI row.
-- `completed/2026-05-10-strength-mobility-companion.md`
+- `2026-05-10-strength-mobility-companion.md`
   - Strength/mobility companion: strength archetypes now produce concrete support blocks, Today Options separates Mobility leicht from Strength Support, and Garmin handoff is note/block-list based.
 
 ## Implementation Rule
@@ -57,7 +57,7 @@ Each plan is intended to become one or more small PRs. Do not combine all plans 
 ## Non-Goals
 
 - Do not copy proprietary TrainerRoad, JOIN, TrainingPeaks or WKO plan/workout content.
-- Do not add a new top-level navigation item.
+- Historical constraint for this completed wave: do not add a new top-level navigation item. Active future navigation rules now live in `../2026-05-02-future-direction-roadmap.md`.
 - Do not trigger live Garmin sync in generic browser QA.
 - Do not weaken the current local-server/VPN model.
 - Do not turn mental health signals into clinical diagnosis.

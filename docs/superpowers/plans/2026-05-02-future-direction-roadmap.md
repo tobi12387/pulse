@@ -119,26 +119,23 @@ These build on the calmer daily UI.
 
 Use this roadmap as the product orientation. Before implementation, open or create the smallest PR-sized plan for the next slice.
 
-Current plan/doc cleanup candidates:
+The active plan folder is intentionally small:
 
-- `2026-05-10-post-progression-next-roadmap.md`: all phases are implemented; move to completed or mark read-only in a docs hygiene PR.
-- `2026-05-10-daily-command-center-v2.md`: implemented; keep as reference only.
-- `2026-05-10-garmin-execution-trust-v2.md`: implemented; keep as reference only.
-- `2026-05-10-progression-library-v2.md`: implemented; keep as reference only.
-- `2026-05-10-ui-accessibility-polish-v2.md`: status must be reconciled before reuse because `docs/ai/current-focus.md` says the phase is implemented while the checkbox plan still reads open.
-- `2026-05-02-fueling-recovery-companion.md`: implemented baseline; future nutrition work belongs under `Nutrition Intelligence`.
-- `2026-05-02-mobile-field-reliability-wave.md`: keep as a manual/evidence gate, not a feature backlog.
+- `2026-05-02-future-direction-roadmap.md`: canonical product roadmap and ordering.
+- `2026-05-02-mobile-field-reliability-wave.md`: real-device/manual evidence gate for iPhone/PWA reliability.
+- `2026-04-28-roadmap.md`: historical pointer kept for older prompts; it points forward to this roadmap and completed phase docs.
+
+Completed benchmark and implementation plans from the 2026-05-10 wave now live under `completed/`. Do not reopen them as backlog unless a new regression or explicit product decision creates a fresh PR-sized plan.
 
 ## Next Implementation Order
 
-1. **Docs hygiene PR:** reconcile active/completed roadmap files, update `docs/ai/current-focus.md`, and keep this roadmap canonical.
-2. **UX Task Contract PR:** encode shared copy/action rules in docs, then apply the first narrow UI slice.
-3. **Today/Home or `Heute` exploration:** generate fresh route evidence and decide whether renaming/splitting Home improves orientation.
-4. **Plan action hierarchy PR:** make Plan's first viewport about the current job, not about all available plan machinery.
-5. **Daily Delta + Planned-vs-Completed:** close the loop between yesterday's data, today's recommendation and tomorrow's plan.
-6. **Garmin execution closure polish:** ensure plan changes end with visible device/readback confidence.
-7. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
-8. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
+1. **UX Task Contract PR:** encode shared copy/action rules in docs, then apply the first narrow UI slice.
+2. **Today/Home or `Heute` exploration:** generate fresh route evidence and decide whether renaming/splitting Home improves orientation.
+3. **Plan action hierarchy PR:** make Plan's first viewport about the current job, not about all available plan machinery.
+4. **Daily Delta + Planned-vs-Completed:** close the loop between yesterday's data, today's recommendation and tomorrow's plan.
+5. **Garmin execution closure polish:** ensure plan changes end with visible device/readback confidence.
+6. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
+7. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
 
 ## Manual Gates
 

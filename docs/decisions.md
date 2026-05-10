@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Aktive Planflaeche wird strikt von erledigten Plänen getrennt
+
+- **Decision:** Erledigte Benchmark- und Implementierungsplaene aus der 2026-05-10-Welle werden nach `docs/superpowers/plans/completed/` verschoben; im aktiven Planordner bleiben nur die kanonische Produktroadmap, der iPhone/PWA-Manual-Gate-Plan und der historische 2026-04-28-Pointer.
+- **Why:** Mehrere abgeschlossene Plaene lagen noch neben aktiven Roadmaps und konnten in autonomen Sessions als offene Arbeit fehlinterpretiert werden. Eine kleine aktive Planflaeche senkt Tokenverbrauch, reduziert doppelte Umsetzung und macht die naechste Produktentscheidung schneller auffindbar.
+- **Alternatives:** Alle Plaene im Root liegen lassen und nur im Chat erklaeren (nicht dauerhaft); alte Plaene loeschen (verliert historische Evidenz); jeden Plan einzeln im Prompt ausschliessen (zu teuer und fehleranfaellig).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Produktroadmap wird um UX-Task-Contract und UI-Benchmark harmonisiert
 
 - **Decision:** `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` ist die kanonische Pulse-Produktroadmap. Sie buendelt Benchmark-Erkenntnisse, UX-Task-Contract, Navigation als Produktwerkzeug und die naechste Reihenfolge von Docs-Hygiene, UX-Contract, Today/Home, Plan Action Hierarchy, Daily Delta/Planned-vs-Completed, Garmin Execution, Athlete Levels/Alternatives und Nutrition Intelligence.
