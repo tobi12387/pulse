@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Garmin-Reparaturaktionen müssen direkt ausführbar sein
+
+- **Decision:** Garmin-Quality-Aktionen zeigen ihren konkreten Aktionstyp und führen `calendar_sync` direkt aus, statt generisch auf eine Seite zu verlinken. Backfill- und Plan-Aktionen behalten ihre vollständige Zielroute inklusive Query-Parametern.
+- **Why:** Garmin-Sync-Schulden sollen dort auflösbar sein, wo Pulse sie sichtbar macht. Ein generisches `Öffnen` auf Settings erzeugt einen Sackgassen-Flow und verschleiert, ob die Uhr-/Edge-Synchronisation tatsächlich gestartet wurde.
+- **Alternatives:** Alle Aktionen weiter als Navigation behandeln (zu indirekt); separate Sync-Debt-Seite bauen (zu groß für diesen Slice); Calendar-Sync automatisch im Hintergrund starten (zu viel versteckte Mutation).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — TrainNow führt in eine schreibfreie Plan-Vorschau
 
 - **Decision:** Today-/TrainNow-Optionen verlinken mit `source=today-options` und konkreten Szenario-Parametern in die Plan-Szenario-Vorschau. Die Plan-Karte übernimmt Sportart, Zone, Dauer und Beschreibung, speichert aber erst nach expliziter Prüfung und Anwendung.
