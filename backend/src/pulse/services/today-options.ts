@@ -1,6 +1,7 @@
 import type {
   PulseActivityType,
   PulseTodayOption,
+  PulseTodayOptionSignalLabel,
   PulseTodayOptionsResponse,
   PulseTrainingCapabilitySummary,
   PulseWorkoutFitLabel,
@@ -59,6 +60,69 @@ function highRecoveryRisk(input: TodayOptionsInput): boolean {
     || (input.fueling.recentGiIssue && (input.plannedToday?.zone ?? 0) >= 4)
     || (input.capabilitySummary?.signals.includes('protect_recovery') ?? false)
     || input.plannedToday?.capabilityFit === 'too_hard_today';
+}
+
+function mentalProtectActive(input: TodayOptionsInput): boolean {
+  return input.mental != null && input.mental.energy <= 3 && input.mental.stress >= 7;
+}
+
+function fuelingProtectActive(input: TodayOptionsInput): boolean {
+  return input.fueling.recentGiIssue && (input.plannedToday?.zone ?? 0) >= 4;
+}
+
+function compactSignals(
+  input: TodayOptionsInput,
+  options: {
+    capabilityFit?: PulseWorkoutFitLabel | null;
+    recovery?: boolean;
+    fueling?: boolean;
+    mental?: boolean;
+  },
+): PulseTodayOptionSignalLabel[] {
+  const labels: PulseTodayOptionSignalLabel[] = [];
+
+  if (options.fueling || fuelingProtectActive(input)) {
+    labels.push({
+      kind: 'fueling_protect',
+      label: 'Fueling schützen',
+      detail: 'Magenhinweis begrenzt Intensität',
+      tone: 'amber',
+    });
+  }
+
+  if (options.mental || mentalProtectActive(input)) {
+    labels.push({
+      kind: 'mental_protect',
+      label: 'Mental schützen',
+      detail: 'Niedrige Energie und hoher Stress',
+      tone: 'rose',
+    });
+  }
+
+  if (options.capabilityFit === 'productive') {
+    labels.push({
+      kind: 'productive',
+      label: 'Produktiv',
+      detail: 'Capability erlaubt kleinen Fortschritt',
+      tone: 'accent',
+    });
+  }
+
+  if (options.recovery) {
+    labels.push({
+      kind: 'recovery',
+      label: 'Recovery',
+      detail: 'Erholung hat heute Vorrang',
+      tone: 'green',
+    });
+  }
+
+  const seen = new Set<PulseTodayOptionSignalLabel['kind']>();
+  return labels.filter(label => {
+    if (seen.has(label.kind)) return false;
+    seen.add(label.kind);
+    return true;
+  });
 }
 
 function baseEvidence(input: TodayOptionsInput): string[] {
@@ -162,6 +226,7 @@ function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
     durationMin,
     archetypeId,
     capabilityFit,
+    signalLabels: compactSignals(input, { capabilityFit }),
   };
 }
 
@@ -188,6 +253,7 @@ function skillsOption(input: TodayOptionsInput): PulseTodayOption {
     durationMin,
     archetypeId: 'strength_prehab',
     capabilityFit: 'recovery',
+    signalLabels: compactSignals(input, { recovery: light }),
   };
 }
 
@@ -207,6 +273,7 @@ function restOption(input: TodayOptionsInput, priority: PulseTodayOption['priori
     cta: 'Tagesentscheidung prüfen',
     targetPath: '/',
     evidence,
+    signalLabels: compactSignals(input, { recovery: true }),
   };
 }
 
@@ -236,6 +303,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
       cta: feedbackDone ? 'Aktivität ansehen' : 'Feedback erfassen',
       targetPath: `/activity/${activity.id}`,
       evidence,
+      signalLabels: compactSignals(input, { recovery: true }),
     },
     {
       id: 'fueling-after-activity',
@@ -251,6 +319,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
         ...evidence,
         input.fueling.loggedToday ? 'Fueling heute bereits geloggt' : 'Fueling heute noch offen',
       ],
+      signalLabels: compactSignals(input, { fueling: !input.fueling.loggedToday || input.fueling.recentGiIssue }),
     },
     {
       id: 'recovery-after-activity',
@@ -261,6 +330,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
       cta: 'Recovery ansehen',
       targetPath: '/data#data-recovery',
       evidence,
+      signalLabels: compactSignals(input, { recovery: true }),
     },
   ];
 
@@ -302,6 +372,7 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
       durationMin: 20,
       archetypeId: 'recovery_spin',
       capabilityFit: 'recovery',
+      signalLabels: compactSignals(input, { recovery: true }),
     },
     {
       id: 'fueling-recovery-check',
@@ -314,6 +385,7 @@ function recoveryProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResp
       cta: 'Daten ansehen',
       targetPath: '/data#data-recovery',
       evidence: baseEvidence(input),
+      signalLabels: compactSignals(input, { fueling: input.fueling.recentGiIssue, recovery: true }),
     },
   ];
   return {
@@ -348,6 +420,7 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
       durationMin: planned.durationMin,
       archetypeId: planned.archetypeId ?? null,
       capabilityFit: planned.capabilityFit,
+      signalLabels: compactSignals(input, { capabilityFit: planned.capabilityFit }),
     },
     {
       id: `planned-easier-${planned.id}`,
@@ -369,6 +442,7 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
       durationMin: easierDuration,
       archetypeId: easierZone <= 1 ? 'recovery_spin' : planned.activityType === 'bike' ? 'endurance_cadence' : 'endurance_steady',
       capabilityFit: 'maintenance',
+      signalLabels: compactSignals(input, { recovery: easierZone <= 1 }),
     },
     restOption(input),
   ];

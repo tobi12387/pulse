@@ -214,6 +214,21 @@ export type PulseTodayOptionKind =
   | 'feedback'
   | 'skills';
 
+export type PulseTodayOptionSignalLabelKind =
+  | 'productive'
+  | 'recovery'
+  | 'fueling_protect'
+  | 'mental_protect';
+
+export type PulseTodayOptionSignalLabelTone = 'accent' | 'green' | 'amber' | 'rose';
+
+export interface PulseTodayOptionSignalLabel {
+  kind: PulseTodayOptionSignalLabelKind;
+  label: string;
+  detail: string;
+  tone: PulseTodayOptionSignalLabelTone;
+}
+
 export interface PulseTodayOption {
   id: string;
   kind: PulseTodayOptionKind;
@@ -228,6 +243,7 @@ export interface PulseTodayOption {
   durationMin?: number;
   archetypeId?: string | null;
   capabilityFit?: PulseWorkoutFitLabel | null;
+  signalLabels?: PulseTodayOptionSignalLabel[];
 }
 
 export interface PulseTodayOptionsResponse {

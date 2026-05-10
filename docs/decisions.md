@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Today Options bekommen kompakte Signal-Labels
+
+- **Decision:** Today Options tragen optionale `signalLabels` im Shared Contract und zeigen pro Option kompakte Gründe wie `Produktiv`, `Recovery`, `Fueling schützen` oder `Mental schützen`. Das stärkste Schutzsignal wird vor produktiven oder generischen Recovery-Hinweisen angezeigt.
+- **Why:** Tobi entscheidet die Tagesoptionen häufig auf iPhone/PWA. Die langen Evidence-Chips bleiben nützlich, aber der primäre Grund muss ohne Lesen langer Details sichtbar sein, besonders wenn GI-, Mental- oder Recovery-Schutz eine harte Einheit verdrängt.
+- **Alternatives:** Nur Detailtexte schärfen (zu langsam erfassbar); Evidence-Chips im Backend umsortieren (zu grob und nicht semantisch); neues Daily-Panel bauen (mehr UI statt klarerer Karte).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan-Apply fuehrt direkt in Garmin-Ausfuehrungsreadback
 
 - **Decision:** Plan- und Szenario-Vorschauen zeigen erwartete Garmin-Create/Update/Delete-Zaehler. Nach einem Apply wechselt Pulse automatisch in den Plan-Tab `Ausfuehrung`, wo der bestehende Garmin-Readback Vorlage, Kalender, Repeat-Status und explizite Reparaturaktionen prueft.

@@ -130,6 +130,11 @@ describe('buildTodayOptions', () => {
       'TSB -18.0',
       'Risiko: HRV-Trend fällt',
     ]));
+    expect(result.options[0]?.signalLabels?.map(label => label.label)).toEqual([
+      'Fueling schützen',
+      'Mental schützen',
+      'Recovery',
+    ]);
   });
 
   it('returns stable explainable workout options on unplanned trainable days', () => {
@@ -190,6 +195,10 @@ describe('buildTodayOptions', () => {
       durationMin: 60,
       capabilityFit: 'productive',
     });
+    expect(result.options[0]?.signalLabels?.[0]).toMatchObject({
+      kind: 'productive',
+      label: 'Produktiv',
+    });
     expect(result.options[0]?.detail).toContain('produktiver aerober Reiz');
     expect(result.options[0]?.evidence).toContain('Capability: Endurance 3.8 -> 4.1');
   });
@@ -218,6 +227,10 @@ describe('buildTodayOptions', () => {
     expect(result.state).toBe('recovery_protect');
     expect(result.options.some(option => option.kind === 'workout' && (option.zone ?? 0) >= 3)).toBe(false);
     expect(result.summary).toContain('Erholung');
+    expect(result.options[0]?.signalLabels?.[0]).toMatchObject({
+      kind: 'fueling_protect',
+      label: 'Fueling schützen',
+    });
   });
 
   it('does not turn a short GI-aware spontaneous option into long fueling practice', () => {
@@ -242,6 +255,7 @@ describe('buildTodayOptions', () => {
     });
     expect(result.options[0]?.targetPath).toContain('archetypeId=endurance_cadence');
     expect(result.options[0]?.evidence).toContain('Fueling: letzte Einheit mit GI-Hinweis');
+    expect(result.options[0]?.signalLabels ?? []).toHaveLength(0);
   });
 
   it('makes the support option concrete and downshifts near recovery risk', () => {

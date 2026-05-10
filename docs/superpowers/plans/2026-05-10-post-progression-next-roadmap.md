@@ -60,6 +60,8 @@
 
 ## Phase 3: Today Options Signal Labels
 
+**Status:** Implemented in branch `codex/today-options-signal-labels-v1`.
+
 **Problem:** Today Options now uses better logic, but the visible card needs faster signal recognition on iPhone.
 
 **Story:** As Tobi, I want each Today Option to show why it is offered in one compact label, so I can decide without reading long evidence.
