@@ -8,7 +8,7 @@ description: Use when operating the Pulse project on its production-like home se
 ## Project constants
 
 - Repository: `tobi12387/pulse`
-- Local workspace: `/Users/tobi/Documents/New project`
+- Local workspace: `/Users/tobi/Documents/Pulse`
 - Server SSH: `root@192.168.178.46`
 - Server project path: `/root/pulse`
 - PM2 apps: `pulse` (backend) and `pulse-frontend` (Vite preview on `:5175`)
