@@ -92,6 +92,14 @@ type GarminSyncDebtSummary = {
   blocked: number;
 };
 
+type PlanAlternativeOption = {
+  id: PlanAlternativeId;
+  label: string;
+  detail: string;
+  recommended?: boolean;
+  recommendationReason?: string;
+};
+
 function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMessage: string): PlanMutationNotice | null {
   if (outcome?.status !== 'failed') return null;
   const detail = outcome.error ? `: ${outcome.error}` : '.';
@@ -291,7 +299,7 @@ function NextTrainingDecisionCard({
 
   if (!nextWorkout) {
     return (
-      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+      <div className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
         <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>
           NÄCHSTE TRAININGSENTSCHEIDUNG
         </div>
@@ -362,7 +370,14 @@ function NextTrainingDecisionCard({
       ? { label: `Risiko ${riskCount} Signal(e)`, targetPath: '/data?tab=analysen#data-plan-trace' }
       : { label: 'Risiko unauffällig', targetPath: '/data?tab=analysen#data-plan-trace' },
   ];
-  const alternatives: Array<{ id: PlanAlternativeId; label: string; detail: string }> = [
+  const recommendedAlternative: { id: PlanAlternativeId; reason: string } | null = riskCount > 0 || mentalPlanImpact
+    ? ((load?.tsb ?? 0) <= -20
+      ? { id: 'rest', reason: 'Empfohlen wegen TSB/Risiko' }
+      : { id: 'easier', reason: 'Empfohlen wegen TSB/Risiko' })
+    : goalsCount > 0 && nextWorkout.zone >= 3
+      ? { id: 'shorter', reason: 'Zielreiz behalten, Tageslast senken' }
+      : null;
+  const baseAlternatives: PlanAlternativeOption[] = [
     {
       id: 'shorter',
       label: 'Kürzer',
@@ -384,6 +399,9 @@ function NextTrainingDecisionCard({
       detail: 'bewusster Ruhetag',
     },
   ];
+  const alternatives: PlanAlternativeOption[] = baseAlternatives.map(option => option.id === recommendedAlternative?.id
+    ? { ...option, recommended: true, recommendationReason: recommendedAlternative.reason }
+    : option);
 
   async function applyAlternative(id: PlanAlternativeId) {
     const workout = nextWorkout;
@@ -403,7 +421,7 @@ function NextTrainingDecisionCard({
   }
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+    <div className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>
           NÄCHSTE TRAININGSENTSCHEIDUNG
@@ -526,12 +544,32 @@ function NextTrainingDecisionCard({
               padding: '8px 9px',
             }}
           >
+            {option.recommended && (
+              <span style={{
+                display: 'inline-block',
+                marginBottom: 5,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 8,
+                color: 'var(--green)',
+                border: '1px solid rgba(52,211,153,0.45)',
+                borderRadius: 3,
+                padding: '1px 5px',
+                textTransform: 'uppercase',
+              }}>
+                Empfohlen
+              </span>
+            )}
             <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: option.id === 'rest' ? 'var(--amber)' : 'var(--accent)', textTransform: 'uppercase' }}>
               {option.label}
             </span>
             <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: 'var(--text-3)', lineHeight: 1.35 }}>
               {option.detail}
             </span>
+            {option.recommendationReason && (
+              <span style={{ display: 'block', marginTop: 4, fontSize: 10.5, color: 'var(--text-2)', lineHeight: 1.35 }}>
+                {option.recommendationReason}
+              </span>
+            )}
           </button>
         ))}
       </div>

@@ -2670,15 +2670,19 @@ test('Plan alternatives adapt the next workout with semantic choices', async ({ 
 
   await page.goto('/plan');
 
+  const decision = page.getByTestId('next-training-decision');
   await expect(page.getByText('ALTERNATIVEN')).toBeVisible();
   await expect(page.getByText('Einbezogen: TSB -15.8')).toBeVisible();
   await expect(page.getByText('Ziele 1 aktiv')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Kürzer/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Leichter/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Verschieben/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Frei lassen/ })).toBeVisible();
+  await expect(decision.getByRole('button', { name: /Kürzer/ })).toBeVisible();
+  const easier = decision.getByRole('button', { name: /Leichter/ });
+  await expect(easier).toBeVisible();
+  await expect(easier).toContainText('Empfohlen');
+  await expect(easier).toContainText('TSB/Risiko');
+  await expect(decision.getByRole('button', { name: /Verschieben/ })).toBeVisible();
+  await expect(decision.getByRole('button', { name: /Frei lassen/ })).toBeVisible();
 
-  await page.getByRole('button', { name: /Leichter/ }).click();
+  await easier.click();
   await expect.poll(() => updates).toHaveLength(1);
   expect(updates[0]).toMatchObject({
     zone: 2,
