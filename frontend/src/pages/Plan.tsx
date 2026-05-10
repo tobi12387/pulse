@@ -17,6 +17,7 @@ import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
 import {
   buildPlanAlternative,
+  executionStatusFor,
   getMonday,
   getMondays,
   getNextOpenWorkout,
@@ -75,6 +76,13 @@ type PlanMutationNotice = {
   tone: 'warning' | 'info' | 'error';
 };
 
+type PlanAdaptationSignal = {
+  id: string;
+  title: string;
+  detail: string;
+  color: string;
+};
+
 function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMessage: string): PlanMutationNotice | null {
   if (outcome?.status !== 'failed') return null;
   const detail = outcome.error ? `: ${outcome.error}` : '.';
@@ -83,6 +91,57 @@ function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMe
     message: `${savedMessage}, aber Garmin wurde nicht aktualisiert${detail} Später im Workout oder in Settings erneut synchronisieren.`,
     tone: 'warning',
   };
+}
+
+function buildPlanAdaptationSignals(
+  workouts: PlannedWorkout[],
+  planTrace: PulsePlanTrace | null,
+  today: string,
+): PlanAdaptationSignal[] {
+  const signals: PlanAdaptationSignal[] = [];
+  const divergentWorkouts = workouts
+    .filter(workout => workout.plannedDate <= today && workout.status !== 'completed')
+    .filter(workout => ['missed', 'replaced_or_off_plan'].includes(executionStatusFor(workout)))
+    .sort((a, b) => b.plannedDate.localeCompare(a.plannedDate));
+
+  const missed = divergentWorkouts.filter(workout => executionStatusFor(workout) === 'missed');
+  const replaced = divergentWorkouts.filter(workout => executionStatusFor(workout) === 'replaced_or_off_plan');
+  if (missed.length > 0) {
+    signals.push({
+      id: 'missed',
+      title: 'Verpasste Einheit',
+      detail: `${missed.length} geplante Einheit(en) ohne passende Garmin-Ausführung. Prüfe, ob Umfang oder Timing angepasst werden sollten.`,
+      color: 'var(--rose)',
+    });
+  }
+  if (replaced.length > 0) {
+    signals.push({
+      id: 'replaced',
+      title: 'Andere Garmin-Ausführung',
+      detail: `${replaced.length} Plantag(e) wurden anders ausgeführt. Die Folgetage sollten nicht blind am ursprünglichen Plan hängen.`,
+      color: 'var(--amber)',
+    });
+  }
+
+  const adaptation = planTrace?.adaptation ?? planTrace?.inputSnapshot.adaptation ?? null;
+  if (adaptation?.learnedFromExecution.length) {
+    signals.push({
+      id: 'trace-execution',
+      title: 'Ausführung gelernt',
+      detail: adaptation.learnedFromExecution.slice(0, 2).join(' '),
+      color: 'var(--green)',
+    });
+  }
+  if (adaptation?.variationRationale.length) {
+    signals.push({
+      id: 'trace-variation',
+      title: 'Variation prüfen',
+      detail: adaptation.variationRationale.slice(0, 2).join(' '),
+      color: 'var(--accent)',
+    });
+  }
+
+  return signals.slice(0, 4);
 }
 
 function NextTrainingDecisionCard({
@@ -990,6 +1049,95 @@ function PlanScenarioPreviewCard({
   );
 }
 
+function PlanAdaptationReviewCard({
+  signals,
+  onReview,
+  onKeep,
+}: {
+  signals: PlanAdaptationSignal[];
+  onReview: () => void;
+  onKeep: () => void;
+}) {
+  if (signals.length === 0) return null;
+
+  return (
+    <section
+      className="card"
+      data-testid="plan-adaptation-review"
+      style={{ borderColor: 'rgba(245,158,11,0.22)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+        <span className="label-mono" style={{ color: 'var(--amber)' }}>Adaptions-Check</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {signals.length} Signal(e)
+        </span>
+      </div>
+      <h2 style={{ fontSize: 15, color: 'var(--text)', margin: '0 0 6px', fontWeight: 600 }}>
+        Plan nach Garmin-Ausführung prüfen
+      </h2>
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        Pulse hat Abweichungen zwischen Plan und echter Ausführung gefunden. Prüfe erst die Auswirkungen, bevor du den Wochenplan anpasst.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8, marginTop: 12 }}>
+        {signals.map(signal => (
+          <div key={signal.id} style={{ border: `1px solid ${translucent(signal.color, 32)}`, borderRadius: 5, padding: '9px 10px', background: 'var(--surface)' }}>
+            <div className="label-mono" style={{ fontSize: 9, color: signal.color, marginBottom: 6 }}>
+              {signal.title}
+            </div>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+              {signal.detail}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+        <button
+          type="button"
+          onClick={onReview}
+          style={{
+            minHeight: 42,
+            minWidth: 44,
+            padding: '8px 12px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--amber)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--amber)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+          }}
+        >
+          Szenario prüfen
+        </button>
+        <button
+          type="button"
+          onClick={onKeep}
+          style={{
+            minHeight: 42,
+            minWidth: 44,
+            padding: '8px 12px',
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+          }}
+        >
+          Plan beibehalten
+        </button>
+      </div>
+    </section>
+  );
+}
+
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
 function TrainingTab() {
@@ -1011,6 +1159,7 @@ function TrainingTab() {
   const [selectedWorkout, setSelectedWorkout] = useState<PlannedWorkout | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [planNotice, setPlanNotice] = useState<PlanMutationNotice | null>(null);
+  const [adaptationDismissed, setAdaptationDismissed] = useState(false);
 
   const selectedWeekDate = getMonday(new Date());
   selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
@@ -1054,6 +1203,9 @@ function TrainingTab() {
     && w.status !== 'completed'
     && w.plannedDate >= today,
   ) ?? null;
+  const adaptationSignals = adaptationDismissed
+    ? []
+    : buildPlanAdaptationSignals(workouts, planTrace, today);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -1077,6 +1229,12 @@ function TrainingTab() {
     setPlanNotice(null);
   }
 
+  function reviewAdaptations() {
+    const target = document.querySelector<HTMLElement>('[data-testid="plan-scenario-preview-card"]');
+    target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
@@ -1095,6 +1253,12 @@ function TrainingTab() {
       />
 
       <TodayOptionsCard variant="full" onNavigate={navigate} />
+
+      <PlanAdaptationReviewCard
+        signals={adaptationSignals}
+        onReview={reviewAdaptations}
+        onKeep={() => setAdaptationDismissed(true)}
+      />
 
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}
