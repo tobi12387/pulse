@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Karpathy-Agentenregeln werden als Pulse-Codex-Disziplin geführt
+
+- **Decision:** Die Karpathy-inspirierten Agentenregeln aus `forrestchang/andrej-karpathy-skills` werden nicht als generische `CLAUDE.md` kopiert, sondern als Pulse-spezifische Codex-Skill `pulse-coding-discipline` plus knappe Pointer in `AGENTS.md`, `docs/ai/context-map.md` und `docs/codex-system-prompt.md` gepflegt.
+- **Why:** Pulse hat bereits harte Repo-Regeln, Session-Rituale und Produktentscheidungen. Eine angepasste Codex-Skill hält die vier nützlichen Prinzipien (Annahmen sichtbar machen, einfachste ausreichende Lösung, chirurgische Diffs, verifizierbare Ziele) auffindbar, ohne Claude-/Cursor-spezifische Installationslogik oder doppelte Prompt-Regeln einzuschleppen.
+- **Alternatives:** `CLAUDE.md` direkt übernehmen (falsches Tool und doppelte Single Source of Truth); Cursor-Regel übernehmen (nicht für Codex relevant); nur `AGENTS.md` erweitern (weniger gut als Skill triggerbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Sportarten werden in Tagesflows lokalisiert angezeigt
 
 - **Decision:** Sichtbare Tages- und Planflächen verwenden eine gemeinsame Frontend-Label-Hilfe für Sportarten (`run` → `Laufen`, `bike` → `Radfahren`) statt technische Activity-Codes direkt zu rendern.
