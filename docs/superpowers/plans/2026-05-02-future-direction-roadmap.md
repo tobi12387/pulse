@@ -129,13 +129,12 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **UX Task Contract PR:** encode shared copy/action rules in docs, then apply the first narrow UI slice.
-2. **Today/Home or `Heute` exploration:** generate fresh route evidence and decide whether renaming/splitting Home improves orientation.
-3. **Plan action hierarchy PR:** make Plan's first viewport about the current job, not about all available plan machinery.
-4. **Daily Delta + Planned-vs-Completed:** close the loop between yesterday's data, today's recommendation and tomorrow's plan.
-5. **Garmin execution closure polish:** ensure plan changes end with visible device/readback confidence.
-6. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
-7. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
+1. **Today/Home or `Heute` exploration:** build on the first Home UX Task Contract slice, generate fresh route evidence and decide whether renaming/splitting Home improves orientation.
+2. **Plan action hierarchy PR:** make Plan's first viewport about the current job, not about all available plan machinery.
+3. **Daily Delta + Planned-vs-Completed:** close the loop between yesterday's data, today's recommendation and tomorrow's plan.
+4. **Garmin execution closure polish:** ensure plan changes end with visible device/readback confidence.
+5. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
+6. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
 
 ## Manual Gates
 

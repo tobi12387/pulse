@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Home Daily Decision nutzt den UX-Task-Contract als erste UI-Schicht
+
+- **Decision:** Die Home-Tagesentscheidung zeigt standardmaessig `Warum jetzt`, einen kompakten naechsten Schritt und `Nach dem Klick`; detaillierte Schritte und Evidenz sind per `Details & Evidenz` optional aufklappbar.
+- **Why:** Die Route-Evidence zeigte, dass die Karte auf Mobile den ersten Screen mit vollstaendiger Checkliste und Evidence-Chips ueberlaedt. Der Contract macht den ersten Handlungsschritt und die Folge des Klicks sichtbar, ohne Diagnose- und Garmin-/Load-Evidenz zu verlieren.
+- **Alternatives:** Die komplette Schritt-/Evidenzliste weiter immer anzeigen (zu bulky); Evidence entfernen (verliert Vertrauen); eine neue Home-Route/Tabs sofort einfuehren (zu grosser IA-Sprung fuer diesen ersten Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Aktive Planflaeche wird strikt von erledigten Plänen getrennt
 
 - **Decision:** Erledigte Benchmark- und Implementierungsplaene aus der 2026-05-10-Welle werden nach `docs/superpowers/plans/completed/` verschoben; im aktiven Planordner bleiben nur die kanonische Produktroadmap, der iPhone/PWA-Manual-Gate-Plan und der historische 2026-04-28-Pointer.

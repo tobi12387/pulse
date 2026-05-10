@@ -80,6 +80,7 @@
 | `2026-05-10-garmin-execution-trust-v2.md` | Garmin Execution Trust v2 — Garmin readback/diff, broken repeat visibility and explicit repair actions | Fresh Benchmark UI Roadmap Phase 3 |
 | `2026-05-10-progression-library-v2.md` | Progression Library v2 — capability language, rotation memory, fit modifiers and safer workout selection | Fresh Benchmark UI Roadmap Phase 4 |
 | `2026-05-10-post-progression-next-roadmap.md` | Post-Progression Next Roadmap — Plan refresh preview, Garmin readback closure, signal labels, fueling debt and no-write QA | Implemented 2026-05-10 |
+| `2026-05-10-ux-task-contract-home-slice.md` | UX Task Contract Home Slice — Home daily decision shows why now, next step, result preview and optional details/evidence | UX Task Contract Home PR |
 
 ## Bekannte veraltete Stellen
 

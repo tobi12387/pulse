@@ -155,9 +155,15 @@ test('Home no-training daily decision offers local closure before Coach support'
 
   const decision = page.getByTestId('daily-decision-card');
   await expect(decision).toContainText('Heute ist kein Training geplant.');
+  await expect(decision).toContainText(/Warum jetzt/i);
+  await expect(decision).toContainText(/Nach dem Klick/i);
+  await expect(decision.getByText('Readiness 78/100')).not.toBeVisible();
   const localClosure = decision.getByRole('button', { name: /Erholungstag abschliessen|Heute abschliessen/i });
   await expect(localClosure).toBeVisible();
   await expect(decision.getByRole('button', { name: /Coach/i })).toHaveCount(1);
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision.getByText('Readiness 78/100')).toBeVisible();
 
   await localClosure.click();
   await expect(page).toHaveURL('/');

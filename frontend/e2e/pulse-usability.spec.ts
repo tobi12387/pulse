@@ -581,6 +581,7 @@ test('Home treats completed planned training with feedback as done and stays foc
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  await page.getByRole('button', { name: /Details & Evidenz/i }).click();
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Erledigt');
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Training abgeschlossen');
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback eingetragen');
@@ -608,7 +609,7 @@ test('Home routes to activity feedback only when completed training still misses
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
-  await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Noch offen');
+  await expect(page.getByTestId('daily-decision-next-steps')).toContainText(/Nächster Schritt/i);
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
   await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Für heute ist nichts mehr offen');
 
@@ -624,6 +625,7 @@ test('Home treats a completed off-plan Garmin activity as today done', async ({ 
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  await page.getByRole('button', { name: /Details & Evidenz/i }).click();
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Garmin-Aktivität abgeschlossen');
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Rennrad Tour');
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
