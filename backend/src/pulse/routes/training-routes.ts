@@ -615,6 +615,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         lte(pulsePlannedWorkouts.plannedDate, until),
       ))
       .orderBy(pulsePlannedWorkouts.plannedDate);
+    const capabilitySummary = await loadTrainingCapabilitySummary(userId, { persist: false }).catch((err: unknown) => {
+      app.log.warn(`[plan-scenario-preview] Training capability summary failed (non-fatal): ${err}`);
+      return null;
+    });
 
     const preview = buildPlanScenarioPreview({
       today,
@@ -631,8 +635,12 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         distanceKm: workout.distanceKm,
         expectedSpeedKmh: null,
         archetypeId: workout.archetypeId,
+        difficultyLevel: workout.difficultyLevel,
+        difficultyEnergySystem: workout.difficultyEnergySystem,
+        capabilityFit: workout.capabilityFit,
       })),
       scenario: parsed.data as PulsePlanScenarioRequest,
+      capabilitySummary,
     });
 
     return { preview };

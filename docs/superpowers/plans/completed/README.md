@@ -86,6 +86,7 @@
 | `2026-05-10-daily-delta-home-v1.md` | Daily Delta Home v1 — Home shows a compact plan-vs-execution loop from existing workouts, activities and daily metrics | Daily Delta PR |
 | `2026-05-10-garmin-execution-closure-polish.md` | Garmin Execution Closure Polish — Plan Ausführung verifies repeat counts, separates Pulse-known from Garmin-readback IDs and routes Settings directly to execution readback | Garmin Closure Polish PR |
 | `2026-05-10-athlete-level-decision-language-v1.md` | Athlete-Level Decision Language v1 — Today Options and Plan translate capability fit into Machbar/Produktiv/Stretch/Zu hart heute action language | Athlete Level Decision Language PR |
+| `2026-05-10-scenario-preview-capability-fit.md` | Scenario Preview Capability Fit — Plan scenario previews show projected archetype, workout level and capability fit before apply without Garmin writes | Scenario Preview Capability Fit PR |
 
 ## Bekannte veraltete Stellen
 

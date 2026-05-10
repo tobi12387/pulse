@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Scenario Preview zeigt Capability Fit read-only
+
+- **Decision:** Plan-Szenario-Vorschauen berechnen Archetyp, Workout-Level, Energy-System und Capability-Fit als reine Response-Metadaten und laden Capability Summary dafuer mit `persist: false`.
+- **Why:** Alternativen sollen vor Apply erklaeren, ob der geplante Effekt machbar, produktiv, Stretch oder zu hart ist, ohne dass eine Vorschau heimlich Capability-Zeilen, Plan oder Garmin veraendert.
+- **Alternatives:** Fit erst nach Apply zeigen (zu spaet fuer bewusste Entscheidung); Capability Summary im Preview wie bisher persistieren (bricht Preview-only-Vertrag); nur statische Warncopy anzeigen (weniger hilfreich als konkrete Workout-Level).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Athlete-Level-Fit wird zur Tagesentscheidungs-Sprache
 
 - **Decision:** Pulse uebersetzt `capabilityFit` zuerst in alltagstaugliche Tages- und Plan-Sprache (`Machbar`, `Produktiv`, `Stretch`, `Zu hart heute`) und nutzt diese Sprache, um kuerzere oder leichtere Alternativen sichtbar zu begruenden.
