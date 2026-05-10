@@ -84,6 +84,14 @@ type PlanAdaptationSignal = {
   color: string;
 };
 
+type GarminSyncDebtSummary = {
+  futureCount: number;
+  localOnly: number;
+  templateOnly: number;
+  degraded: number;
+  blocked: number;
+};
+
 function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMessage: string): PlanMutationNotice | null {
   if (outcome?.status !== 'failed') return null;
   const detail = outcome.error ? `: ${outcome.error}` : '.';
@@ -153,6 +161,99 @@ function buildPlanAdaptationSignals(
   }
 
   return signals.slice(0, 4);
+}
+
+function buildGarminSyncDebtSummary(workouts: PlannedWorkout[], today: string): GarminSyncDebtSummary | null {
+  const future = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
+  if (future.length === 0) return null;
+
+  const localOnly = future.filter(workout => executionStatusFor(workout) === 'local_planned').length;
+  const templateOnly = future.filter(workout => executionStatusFor(workout) === 'garmin_template').length;
+  const degraded = future.filter(workout => workout.garminSyncContract?.status === 'degraded').length;
+  const blocked = future.filter(workout => workout.garminSyncContract?.status === 'blocked').length;
+
+  if (localOnly + templateOnly + degraded + blocked === 0) return null;
+  return { futureCount: future.length, localOnly, templateOnly, degraded, blocked };
+}
+
+function PlanGarminSyncDebtCard({
+  workouts,
+  today,
+  onNavigate,
+}: {
+  workouts: PlannedWorkout[];
+  today: string;
+  onNavigate: (path: string) => void;
+}) {
+  const summary = buildGarminSyncDebtSummary(workouts, today);
+  if (!summary) return null;
+
+  const tone = summary.blocked > 0 ? 'var(--rose)' : 'var(--amber)';
+  const chips = [
+    summary.localOnly > 0 ? `${summary.localOnly} lokal` : null,
+    summary.templateOnly > 0 ? `${summary.templateOnly} nur Vorlage` : null,
+    summary.degraded > 0 ? `${summary.degraded} Einschränkung` : null,
+    summary.blocked > 0 ? `${summary.blocked} blockiert` : null,
+  ].filter((chip): chip is string => chip != null);
+
+  return (
+    <section
+      className="card"
+      data-testid="plan-garmin-sync-debt"
+      style={{ borderColor: translucent(tone, 28), background: translucent(tone, 5) }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+        <span className="label-mono" style={{ color: tone }}>Garmin Sync-Check</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+          {summary.futureCount} Zukunftseinheit(en)
+        </span>
+      </div>
+      <h2 style={{ fontSize: 15, color: 'var(--text)', margin: '0 0 6px', fontWeight: 600 }}>
+        Uhr/Edge-Handoff prüfen
+      </h2>
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        Einige geplante Einheiten sind noch nicht vollständig als Garmin-Vorlage oder Kalendertermin abgesichert.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+        {chips.map(chip => (
+          <span
+            key={chip}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: tone,
+              border: `1px solid ${translucent(tone, 45)}`,
+              borderRadius: 4,
+              padding: '3px 6px',
+            }}
+          >
+            {chip}
+          </span>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => onNavigate('/settings?section=garmin')}
+        style={{
+          marginTop: 12,
+          minHeight: 42,
+          minWidth: 44,
+          width: '100%',
+          background: 'var(--surface-2)',
+          border: `1px solid ${tone}`,
+          borderRadius: 'var(--radius)',
+          color: tone,
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: 0,
+          textTransform: 'uppercase',
+        }}
+      >
+        Garmin öffnen
+      </button>
+    </section>
+  );
 }
 
 function NextTrainingDecisionCard({
@@ -1482,6 +1583,8 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
       />
 
       <TodayOptionsCard variant="full" onNavigate={navigate} />
+
+      <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
 
       <PlanAdaptationReviewCard
         signals={adaptationSignals}
