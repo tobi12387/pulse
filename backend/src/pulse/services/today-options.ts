@@ -159,8 +159,12 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
   const sport = SPORT_LABEL[activity.activityType];
   const distance = activity.distanceKm != null ? ` · ${activity.distanceKm >= 10 ? Math.round(activity.distanceKm) : activity.distanceKm.toFixed(1)} km` : '';
   const activityLine = `${sport} ${activity.durationMin} min${distance}`;
+  const plannedLine = input.plannedToday
+    ? `${SPORT_LABEL[input.plannedToday.activityType]} ${input.plannedToday.durationMin} min Z${input.plannedToday.zone}`
+    : null;
   const feedbackDone = activity.rpe != null || activity.feedbackLoggedAt != null;
   const evidence = [
+    ...(plannedLine ? [`Geplant: ${plannedLine}`] : []),
     `Abgeschlossen: ${activityLine}`,
     ...baseEvidence(input),
   ];
@@ -207,7 +211,9 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
   return {
     date: input.date,
     state: 'completed_activity',
-    summary: `${activityLine} abgeschlossen. Pulse priorisiert jetzt Feedback, Fueling und Regeneration statt weiterer Trainingsvorschläge.`,
+    summary: plannedLine
+      ? `Geplantes Training erledigt: ${activityLine}. Pulse schliesst die Trainingsentscheidung und priorisiert Feedback, Fueling und Regeneration.`
+      : `${activityLine} abgeschlossen. Pulse priorisiert jetzt Feedback, Fueling und Regeneration statt weiterer Trainingsvorschläge.`,
     options,
     signature: signature(input, options),
   };

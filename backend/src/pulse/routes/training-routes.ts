@@ -1194,7 +1194,10 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         .where(and(
           eq(pulsePlannedWorkouts.userId, userId),
           eq(pulsePlannedWorkouts.plannedDate, today),
-          eq(pulsePlannedWorkouts.status, 'planned'),
+          or(
+            eq(pulsePlannedWorkouts.status, 'planned'),
+            eq(pulsePlannedWorkouts.status, 'completed'),
+          ),
         ))
         .orderBy(desc(pulsePlannedWorkouts.createdAt))
         .limit(1),
