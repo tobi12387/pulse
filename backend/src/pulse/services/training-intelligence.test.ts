@@ -163,4 +163,14 @@ describe('trainingArchetypes', () => {
       'strength_support',
     ]));
   });
+
+  it('keeps workout library archetype ids unique and Garmin-structure aware', () => {
+    const ids = trainingArchetypes.map(archetype => archetype.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(trainingArchetypes).toHaveLength(20);
+    expect(trainingArchetypes.every(archetype => archetype.garminStructure)).toBe(true);
+    expect(trainingArchetypes.filter(archetype => archetype.progressionFamily === 'endurance').length).toBeGreaterThanOrEqual(4);
+    expect(trainingArchetypes.filter(archetype => archetype.progressionFamily === 'long').length).toBeGreaterThanOrEqual(3);
+  });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateScientificWeekPlan, generateWeekWorkouts, adaptIntensityForReadiness, decidePlanDays } from './plan-engine.js';
 import type { PulseGoalLimiter, PulsePlanLearningSnapshot, PulsePlanLearningWeek, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import { trainingArchetypes } from './training-intelligence.js';
 
 vi.mock('../../lib/llm.js', () => ({
   llmComplete: vi.fn().mockResolvedValue('[]'),
@@ -453,7 +454,38 @@ describe('generateScientificWeekPlan', () => {
     const descriptions = workouts.map(w => w.description).join(' ');
     expect(descriptions).toContain('Archetyp');
     expect(descriptions).toContain('Variation zur Vorwoche');
-    expect(workouts.filter(w => w.zone >= 4).map(w => w.description).join(' ')).toContain('Threshold Intervals');
+    expect(workouts.filter(w => w.zone >= 4).map(w => w.description).join(' ')).toContain('Threshold');
+  });
+
+  it('preserves rotated endurance-family archetypes across generated weeks', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-11',
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 6,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+      planLearning: planLearning({
+        weekStart: '2026-05-04',
+        sportMix: {
+          bike: { sessions: 3, totalMinutes: 230, totalTss: 170 },
+          run: { sessions: 1, totalMinutes: 45, totalTss: 35 },
+        },
+      }, ['repeated_sport_mix']),
+    });
+
+    const archetypeById = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
+    const enduranceIds = workouts
+      .map(workout => workout.archetypeId)
+      .filter((id): id is string => id != null && archetypeById.get(id)?.progressionFamily === 'endurance');
+
+    expect(new Set(enduranceIds).size).toBeGreaterThanOrEqual(2);
+    expect(enduranceIds.slice(0, 2)).not.toEqual(['endurance_steady', 'endurance_steady']);
   });
 
   it('does not reduce density when learning has history but no actual issue flag', async () => {

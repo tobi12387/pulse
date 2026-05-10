@@ -56,6 +56,7 @@ function project(input: PlanScenarioPreviewInput): PulsePlanScenarioProjectedWor
       description: scenario.workout.description ?? null,
       distanceKm: scenario.workout.distanceKm ?? null,
       expectedSpeedKmh: scenario.workout.expectedSpeedKmh ?? null,
+      archetypeId: scenario.workout.archetypeId ?? null,
     });
   }
 

@@ -134,7 +134,33 @@ describe('buildTodayOptions', () => {
     expect(first.options[0]?.targetPath).toContain('scenario=workout');
     expect(first.options[0]?.targetPath).toContain('activityType=bike');
     expect(first.options[0]?.targetPath).toContain('durationMin=60');
+    expect(first.options[0]?.targetPath).toContain('archetypeId=endurance_cadence');
+    expect(first.options[0]?.archetypeId).toBe('endurance_cadence');
     expect(first.options[0]?.targetPath).toContain('#plan-scenario-preview');
     expect(first.options[0]?.evidence.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not turn a short GI-aware spontaneous option into long fueling practice', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 85,
+      tsb: 8,
+      plannedToday: null,
+      completedTodayActivities: [],
+      recentSportMix: { bike: 0, run: 2 },
+      riskSignals: [],
+      mental: { mood: 8, energy: 8, stress: 2, motivation: 8 },
+      fueling: { recentGiIssue: true, loggedToday: false },
+      goals: { activeCount: 1, preferredSports: ['bike'] },
+      capabilitySummary: null,
+    });
+
+    expect(result.state).toBe('unplanned_trainable');
+    expect(result.options[0]).toMatchObject({
+      activityType: 'bike',
+      archetypeId: 'endurance_cadence',
+    });
+    expect(result.options[0]?.targetPath).toContain('archetypeId=endurance_cadence');
+    expect(result.options[0]?.evidence).toContain('Fueling: letzte Einheit mit GI-Hinweis');
   });
 });

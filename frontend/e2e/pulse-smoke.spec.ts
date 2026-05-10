@@ -86,6 +86,7 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
     durationMin: 45,
     targetTss: 38,
     status: 'planned',
+    archetypeId: 'endurance_steady',
     description: 'Lockerer Lauf mit sauberer Grenze.',
   };
   const visibleWeekWorkout = {
@@ -129,6 +130,9 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
 
   await page.goto('/plan');
   await expect(page.getByRole('button', { name: 'Fr 8: Laufen öffnen' })).toBeVisible();
+  await expect(page.getByText('Archetyp: Steady Endurance').first()).toBeVisible();
+  await expect(page.getByText('endurance_steady', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('endurance steady', { exact: true })).toHaveCount(0);
   await expect(page.getByText('run', { exact: true })).toHaveCount(0);
 });
 

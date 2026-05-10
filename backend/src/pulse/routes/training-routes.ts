@@ -450,6 +450,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           distanceKm: z.number().min(0.1).max(1000).nullable().optional(),
           expectedSpeedKmh: z.number().min(1).max(80).nullable().optional(),
           description: z.string().trim().max(1000).nullable().optional(),
+          archetypeId: z.string().trim().max(80).nullable().optional(),
         }).refine(value => value.durationMin != null || (value.distanceKm != null && value.expectedSpeedKmh != null), {
           message: 'Dauer oder Distanz plus erwarteter Schnitt erforderlich',
           path: ['durationMin'],
@@ -505,6 +506,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         description: workout.description,
         distanceKm: workout.distanceKm,
         expectedSpeedKmh: null,
+        archetypeId: workout.archetypeId,
       })),
       scenario: parsed.data as PulsePlanScenarioRequest,
     });
@@ -521,6 +523,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       distanceKm: z.number().min(0.1).max(1000).optional(),
       expectedSpeedKmh: z.number().min(1).max(80).optional(),
       description: z.string().trim().max(1000).optional(),
+      archetypeId: z.string().trim().max(80).optional(),
       syncGarmin: z.boolean().optional().default(true),
       userLocked: z.boolean().optional().default(true),
     }).refine(value => value.durationMin != null || (value.distanceKm != null && value.expectedSpeedKmh != null), {
@@ -553,6 +556,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       durationMin,
       distanceKm: parsed.data.distanceKm ?? null,
       targetTss,
+      archetypeId: parsed.data.archetypeId ?? null,
       description,
       origin: 'user',
       userLocked: parsed.data.userLocked,
@@ -1123,6 +1127,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
             zone:         w.zone,
             durationMin:  w.durationMin,
             targetTss:    w.targetTss,
+            archetypeId:   w.archetypeId ?? null,
             description:  w.description,
             adjustedReason: w.adjustedReason ?? null,
             adjustedAt:   w.adjustedReason ? new Date() : null,
@@ -1797,6 +1802,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
             zone: w.zone,
             durationMin: w.durationMin,
             targetTss: w.targetTss,
+            archetypeId: w.archetypeId ?? null,
             description: w.description,
             adjustedReason: w.adjustedReason ?? null,
             adjustedAt: w.adjustedReason ? new Date() : null,

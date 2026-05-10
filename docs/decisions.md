@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Workout Library Varianten werden lokal gewählt und per Archetype-ID erzwungen
+
+- **Decision:** Pulse erweitert die Trainingsbibliothek als lokale, Tobi-spezifische Variantensammlung und bewahrt den gewählten `archetypeId` über Wochenplan-Generierung, Today-Options-Deep-Link, Szenario-Vorschau und Custom-Workout-Erstellung. `buildWorkoutSteps()` nutzt den persistierten Archetyp als Forced-Archetype, damit Beschreibung, Steps, Difficulty-Metadaten und Garmin-Sync-Vertrag aus derselben Library-Quelle stammen.
+- **Why:** Der Benchmark-Gap war nicht eine kopierte Fremdbibliothek, sondern fehlende Variation, Wiederholungsvermeidung und Ausführungstreue. Ein erzwungener Archetyp verhindert, dass Plan Engine, UI und Garmin-Export dieselbe Einheit unterschiedlich neu inferieren; zugleich bleiben Read-/Preview-Flows kontrolliert und Garmin-sicher.
+- **Alternatives:** Vollständige Plan-Engine-Objekte inklusive Steps direkt persistieren (größerer PR und mehr DB-/Route-Kopplung); fremde Trainingskataloge importieren (nicht erlaubt und nicht Tobi-spezifisch); Archetypen bei jedem Detailaufruf neu erraten (alte Gleichförmigkeit und Sportwechsel-Bugs).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Adaptation Events entstehen aus Write-Pfaden, nicht aus Reads
 
 - **Decision:** Die Adaptation Event Queue wird über bestehende Write-Pfade aktualisiert (Garmin-Sync, RPE-Feedback, Mental Check-in, Fueling-Log, Garmin-Sync-Debt) und der neue Read-Endpoint `/plan/adaptation-events` liest nur offene Events.

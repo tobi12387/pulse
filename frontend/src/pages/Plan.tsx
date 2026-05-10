@@ -1063,6 +1063,7 @@ function PlanScenarioPreviewCard({
   const zoneParam = searchParams.get('zone');
   const durationParam = searchParams.get('durationMin');
   const descriptionParam = searchParams.get('description');
+  const archetypeParam = searchParams.get('archetypeId');
   const previewScenario = usePlanScenarioPreview();
   const createWorkout = useCreateWorkout();
   const updateWorkout = useUpdateWorkout();
@@ -1071,6 +1072,7 @@ function PlanScenarioPreviewCard({
   const [workoutActivityType, setWorkoutActivityType] = useState<PulseActivityType>('bike');
   const [workoutZone, setWorkoutZone] = useState(2);
   const [workoutDuration, setWorkoutDuration] = useState('');
+  const [workoutArchetypeId, setWorkoutArchetypeId] = useState<string | null>(null);
   const [tourDate, setTourDate] = useState(isoDateLocal(addLocalDays(new Date(), 1)));
   const [tourDistance, setTourDistance] = useState('');
   const [tourSpeed, setTourSpeed] = useState('');
@@ -1097,6 +1099,7 @@ function PlanScenarioPreviewCard({
     setWorkoutActivityType(activityType);
     setWorkoutZone(zone);
     setWorkoutDuration(String(durationMin));
+    setWorkoutArchetypeId(archetypeParam);
     setTourDate(today);
     setTourDistance('');
     setTourSpeed('');
@@ -1105,7 +1108,7 @@ function PlanScenarioPreviewCard({
     setError(null);
     setApplyError(null);
     setReviewHint('TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
-  }, [activityTypeParam, descriptionParam, durationParam, entrySource, scenarioParam, searchKey, today, zoneParam]);
+  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
     if (reviewRequest.seq <= 0) return;
@@ -1145,6 +1148,7 @@ function PlanScenarioPreviewCard({
         distanceKm: Number.isFinite(distanceKm) && distanceKm > 0 ? distanceKm : null,
         expectedSpeedKmh: Number.isFinite(expectedSpeedKmh) && expectedSpeedKmh > 0 ? expectedSpeedKmh : null,
         description: tourDescription.trim() || null,
+        archetypeId: workoutArchetypeId,
       },
     };
   }
@@ -1172,9 +1176,11 @@ function PlanScenarioPreviewCard({
           plannedDate: sc.workout.plannedDate,
           activityType: sc.workout.activityType,
           zone: sc.workout.zone ?? 2,
+          durationMin: sc.workout.durationMin ?? undefined,
           distanceKm: sc.workout.distanceKm ?? undefined,
           expectedSpeedKmh: sc.workout.expectedSpeedKmh ?? undefined,
           description: sc.workout.description ?? undefined,
+          archetypeId: sc.workout.archetypeId ?? undefined,
           syncGarmin: true,
           userLocked: true,
         });
@@ -1309,7 +1315,7 @@ function PlanScenarioPreviewCard({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 10 }}>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
               Sportart
-              <select value={workoutActivityType} onChange={e => setWorkoutActivityType(e.target.value as PulseActivityType)} style={fieldStyle}>
+              <select value={workoutActivityType} onChange={e => { setWorkoutActivityType(e.target.value as PulseActivityType); setWorkoutArchetypeId(null); }} style={fieldStyle}>
                 {CUSTOM_ACTIVITY_TYPES.map(type => (
                   <option key={type} value={type}>{ACTIVITY_LABEL[type] ?? type}</option>
                 ))}
@@ -1317,7 +1323,7 @@ function PlanScenarioPreviewCard({
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
               Zone
-              <select value={String(workoutZone)} onChange={e => setWorkoutZone(Number(e.target.value))} style={fieldStyle}>
+              <select value={String(workoutZone)} onChange={e => { setWorkoutZone(Number(e.target.value)); setWorkoutArchetypeId(null); }} style={fieldStyle}>
                 {[1, 2, 3, 4, 5].map(zone => (
                   <option key={zone} value={zone}>Z{zone}</option>
                 ))}
@@ -1329,7 +1335,7 @@ function PlanScenarioPreviewCard({
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
               Dauer min
-              <input inputMode="numeric" value={workoutDuration} onChange={e => setWorkoutDuration(e.target.value)} placeholder="optional" style={fieldStyle} />
+              <input inputMode="numeric" value={workoutDuration} onChange={e => { setWorkoutDuration(e.target.value); setWorkoutArchetypeId(null); }} placeholder="optional" style={fieldStyle} />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)' }}>
               km optional
