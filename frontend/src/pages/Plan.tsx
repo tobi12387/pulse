@@ -5,7 +5,7 @@ import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
-  useTodayOptions,
+  useTodayOptions, useFitnessLoad,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -33,7 +33,7 @@ import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } 
 import { ACTIVITY_LABEL, DAY_SHORT, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
-import type { PulseActivityType, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseActivityType, PulseFitnessLoad, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 
 type Tab = 'training' | 'ziele' | 'review' | 'statistik';
 
@@ -281,6 +281,7 @@ function NextTrainingDecisionCard({
   nextWorkout,
   availableDays,
   activeGoalsCount,
+  currentLoad,
   planTrace,
   mentalPlanImpact,
   todayOptionsState,
@@ -293,6 +294,7 @@ function NextTrainingDecisionCard({
   nextWorkout: PlannedWorkout | null;
   availableDays: number[];
   activeGoalsCount: number;
+  currentLoad: PulseFitnessLoad | null;
   planTrace: PulsePlanTrace | null;
   mentalPlanImpact: string | null;
   todayOptionsState: PulseTodayOptionsResponse['state'] | null;
@@ -368,7 +370,7 @@ function NextTrainingDecisionCard({
     month: '2-digit',
   });
   const isToday = nextWorkout.plannedDate === today;
-  const load = planTrace?.inputSnapshot.load ?? null;
+  const load = currentLoad;
   const riskCount = planTrace?.inputSnapshot.riskSignals.length ?? 0;
   const goalsCount = activeGoalsCount || planTrace?.inputSnapshot.goals.length || 0;
   const sourceChips: SourceChip[] = [
@@ -383,14 +385,16 @@ function NextTrainingDecisionCard({
       ? { label: `Risiko ${riskCount} Signal(e)`, targetPath: '/data?tab=analysen#data-plan-trace' }
       : { label: 'Risiko unauffällig', targetPath: '/data?tab=analysen#data-plan-trace' },
   ];
+  const fatigueAlternativeNeeded = load != null && load.tsb <= -20;
   const growthAlternativeAllowed = riskCount === 0
     && !mentalPlanImpact
+    && !fatigueAlternativeNeeded
     && goalsCount > 0
     && nextWorkout.zone <= 2
     && nextWorkout.durationMin <= 180
     && load != null
     && load.tsb >= 5;
-  const recommendedAlternative: { id: PlanAlternativeId; reason: string } | null = riskCount > 0 || mentalPlanImpact
+  const recommendedAlternative: { id: PlanAlternativeId; reason: string } | null = riskCount > 0 || mentalPlanImpact || fatigueAlternativeNeeded
     ? ((load?.tsb ?? 0) <= -20
       ? { id: 'rest', reason: 'Empfohlen wegen TSB/Risiko' }
       : { id: 'easier', reason: 'Empfohlen wegen TSB/Risiko' })
@@ -855,15 +859,6 @@ function CustomWorkoutForm({
     : null;
   const effectiveDuration = Number.isFinite(explicitDuration) && explicitDuration > 0 ? explicitDuration : inferredDuration;
 
-  function applyLongTourPreset() {
-    setActivityType('bike');
-    setZone(2);
-    setDistanceKm('155');
-    setExpectedSpeedKmh('22');
-    setDurationMin('');
-    setDescription('Entspannte Rennradtour mit Stops.');
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -929,27 +924,6 @@ function CustomWorkoutForm({
           <input inputMode="numeric" value={durationMin} onChange={e => setDurationMin(e.target.value)} placeholder={inferredDuration ? String(inferredDuration) : ''} style={fieldStyle} />
         </label>
       </div>
-
-      <button
-        type="button"
-        onClick={applyLongTourPreset}
-        style={{
-          minHeight: 42,
-          marginTop: 10,
-          background: 'rgba(94,230,207,0.06)',
-          border: '1px solid rgba(94,230,207,0.28)',
-          borderRadius: 'var(--radius)',
-          color: 'var(--accent)',
-          cursor: 'pointer',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          padding: '0 12px',
-        }}
-      >
-        155-km Tour vorbereiten
-      </button>
 
       <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 11, color: 'var(--text-2)', marginTop: 10 }}>
         Notiz
@@ -1097,9 +1071,9 @@ function PlanScenarioPreviewCard({
   const [workoutZone, setWorkoutZone] = useState(2);
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [tourDate, setTourDate] = useState(isoDateLocal(addLocalDays(new Date(), 1)));
-  const [tourDistance, setTourDistance] = useState('155');
-  const [tourSpeed, setTourSpeed] = useState('22');
-  const [tourDescription, setTourDescription] = useState('Entspannte Rennradtour mit Stops.');
+  const [tourDistance, setTourDistance] = useState('');
+  const [tourSpeed, setTourSpeed] = useState('');
+  const [tourDescription, setTourDescription] = useState('');
   const [moveDate, setMoveDate] = useState(nextWorkout ? nextAvailableDateAfter(nextWorkout.plannedDate, availableDays) : isoDateLocal(addLocalDays(new Date(), 1)));
   const [reduceFactor, setReduceFactor] = useState(75);
   const [error, setError] = useState<string | null>(null);
@@ -1615,6 +1589,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const raceCommand = useRaceCommand();
   const seasonStrategy = useSeasonStrategy();
   const todayOptions = useTodayOptions();
+  const fitnessLoad = useFitnessLoad();
   const availability = useWeekAvailability();
   const generate  = useGeneratePlan();
   const navigate  = useNavigate();
@@ -1710,6 +1685,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         nextWorkout={nextDecisionWorkout}
         availableDays={decisionAvailableDays}
         activeGoalsCount={activeGoals.length}
+        currentLoad={fitnessLoad.data ?? null}
         planTrace={decisionPlanTrace}
         mentalPlanImpact={mentalPlanImpact}
         todayOptionsState={todayOptions.data?.todayOptions.state ?? null}

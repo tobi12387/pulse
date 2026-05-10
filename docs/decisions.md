@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Planentscheidung nutzt aktuelle Load-Daten und kein fixes 155-km-Preset
+
+- **Decision:** Die nächste Trainingsentscheidung nutzt den aktuellen `/api/pulse/load`-Wert für TSB-Chips und Adaptionslogik statt den gespeicherten Generation-Trace als Load-Quelle. Das 155-km-Beispiel bleibt nur eine frei eingebbare eigene Einheit; Formular und Szenario-Vorschau enthalten keinen festen 155-km-Preset mehr.
+- **Why:** Home/Data/Plan müssen dieselben aktuellen Load-Werte zeigen, sonst wirkt die Planentscheidung fachlich willkürlich. Tobi hatte die 155-km-Tour als Beispiel genannt, nicht als dauerhaftes Produkt-Feature; feste Defaults würden zukünftige Einheiten wieder künstlich gleichförmig machen.
+- **Alternatives:** Den Trace-Snapshot weiter als Planquelle verwenden (stale Werte im Daily Flow); nach jedem Load-Wechsel nur neu generieren lassen (zu viel manuelle Reparatur); den 155-km-Preset als Shortcut behalten (missversteht das Beispiel als eigene Funktion).
+- **Decided by:** Codex.
+- **Status:** active; supersedes "2026-05-10 — Manuelle Einheiten starten neutral statt als 155-km-Tour" where it kept an explicit preset.
+
 ## 2026-05-10 — Sportarten werden in Tagesflows lokalisiert angezeigt
 
 - **Decision:** Sichtbare Tages- und Planflächen verwenden eine gemeinsame Frontend-Label-Hilfe für Sportarten (`run` → `Laufen`, `bike` → `Radfahren`) statt technische Activity-Codes direkt zu rendern.
