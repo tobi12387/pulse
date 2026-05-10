@@ -104,6 +104,7 @@ function garminTone(status: string | undefined): string {
 function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
   const homeQuery = usePulseHome();
   const checkinToday = useCheckinToday();
+  const navigate = useNavigate();
   const home = homeQuery.data;
   const garmin = home?.dataStatus.garmin;
   const hasCheckin = checkinToday.data?.checkin != null;
@@ -111,6 +112,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
     id: string;
     tab: Tab;
     hash: string;
+    targetPath?: string;
     label: string;
     value: string;
     detail: string;
@@ -151,9 +153,10 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
       id: 'plan-load',
       tab: 'analysen',
       hash: 'data-plan-trace',
+      targetPath: '/plan?tab=training#plan-scenario-preview',
       label: 'Plan-/Load',
       value: `CTL ${fmtMetric(home?.fitnessLoad.ctl, 1)} · ATL ${fmtMetric(home?.fitnessLoad.atl, 1)}`,
-      detail: 'Planlogik, Zielbezug, Load und Adaptionsgründe prüfen.',
+      detail: 'Zur Szenario-Vorschau wechseln und Planwirkung prüfen.',
       tone: 'var(--accent)',
     },
   ];
@@ -180,7 +183,13 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
             key={row.id}
             type="button"
             data-testid={`data-triage-${row.id}`}
-            onClick={() => onOpen(row.tab, row.hash)}
+            onClick={() => {
+              if (row.targetPath) {
+                navigate(row.targetPath);
+                return;
+              }
+              onOpen(row.tab, row.hash);
+            }}
             style={{
               minWidth: 44,
               minHeight: 58,
