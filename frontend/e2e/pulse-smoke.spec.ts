@@ -77,6 +77,61 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
   }
 });
 
+test('daily training surfaces use localized activity labels', async ({ page }) => {
+  const runWorkout = {
+    id: 'run-label-test',
+    plannedDate: '2026-05-01',
+    activityType: 'run',
+    zone: 2,
+    durationMin: 45,
+    targetTss: 38,
+    status: 'planned',
+    description: 'Lockerer Lauf mit sauberer Grenze.',
+  };
+  const visibleWeekWorkout = {
+    ...runWorkout,
+    id: 'run-week-label-test',
+    plannedDate: '2026-05-08',
+  };
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: runWorkout,
+      nextWorkout: runWorkout,
+    },
+    planWorkouts: [runWorkout, visibleWeekWorkout],
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'recovery_protect',
+        summary: 'Heute ist Erholung wichtiger als zusätzliche Intensität.',
+        signature: 'run-label-test',
+        options: [{
+          id: 'optional-run-z1',
+          kind: 'recovery',
+          priority: 'secondary',
+          title: 'Optional 20 min Z1',
+          detail: 'Nur wenn du dich nach Bewegung besser fühlst.',
+          cta: 'Option planen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Recovery protect'],
+          activityType: 'run',
+          zone: 1,
+          durationMin: 20,
+        }],
+      },
+    },
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('daily-decision-card')).toContainText('Laufen · Z2 · 45 min');
+  await expect(page.getByTestId('today-options-card')).toContainText('Laufen · Z1 · 20 min');
+  await expect(page.getByText('run', { exact: true })).toHaveCount(0);
+
+  await page.goto('/plan');
+  await expect(page.getByRole('button', { name: 'Fr 8: Laufen öffnen' })).toBeVisible();
+  await expect(page.getByText('run', { exact: true })).toHaveCount(0);
+});
+
 test('/insights redirects to the Data analysis tab', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/data?tab=analysen');

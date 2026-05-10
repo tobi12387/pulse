@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Sportarten werden in Tagesflows lokalisiert angezeigt
+
+- **Decision:** Sichtbare Tages- und Planflächen verwenden eine gemeinsame Frontend-Label-Hilfe für Sportarten (`run` → `Laufen`, `bike` → `Radfahren`) statt technische Activity-Codes direkt zu rendern.
+- **Why:** Der Live-Browser-Review zeigte `run` in Home-Tagesentscheidung, TodayOptions und Plan-Wochenleiste. Diese Rohcodes wirken wie interne Daten und stören gerade auf iPhone/PWA-Flows, in denen die Entscheidung schnell verständlich sein muss.
+- **Alternatives:** Nur Home einzeln patchen (lässt denselben Fehler in Plan/Options wieder auftauchen); Backend-Labels erzwingen (größerer API-Vertrag für einen UI-Render-Fix); technische Codes akzeptieren (schwächt Vertrauen in die tägliche Führung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Saisonlinie bleibt ohne Load-Model renderbar
 
 - **Decision:** Die Plan-Saisonlinie behandelt `seasonStrategy.loadModel` als optionalen API-Bestandteil. Wenn die API keinen Load-Forecast liefert, rendert Pulse Block, Guardrails und Evidenz weiter und blendet nur Saisonlast, Forecast und Warnungen aus.

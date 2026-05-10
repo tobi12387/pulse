@@ -1,4 +1,5 @@
 import type { PulseHomeScreenData, PulseNextBestAction } from '@coaching-os/shared/pulse';
+import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
 export type DailyDecisionStepStatus = 'done' | 'open' | 'note';
@@ -41,7 +42,7 @@ function readinessBoundary(score: number | null | undefined, tsb: number | null 
 function workoutLabel(home: PulseHomeScreenData): string | null {
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   if (!workout || workout.plannedDate !== home.date) return null;
-  return `${workout.activityType} · Z${workout.zone} · ${workout.durationMin} min`;
+  return `${activityLabel(workout.activityType)} · Z${workout.zone} · ${workout.durationMin} min`;
 }
 
 function completedTodayWorkout(home: PulseHomeScreenData) {
@@ -68,7 +69,7 @@ function completedActivityFor(home: PulseHomeScreenData, workout: HomeWorkout) {
   return home.recentActivities.find(activity => activity.id === workout.completedActivityId) ?? null;
 }
 
-function activityLabel(activity: HomeActivity): string {
+function completedActivityLabel(activity: HomeActivity): string {
   const typeLabel: Record<string, string> = {
     bike: 'Rad',
     run: 'Lauf',
@@ -216,7 +217,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   }
 
   if (offPlanActivity && !todayWorkout) {
-    const completedLabel = activityLabel(offPlanActivity);
+    const completedLabel = completedActivityLabel(offPlanActivity);
     const feedbackDone = offPlanActivity.feedbackLoggedAt != null || offPlanActivity.rpe != null;
     const feedbackTargetPath = `/activity/${offPlanActivity.id}`;
     const steps: DailyDecisionStep[] = [
