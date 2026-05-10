@@ -3,6 +3,7 @@ import {
   buildGarminWorkoutJson,
   buildGarminSyncContract,
   garminWorkoutHasBrokenRepeatIterations,
+  previewGarminSyncContract,
   workoutHasRepeatSteps,
 } from './garmin-workout.js';
 
@@ -174,6 +175,28 @@ describe('buildGarminWorkoutJson', () => {
     expect(contract.summary).toContain('ohne HR-Ziel');
     expect(contract.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'unsupported_hr_target', severity: 'warning' }),
+    ]));
+  });
+
+  it('marks strength support as note-based Garmin handoff', () => {
+    const contract = previewGarminSyncContract({
+      activityType: 'strength',
+      zone: 1,
+      durationMin: 25,
+      description: 'Support Session',
+      steps: [
+        { type: 'steady', durationMin: 7, zone: 1, description: 'Mobility: hips, T-spine' },
+        { type: 'steady', durationMin: 6, zone: 1, description: 'Core: dead bug, side plank' },
+        { type: 'steady', durationMin: 6, zone: 1, description: 'Glutes: bridge' },
+        { type: 'steady', durationMin: 6, zone: 1, description: 'Cooldown: breathing' },
+      ],
+    });
+
+    expect(contract.status).toBe('degraded');
+    expect(contract.payloadReady).toBe(true);
+    expect(contract.summary).toContain('Notiz/Blockliste');
+    expect(contract.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'strength_notes_only', severity: 'warning' }),
     ]));
   });
 });

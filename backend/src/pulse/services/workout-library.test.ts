@@ -137,6 +137,20 @@ describe('workout library', () => {
     expect(prescription.steps.map(step => step.description).join(' ')).toContain('Mobility');
   });
 
+  it('turns strength support into concrete blocks instead of a generic note', () => {
+    const prescription = buildWorkoutLibraryPrescription({
+      activityType: 'strength',
+      zone: 1,
+      durationMin: 25,
+      targetTss: 15,
+    }, null, { forcedArchetypeId: 'strength_support' });
+
+    expect(prescription.steps.length).toBeGreaterThanOrEqual(3);
+    expect(prescription.steps.every(step => step.type !== 'interval')).toBe(true);
+    expect(prescription.steps.map(step => step.description).join(' ')).toContain('Core');
+    expect(prescription.description).toContain('Unterstuetzt Haltung');
+  });
+
   it('keeps short high-intensity activations inside the planned duration', () => {
     const shortActivation = buildWorkoutLibraryPrescription({
       activityType: 'run',

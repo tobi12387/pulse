@@ -24,7 +24,7 @@
 
 ## Task 1: Add A Support Session Library
 
-- [ ] **Step 1: Create tests**
+- [x] **Step 1: Create tests**
 
 Create `backend/src/pulse/services/support-session-library.test.ts`:
 
@@ -50,7 +50,7 @@ describe('support-session-library', () => {
 });
 ```
 
-- [ ] **Step 2: Implement service**
+- [x] **Step 2: Implement service**
 
 Create `backend/src/pulse/services/support-session-library.ts`:
 
@@ -104,7 +104,7 @@ export function buildSupportSession(input: {
 }
 ```
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run:
 
@@ -116,7 +116,7 @@ Expected: PASS.
 
 ## Task 2: Integrate With Workout Library
 
-- [ ] **Step 1: Use support descriptions for strength**
+- [x] **Step 1: Use support descriptions for strength**
 
 In `workout-library.ts`, when `archetype.id === 'strength_support' || archetype.id === 'strength_prehab'`, call `buildSupportSession` and convert blocks into `WorkoutStep[]`:
 
@@ -129,11 +129,11 @@ return session.blocks.map(block => ({
 }));
 ```
 
-- [ ] **Step 2: Include support note in description**
+- [x] **Step 2: Include support note in description**
 
 Append `session.planNote` to the generated library description for strength workouts.
 
-- [ ] **Step 3: Test generated steps**
+- [x] **Step 3: Test generated steps**
 
 Add to `workout-library.test.ts`:
 
@@ -148,7 +148,7 @@ it('turns strength support into concrete blocks instead of a generic note', () =
 
 ## Task 3: Surface Without Creating Habit Tracking
 
-- [ ] **Step 1: Plan detail UI**
+- [x] **Step 1: Plan detail UI**
 
 In `frontend/src/components/WorkoutDetailModal.tsx`, show support blocks inside the existing workout detail modal only for `activityType === 'strength'`. Reuse the existing step list styling where it fits, but label the section as a support session, not a Garmin interval workout:
 
@@ -169,7 +169,7 @@ In `frontend/src/components/WorkoutDetailModal.tsx`, show support blocks inside 
 
 For strength/support workouts, either hide the Garmin upload CTA or show the existing sync contract as degraded with copy: `Support-Session wird als Notiz/Blockliste behandelt, nicht als Intervallstruktur.`
 
-- [ ] **Step 2: Today Options**
+- [x] **Step 2: Today Options**
 
 In `today-options.ts`, make Skills/Mobility option clearer:
 
@@ -180,11 +180,11 @@ detail: input.readinessScore < 60
   : '25 min Core, Mobility und Glutes als Unterstuetzung fuer Rad/Lauf.',
 ```
 
-- [ ] **Step 3: Existing strength summary**
+- [x] **Step 3: Existing strength summary**
 
 Do not add a new Data card for support sessions in this slice. If a count is useful, add it to the existing `StrengthStatsCard` in `frontend/src/pages/Plan.tsx` with neutral language such as `Support-Sessions diesen Monat`; no streaks, badges or habit language.
 
-- [ ] **Step 4: Verification**
+- [x] **Step 4: Verification**
 
 Run:
 
@@ -203,3 +203,12 @@ Expected: PASS.
 - No habit tracker, streak or new navigation is introduced.
 - Garmin sync degrades gracefully as notes when strength is not structured like endurance intervals.
 - Browser coverage proves the strength detail modal shows support blocks and does not present them as a normal Garmin interval workout.
+
+## Implementation Notes
+
+- Implemented in branch `codex/strength-mobility-companion`.
+- Added a deterministic support-session library for cycling/run prehab, mobility-only and core-stability blocks.
+- Strength archetypes now generate concrete Mobility/Core/Glutes/Cooldown blocks and append the support note to workout descriptions.
+- Today Options now labels the support action as `Mobility leicht` near recovery risk and `Strength Support` otherwise.
+- Garmin sync contracts for strength are intentionally degraded with `strength_notes_only`, so the UI treats the handoff as a note/block list rather than a normal interval workout.
+- No new navigation, streak, badge, habit tracker or extra Data card was added.

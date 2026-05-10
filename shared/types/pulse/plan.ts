@@ -30,6 +30,7 @@ export type PulseGarminSyncContractIssueCode =
   | 'repeat_iterations_invalid'
   | 'repeat_group_missing'
   | 'unsupported_hr_target'
+  | 'strength_notes_only'
   | 'empty_steps'
   | 'invalid_step_duration'
   | 'remote_repeat_repair';

@@ -307,7 +307,7 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
                 lineHeight: 1.2,
               }}
             >
-              <span style={{ color: 'var(--accent)' }}>Garmin-Struktur</span>
+              <span style={{ color: 'var(--accent)' }}>{w.activityType === 'strength' ? 'Support-Blockliste' : 'Garmin-Struktur'}</span>
               <span>{structureSummary}</span>
             </div>
           )}

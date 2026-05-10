@@ -163,4 +163,28 @@ describe('buildTodayOptions', () => {
     expect(result.options[0]?.targetPath).toContain('archetypeId=endurance_cadence');
     expect(result.options[0]?.evidence).toContain('Fueling: letzte Einheit mit GI-Hinweis');
   });
+
+  it('makes the support option concrete and downshifts near recovery risk', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 58,
+      tsb: -4,
+      plannedToday: null,
+      completedTodayActivities: [],
+      recentSportMix: { bike: 2 },
+      riskSignals: [],
+      mental: { mood: 6, energy: 5, stress: 5, motivation: 6 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: null,
+    });
+
+    const support = result.options.find(option => option.kind === 'skills');
+    expect(support).toMatchObject({
+      title: 'Mobility leicht',
+      detail: '15-20 min Beweglichkeit und Atmung, ohne Trainingsstress.',
+      durationMin: 20,
+      archetypeId: 'strength_prehab',
+    });
+    expect(support?.targetPath).toContain('durationMin=20');
+  });
 });

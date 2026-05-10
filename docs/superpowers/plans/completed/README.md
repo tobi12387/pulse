@@ -71,6 +71,7 @@
 | `2026-05-10-power-data-quality-foundation.md` | Power Data Quality Foundation — stream/lap/unavailable provenance for training analytics with compact Data evidence before future durability claims | Power Data Quality PR |
 | `2026-05-10-power-duration-durability.md` | Power Duration/Durability — quality-gated best efforts, durability snapshots, Data summary and Plan durability limiter | Power Duration PR |
 | `2026-05-10-season-atp-v2.md` | Season ATP v2 — annual hours/TSS, A/B/C event bias, safe missed-load compensation and compact Plan ATP guardrail row | Season ATP PR |
+| `2026-05-10-strength-mobility-companion.md` | Strength Mobility Companion — concrete support block lists, clearer Today Options and note-based Garmin handoff for strength | Strength Mobility PR |
 
 ## Bekannte veraltete Stellen
 

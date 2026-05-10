@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Strength Support bleibt konkrete Blockliste ohne Habit-System
+
+- **Decision:** Pulse erzeugt fuer Strength/Mobility konkrete Mobility/Core/Glutes/Cooldown-Bloecke aus einer lokalen Support-Session-Library. Garmin-Sync fuer Strength wird bewusst als `degraded`/`strength_notes_only` gefuehrt und in der UI als Notiz-/Blocklisten-Handoff erklaert; es gibt keine neue Navigation, keine Streaks und keinen Habit Tracker.
+- **Why:** Unterstuetzendes Krafttraining soll im Alltag sofort ausführbar sein, aber nicht wie ein zusaetzlicher Ausdauerreiz oder normales Garmin-Intervalltraining wirken. Die klare Degradierung verhindert falsches Vertrauen in Strength-Intervalle auf Edge/Uhr und haelt den Scope niedrig.
+- **Alternatives:** Strength als generische Textnotiz belassen (zu unkonkret); Garmin als vollwertig `ready` markieren (irrefuehrend); eigenen Strength-/Habit-Bereich bauen (zu schwer und gegen Produkt-No-Gos).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Season ATP bleibt Guardrail statt eigener Kalender
 
 - **Decision:** Pulse erweitert Season Strategy um Jahresstunden/Jahres-TSS, A/B/C-Event-Bias und letzte-14-Tage-Nachhol-Last, aber Plan Engine nutzt nur eine konservative, halbierte Kompensation und blockt sie in Taper, Race Week, Deload/Recovery, bei TSB <= -8 oder kritischem Risiko. Die UI zeigt das als eine kompakte Zeile in der Saisonlinie.
