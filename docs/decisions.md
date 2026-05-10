@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Produktroadmap wird um UX-Task-Contract und UI-Benchmark harmonisiert
+
+- **Decision:** `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` ist die kanonische Pulse-Produktroadmap. Sie buendelt Benchmark-Erkenntnisse, UX-Task-Contract, Navigation als Produktwerkzeug und die naechste Reihenfolge von Docs-Hygiene, UX-Contract, Today/Home, Plan Action Hierarchy, Daily Delta/Planned-vs-Completed, Garmin Execution, Athlete Levels/Alternatives und Nutrition Intelligence.
+- **Why:** Die bisherigen aktiven Roadmap-Dokumente enthielten teils umgesetzte Phasen, Benchmark-Reste und alte Navigationsannahmen. Pulse braucht eine eindeutige Quelle, die neue Tabs nicht dogmatisch blockiert, aber jede Navigation an wiederkehrende Nutzerflows und klare Handlungen bindet.
+- **Alternatives:** UI/UX-Plan und Benchmark-Plan getrennt weiterfuehren (erzeugt doppelte Prioritaeten); neue Top-Level-Tabs weiterhin implizit vermeiden (zu starr); nur Chat-Zusammenfassung nutzen (nicht dauerhaft fuer Agenten).
+- **Decided by:** Tobi / Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan-/Garmin-QA bekommt einen read-only Harness
 
 - **Decision:** Pulse fuehrt `npm run qa:plan:no-garmin-write` als dedizierten Playwright-Harness fuer Plan Refresh Preview, Today Options Signal Labels und Garmin Execution Readback. Der Harness nutzt ausschliesslich gemockte Pulse-API-Fixtures und asserted, dass keine Garmin- oder Plan-Mutationsendpunkte aufgerufen werden.

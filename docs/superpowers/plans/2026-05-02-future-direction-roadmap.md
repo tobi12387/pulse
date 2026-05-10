@@ -1,139 +1,159 @@
-# Pulse Future Direction Roadmap
+# Pulse Product Roadmap
 
-> Stand: 2026-05-05 after Daily Loop Slimming, Insights into Data, Mental Check-in Simplification and Coach primary-nav removal. This is the active orientation document for future Pulse work. It keeps completed implementation plans out of the active plan surface and turns the remaining gated work into a prioritized product direction.
+> Stand: 2026-05-10 after the UI/UX benchmark against Garmin, WHOOP, Oura, TrainerRoad, TrainingPeaks, JOIN, Runna, Strava, MacroFactor and Intervals/Xert/WKO-style analytics. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching plan.
 
 ## Product North Star
 
-Pulse should be the quiet daily operating system for training and recovery: one trustworthy daily decision, backed by Garmin and subjective data, visible on the device Tobi actually uses, and explainable enough that he can override it with confidence.
+Pulse should be the quiet daily operating system for training, recovery and execution: it turns Garmin, plan, mental, fueling and goal evidence into one understandable next action, then explains enough that Tobi can trust, override or refine it.
 
-## Principles
+The product target is not "more data". The target is better daily judgment:
 
-1. **One daily loop beats more dashboards.** Home should answer what matters today; Coach is a callable support layer, while Plan and Data provide decisions and evidence.
-2. **Every recommendation needs provenance.** Training, recovery and mental guidance should show the data or preference behind it.
-3. **PWA over VPN remains the default platform.** Native iOS is evaluated only after real-device PWA friction is measured.
-4. **Mental fitness is first-class but careful.** Pulse can guide reflection, detect patterns and suggest boundaries; it must not infer clinical labels or hide sensitive assumptions.
-5. **Garmin is a source, not the product.** Pulse should preserve and reconcile Garmin data, then translate it into useful decisions.
-6. **Local ops must be boring.** Deploy, health, test-services and browser QA need repeatable checks so agents do not rediscover the same failures.
+- what should I do today;
+- why is that the right call;
+- what happens if I accept, change or skip it;
+- how does it affect my goal, recovery, Garmin device and next plan decision.
 
-## Prioritized Future Waves
+## Product Principles
 
-| Rank | Wave | Why It Comes Here | Implementation Plan |
-|---|---|---|---|
-| 1 | Mobile Field Reliability | Pulse becomes useful when it works on iPhone over VPN, not only in desktop preview; remaining work is mostly manual push/certificate evidence and diagnostics | `2026-05-02-mobile-field-reliability-wave.md` |
-| 2 | Fueling & Recovery Companion | Practical pre/during/post workout support, but dietary preferences must be confirmed before implementation | `2026-05-02-fueling-recovery-companion.md` |
-| 3 | Native iOS Evaluation Gate | Only if PWA field evidence shows persistent iOS-specific friction | Decision gate below |
+1. **Lead, then explain.** Pulse first shows the next useful action; evidence and analysis are available one layer deeper.
+2. **Every action has a contract.** Tasks, CTAs and descriptions must answer: what should I do, why now, and what happens afterwards.
+3. **Navigation is a product tool.** Pulse may add, rename or remove tabs, areas or modes when that makes a recurring flow clearer, faster or calmer. The number of tabs is not the goal; orientation is.
+4. **Daily usefulness beats feature breadth.** A small daily flow that is trusted matters more than a larger dashboard that Tobi must interpret.
+5. **Garmin execution must close the loop.** Planning is not complete until the workout's device/calendar/repeat status is understandable and repairable.
+6. **Mental fitness is first-class but careful.** Pulse can guide reflection, boundaries and adaptation; it must not infer clinical labels or hide sensitive assumptions.
+7. **PWA over VPN remains the default platform.** Native iOS is evaluated only after real iPhone/PWA friction proves a concrete need.
+8. **Local ops must be boring.** Deploy, health, test services and browser QA need repeatable checks so agents do not rediscover the same failures.
 
-## Recently Completed Directional Waves
+## UX Task Contract
 
-| Wave | Outcome | Reference |
+All visible tasks, descriptions and CTA labels should follow this grammar:
+
+```text
+Title: what should I do?
+Summary: why is this relevant now?
+Primary action: what result does the click create?
+Result preview: what changes afterwards?
+Evidence: optional, compact and expandable.
+```
+
+### Copy Rules
+
+- Prefer outcome labels over destination labels: `Wochenplan erstellen` beats `Zum Plan`.
+- Prefer everyday language over internal model terms: `Heute locker bleiben` beats `Plan-/Load pruefen`.
+- Keep one primary action per card or first viewport.
+- Make optional evidence visibly optional with `Warum?`, `Details` or a compact evidence row.
+- Distinguish information cards from action cards. If a card is clickable, the action/result must be obvious.
+- When a recommendation repeats, explain why it is still valid or what changed since yesterday.
+
+### Navigation Rules
+
+New navigation is allowed when it improves orientation. A new tab, area or mode is a good candidate when:
+
+- it supports a recurring flow that users understand as its own job;
+- it makes an existing page calmer;
+- the first mobile viewport can state a single purpose and action;
+- it carries work, not just more data;
+- it improves the daily path more than embedding the same content in an existing route.
+
+Potential future areas are therefore open product options, not exceptions:
+
+- `Heute` if Home becomes a dedicated daily command surface;
+- `Ausfuehrung` if Garmin/device workout execution becomes a recurring flow beyond a Plan subtab;
+- `Nutrition` if fueling and recovery become daily/weekly planning work;
+- `Coach` if it becomes a true explanation/reflection mode again rather than a fifth dashboard.
+
+## UI/UX Benchmark Translation
+
+| Reference | What It Does Well | Pulse Direction |
 |---|---|---|
-| Daily Loop Explainability | Home/Coach share visible action history, suppressed reasons are explainable, Insight evidence links to sources, and daily check-ins are date-scoped. | `completed/2026-05-02-daily-loop-explainability-wave.md`, PR #102 |
-| Local Ops Autopilot | `npm run pulse:status` separates Mac-local Docker/Postgres/Redis blockers from server deploy mirror health and documents the local ops flow. | `completed/2026-05-02-local-ops-autopilot.md`, PR #105 |
-| Adaptive Training Intelligence v2 | Plan generation now uses deterministic execution review for matched, missed, replaced, RPE/recovery and deliberate rest-day rationale. | `completed/2026-05-02-adaptive-training-intelligence-v2.md`, PR #106 |
-| Mental Fitness Companion | Guided Daily Check-in questions now come from deterministic PulseContext guidance; mental support actions use the existing closure model. | `completed/2026-05-02-mental-fitness-companion.md`, PR #108 |
-| Garmin Data Quality Control Center | Settings/Data now show Garmin domain quality, freshness, repairability and blocked provider states. | `completed/2026-05-02-garmin-data-quality-control-center.md`, PR #111 |
-| Goal/Race Command Center | Plan now shows race phase, readiness, next key workout, recovery boundary and risk impact from existing evidence. | `completed/2026-05-02-goal-race-command-center.md`, PR #112 |
-| Daily Outcome Learning Loop | Home/Coach now show a deterministic learning signal from action decisions, check-ins and Garmin execution without hidden LLM memory. | `completed/2026-05-02-daily-outcome-learning-loop.md`, PR #113 |
-| Season Strategy Planner | Plan now shows a deterministic 8-16 week season line and weekly generation uses target-session, hard-day, deload and free-day guardrails. | `completed/2026-05-02-season-strategy-planner.md`, PR #114 |
-| Garmin Signal Usefulness Wave | Data now shows which Garmin signals are already used, underused or missing/sparse, without live Garmin probing from UI routes. | `completed/2026-05-02-garmin-signal-usefulness-wave.md`, PR #116 |
-| Daily Decision Quality Loop | Home, Coach and Insights now show whether recent recommendations helped, repeated usefully, became stale or need a strategy change. | `completed/2026-05-02-daily-decision-quality-loop.md`, PR #117 |
-| Structure Boundary Cleanup | Pulse route, feature and shared-type monoliths were split; future structure work needs fresh file counts before planning. | `completed/2026-05-02-structure-boundary-cleanup.md`, PR #136-#148 |
-| UI/UX Deep Friction Closure | Mobile containment, daily-loop priority, local feedback recovery, Settings diagnostics and route evidence refresh are complete. | `completed/2026-05-02-ui-ux-deep-friction-roadmap.md`, PR #155-#160 |
-| Daily Loop Slimming | Home remains the full daily decision source; Coach and Plan use compact support cards instead of repeating the whole decision grid. | `completed/2026-05-04-daily-loop-slimming.md`, PR #163 |
-| Insights Into Data | Insights is rendered as Data `Analysen`, removed from primary navigation, and `/insights` redirects to `/data?tab=analysen`. | `completed/2026-05-04-insights-into-data.md`, PR #165 |
-| Mental Check-in Simplification | Data, Home and Coach now share a lower-friction mental check-in flow with quick choices, free-text preview and visible Coach context. | `completed/2026-05-04-mental-checkin-simplification.md`, PR #167-#171 |
-| Coach Primary-Nav Removal | The primary navigation is now Home, Data, Plan and Settings; `/coach` remains a compatibility/deep-link route. | `../specs/2026-05-04-nav-ia-design.md`, `../../qa/2026-05-05-remove-coach-tab.md`, PR #172 |
-| UI/UX Foundation And Trust Slice | Login, Data overview, daily-flow deduplication, Mental qualitative cards and Garmin 0-repeat repair detection are live. | `../../qa/2026-05-05-ui-ux-phase2-review.md`, PR #175-#176 |
-| Home Daily Decision Closure | Fallback no-training days close locally on Home; Coach remains a secondary support prompt and synthetic action ids are not patched. | `completed/2026-05-05-home-daily-decision-closure.md`, PR #178 |
-| Mental Signal Impact Loop | Saved mental check-ins now use shared impact language across Data, Home, Plan and Coach. | `completed/2026-05-05-mental-signal-impact-loop.md`, PR #180 |
-| Garmin Workout Sync Confidence | Plan rows and workout detail modal show whether a planned workout is local-only, Garmin-template-only, calendar-ready, completed, missed or replaced. | `completed/2026-05-05-garmin-workout-sync-confidence.md`, PR #182 |
-| Mobile/A11y Controls Polish | Daily-use controls meet the 44px mobile touch baseline; Data/Plan tabs and Mental radios support keyboard semantics. | `completed/2026-05-05-mobile-a11y-controls-polish.md`, PR #184, PR #186 |
-| Data Decision Evidence Trail | Home/Plan evidence chips deep-link to Data anchors with hash-driven tab selection, scrolling and visible focus. | `completed/2026-05-05-data-decision-evidence-trail.md`, PR #188 |
+| Garmin Daily Suggested Workouts / Garmin Coach | Answers "what should I do today" from training load, recovery, sleep and recent workouts. | Pulse should make today's recommendation explicit and device-aware, not bury it under diagnostics. |
+| WHOOP | Separates today's state, plan, dashboard and coach surfaces. | Pulse may split flows when it reduces cognitive load; Home/Data/Plan/Settings are not sacred. |
+| Oura | Uses calm Today cards and pushes trends/contributors deeper. | Mental and recovery should start with states and suggestions; numbers stay available as evidence. |
+| TrainerRoad | TrainNow and Workout Levels make spontaneous workouts and progression easy to understand. | Today options and planned workouts should show fit: productive, maintain, stretch, protect or too hard. |
+| TrainingPeaks | Calendar, structured workout builder and device sync make execution concrete. | Plan should feel like calendar plus execution trust, not only a generation surface. |
+| JOIN / Runna | Adapts around availability, not-feeling-100%, progress and life context. | Pulse needs first-class "I have little time", "not ready", "change today" and "off-plan activity" flows. |
+| Strava | Progress is motivational and understandable. | Data should include motivating goal progress, not only diagnostics. |
+| MacroFactor | Dashboard plus quick actions plus weekly coaching updates explain what changed. | Pulse should summarize deltas and plan changes instead of asking Tobi to reinterpret raw metrics. |
+| Intervals.icu / Xert / WKO | Deep analytics and model provenance are powerful for experts. | Pulse should keep deep analysis in Data and translate it into next actions before surfacing it elsewhere. |
 
-## Next Plan Summaries
+## Harmonized Roadmap
 
-### Standing UI/UX Evidence Rule
+### Short Term: Make Pulse Easier To Use Daily
 
-The UI/UX Deep Friction Closure roadmap is completed. New UI/UX work should begin by regenerating the route evidence pack in `docs/qa/route-evidence-pack.md`, then turning only observed friction into a narrow plan or PR.
+These come first because they reduce daily friction before adding more intelligence.
 
-### Navigation IA Continuation
+| Rank | Theme | Outcome | Likely Plan |
+|---|---|---|---|
+| 1 | Roadmap and active-plan cleanup | Active docs point to this roadmap; completed docs stop looking like backlog. | Docs-only roadmap hygiene PR |
+| 2 | UX Task Contract foundation | Shared copy/action rules are documented and then applied to Home, Plan, Data and Settings. | New focused implementation plan |
+| 3 | Today/Home simplification | The first screen gives one daily decision, one primary action and optional `Warum?`. Consider renaming Home to `Heute` if evidence supports it. | Home/Daily Command PR |
+| 4 | Plan action hierarchy | Plan starts with the current job: execute, pause, create plan, set availability or check Garmin sync. | Plan UI PR |
+| 5 | Daily Delta Coach | Pulse explains what changed since yesterday and why the plan did or did not adapt. | Home/Plan/Data slice |
+| 6 | Planned-vs-Completed Score | After Garmin activities, Pulse shows plan match, load delta, RPE/fueling signal and what changes next. | Backend + Activity/Plan UI |
+| 7 | Garmin execution closure polish | Apply/regenerate flows end with expected Garmin operations and readback/repair status. | Plan `Ausfuehrung` slice |
 
-Implementation spec: [`../specs/2026-05-04-nav-ia-design.md`](../specs/2026-05-04-nav-ia-design.md)
-Home daily closure slice: [`completed/2026-05-05-home-daily-decision-closure.md`](completed/2026-05-05-home-daily-decision-closure.md)
+### Medium Term: Make The Intelligence Understandable
 
-**Goal:** Finish the transition from Coach as a place to Coach as a contextual action layer.
+These build on the calmer daily UI.
 
-**Scope:**
-- embed the remaining Coach composer/history affordances where they support Home, Plan and Data flows;
-- keep `/coach` compatible until route evidence and normal use prove it can be redirected or hidden further;
-- preserve voice and existing Home/Plan/push deep links during the transition.
+| Theme | Outcome | Benchmark Link |
+|---|---|---|
+| Pulse Athlete Levels | Energy-system capability becomes user-facing as `machbar`, `produktiv`, `stretch`, `schuetzen` or `zu hart heute`. | TrainerRoad Workout/Progression Levels |
+| Workout Alternatives v2 | Every relevant workout can offer shorter, easier, same-purpose, outside/indoor, group/solo or recovery alternatives. | TrainerRoad TrainNow, JOIN availability |
+| Data IA Compression | Data becomes `Heute relevant`, `Trends`, `Datenqualitaet` and `Analyse`, instead of many equal tabs. | Oura Trends, Intervals analytics |
+| Settings Status First | Settings starts with `Alles bereit` or `Problem beheben`, then details. | Garmin/WHOOP app diagnostics |
+| Nutrition Intelligence | Fueling guidance learns from real rides, 750 ml bottles, MNSTRY products, GI comfort and workout intensity. | MacroFactor coaching update pattern |
+| iPhone/PWA Field Reliability | Real device evidence decides whether PWA fixes are enough or whether a native/wrapper path is worth planning. | WHOOP/Oura mobile-first reliability |
 
-**Acceptance:**
-- Home/Data/Plan/Settings remain the only primary navigation destinations;
-- `/coach` is not a dead end;
-- route evidence shows the contextual surfaces do not make the daily iPhone/PWA flow bulky again.
+### Long Term: Become A Personal Coach, Not A Dashboard
 
-### Mobile Field Reliability
+| Theme | Outcome |
+|---|---|
+| Personal Response Model | Pulse learns how Tobi responds to training, sleep, mental state, fueling and RPE over time. |
+| Predictive Goal Engine | Pulse shows goal probability, limiter risk and the next best intervention for 70.3, endurance, recovery and body composition goals. |
+| Adaptive Season Builder | Season planning handles build, recovery, specificity, taper, missed load, availability and event priority as one model. |
+| Contextual Coach Mode | Coach becomes an explanation/reflection mode that can live as a tab, overlay or route depending on evidence. |
+| Customizable Daily Surface | Tobi can choose which focus cards appear first, while Pulse keeps safe defaults for the daily decision. |
 
-Implementation plan: [`2026-05-02-mobile-field-reliability-wave.md`](2026-05-02-mobile-field-reliability-wave.md)
+## Active Plan Surface
 
-**Goal:** Prove Pulse on the real iPhone over VPN before changing platform strategy.
+Use this roadmap as the product orientation. Before implementation, open or create the smallest PR-sized plan for the next slice.
 
-**Scope:**
-- record real-device reachability, certificate, login, route, Add-to-Home-Screen and push evidence;
-- convert only observed friction into deterministic browser checks;
-- keep Settings diagnostics accurate without promising unsupported iOS capabilities.
+Current plan/doc cleanup candidates:
 
-**Acceptance:**
-- evidence is recorded from Tobi's device;
-- any real issue has a reproducible regression check;
-- the local-server/VPN model remains the default until evidence says otherwise.
+- `2026-05-10-post-progression-next-roadmap.md`: all phases are implemented; move to completed or mark read-only in a docs hygiene PR.
+- `2026-05-10-daily-command-center-v2.md`: implemented; keep as reference only.
+- `2026-05-10-garmin-execution-trust-v2.md`: implemented; keep as reference only.
+- `2026-05-10-progression-library-v2.md`: implemented; keep as reference only.
+- `2026-05-10-ui-accessibility-polish-v2.md`: status must be reconciled before reuse because `docs/ai/current-focus.md` says the phase is implemented while the checkbox plan still reads open.
+- `2026-05-02-fueling-recovery-companion.md`: implemented baseline; future nutrition work belongs under `Nutrition Intelligence`.
+- `2026-05-02-mobile-field-reliability-wave.md`: keep as a manual/evidence gate, not a feature backlog.
 
-### Fueling & Recovery Companion
+## Next Implementation Order
 
-Implementation plan: [`2026-05-02-fueling-recovery-companion.md`](2026-05-02-fueling-recovery-companion.md)
-
-**Goal:** Turn planned workouts and completed activities into practical fueling, sleep and recovery support.
-
-**Scope candidate:**
-- pre-workout carbohydrate/hydration guidance from duration, intensity and weather when available;
-- during-workout fueling reminders for long sessions;
-- post-workout recovery note tied to sleep debt, HRV, soreness and nutrition logs;
-- race-day fueling checklist after Season Strategy exists.
-
-**Decision needed before implementation:** dietary constraints, preferred products and how opinionated Pulse should be with calories/carbs/sodium.
-
-### Native iOS Evaluation Gate
-
-**Goal:** Decide whether a native wrapper is worth building after the PWA is tested on the real device.
-
-**Scope:**
-- compare real iPhone PWA evidence against the expected daily flows;
-- list only persistent problems that cannot be solved in the web/PWA layer;
-- estimate maintenance cost for a wrapper, local-network auth, push and deployment;
-- keep the current answer as "no native wrapper" unless field evidence proves a concrete need.
-
-**Likely files:**
-- `docs/qa/2026-05-02-iphone-pwa-real-device.md`
-- `docs/superpowers/plans/2026-05-02-mobile-field-reliability-wave.md`
-- `docs/decisions.md`
-
-**Acceptance:**
-- the decision is based on recorded device evidence, not novelty;
-- PWA fixes are exhausted before native work starts;
-- the local-server/VPN model is explicitly preserved or explicitly reversed.
+1. **Docs hygiene PR:** reconcile active/completed roadmap files, update `docs/ai/current-focus.md`, and keep this roadmap canonical.
+2. **UX Task Contract PR:** encode shared copy/action rules in docs, then apply the first narrow UI slice.
+3. **Today/Home or `Heute` exploration:** generate fresh route evidence and decide whether renaming/splitting Home improves orientation.
+4. **Plan action hierarchy PR:** make Plan's first viewport about the current job, not about all available plan machinery.
+5. **Daily Delta + Planned-vs-Completed:** close the loop between yesterday's data, today's recommendation and tomorrow's plan.
+6. **Garmin execution closure polish:** ensure plan changes end with visible device/readback confidence.
+7. **Athlete Levels and Alternatives v2:** make training progression and alternatives understandable without adding dashboard weight.
+8. **Nutrition Intelligence:** turn fueling logs and product preferences into practical per-session guidance.
 
 ## Manual Gates
 
-These are not blocked by implementation skill; they need Tobi's device or approval:
+These still need Tobi's device, approval or live environment:
 
 1. Real iPhone/VPN/PWA run using `docs/ai/checklists/iphone-pwa-qa.md`, recorded in `docs/qa/2026-05-02-iphone-pwa-real-device.md`.
-2. Canva preview approval before saving changes to `Pulse Everyday Flow UX Board`.
-3. Push activation on each browser/device where notifications should work.
+2. Push activation on each browser/device where notifications should work.
+3. Real Garmin calendar/workout writes only when explicitly testing or repairing sync.
+4. Native iOS decision only after PWA/VPN evidence shows an unresolved recurring problem.
 
 ## Explicit Non-Goals
 
 - No Telegram integration.
 - No data export.
+- No copied proprietary TrainerRoad, TrainingPeaks, JOIN, Runna, Xert or WKO plan/workout content.
 - No direct development on the Ubuntu server.
 - No public cloud tunnel unless the local VPN model is explicitly reversed later.
+- No clinical mental-health diagnosis or hidden sensitive inference.
