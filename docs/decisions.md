@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Daily Delta startet als read-only Home-Loop
+
+- **Decision:** Pulse fuehrt einen read-only `GET /api/pulse/daily-delta` Contract ein und zeigt den neuesten Plan-vs-Ausfuehrung-Status zuerst auf Home direkt nach der Tagesentscheidung. Der Contract nutzt vorhandene Plan-, Aktivitaets- und Tagesmetriken-Daten und erfordert keine Migration.
+- **Why:** Nach erledigten Workouts braucht Home eine klare Antwort, was wirklich passiert ist und wie das die naechste Planung beeinflusst. Eine kleine Home-Zeile reduziert kognitive Last staerker als ein neuer Analysebereich oder weitere Plan-Diagnostik.
+- **Alternatives:** Nur bestehendes Outcome-Learning weiter anzeigen (zu indirekt fuer geplante vs. echte Einheit); Daily Delta sofort in Home, Plan und Data ausrollen (groesserer UI-Scope); neues Persistenzmodell bauen (unnötig fuer v1).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan startet mit einer sichtbaren Aktionsvereinbarung
 
 - **Decision:** Der Plan-Tab zeigt vor Evidenz, Alternativen und Tools eine `Plan-Aktion` mit konkreter Primaerhandlung, `Warum jetzt` und `Nach dem Klick`; bei offener Einheit fuehrt die Primaerhandlung in die Einheit, bei fehlender Einheit zuerst in die Verfuegbarkeit, und Today Options uebernimmt den Vertrag, wenn nur dort die geplante Tagesaktion sichtbar ist.

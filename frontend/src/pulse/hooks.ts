@@ -33,6 +33,7 @@ export const pulseKeys = {
   briefing:     ['pulse', 'briefing'] as const,
   actions:      ['pulse', 'actions'] as const,
   dailyOutcomes: (days: number) => ['pulse', 'outcomes', 'daily', days] as const,
+  dailyDelta: (days: number) => ['pulse', 'daily-delta', days] as const,
   decisionQuality: (days: number) => ['pulse', 'decisions', 'quality', days] as const,
   risk:         ['pulse', 'risk'] as const,
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
@@ -107,6 +108,15 @@ export function useDailyOutcomeLearning(days = 7) {
   return useQuery({
     queryKey: pulseKeys.dailyOutcomes(days),
     queryFn: () => pulseApi.outcomes.daily(days),
+    staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
+  });
+}
+
+export function useDailyDelta(days = 7) {
+  return useQuery({
+    queryKey: pulseKeys.dailyDelta(days),
+    queryFn: () => pulseApi.dailyDelta(days),
     staleTime: 5 * 60_000,
     refetchInterval: 10 * 60_000,
   });

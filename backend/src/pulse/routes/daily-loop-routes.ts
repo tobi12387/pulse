@@ -4,6 +4,7 @@ import { and, desc, eq, gte, lt, or } from 'drizzle-orm';
 import type {
   PulseActionsResponse,
   PulseDailyDecisionQualityResponse,
+  PulseDailyDeltaResponse,
   PulseDailyOutcomeLearningResponse,
   PulseHomeScreenData,
   RpeSorenessArea,
@@ -26,6 +27,7 @@ import { getCached, invalidateUser, setCached } from '../lib/pulse-cache.js';
 import { computeReadinessScore } from '../services/load-engine.js';
 import { getPrognosis } from '../services/prognosis-engine.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from '../services/risk-engine.js';
+import { buildDailyDelta } from '../services/daily-delta.js';
 import { buildDailyOutcomeLearning, type DailyOutcomeLearningActionDecision } from '../services/daily-outcome-learning.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import {
@@ -438,6 +440,64 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
         })),
       }),
     };
+  });
+
+  app.get('/daily-delta', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseDailyDeltaResponse | unknown> => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(30).optional().default(7),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const sinceDate = addDateDays(new Date(`${today}T00:00:00.000Z`), -parsed.data.days);
+    const since = toIsoDate(sinceDate);
+
+    const [plannedWorkouts, activities, dailyMetrics] = await Promise.all([
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        targetTss: pulsePlannedWorkouts.targetTss,
+        status: pulsePlannedWorkouts.status,
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        complianceScore: pulsePlannedWorkouts.complianceScore,
+      }).from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, since))),
+      db.select({
+        id: pulseActivities.id,
+        startTime: pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec,
+        tss: pulseActivities.tss,
+        rpe: pulseActivities.rpe,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, sinceDate)))
+        .orderBy(desc(pulseActivities.startTime)),
+      db.select({
+        date: pulseDailyMetrics.date,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since))),
+    ]);
+
+    return buildDailyDelta({
+      today,
+      days: parsed.data.days,
+      plannedWorkouts: plannedWorkouts.map(row => ({
+        ...row,
+        status: row.status as string,
+      })),
+      activities: activities.map(row => ({
+        ...row,
+        startTime: row.startTime.toISOString(),
+      })),
+      dailyMetrics,
+    });
   });
 
   app.get('/decisions/quality', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseDailyDecisionQualityResponse | unknown> => {
