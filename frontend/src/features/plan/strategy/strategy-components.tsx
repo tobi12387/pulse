@@ -417,7 +417,7 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
   const nextBoundary = guardrails.nextBoundary
     ? `${guardrails.nextBoundary.label} ab ${formatPlanDate(guardrails.nextBoundary.date)}`
     : 'Keine harte Boundary im Horizont';
-  const loadModel = strategy.loadModel;
+  const loadModel = (strategy as PulseSeasonStrategy & { loadModel?: PulseSeasonStrategy['loadModel'] }).loadModel ?? null;
 
   return (
     <div className="card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
@@ -457,15 +457,17 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
           detail={guardrails.rationale.slice(0, 2).join(' ')}
           color="var(--blue)"
         />
-        <RaceCommandFact
-          label="Saisonlast"
-          value={`${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS`}
-          detail={`${loadModel.currentWeek.note} Ramp-Cap ${loadModel.rampRateCapPct}%.`}
-          color={loadModel.currentWeek.kind === 'deload' || loadModel.currentWeek.kind === 'taper' ? 'var(--amber)' : 'var(--accent)'}
-        />
+        {loadModel && (
+          <RaceCommandFact
+            label="Saisonlast"
+            value={`${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS`}
+            detail={`${loadModel.currentWeek.note} Ramp-Cap ${loadModel.rampRateCapPct}%.`}
+            color={loadModel.currentWeek.kind === 'deload' || loadModel.currentWeek.kind === 'taper' ? 'var(--amber)' : 'var(--accent)'}
+          />
+        )}
       </div>
 
-      {loadModel.forecast.length > 0 && (
+      {loadModel && loadModel.forecast.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
           {loadModel.forecast.slice(0, 4).map(week => (
             <div key={week.weekStart} style={{ background: 'var(--surface-2)', padding: '7px 8px', minWidth: 0 }}>
@@ -478,7 +480,7 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
         </div>
       )}
 
-      {loadModel.warnings.length > 0 && (
+      {loadModel && loadModel.warnings.length > 0 && (
         <div style={{ display: 'grid', gap: 5, marginBottom: 10 }}>
           {loadModel.warnings.slice(0, 2).map(warning => (
             <div key={warning} style={{ fontSize: 11, color: 'var(--amber)', lineHeight: 1.45 }}>

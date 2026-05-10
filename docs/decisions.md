@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Saisonlinie bleibt ohne Load-Model renderbar
+
+- **Decision:** Die Plan-Saisonlinie behandelt `seasonStrategy.loadModel` als optionalen API-Bestandteil. Wenn die API keinen Load-Forecast liefert, rendert Pulse Block, Guardrails und Evidenz weiter und blendet nur Saisonlast, Forecast und Warnungen aus.
+- **Why:** Der Live-Browser-Reload zeigte einen Crash auf `/plan`, weil produktive Saisonstrategie-Daten ohne `loadModel` zurückkamen. Eine fehlende Modell-Ergänzung darf die zentrale Planseite nicht über die Error Boundary unbenutzbar machen.
+- **Alternatives:** Backend sofort verpflichtend auffüllen (sinnvoll als separate Datenvertrags-Härtung, aber nicht ausreichend als UI-Schutz); Error Boundary akzeptieren (zu hart für Alltag); Mock-Daten weiter als vollständig annehmen (hat den Live-Fehler verdeckt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Garmin-Sync-Schulden zeigen einen 15-Tage-Gerätehorizont
 
 - **Decision:** Die Plan-Garmin-Sync-Karte zeigt zusätzlich zur Gesamtzahl geplanter Zukunftseinheiten, wie viele offene Sync-Schulden im nächsten 15-Tage-Gerätehorizont liegen.

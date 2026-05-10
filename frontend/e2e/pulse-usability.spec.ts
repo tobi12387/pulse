@@ -2112,6 +2112,41 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
   await expect(page.getByText('6 verfügbare Tage')).toBeVisible();
 });
 
+test('Plan season strategy keeps rendering when load model is absent', async ({ page }) => {
+  await mockPulseApi(page, {
+    seasonStrategy: {
+      horizonWeeks: 12,
+      primaryGoal: null,
+      currentBlock: {
+        kind: 'maintenance',
+        label: 'Maintenance',
+        startWeek: '2026-05-04',
+        endWeek: '2026-06-01',
+        focus: 'Robuste Routine erhalten und Spielraum für Alltag lassen.',
+      },
+      upcomingBlocks: [],
+      guardrails: {
+        targetSessions: 3,
+        maxHardDays: 1,
+        deload: false,
+        freeDayRationale: 'Mindestens ein freier Tag bleibt geschützt.',
+        rationale: ['Health- und Risk-Regeln bleiben stärker.'],
+        nextBoundary: null,
+      },
+      loadModel: undefined,
+      evidence: ['Maintenance ohne Race-Ziel'],
+    },
+  });
+
+  await page.goto('/plan');
+
+  await expect(page.getByText('Saisonlinie')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Maintenance' })).toBeVisible();
+  await expect(page.getByText('Saisonlast')).toHaveCount(0);
+  await expect(page.getByText('Maintenance ohne Race-Ziel')).toBeVisible();
+  await expect(page.getByText('Diese Ansicht ist gerade abgestürzt.')).toHaveCount(0);
+});
+
 test('Plan preserves race goal metadata when editing', async ({ page }) => {
   let updateBody: Record<string, unknown> | null = null;
   await mockPulseApi(page, {
