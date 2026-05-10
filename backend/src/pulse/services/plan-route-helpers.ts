@@ -9,6 +9,7 @@ import type {
   RpeSorenessArea,
 } from '@coaching-os/shared/pulse';
 import {
+  type GarminActivityHrZoneCache,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
 } from '../../db/pulse-schema.js';
@@ -46,6 +47,7 @@ type ExecutionActivityRow = {
   tss: number | null;
   rpe: number | null;
   sorenessAreas: string[] | null;
+  garminHrZones?: GarminActivityHrZoneCache[] | null;
 };
 
 export async function getPlannedZoneByActivityId(userId: string, activityIds: string[]): Promise<Map<string, number>> {
@@ -128,6 +130,7 @@ export function buildExecutionReviewForPreviousWeek(params: {
       tss: activity.tss,
       rpe: activity.rpe,
       sorenessAreas: normalizeSorenessAreas(activity.sorenessAreas),
+      hrZones: activity.garminHrZones ?? null,
     })),
     availableDays: params.availableDays,
     recovery: params.recovery,

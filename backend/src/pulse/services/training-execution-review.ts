@@ -29,6 +29,7 @@ export interface TrainingExecutionActivity {
   tss?: number | null;
   rpe?: number | null;
   sorenessAreas?: RpeSorenessArea[] | null;
+  hrZones?: Array<{ zone: number | null; secsInZone: number | null }> | null;
 }
 
 export interface TrainingExecutionRecovery {
@@ -104,6 +105,16 @@ function isWeakRecovery(recovery: TrainingExecutionRecovery | null | undefined):
   if (recovery.readinessScore != null && recovery.readinessScore < 45) return true;
   if (recovery.bodyBatteryMax != null && recovery.bodyBatteryMax < 45) return true;
   return recovery.hrvStatus === 'poor' || recovery.hrvStatus === 'below_normal';
+}
+
+function hrZoneShare(activity: TrainingExecutionActivity, predicate: (zone: number) => boolean): number | null {
+  const zones = activity.hrZones?.filter(zone => zone.zone != null && zone.secsInZone != null && zone.secsInZone > 0) ?? [];
+  const total = zones.reduce((sum, zone) => sum + (zone.secsInZone ?? 0), 0);
+  if (total <= 0) return null;
+  const matching = zones
+    .filter(zone => zone.zone != null && predicate(zone.zone))
+    .reduce((sum, zone) => sum + (zone.secsInZone ?? 0), 0);
+  return matching / total;
 }
 
 function matchPlannedToActivities(input: BuildTrainingExecutionReviewInput, today: string): MatchResult[] {
@@ -195,6 +206,22 @@ export function buildTrainingExecutionReview(input: BuildTrainingExecutionReview
       learned.push(`Subjektive Belastung war hoch (RPE ${rpe}/10 nach ${match.workout.activityType}).`);
       const offset = dayOffsetFromWeekStart(input.weekStart, match.workout.plannedDate);
       if (offset != null && hardWorkout) avoidHardDays.add(offset);
+    }
+    if (activity) {
+      const highHrShare = hrZoneShare(activity, zone => zone >= 4);
+      const targetHrShare = hrZoneShare(activity, zone => zone >= match.workout.zone);
+      if (match.workout.zone <= 2 && highHrShare != null && highHrShare >= 0.25) {
+        signals.add('reduce_next_intensity');
+        intents.add('reduce');
+        learned.push(`Garmin-HR-Zonen zeigen: lockere ${match.workout.activityType}-Einheit wurde zu hart ausgeführt (${Math.round(highHrShare * 100)}% in Z4/Z5).`);
+      }
+      if (hardWorkout && targetHrShare != null && targetHrShare < 0.15) {
+        signals.add('reduce_next_intensity');
+        intents.add('reduce');
+        learned.push(`Garmin-HR-Zonen zeigen: Intensitätsziel wurde kaum getroffen (${Math.round(targetHrShare * 100)}% ab Z${match.workout.zone}).`);
+        const offset = dayOffsetFromWeekStart(input.weekStart, match.workout.plannedDate);
+        if (offset != null) avoidHardDays.add(offset);
+      }
     }
     if (isWeakRecovery(input.recovery) || (rpe != null && rpe >= 9) || sorenessAreas.includes('general_fatigue')) {
       signals.add('protect_recovery');
