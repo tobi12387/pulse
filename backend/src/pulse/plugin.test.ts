@@ -2573,6 +2573,105 @@ describe('POST /api/pulse/plan/workout/:id/sync-garmin', () => {
   });
 });
 
+describe('GET /api/pulse/garmin/execution-diff', () => {
+  it('returns read-only Garmin calendar trust rows without triggering sync writes', async () => {
+    const plannedDate = dateDaysFrom(1);
+    await db.insert(pulsePlannedWorkouts).values([
+      {
+        userId,
+        plannedDate,
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        targetTss: 62,
+        description: 'Garmin bereit',
+        garminWorkoutId: 'gw-ready',
+        garminScheduledId: 'sched-ready',
+        executionStatus: 'garmin_scheduled',
+        executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+        steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+      },
+      {
+        userId,
+        plannedDate: dateDaysFrom(2),
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        description: 'Kalender fehlt',
+        garminWorkoutId: 'gw-missing-calendar',
+        garminScheduledId: 'sched-missing-calendar',
+        executionStatus: 'garmin_template',
+        executionNotes: 'Workout-Vorlage ist auf Garmin, aber kein Kalendertermin ist bekannt.',
+        steps: [{ type: 'steady', durationMin: 45, zone: 2, description: 'Z2' }],
+      },
+    ]);
+
+    garminMocks.get.mockImplementation(async (url: string) => {
+      if (url.includes('/calendar-service/')) {
+        return {
+          calendarItems: [{
+            itemType: 'workout',
+            id: 'sched-ready',
+            workoutId: 'gw-ready',
+            date: plannedDate,
+          }],
+        };
+      }
+      if (url.includes('/workout-service/workout/gw-ready')) {
+        return { workoutSegments: [{ workoutSteps: [{ type: 'ExecutableStepDTO' }] }] };
+      }
+      return { workoutSegments: [{ workoutSteps: [] }] };
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/execution-diff?days=15',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ rows: Array<{ status: string; workoutId: string; repairActions: string[] }> }>();
+    expect(body.rows.map(row => row.status)).toEqual(['ready', 'missing_calendar']);
+    expect(body.rows[1]!.repairActions).toEqual(['schedule_calendar']);
+    expect(garminMocks.addWorkout).not.toHaveBeenCalled();
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+
+  it('returns unknown rows when Garmin login is unavailable', async () => {
+    const plannedDate = dateDaysFrom(1);
+    await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate,
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 62,
+      description: 'Readback offen',
+      garminWorkoutId: 'gw-unknown',
+      garminScheduledId: 'sched-unknown',
+      executionStatus: 'garmin_scheduled',
+      executionNotes: 'Workout ist auf Garmin im Kalender geplant.',
+      steps: [{ type: 'steady', durationMin: 75, zone: 2, description: 'Z2' }],
+    });
+    const { getGarminClient } = await import('../lib/garmin-client.js');
+    vi.mocked(getGarminClient).mockRejectedValueOnce(new Error('login failed'));
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/garmin/execution-diff?days=15',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ rows: Array<{ status: string; summary: string }> }>();
+    expect(body.rows).toHaveLength(1);
+    expect(body.rows[0]).toMatchObject({ status: 'unknown' });
+    expect(body.rows[0]!.summary).toContain('Garmin-Readback');
+  });
+});
+
 describe('GET /api/pulse/goals', () => {
   it('returns 200 with empty goals', async () => {
     const res = await app.inject({

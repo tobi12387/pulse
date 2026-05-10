@@ -3519,6 +3519,60 @@ test('Settings surfaces blocked Garmin provider state with bounded actions', asy
   expect(requests).toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
 });
 
+test('Plan Ausführung shows Garmin execution trust without live sync on load', async ({ page }) => {
+  const requests: Array<{ method: string; pathname: string }> = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
+    garminExecutionDiff: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      window: { from: '2026-05-01', to: '2026-05-15', days: 15 },
+      rows: [
+        {
+          workoutId: 'workout-ready',
+          plannedDate: '2026-05-02',
+          title: 'Rad · Z2 · 75 min',
+          status: 'ready',
+          summary: 'Auf Garmin bereit: Vorlage und Kalendertermin wurden im Readback gefunden.',
+          local: { garminWorkoutId: 'gw-ready', garminScheduledId: 'sched-ready' },
+          remote: { workoutId: 'gw-ready', scheduledId: 'sched-ready', lastSeenAt: '2026-05-01T08:00:00.000Z' },
+          repairActions: [],
+        },
+        {
+          workoutId: 'workout-missing',
+          plannedDate: '2026-05-03',
+          title: 'Laufen · Z2 · 45 min',
+          status: 'missing_calendar',
+          summary: 'Vorlage bekannt, aber die Einheit fehlt im Garmin-Kalenderfenster.',
+          local: { garminWorkoutId: 'gw-missing', garminScheduledId: 'sched-missing' },
+          remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+          repairActions: ['schedule_calendar'],
+        },
+        {
+          workoutId: 'workout-repeat',
+          plannedDate: '2026-05-04',
+          title: 'Rad · Z4 · 30 min',
+          status: 'broken_repeat',
+          summary: 'Remote-Workout hat defekte Wiederholungen und sollte neu synchronisiert werden.',
+          local: { garminWorkoutId: 'gw-repeat', garminScheduledId: 'sched-repeat' },
+          remote: { workoutId: 'gw-repeat', scheduledId: 'sched-repeat', lastSeenAt: '2026-05-01T08:00:00.000Z' },
+          repairActions: ['repair_repeat'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+  await page.getByRole('tab', { name: 'Ausführung' }).click();
+
+  const panel = page.getByTestId('garmin-execution-trust-panel');
+  await expect(panel).toContainText('Auf Garmin bereit');
+  await expect(panel).toContainText('Fehlt im Garmin-Kalender');
+  await expect(panel).toContainText('Repeat reparieren');
+  expect(requests).toContainEqual({ method: 'GET', pathname: '/api/pulse/garmin/execution-diff' });
+  expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/garmin/calendar/sync' });
+  expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout/workout-repeat/sync-garmin' });
+});
+
 test('Data backfill shows preview, last run and failed days first', async ({ page }) => {
   const coverage = {
     range: { from: '2026-05-01', to: '2026-05-02', days: 2, year: null },

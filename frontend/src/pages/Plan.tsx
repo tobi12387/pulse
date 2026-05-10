@@ -9,6 +9,7 @@ import {
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
+import { GarminExecutionTrustPanel } from '@/components/GarminExecutionTrustPanel';
 import { StrengthLogger } from '@/components/StrengthLogger';
 import { TodayOptionsCard } from '@/components/TodayOptionsCard';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
@@ -35,7 +36,7 @@ import { mentalImpact } from '@/features/mental/mental-impact';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import type { PulseActivityType, PulseAdaptationEvent, PulseFitnessLoad, PulsePlanScenarioPreview, PulsePlanScenarioRequest, PulsePlanTrace, PulsePlannedWorkout, PulseStrengthSession, PulseStrengthTrendPoint, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 
-type Tab = 'training' | 'ziele' | 'review' | 'statistik';
+type Tab = 'training' | 'ausfuehrung' | 'ziele' | 'review' | 'statistik';
 
 function fmt(v: number | null | undefined, decimals = 1, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -2692,6 +2693,7 @@ function StatistikTab() {
 
 const TABS = [
   { id: 'training', label: 'Training' },
+  { id: 'ausfuehrung', label: 'Ausführung' },
   { id: 'ziele',    label: 'Ziele'    },
   { id: 'review',   label: 'Review'   },
   { id: 'statistik', label: 'Statistik' },
@@ -2707,6 +2709,7 @@ function TabPanel({ tab, children }: { tab: Tab; children: React.ReactNode }) {
 
 const TAB_QUERY: Record<Tab, string> = {
   training: 'training',
+  ausfuehrung: 'execution',
   ziele: 'goals',
   review: 'review',
   statistik: 'stats',
@@ -2714,6 +2717,8 @@ const TAB_QUERY: Record<Tab, string> = {
 
 const QUERY_TAB: Record<string, Tab> = {
   training: 'training',
+  execution: 'ausfuehrung',
+  ausfuehrung: 'ausfuehrung',
   goals: 'ziele',
   ziele: 'ziele',
   review: 'review',
@@ -2787,6 +2792,7 @@ export default function Plan() {
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
       {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} /></TabPanel>}
+      {tab === 'ausfuehrung' && <TabPanel tab="ausfuehrung"><GarminExecutionTrustPanel onNavigate={navigate} /></TabPanel>}
       {tab === 'ziele'    && <TabPanel tab="ziele"><ZieleTab /></TabPanel>}
       {tab === 'review'   && <TabPanel tab="review"><ReviewTab /></TabPanel>}
       {tab === 'statistik' && <TabPanel tab="statistik"><StatistikTab /></TabPanel>}

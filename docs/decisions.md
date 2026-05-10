@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Garmin Execution Trust startet read-only im Plan
+
+- **Decision:** Plan bekommt einen verschachtelten Tab `Ausführung`, der Garmin-Vorlagen, Kalendertermine und defekte Wiederholungen per Readback prüft, aber auf Load keine Garmin-Schreibaktionen ausführt. Reparatur-CTAs führen zunächst zu Settings/Garmin; konkrete Reparaturklicks bleiben die nächste separate Aufgabe.
+- **Why:** Tobi braucht vor einer Einheit Vertrauen, ob Pulse wirklich auf Uhr/Edge ausführbar ist. Ein lesender Diff reduziert Unsicherheit und verhindert zugleich, dass Browser-QA oder normale Plan-Navigation echte Garmin-Syncs anstoßen.
+- **Alternatives:** Reparaturen sofort im neuen Plan-Tab ausführen (größerer Risiko- und Testscope); nur Settings-Diagnose erweitern (zu versteckt im täglichen Planfluss); live Sync automatisch beim Öffnen (zu riskant).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Plan WeekStrip wird auf Mobile ein Touch-Scroller
 
 - **Decision:** Die Plan-Wochenleiste kapselt die sieben Tageskacheln in einem horizontalen Touch-Scroller mit stabiler Mindestbreite und scrollt die relevante Tageskachel automatisch in den sichtbaren Bereich.

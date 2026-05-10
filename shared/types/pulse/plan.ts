@@ -88,6 +88,46 @@ export interface PulseGarminExecutionLedgerEntry {
   errorMessage: string | null;
 }
 
+export type PulseGarminExecutionDiffStatus =
+  | 'ready'
+  | 'missing_calendar'
+  | 'missing_template'
+  | 'broken_repeat'
+  | 'degraded_expected'
+  | 'completed'
+  | 'stale'
+  | 'unknown';
+
+export type PulseGarminExecutionRepairAction =
+  | 'upload_template'
+  | 'schedule_calendar'
+  | 'repair_repeat'
+  | 'delete_stale_remote';
+
+export interface PulseGarminExecutionDiffRow {
+  workoutId: string;
+  plannedDate: string;
+  title: string;
+  status: PulseGarminExecutionDiffStatus;
+  summary: string;
+  local: {
+    garminWorkoutId: string | null;
+    garminScheduledId: string | null;
+  };
+  remote: {
+    workoutId: string | null;
+    scheduledId: string | null;
+    lastSeenAt: string | null;
+  };
+  repairActions: PulseGarminExecutionRepairAction[];
+}
+
+export interface PulseGarminExecutionDiffResponse {
+  generatedAt: string;
+  window: { from: string; to: string; days: number };
+  rows: PulseGarminExecutionDiffRow[];
+}
+
 export type PulseAdaptationEventKind =
   | 'activity_completed'
   | 'planned_workout_missed'

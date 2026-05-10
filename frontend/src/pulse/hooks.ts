@@ -49,6 +49,7 @@ export const pulseKeys = {
   garminCoverage:   (days: number) => ['pulse', 'garmin-coverage', days] as const,
   garminSignalUsefulness: (days: number) => ['pulse', 'garmin-signal-usefulness', days] as const,
   garminExecutionLedger: (workoutId: string | null) => ['pulse', 'garmin-execution-ledger', workoutId] as const,
+  garminExecutionDiff: (days: number) => ['pulse', 'garmin-execution-diff', days] as const,
   pushSettings:     ['pulse', 'push', 'settings'] as const,
   strengthSessions: (days: number, exercise: string | null) =>
     ['pulse', 'strength', 'sessions', days, exercise] as const,
@@ -522,7 +523,16 @@ export function useGarminCalendarSync() {
     onSuccess: () => {
       invalidatePulsePlanContextQueries(qc);
       void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-coverage'] });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'garmin-execution-diff'] });
     },
+  });
+}
+
+export function useGarminExecutionDiff(days = 15) {
+  return useQuery({
+    queryKey: pulseKeys.garminExecutionDiff(days),
+    queryFn: () => pulseApi.garmin.executionDiff(days),
+    staleTime: 30_000,
   });
 }
 
