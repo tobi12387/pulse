@@ -50,6 +50,43 @@ export interface PulseGarminSyncContract {
   issues: PulseGarminSyncContractIssue[];
 }
 
+export type PulseGarminExecutionOperation =
+  | 'create'
+  | 'update'
+  | 'manual_resync'
+  | 'calendar_repair'
+  | 'delete';
+
+export type PulseGarminExecutionOutcome =
+  | 'ready'
+  | 'degraded'
+  | 'blocked'
+  | 'failed'
+  | 'deleted';
+
+export interface PulseGarminPayloadSnapshot {
+  workoutId: string | null;
+  scheduledId: string | null;
+  stepCount: number;
+  repeatGroupCount: number;
+  invalidRepeatCount: number;
+  hrTargetStepCount: number;
+  durationSec: number | null;
+  checkedAt: string;
+}
+
+export interface PulseGarminExecutionLedgerEntry {
+  id: string;
+  plannedWorkoutId: string;
+  attemptedAt: string;
+  operation: PulseGarminExecutionOperation;
+  outcome: PulseGarminExecutionOutcome;
+  summary: string;
+  payloadSnapshot: PulseGarminPayloadSnapshot | null;
+  issues: PulseGarminSyncContractIssue[];
+  errorMessage: string | null;
+}
+
 export interface PulsePlannedWorkout {
   id: string;
   userId: string;

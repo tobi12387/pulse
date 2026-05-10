@@ -8,8 +8,12 @@ import type {
   PulseActivityType,
   PulseCoachCommunicationStyle,
   PulseCapabilityConfidence,
+  PulseGarminExecutionOperation,
+  PulseGarminExecutionOutcome,
+  PulseGarminPayloadSnapshot,
   PulseFuelingGuidanceStyle,
   PulseGarminSyncContract,
+  PulseGarminSyncContractIssue,
   PulsePlanDecision,
   PulsePlanTrace,
   PulsePushTopics,
@@ -344,6 +348,24 @@ export const pulsePlannedWorkouts = pgTable('pulse_planned_workouts', {
   createdAt:            timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('pulse_planned_workouts_user_date_idx').on(t.userId, t.plannedDate),
+]);
+
+export const pulseGarminExecutionLedger = pgTable('pulse_garmin_execution_ledger', {
+  id:                uuid('id').primaryKey().defaultRandom(),
+  userId:            uuid('user_id').notNull(),
+  plannedWorkoutId:  uuid('planned_workout_id').notNull(),
+  attemptedAt:       timestamp('attempted_at', { withTimezone: true }).notNull().defaultNow(),
+  operation:         varchar('operation', { length: 32 }).notNull().$type<PulseGarminExecutionOperation>(),
+  outcome:           varchar('outcome', { length: 32 }).notNull().$type<PulseGarminExecutionOutcome>(),
+  localContract:     jsonb('local_contract').$type<PulseGarminSyncContract>(),
+  remoteWorkoutId:   varchar('remote_workout_id', { length: 128 }),
+  remoteScheduledId: varchar('remote_scheduled_id', { length: 128 }),
+  payloadSnapshot:   jsonb('payload_snapshot').$type<PulseGarminPayloadSnapshot>(),
+  issues:            jsonb('issues').$type<PulseGarminSyncContractIssue[]>().default([]),
+  errorMessage:      text('error_message'),
+}, (t) => [
+  index('pulse_garmin_execution_ledger_workout_idx').on(t.plannedWorkoutId, t.attemptedAt),
+  index('pulse_garmin_execution_ledger_user_outcome_idx').on(t.userId, t.outcome, t.attemptedAt),
 ]);
 
 // ─── Plan generation trace ──────────────────────────────────────────────────

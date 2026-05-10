@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-10 — Garmin Execution Ledger ist nicht-blockierend
+
+- **Decision:** Garmin Upload-, Kalender-Reparatur- und Delete-Pfade schreiben einen lokalen Execution Ledger, aber ein Ledger-Schreibfehler darf den eigentlichen Garmin-Sync nicht in einen 502 verwandeln.
+- **Why:** Der Ledger soll Vertrauen und Debuggability schaffen, nicht die Geräteausführung fragiler machen. Lokale Tests zeigten, dass eine nicht migrierte oder temporär nicht beschreibbare Ledger-Tabelle sonst erfolgreiche Garmin-Uploads als fehlgeschlagen erscheinen lässt.
+- **Alternatives:** Ledger-Insert als harte Transaktion koppeln (maximale Vollständigkeit, aber schlechter Alltagspfad); Ledger nur read-only berechnen (keine Historie); Garmin-Sync ohne Ledger fortführen (alte Vertrauenslücke).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-10 — Benchmark-Upgrades starten mit Vertrauen, Adaptation und Datenqualität
 
 - **Decision:** Die nächste Trainings-Benchmark-Welle wird als acht PR-große Pläne geführt: Garmin Execution Ledger, Adaptation Event Queue, Workout Library v2, Mobile Plan Flow, Power Data Quality Foundation, Power Duration/Durability, Season ATP v2 und Strength/Mobility Companion.

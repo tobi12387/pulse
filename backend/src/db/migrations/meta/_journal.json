@@ -218,6 +218,13 @@
       "when": 1778343600000,
       "tag": "0030_garmin_sync_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1778344500000,
+      "tag": "0031_garmin_execution_ledger",
+      "breakpoints": true
     }
   ]
 }

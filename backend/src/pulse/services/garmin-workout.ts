@@ -1,6 +1,7 @@
 import type { WorkoutStep } from '../../db/pulse-schema.js';
 import type {
   PulseFuelingRecoveryGuidanceResponse,
+  PulseGarminPayloadSnapshot,
   PulseGarminSyncContract,
   PulseGarminSyncContractIssue,
 } from '@coaching-os/shared/pulse';
@@ -277,6 +278,51 @@ function payloadWorkoutSteps(payload: unknown): unknown[] {
 
 function isGarminRepeatGroup(step: unknown): step is Partial<GarminRepeatGroup> {
   return typeof step === 'object' && step != null && (step as { type?: unknown }).type === 'RepeatGroupDTO';
+}
+
+function flattenGarminWorkoutSteps(steps: unknown[]): unknown[] {
+  return steps.flatMap(step => {
+    if (isGarminRepeatGroup(step)) {
+      const childSteps = Array.isArray(step.workoutSteps) ? step.workoutSteps : [];
+      return [step, ...flattenGarminWorkoutSteps(childSteps)];
+    }
+    return [step];
+  });
+}
+
+export function summarizeGarminPayloadSnapshot(
+  payload: unknown,
+  ids: {
+    workoutId?: string | null;
+    scheduledId?: string | null;
+    checkedAt?: string;
+  } = {},
+): PulseGarminPayloadSnapshot {
+  const steps = flattenGarminWorkoutSteps(payloadWorkoutSteps(payload));
+  const repeatGroups = steps.filter(isGarminRepeatGroup);
+  const executable = steps.filter(step => typeof step === 'object' && step != null && (step as { type?: string }).type === 'ExecutableStepDTO');
+  const invalidRepeatCount = repeatGroups.filter(step => {
+    const repeat = step as Partial<GarminRepeatGroup>;
+    return (repeat.numberOfIterations ?? 0) <= 0
+      || (repeat.endConditionValue ?? 0) <= 0
+      || repeat.endCondition?.conditionTypeKey !== 'iterations';
+  }).length;
+  const hrTargetStepCount = executable.filter(step =>
+    (step as { targetType?: { workoutTargetTypeKey?: string } }).targetType?.workoutTargetTypeKey === 'heart.rate.zone'
+  ).length;
+
+  return {
+    workoutId: ids.workoutId ?? null,
+    scheduledId: ids.scheduledId ?? null,
+    stepCount: steps.length,
+    repeatGroupCount: repeatGroups.length,
+    invalidRepeatCount,
+    hrTargetStepCount,
+    durationSec: typeof payload === 'object' && payload != null
+      ? ((payload as { estimatedDurationInSecs?: number }).estimatedDurationInSecs ?? null)
+      : null,
+    checkedAt: ids.checkedAt ?? new Date().toISOString(),
+  };
 }
 
 function summarizeGarminContract(status: PulseGarminSyncContract['status'], issues: PulseGarminSyncContractIssue[]): string {
