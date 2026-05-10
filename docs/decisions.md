@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Data Mobile Tabs umbrechen statt seitlich clippen
+
+- **Decision:** Die Data-Subnavigation nutzt den vorhandenen `SegmentedControl`-Wrap-Modus, damit Deep-Links wie `data?tab=mental` auf iPhone/PWA keine Tab-Labels seitlich abschneiden.
+- **Why:** Der Live-Browsercheck nach dem Daily-Command-Deploy zeigte abgeschnittene `Überblick`-/`Analysen`-Tabs. Ein zweizeiliger, stabiler Tabbereich ist fuer taegliche Mobile-Nutzung verlaesslicher als eine automatisch seitlich gescrollte Leiste.
+- **Alternatives:** Horizontalen Scroll beibehalten (visuell angeschnitten); Labels weiter kuerzen (Informationsverlust); Data-IA jetzt groesser umbauen (zu grosser Scope fuer den gefundenen Live-Fix).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Home Today Options folgen einem Daily Command State
 
 - **Decision:** Home leitet einen einzigen `DailyCommandKind` aus geplantem Training, erledigten Garmin-Aktivitaeten und Today-Options-Zustand ab. Die kompakte Today-Options-Karte erscheint nur noch bei `planned` oder `free_trainable`; generische mobile Verfuegbarkeitsbuttons erscheinen nur bei freien, trainierbaren Tagen.
