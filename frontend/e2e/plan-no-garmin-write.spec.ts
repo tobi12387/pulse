@@ -160,6 +160,15 @@ test('Plan no-Garmin-write harness exercises preview, today labels and execution
           summary: 'Remote-Workout hat defekte Wiederholungen; Button bleibt in dieser QA ungeklickt.',
           local: { garminWorkoutId: 'gw-qa-repeat', garminScheduledId: 'sched-qa-repeat' },
           remote: { workoutId: 'gw-qa-repeat', scheduledId: 'sched-qa-repeat', lastSeenAt: '2026-05-01T08:00:00.000Z' },
+          repeatAudit: {
+            status: 'repair_needed',
+            summary: 'Pulse erwartet 3x in 1 Repeat-Block; Garmin meldet 1 ungültigen Repeat-Block.',
+            localRepeatGroups: 1,
+            localRepeatIterations: 3,
+            remoteRepeatGroups: 1,
+            remoteRepeatIterations: null,
+            remoteInvalidRepeatGroups: 1,
+          },
           repairActions: ['repair_repeat'],
         },
       ],
@@ -182,11 +191,36 @@ test('Plan no-Garmin-write harness exercises preview, today labels and execution
 
   await page.getByRole('tab', { name: 'Ausführung' }).click();
   const executionPanel = page.getByTestId('garmin-execution-trust-panel');
+  await expect(executionPanel).toContainText('Geräte-Check abschließen');
+  await expect(executionPanel).toContainText('Warum jetzt');
+  await expect(executionPanel).toContainText('Nach dem Klick');
+  await expect(executionPanel).toContainText('Pulse bekannt');
+  await expect(executionPanel).toContainText('Garmin Readback');
   await expect(executionPanel).toContainText('Auf Garmin bereit');
-  await expect(executionPanel).toContainText('Repeat reparieren');
+  await expect(executionPanel).toContainText('Pulse erwartet 3x');
+  await expect(executionPanel).toContainText('Wiederholungen reparieren');
   await expect(executionPanel).toContainText('Neu prüfen');
 
   expect(requests.some(request => request.method === 'GET' && request.pathname.startsWith('/api/pulse/plan/refresh-preview/'))).toBe(true);
   expect(requests).toContainEqual({ method: 'GET', pathname: '/api/pulse/garmin/execution-diff' });
+  assertNoForbiddenWrites(requests);
+});
+
+test('Settings Plan prüfen opens Garmin execution readback without writes', async ({ page }) => {
+  const requests: RequestLog[] = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
+    garminExecutionDiff: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      window: { from: '2026-05-01', to: '2026-05-15', days: 15 },
+      rows: [],
+    },
+  });
+
+  await page.goto('/settings?section=garmin');
+  await page.getByRole('button', { name: 'Plan prüfen' }).click();
+
+  await expect(page).toHaveURL('/plan?tab=execution');
+  await expect(page.getByTestId('garmin-execution-trust-panel')).toContainText('Geräte-Check abschließen');
   assertNoForbiddenWrites(requests);
 });

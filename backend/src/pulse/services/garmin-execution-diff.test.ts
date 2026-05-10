@@ -57,7 +57,7 @@ function remote(overrides: Partial<NormalizedGarminCalendarWorkout> = {}): Norma
     id: overrides.id ?? 'remote-schedule-1',
     workoutId: overrides.workoutId ?? 'remote-workout-1',
     date: overrides.date ?? '2026-05-11',
-    workout: overrides.workout ?? {
+    workout: Object.hasOwn(overrides, 'workout') ? overrides.workout : {
       workoutSegments: [{
         workoutSteps: [
           { type: 'ExecutableStepDTO' },
@@ -140,6 +140,105 @@ describe('buildGarminExecutionDiff', () => {
     expect(response.rows[0]).toMatchObject({
       status: 'broken_repeat',
       repairActions: ['repair_repeat'],
+      repeatAudit: {
+        status: 'repair_needed',
+        localRepeatGroups: 1,
+        localRepeatIterations: 3,
+        remoteRepeatGroups: 1,
+        remoteRepeatIterations: null,
+        remoteInvalidRepeatGroups: 1,
+      },
+    });
+  });
+
+  it('summarizes valid repeat readback so the UI can show Garmin matches Pulse', () => {
+    const response = buildGarminExecutionDiff({
+      localWorkouts: [workout({
+        steps: [{ type: 'interval', durationMin: 4, zone: 5, reps: 5, restMin: 4 }],
+      })],
+      remoteWorkouts: [remote({
+        workout: {
+          workoutSegments: [{
+            workoutSteps: [{
+              type: 'RepeatGroupDTO',
+              numberOfIterations: 5,
+              endConditionValue: 5,
+              endCondition: { conditionTypeKey: 'iterations' },
+            }],
+          }],
+        },
+      })],
+      ledgerEntries: [],
+      today: '2026-05-10',
+    });
+
+    expect(response.rows[0]).toMatchObject({
+      status: 'ready',
+      repeatAudit: {
+        status: 'ok',
+        localRepeatGroups: 1,
+        localRepeatIterations: 5,
+        remoteRepeatGroups: 1,
+        remoteRepeatIterations: 5,
+        remoteInvalidRepeatGroups: 0,
+      },
+    });
+    expect(response.rows[0]!.repeatAudit?.summary).toContain('Pulse erwartet 5x');
+  });
+
+  it('flags valid remote repeats when the count does not match Pulse', () => {
+    const response = buildGarminExecutionDiff({
+      localWorkouts: [workout({
+        steps: [{ type: 'interval', durationMin: 4, zone: 5, reps: 5, restMin: 4 }],
+      })],
+      remoteWorkouts: [remote({
+        workout: {
+          workoutSegments: [{
+            workoutSteps: [{
+              type: 'RepeatGroupDTO',
+              numberOfIterations: 4,
+              endConditionValue: 4,
+              endCondition: { conditionTypeKey: 'iterations' },
+            }],
+          }],
+        },
+      })],
+      ledgerEntries: [],
+      today: '2026-05-10',
+    });
+
+    expect(response.rows[0]).toMatchObject({
+      status: 'broken_repeat',
+      repeatAudit: {
+        status: 'repair_needed',
+        localRepeatIterations: 5,
+        remoteRepeatIterations: 4,
+      },
+      repairActions: ['repair_repeat'],
+    });
+  });
+
+  it('does not mark repeat workouts ready when Garmin details could not be read', () => {
+    const response = buildGarminExecutionDiff({
+      localWorkouts: [workout({
+        steps: [{ type: 'interval', durationMin: 4, zone: 5, reps: 5, restMin: 4 }],
+      })],
+      remoteWorkouts: [remote({ workout: null })],
+      ledgerEntries: [],
+      today: '2026-05-10',
+    });
+
+    expect(response.rows[0]).toMatchObject({
+      status: 'unknown',
+      repeatAudit: {
+        status: 'unverified',
+        localRepeatGroups: 1,
+        localRepeatIterations: 5,
+        remoteRepeatGroups: null,
+        remoteRepeatIterations: null,
+        remoteInvalidRepeatGroups: null,
+      },
+      repairActions: [],
     });
   });
 

@@ -292,7 +292,7 @@ export default function Settings() {
               <Row label="Ausführung">
                 <button
                   type="button"
-                  onClick={() => navigate('/plan')}
+                  onClick={() => navigate('/plan?tab=execution')}
                   style={{
                     background: 'var(--surface-2)',
                     border: '1px solid var(--border)',

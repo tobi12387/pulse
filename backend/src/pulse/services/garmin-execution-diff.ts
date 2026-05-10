@@ -4,6 +4,7 @@ import type {
   PulseGarminExecutionLedgerEntry,
   PulseGarminExecutionRepairAction,
   PulseGarminExecutionDiffStatus,
+  PulseGarminRepeatReadbackAudit,
   PulsePlannedWorkout,
 } from '@coaching-os/shared/pulse';
 import { garminWorkoutHasBrokenRepeatIterations } from './garmin-workout.js';
@@ -46,6 +47,100 @@ function isCompleted(workout: PulsePlannedWorkout): boolean {
 function isExpectedDegraded(workout: PulsePlannedWorkout): boolean {
   return workout.garminSyncContract?.status === 'degraded'
     && workout.garminSyncContract.issues.some(issue => issue.code === 'strength_notes_only');
+}
+
+function plural(count: number, singular: string, pluralLabel: string): string {
+  return `${count} ${count === 1 ? singular : pluralLabel}`;
+}
+
+function localRepeatStats(workout: PulsePlannedWorkout): { groups: number; iterations: number } {
+  const repeats = (workout.steps ?? [])
+    .filter(step => step.type === 'interval' && (step.reps ?? 0) > 1);
+  return {
+    groups: repeats.length,
+    iterations: repeats.reduce((sum, step) => sum + (step.reps ?? 0), 0),
+  };
+}
+
+function remoteWorkoutSteps(workout: unknown): unknown[] | null {
+  if (typeof workout !== 'object' || workout == null) return null;
+  const segments = Array.isArray((workout as { workoutSegments?: unknown }).workoutSegments)
+    ? (workout as { workoutSegments: Array<{ workoutSteps?: unknown }> }).workoutSegments
+    : [];
+  return segments.flatMap(segment => Array.isArray(segment.workoutSteps) ? segment.workoutSteps : []);
+}
+
+function remoteRepeatStats(workout: unknown): { groups: number; iterations: number | null; invalid: number } | null {
+  const steps = remoteWorkoutSteps(workout);
+  if (!steps) return null;
+  const repeats = steps.filter(step =>
+    typeof step === 'object' && step != null && (step as { type?: unknown }).type === 'RepeatGroupDTO'
+  );
+  let invalid = 0;
+  let iterations = 0;
+  for (const step of repeats) {
+    const repeat = step as {
+      numberOfIterations?: number | null;
+      endConditionValue?: number | null;
+      endCondition?: { conditionTypeKey?: string | null } | null;
+    };
+    const count = repeat.numberOfIterations ?? null;
+    const endCount = repeat.endConditionValue ?? null;
+    const valid = count != null
+      && count > 0
+      && endCount != null
+      && endCount > 0
+      && count === endCount
+      && repeat.endCondition?.conditionTypeKey === 'iterations';
+    if (!valid) invalid += 1;
+    else iterations += count;
+  }
+  return {
+    groups: repeats.length,
+    iterations: invalid > 0 ? null : iterations,
+    invalid,
+  };
+}
+
+function repeatAuditFor(
+  workout: PulsePlannedWorkout,
+  remote: NormalizedGarminCalendarWorkout | null,
+): PulseGarminRepeatReadbackAudit | null {
+  const local = localRepeatStats(workout);
+  if (local.groups === 0) return null;
+
+  const localSummary = `Pulse erwartet ${local.iterations}x in ${plural(local.groups, 'Repeat-Block', 'Repeat-Blöcken')}`;
+  const remoteStats = remote?.workout == null ? null : remoteRepeatStats(remote.workout);
+  if (!remoteStats) {
+    return {
+      status: 'unverified',
+      summary: `${localSummary}; Garmin-Details konnten nicht gelesen werden.`,
+      localRepeatGroups: local.groups,
+      localRepeatIterations: local.iterations,
+      remoteRepeatGroups: null,
+      remoteRepeatIterations: null,
+      remoteInvalidRepeatGroups: null,
+    };
+  }
+
+  const repairNeeded = remoteStats.invalid > 0
+    || remoteStats.groups !== local.groups
+    || remoteStats.iterations !== local.iterations;
+  const remoteSummary = remoteStats.iterations == null
+    ? `Garmin meldet ${plural(remoteStats.invalid, 'ungültigen Repeat-Block', 'ungültige Repeat-Blöcke')}`
+    : `Garmin zeigt ${remoteStats.iterations}x`;
+
+  return {
+    status: repairNeeded ? 'repair_needed' : 'ok',
+    summary: repairNeeded
+      ? `${localSummary}; ${remoteSummary}.`
+      : `${localSummary}; Garmin Readback passt.`,
+    localRepeatGroups: local.groups,
+    localRepeatIterations: local.iterations,
+    remoteRepeatGroups: remoteStats.groups,
+    remoteRepeatIterations: remoteStats.iterations,
+    remoteInvalidRepeatGroups: remoteStats.invalid,
+  };
 }
 
 function latestLedgerByWorkout(entries: PulseGarminExecutionLedgerEntry[]): Map<string, PulseGarminExecutionLedgerEntry> {
@@ -105,12 +200,15 @@ function diffRow(
   remoteUnavailable: boolean,
 ): PulseGarminExecutionDiffRow {
   let status: PulseGarminExecutionDiffStatus;
+  const repeatAudit = repeatAuditFor(workout, remote);
   if (isCompleted(workout)) status = 'completed';
   else if (isExpectedDegraded(workout)) status = 'degraded_expected';
   else if (remoteUnavailable) status = 'unknown';
   else if (!workout.garminWorkoutId) status = 'missing_template';
   else if (!remote) status = 'missing_calendar';
   else if (remote.date !== workout.plannedDate) status = 'stale';
+  else if (repeatAudit?.status === 'unverified') status = 'unknown';
+  else if (repeatAudit?.status === 'repair_needed') status = 'broken_repeat';
   else if (remote.workout != null && garminWorkoutHasBrokenRepeatIterations(remote.workout)) status = 'broken_repeat';
   else status = 'ready';
 
@@ -129,6 +227,7 @@ function diffRow(
       scheduledId: remote?.id ?? latestLedger?.payloadSnapshot?.scheduledId ?? null,
       lastSeenAt: remote?.lastSeenAt ?? null,
     },
+    repeatAudit,
     repairActions: repairActionsFor(status),
   };
 }
