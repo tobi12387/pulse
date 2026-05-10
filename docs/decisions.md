@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Benchmark-Upgrades starten mit Vertrauen, Adaptation und Datenqualität
+
+- **Decision:** Die nächste Trainings-Benchmark-Welle wird als acht PR-große Pläne geführt: Garmin Execution Ledger, Adaptation Event Queue, Workout Library v2, Mobile Plan Flow, Power Data Quality Foundation, Power Duration/Durability, Season ATP v2 und Strength/Mobility Companion.
+- **Why:** Der Vergleich mit TrainerRoad, TrainingPeaks, JOIN, Garmin Coach, Intervals.icu und WKO5 zeigte, dass Pulse nicht noch mehr Oberfläche braucht, sondern verlässliche Geräteausführung, zentrale Adaptionsentscheidungen, tiefere Workout-Bausteine und belastbare Datenqualität vor Power-/Durability-Modellclaims.
+- **Alternatives:** Direkt WKO-/TrainerRoad-ähnliche Power-Modelle bauen (zu riskant ohne Stream-/Power-Qualitätsnachweis); Mobile UI zuerst polieren (wichtig, aber ohne Sync-/Adaptionsgrundlage weniger wirksam); alle Benchmark-Gaps in einem Großplan umsetzen (zu konflikt- und tokenanfällig).
+- **Decided by:** Codex mit parallelem Subagent-Review.
+- **Status:** active.
+
 ## 2026-05-10 — Plan-UI bevorzugt frisch generierte Trace-Daten
 
 - **Decision:** Nach `Plan erstellen` zeigt der Plan-Tab den im Mutationsergebnis gelieferten `planTrace` sofort an, wenn er zur ausgewählten Woche gehört. Der ältere Query-Trace bleibt nur Fallback für Reloads oder andere Wochen.
