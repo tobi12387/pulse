@@ -980,7 +980,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart = shiftIsoDate(weekStartStr, -7);
-    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows] = await Promise.all([
+    const [fitnessLoad, recentActs, goals, recentFeedback, activeHealthStates, riskSignalRows, planLearning, previousWorkoutRows, recentArchetypeRows] = await Promise.all([
       computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
@@ -1046,7 +1046,21 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
           inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
         )),
+      db.select({
+        archetypeId: pulsePlannedWorkouts.archetypeId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, shiftIsoDate(weekStartStr, -14)),
+          lt(pulsePlannedWorkouts.plannedDate, weekStartStr),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(12),
     ]);
+    const recentArchetypeIds = [...new Set(recentArchetypeRows
+      .map(row => row.archetypeId)
+      .filter((id): id is string => Boolean(id)))];
     const activeRaces = await getActiveRaces(userId, weekStartStr, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
     const seasonTss = await loadSeasonTssLast14d(userId, weekStartStr);
@@ -1160,6 +1174,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         executionReview,
         seasonStrategy,
         goalLimiter,
+        recentArchetypeIds,
         recentFeedback: recentFeedback
           .filter(w => w.workoutFeedback != null)
           .map(w => ({
@@ -1669,7 +1684,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const since42d = new Date(Date.now() - 42 * 86_400_000);
     const today = new Date().toISOString().split('T')[0]!;
     const previousWeekStart2 = shiftIsoDate(weekStart, -7);
-    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2] = await Promise.all([
+    const [fitnessLoad, recentActs2, goals2, recentFeedback2, activeHealthStates2, riskSignalRows2, planLearning2, previousWorkoutRows2, recentArchetypeRows2] = await Promise.all([
       computeFitnessLoad(userId, today),
       db.select({
         id:            pulseActivities.id,
@@ -1734,7 +1749,21 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
           lt(pulsePlannedWorkouts.plannedDate, weekStart),
           inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
         )),
+      db.select({
+        archetypeId: pulsePlannedWorkouts.archetypeId,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, shiftIsoDate(weekStart, -14)),
+          lt(pulsePlannedWorkouts.plannedDate, weekStart),
+          inArray(pulsePlannedWorkouts.status, ['planned', 'completed', 'skipped']),
+        ))
+        .orderBy(desc(pulsePlannedWorkouts.plannedDate))
+        .limit(12),
     ]);
+    const recentArchetypeIds2 = [...new Set(recentArchetypeRows2
+      .map(row => row.archetypeId)
+      .filter((id): id is string => Boolean(id)))];
     const activeRaces2 = await getActiveRaces(userId, weekStart, { ctl: fitnessLoad.ctl });
     const [coachPrefsRow2] = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId)).limit(1);
     const seasonTss2 = await loadSeasonTssLast14d(userId, weekStart);
@@ -1845,6 +1874,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         executionReview: executionReview2,
         seasonStrategy: seasonStrategy2,
         goalLimiter: goalLimiter2,
+        recentArchetypeIds: recentArchetypeIds2,
         recentFeedback: recentFeedback2
           .filter(w => w.workoutFeedback != null)
           .map(w => ({

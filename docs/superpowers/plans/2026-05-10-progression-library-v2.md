@@ -71,11 +71,11 @@ Expected: progression evidence visible and deterministic.
 
 ## Task 2: Expand Library Where It Reduces Repetition
 
-- [ ] **Step 1: Add repetition tests**
+- [x] **Step 1: Add repetition tests**
 
 In `workout-library.test.ts`, assert that two consecutive weeks with same target energy system choose different archetypes unless constraints force reuse.
 
-- [ ] **Step 2: Add local variants**
+- [x] **Step 2: Add local variants**
 
 Extend `workout-library.ts` with additional Garmin-safe variants:
 
@@ -88,11 +88,11 @@ Extend `workout-library.ts` with additional Garmin-safe variants:
 
 Keep each variant original and local; do not copy third-party workouts.
 
-- [ ] **Step 3: Add rotation memory**
+- [x] **Step 3: Add rotation memory**
 
 Use existing planned workout `archetypeId` history to avoid repeating the same archetype within 14 days when alternatives fit.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 

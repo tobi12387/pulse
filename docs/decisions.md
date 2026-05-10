@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-10 — Workout-Rotation nutzt echte 14-Tage-Archetyp-Historie
+
+- **Decision:** Die Plan Engine vermeidet kuerzlich geplante Archetypen aus den letzten 14 Tagen, wenn passende Alternativen derselben Trainingsfamilie existieren. Die vorhandene lokale Garmin-sichere Library bleibt die Variantenquelle; es wird kein fremder Workout-Katalog importiert.
+- **Why:** Tobi nimmt Wiederholung in geplanten Workouts direkt wahr. Rotation nur innerhalb einer Woche oder aus grober Vorwochen-Lernlogik reicht nicht; die konkrete Archetyp-Historie ist die naheliegende, testbare Quelle.
+- **Alternatives:** Zufallsrotation (schlechter reproduzierbar); neue Library-UI (mehr Oberflaeche statt besserer Auswahl); Wiederholungen nur in Textbeschreibung kaschieren (inhaltlich keine echte Variation).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Capability Levels zeigen den nächsten Progressionsreiz
 
 - **Decision:** Jede Training-Capability liefert zusätzlich `nextRecommendedWorkoutLevel`, `lastProgressionReason` und `staleReason`. Die Plan-Statistik zeigt daraus kompakt, ob der nächste Reiz steigen darf, gehalten/reduziert wird oder wegen fehlender Evidenz vorsichtig bleibt.

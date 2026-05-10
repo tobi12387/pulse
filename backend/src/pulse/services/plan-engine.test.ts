@@ -521,6 +521,34 @@ describe('generateScientificWeekPlan', () => {
     expect(enduranceIds.slice(0, 2)).not.toEqual(['endurance_steady', 'endurance_steady']);
   });
 
+  it('avoids archetypes used in the recent 14-day plan history when alternatives fit', async () => {
+    const workouts = await generateScientificWeekPlan({
+      weekStart: '2026-05-18',
+      phase: 'base',
+      weeklyHoursTarget: 8,
+      availableDays: [0, 1, 2, 3, 5],
+      ctl: 30,
+      atl: 28,
+      tsb: 6,
+      ftpWatts: 220,
+      maxHrBpm: 185,
+      recentActivities: [],
+      goals: [{ title: 'Alltagstauglich fitter werden', targetDate: '2026-08-01', category: 'weight' }],
+      recentArchetypeIds: ['endurance_steady', 'threshold_intervals'],
+    });
+
+    const archetypeById = new Map(trainingArchetypes.map(archetype => [archetype.id, archetype]));
+    const rotatedEndurance = workouts
+      .map(workout => workout.archetypeId)
+      .filter((id): id is string => id != null && archetypeById.get(id)?.progressionFamily === 'endurance');
+    const hardIds = workouts
+      .filter(workout => workout.zone >= 4)
+      .map(workout => workout.archetypeId);
+
+    expect(rotatedEndurance[0]).not.toBe('endurance_steady');
+    expect(hardIds).not.toContain('threshold_intervals');
+  });
+
   it('does not reduce density when learning has history but no actual issue flag', async () => {
     const workouts = await generateScientificWeekPlan({
       weekStart: '2026-05-04',

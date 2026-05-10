@@ -460,10 +460,14 @@ function withTrainingIntentAnnotations(
     planLearning?: PulsePlanLearningSnapshot | null | undefined;
     executionReview?: PulseTrainingExecutionReview | null | undefined;
     goalLimiter?: PulseGoalLimiter | null | undefined;
+    recentArchetypeIds?: string[] | null | undefined;
   },
 ): WeekWorkout[] {
   const needsVariation = learningNeedsVariation(ctx.planLearning, ctx.executionReview);
-  const previousAvoidance = previousArchetypeAvoidance(ctx.planLearning);
+  const previousAvoidance = [
+    ...previousArchetypeAvoidance(ctx.planLearning),
+    ...(ctx.recentArchetypeIds ?? []),
+  ];
   const selectedArchetypes: string[] = [];
 
   return workouts.map((workout, index) => {
@@ -1224,6 +1228,7 @@ export interface ScientificPlanInput {
   executionReview?: PulseTrainingExecutionReview | null;
   seasonStrategy?: PulseSeasonStrategy | null;
   goalLimiter?: PulseGoalLimiter | null;
+  recentArchetypeIds?: string[];
   recentFeedback?: Array<{
     date: string;
     activityType: string;
@@ -1311,6 +1316,7 @@ export async function generateScientificWeekPlan(input: ScientificPlanInput): Pr
     planLearning: input.planLearning,
     executionReview: input.executionReview,
     goalLimiter: input.goalLimiter,
+    recentArchetypeIds: input.recentArchetypeIds,
   });
 
   const rpeSafety = summarizeRpeSafety(input.recentActivities);
