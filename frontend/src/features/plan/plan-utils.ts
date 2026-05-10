@@ -19,7 +19,7 @@ export type WorkoutUpdate = {
   description?: string | null;
 };
 
-export type PlanAlternativeId = 'shorter' | 'easier' | 'move' | 'rest';
+export type PlanAlternativeId = 'shorter' | 'easier' | 'longer' | 'move' | 'rest';
 
 export function getMonday(d: Date): Date {
   const day = d.getDay();
@@ -162,6 +162,14 @@ export function buildPlanAlternative(workout: PlannedWorkout, id: PlanAlternativ
       durationMin,
       status: 'planned',
       description: appendPlanNote(workout.description, `Alternative: leichter (Z${zone}, ${durationMin} min), wenn Load oder Tagesform gegen die geplante Intensität sprechen.`),
+    };
+  }
+  if (id === 'longer') {
+    const durationMin = Math.min(240, roundToFive(workout.durationMin * 1.25));
+    return {
+      durationMin,
+      status: 'planned',
+      description: appendPlanNote(workout.description, `Alternative: länger (${durationMin} min), weil Ziel, Load und Tagesform zusätzlichen ruhigen Ausdauerumfang erlauben.`),
     };
   }
   if (id === 'move') {

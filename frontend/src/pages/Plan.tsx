@@ -370,13 +370,22 @@ function NextTrainingDecisionCard({
       ? { label: `Risiko ${riskCount} Signal(e)`, targetPath: '/data?tab=analysen#data-plan-trace' }
       : { label: 'Risiko unauffällig', targetPath: '/data?tab=analysen#data-plan-trace' },
   ];
+  const growthAlternativeAllowed = riskCount === 0
+    && !mentalPlanImpact
+    && goalsCount > 0
+    && nextWorkout.zone <= 2
+    && nextWorkout.durationMin <= 180
+    && load != null
+    && load.tsb >= 5;
   const recommendedAlternative: { id: PlanAlternativeId; reason: string } | null = riskCount > 0 || mentalPlanImpact
     ? ((load?.tsb ?? 0) <= -20
       ? { id: 'rest', reason: 'Empfohlen wegen TSB/Risiko' }
       : { id: 'easier', reason: 'Empfohlen wegen TSB/Risiko' })
-    : goalsCount > 0 && nextWorkout.zone >= 3
-      ? { id: 'shorter', reason: 'Zielreiz behalten, Tageslast senken' }
-      : null;
+    : growthAlternativeAllowed
+      ? { id: 'longer', reason: 'Ziel + grüne Signale' }
+      : goalsCount > 0 && nextWorkout.zone >= 3
+        ? { id: 'shorter', reason: 'Zielreiz behalten, Tageslast senken' }
+        : null;
   const baseAlternatives: PlanAlternativeOption[] = [
     {
       id: 'shorter',
@@ -388,6 +397,11 @@ function NextTrainingDecisionCard({
       label: 'Leichter',
       detail: `Z${Math.max(1, Math.min(2, nextWorkout.zone - 1))}, ${roundToFive(nextWorkout.durationMin * 0.85)} min`,
     },
+    ...(growthAlternativeAllowed ? [{
+      id: 'longer' as const,
+      label: 'Länger',
+      detail: `${Math.min(240, roundToFive(nextWorkout.durationMin * 1.25))} min ruhige Ausdauer`,
+    }] : []),
     {
       id: 'move',
       label: 'Verschieben',

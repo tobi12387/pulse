@@ -2772,6 +2772,62 @@ test('Plan alternatives adapt the next workout with semantic choices', async ({ 
   });
 });
 
+test('Plan alternatives offer goal-oriented extra endurance only when signals are green', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const updates: unknown[] = [];
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        targetTss: 45,
+        status: 'planned',
+        description: 'Lockere Grundlage, wenn die Signale grün bleiben.',
+      },
+    ],
+    planTrace: {
+      weekStart: '2026-04-27',
+      inputSnapshot: {
+        load: { ctl: 42.4, atl: 36.1, tsb: 8.4 },
+        phase: 'base',
+        weeklyHoursTarget: 8,
+        goals: [{ title: 'Ausdauerbasis ausbauen' }],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        dataWarnings: [],
+        recentSportMix: { bike: 2 },
+        learningSnapshot: null,
+      },
+      sportMix: { bike: 2 },
+      generatedSummary: [],
+      hardDays: [],
+      planDecision: null,
+    },
+    onPlanWorkoutUpdate: (_id, body) => updates.push(body),
+  });
+
+  await page.goto('/plan');
+
+  const decision = page.getByTestId('next-training-decision');
+  await expect(decision.getByText('ADAPTIONS-CHECK')).toBeVisible();
+  await expect(decision.getByText('1 Empfehlung prüfen')).toBeVisible();
+  const longer = decision.getByRole('button', { name: /Länger/ });
+  await expect(longer).toBeVisible();
+  await expect(longer).toContainText('Empfohlen');
+  await expect(longer).toContainText('Ziel + grüne Signale');
+
+  await longer.click();
+  await expect.poll(() => updates).toHaveLength(1);
+  expect(updates[0]).toMatchObject({
+    durationMin: 75,
+    status: 'planned',
+  });
+});
+
 test('Plan alternatives avoid stale trace context for next-week workouts', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   await mockPulseApi(page, {
