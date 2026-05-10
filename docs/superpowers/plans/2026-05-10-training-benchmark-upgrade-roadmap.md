@@ -22,7 +22,14 @@ The next improvement wave is not another broad dashboard wave. It is a sequence 
 
 ## Active Plan Order
 
-No active implementation plan remains in this benchmark wave. Start the next loop with a fresh benchmark and UI/browser review before adding more roadmap items.
+The 2026-05-10 fresh benchmark and browser-evidence review is now captured in [`2026-05-10-fresh-benchmark-ui-roadmap.md`](2026-05-10-fresh-benchmark-ui-roadmap.md) and [`../../qa/2026-05-10-fresh-benchmark-ui-review.md`](../../qa/2026-05-10-fresh-benchmark-ui-review.md).
+
+Next implementation order:
+
+1. [`UI Accessibility Polish v2`](2026-05-10-ui-accessibility-polish-v2.md)
+2. [`Daily Command Center v2`](2026-05-10-daily-command-center-v2.md)
+3. [`Garmin Execution Trust v2`](2026-05-10-garmin-execution-trust-v2.md)
+4. [`Progression Library v2`](2026-05-10-progression-library-v2.md)
 
 ## Completed In This Wave
 
