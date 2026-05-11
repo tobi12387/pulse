@@ -534,6 +534,29 @@ test('Coach and Data analyses show the daily decision quality signal', async ({ 
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
+test('Insights starts as synthesis and defers deep AI analysis until requested', async ({ page }) => {
+  let insightRequests = 0;
+  await mockPulseApi(page, {
+    onRequest: (pathname) => {
+      if (pathname === '/api/pulse/insights') insightRequests += 1;
+    },
+  });
+
+  await page.goto('/insights');
+  await expect(page.getByTestId('insights-synthesis-hero')).toBeVisible();
+  await expect(page.getByTestId('insights-synthesis-hero')).toContainText('Aktueller Fokus');
+  await expect(page.getByTestId('data-analysis-decision-quality-card')).toHaveCount(0);
+  expect(insightRequests).toBe(0);
+
+  await page.getByRole('button', { name: 'Tiefe Analyse anzeigen' }).click();
+  await expect(page.getByTestId('insights-deep-analysis')).toBeVisible();
+  expect(insightRequests).toBe(0);
+
+  await page.getByRole('button', { name: /Gesamt/i }).click();
+  await expect(page.getByTestId('insights-deep-analysis')).toContainText(/Datenbasis|Noch nicht genug Daten|Analyse konnte/i);
+  expect(insightRequests).toBeGreaterThan(0);
+});
+
 test('Data analyses explain personal response patterns without opening AI cards', async ({ page }) => {
   let insightRequests = 0;
   await mockPulseApi(page, {

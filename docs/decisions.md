@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Insights wird Synthese statt Data-Analyse-Duplikat
+
+- **Decision:** `/insights` bekommt eine eigene kompakte Synthese-Schicht aus vorhandener Personal-Response-, Goal-, Plan- und Quality-Evidenz. `Data > Analyse` bleibt die tiefe Evidenz-Werkbank; Domain-/AI-Analysen in Insights sind nur noch bewusst per Deep-Dive sichtbar.
+- **Why:** Die Route-Evidence zeigte, dass `/insights` optisch und fachlich fast identisch mit `Data > Analyse` war. Ein Top-Level-Tab braucht eine klare Aufgabe: Muster verdichten und zu Plan/Data führen, nicht dieselben Detailkarten wiederholen.
+- **Alternatives:** Insights entfernen (verliert Top-Level-Musterraum); Data-Analyse ebenfalls umbauen (zu grosser Scope); nur Headertexte ändern (Dichte und Doppelung bleiben).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Plan startet auf Desktop mit Aktion und Woche
 
 - **Decision:** Der naechste Focus-Redesign-Slice priorisiert `/plan` als Daily-Planning-Surface: aktuelle Plan-Aktion und Wochenstreifen kommen vor Saison-/Strategie-Evidenz; der `Saisonvertrag` bleibt sichtbar, aber Details sind progressiv.
