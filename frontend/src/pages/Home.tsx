@@ -14,6 +14,7 @@ import { resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
+import { HomeSurfaceFocusCard, useHomeSurfaceFocus, type HomeFocusSlot } from '@/features/home/home-surface-preferences';
 import type { PulseActionState, PulseAdaptationEvent, PulseDailyDeltaItem, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
@@ -753,7 +754,7 @@ function HomeMentalCheckinCard({
   const preset = HOME_MENTAL_PRESETS.find(candidate => candidate.id === selected) ?? HOME_MENTAL_PRESETS[1]!;
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+    <div className="card" data-testid="home-mental-checkin-card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 9 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Mental Check-in</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>Home Quick</span>
@@ -906,6 +907,7 @@ export default function Home() {
   const todayOptionsQuery = useTodayOptions();
   const navigate = useNavigate();
   const [homeCheckinSubmitted, setHomeCheckinSubmitted] = useState(false);
+  const homeSurface = useHomeSurfaceFocus();
 
   if (isLoading) {
     return (
@@ -980,6 +982,132 @@ export default function Home() {
   const readinessLabel = readiness.shortLabel;
   const tsbBucket = bucketize(fl.tsb, TSB_BUCKETS);
   const tsbColor = colorOf(tsbBucket.color);
+
+  function renderFocusSlot(slot: HomeFocusSlot) {
+    if (slot === 'delta') {
+      if (!latestDelta) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-delta">
+          <DailyDeltaCard delta={latestDelta} onNavigate={navigate} />
+        </div>
+      );
+    }
+
+    if (slot === 'todayOptions') {
+      return (
+        <div key={slot} data-testid="home-focus-item-todayOptions">
+          <TodayOptionsCard variant="compact" commandKind={dailyCommand} onNavigate={navigate} />
+        </div>
+      );
+    }
+
+    if (slot === 'adaptation') {
+      if (!primaryAdaptationEvent) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-adaptation">
+          <HomeAdaptationEventCard event={primaryAdaptationEvent} onNavigate={navigate} />
+        </div>
+      );
+    }
+
+    if (slot === 'mental') {
+      const hasMentalContent = mentalDaySignal || homeCheckinSubmitted || (homeMentalAction && !homeCheckinSubmitted);
+      if (!hasMentalContent) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-mental" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {mentalDaySignal && (
+            <p
+              data-testid="mental-impact-summary"
+              style={{
+                margin: '-4px 0 0',
+                padding: '9px 10px',
+                background: 'var(--surface-2)',
+                border: '1px solid rgba(94,230,207,0.18)',
+                borderRadius: 5,
+                color: 'var(--text-2)',
+                fontSize: 12,
+                lineHeight: 1.45,
+              }}
+            >
+              {mentalDaySignal}
+            </p>
+          )}
+
+          {homeCheckinSubmitted && (
+            <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)', letterSpacing: '0.12em' }}>
+                CHECK-IN HEUTE ERLEDIGT ✓
+              </span>
+            </div>
+          )}
+
+          {homeMentalAction && !homeCheckinSubmitted && (
+            <HomeMentalCheckinCard
+              isPending={checkin.isPending}
+              error={checkin.error}
+              onSubmit={(preset) => {
+                checkin.mutate(
+                  { ...preset.scores, notes: preset.note },
+                  { onSuccess: () => setHomeCheckinSubmitted(true) },
+                );
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    if (slot === 'action') {
+      if (!visiblePrimaryAction) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-action">
+          <ActionClosureCard
+            action={visiblePrimaryAction}
+            isPending={updateAction.isPending}
+            onNavigate={navigate}
+            onResolve={(status) => updateAction.mutate({
+              id: visiblePrimaryAction.decisionId,
+              status,
+              reason: status === 'completed' ? 'In Home erledigt.' : 'In Home verschoben.',
+            })}
+          />
+        </div>
+      );
+    }
+
+    if (slot === 'history') {
+      if (!recentDecisions.length && !suppressedActions.length) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-history">
+          <DailyLoopHistoryCard
+            recentDecisions={recentDecisions}
+            suppressed={suppressedActions}
+            onNavigate={navigate}
+          />
+        </div>
+      );
+    }
+
+    if (slot === 'learning') {
+      if (!latestOutcome) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-learning">
+          <DailyOutcomeLearningCard outcome={latestOutcome} />
+        </div>
+      );
+    }
+
+    if (slot === 'followUps') {
+      if (followUpActions.length === 0) return null;
+      return (
+        <div key={slot} data-testid="home-focus-item-followUps">
+          <NextBestActionsCard actions={followUpActions} onNavigate={navigate} />
+        </div>
+      );
+    }
+
+    return null;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
@@ -1086,8 +1214,6 @@ export default function Home() {
         />
       )}
 
-      <DailyDeltaCard delta={latestDelta} onNavigate={navigate} />
-
       <div
         data-testid="home-command-summary"
         style={{
@@ -1119,73 +1245,9 @@ export default function Home() {
         ))}
       </div>
 
-      <TodayOptionsCard variant="compact" commandKind={dailyCommand} onNavigate={navigate} />
+      <HomeSurfaceFocusCard focus={homeSurface.focus} onFocusChange={homeSurface.setFocus} />
 
-      {primaryAdaptationEvent && (
-        <HomeAdaptationEventCard event={primaryAdaptationEvent} onNavigate={navigate} />
-      )}
-
-      {mentalDaySignal && (
-        <p
-          data-testid="mental-impact-summary"
-          style={{
-            margin: '-4px 0 0',
-            padding: '9px 10px',
-            background: 'var(--surface-2)',
-            border: '1px solid rgba(94,230,207,0.18)',
-            borderRadius: 5,
-            color: 'var(--text-2)',
-            fontSize: 12,
-            lineHeight: 1.45,
-          }}
-        >
-          {mentalDaySignal}
-        </p>
-      )}
-
-      {homeCheckinSubmitted && (
-        <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)', letterSpacing: '0.12em' }}>
-            CHECK-IN HEUTE ERLEDIGT ✓
-          </span>
-        </div>
-      )}
-
-      {homeMentalAction && !homeCheckinSubmitted && (
-        <HomeMentalCheckinCard
-          isPending={checkin.isPending}
-          error={checkin.error}
-          onSubmit={(preset) => {
-            checkin.mutate(
-              { ...preset.scores, notes: preset.note },
-              { onSuccess: () => setHomeCheckinSubmitted(true) },
-            );
-          }}
-        />
-      )}
-
-      {visiblePrimaryAction && (
-        <ActionClosureCard
-          action={visiblePrimaryAction}
-          isPending={updateAction.isPending}
-          onNavigate={navigate}
-          onResolve={(status) => updateAction.mutate({
-            id: visiblePrimaryAction.decisionId,
-            status,
-            reason: status === 'completed' ? 'In Home erledigt.' : 'In Home verschoben.',
-          })}
-        />
-      )}
-
-      <DailyLoopHistoryCard
-        recentDecisions={recentDecisions}
-        suppressed={suppressedActions}
-        onNavigate={navigate}
-      />
-
-      <DailyOutcomeLearningCard outcome={latestOutcome} />
-
-      <NextBestActionsCard actions={followUpActions} onNavigate={navigate} />
+      {homeSurface.order.map(slot => renderFocusSlot(slot))}
 
       {/* ── Race Card (next/current race) ── */}
       <RaceCard />

@@ -298,8 +298,9 @@ test('Daily loop clarity keeps Home guidance plain and slim support on task rout
   await expect(page.getByText('Abschluss', { exact: true })).toHaveCount(0);
 
   await page.goto('/plan');
-  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Coach fragen/i }).first()).toBeVisible();
+  await expect(page.getByText('Plan-Aktion').first()).toBeVisible();
+  await expect(page.getByText(/Nach dem Klick/i).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Workout öffnen|Einheit öffnen|Verfügbarkeit prüfen/i }).first()).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -1199,6 +1200,113 @@ test('Home completes a compact mental check-in without opening Data', async ({ p
     motivation: 3,
   });
   expect(String((submitted as { notes?: string }).notes)).toContain('Home Quick: Schützen');
+});
+
+test('Daily Surface focus mode is local and read-only', async ({ page }) => {
+  const writes: string[] = [];
+  page.on('request', request => {
+    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method())) {
+      writes.push(`${request.method()} ${new URL(request.url()).pathname}`);
+    }
+  });
+  await mockPulseApi(page, {
+    todayOptionsState: 'unplanned_trainable',
+    dailyDelta: [{
+      date: '2026-05-01',
+      status: 'matched',
+      title: 'Plan und Ausführung passen zusammen',
+      summary: 'Die geplante Einheit wurde mit Garmin-Ausführung abgeglichen.',
+      score: 92,
+      loadDeltaTss: 4,
+      recoveryDelta: null,
+      nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln.',
+      evidence: ['Geplant: Rad 75 min', 'Garmin: Rad 77 min'],
+      targetPath: '/activity/activity-done',
+    }],
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByTestId('home-surface-focus-card')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Standard/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('daily-delta-card')).toBeVisible();
+  await expect(page.getByTestId('today-options-card')).toBeVisible();
+
+  await page.getByRole('button', { name: /Training/i }).click();
+
+  await expect(page.getByRole('button', { name: /Training/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBe('training');
+  expect(writes).toEqual([]);
+});
+
+test('Daily Surface can put the mental check-in before training options', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+    todayOptionsState: 'unplanned_trainable',
+    actions: [
+      {
+        id: 'checkin',
+        decisionId: 'decision-checkin',
+        source: 'checkin',
+        priority: 'normal',
+        title: 'Check-in eintragen',
+        reason: 'Tages-Check-in fehlt.',
+        cta: 'Eintragen',
+        targetPath: '/data?tab=today#data-mental',
+        status: 'open',
+        resolvedAt: null,
+        resolutionReason: null,
+        resolvedBy: 'Check-in heute speichern.',
+      },
+    ],
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByTestId('home-mental-checkin-card')).toBeVisible();
+  await expect(page.getByTestId('today-options-card')).toBeVisible();
+  await page.getByRole('button', { name: /Mental/i }).click();
+
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBe('mental');
+  const mentalBox = await page.getByTestId('home-focus-item-mental').boundingBox();
+  const optionsBox = await page.getByTestId('home-focus-item-todayOptions').boundingBox();
+  expect(mentalBox).not.toBeNull();
+  expect(optionsBox).not.toBeNull();
+  expect(mentalBox!.y).toBeLessThan(optionsBox!.y);
+});
+
+test('Daily Surface resets to the safe default order', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('pulse.home.surface.focus.v1', 'review');
+  });
+  await mockPulseApi(page, {
+    todayOptionsState: 'unplanned_trainable',
+    dailyDelta: [{
+      date: '2026-05-01',
+      status: 'matched',
+      title: 'Plan und Ausführung passen zusammen',
+      summary: 'Die geplante Einheit wurde mit Garmin-Ausführung abgeglichen.',
+      score: 92,
+      loadDeltaTss: 4,
+      recoveryDelta: null,
+      nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln.',
+      evidence: ['Geplant: Rad 75 min', 'Garmin: Rad 77 min'],
+      targetPath: '/activity/activity-done',
+    }],
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('button', { name: /Rueckblick/i })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: /Standard/i }).click();
+
+  await expect(page.getByRole('button', { name: /Standard/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBeNull();
+  const deltaBox = await page.getByTestId('home-focus-item-delta').boundingBox();
+  const optionsBox = await page.getByTestId('home-focus-item-todayOptions').boundingBox();
+  expect(deltaBox).not.toBeNull();
+  expect(optionsBox).not.toBeNull();
+  expect(deltaBox!.y).toBeLessThan(optionsBox!.y);
 });
 
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
