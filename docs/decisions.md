@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Data-Backfill-Aktionen erfüllen Mobile-Touch-Baseline
+
+- **Decision:** Der nächste Mini-Slice beschränkt sich auf die Touch-Zielgröße der bestehenden `Vorschau`- und `Nachladen`-Buttons in Data > Datenqualität. Backfill-Logik, Garmin-Schreibgrenze und Copy bleiben unverändert.
+- **Why:** Frühere Route-Evidence markierte tiefe Nachlade-Aktionen als kleine iPhone/PWA-Kandidaten. Nach der Data-Default-Entlastung ist dies ein risikoarmer Accessibility-Fix ohne fachliche Entscheidung.
+- **Alternatives:** Komplette Data-Abdeckungsseite neu organisieren (zu gross); Backfill-Flow fachlich verändern (nicht nötig); Thema ignorieren (lässt bekannte Touch-Friktion bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Data startet mit einer Daten-Aktion statt Einstiegswand
 
 - **Decision:** `/data` behält die Bereiche `Heute relevant`, `Trends`, `Datenqualität` und `Analyse`, aber der Default-Start wird auf eine primäre Daten-Aktion mit `Warum jetzt`, `Nach dem Klick` und kompakter Evidenz reduziert. Sekundäre Bereichskarten und Provenienz-Shortcuts bleiben verfügbar, öffnen aber erst über `Weitere Datenbereiche anzeigen`.

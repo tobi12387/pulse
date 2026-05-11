@@ -714,6 +714,8 @@ export function CoverageTab() {
             disabled={!backfillFrom || !backfillTo || backfill.isPending}
             onClick={() => void runBackfill(true)}
             style={{
+              minWidth: 44,
+              minHeight: 44,
               padding: '9px 10px',
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
@@ -733,6 +735,8 @@ export function CoverageTab() {
             disabled={!backfillFrom || !backfillTo || backfill.isPending || candidateCount === 0}
             onClick={() => void runBackfill(false)}
             style={{
+              minWidth: 44,
+              minHeight: 44,
               padding: '9px 10px',
               background: candidateCount === 0 ? 'var(--surface-2)' : 'var(--accent)',
               border: '1px solid var(--accent)',
