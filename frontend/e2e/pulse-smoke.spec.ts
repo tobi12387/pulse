@@ -86,7 +86,9 @@ test('Data analysis shows power data provenance', async ({ page }) => {
 
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await page.goto('/plan');
-  await expect(page.getByText('Saisonlinie')).toBeVisible();
+  const seasonLine = page.getByTestId('plan-season-strategy-card');
+  await expect(seasonLine.getByText('Saisonlinie', { exact: true })).toBeVisible();
+  await seasonLine.getByRole('button', { name: 'Saisonlinie anzeigen' }).click();
   await expect(page.getByTestId('season-atp-row')).toContainText('Jahresziel');
   await expect(page.getByTestId('season-atp-row')).toContainText('384 h / 18432 TSS');
   await expect(page.getByTestId('season-atp-row')).toContainText('Ramp-Cap');
@@ -527,8 +529,8 @@ test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo
   expect(overflow).toEqual([]);
 });
 
-test('Plan mobile week strip keeps workout labels inside a touch scroller', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile week strip containment is a narrow viewport affordance');
+test('Plan mobile week strip fits seven days without hidden horizontal scrolling', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile week strip fit is a narrow viewport affordance');
 
   await mockPulseApi(page, {
     planWorkouts: [{
@@ -566,7 +568,7 @@ test('Plan mobile week strip keeps workout labels inside a touch scroller', asyn
   });
 
   expect(containment.documentOverflow).toBeLessThanOrEqual(1);
-  expect(containment.hasHorizontalScroller).toBe(true);
+  expect(containment.hasHorizontalScroller).toBe(false);
 });
 
 test('Plan mobile workout rows wrap status chips without horizontal overflow', async ({ page }, testInfo) => {
