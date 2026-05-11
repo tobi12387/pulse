@@ -1231,6 +1231,9 @@ test('Daily Surface focus mode is local and read-only', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Standard/i })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('daily-delta-card')).toBeVisible();
   await expect(page.getByTestId('today-options-card')).toBeVisible();
+  const focusBox = await page.getByTestId('home-surface-focus-card').boundingBox();
+  expect(focusBox).not.toBeNull();
+  expect(focusBox!.height).toBeLessThanOrEqual(125);
 
   await page.getByRole('button', { name: /Training/i }).click();
 

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Live UI/UX Slice fokussiert Home-Fokus-Dichte
+
+- **Decision:** Die frische Live-UI/UX-Runde nach PR #311 wird als kleiner Frontend-Slice auf die Dichte der `Heute-Fokus`-Kontrolle begrenzt. Plan-Wochenscroller und tiefe Settings-Diagnose-Buttons bleiben dokumentierte Kandidaten, werden aber nicht im gleichen PR veraendert.
+- **Why:** Die Live-Screenshots zeigen den staerksten taeglichen Reibungspunkt direkt auf Home: die neue Fokuswahl wirkt auf Mobile zu kartenartig und schiebt echte Fokusinhalte nach unten. Ein kompakter Segment-Control-Fix reduziert Dichte ohne neue Produktlogik, Backend-Persistenz oder Garmin-Risiko.
+- **Alternatives:** Plan-Wochenscroller gleichzeitig umbauen (anderer Flow); Settings-Touch-Targets mitziehen (anderer Bereich); groessere Home-Rehierarchisierung (zu breiter Scope ohne neue Nutzerentscheidung).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Customizable Daily Surface v1 bleibt lokal und read-only
 
 - **Decision:** Home-Fokusreihenfolge wird als lokale Browser-/Geraetepraeferenz umgesetzt. Sie sortiert nur vorhandene Fokusflaechen; Hauptentscheidung, Statuswarnungen, Garmin-Sync und Backend-/Plan-/Check-in-Zustaende bleiben unveraendert.
