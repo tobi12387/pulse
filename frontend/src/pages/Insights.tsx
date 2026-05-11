@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useDailyDecisionQuality, useDeepInsight, usePlanTrace, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDeepInsight, useGoalProjection, usePersonalResponse, usePlanTrace, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
@@ -42,6 +42,32 @@ function decisionQualityColor(status: PulseDailyDecisionQualityResponse['status'
   if (status === 'stale') return 'var(--amber)';
   if (status === 'needs_strategy_change') return 'var(--rose)';
   return 'var(--text-3)';
+}
+
+function goalStatusTone(status: string | null | undefined): string {
+  if (status === 'on_track') return 'var(--green)';
+  if (status === 'watch') return 'var(--amber)';
+  if (status === 'at_risk') return 'var(--rose)';
+  return 'var(--text-3)';
+}
+
+function goalStatusLabel(status: string | null | undefined): string {
+  if (status === 'on_track') return 'auf Kurs';
+  if (status === 'watch') return 'beobachten';
+  if (status === 'at_risk') return 'kritisch';
+  return 'offen';
+}
+
+function responseStrengthTone(strength: string | null | undefined): string {
+  if (strength === 'useful') return 'var(--green)';
+  if (strength === 'learning') return 'var(--amber)';
+  return 'var(--text-3)';
+}
+
+function responseStrengthLabel(strength: string | null | undefined): string {
+  if (strength === 'useful') return 'nutzbar';
+  if (strength === 'learning') return 'lernt';
+  return 'offen';
 }
 
 function insightErrorState(error: unknown): { title: string; message: string; retryable: boolean } {
@@ -564,6 +590,288 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
   );
 }
 
+function SynthesisCard({
+  eyebrow,
+  title,
+  body,
+  meta,
+  color = 'var(--accent)',
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  meta: string;
+  color?: string;
+}) {
+  return (
+    <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, borderColor: `color-mix(in srgb, ${color} 24%, transparent)` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          {eyebrow}
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+          {meta}
+        </span>
+      </div>
+      <h2 style={{ fontSize: 15, color: 'var(--text)', margin: 0, fontWeight: 650, lineHeight: 1.35 }}>
+        {title}
+      </h2>
+      <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+        {body}
+      </p>
+    </section>
+  );
+}
+
+function SynthesisBlock({
+  eyebrow,
+  title,
+  body,
+  meta,
+  color = 'var(--accent)',
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  meta: string;
+  color?: string;
+}) {
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', background: 'var(--surface-2)', minWidth: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', marginBottom: 6 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          {eyebrow}
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
+          {meta}
+        </span>
+      </div>
+      <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 650, lineHeight: 1.35 }}>
+        {title}
+      </div>
+      <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, margin: '5px 0 0' }}>
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function InsightsSynthesis() {
+  const [days, setDays] = useState(30);
+  const [deepOpen, setDeepOpen] = useState(false);
+  const navigate = useNavigate();
+  const personalResponse = usePersonalResponse(42);
+  const goalProjection = useGoalProjection(180);
+  const decisionQuality = useDailyDecisionQuality(14);
+  const capability = useTrainingCapabilities(90);
+  const trainingAnalytics = useTrainingAnalytics(12);
+  const currentWeekStart = isoDate(getMonday(new Date()));
+  const planTrace = usePlanTrace(currentWeekStart);
+
+  const personalSummary = personalResponse.data?.summary ?? null;
+  const personalSignal = personalSummary?.signals.find(signal => signal.strength !== 'insufficient')
+    ?? personalSummary?.signals[0]
+    ?? null;
+  const topGoal = goalProjection.data?.projections[0] ?? null;
+  const limiter = planTrace.data?.trace?.inputSnapshot.goalLimiter ?? null;
+  const powerQuality = trainingAnalytics.data?.powerDataQuality ?? null;
+  const powerDuration = trainingAnalytics.data?.powerDuration ?? null;
+  const capabilityLevel = capability.data?.capabilitySummary.levels.find(level => !level.staleReason)
+    ?? capability.data?.capabilitySummary.levels[0]
+    ?? null;
+  const focusTitle = topGoal?.nextBestIntervention.title
+    ?? personalSignal?.label
+    ?? limiter?.label
+    ?? 'Pulse sammelt belastbare Muster.';
+  const focusBody = topGoal?.nextBestIntervention.summary
+    ?? personalSignal?.nextAdjustment
+    ?? decisionQuality.data?.suggestedAdjustment
+    ?? 'Insights verdichtet vorhandene Evidenz und verlinkt in die Details, statt jede Analyse sofort auszubreiten.';
+  const heroMeta = topGoal?.probabilityPct == null
+    ? goalStatusLabel(topGoal?.status)
+    : `${goalStatusLabel(topGoal?.status)} · ca. ${topGoal.probabilityPct}%`;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <PageHeader
+        eyebrow="INSIGHTS · SYNTHESE"
+        title="Insights"
+        description="Die wichtigsten Muster zuerst. Tiefe Evidenz bleibt erreichbar, aber sie steht nicht mehr im Weg."
+      />
+
+      <section
+        className="card"
+        data-testid="insights-synthesis-hero"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 18,
+          alignItems: 'end',
+          borderColor: 'rgba(94,230,207,0.24)',
+          background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))',
+        }}
+      >
+        <div style={{ minWidth: 0, flex: '1 1 420px' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8 }}>
+            Aktueller Fokus
+          </div>
+          <h2 style={{ fontSize: 22, color: 'var(--text)', margin: '0 0 8px', fontWeight: 650, lineHeight: 1.25 }}>
+            {focusTitle}
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0, maxWidth: 720 }}>
+            {focusBody}
+          </p>
+        </div>
+        <div style={{ display: 'flex', flex: '1 1 240px', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/plan')}
+            style={{
+              minHeight: 42,
+              minWidth: 44,
+              padding: '9px 12px',
+              border: '1px solid var(--accent)',
+              borderRadius: 4,
+              background: 'rgba(94,230,207,0.12)',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Plan ansehen
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/data?tab=analysis')}
+            style={{
+              minHeight: 42,
+              minWidth: 44,
+              padding: '9px 12px',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              background: 'var(--surface-2)',
+              color: 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Evidenz öffnen
+          </button>
+        </div>
+      </section>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+        <SynthesisCard
+          eyebrow="Ziel"
+          title={topGoal?.title ?? 'Zielprojektion offen'}
+          body={topGoal?.summary ?? goalProjection.data?.headline ?? 'Sobald ein aktives Ziel belastbar genug ist, fasst Pulse Wahrscheinlichkeit, Limiter und nächste Intervention hier zusammen.'}
+          meta={heroMeta}
+          color={goalStatusTone(topGoal?.status)}
+        />
+        <SynthesisCard
+          eyebrow="Reaktion"
+          title={personalSummary?.headline ?? 'Reaktionsmuster offen'}
+          body={personalSignal?.nextAdjustment ?? 'Pulse lernt noch, welche mentalen, Fueling- und Load-Signale wirklich wiederholbar wirken.'}
+          meta={responseStrengthLabel(personalSummary?.strength)}
+          color={responseStrengthTone(personalSummary?.strength)}
+        />
+        <SynthesisCard
+          eyebrow="Planqualität"
+          title={decisionQuality.data?.statusLabel ?? limiter?.label ?? 'Plan-Evidenz läuft'}
+          body={decisionQuality.data?.suggestedAdjustment ?? limiter?.planBias ?? 'Plan-Trace, Capability und Entscheidungshistorie werden gelesen, ohne den Plan automatisch zu verändern.'}
+          meta={decisionQuality.data ? `${decisionQuality.data.qualityScore}/100` : 'read-only'}
+          color={decisionQuality.data ? decisionQualityColor(decisionQuality.data.status) : 'var(--text-3)'}
+        />
+      </div>
+
+      <section className="card" data-testid="insights-next-actions" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Nächste sinnvolle Prüfung
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
+            read-only
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
+          <SynthesisBlock
+            eyebrow="Intervention"
+            title={topGoal?.nextBestIntervention.title ?? 'Noch keine Intervention'}
+            body={topGoal?.nextBestIntervention.summary ?? 'Pulse wartet auf belastbare Ziel- und Reaktionsdaten, bevor es eine Intervention hervorhebt.'}
+            meta={topGoal?.nextBestIntervention.actionLabel ?? 'offen'}
+            color="var(--blue)"
+          />
+          <SynthesisBlock
+            eyebrow="Datenqualität"
+            title={powerQuality ? powerDataQualityMeta(powerQuality.status).label : 'Power-Daten offen'}
+            body={powerDuration?.durabilityLine ?? powerQuality?.limitations[0] ?? 'Durability und Power-Qualität bleiben als Evidenz-Gate sichtbar, bevor Pulse härtere Schlüsse zieht.'}
+            meta={powerQuality ? `${powerQuality.coveragePct}% Coverage` : 'prüft'}
+            color={powerQuality ? powerDataQualityMeta(powerQuality.status).color : 'var(--text-3)'}
+          />
+          <SynthesisBlock
+            eyebrow="Capability"
+            title={capabilityLevel?.label ?? 'Capability offen'}
+            body={capabilityLevel?.lastProgressionReason ?? capabilityLevel?.staleReason ?? capability.data?.capabilitySummary.recommendations[0] ?? 'Workout-Fit wird aus Ausführung und Feedback gelernt.'}
+            meta={capability.isLoading ? 'lädt' : '90T'}
+            color="var(--amber)"
+          />
+        </div>
+      </section>
+
+      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Deep-Dive
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
+              Domänenanalysen bleiben verfügbar, werden aber erst nach deinem Klick geladen.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-expanded={deepOpen}
+            onClick={() => setDeepOpen(open => !open)}
+            style={{
+              minHeight: 44,
+              minWidth: 44,
+              padding: '8px 12px',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              background: deepOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+              color: deepOpen ? 'var(--accent)' : 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {deepOpen ? 'Tiefe Analyse ausblenden' : 'Tiefe Analyse anzeigen'}
+          </button>
+        </div>
+
+        {deepOpen && (
+          <div data-testid="insights-deep-analysis" style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />
+            </div>
+            {DOMAINS.map(d => (
+              <InsightCard key={d.key} domain={d.key} days={days} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export default function Insights() {
-  return <DataAnalysenTab mode="insights" />;
+  return <InsightsSynthesis />;
 }

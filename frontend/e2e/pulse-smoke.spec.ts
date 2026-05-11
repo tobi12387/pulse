@@ -498,7 +498,9 @@ test('/insights renders as a top-level evidence route', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/insights');
   await expect(page.getByRole('heading', { name: 'Insights', exact: true })).toBeVisible();
-  await expect(page.getByTestId('data-analysis-decision-quality-card')).toBeVisible();
+  await expect(page.getByTestId('insights-synthesis-hero')).toBeVisible();
+  await expect(page.getByTestId('data-analysis-decision-quality-card')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Tiefe Analyse anzeigen' })).toBeVisible();
 });
 
 test('primary navigation exposes Focus routes without Coach tab', async ({ page }) => {
