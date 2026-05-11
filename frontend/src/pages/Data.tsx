@@ -55,6 +55,7 @@ const HASH_TAB: Record<string, Tab> = {
   'data-garmin-quality': 'qualitaet',
   'data-plan-trace': 'analyse',
   'data-personal-response': 'analyse',
+  'data-goal-projection': 'analyse',
 };
 
 function tabFromQuery(value: string | null): Tab {

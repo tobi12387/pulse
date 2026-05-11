@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Predictive Goal Engine v1 bleibt read-only
+
+- **Decision:** Pulse zeigt Zielwahrscheinlichkeit, Limiter-Risiko und naechste Intervention als deterministischen Evidence Layer ueber `GET /api/pulse/goal-projection` in Data > Analyse. v1 schreibt keine Ziele, Workouts, Garmin-Objekte, Plan-Generationen, Nutrition-Logs oder LLM-Artefakte.
+- **Why:** Die Roadmap braucht bessere Coach-Qualitaet, aber automatische Plan-/Garmin-Mutationen waeren ohne Browser- und Nutzerevidenz zu riskant. Ein sichtbarer, read-only Ziel-Layer kann Personal Response, Capability, Fueling, Load und Limiter zusammenfuehren, ohne Tobi Kontrolle zu entziehen.
+- **Alternatives:** Zielprognosen direkt in Plan-Generierung einbauen (zu versteckt); neue Goal-DB-Tabellen fuer v1 anlegen (nicht noetig); Coach/LLM Prognosen erzeugen (zu teuer und schlechter reproduzierbar fuer einen Evidence Layer).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Personal Response Model v1 bleibt Data-first und read-only
 
 - **Decision:** Personal Response Model v1 wird als deterministischer `GET /api/pulse/personal-response` im Daily-Loop-Kontext umgesetzt und in Data > Analyse als kompakter Evidenzblock angezeigt. Es schreibt keine Garmin-, Plan-, Profil- oder LLM-Daten und beeinflusst Plan/Goal/Coach noch nicht automatisch.

@@ -38,6 +38,7 @@ type MockPulseApiOptions = {
   dailyDelta?: unknown[];
   decisionQuality?: unknown;
   personalResponse?: unknown;
+  goalProjection?: unknown;
   goals?: unknown[];
   actions?: unknown[];
   suppressedActions?: unknown[];
@@ -663,6 +664,42 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
       },
     };
   }
+  if (pathname === '/api/pulse/goal-projection') {
+    const horizonDays = Number(searchParams.get('horizonDays') ?? 180);
+    return {
+      generatedAt: `${today}T00:00:00.000Z`,
+      horizonDays,
+      headline: 'Top-Ziel braucht Aufmerksamkeit: 70.3 Kraichgau.',
+      projections: [{
+        goalId: 'race-1',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-07-11',
+        daysUntil: 71,
+        probabilityPct: 64,
+        status: 'watch',
+        confidence: 'medium',
+        summary: '70.3 Kraichgau: beobachten bei ca. 64% mit mittel-Konfidenz.',
+        limiterRisk: {
+          status: 'watch',
+          label: 'Long Endurance + Fueling',
+          summary: 'lange Ausdauer kontrolliert aufbauen und Fueling-Vertraeglichkeit absichern',
+          evidence: ['Long-Endurance-Level 3.1', 'Fueling-Vertraeglichkeit lernt'],
+        },
+        nextBestIntervention: {
+          kind: 'fueling_practice',
+          title: 'Fueling-Praxis absichern',
+          summary: 'Die naechste lange Einheit sollte kontrolliert Fueling und GI-Vertraeglichkeit schliessen.',
+          actionLabel: 'Plan pruefen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Long-Endurance-Level 3.1', '1 kontrollierter During-Log'],
+        },
+        evidence: ['CTL 48.0 / TSB -7.0', 'Capability long_endurance/endurance Ø 3.1', 'Response learning'],
+        missingEvidence: ['Wiederholte stabile Fueling-/GI-Logs fuer lange Einheiten fehlen.'],
+      }],
+      missingEvidence: ['Wiederholte stabile Fueling-/GI-Logs fuer lange Einheiten fehlen.'],
+    };
+  }
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
   if (pathname === '/api/pulse/plan/today/options') {
     return {
@@ -1080,6 +1117,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/personal-response' && options.personalResponse) {
       return json(route, options.personalResponse);
+    }
+    if (url.pathname === '/api/pulse/goal-projection' && options.goalProjection) {
+      return json(route, options.goalProjection);
     }
     if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
       const decisionId = url.pathname.split('/').at(-1) ?? 'decision-1';

@@ -36,6 +36,7 @@ export const pulseKeys = {
   dailyDelta: (days: number) => ['pulse', 'daily-delta', days] as const,
   decisionQuality: (days: number) => ['pulse', 'decisions', 'quality', days] as const,
   personalResponse: (days: number) => ['pulse', 'personal-response', days] as const,
+  goalProjection: (horizonDays: number) => ['pulse', 'goal-projection', horizonDays] as const,
   risk:         ['pulse', 'risk'] as const,
   insight:      (domain: string, days: number) => ['pulse', 'insight', domain, days] as const,
   correlations:      (days: number)  => ['pulse', 'correlations', days] as const,
@@ -82,6 +83,7 @@ function invalidatePulsePlanContextQueries(qc: QueryClient): void {
   void qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
   void qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
   void qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
+  void qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
   void qc.invalidateQueries({ queryKey: pulseKeys.home });
   void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
 }
@@ -142,6 +144,15 @@ export function usePersonalResponse(days = 42) {
   });
 }
 
+export function useGoalProjection(horizonDays = 180) {
+  return useQuery({
+    queryKey: pulseKeys.goalProjection(horizonDays),
+    queryFn: () => pulseApi.goalProjection(horizonDays),
+    staleTime: 5 * 60_000,
+    refetchInterval: 10 * 60_000,
+  });
+}
+
 export function useUpdatePulseAction() {
   const qc = useQueryClient();
   return useMutation({
@@ -152,6 +163,7 @@ export function useUpdatePulseAction() {
       void qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
       void qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
       void qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       invalidatePulseContextQueries(qc);
     },
   });
@@ -443,6 +455,7 @@ export function usePulseCheckin() {
       qc.invalidateQueries({ queryKey: ['pulse', 'outcomes', 'daily'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'decisions', 'quality'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       qc.invalidateQueries({ queryKey: pulseKeys.actions });
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
@@ -467,6 +480,7 @@ export function useCreateGoal() {
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
       void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -483,6 +497,7 @@ export function useUpdateGoal() {
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
       void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -498,6 +513,7 @@ export function useDeleteGoal() {
       void qc.invalidateQueries({ queryKey: pulseKeys.races });
       void qc.invalidateQueries({ queryKey: pulseKeys.raceCommand });
       void qc.invalidateQueries({ queryKey: pulseKeys.seasonStrategy });
+      void qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       void qc.invalidateQueries({ queryKey: pulseKeys.home });
       void qc.invalidateQueries({ queryKey: pulseKeys.briefing });
     },
@@ -1023,6 +1039,7 @@ export function useCreateNutritionLog() {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
       qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
       qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       if (variables.workoutId) {
         qc.invalidateQueries({ queryKey: pulseKeys.home });
@@ -1045,6 +1062,7 @@ export function useDeleteNutritionLog() {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
       qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
       qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
       qc.invalidateQueries({ queryKey: pulseKeys.home });
       qc.invalidateQueries({ queryKey: pulseKeys.plan });

@@ -1,12 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import type { PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulseGarminExecutionOperation, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse } from '@coaching-os/shared/pulse';
+import type { GoalCategory, PulseActivityType, PulseFuelingRecoveryGuidanceResponse, PulseGarminExecutionOperation, PulseGoalProjectionResponse, PulsePlanScenarioRequest, PulseRaceCommandResponse, PulseSeasonStrategyResponse, RaceDiscipline } from '@coaching-os/shared/pulse';
 import { db } from '../../lib/db.js';
 import { garminApi, getGarminClient } from '../../lib/garmin-client.js';
 import {
   pulseActivities,
   pulseActivityStreams,
+  pulseActionDecisions,
   pulseCoachPreferences,
   pulseDailyMetrics,
   pulseGoals,
@@ -18,6 +19,7 @@ import {
   pulsePowerDurationSnapshots,
   pulseTrainingCapabilityLevels,
   pulseUserProfile,
+  pulseWeightLog,
   pulseWeeklyReviews,
   pulseWeekAvailability,
 } from '../../db/pulse-schema.js';
@@ -52,6 +54,9 @@ import {
 import { buildSeasonStrategy } from '../services/season-strategy.js';
 import { deriveGoalLimiter } from '../services/goal-limiters.js';
 import { buildRaceCommandSummary } from '../services/race-command.js';
+import { buildGoalProjectionSummary } from '../services/predictive-goal-engine.js';
+import { buildPersonalResponseSummary } from '../services/personal-response-model.js';
+import { buildDailyOutcomeLearning, type DailyOutcomeLearningActionDecision } from '../services/daily-outcome-learning.js';
 import { loadTrainingCapabilitySummary } from '../services/training-capability-store.js';
 import { summarizePlanCapabilityFit } from '../services/training-capabilities.js';
 import { classifyPowerDataQuality } from '../services/power-data-quality.js';
@@ -67,7 +72,7 @@ import { loadOpenAdaptationEvents, refreshAdaptationEventsForUser } from '../ser
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import { getActiveRiskSignals } from '../services/risk-engine.js';
 import { getActiveRaces } from '../services/race-engine.js';
-import { getFitnessLoadCached } from '../services/daily-loop.js';
+import { getFitnessLoadCached, loadDailyDecisionQuality } from '../services/daily-loop.js';
 import { profileWithProvenance } from '../services/profile-sync.js';
 import { fetchGarminCalendarWorkouts } from '../services/garmin-calendar-workouts.js';
 import { generateWeeklyReview } from '../services/review-engine.js';
@@ -95,6 +100,16 @@ import {
 type PowerDurationSnapshot = typeof pulsePowerDurationSnapshots.$inferSelect;
 
 const pulseActivityTypeSchema = z.enum(['run', 'bike', 'swim', 'strength', 'hike', 'other']);
+const goalCategories = ['race', 'weight', 'ftp', 'vo2max', 'volume'] as const;
+const raceDisciplines = ['run', 'bike', 'swim', 'triathlon_sprint', 'triathlon_olympic', 'triathlon_70_3', 'triathlon_140_6', 'duathlon', 'other'] as const;
+
+function normalizeGoalCategoryValue(value: string | null): GoalCategory | null {
+  return goalCategories.includes(value as GoalCategory) ? value as GoalCategory : null;
+}
+
+function normalizeRaceDisciplineValue(value: string | null): RaceDiscipline | null {
+  return raceDisciplines.includes(value as RaceDiscipline) ? value as RaceDiscipline : null;
+}
 
 const strengthSetSchema = z.object({
   exercise: z.string().trim().min(1).max(80),
@@ -2169,6 +2184,301 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       .where(eq(pulseGoals.userId, userId))
       .orderBy(desc(pulseGoals.createdAt));
     return { goals };
+  });
+
+  app.get('/goal-projection', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulseGoalProjectionResponse | unknown> => {
+    const parsed = z.object({
+      horizonDays: z.coerce.number().int().min(30).max(365).optional().default(180),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const horizonTo = toIsoDate(addDateDays(new Date(`${today}T00:00:00.000Z`), parsed.data.horizonDays));
+    const responseDays = 42;
+    const responseSinceDate = addDateDays(new Date(`${today}T00:00:00.000Z`), -responseDays);
+    const responseSince = toIsoDate(responseSinceDate);
+    const weekStart = currentWeekStartIso();
+    const fitnessLoad = await getFitnessLoadCached(userId, today);
+
+    const [
+      goals,
+      races,
+      weekAvail,
+      profileRows,
+      prefsRow,
+      seasonTss,
+      riskSignals,
+      healthStates,
+      recentActs,
+      responseWorkouts,
+      projectionWorkouts,
+      actionRows,
+      checkins,
+      dailyMetrics,
+      decisionQuality,
+      fuelingBaseline,
+      weightTrend,
+      fuelingHistory,
+      capabilitySummary,
+      latestPowerDuration,
+    ] = await Promise.all([
+      db.select({
+        id: pulseGoals.id,
+        title: pulseGoals.title,
+        category: pulseGoals.category,
+        targetDate: pulseGoals.targetDate,
+        progress: pulseGoals.progress,
+        metrics: pulseGoals.metrics,
+        raceDiscipline: pulseGoals.raceDiscipline,
+        raceDistanceKm: pulseGoals.raceDistanceKm,
+        raceTargetTimeSec: pulseGoals.raceTargetTimeSec,
+        racePriority: pulseGoals.racePriority,
+      }).from(pulseGoals)
+        .where(and(eq(pulseGoals.userId, userId), eq(pulseGoals.status, 'active')))
+        .orderBy(desc(pulseGoals.createdAt))
+        .limit(8),
+      getActiveRaces(userId, today, { ctl: fitnessLoad.ctl }),
+      db.select().from(pulseWeekAvailability)
+        .where(and(eq(pulseWeekAvailability.userId, userId), eq(pulseWeekAvailability.weekStart, weekStart)))
+        .limit(1),
+      db.select().from(pulseUserProfile)
+        .where(eq(pulseUserProfile.userId, userId))
+        .limit(1),
+      db.select().from(pulseCoachPreferences)
+        .where(eq(pulseCoachPreferences.userId, userId))
+        .limit(1),
+      loadSeasonTssLast14d(userId, weekStart),
+      getActiveRiskSignals(userId),
+      db.select({
+        type: pulseHealthState.type,
+        severity: pulseHealthState.severity,
+        bodyPart: pulseHealthState.bodyPart,
+        startDate: pulseHealthState.startDate,
+        notes: pulseHealthState.notes,
+      }).from(pulseHealthState)
+        .where(and(
+          eq(pulseHealthState.userId, userId),
+          isNull(pulseHealthState.resolvedAt),
+          lte(pulseHealthState.startDate, today),
+          or(isNull(pulseHealthState.endDate), gte(pulseHealthState.endDate, today)),
+        ))
+        .orderBy(desc(pulseHealthState.startDate)),
+      db.select({
+        id: pulseActivities.id,
+        source: pulseActivities.source,
+        startTime: pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec,
+        tss: pulseActivities.tss,
+        rpe: pulseActivities.rpe,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, responseSinceDate)))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(120),
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        status: pulsePlannedWorkouts.status,
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        executionStatus: pulsePlannedWorkouts.executionStatus,
+      }).from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, responseSince))),
+      db.select({
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        targetTss: pulsePlannedWorkouts.targetTss,
+        capabilityFit: pulsePlannedWorkouts.capabilityFit,
+        status: pulsePlannedWorkouts.status,
+      }).from(pulsePlannedWorkouts)
+        .where(and(
+          eq(pulsePlannedWorkouts.userId, userId),
+          gte(pulsePlannedWorkouts.plannedDate, today),
+          lte(pulsePlannedWorkouts.plannedDate, horizonTo),
+        ))
+        .orderBy(pulsePlannedWorkouts.plannedDate)
+        .limit(80),
+      db.select({
+        id: pulseActionDecisions.id,
+        source: pulseActionDecisions.source,
+        sourceId: pulseActionDecisions.sourceId,
+        kind: pulseActionDecisions.kind,
+        title: pulseActionDecisions.title,
+        status: pulseActionDecisions.status,
+        targetRoute: pulseActionDecisions.targetRoute,
+        createdAt: pulseActionDecisions.createdAt,
+        resolvedAt: pulseActionDecisions.resolvedAt,
+        resolutionReason: pulseActionDecisions.resolutionReason,
+      }).from(pulseActionDecisions)
+        .where(and(
+          eq(pulseActionDecisions.userId, userId),
+          or(gte(pulseActionDecisions.createdAt, responseSinceDate), gte(pulseActionDecisions.resolvedAt, responseSinceDate)),
+        ))
+        .orderBy(desc(pulseActionDecisions.createdAt))
+        .limit(200),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, responseSince))),
+      db.select({
+        date: pulseDailyMetrics.date,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        hrvStatus: pulseDailyMetrics.hrvStatus,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, responseSince))),
+      loadDailyDecisionQuality(userId, responseDays),
+      loadFuelingOutcomeBaseline(userId, today),
+      db.select({
+        date: pulseWeightLog.date,
+        weightKg: pulseWeightLog.weightKg,
+        bodyFatPct: pulseWeightLog.bodyFatPct,
+        muscleMassKg: pulseWeightLog.muscleMassKg,
+      }).from(pulseWeightLog)
+        .where(and(eq(pulseWeightLog.userId, userId), gte(pulseWeightLog.date, responseSince)))
+        .orderBy(desc(pulseWeightLog.date))
+        .limit(30),
+      loadRecentFuelingHistory(userId, weekStart),
+      loadTrainingCapabilitySummary(userId, { persist: false }).catch((err: unknown) => {
+        app.log.warn(`[goal-projection] Training capability summary failed (non-fatal): ${err}`);
+        return null;
+      }),
+      loadLatestPowerDurationSnapshot(userId).catch((err: unknown) => {
+        app.log.warn(`[goal-projection] Power duration snapshot failed (non-fatal): ${err}`);
+        return null;
+      }),
+    ]);
+
+    const preferences = serializeCoachPreferences(prefsRow[0] ?? null);
+    const availability = {
+      availableDays: (weekAvail[0]?.availableDays as number[] | null) ?? [0, 2, 4, 5],
+      weeklyHours: weekAvail[0]?.weeklyHours ?? profileRows[0]?.weeklyHoursTarget ?? 8,
+    };
+    const planGoals = goals.map(goal => ({
+      id: goal.id,
+      title: goal.title,
+      category: goal.category,
+      targetDate: goal.targetDate,
+      racePriority: normalizeRacePriority(goal.racePriority),
+    }));
+    const seasonStrategy = buildSeasonStrategy({
+      today,
+      weekStart,
+      races,
+      goals: planGoals,
+      fitnessLoad,
+      availability,
+      coachPreferences: {
+        preferredLongDays: preferences.preferredLongDays,
+        dislikedWorkoutPatterns: preferences.dislikedWorkoutPatterns,
+      },
+      plannedTssLast14d: seasonTss.plannedTssLast14d,
+      completedTssLast14d: seasonTss.completedTssLast14d,
+    });
+    const plannedZoneByActivityId = await getPlannedZoneByActivityId(userId, recentActs.map(activity => activity.id));
+    const recentPlanActivities = recentActs.map(activity => ({
+      date: activity.startTime.toISOString().split('T')[0]!,
+      activityType: activity.activityType,
+      durationMin: Math.round((activity.durationSec ?? 0) / 60),
+      tss: activity.tss ?? 0,
+      rpe: activity.rpe,
+      plannedZone: plannedZoneByActivityId.get(activity.id) ?? null,
+    }));
+    const goalLimiter = deriveGoalLimiter({
+      goals: goals.map(goal => ({
+        title: goal.title,
+        category: goal.category,
+        targetDate: goal.targetDate,
+        raceDiscipline: goal.raceDiscipline,
+        raceDistanceKm: goal.raceDistanceKm,
+        racePriority: normalizeRacePriority(goal.racePriority),
+      })),
+      trainingCapabilities: capabilitySummary,
+      recentActivities: recentPlanActivities,
+      fuelingHistory,
+      durability: durabilityLimiterInput(latestPowerDuration),
+    });
+    const dailyOutcomes = buildDailyOutcomeLearning({
+      today,
+      days: responseDays,
+      actionDecisions: actionRows.map((row): DailyOutcomeLearningActionDecision => ({
+        ...row,
+        status: row.status as DailyOutcomeLearningActionDecision['status'],
+        createdAt: row.createdAt.toISOString(),
+        resolvedAt: row.resolvedAt?.toISOString() ?? null,
+      })),
+      checkins,
+      plannedWorkouts: responseWorkouts.map(row => ({
+        ...row,
+        executionStatus: row.executionStatus ?? null,
+      })),
+      activities: recentActs.map(row => ({
+        ...row,
+        startTime: row.startTime.toISOString(),
+      })),
+      dailyMetrics: dailyMetrics.map(row => ({
+        ...row,
+        hrvStatus: row.hrvStatus ?? null,
+      })),
+    });
+    const personalResponse = buildPersonalResponseSummary({
+      today,
+      days: responseDays,
+      dailyOutcomes,
+      decisionQuality,
+      fuelingBaseline,
+      mentalCheckins: checkins,
+      executionReviews: recentActs.map(activity => ({
+        date: toIsoDate(activity.startTime),
+        plannedZone: plannedZoneByActivityId.get(activity.id) ?? null,
+        rpe: activity.rpe,
+        durationMin: activity.durationSec == null ? null : Math.round(activity.durationSec / 60),
+        tss: activity.tss,
+      })),
+    });
+
+    return buildGoalProjectionSummary({
+      today,
+      horizonDays: parsed.data.horizonDays,
+      goals: goals.map(goal => ({
+        id: goal.id,
+        title: goal.title,
+        category: normalizeGoalCategoryValue(goal.category),
+        targetDate: goal.targetDate,
+        progress: goal.progress ?? null,
+        metrics: (goal.metrics as Record<string, unknown> | null) ?? {},
+        raceDiscipline: normalizeRaceDisciplineValue(goal.raceDiscipline),
+        raceDistanceKm: goal.raceDistanceKm,
+        raceTargetTimeSec: goal.raceTargetTimeSec,
+        racePriority: normalizeRacePriority(goal.racePriority),
+      })),
+      fitnessLoad,
+      trainingCapabilities: capabilitySummary,
+      goalLimiter,
+      seasonStrategy,
+      personalResponse,
+      fuelingBaseline,
+      riskSignals: riskSignals.map(signal => ({ severity: signal.severity, title: signal.title })),
+      healthStates: healthStates.map(state => ({ type: state.type, severity: state.severity, bodyPart: state.bodyPart })),
+      weightTrend,
+      plannedWorkouts: projectionWorkouts.map(workout => ({
+        plannedDate: workout.plannedDate,
+        zone: workout.zone,
+        durationMin: workout.durationMin,
+        targetTss: workout.targetTss,
+        capabilityFit: workout.capabilityFit ?? null,
+        status: workout.status,
+      })),
+    });
   });
 
   app.post('/goals', { onRequest: [app.authenticate] }, async (req, reply) => {

@@ -90,6 +90,7 @@
 | `2026-05-10-nutrition-intelligence-v1.md` | Nutrition Intelligence v1 — low-intake GI logs lower the next long-session target to a controlled 50-70 g/h with 750-ml bottle and powder math | Nutrition Intelligence PR |
 | `2026-05-10-nutrition-outcome-baseline.md` | Nutrition Outcome Baseline — recent long-session logs become a structured baseline for carb target, bottles, powder, fluid and sodium evidence gaps | Nutrition Outcome Baseline PR |
 | `2026-05-11-personal-response-model-v1.md` | Personal Response Model v1 — deterministic read-only response summary, API endpoint and compact Data > Analyse evidence block | Personal Response Model PR |
+| `2026-05-11-predictive-goal-engine-v1.md` | Predictive Goal Engine v1 — deterministic read-only goal probability, limiter risk and next-intervention evidence in Data > Analyse | Predictive Goal Engine PR |
 
 ## Bekannte veraltete Stellen
 

@@ -464,6 +464,25 @@ test('Data analyses explain personal response patterns without opening AI cards'
   expect(insightRequests).toBe(0);
 });
 
+test('Data analyses show goal projection without opening AI cards', async ({ page }) => {
+  let insightRequests = 0;
+  await mockPulseApi(page, {
+    onRequest: (pathname) => {
+      if (pathname === '/api/pulse/insights') insightRequests += 1;
+    },
+  });
+
+  await page.goto('/data?tab=analysis#data-goal-projection');
+
+  const card = page.getByTestId('data-goal-projection-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Zielprojektion');
+  await expect(card).toContainText('70.3 Kraichgau');
+  await expect(card).toContainText('Fueling-Praxis absichern');
+  await expect(card).toContainText('Long Endurance + Fueling');
+  expect(insightRequests).toBe(0);
+});
+
 function completedWorkoutHome({ rpe, feedbackLoggedAt }: { rpe: number | null; feedbackLoggedAt: string | null }) {
   return {
     todayWorkout: {
