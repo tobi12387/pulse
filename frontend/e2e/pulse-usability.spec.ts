@@ -1757,6 +1757,7 @@ test('Data overview exposes provenance shortcuts', async ({ page }) => {
 
   await page.goto('/data');
   await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   const triage = page.getByTestId('data-evidence-triage');
   await expect(triage).toContainText('Readiness 78/100');
   await expect(triage).toContainText('TSB -5.7');
@@ -1768,20 +1769,44 @@ test('Data overview exposes provenance shortcuts', async ({ page }) => {
   await expect(page.locator('#data-recovery')).toBeVisible();
 
   await page.goto('/data');
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   await page.getByTestId('data-triage-garmin').click();
   await expect(page).toHaveURL('/data?tab=quality#data-garmin-quality');
   await expect(page.locator('#data-garmin-quality')).toBeVisible();
 
   await page.goto('/data');
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   await page.getByRole('button', { name: 'Plan-/Load-Analyse prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
   await expect(page.locator('#data-plan-trace')).toBeVisible();
+});
+
+test('Data starts with one daily action before secondary areas', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/data');
+  const action = page.getByTestId('data-primary-action');
+  await expect(action).toBeVisible();
+  await expect(action).toContainText('Daten-Aktion');
+  await expect(action).toContainText('Warum jetzt');
+  await expect(action).toContainText('Nach dem Klick');
+  await expect(action).toContainText('Planwirkung prüfen');
+
+  await expect(page.getByTestId('data-secondary-areas')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
+  const secondary = page.getByTestId('data-secondary-areas');
+  await expect(secondary).toBeVisible();
+  await expect(secondary.getByRole('button', { name: 'Analyse öffnen' })).toBeVisible();
+  await expect(secondary.getByRole('button', { name: 'Check-in öffnen' })).toBeVisible();
+  await expect(secondary.getByRole('button', { name: 'Trends öffnen' })).toBeVisible();
+  await expect(secondary.getByRole('button', { name: 'Plan-/Load-Analyse prüfen' })).toBeVisible();
 });
 
 test('Data Plan Load triage hands off to the actionable Plan scenario surface', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data');
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   await page.getByTestId('data-triage-plan-load').click();
 
   await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-scenario-preview');
@@ -4623,6 +4648,9 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, '90T');
 
   await page.goto('/data?tab=overview');
+  await expectTouchTarget(page, 'Check-in öffnen');
+  await expectTouchTarget(page, 'Weitere Datenbereiche anzeigen');
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   await expectTouchTarget(page, 'Analyse öffnen');
   await expectTouchTarget(page, 'Check-in öffnen');
   await expectTouchTarget(page, 'Trends öffnen');

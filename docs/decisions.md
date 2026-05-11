@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Data startet mit einer Daten-Aktion statt Einstiegswand
+
+- **Decision:** `/data` behält die Bereiche `Heute relevant`, `Trends`, `Datenqualität` und `Analyse`, aber der Default-Start wird auf eine primäre Daten-Aktion mit `Warum jetzt`, `Nach dem Klick` und kompakter Evidenz reduziert. Sekundäre Bereichskarten und Provenienz-Shortcuts bleiben verfügbar, öffnen aber erst über `Weitere Datenbereiche anzeigen`.
+- **Why:** Nach Plan- und Insights-Fokus bleibt Data der naechste Dichte-Hotspot: Der Startbereich zeigt Triage, mehrere gleichrangige Karten und Evidenz-Chips gleichzeitig. Das widerspricht dem UX Task Contract, weil unklar ist, welche Handlung zuerst zählt.
+- **Alternatives:** Data-IA erneut umbauen (zu grosser Scope und bereits v1-komprimiert); Analyse-/Evidenzkarten entfernen (verliert Trust); nur Abstände reduzieren (senkt kognitive Last nicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Insights wird Synthese statt Data-Analyse-Duplikat
 
 - **Decision:** `/insights` bekommt eine eigene kompakte Synthese-Schicht aus vorhandener Personal-Response-, Goal-, Plan- und Quality-Evidenz. `Data > Analyse` bleibt die tiefe Evidenz-Werkbank; Domain-/AI-Analysen in Insights sind nur noch bewusst per Deep-Dive sichtbar.
