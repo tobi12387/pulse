@@ -136,7 +136,7 @@ These build on the calmer daily UI.
 | Predictive Goal Engine | Implemented v1: Pulse exposes deterministic, read-only goal probability, limiter risk and next best intervention in Data > Analyse, using Personal Response, capability, fueling, load and execution evidence without mutating plan or Garmin. |
 | Adaptive Season Builder | Implemented v1: Plan shows a read-only `Saisonvertrag` that combines Season Strategy and Goal Projection evidence, including top-goal probability, next 14-day contract, hard-day cap, load guardrail and next intervention without hidden mutations. |
 | Contextual Coach Mode | Implemented v1: Coach shows a read-only context card that combines Personal Response, Goal Projection and Season Strategy evidence, then prepares a focused prompt only after an explicit click. |
-| Customizable Daily Surface | Next non-gated build: after the daily command surface has stable response/goal/season/coach inputs, Tobi can choose which focus cards appear first while Pulse keeps safe defaults for the daily decision. |
+| Customizable Daily Surface | Implemented v1: Home lets Tobi choose a local per-device focus-card order while the main daily decision, warnings and Garmin-sensitive controls keep safe defaults. |
 
 ## Active Plan Surface
 
@@ -155,7 +155,7 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 1. **Predictive Goal Engine v1:** implemented as read-only goal probability, limiter risk and next-intervention evidence from Personal Response, capability, fueling and execution data. No hidden plan mutation in v1.
 2. **Adaptive Season Builder v1:** implemented as a read-only Plan `Saisonvertrag` that consumes existing season strategy and goal projection evidence. No hidden workout, goal or Garmin mutation in v1.
 3. **Contextual Coach Mode:** implemented as a read-only Coach context card using Personal Response, Goal Projection and Season Strategy evidence. No automatic send, new backend endpoint, LLM prompt mutation or Garmin write in v1.
-4. **Customizable Daily Surface:** next non-gated build; after daily command has stable response/goal/season/coach inputs, allow Tobi to choose which focus cards appear first while Pulse keeps safe defaults.
+4. **Customizable Daily Surface:** implemented as a local read-only Home focus ordering control. No backend, plan, Garmin or check-in mutation in v1.
 5. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
 6. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
 7. **Optional Daily Delta echoes / Garmin modal polish:** only if route evidence or user feedback shows a real gap.

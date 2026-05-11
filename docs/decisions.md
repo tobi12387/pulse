@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Customizable Daily Surface v1 bleibt lokal und read-only
+
+- **Decision:** Home-Fokusreihenfolge wird als lokale Browser-/Geraetepraeferenz umgesetzt. Sie sortiert nur vorhandene Fokusflaechen; Hauptentscheidung, Statuswarnungen, Garmin-Sync und Backend-/Plan-/Check-in-Zustaende bleiben unveraendert.
+- **Why:** Tobi soll die taegliche Oberflaeche ruhiger priorisieren koennen, ohne dass Pulse versteckte Produktlogik, Garmin-Writes oder accountweite Einstellungen einfuehrt. Safe Defaults bleiben fuer neue Geraete erhalten.
+- **Alternatives:** Drag-and-drop mit Backend-Persistenz (zu gross fuer v1); neue Tabs fuer jeden Fokus (mehr IA statt weniger Dichte); automatische Personalisierung (zu versteckt ohne Evidenz).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Contextual Coach Mode v1 bleibt read-only
 
 - **Decision:** Contextual Coach Mode v1 wird als read-only Coach-Kontextkarte umgesetzt, die Personal Response, Goal Projection und Season Strategy Evidence sichtbar macht und nur per Klick eine fokussierte Frage vorbereitet.
