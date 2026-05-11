@@ -1,7 +1,8 @@
 import { Skeleton } from '@/components/Skeleton';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
-import type { PulsePlanDecision, PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import type { PulseGoalProjectionResponse, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import { Link } from 'react-router-dom';
 import { formatPlanDate } from '../plan-utils';
 import { buildPlanDecisionEvidence, type PlanDecisionEvidenceTone } from './plan-decision-insights';
 
@@ -382,6 +383,167 @@ export function RaceCommandCard({ command, isLoading }: { command: PulseRaceComm
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {command.evidence.map(item => (
+          <span key={item} style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            padding: '3px 7px',
+          }}>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function goalProjectionTone(status: string | null | undefined): string {
+  if (status === 'on_track') return 'var(--green)';
+  if (status === 'watch') return 'var(--amber)';
+  if (status === 'at_risk') return 'var(--rose)';
+  return 'var(--text-3)';
+}
+
+function goalProjectionLabel(status: string | null | undefined): string {
+  if (status === 'on_track') return 'auf Kurs';
+  if (status === 'watch') return 'beobachten';
+  if (status === 'at_risk') return 'kritisch';
+  return 'Evidenz offen';
+}
+
+function seasonContractHeadline(strategy: PulseSeasonStrategy | null, goalProjection: PulseGoalProjectionResponse | null): string {
+  const top = goalProjection?.projections[0] ?? null;
+  if (top?.status === 'at_risk') return 'Zielrisiko zuerst stabilisieren.';
+  if (top?.status === 'watch') return 'Aufbau fortsetzen, Limiter gezielt schliessen.';
+  if (strategy?.currentBlock.kind === 'taper' || strategy?.currentBlock.kind === 'race_week') return 'Frische schuetzen, keine Zusatzlast erzwingen.';
+  if (top?.status === 'insufficient_evidence') return 'Saisonlinie halten, Evidenz vervollstaendigen.';
+  return 'Saisonaufbau sauber fortsetzen.';
+}
+
+export function AdaptiveSeasonContractCard({
+  strategy,
+  goalProjection,
+  isLoading,
+}: {
+  strategy: PulseSeasonStrategy | null;
+  goalProjection: PulseGoalProjectionResponse | null;
+  isLoading: boolean;
+}) {
+  if (isLoading && !strategy && !goalProjection) {
+    return (
+      <div className="card" style={{ borderColor: 'rgba(59,130,246,0.16)' }}>
+        <Skeleton height={10} width="30%" />
+        <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+          <Skeleton height={50} />
+          <Skeleton height={50} />
+          <Skeleton height={50} />
+        </div>
+      </div>
+    );
+  }
+  if (!strategy && !goalProjection) return null;
+
+  const top = goalProjection?.projections[0] ?? null;
+  const guardrails = strategy?.guardrails ?? null;
+  const loadModel = strategy?.loadModel ?? null;
+  const tone = goalProjectionTone(top?.status);
+  const probability = top?.probabilityPct == null ? 'offen' : `ca. ${top.probabilityPct}%`;
+  const nextBoundary = guardrails?.nextBoundary
+    ? `${guardrails.nextBoundary.label} ab ${formatPlanDate(guardrails.nextBoundary.date)}`
+    : 'Keine harte Boundary im Horizont';
+  const topGoalSummary = top
+    ? top.summary.toLocaleLowerCase().startsWith(top.title.toLocaleLowerCase())
+      ? top.summary
+      : `${top.title}: ${top.summary}`
+    : 'Pulse verbindet Saisonlinie und Zielprojektion, sobald ein aktives Ziel belastbar genug ist.';
+
+  return (
+    <div className="card" data-testid="plan-adaptive-season-contract" style={{ borderColor: translucent(tone, 24) }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+        <span className="label-mono" style={{ color: 'var(--blue)' }}>Saisonvertrag</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: tone }}>
+          {top ? `${goalProjectionLabel(top.status)} · ${probability}` : 'Evidenz offen'}
+        </span>
+      </div>
+
+      <div style={{ marginBottom: 10 }}>
+        <h2 style={{ fontSize: 16, color: 'var(--text)', margin: '0 0 4px', fontWeight: 650 }}>
+          {seasonContractHeadline(strategy, goalProjection)}
+        </h2>
+        <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
+          {topGoalSummary}
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
+        <RaceCommandFact
+          label="Naechste 14 Tage"
+          value={guardrails ? `${guardrails.targetSessions} Einheiten` : 'offen'}
+          detail={guardrails?.freeDayRationale ?? 'Verfuegbarkeit oder Saisonlinie noch offen.'}
+          color="var(--accent)"
+        />
+        <RaceCommandFact
+          label="Hard-Day-Cap"
+          value={guardrails ? `max. ${guardrails.maxHardDays}` : 'offen'}
+          detail={guardrails?.deload ? 'Deload/Konsolidierung ist aktiv.' : 'Keine zusaetzlichen harten Tage ohne klare Evidenz.'}
+          color={guardrails?.deload ? 'var(--amber)' : 'var(--green)'}
+        />
+        <RaceCommandFact
+          label="Load-Vertrag"
+          value={loadModel ? `${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS` : 'offen'}
+          detail={loadModel ? loadModel.currentWeek.note : 'Saisonlast wird aus aktueller Season Strategy gelesen.'}
+          color="var(--blue)"
+        />
+        <RaceCommandFact
+          label="Naechste Grenze"
+          value={nextBoundary}
+          detail={guardrails?.rationale.slice(0, 2).join(' ') ?? top?.limiterRisk.summary ?? null}
+          color={top?.limiterRisk.status === 'blocked' ? 'var(--rose)' : top?.limiterRisk.status === 'watch' ? 'var(--amber)' : 'var(--accent)'}
+        />
+      </div>
+
+      {top?.nextBestIntervention && (
+        <div
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: '8px 10px',
+            background: 'var(--surface-2)',
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <span className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>Naechste Intervention</span>
+            <Link
+              to={top.nextBestIntervention.targetPath}
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--accent)',
+                letterSpacing: 0,
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+              }}
+            >
+              {top.nextBestIntervention.actionLabel}
+            </Link>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
+            <strong style={{ color: 'var(--text)' }}>{top.nextBestIntervention.title}</strong>
+            {' '}
+            {top.nextBestIntervention.summary}
+          </p>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {[
+          ...(top?.evidence.slice(0, 3) ?? []),
+          ...(strategy?.evidence.slice(0, 2) ?? []),
+          ...(goalProjection?.missingEvidence.slice(0, 1) ?? []),
+        ].map(item => (
           <span key={item} style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,

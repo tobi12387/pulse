@@ -5,6 +5,7 @@ import {
   usePulseActivities, usePulsePlan, usePulseGoals,
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanRefreshPreview, usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
+  useGoalProjection,
   useTodayOptions, useFitnessLoad, useAdaptationEvents,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
@@ -30,7 +31,7 @@ import {
   type PlanAlternativeId,
 } from '@/features/plan/plan-utils';
 import { GoalCard, GoalForm } from '@/features/plan/goals/goal-components';
-import { PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
+import { AdaptiveSeasonContractCard, PlanDecisionCard, PlanTraceCard, RaceCommandCard, SeasonStrategyCard } from '@/features/plan/strategy/strategy-components';
 import { PlanLimiterWorkoutSummary, WeekStrip, WorkoutRow } from '@/features/plan/training/training-components';
 import { DAY_SHORT } from '@/features/plan/training/training-copy';
 import { ACTIVITY_LABEL, workoutArchetypeCopy } from '@/pulse/activity-labels';
@@ -2263,6 +2264,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const checkinHistory = useCheckinHistory(7);
   const raceCommand = useRaceCommand();
   const seasonStrategy = useSeasonStrategy();
+  const goalProjection = useGoalProjection(180);
   const todayOptions = useTodayOptions();
   const fitnessLoad = useFitnessLoad();
   const availability = useWeekAvailability();
@@ -2398,6 +2400,12 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}
         isLoading={raceCommand.isLoading}
+      />
+
+      <AdaptiveSeasonContractCard
+        strategy={seasonStrategy.data?.strategy ?? planTrace?.inputSnapshot.seasonStrategy ?? null}
+        goalProjection={goalProjection.data ?? null}
+        isLoading={seasonStrategy.isLoading || goalProjection.isLoading}
       />
 
       <SeasonStrategyCard
