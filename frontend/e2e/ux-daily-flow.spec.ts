@@ -123,7 +123,7 @@ test('Plan renders completed planned workout today options as a closed decision'
             title: 'Resttag schützen',
             detail: 'Heute nicht nachlegen. Essen, Trinken, lockere Bewegung und Schlaf bestimmen den Nutzen der Einheit.',
             cta: 'Recovery ansehen',
-            targetPath: '/data#data-recovery',
+            targetPath: '/data?tab=trends#data-recovery',
             evidence: ['Readiness 76/100'],
           },
         ],

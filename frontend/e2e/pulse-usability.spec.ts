@@ -184,7 +184,7 @@ test('Data analyses load only after the user opens a card', async ({ page }) => 
     },
   });
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
   await expect(page.getByText('Öffne eine Karte, um die Analyse gezielt zu laden.')).toBeVisible();
   expect(insightRequests).toBe(0);
@@ -197,7 +197,7 @@ test('Data analyses load only after the user opens a card', async ({ page }) => 
 test('Data analyses show evidence links for opened analysis cards', async ({ page }) => {
   await mockPulseApi(page);
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
 
   await expect(page.getByText('Datenbasis')).toBeVisible();
@@ -212,7 +212,7 @@ test('Data analyses show evidence links for opened analysis cards', async ({ pag
 test('Data analyses show a helpful state instead of raw server errors', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'server' });
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
 
   await expect(page.getByText('Analyse konnte gerade nicht geladen werden.')).toBeVisible();
@@ -224,7 +224,7 @@ test('Data analyses show a helpful state instead of raw server errors', async ({
 test('Data analyses classify provider errors with a retry action', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'provider' });
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
 
   await expect(page.getByText('KI-Provider gerade nicht erreichbar.')).toBeVisible();
@@ -236,7 +236,7 @@ test('Data analyses classify provider errors with a retry action', async ({ page
 test('Data analyses classify missing data without offering a retry', async ({ page }) => {
   await mockPulseApi(page, { insightErrorKind: 'data_missing' });
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await page.locator('button[aria-controls="insight-mental-content"]').click();
 
   await expect(page.getByText('Noch nicht genug Daten.')).toBeVisible();
@@ -441,7 +441,7 @@ test('Coach and Data analyses show the daily decision quality signal', async ({ 
   await page.getByTestId('coach-decision-quality-chip').click();
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Wiederholung prüfen/);
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Entscheidungsqualität');
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
@@ -1001,8 +1001,7 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
     },
   });
 
-  await page.goto('/data');
-  await page.getByRole('tab', { name: 'Mental', exact: true }).click();
+  await page.goto('/data?tab=mental');
 
   await expect(page.getByText('Quick Check-in')).toBeVisible();
   await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
@@ -1105,7 +1104,7 @@ test('Home completes a compact mental check-in without opening Data', async ({ p
         title: 'Check-in eintragen',
         reason: 'Tages-Check-in fehlt.',
         cta: 'Eintragen',
-        targetPath: '/data?tab=mental',
+        targetPath: '/data?tab=today#data-mental',
         status: 'open',
         resolvedAt: null,
         resolutionReason: null,
@@ -1137,7 +1136,7 @@ test('Data shows Garmin recovery depth signals without exposing raw payloads', a
   await mockPulseApi(page);
 
   await page.goto('/data');
-  await page.getByRole('tab', { name: 'Metriken' }).click();
+  await page.getByRole('tab', { name: 'Trends' }).click();
 
   await expect(page.getByText('Recovery Depth')).toBeVisible();
   await expect(page.getByText('Schlafbedarf')).toBeVisible();
@@ -1387,14 +1386,13 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
   expect(coachSends).toBe(0);
 
   await page.goto('/plan?tab=training');
-  const nextDecisionBox = await page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG').boundingBox();
-  expect(nextDecisionBox).not.toBeNull();
+  await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
   await expect(page.getByText('Radfahren · Zone 2')).toBeVisible();
 
   await page.getByRole('button', { name: 'Metriken prüfen' }).click();
-  await expect(page).toHaveURL('/data?tab=metrics');
-  await expect(page.getByRole('tab', { name: 'Metriken' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL('/data?tab=trends#data-recovery');
+  await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
 
   await page.goBack();
   await expect(page).toHaveURL('/plan?tab=training');
@@ -1407,10 +1405,11 @@ test('Home evidence chips deep-link to Data evidence sections', async ({ page })
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
 
+  await page.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await page.getByRole('button', { name: /Readiness 78\/100/ }).click();
   await expect(page).toHaveURL(/\/data/);
   await expect(page).toHaveURL(/#data-recovery$/);
-  await expect(page.getByRole('tab', { name: 'Metriken' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#data-recovery')).toBeVisible();
 });
 
@@ -1458,8 +1457,8 @@ test('Plan evidence chips deep-link to Data plan trace', async ({ page }) => {
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
 
   await page.getByRole('button', { name: /Einbezogen: TSB -5\.7/ }).click();
-  await expect(page).toHaveURL('/data?tab=analysen#data-plan-trace');
-  await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+  await expect(page.getByRole('tab', { name: 'Analyse' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#data-plan-trace')).toBeVisible();
 });
 
@@ -1467,7 +1466,7 @@ test('Data overview exposes provenance shortcuts', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data');
-  await expect(page.getByText('DATA · ÜBERBLICK')).toBeVisible();
+  await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
   const triage = page.getByTestId('data-evidence-triage');
   await expect(triage).toContainText('Readiness 78/100');
   await expect(triage).toContainText('TSB -5.7');
@@ -1475,17 +1474,17 @@ test('Data overview exposes provenance shortcuts', async ({ page }) => {
   await expect(triage).toContainText('Garmin bereit');
 
   await page.getByTestId('data-triage-readiness').click();
-  await expect(page).toHaveURL('/data?tab=metrics#data-recovery');
+  await expect(page).toHaveURL('/data?tab=trends#data-recovery');
   await expect(page.locator('#data-recovery')).toBeVisible();
 
   await page.goto('/data');
   await page.getByTestId('data-triage-garmin').click();
-  await expect(page).toHaveURL('/data?tab=coverage#data-garmin-quality');
+  await expect(page).toHaveURL('/data?tab=quality#data-garmin-quality');
   await expect(page.locator('#data-garmin-quality')).toBeVisible();
 
   await page.goto('/data');
   await page.getByRole('button', { name: 'Plan-/Load-Analyse prüfen' }).click();
-  await expect(page).toHaveURL('/data?tab=analysen#data-plan-trace');
+  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
   await expect(page.locator('#data-plan-trace')).toBeVisible();
 });
 
@@ -1509,17 +1508,17 @@ test('Data ignores malformed hashes and stays usable', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data#%');
-  await expect(page.getByText('DATA · ÜBERBLICK')).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Überblick' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
 });
 
 test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data?tab=mental');
-  await expect(page.getByRole('tab', { name: 'Mental', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await page.getByRole('tab', { name: 'Gewicht' }).click();
-  await expect(page).toHaveURL('/data?tab=weight');
+  await expect(page.getByRole('tab', { name: 'Heute relevant', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('tab', { name: 'Trends' }).click();
+  await expect(page).toHaveURL('/data?tab=trends');
 
   await page.goto('/plan?tab=goals');
   await expect(page.getByRole('tab', { name: 'Ziele' })).toHaveAttribute('aria-selected', 'true');
@@ -1552,11 +1551,11 @@ test('Tablet navigation and segmented panels expose accessible targets', async (
   expect(logoutBox!.width, 'desktop logout should be at least 44px wide').toBeGreaterThanOrEqual(44);
 
   await page.goto('/data?tab=mental');
-  const mentalTab = page.getByRole('tab', { name: 'Mental', exact: true });
-  await expect(mentalTab).toHaveAttribute('aria-controls', 'data-mental-panel');
-  const mentalPanel = page.locator('#data-mental-panel[role="tabpanel"]');
+  const mentalTab = page.getByRole('tab', { name: 'Heute relevant', exact: true });
+  await expect(mentalTab).toHaveAttribute('aria-controls', 'data-heute-panel');
+  const mentalPanel = page.locator('#data-heute-panel[role="tabpanel"]');
   await expect(mentalPanel).toBeVisible();
-  await expect(mentalPanel).toHaveAttribute('aria-labelledby', 'data-mental-tab');
+  await expect(mentalPanel).toHaveAttribute('aria-labelledby', 'data-heute-tab');
 
   await page.goto('/plan?tab=training');
   const trainingTab = page.getByRole('tab', { name: 'Training', exact: true });
@@ -3592,7 +3591,7 @@ test('Data coverage explains status, cause and action before backfill', async ({
   });
 
   await page.goto('/data');
-  await page.getByRole('tab', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Datenqualität' }).click();
 
   await expect(page.getByText('Coverage Diagnose')).toBeVisible();
   await expect(page.getByText('Status', { exact: true })).toBeVisible();
@@ -3655,16 +3654,17 @@ test('Data shows Garmin domain quality and affected-tab hints', async ({ page })
   });
 
   await page.goto('/data');
-  await page.getByRole('tab', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Datenqualität' }).click();
 
   await expect(page.getByTestId('garmin-quality-panel')).toContainText('Garmin Domainqualität');
   await expect(page.getByTestId('garmin-quality-sleep')).toContainText('TEIL');
   await expect(page.getByTestId('garmin-quality-body_composition')).toContainText('ALT');
   await expect(page.getByTestId('garmin-quality-body_composition')).toContainText('Körperzusammensetzung fehlt');
 
-  await page.getByRole('tab', { name: 'Gewicht' }).click();
-  await expect(page.getByTestId('garmin-quality-hint')).toContainText('Körperdaten');
-  await expect(page.getByTestId('garmin-quality-hint')).toContainText('ALT');
+  await page.getByRole('tab', { name: 'Trends' }).click();
+  const bodyCompositionHint = page.getByTestId('garmin-quality-hint').filter({ hasText: 'Körperdaten' });
+  await expect(bodyCompositionHint).toContainText('Körperdaten');
+  await expect(bodyCompositionHint).toContainText('ALT');
 });
 
 test('Data shows Garmin signal usefulness priorities', async ({ page }) => {
@@ -3702,7 +3702,7 @@ test('Data shows Garmin signal usefulness priorities', async ({ page }) => {
   });
 
   await page.goto('/data');
-  await page.getByRole('tab', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Datenqualität' }).click();
 
   await expect(page.getByTestId('garmin-signal-usefulness-panel')).toContainText('Garmin Signalnutzen');
   await expect(page.getByTestId('garmin-signal-body_battery_depth')).toContainText('UNTERGENUTZT');
@@ -3948,7 +3948,7 @@ test('Data analyses show limiter evidence freshness from the plan trace', async 
     planTrace: limiterPlanTraceFixture(),
   });
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
 
   await expect(page.getByTestId('data-limiter-evidence-card')).toContainText('Limiter-Evidenz');
   await expect(page.getByTestId('data-limiter-evidence-card')).toContainText('Long Endurance + Fueling');
@@ -4011,7 +4011,7 @@ test('Data backfill shows preview, last run and failed days first', async ({ pag
   });
 
   await page.goto('/data');
-  await page.getByRole('tab', { name: 'Abdeckung' }).click();
+  await page.getByRole('tab', { name: 'Datenqualität' }).click();
   await page.getByRole('button', { name: 'Vorschau' }).click();
 
   await expect(page.getByText('Nächste Aktion')).toBeVisible();
@@ -4190,7 +4190,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);
 
   await page.goto('/data');
-  const overviewTab = page.getByRole('tab', { name: 'Überblick', exact: true });
+  const overviewTab = page.getByRole('tab', { name: 'Heute relevant', exact: true });
   await expect(overviewTab).toBeVisible();
   const box = await overviewTab.boundingBox();
   expect(box).not.toBeNull();
@@ -4203,8 +4203,8 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
       clientWidth: parent.clientWidth,
     };
   });
-  expect(['auto', 'scroll']).toContain(dataTabs.overflowX);
-  expect(dataTabs.scrollWidth).toBeGreaterThan(dataTabs.clientWidth);
+  expect(['auto', 'visible']).toContain(dataTabs.overflowX);
+  expect(dataTabs.scrollWidth).toBeLessThanOrEqual(dataTabs.clientWidth + 1);
 
   await page.goto('/plan');
   await expect(page.getByRole('tab', { name: 'Statistik' })).toBeVisible();
@@ -4223,7 +4223,7 @@ test('Mobile routes avoid unintended horizontal overflow', async ({ page }) => {
 
   await mockPulseApi(page);
 
-  for (const route of ['/', '/coach', '/data', '/data?tab=analysen', '/plan', '/settings']) {
+  for (const route of ['/', '/coach', '/data', '/data?tab=analysis', '/plan', '/settings']) {
     await expectNoHorizontalOverflow(page, route);
   }
 });
@@ -4263,15 +4263,15 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   });
 
   await page.goto('/data?tab=coverage');
-  await expectTabTouchTarget(page, 'Überblick');
-  await expectTabTouchTarget(page, 'Abdeckung');
+  await expectTabTouchTarget(page, 'Heute relevant');
+  await expectTabTouchTarget(page, 'Datenqualität');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');
 
   await page.goto('/data?tab=overview');
-  await expectTouchTarget(page, 'Analysen öffnen');
+  await expectTouchTarget(page, 'Analyse öffnen');
   await expectTouchTarget(page, 'Check-in öffnen');
-  await expectTouchTarget(page, 'Schlaf öffnen');
+  await expectTouchTarget(page, 'Trends öffnen');
 
   await page.goto('/plan');
   await expectTabTouchTarget(page, 'Training');
@@ -4299,7 +4299,7 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTouchTarget(page, 'Welche Grenze macht diesen freien Tag wirklich erholsam?');
   await expectTouchTarget(page, 'Mental: ruhig');
 
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   await expectTouchTarget(page, '7T');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');

@@ -484,15 +484,15 @@ function NextTrainingDecisionCard({
   const levelSummary = athleteLevelSummary(nextWorkout);
   const sourceChips: SourceChip[] = [
     load
-      ? { label: `Einbezogen: TSB ${load.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' }
-      : { label: 'Einbezogen: aktueller Plan', targetPath: '/data?tab=analysen#data-plan-trace' },
+      ? { label: `Einbezogen: TSB ${load.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' }
+      : { label: 'Einbezogen: aktueller Plan', targetPath: '/data?tab=analysis#data-plan-trace' },
     { label: `Verfügbarkeit ${availableDays.map(day => DAY_SHORT[day]).join('/') || 'offen'}` },
     goalsCount > 0
       ? { label: `Ziele ${goalsCount} aktiv`, targetPath: '/plan?tab=goals' }
       : { label: 'Ziele keine aktiven', targetPath: '/plan?tab=goals' },
     riskCount > 0
-      ? { label: `Risiko ${riskCount} Signal(e)`, targetPath: '/data?tab=analysen#data-plan-trace' }
-      : { label: 'Risiko unauffällig', targetPath: '/data?tab=analysen#data-plan-trace' },
+      ? { label: `Risiko ${riskCount} Signal(e)`, targetPath: '/data?tab=analysis#data-plan-trace' }
+      : { label: 'Risiko unauffällig', targetPath: '/data?tab=analysis#data-plan-trace' },
   ];
   const fatigueAlternativeNeeded = load != null && load.tsb <= -20;
   const growthAlternativeAllowed = riskCount === 0
@@ -763,8 +763,8 @@ function NextTrainingDecisionCard({
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 12 }}>
         {[
-          ['Metriken prüfen', '/data?tab=metrics'],
-          ['Mental prüfen', '/data?tab=mental'],
+          ['Metriken prüfen', '/data?tab=trends#data-recovery'],
+          ['Mental prüfen', '/data?tab=today#data-mental'],
           ['Ziele prüfen', '/plan?tab=goals'],
         ].map(([label, path]) => (
           <button

@@ -4,14 +4,14 @@ import { mockPulseApi } from './fixtures/pulse-api';
 const routes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'READINESS' },
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
+  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Heute, Trends, Qualität & Analyse' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
 
 const primaryNavRoutes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'READINESS' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
+  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Heute, Trends, Qualität & Analyse' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
@@ -74,7 +74,7 @@ for (const route of routes) {
 }
 
 test('Data analysis shows power data provenance', async ({ page }) => {
-  await page.goto('/data?tab=analysen');
+  await page.goto('/data?tab=analysis');
   const qualityCard = page.getByTestId('power-data-quality');
   await expect(qualityCard).toBeVisible();
   await expect(qualityCard).toContainText('Power-Daten');
@@ -201,6 +201,7 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
 });
 
 test('daily training surfaces use localized activity labels', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const runWorkout = {
     id: 'run-label-test',
     plannedDate: '2026-05-01',
@@ -252,7 +253,7 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
   await expect(page.getByText('run', { exact: true })).toHaveCount(0);
 
   await page.goto('/plan');
-  await expect(page.getByRole('button', { name: 'Fr 8: Laufen öffnen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fr 1: Laufen öffnen' })).toBeVisible();
   await expect(page.getByText('Archetyp: Steady Endurance').first()).toBeVisible();
   await expect(page.getByText('endurance_steady', { exact: true })).toHaveCount(0);
   await expect(page.getByText('endurance steady', { exact: true })).toHaveCount(0);
@@ -397,8 +398,8 @@ test('mobile Home planned workout state shows the concrete plan option without a
 
 test('/insights redirects to the Data analysis tab', async ({ page }) => {
   await page.goto('/insights');
-  await expect(page).toHaveURL('/data?tab=analysen');
-  await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL('/data?tab=analysis');
+  await expect(page.getByRole('tab', { name: 'Analyse' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
 });
 
@@ -415,10 +416,10 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data');
-  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+  await expectHealthyPage(page, 'Heute, Trends, Qualität & Analyse');
 
   const viewportWidth = page.viewportSize()?.width ?? 0;
-  const labels = ['Überblick', 'Abdeckung', 'Schlaf', 'Metriken', 'Gewicht', 'Mental', 'Analysen'];
+  const labels = ['Heute relevant', 'Trends', 'Datenqualität', 'Analyse'];
 
   for (const label of labels) {
     const tab = page.getByRole('tab', { name: label });
@@ -434,7 +435,7 @@ test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data?tab=mental');
-  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+  await expectHealthyPage(page, 'Heute, Trends, Qualität & Analyse');
 
   const overflow = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
@@ -549,7 +550,7 @@ test('top-level hotkeys follow the four-tab navigation order', async ({ page }, 
 
   await page.keyboard.press('2');
   await expect(page).toHaveURL('/data');
-  await expectHealthyPage(page, 'Schlaf, Metriken, Mental & Analysen');
+  await expectHealthyPage(page, 'Heute, Trends, Qualität & Analyse');
 
   await page.keyboard.press('3');
   await expect(page).toHaveURL('/plan');

@@ -7,54 +7,70 @@ import { GewichtTab, MetrikenTab, SchlafTab } from '@/features/data/recovery/rec
 import { DataAnalysenTab } from '@/pages/Insights';
 import { useCheckinToday, usePulseHome } from '@/pulse/hooks';
 
-type Tab = 'ueberblick' | 'abdeckung' | 'schlaf' | 'metriken' | 'gewicht' | 'mental' | 'analysen';
+type Tab = 'heute' | 'trends' | 'qualitaet' | 'analyse';
+type DataFocus = 'mental' | 'recovery' | 'sleep' | 'weight' | null;
 
 const TABS = [
-  { id: 'ueberblick', label: 'Überblick' },
-  { id: 'abdeckung', label: 'Abdeckung' },
-  { id: 'schlaf', label: 'Schlaf' },
-  { id: 'metriken', label: 'Metriken' },
-  { id: 'gewicht', label: 'Gewicht' },
-  { id: 'mental', label: 'Mental' },
-  { id: 'analysen', label: 'Analysen' },
+  { id: 'heute', label: 'Heute relevant' },
+  { id: 'trends', label: 'Trends' },
+  { id: 'qualitaet', label: 'Datenqualität' },
+  { id: 'analyse', label: 'Analyse' },
 ];
 
 const TAB_QUERY: Record<Tab, string> = {
-  ueberblick: 'overview',
-  abdeckung: 'coverage',
-  schlaf: 'sleep',
-  metriken: 'metrics',
-  gewicht: 'weight',
-  mental: 'mental',
-  analysen: 'analysen',
+  heute: 'today',
+  trends: 'trends',
+  qualitaet: 'quality',
+  analyse: 'analysis',
 };
 
 const QUERY_TAB: Record<string, Tab> = {
-  overview: 'ueberblick',
-  ueberblick: 'ueberblick',
-  coverage: 'abdeckung',
-  abdeckung: 'abdeckung',
-  sleep: 'schlaf',
-  schlaf: 'schlaf',
-  metrics: 'metriken',
-  metriken: 'metriken',
-  weight: 'gewicht',
-  gewicht: 'gewicht',
-  mental: 'mental',
-  analysen: 'analysen',
-  analysis: 'analysen',
-  insights: 'analysen',
+  today: 'heute',
+  heute: 'heute',
+  overview: 'heute',
+  ueberblick: 'heute',
+  mental: 'heute',
+  trends: 'trends',
+  sleep: 'trends',
+  schlaf: 'trends',
+  metrics: 'trends',
+  metriken: 'trends',
+  weight: 'trends',
+  gewicht: 'trends',
+  quality: 'qualitaet',
+  datenqualitaet: 'qualitaet',
+  coverage: 'qualitaet',
+  abdeckung: 'qualitaet',
+  analysis: 'analyse',
+  analyse: 'analyse',
+  analysen: 'analyse',
+  insights: 'analyse',
 };
 
 const HASH_TAB: Record<string, Tab> = {
-  'data-recovery': 'metriken',
-  'data-mental': 'mental',
-  'data-garmin-quality': 'abdeckung',
-  'data-plan-trace': 'analysen',
+  'data-recovery': 'trends',
+  'data-sleep': 'trends',
+  'data-weight': 'trends',
+  'data-mental': 'heute',
+  'data-garmin-quality': 'qualitaet',
+  'data-plan-trace': 'analyse',
 };
 
 function tabFromQuery(value: string | null): Tab {
-  return value ? QUERY_TAB[value] ?? 'ueberblick' : 'ueberblick';
+  return value ? QUERY_TAB[value] ?? 'heute' : 'heute';
+}
+
+function focusFromQuery(value: string | null, hash: string): DataFocus {
+  const decodedHash = hashFromLocation(hash);
+  if (decodedHash === 'data-mental') return 'mental';
+  if (decodedHash === 'data-sleep') return 'sleep';
+  if (decodedHash === 'data-weight') return 'weight';
+  if (decodedHash === 'data-recovery') return 'recovery';
+  if (value === 'mental') return 'mental';
+  if (value === 'sleep' || value === 'schlaf') return 'sleep';
+  if (value === 'weight' || value === 'gewicht') return 'weight';
+  if (value === 'metrics' || value === 'metriken') return 'recovery';
+  return null;
 }
 
 function hashFromLocation(hash: string): string {
@@ -128,7 +144,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
   }> = [
     {
       id: 'readiness',
-      tab: 'metriken',
+      tab: 'trends',
       hash: 'data-recovery',
       label: 'Readiness / TSB',
       value: `Readiness ${fmtMetric(home?.readiness.score)}/100 · TSB ${fmtMetric(home?.fitnessLoad.tsb, 1)}`,
@@ -139,7 +155,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
     },
     {
       id: 'mental',
-      tab: 'mental',
+      tab: 'heute',
       hash: 'data-mental',
       label: 'Mental Check-in',
       value: checkinToday.isLoading ? 'Status wird geladen' : hasCheckin ? 'Heute vorhanden' : 'Heute offen',
@@ -150,7 +166,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
     },
     {
       id: 'garmin',
-      tab: 'abdeckung',
+      tab: 'qualitaet',
       hash: 'data-garmin-quality',
       label: 'Garmin-Frische',
       value: `${garminStatusLabel(garmin?.status)} · ${garmin?.metricsDays14 ?? '–'} Metrik-Tage`,
@@ -159,7 +175,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
     },
     {
       id: 'plan-load',
-      tab: 'analysen',
+      tab: 'analyse',
       hash: 'data-plan-trace',
       targetPath: '/plan?tab=training&source=data-load#plan-scenario-preview',
       label: 'Plan-/Load',
@@ -229,41 +245,43 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
 }
 
 function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
-  const cards: Array<{ tab: Tab; title: string; text: string; cta: string }> = [
+  const cards: Array<{ tab: Tab; hash?: string; title: string; text: string; cta: string }> = [
     {
-      tab: 'analysen',
-      title: 'Analysen',
-      text: 'Trends und Auffälligkeiten gezielt öffnen, ohne Wartungsstatus zuerst zu sehen.',
-      cta: 'Analysen öffnen',
+      tab: 'analyse',
+      title: 'Analyse',
+      text: 'Auffälligkeiten und Planlogik gezielt öffnen, wenn du tiefer verstehen willst.',
+      cta: 'Analyse öffnen',
     },
     {
-      tab: 'mental',
+      tab: 'heute',
+      hash: 'data-mental',
       title: 'Mental Check-in',
       text: 'Schneller Tagesabgleich mit einfachen Zuständen und optionalen Details.',
       cta: 'Check-in öffnen',
     },
     {
-      tab: 'schlaf',
-      title: 'Schlaf & Erholung',
-      text: 'Schlaf, Metriken und Gewicht als Grundlage für Entscheidungen prüfen.',
-      cta: 'Schlaf öffnen',
+      tab: 'trends',
+      hash: 'data-recovery',
+      title: 'Trends',
+      text: 'Erholung, Schlaf und Gewicht als Verlauf prüfen, ohne einzelne Roh-Tabs zu suchen.',
+      cta: 'Trends öffnen',
     },
   ];
   const provenance: Array<{ tab: Tab; hash: string; label: string; detail: string }> = [
     {
-      tab: 'mental',
+      tab: 'heute',
       hash: 'data-mental',
       label: 'Mental Check-in prüfen',
       detail: 'Subjektive Lage und Tagesnotizen.',
     },
     {
-      tab: 'abdeckung',
+      tab: 'qualitaet',
       hash: 'data-garmin-quality',
       label: 'Garmin Abdeckung prüfen',
       detail: 'Frische, Lücken und Sync-Qualität.',
     },
     {
-      tab: 'analysen',
+      tab: 'analyse',
       hash: 'data-plan-trace',
       label: 'Plan-/Load-Analyse prüfen',
       detail: 'TSB, Ziele, Risiko und Planlogik.',
@@ -273,12 +291,12 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div>
-        <div className="label-mono" style={{ marginBottom: 3 }}>DATA · ÜBERBLICK</div>
+        <div className="label-mono" style={{ marginBottom: 3 }}>DATA · HEUTE RELEVANT</div>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
-          Datenüberblick
+          Heute relevant
         </h2>
         <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-          Starte mit nutzbaren Signalen und wechsle nur bei Bedarf zur Abdeckung.
+          Starte mit nutzbaren Signalen und öffne Details nur dann, wenn sie die Tagesentscheidung erklären.
         </p>
       </div>
       <EvidenceTriage onOpen={onOpen} />
@@ -291,7 +309,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
             </div>
             <button
               type="button"
-              onClick={() => onOpen(card.tab)}
+              onClick={() => onOpen(card.tab, card.hash)}
               style={{
                 alignSelf: 'flex-start',
                 minWidth: 44,
@@ -348,15 +366,71 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   );
 }
 
+function DataHeuteTab({ onOpen, focus }: { onOpen: (tab: Tab, hash?: string) => void; focus: DataFocus }) {
+  if (focus === 'mental') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <div className="label-mono" style={{ marginBottom: 3 }}>DATA · HEUTE RELEVANT</div>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+            Mental Check-in
+          </h2>
+          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            Subjektive Lage zuerst erfassen; Readiness, Garmin und Plan-Evidenz bleiben als Kontext erreichbar.
+          </p>
+        </div>
+        <EvidenceSection id="data-mental"><MentalTab /></EvidenceSection>
+        <EvidenceTriage onOpen={onOpen} />
+      </div>
+    );
+  }
+
+  return <DataOverviewTab onOpen={onOpen} />;
+}
+
+function DataTrendsTab({ focus }: { focus: DataFocus }) {
+  const sections = [
+    { id: 'data-recovery', key: 'recovery' as const, label: 'Erholung & Last', children: <MetrikenTab /> },
+    { id: 'data-sleep', key: 'sleep' as const, label: 'Schlaf', children: <SchlafTab /> },
+    { id: 'data-weight', key: 'weight' as const, label: 'Gewicht & Körper', children: <GewichtTab /> },
+  ];
+  const orderedSections = focus && focus !== 'mental'
+    ? [...sections.filter(section => section.key === focus), ...sections.filter(section => section.key !== focus)]
+    : sections;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <div className="label-mono" style={{ marginBottom: 3 }}>DATA · TRENDS</div>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+          Trends
+        </h2>
+        <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          Verlaufssignale für Erholung, Schlaf und Körperdaten. Details bleiben hier gesammelt, damit Data nicht wie sieben gleichrangige Wartungsbereiche startet.
+        </p>
+      </div>
+      {orderedSections.map(section => (
+        <EvidenceSection key={section.id} id={section.id}>
+          <div className="label-mono" style={{ margin: '0 0 8px', color: 'var(--accent)' }}>{section.label}</div>
+          {section.children}
+        </EvidenceSection>
+      ))}
+    </div>
+  );
+}
+
 export default function Data() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const searchKey = searchParams.toString();
-  const tab = tabFromQuery(searchParams.get('tab'));
+  const tabParam = searchParams.get('tab');
+  const tab = tabFromQuery(tabParam);
+  const focus = focusFromQuery(tabParam, location.hash);
 
   function setTab(tabId: string, hash?: string) {
     const nextTab = tabId as Tab;
+    if (!TAB_QUERY[nextTab]) return;
     const next = new URLSearchParams(searchParams);
     next.set('tab', TAB_QUERY[nextTab]);
     if (hash) {
@@ -397,15 +471,12 @@ export default function Data() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader eyebrow="DATA" title="Schlaf, Metriken, Mental & Analysen" />
+      <PageHeader eyebrow="DATA" title="Heute, Trends, Qualität & Analyse" />
       <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Data Bereiche" idPrefix="data" wrap />
-      {tab === 'ueberblick' && <TabPanel tab="ueberblick"><DataOverviewTab onOpen={setTab} /></TabPanel>}
-      {tab === 'abdeckung' && <TabPanel tab="abdeckung"><EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection></TabPanel>}
-      {tab === 'schlaf' && <TabPanel tab="schlaf"><SchlafTab /></TabPanel>}
-      {tab === 'metriken' && <TabPanel tab="metriken"><EvidenceSection id="data-recovery"><MetrikenTab /></EvidenceSection></TabPanel>}
-      {tab === 'gewicht' && <TabPanel tab="gewicht"><GewichtTab /></TabPanel>}
-      {tab === 'mental' && <TabPanel tab="mental"><EvidenceSection id="data-mental"><MentalTab /></EvidenceSection></TabPanel>}
-      {tab === 'analysen' && <TabPanel tab="analysen"><EvidenceSection id="data-plan-trace"><DataAnalysenTab /></EvidenceSection></TabPanel>}
+      {tab === 'heute' && <TabPanel tab="heute"><DataHeuteTab onOpen={setTab} focus={focus} /></TabPanel>}
+      {tab === 'trends' && <TabPanel tab="trends"><DataTrendsTab focus={focus} /></TabPanel>}
+      {tab === 'qualitaet' && <TabPanel tab="qualitaet"><EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection></TabPanel>}
+      {tab === 'analyse' && <TabPanel tab="analyse"><EvidenceSection id="data-plan-trace"><DataAnalysenTab /></EvidenceSection></TabPanel>}
     </div>
   );
 }

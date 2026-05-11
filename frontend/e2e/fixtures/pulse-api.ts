@@ -442,7 +442,7 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
           title: 'Feedback erfassen',
           detail: 'RPE, Beine und Fueling sichern, bevor Pulse Folgetage bewertet.',
           cta: 'Feedback oeffnen',
-          targetPath: '/data?tab=analysen',
+          targetPath: '/data?tab=analysis',
           evidence: ['Aktivitaet erkannt'],
         }],
       },
