@@ -7,6 +7,7 @@ import type {
   PulseDailyDeltaResponse,
   PulseDailyOutcomeLearningResponse,
   PulseHomeScreenData,
+  PulsePersonalResponseResponse,
   RpeSorenessArea,
   WorkoutStep,
 } from '@coaching-os/shared/pulse';
@@ -29,6 +30,8 @@ import { getPrognosis } from '../services/prognosis-engine.js';
 import { evaluateAndPersistRiskSignals, getActiveRiskSignals } from '../services/risk-engine.js';
 import { buildDailyDelta } from '../services/daily-delta.js';
 import { buildDailyOutcomeLearning, type DailyOutcomeLearningActionDecision } from '../services/daily-outcome-learning.js';
+import { loadFuelingOutcomeBaseline } from '../services/fueling-outcome-baseline.js';
+import { buildPersonalResponseSummary } from '../services/personal-response-model.js';
 import { deriveWorkoutExecutionState, scoreActivityWorkoutMatch } from '../services/workout-reconciliation.js';
 import {
   addDateDays,
@@ -507,6 +510,137 @@ export async function registerPulseDailyLoopRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
 
     return loadDailyDecisionQuality(req.user.sub, parsed.data.days);
+  });
+
+  app.get('/personal-response', { onRequest: [app.authenticate] }, async (req, reply): Promise<PulsePersonalResponseResponse | unknown> => {
+    const parsed = z.object({
+      days: z.coerce.number().int().min(7).max(90).optional().default(42),
+    }).safeParse(req.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const today = toIsoDate(new Date());
+    const sinceDate = addDateDays(new Date(`${today}T00:00:00.000Z`), -parsed.data.days);
+    const since = toIsoDate(sinceDate);
+
+    const [
+      actionRows,
+      checkins,
+      plannedWorkouts,
+      activities,
+      dailyMetrics,
+      decisionQuality,
+      fuelingBaseline,
+      executionReviews,
+    ] = await Promise.all([
+      db.select({
+        id: pulseActionDecisions.id,
+        source: pulseActionDecisions.source,
+        sourceId: pulseActionDecisions.sourceId,
+        kind: pulseActionDecisions.kind,
+        title: pulseActionDecisions.title,
+        status: pulseActionDecisions.status,
+        targetRoute: pulseActionDecisions.targetRoute,
+        createdAt: pulseActionDecisions.createdAt,
+        resolvedAt: pulseActionDecisions.resolvedAt,
+        resolutionReason: pulseActionDecisions.resolutionReason,
+      }).from(pulseActionDecisions)
+        .where(and(
+          eq(pulseActionDecisions.userId, userId),
+          or(gte(pulseActionDecisions.createdAt, sinceDate), gte(pulseActionDecisions.resolvedAt, sinceDate)),
+        ))
+        .orderBy(desc(pulseActionDecisions.createdAt))
+        .limit(200),
+      db.select({
+        date: pulseMentalCheckins.date,
+        mood: pulseMentalCheckins.mood,
+        energy: pulseMentalCheckins.energy,
+        stress: pulseMentalCheckins.stress,
+        motivation: pulseMentalCheckins.motivation,
+      }).from(pulseMentalCheckins)
+        .where(and(eq(pulseMentalCheckins.userId, userId), gte(pulseMentalCheckins.date, since))),
+      db.select({
+        id: pulsePlannedWorkouts.id,
+        plannedDate: pulsePlannedWorkouts.plannedDate,
+        activityType: pulsePlannedWorkouts.activityType,
+        zone: pulsePlannedWorkouts.zone,
+        durationMin: pulsePlannedWorkouts.durationMin,
+        status: pulsePlannedWorkouts.status,
+        completedActivityId: pulsePlannedWorkouts.completedActivityId,
+        executionStatus: pulsePlannedWorkouts.executionStatus,
+      }).from(pulsePlannedWorkouts)
+        .where(and(eq(pulsePlannedWorkouts.userId, userId), gte(pulsePlannedWorkouts.plannedDate, since))),
+      db.select({
+        id: pulseActivities.id,
+        source: pulseActivities.source,
+        startTime: pulseActivities.startTime,
+        activityType: pulseActivities.activityType,
+        durationSec: pulseActivities.durationSec,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, sinceDate)))
+        .orderBy(desc(pulseActivities.startTime)),
+      db.select({
+        date: pulseDailyMetrics.date,
+        sleepHours: pulseDailyMetrics.sleepHours,
+        hrvStatus: pulseDailyMetrics.hrvStatus,
+        bodyBatteryMax: pulseDailyMetrics.bodyBatteryMax,
+        stressAvg: pulseDailyMetrics.stressAvg,
+      }).from(pulseDailyMetrics)
+        .where(and(eq(pulseDailyMetrics.userId, userId), gte(pulseDailyMetrics.date, since))),
+      loadDailyDecisionQuality(userId, parsed.data.days),
+      loadFuelingOutcomeBaseline(userId, today),
+      db.select({
+        startTime: pulseActivities.startTime,
+        durationSec: pulseActivities.durationSec,
+        tss: pulseActivities.tss,
+        rpe: pulseActivities.rpe,
+      }).from(pulseActivities)
+        .where(and(eq(pulseActivities.userId, userId), gte(pulseActivities.startTime, sinceDate)))
+        .orderBy(desc(pulseActivities.startTime))
+        .limit(120),
+    ]);
+
+    const dailyOutcomes = buildDailyOutcomeLearning({
+      today,
+      days: parsed.data.days,
+      actionDecisions: actionRows.map((row): DailyOutcomeLearningActionDecision => ({
+        ...row,
+        status: row.status as DailyOutcomeLearningActionDecision['status'],
+        createdAt: row.createdAt.toISOString(),
+        resolvedAt: row.resolvedAt?.toISOString() ?? null,
+      })),
+      checkins,
+      plannedWorkouts: plannedWorkouts.map(row => ({
+        ...row,
+        executionStatus: row.executionStatus ?? null,
+      })),
+      activities: activities.map(row => ({
+        ...row,
+        startTime: row.startTime.toISOString(),
+      })),
+      dailyMetrics: dailyMetrics.map(row => ({
+        ...row,
+        hrvStatus: row.hrvStatus ?? null,
+      })),
+    });
+
+    return {
+      summary: buildPersonalResponseSummary({
+        today,
+        days: parsed.data.days,
+        dailyOutcomes,
+        decisionQuality,
+        fuelingBaseline,
+        mentalCheckins: checkins,
+        executionReviews: executionReviews.map(review => ({
+          date: toIsoDate(review.startTime),
+          plannedZone: null,
+          rpe: review.rpe,
+          durationMin: review.durationSec == null ? null : Math.round(review.durationSec / 60),
+          tss: review.tss,
+        })),
+      }),
+    };
   });
 
   app.get('/risk', { onRequest: [app.authenticate] }, async (req) => {

@@ -13,7 +13,7 @@ import type {
   PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
   PulseFuelingDebtSummary, PulseFuelingOutcomeBaseline, PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
   PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
-  PulseGarminExecutionDiffResponse,
+  PulseGarminExecutionDiffResponse, PulsePersonalResponseResponse,
 } from '@coaching-os/shared/pulse';
 
 const BASE = '/api/pulse';
@@ -153,6 +153,9 @@ export const pulseApi = {
     quality: (days = 14): Promise<PulseDailyDecisionQualityResponse> =>
       request(`/decisions/quality?days=${encodeURIComponent(String(days))}`),
   },
+
+  personalResponse: (days = 42): Promise<PulsePersonalResponseResponse> =>
+    request(`/personal-response?days=${encodeURIComponent(String(days))}`),
 
   push: {
     settings: (): Promise<PulsePushSettings> =>

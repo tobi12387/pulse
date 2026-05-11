@@ -446,6 +446,24 @@ test('Coach and Data analyses show the daily decision quality signal', async ({ 
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
+test('Data analyses explain personal response patterns without opening AI cards', async ({ page }) => {
+  let insightRequests = 0;
+  await mockPulseApi(page, {
+    onRequest: (pathname) => {
+      if (pathname === '/api/pulse/insights') insightRequests += 1;
+    },
+  });
+
+  await page.goto('/data?tab=analysis#data-personal-response');
+
+  const card = page.getByTestId('data-personal-response-card');
+  await expect(card).toContainText('Persönliches Reaktionsmodell');
+  await expect(card).toContainText('Pulse lernt deine Reaktionsmuster.');
+  await expect(card).toContainText('Mentale Last einbeziehen');
+  await expect(card).toContainText('Boundary');
+  expect(insightRequests).toBe(0);
+});
+
 function completedWorkoutHome({ rpe, feedbackLoggedAt }: { rpe: number | null; feedbackLoggedAt: string | null }) {
   return {
     todayWorkout: {

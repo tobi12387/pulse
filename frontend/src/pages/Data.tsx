@@ -54,6 +54,7 @@ const HASH_TAB: Record<string, Tab> = {
   'data-mental': 'heute',
   'data-garmin-quality': 'qualitaet',
   'data-plan-trace': 'analyse',
+  'data-personal-response': 'analyse',
 };
 
 function tabFromQuery(value: string | null): Tab {
@@ -285,6 +286,12 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       hash: 'data-plan-trace',
       label: 'Plan-/Load-Analyse prüfen',
       detail: 'TSB, Ziele, Risiko und Planlogik.',
+    },
+    {
+      tab: 'analyse',
+      hash: 'data-personal-response',
+      label: 'Reaktionsmodell prüfen',
+      detail: 'Welche Muster Pulse bei dir gerade wirklich lernen darf.',
     },
   ];
 

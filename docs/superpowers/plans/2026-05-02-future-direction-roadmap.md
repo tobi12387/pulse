@@ -132,8 +132,8 @@ These build on the calmer daily UI.
 
 | Theme | Outcome |
 |---|---|
-| Personal Response Model | Next non-gated build: Pulse explains how Tobi responds to training, sleep, mental state, fueling and RPE over time. Start with `docs/superpowers/plans/2026-05-11-personal-response-model-v1.md`. |
-| Predictive Goal Engine | After the response model is visible, Pulse shows goal probability, limiter risk and the next best intervention for 70.3, endurance, recovery and body composition goals. |
+| Personal Response Model | Implemented v1: Pulse exposes deterministic, read-only response evidence in Data > Analyse and labels weak evidence instead of mutating plans or Garmin. |
+| Predictive Goal Engine | Next non-gated build: Pulse shows goal probability, limiter risk and the next best intervention for 70.3, endurance, recovery and body composition goals, using Personal Response evidence read-only first. |
 | Adaptive Season Builder | After goal probability has evidence, season planning handles build, recovery, specificity, taper, missed load, availability and event priority as one model. |
 | Contextual Coach Mode | After response and goal evidence exist, Coach becomes an explanation/reflection mode that can live as a tab, overlay or route depending on evidence. |
 | Customizable Daily Surface | After the daily command surface has stable response/goal inputs, Tobi can choose which focus cards appear first while Pulse keeps safe defaults for the daily decision. |
@@ -146,20 +146,21 @@ The active plan folder is intentionally small:
 
 - `2026-05-02-future-direction-roadmap.md`: canonical product roadmap and ordering.
 - `2026-05-02-mobile-field-reliability-wave.md`: real-device/manual evidence gate for iPhone/PWA reliability.
-- `2026-05-11-personal-response-model-v1.md`: next PR-sized implementation plan for the first long-term product foundation.
 - `2026-04-28-roadmap.md`: historical pointer kept for older prompts; it points forward to this roadmap and completed phase docs.
 
 Completed benchmark and implementation plans from the 2026-05-10 wave now live under `completed/`. Do not reopen them as backlog unless a new regression or explicit product decision creates a fresh PR-sized plan.
 
 ## Next Implementation Order
 
-1. **Personal Response Model v1:** build the read-only deterministic response summary in Data > Analyse. This is the next non-gated long-term foundation because it feeds the later goal, season and coach phases.
-2. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
-3. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
-4. **Optional Daily Delta echoes:** only if route evidence or Tobi reports that the Home v1 card is insufficient in Plan/Data.
-5. **Optional Garmin modal polish:** only if live/user evidence shows `vor Upload`/readback wording still confuses execution.
+1. **Predictive Goal Engine v1:** create the next PR-sized plan and start read-only goal probability, limiter risk and next-intervention evidence from Personal Response, capability, fueling and execution data. No hidden plan mutation in v1.
+2. **Adaptive Season Builder v1:** after goal probability has evidence, model build/recovery/specificity/taper/missed-load/availability as one season contract.
+3. **Contextual Coach Mode:** after response and goal evidence exist, let Coach explain response patterns and ask focused follow-up questions, either as tab, overlay or route based on evidence.
+4. **Customizable Daily Surface:** after daily command has stable response/goal inputs, allow Tobi to choose which focus cards appear first while Pulse keeps safe defaults.
+5. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
+6. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
+7. **Optional Daily Delta echoes / Garmin modal polish:** only if route evidence or user feedback shows a real gap.
 
-After Personal Response Model v1, continue with Predictive Goal Engine v1, Adaptive Season Builder v1, Contextual Coach Mode and Customizable Daily Surface as separate PR-sized plans. Do not merge them into one large product PR.
+Keep each long-term theme as a separate PR-sized plan. Do not merge Predictive Goal, Season, Coach and Daily Surface into one large product PR.
 
 ## Manual Gates
 
