@@ -127,6 +127,76 @@ test('Plan keeps the action contract when only Today Options has the planned wor
   await expect(action.getByRole('button', { name: /Workout öffnen/i })).toBeVisible();
 });
 
+test('Plan alternatives explain purpose result and safest choice', async ({ page }) => {
+  await mockPulseApi(page, {
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+        signature: 'planned-with-alternatives-contract',
+        options: [
+          {
+            id: 'planned-primary-contract',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Plan ausführen: Rad',
+            detail: '75 min Z2. Passt heute, solange Check-in und Warm-up unauffällig bleiben.',
+            cta: 'Workout öffnen',
+            targetPath: '/plan?tab=training',
+            evidence: ['Readiness 82/100', 'TSB 3.0'],
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 75,
+            archetypeId: 'endurance_steady',
+            capabilityFit: 'productive',
+            signalLabels: [{ kind: 'productive', label: 'Produktiv', detail: 'Capability erlaubt kleinen Fortschritt', tone: 'accent' }],
+          },
+          {
+            id: 'planned-easier-contract',
+            kind: 'workout',
+            priority: 'secondary',
+            title: 'Leichtere Alternative',
+            detail: '55 min Z1, falls Warm-up oder Kopf nicht passen.',
+            cta: 'Plan anpassen',
+            targetPath: '/plan?tab=training&source=today-options&scenario=workout&activityType=bike&zone=1&durationMin=55&description=55%20min%20Z1#plan-scenario-preview',
+            evidence: ['Readiness 82/100', 'TSB 3.0'],
+            activityType: 'bike',
+            zone: 1,
+            durationMin: 55,
+            archetypeId: 'recovery_spin',
+            capabilityFit: 'maintenance',
+            signalLabels: [{ kind: 'fit_maintenance', label: 'Machbar', detail: 'Erhaltung statt Progression', tone: 'green' }],
+          },
+          {
+            id: 'planned-rest-contract',
+            kind: 'rest',
+            priority: 'support',
+            title: 'Bewusst frei lassen',
+            detail: 'Wenn Training nur aus Gewohnheit entsteht, ist ein sauber geschlossener Ruhetag wertvoller.',
+            cta: 'Tagesentscheidung prüfen',
+            targetPath: '/',
+            evidence: ['Readiness 82/100', 'TSB 3.0'],
+            signalLabels: [{ kind: 'recovery', label: 'Recovery', detail: 'Erholung bleibt geschützt', tone: 'green' }],
+          },
+        ],
+      },
+    },
+  });
+
+  await page.goto('/plan');
+  const options = page.getByTestId('today-options-card-full');
+  await expect(options).toContainText('Ausweichoptionen');
+  await expect(options).toContainText('Sicherste Option');
+  await expect(options).toContainText('Bewusst frei lassen');
+  await expect(options).toContainText('Leichtere Alternative');
+  await expect(options).toContainText('Zweck');
+  await expect(options).toContainText('Warum jetzt');
+  await expect(options).toContainText('Nach dem Klick');
+  await expect(options).toContainText('Sicher wenn');
+  await expect(options).toContainText('Plan-Szenario öffnen');
+});
+
 test('Plan detail shows strength support blocks without misleading Garmin interval copy', async ({ page }) => {
   const strengthWorkout = {
     id: 'strength-support-smoke',
@@ -298,6 +368,9 @@ test('mobile Home availability intent opens a workout scenario preview', async (
   await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Sicherste Entscheidung');
+  await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Wende an');
   expect(previewBody).toMatchObject({
     type: 'add_custom_tour',
     workout: {

@@ -613,7 +613,7 @@ test('Home routes to activity feedback only when completed training still misses
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
   await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Für heute ist nichts mehr offen');
 
-  await page.getByRole('button', { name: /Feedback erfassen/i }).click();
+  await page.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
   await expect(page).toHaveURL(/\/activity\/activity-done/);
 });
 
@@ -632,7 +632,7 @@ test('Home treats a completed off-plan Garmin activity as today done', async ({ 
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Plan abgleichen');
   await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
 
-  await page.getByRole('button', { name: /Feedback erfassen/i }).click();
+  await page.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
   await expect(page).toHaveURL(/\/activity\/activity-off-plan/);
 });
 
@@ -1623,6 +1623,9 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
   await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Sicherste Entscheidung');
+  await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Wende an');
   await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
   await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
   await expect(scenarioCard).not.toContainText('155 km');

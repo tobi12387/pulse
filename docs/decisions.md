@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Workout Alternatives UX v2 bleibt eine Erklaerschicht
+
+- **Decision:** Workout Alternatives UX v2 wird als Frontend-Erklaerschicht ueber den bestehenden Today-Options- und Scenario-Preview-Vertraegen umgesetzt. Plan-Alternativen zeigen im Full-Layout `Ausweichoptionen`, `Sicherste Option`, `Zweck`, `Warum jetzt`, `Nach dem Klick` und `Sicher wenn`; Scenario Preview trennt Preview-Pending von Apply-Pending und zeigt `Nach Apply` plus `Sicherste Entscheidung`.
+- **Why:** Die Benchmark-Roadmap verlangt verstaendliche TrainNow-/JOIN-aehnliche Alternativen, aber die vorhandenen Contracts reichen fuer diesen Schritt aus. Baseline-Evidence zeigte ausserdem, dass der mobile Scenario-Preview-Button waehrend Auto-Preview wie ein laufendes Apply aussehen konnte.
+- **Alternatives:** Neue Backend-/Shared-Contracts bauen (zu grosser Scope fuer die beobachtete UI-Friktion); eigenen Alternativen-Tab einfuehren (mehr Navigation statt klarerer Karten); Alternativen verstecken oder Garmin automatisch schreiben (weniger Tagesnutzen bzw. zu riskant).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Settings startet mit einem Status vor der Diagnose
 
 - **Decision:** Settings zeigt oberhalb der technischen Diagnosematrix eine Statuskarte (`Alles bereit` oder `Problem beheben`), die aus den bestehenden Zugriff-, PWA-, Push- und Garmin-Signalen abgeleitet wird. Die Karte routet nur zu vorhandenen Settings-/Data-Abschnitten und loest keine Push-Prompts, Garmin-Writes, Backend-Jobs oder Migrationen aus.
