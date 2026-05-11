@@ -89,7 +89,7 @@ export function HomeSurfaceFocusCard({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--text-3)' }}>Heute-Fokus</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>Dieses Geraet</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>lokal</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
         {HOME_SURFACE_FOCUS_OPTIONS.map(option => {
@@ -99,10 +99,11 @@ export function HomeSurfaceFocusCard({
               key={option.value}
               type="button"
               aria-pressed={active}
+              aria-label={`${option.label}: ${option.summary}`}
               onClick={() => onFocusChange(option.value)}
               style={{
-                minHeight: 48,
-                padding: '7px 6px',
+                minHeight: 44,
+                padding: '7px 5px',
                 background: active ? 'rgba(94,230,207,0.14)' : 'var(--surface-2)',
                 border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 5,
@@ -111,18 +112,15 @@ export function HomeSurfaceFocusCard({
                 textAlign: 'left',
               }}
             >
-              <span style={{ display: 'block', fontSize: 11.5, fontWeight: 700, lineHeight: 1.15 }}>
+              <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, lineHeight: 1.15, overflowWrap: 'anywhere' }}>
                 {option.label}
-              </span>
-              <span style={{ display: 'block', marginTop: 3, fontSize: 9.5, color: 'var(--text-3)', lineHeight: 1.2 }}>
-                {option.summary}
               </span>
             </button>
           );
         })}
       </div>
-      <p style={{ margin: '8px 0 0', fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
-        Sortiert nur diese Home-Fokuskarten auf diesem Geraet. Hauptkarte und Warnungen bleiben fest.
+      <p style={{ margin: '7px 0 0', fontSize: 10, color: 'var(--text-3)', lineHeight: 1.35 }}>
+        Lokale Reihenfolge; Hauptkarte und Warnungen bleiben fest.
       </p>
     </section>
   );
