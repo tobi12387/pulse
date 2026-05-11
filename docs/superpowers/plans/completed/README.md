@@ -97,6 +97,7 @@
 | `2026-05-11-desktop-plan-daily-focus.md` | Desktop Plan Daily Focus — Plan starts with action plus week before compact season evidence, backed by route evidence | Desktop Density PR |
 | `2026-05-11-insights-synthesis-focus.md` | Insights Synthesis Focus — top-level Insights becomes a synthesis surface while Data Analyse remains the deep evidence workbench | Insights Density PR |
 | `2026-05-11-data-daily-action-focus.md` | Data Daily Action Focus — Data starts with one daily data action while triage and secondary evidence stay optional | Data Density PR |
+| `2026-05-11-data-backfill-touch-polish.md` | Data Backfill Touch Polish — Garmin Backfill preview/write buttons meet the mobile touch-target baseline | Data A11y PR |
 
 ## Bekannte veraltete Stellen
 

@@ -4646,6 +4646,8 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expectTabTouchTarget(page, 'Datenqualität');
   await expectTouchTarget(page, '30T');
   await expectTouchTarget(page, '90T');
+  await expectTouchTarget(page, 'Vorschau');
+  await expectTouchTarget(page, 'Nachladen');
 
   await page.goto('/data?tab=overview');
   await expectTouchTarget(page, 'Check-in öffnen');
