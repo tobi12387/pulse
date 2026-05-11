@@ -54,6 +54,65 @@ function signalToneStyle(tone: NonNullable<PulseTodayOption['signalLabels']>[num
   return { color: 'var(--accent)', borderColor: 'rgba(94,230,207,0.34)', background: 'rgba(94,230,207,0.08)' };
 }
 
+function optionPurpose(option: PulseTodayOption): string {
+  if (option.kind === 'rest') return 'Training bewusst auslassen und Erholung schützen.';
+  if (option.kind === 'recovery') return 'Bewegung nur als Recovery-Reiz nutzen.';
+  if (option.kind === 'skills') return 'Stabilität, Mobility oder Technik ergänzen, ohne Ausdauerlast zu erzwingen.';
+  if (option.kind === 'fueling') return 'Versorgung, Magenverträglichkeit oder Schlaf als Trainingsvoraussetzung schließen.';
+  if (option.kind === 'feedback') return 'Feedback sichern, damit Pulse die nächste Entscheidung besser bewertet.';
+  return option.priority === 'primary'
+    ? 'Den geplanten Trainingsreiz ausführen.'
+    : 'Den Trainingsreiz leichter oder passender machen.';
+}
+
+function optionResultPreview(option: PulseTodayOption): string {
+  if (option.targetPath.includes('#plan-scenario-preview')) {
+    return 'Plan-Szenario öffnen; Pulse zeigt Load, Recovery und Garmin-Auswirkung vor Änderungen.';
+  }
+  if (option.targetPath.startsWith('/activity/')) {
+    return 'Aktivität öffnen; dein Feedback beeinflusst die nächsten Empfehlungen.';
+  }
+  if (option.targetPath.startsWith('/data')) {
+    return 'Data öffnen; keine Plan- oder Garmin-Änderung.';
+  }
+  if (option.targetPath === '/') {
+    return 'Heute öffnen; Tagesentscheidung prüfen, ohne Garmin zu verändern.';
+  }
+  if (option.targetPath.startsWith('/plan')) {
+    return 'Plan öffnen; Änderungen passieren erst nach bewusster Aktion.';
+  }
+  return 'Ziel öffnen; Pulse schreibt erst nach einer bestätigten Aktion.';
+}
+
+function optionSafetyLine(option: PulseTodayOption): string {
+  const firstSignal = option.signalLabels?.[0];
+  if (option.kind === 'rest') return 'Sicherste Wahl, wenn Training nur aus Gewohnheit entstehen würde.';
+  if (option.kind === 'recovery') return 'Sicher, wenn sich lockere Bewegung besser anfühlt als komplette Ruhe.';
+  if (option.kind === 'skills') return 'Sicher, wenn du Nutzen willst, aber keine zusätzliche Ausdauerlast brauchst.';
+  if (option.capabilityFit === 'too_hard_today') return 'Heute als Grenze behandeln und eine leichtere Option wählen.';
+  if (option.capabilityFit === 'stretch') return 'Nur mit guter Tagesform, sauberem Warm-up und genug Fueling.';
+  if (option.capabilityFit === 'maintenance') return firstSignal?.detail ?? 'Sicher, wenn Erhaltung wichtiger ist als Progression.';
+  if (option.capabilityFit === 'productive') return firstSignal?.detail ?? 'Sicher, wenn Warm-up und Tagesgefühl passen.';
+  return firstSignal?.detail ?? 'Sicher, wenn die Option zu Zeit, Körpergefühl und Ziel passt.';
+}
+
+function optionContract(option: PulseTodayOption) {
+  return {
+    purpose: optionPurpose(option),
+    whyNow: option.detail,
+    result: optionResultPreview(option),
+    safety: optionSafetyLine(option),
+  };
+}
+
+function safestAlternative(options: PulseTodayOption[]): PulseTodayOption | null {
+  return options.find(option => option.kind === 'rest')
+    ?? options.find(option => option.kind === 'recovery')
+    ?? options.find(option => option.capabilityFit === 'maintenance')
+    ?? options[0]
+    ?? null;
+}
+
 function mobileIntentTarget(option: typeof TODAY_INTENTS[number]): string {
   const params = new URLSearchParams({
     tab: 'training',
@@ -270,91 +329,134 @@ export function TodayOptionsCard({
           </div>
         </section>
       ) : visibleOptions.length > 0 ? (
-      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: variant === 'full' ? 'repeat(auto-fit, minmax(190px, 1fr))' : '1fr' }}>
-        {visibleOptions.map(option => {
-          const Icon = KIND_ICON[option.kind];
-          const meta = optionMeta(option);
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => onNavigate(option.targetPath)}
+        <>
+          {variant === 'full' && (
+            <div
+              data-testid="today-options-alternatives-contract"
               style={{
-                textAlign: 'left',
-                border: `1px solid ${optionTone(option)}`,
-                background: option.priority === 'primary' ? 'rgba(94,230,207,0.06)' : 'var(--surface-2)',
-                borderRadius: 'var(--radius)',
-                padding: 10,
-                minHeight: variant === 'full' ? 122 : 78,
-                cursor: 'pointer',
-                color: 'var(--text)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 7,
+                display: 'grid',
+                gap: 6,
+                marginBottom: 8,
+                padding: '9px 10px',
+                border: '1px solid rgba(94,230,207,0.2)',
+                borderRadius: 6,
+                background: 'rgba(94,230,207,0.04)',
               }}
             >
-              <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Icon size={15} color={option.priority === 'primary' ? 'var(--accent)' : 'var(--text-3)'} aria-hidden="true" />
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{option.title}</span>
-              </span>
-              {meta && (
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-                  {meta}
-                </span>
-              )}
-              {option.signalLabels && option.signalLabels.length > 0 && (
-                <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {option.signalLabels.slice(0, 2).map(label => {
-                    const tone = signalToneStyle(label.tone);
-                    return (
-                      <span
-                        key={`${option.id}-${label.kind}`}
-                        title={label.detail}
-                        style={{
+              <div className="label-mono" style={{ color: 'var(--accent)' }}>Ausweichoptionen</div>
+              {(() => {
+                const safest = safestAlternative(visibleOptions);
+                return safest ? (
+                  <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
+                    <strong style={{ color: 'var(--text)' }}>Sicherste Option:</strong> {safest.title}. {optionSafetyLine(safest)}
+                  </p>
+                ) : null;
+              })()}
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: 8, gridTemplateColumns: variant === 'full' ? 'repeat(auto-fit, minmax(190px, 1fr))' : '1fr' }}>
+            {visibleOptions.map(option => {
+              const Icon = KIND_ICON[option.kind];
+              const meta = optionMeta(option);
+              const contract = optionContract(option);
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => onNavigate(option.targetPath)}
+                  style={{
+                    textAlign: 'left',
+                    border: `1px solid ${optionTone(option)}`,
+                    background: option.priority === 'primary' ? 'rgba(94,230,207,0.06)' : 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
+                    padding: 10,
+                    minHeight: variant === 'full' ? 122 : 78,
+                    cursor: 'pointer',
+                    color: 'var(--text)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 7,
+                  }}
+                >
+                  <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Icon size={15} color={option.priority === 'primary' ? 'var(--accent)' : 'var(--text-3)'} aria-hidden="true" />
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{option.title}</span>
+                  </span>
+                  {meta && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                      {meta}
+                    </span>
+                  )}
+                  {option.signalLabels && option.signalLabels.length > 0 && (
+                    <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                      {option.signalLabels.slice(0, 2).map(label => {
+                        const tone = signalToneStyle(label.tone);
+                        return (
+                          <span
+                            key={`${option.id}-${label.kind}`}
+                            title={label.detail}
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 9,
+                              fontWeight: 700,
+                              lineHeight: 1.2,
+                              color: tone.color,
+                              border: `1px solid ${tone.borderColor}`,
+                              borderRadius: 4,
+                              background: tone.background,
+                              padding: '3px 5px',
+                              maxWidth: '100%',
+                            }}
+                          >
+                            {label.label}
+                          </span>
+                        );
+                      })}
+                    </span>
+                  )}
+                  {variant === 'full' ? (
+                    <span style={{ display: 'grid', gap: 5 }}>
+                      {[
+                        ['Zweck', contract.purpose],
+                        ['Warum jetzt', contract.whyNow],
+                        ['Nach dem Klick', contract.result],
+                        ['Sicher wenn', contract.safety],
+                      ].map(([label, value]) => (
+                        <span key={label} style={{ display: 'grid', gap: 2 }}>
+                          <span className="label-mono" style={{ fontSize: 8, color: 'var(--accent)' }}>{label}</span>
+                          <span style={{ fontSize: 11.2, color: 'var(--text-2)', lineHeight: 1.4 }}>{value}</span>
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                      {option.detail}
+                    </span>
+                  )}
+                  {variant === 'full' && option.evidence.length > 0 && (
+                    <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 'auto' }}>
+                      {option.evidence.slice(0, 3).map(item => (
+                        <span key={item} style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
-                          fontWeight: 700,
-                          lineHeight: 1.2,
-                          color: tone.color,
-                          border: `1px solid ${tone.borderColor}`,
+                          color: 'var(--text-3)',
+                          border: '1px solid var(--border)',
                           borderRadius: 4,
-                          background: tone.background,
                           padding: '3px 5px',
-                          maxWidth: '100%',
-                        }}
-                      >
-                        {label.label}
-                      </span>
-                    );
-                  })}
-                </span>
-              )}
-              <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
-                {option.detail}
-              </span>
-              {variant === 'full' && option.evidence.length > 0 && (
-                <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 'auto' }}>
-                  {option.evidence.slice(0, 3).map(item => (
-                    <span key={item} style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
-                      color: 'var(--text-3)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      padding: '3px 5px',
-                    }}>
-                      {item}
+                        }}>
+                          {item}
+                        </span>
+                      ))}
                     </span>
-                  ))}
-                </span>
-              )}
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: option.priority === 'primary' ? 'var(--accent)' : 'var(--text-3)', marginTop: 'auto' }}>
-                {option.cta}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                  )}
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: option.priority === 'primary' ? 'var(--accent)' : 'var(--text-3)', marginTop: 'auto' }}>
+                    {option.cta}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
       ) : null}
     </section>
   );

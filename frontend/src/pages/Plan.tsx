@@ -1482,7 +1482,9 @@ function PlanScenarioPreviewCard({
   const [reviewHint, setReviewHint] = useState<string | null>(null);
   const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
   const autoPreviewKeyRef = useRef<string | null>(null);
-  const pending = previewScenario.isPending || createWorkout.isPending || updateWorkout.isPending;
+  const previewPending = previewScenario.isPending;
+  const applyPending = createWorkout.isPending || updateWorkout.isPending;
+  const pending = previewPending || applyPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
   const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent';
@@ -1659,6 +1661,14 @@ function PlanScenarioPreviewCard({
   function renderPreviewActions() {
     if (!preview) return null;
     const applyEnabled = preview.applySupported && mode !== 'availability';
+    const actionActive = applyEnabled && !pending;
+    const applyLabel = mode === 'availability'
+      ? 'Im Verfügbarkeitsbereich speichern'
+      : applyPending
+      ? '● Wende an…'
+      : previewPending
+      ? 'Vorschau prüft…'
+      : 'Vorschau anwenden';
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(96px, auto)', gap: 8 }}>
         <button
@@ -1668,11 +1678,11 @@ function PlanScenarioPreviewCard({
           style={{
             minHeight: 44,
             minWidth: 44,
-            background: applyEnabled ? 'var(--accent)' : 'var(--surface-2)',
-            color: applyEnabled ? 'var(--bg)' : 'var(--text-3)',
-            border: 'none',
+            background: actionActive ? 'var(--accent)' : 'var(--surface-2)',
+            color: actionActive ? 'var(--bg)' : 'var(--text-3)',
+            border: actionActive ? 'none' : '1px solid var(--border)',
             borderRadius: 'var(--radius)',
-            cursor: applyEnabled ? 'pointer' : 'default',
+            cursor: actionActive ? 'pointer' : 'default',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             fontWeight: 600,
@@ -1680,7 +1690,7 @@ function PlanScenarioPreviewCard({
             textTransform: 'uppercase',
           }}
         >
-          {mode === 'availability' ? 'Im Verfügbarkeitsbereich speichern' : pending ? '● Wende an…' : 'Vorschau anwenden'}
+          {applyLabel}
         </button>
         <button
           type="button"
@@ -1712,6 +1722,32 @@ function PlanScenarioPreviewCard({
   const previewResult = preview ? (
     <div style={{ marginTop: 12, display: 'grid', gap: 10 }} data-testid="plan-scenario-preview-result">
       <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{preview.summary}</div>
+      <div
+        data-testid="scenario-result-contract"
+        style={{
+          display: 'grid',
+          gap: 6,
+          border: '1px solid rgba(94,230,207,0.22)',
+          borderRadius: 6,
+          background: 'rgba(94,230,207,0.05)',
+          padding: '9px 10px',
+        }}
+      >
+        <div style={{ display: 'grid', gap: 2 }}>
+          <span className="label-mono" style={{ fontSize: 8, color: 'var(--accent)' }}>Nach Apply</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+            {preview.garminImpact?.summary ?? (preview.applySupported ? 'Pulse speichert die Änderung erst nach bewusstem Anwenden.' : 'Keine Plan- oder Garmin-Änderung.')}
+          </span>
+        </div>
+        <div style={{ display: 'grid', gap: 2 }}>
+          <span className="label-mono" style={{ fontSize: 8, color: 'var(--accent)' }}>Sicherste Entscheidung</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+            {preview.warnings.length > 0
+              ? 'Warnungen zuerst lesen; nur anwenden, wenn die Einheit heute noch zu Körpergefühl, Zeit und Fueling passt.'
+              : 'Anwenden nur, wenn sich die Option nach Warm-up, Tagesgefühl und Zeitfenster weiterhin passend anfühlt.'}
+          </span>
+        </div>
+      </div>
       {isQuickScenarioEntry && renderPreviewActions()}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(116px, 1fr))', gap: 6 }}>
         {[

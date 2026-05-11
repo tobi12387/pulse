@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest recorded main/deploy mirror before this branch: `98b611b` / PR #302. Verify live deploy state with `scripts/verify-server.sh` when it matters.
+- Latest recorded main/deploy mirror before this branch: `2c67d67` / PR #303. Verify live deploy state with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
@@ -24,7 +24,8 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Fueling & Recovery preference capture, the pure backend guidance engine, read-only Plan modal guidance, Garmin workout-description handoff, generic portion equivalents, confirmed MNSTRY product calibration and practical Activity Fueling Logs are implemented: no dietary restrictions, `POWER CARB Sour Cherry 1:0.8` is the primary during anchor, Tobi-specific MNSTRY guidance uses 750 ml bottles plus approximate powder grams, `PORRIDGE BAR Sour Cherry` and `PROTEIN BAR 8 Peanut & Cranberry` support pre/post guidance, and `BICARB GEL 40 Lemon 1:0.8` stays race-/intensity-specific. Fueling logs now capture 750-ml bottles, powder grams, selected products/snacks and GI comfort.
 - Training-plan intelligence now has the benchmark foundations: capability levels, workout library/archetype fit, TrainNow options, scenario preview/apply, season load modeling, Garmin sync contracts, execution ledger/readback, goal limiter evidence, Plan Refresh Preview, Today Options signal labels, Fueling Debt Closure, Limiter-To-Workout Mapping and no-Garmin-write QA. Do not rebuild these completed plans.
 - Data IA Compression v1 has compressed Data into four evidence-oriented areas (`Heute relevant`, `Trends`, `Datenqualität`, `Analyse`) while legacy Data query/hash links remain compatible.
-- Settings Status First v1 is implemented: `/settings` now answers `Alles bereit` or `Problem beheben` before showing technical diagnostics. The next autonomous queue should start with Workout Alternatives UX v2, then Nutrition Trend Summaries when repeated logs exist.
+- Settings Status First v1 is implemented: `/settings` now answers `Alles bereit` or `Problem beheben` before showing technical diagnostics.
+- Workout Alternatives UX v2 is implemented: full Plan alternatives now explain purpose, why-now, click result and safest choice; scenario previews distinguish preview-loading from apply-running. The remaining roadmap work is evidence-gated: Nutrition Trend Summaries only when repeated fueling logs exist, optional Daily Delta/Garmin wording only when route evidence or user feedback shows a real gap, and Mobile Field Reliability remains a real-iPhone gate.
 - Route evidence on `7c087da` found no overflow and no current proof that optional Daily Delta Plan/Data echoes or additional Garmin modal copy are needed; see `docs/qa/2026-05-10-next-options-route-evidence.md`.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.
 
