@@ -7,6 +7,7 @@ import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import { PersonalResponseCard } from '@/features/data/response/personal-response-components';
+import { GoalProjectionCard } from '@/features/data/goals/goal-projection-components';
 import { getMonday, isoDate } from '@/features/plan/plan-utils';
 import type { LucideIcon } from 'lucide-react';
 import type { PulseDailyDecisionQualityResponse, PulsePlanTrace, PulsePowerDataQualitySummary, PulsePowerDurationSummary, PulseTrainingCapabilityLevel } from '@coaching-os/shared/pulse';
@@ -543,6 +544,7 @@ export function DataAnalysenTab() {
 
       <MentalLoadOverlay />
       <PersonalResponseCard days={42} />
+      <GoalProjectionCard horizonDays={180} />
       <TrainingCapabilityCard summary={capability.data?.capabilitySummary} loading={capability.isLoading} />
       <PowerDataQualityCard
         quality={trainingAnalytics.data?.powerDataQuality}

@@ -10,6 +10,7 @@ import {
   pulseCoachPreferences,
   pulseCoachSessions,
   pulseDailyMetrics,
+  pulseGoals,
   pulseMentalCheckins,
   pulsePlanGenerations,
   pulsePlannedWorkouts,
@@ -140,6 +141,7 @@ afterAll(async () => {
     await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
     await db.delete(pulseActivityStreams);
     await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
+    await db.delete(pulseGoals).where(eq(pulseGoals.userId, userId));
     await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
     await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
     await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
@@ -162,6 +164,7 @@ beforeEach(async () => {
   await db.delete(pulsePowerDurationSnapshots).where(eq(pulsePowerDurationSnapshots.userId, userId));
   await db.delete(pulseActivityStreams);
   await db.delete(pulseActivities).where(eq(pulseActivities.userId, userId));
+  await db.delete(pulseGoals).where(eq(pulseGoals.userId, userId));
   await db.delete(pulseSleepSessions).where(eq(pulseSleepSessions.userId, userId));
   await db.delete(pulseDailyMetrics).where(eq(pulseDailyMetrics.userId, userId));
   await db.delete(pulsePlanGenerations).where(eq(pulsePlanGenerations.userId, userId));
@@ -2878,6 +2881,56 @@ describe('GET /api/pulse/goals', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toHaveProperty('goals');
+  });
+});
+
+describe('GET /api/pulse/goal-projection', () => {
+  it('returns read-only projections for active goals', async () => {
+    const goalRes = await app.inject({
+      method: 'POST',
+      url: '/api/pulse/goals',
+      payload: {
+        title: '70.3 Test Race',
+        category: 'race',
+        targetDate: dateDaysFrom(70),
+        raceDiscipline: 'triathlon_70_3',
+        raceDistanceKm: 113,
+        racePriority: 'A',
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(goalRes.statusCode).toBe(201);
+
+    const beforeGoals = await db.select({ id: pulseGoals.id }).from(pulseGoals).where(eq(pulseGoals.userId, userId));
+    const beforeWorkouts = await db.select({ id: pulsePlannedWorkouts.id }).from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/goal-projection?horizonDays=180',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      projections: Array<{
+        title: string;
+        status: string;
+        probabilityPct: number | null;
+        limiterRisk: { status: string };
+        nextBestIntervention: { kind: string };
+      }>;
+    }>();
+    expect(body.projections).toHaveLength(1);
+    expect(body.projections[0]).toMatchObject({
+      title: '70.3 Test Race',
+      limiterRisk: { status: expect.any(String) },
+      nextBestIntervention: { kind: expect.any(String) },
+    });
+
+    const afterGoals = await db.select({ id: pulseGoals.id }).from(pulseGoals).where(eq(pulseGoals.userId, userId));
+    const afterWorkouts = await db.select({ id: pulsePlannedWorkouts.id }).from(pulsePlannedWorkouts).where(eq(pulsePlannedWorkouts.userId, userId));
+    expect(afterGoals).toHaveLength(beforeGoals.length);
+    expect(afterWorkouts).toHaveLength(beforeWorkouts.length);
   });
 });
 

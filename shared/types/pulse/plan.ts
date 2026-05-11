@@ -615,6 +615,61 @@ export interface PulseRaceCommandResponse {
   command: PulseRaceCommandSummary | null;
 }
 
+export type PulseGoalProjectionStatus =
+  | 'on_track'
+  | 'watch'
+  | 'at_risk'
+  | 'insufficient_evidence';
+
+export type PulseGoalProjectionInterventionKind =
+  | 'build_long_endurance'
+  | 'fueling_practice'
+  | 'threshold_vo2'
+  | 'protect_recovery'
+  | 'body_composition_consistency'
+  | 'consistency'
+  | 'data_quality';
+
+export interface PulseGoalProjectionLimiterRisk {
+  status: 'clear' | 'watch' | 'blocked' | 'unknown';
+  label: string;
+  summary: string;
+  evidence: string[];
+}
+
+export interface PulseGoalProjectionIntervention {
+  kind: PulseGoalProjectionInterventionKind;
+  title: string;
+  summary: string;
+  actionLabel: string;
+  targetPath: string;
+  evidence: string[];
+}
+
+export interface PulseGoalProjection {
+  goalId: string;
+  title: string;
+  category: GoalCategory | null;
+  targetDate: string | null;
+  daysUntil: number | null;
+  probabilityPct: number | null;
+  status: PulseGoalProjectionStatus;
+  confidence: PulseCapabilityConfidence;
+  summary: string;
+  limiterRisk: PulseGoalProjectionLimiterRisk;
+  nextBestIntervention: PulseGoalProjectionIntervention;
+  evidence: string[];
+  missingEvidence: string[];
+}
+
+export interface PulseGoalProjectionResponse {
+  generatedAt: string;
+  horizonDays: number;
+  headline: string;
+  projections: PulseGoalProjection[];
+  missingEvidence: string[];
+}
+
 export type PulseSeasonStrategyBlockKind =
   | 'base'
   | 'build'

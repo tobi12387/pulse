@@ -133,8 +133,8 @@ These build on the calmer daily UI.
 | Theme | Outcome |
 |---|---|
 | Personal Response Model | Implemented v1: Pulse exposes deterministic, read-only response evidence in Data > Analyse and labels weak evidence instead of mutating plans or Garmin. |
-| Predictive Goal Engine | Next non-gated build: Pulse shows goal probability, limiter risk and the next best intervention for 70.3, endurance, recovery and body composition goals, using Personal Response evidence read-only first. |
-| Adaptive Season Builder | After goal probability has evidence, season planning handles build, recovery, specificity, taper, missed load, availability and event priority as one model. |
+| Predictive Goal Engine | Implemented v1: Pulse exposes deterministic, read-only goal probability, limiter risk and next best intervention in Data > Analyse, using Personal Response, capability, fueling, load and execution evidence without mutating plan or Garmin. |
+| Adaptive Season Builder | Next non-gated build: after goal probability has evidence, season planning handles build, recovery, specificity, taper, missed load, availability and event priority as one model. |
 | Contextual Coach Mode | After response and goal evidence exist, Coach becomes an explanation/reflection mode that can live as a tab, overlay or route depending on evidence. |
 | Customizable Daily Surface | After the daily command surface has stable response/goal inputs, Tobi can choose which focus cards appear first while Pulse keeps safe defaults for the daily decision. |
 
@@ -152,8 +152,8 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Predictive Goal Engine v1:** create the next PR-sized plan and start read-only goal probability, limiter risk and next-intervention evidence from Personal Response, capability, fueling and execution data. No hidden plan mutation in v1.
-2. **Adaptive Season Builder v1:** after goal probability has evidence, model build/recovery/specificity/taper/missed-load/availability as one season contract.
+1. **Predictive Goal Engine v1:** implemented as read-only goal probability, limiter risk and next-intervention evidence from Personal Response, capability, fueling and execution data. No hidden plan mutation in v1.
+2. **Adaptive Season Builder v1:** next non-gated build; after goal probability has evidence, model build/recovery/specificity/taper/missed-load/availability as one season contract.
 3. **Contextual Coach Mode:** after response and goal evidence exist, let Coach explain response patterns and ask focused follow-up questions, either as tab, overlay or route based on evidence.
 4. **Customizable Daily Surface:** after daily command has stable response/goal inputs, allow Tobi to choose which focus cards appear first while Pulse keeps safe defaults.
 5. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
