@@ -69,6 +69,13 @@ async function overflowSummary(page: Page) {
   });
 }
 
+async function resetRouteScroll(page: Page) {
+  await page.evaluate(() => {
+    document.scrollingElement?.scrollTo({ top: 0, left: 0 });
+    document.querySelector('main')?.scrollTo({ top: 0, left: 0 });
+  });
+}
+
 test.describe('Route evidence screenshot pack', () => {
   test.skip(process.env.PULSE_ROUTE_EVIDENCE !== 'true', 'set PULSE_ROUTE_EVIDENCE=true to capture route screenshots');
   test.setTimeout(60_000);
@@ -97,9 +104,11 @@ test.describe('Route evidence screenshot pack', () => {
       route: { path: string; label: string; visibleText: string },
       verify?: () => Promise<void>,
     ) {
+      await resetRouteScroll(page);
       await page.goto(route.path);
       await expect(page.locator('main').getByText(route.visibleText).first()).toBeVisible();
       await verify?.();
+      if (!route.path.includes('#')) await resetRouteScroll(page);
       const overflow = await overflowSummary(page);
       const filename = `${String(screenshots.length + 1).padStart(2, '0')}-${route.label}.png`;
       const file = path.join(runDir, filename);
@@ -114,7 +123,7 @@ test.describe('Route evidence screenshot pack', () => {
     }
 
     for (const route of routes) {
-      await capture(route, route.label === 'data-analysen'
+      await capture(route, route.label === 'data-analysis'
         ? async () => {
             const qualityCard = page.getByTestId('power-data-quality');
             await expect(qualityCard).toBeVisible();

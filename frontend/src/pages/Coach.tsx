@@ -21,7 +21,8 @@ import {
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
-import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { InlineFeedback } from '@/components/Feedback';
+import { errorMessage } from '@/components/feedback-utils';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { ContextualCoachModeCard } from '@/features/coach/contextual-coach-mode';

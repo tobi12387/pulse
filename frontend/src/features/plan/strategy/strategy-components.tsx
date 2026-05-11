@@ -432,6 +432,8 @@ export function AdaptiveSeasonContractCard({
   goalProjection: PulseGoalProjectionResponse | null;
   isLoading: boolean;
 }) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   if (isLoading && !strategy && !goalProjection) {
     return (
       <div className="card" style={{ borderColor: 'rgba(59,130,246,0.16)' }}>
@@ -459,14 +461,60 @@ export function AdaptiveSeasonContractCard({
       ? top.summary
       : `${top.title}: ${top.summary}`
     : 'Pulse verbindet Saisonlinie und Zielprojektion, sobald ein aktives Ziel belastbar genug ist.';
+  const compactFacts = [
+    {
+      label: 'Naechste 14 Tage',
+      value: guardrails ? `${guardrails.targetSessions} Einheiten` : 'offen',
+      color: 'var(--accent)',
+    },
+    {
+      label: 'Hard-Day-Cap',
+      value: guardrails ? `max. ${guardrails.maxHardDays}` : 'offen',
+      color: guardrails?.deload ? 'var(--amber)' : 'var(--green)',
+    },
+    {
+      label: 'Load-Vertrag',
+      value: loadModel ? `${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS` : 'offen',
+      color: 'var(--blue)',
+    },
+    {
+      label: 'Naechste Grenze',
+      value: nextBoundary,
+      color: top?.limiterRisk.status === 'blocked' ? 'var(--rose)' : top?.limiterRisk.status === 'watch' ? 'var(--amber)' : 'var(--accent)',
+    },
+  ];
 
   return (
     <div className="card" data-testid="plan-adaptive-season-contract" style={{ borderColor: translucent(tone, 24) }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
-        <span className="label-mono" style={{ color: 'var(--blue)' }}>Saisonvertrag</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: tone }}>
-          {top ? `${goalProjectionLabel(top.status)} · ${probability}` : 'Evidenz offen'}
-        </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+          <span className="label-mono" style={{ color: 'var(--blue)' }}>Saisonvertrag</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: tone }}>
+            {top ? `${goalProjectionLabel(top.status)} · ${probability}` : 'Evidenz offen'}
+          </span>
+        </div>
+        <button
+          type="button"
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen(open => !open)}
+          style={{
+            minWidth: 44,
+            minHeight: 44,
+            padding: '7px 10px',
+            background: detailsOpen ? 'rgba(91,157,255,0.12)' : 'var(--surface-2)',
+            border: `1px solid ${detailsOpen ? 'rgba(91,157,255,0.38)' : 'var(--border)'}`,
+            borderRadius: 4,
+            color: detailsOpen ? 'var(--blue)' : 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {detailsOpen ? 'Saisonvertrag ausblenden' : 'Saisonvertrag anzeigen'}
+        </button>
       </div>
 
       <div style={{ marginBottom: 10 }}>
@@ -478,31 +526,15 @@ export function AdaptiveSeasonContractCard({
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
-        <RaceCommandFact
-          label="Naechste 14 Tage"
-          value={guardrails ? `${guardrails.targetSessions} Einheiten` : 'offen'}
-          detail={guardrails?.freeDayRationale ?? 'Verfuegbarkeit oder Saisonlinie noch offen.'}
-          color="var(--accent)"
-        />
-        <RaceCommandFact
-          label="Hard-Day-Cap"
-          value={guardrails ? `max. ${guardrails.maxHardDays}` : 'offen'}
-          detail={guardrails?.deload ? 'Deload/Konsolidierung ist aktiv.' : 'Keine zusaetzlichen harten Tage ohne klare Evidenz.'}
-          color={guardrails?.deload ? 'var(--amber)' : 'var(--green)'}
-        />
-        <RaceCommandFact
-          label="Load-Vertrag"
-          value={loadModel ? `${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS` : 'offen'}
-          detail={loadModel ? loadModel.currentWeek.note : 'Saisonlast wird aus aktueller Season Strategy gelesen.'}
-          color="var(--blue)"
-        />
-        <RaceCommandFact
-          label="Naechste Grenze"
-          value={nextBoundary}
-          detail={guardrails?.rationale.slice(0, 2).join(' ') ?? top?.limiterRisk.summary ?? null}
-          color={top?.limiterRisk.status === 'blocked' ? 'var(--rose)' : top?.limiterRisk.status === 'watch' ? 'var(--amber)' : 'var(--accent)'}
-        />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 6, marginBottom: 10 }}>
+        {compactFacts.map(fact => (
+          <div key={fact.label} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '7px 8px', background: 'var(--surface)' }}>
+            <div className="label-mono" style={{ fontSize: 8, color: fact.color, marginBottom: 3 }}>{fact.label}</div>
+            <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3, overflowWrap: 'anywhere' }}>
+              {fact.value}
+            </div>
+          </div>
+        ))}
       </div>
 
       {top?.nextBestIntervention && (
@@ -534,29 +566,60 @@ export function AdaptiveSeasonContractCard({
           <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
             <strong style={{ color: 'var(--text)' }}>{top.nextBestIntervention.title}</strong>
             {' '}
-            {top.nextBestIntervention.summary}
+            {detailsOpen ? top.nextBestIntervention.summary : 'als naechster sauberer Hebel.'}
           </p>
         </div>
       )}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {[
-          ...(top?.evidence.slice(0, 3) ?? []),
-          ...(strategy?.evidence.slice(0, 2) ?? []),
-          ...(goalProjection?.missingEvidence.slice(0, 1) ?? []),
-        ].map(item => (
-          <span key={item} style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            color: 'var(--text-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            padding: '3px 7px',
-          }}>
-            {item}
-          </span>
-        ))}
-      </div>
+      {detailsOpen && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
+            <RaceCommandFact
+              label="Naechste 14 Tage"
+              value={guardrails ? `${guardrails.targetSessions} Einheiten` : 'offen'}
+              detail={guardrails?.freeDayRationale ?? 'Verfuegbarkeit oder Saisonlinie noch offen.'}
+              color="var(--accent)"
+            />
+            <RaceCommandFact
+              label="Hard-Day-Cap"
+              value={guardrails ? `max. ${guardrails.maxHardDays}` : 'offen'}
+              detail={guardrails?.deload ? 'Deload/Konsolidierung ist aktiv.' : 'Keine zusaetzlichen harten Tage ohne klare Evidenz.'}
+              color={guardrails?.deload ? 'var(--amber)' : 'var(--green)'}
+            />
+            <RaceCommandFact
+              label="Load-Vertrag"
+              value={loadModel ? `${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS` : 'offen'}
+              detail={loadModel ? loadModel.currentWeek.note : 'Saisonlast wird aus aktueller Season Strategy gelesen.'}
+              color="var(--blue)"
+            />
+            <RaceCommandFact
+              label="Naechste Grenze"
+              value={nextBoundary}
+              detail={guardrails?.rationale.slice(0, 2).join(' ') ?? top?.limiterRisk.summary ?? null}
+              color={top?.limiterRisk.status === 'blocked' ? 'var(--rose)' : top?.limiterRisk.status === 'watch' ? 'var(--amber)' : 'var(--accent)'}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {[
+              ...(top?.evidence.slice(0, 3) ?? []),
+              ...(strategy?.evidence.slice(0, 2) ?? []),
+              ...(goalProjection?.missingEvidence.slice(0, 1) ?? []),
+            ].map(item => (
+              <span key={item} style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--text-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '3px 7px',
+              }}>
+                {item}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

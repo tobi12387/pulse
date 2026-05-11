@@ -120,6 +120,27 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(action.getByRole('button', { name: /Einheit öffnen/i })).toBeVisible();
 });
 
+test('Plan shows the week before season evidence on desktop', async ({ page }) => {
+  await page.goto('/plan');
+
+  const action = page.getByTestId('plan-primary-action');
+  const weekStrip = page.getByTestId('plan-week-strip-scroller');
+  const seasonContract = page.getByTestId('plan-adaptive-season-contract');
+
+  await expect(action).toBeVisible();
+  await expect(weekStrip).toBeVisible();
+  await expect(weekStrip).toBeInViewport({ ratio: 0.45 });
+  await expect(seasonContract).toBeVisible();
+
+  const weekBeforeSeasonEvidence = await page.evaluate(() => {
+    const week = document.querySelector('[data-testid="plan-week-strip-scroller"]');
+    const contract = document.querySelector('[data-testid="plan-adaptive-season-contract"]');
+    if (!week || !contract) return false;
+    return Boolean(week.compareDocumentPosition(contract) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(weekBeforeSeasonEvidence).toBe(true);
+});
+
 test('Plan keeps the action contract when only Today Options has the planned workout', async ({ page }) => {
   await page.goto('/plan');
   const action = page.getByTestId('plan-primary-action');

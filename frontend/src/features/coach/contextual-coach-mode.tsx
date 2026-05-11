@@ -3,6 +3,7 @@ import type {
   PulsePersonalResponseResponse,
   PulseSeasonStrategyResponse,
 } from '@coaching-os/shared/pulse';
+import { buildContextualCoachPrompt } from './contextual-coach-prompt';
 
 type ContextualCoachModeCardProps = {
   personalResponse: PulsePersonalResponseResponse | null;
@@ -29,35 +30,6 @@ function statusColor(status: string | null | undefined): string {
 function compactText(value: string | null | undefined, fallback: string): string {
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : fallback;
-}
-
-export function buildContextualCoachPrompt({
-  personalResponse,
-  goalProjection,
-  seasonStrategy,
-}: Pick<ContextualCoachModeCardProps, 'personalResponse' | 'goalProjection' | 'seasonStrategy'>): string {
-  const personalSignal = personalResponse?.summary.signals.find(signal => signal.strength !== 'insufficient')
-    ?? personalResponse?.summary.signals[0]
-    ?? null;
-  const topGoal = goalProjection?.projections[0] ?? null;
-  const strategy = seasonStrategy?.strategy ?? null;
-  const guardrails = strategy?.guardrails ?? null;
-
-  const lines = [
-    'Nutze bitte meinen aktuellen Pulse-Kontext und erklaere mir die naechste sinnvolle Coach-Frage.',
-    personalResponse
-      ? `Persoenliche Reaktion: ${personalResponse.summary.headline} ${personalSignal ? `${personalSignal.label}: ${personalSignal.nextAdjustment}` : 'Keine starke Einzelspur.'}`
-      : 'Persoenliche Reaktion: noch offen.',
-    topGoal
-      ? `Ziel: ${topGoal.summary} Naechste Intervention: ${topGoal.nextBestIntervention.title} - ${topGoal.nextBestIntervention.summary}`
-      : 'Ziel: keine belastbare Projektion.',
-    strategy
-      ? `Saisonvertrag: ${strategy.currentBlock.label}. ${guardrails ? `${guardrails.targetSessions} Einheiten, max. ${guardrails.maxHardDays} harte Tage. ${guardrails.freeDayRationale}` : 'Guardrails offen.'}`
-      : 'Saisonvertrag: noch offen.',
-    'Bitte antworte alltagstauglich: was ist jetzt wichtig, warum, welche Grenze schuetzt mich, und welche Frage sollte ich zuerst klaeren?',
-  ];
-
-  return lines.join('\n');
 }
 
 function ContextFact({

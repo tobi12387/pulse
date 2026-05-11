@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useGarminCalendarSync, useGarminExecutionDiff, useSyncWorkoutToGarmin } from '@/pulse/hooks';
-import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { InlineFeedback } from '@/components/Feedback';
+import { errorMessage } from '@/components/feedback-utils';
 import { Skeleton } from '@/components/Skeleton';
 import type {
   PulseGarminExecutionDiffRow,

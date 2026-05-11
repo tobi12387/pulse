@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { useDataCoverage, useGarminBackfill, useGarminCoverage, useGarminSignalUsefulness } from '@/pulse/hooks';
 import { Skeleton } from '@/components/Skeleton';
 import { GarminQualityList } from '@/components/GarminQualityList';
-import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { InlineFeedback } from '@/components/Feedback';
+import { errorMessage } from '@/components/feedback-utils';
 import { RangeControl } from '@/components/PulseChrome';
 import type { PulseDataCoverageDay, PulseDataCoverageDomain, PulseDataCoverageResponse, PulseGarminBackfillResponse, PulseGarminCoverageDomain, PulseGarminSignalUsefulnessResponse } from '@coaching-os/shared/pulse';
 
