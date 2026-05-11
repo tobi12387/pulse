@@ -9,22 +9,24 @@
   /* Surface */
   --bg:        #0A0B0D;
   --surface:   #101216;
-  --surface-2: #1A1D26;
+  --surface-2: #171A1F;
   --border:    #1F232A;
+  --border-hi: #2A3038;
 
   /* Text */
-  --text:      #E8ECF1;
-  --text-2:    #8B95A3;
-  --text-3:    #8A93A1;
+  --text:      #E6E8EB;
+  --text-2:    #9098A3;
+  --text-3:    #5C636E;
 
   /* Accent */
   --accent:    #5EE6CF;
 
   /* Semantic */
-  --green:     #4ADE80;
-  --amber:     #FBBF24;
-  --rose:      #F87171;
-  --blue:      #60A5FA;
+  --accent-dim: rgba(94,230,207,0.16);
+  --green:     #5ECF8B;
+  --amber:     #FFB454;
+  --rose:      #F47174;
+  --blue:      #5B9DFF;
 
   /* Radius — technical, not friendly */
   --radius: 6px;
@@ -232,6 +234,70 @@
     padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 12px);
   }
 
+  .pulse-shell-topbar {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .pulse-focus-sidebar {
+    width: 172px;
+  }
+
+  .pulse-brand-mark {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--accent);
+    border-radius: 999px;
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .pulse-brand-mark::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+  }
+
+  .focus-decision-body {
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+    gap: 32px;
+  }
+
+  .focus-recovery-panel {
+    border-left: 1px solid var(--border);
+    padding-left: 28px;
+    min-width: 0;
+  }
+
+  .focus-hero-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .focus-diary-entry {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .focus-diary-body {
+    padding-bottom: 24px;
+    border-left: 1px solid var(--border);
+    padding-left: 24px;
+    position: relative;
+    min-width: 0;
+  }
+
   .pulse-coach-shell {
     height: calc(100vh - var(--mobile-topbar-height) - var(--mobile-bottomnav-height) - var(--safe-top) - var(--safe-bottom) - 28px);
     height: calc(100dvh - var(--mobile-topbar-height) - var(--mobile-bottomnav-height) - var(--safe-top) - var(--safe-bottom) - 28px);
@@ -260,6 +326,33 @@
   }
 
   @media (max-width: 600px) {
+    .focus-decision-body {
+      padding: 20px 16px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+    }
+
+    .focus-recovery-panel {
+      border-left: none;
+      border-top: 1px solid var(--border);
+      padding-left: 0;
+      padding-top: 18px;
+    }
+
+    .focus-hero-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .focus-diary-entry {
+      grid-template-columns: 86px minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .focus-diary-body {
+      padding-left: 16px;
+    }
+
     .coverage-mobile-list {
       display: flex;
     }

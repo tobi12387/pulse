@@ -132,7 +132,7 @@ test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
   await expect(page).toHaveURL('/data?tab=trends');
 });
 
-test('desktop operational routes use a wider shell than Home', async ({ page }, testInfo) => {
+test('desktop Focus operational routes share the wide shell', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop shell width check');
 
   await page.goto('/');
@@ -143,7 +143,9 @@ test('desktop operational routes use a wider shell than Home', async ({ page }, 
   await expect(page.getByText('Heute, Trends, Qualität & Analyse')).toBeVisible();
   const dataWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
-  expect(homeWidth).toBeLessThanOrEqual(820);
+  expect(homeWidth).toBeGreaterThanOrEqual(960);
+  expect(homeWidth).toBeLessThanOrEqual(1120);
   expect(dataWidth).toBeGreaterThanOrEqual(960);
-  expect(dataWidth).toBeGreaterThan(homeWidth);
+  expect(dataWidth).toBeLessThanOrEqual(1120);
+  expect(Math.abs(dataWidth - homeWidth)).toBeLessThanOrEqual(4);
 });

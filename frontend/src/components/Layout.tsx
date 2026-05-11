@@ -1,23 +1,48 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
+import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
   { to: '/',          label: 'Heute',     mobileLabel: 'Heute',    key: '1', end: true  },
   { to: '/data',      label: 'Data',      mobileLabel: 'Data',     key: '2', end: false },
   { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',     key: '3', end: false },
-  { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '4', end: false },
+  { to: '/insights',  label: 'Insights',  mobileLabel: 'Insights', key: '4', end: false },
+  { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '5', end: false },
 ];
 
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [coachOpen, setCoachOpen] = useState(false);
   useNavHotkeys();
 
-  const isOperationalRoute = location.pathname === '/' || location.pathname.startsWith('/data') || location.pathname.startsWith('/plan');
+  const isOperationalRoute = location.pathname === '/' || location.pathname.startsWith('/data') || location.pathname.startsWith('/plan') || location.pathname.startsWith('/insights');
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1120 } : undefined;
+  const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
+
+  useEffect(() => {
+    function handleCommand(event: globalThis.KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || Boolean(target?.isContentEditable);
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        if (isTyping) return;
+        event.preventDefault();
+        setCoachOpen(open => !open);
+      }
+      if (!isTyping && event.key === 'Escape') {
+        setCoachOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleCommand);
+    return () => window.removeEventListener('keydown', handleCommand);
+  }, []);
 
   async function handleLogout() {
     await api.auth.logout().catch(() => {});
@@ -26,43 +51,53 @@ export default function Layout() {
   }
 
   return (
-    <div className="pulse-app-shell flex overflow-hidden">
+    <div className="pulse-app-shell flex flex-col overflow-hidden" style={focusCssVars as CSSProperties}>
+
+      <header
+        className="pulse-shell-topbar hidden md:flex items-center justify-between px-[18px] border-b"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="pulse-brand-mark" aria-hidden="true" />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--text)', letterSpacing: '.18em' }}>
+            PULSE.OS
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>v2.1</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+          <span><span style={{ color: 'var(--green)' }}>●</span> sync bereit</span>
+          <span>{today}</span>
+          <span style={{ color: 'var(--text)' }}>{user?.name ?? 'Tobi'}</span>
+        </div>
+      </header>
+
+      <div className="flex flex-1 min-h-0 overflow-hidden">
 
       {/* ── Sidebar (desktop) ── */}
       <aside
-        className="hidden md:flex flex-col shrink-0 w-48 border-r"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+        className="pulse-focus-sidebar hidden md:flex flex-col shrink-0 border-r"
+        style={{ background: 'var(--bg)', borderColor: 'var(--border)', padding: '14px 8px' }}
       >
-        {/* Logo */}
-        <div className="px-4 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <span
-            className="mono"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: 0,
-              color: 'var(--accent)',
-            }}
-          >
-            PULSE
-          </span>
-        </div>
-
         {/* Nav */}
-        <nav className="flex-1 py-3 flex flex-col gap-0.5 px-2">
+        <nav className="flex-1 flex flex-col gap-px">
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.18em', padding: '4px 10px 8px' }}>
+            NAVIGATION
+          </div>
           {NAV_ITEMS.map(({ to, label, key, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex min-h-[44px] items-center justify-between rounded px-3 py-2 text-[13px] transition-colors ${
+                `flex min-h-[44px] items-center justify-between rounded-[4px] px-[10px] py-2 text-[12.5px] transition-colors ${
                   isActive
                     ? 'bg-[var(--surface-2)] text-[var(--text)]'
                     : 'text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'
                 }`
               }
+              style={({ isActive }) => ({
+                borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+              })}
             >
               <span>{label}</span>
               <span
@@ -79,9 +114,35 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* User */}
+        <div style={{ padding: 10, border: '1px solid var(--border)', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', lineHeight: 1.6 }}>
+          <div style={{ color: 'var(--text-3)', marginBottom: 4 }}>SYSTEM</div>
+          <div>garmin <span style={{ color: 'var(--green)' }}>bereit</span></div>
+          <div>server lokal</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setCoachOpen(true)}
+          style={{
+            marginTop: 8,
+            minHeight: 44,
+            padding: '8px 10px',
+            border: '1px dashed var(--accent)',
+            borderRadius: 4,
+            background: 'transparent',
+            color: 'var(--accent)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: '.14em',
+            textAlign: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          ⌘K · COACH
+        </button>
+
         <div
-          className="px-4 py-4 border-t flex items-center justify-between"
+          className="mt-2 px-2 py-2 border-t flex items-center justify-between"
           style={{ borderColor: 'var(--border)' }}
         >
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
@@ -102,8 +163,11 @@ export default function Layout() {
         className="pulse-mobile-topbar md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 border-b"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, letterSpacing: 0, color: 'var(--accent)' }}>
-          PULSE
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="pulse-brand-mark" aria-hidden="true" />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, letterSpacing: '.18em', color: 'var(--text)' }}>
+            PULSE.OS
+          </span>
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: 0 }}>
           {new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
@@ -152,6 +216,154 @@ export default function Layout() {
           </NavLink>
         ))}
       </nav>
+
+      <CoachCommandDrawer
+        open={coachOpen}
+        onClose={() => setCoachOpen(false)}
+        onOpenCoach={() => {
+          setCoachOpen(false);
+          navigate('/coach?focus=daily');
+        }}
+        onOpenData={() => {
+          setCoachOpen(false);
+          navigate('/data?tab=today#data-mental');
+        }}
+      />
+      </div>
     </div>
+  );
+}
+
+function CoachCommandDrawer({
+  open,
+  onClose,
+  onOpenCoach,
+  onOpenData,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onOpenCoach: () => void;
+  onOpenData: () => void;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const primaryActionRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const restoreTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = window.requestAnimationFrame(() => {
+      (primaryActionRef.current ?? dialogRef.current)?.focus({ preventScroll: true });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      restoreTarget?.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  function getFocusableNodes() {
+    return Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ) ?? []).filter(element => element.offsetParent !== null);
+  }
+
+  function handleDialogKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      onClose();
+      return;
+    }
+
+    if (event.key !== 'Tab') return;
+    const focusable = getFocusableNodes();
+    if (focusable.length === 0) {
+      event.preventDefault();
+      dialogRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    if (event.shiftKey && (!activeElement || activeElement === first || !dialogRef.current?.contains(activeElement))) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+
+    if (!event.shiftKey && activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        onMouseDown={onClose}
+        style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.48)', border: 'none' }}
+      />
+      <aside
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Coach Command"
+        tabIndex={-1}
+        onKeyDown={handleDialogKeyDown}
+        style={{
+          position: 'fixed',
+          top: 44,
+          right: 0,
+          bottom: 0,
+          zIndex: 41,
+          width: 'min(380px, 100vw)',
+          background: 'var(--surface)',
+          borderLeft: '1px solid var(--border)',
+          padding: 18,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          boxShadow: '-18px 0 40px rgba(0,0,0,0.35)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+          <div>
+            <div className="label-mono" style={{ color: 'var(--accent)' }}>⌘K · COACH</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 500 }}>Was soll Pulse klären?</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ minWidth: 44, minHeight: 44, background: 'transparent', color: 'var(--text-3)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}
+          >
+            ×
+          </button>
+        </div>
+        <button
+          ref={primaryActionRef}
+          type="button"
+          onClick={onOpenCoach}
+          style={{ minHeight: 56, padding: 12, background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--accent)', borderRadius: 5, textAlign: 'left', cursor: 'pointer' }}
+        >
+          <span className="label-mono" style={{ color: 'var(--accent)' }}>Daily Coach</span>
+          <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            Tagesentscheidung im Coach öffnen, ohne einen Haupttab für Coach zu brauchen.
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={onOpenData}
+          style={{ minHeight: 56, padding: 12, background: 'transparent', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 5, textAlign: 'left', cursor: 'pointer' }}
+        >
+          <span className="label-mono">Check-in öffnen</span>
+          <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            Mentalen Tageszustand eintragen, damit Plan und Briefing mit echtem Kontext arbeiten.
+          </span>
+        </button>
+      </aside>
+    </>
   );
 }

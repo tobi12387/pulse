@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Focus-Redesign startet mit Shell und Heute
+
+- **Decision:** Pulse setzt die neue `Single Decision + Diary`-Aesthetik in PR-Slices um. Slice 1 baut Design-Tokens, Focus-Shell, fuenf Hauptziele (`Heute`, `Data`, `Plan`, `Insights`, `Settings`) und Home als Tagesentscheidung plus read-only Tagesverlauf; Coach bleibt als `/coach` Kompatibilitaetsroute und wird in der Haupt-IA ueber `⌘K` angeboten.
+- **Why:** Tobi will weniger volle Seiten und eine klarere taegliche Entscheidung, ohne bestehende Daily-Loop-, Feedback-, Garmin-, Coach-Prompt- und Evidence-Vertraege zu verlieren. Ein kleiner Shell/Home-Slice beweist die neue Sprache und haelt Data/Plan/Settings als folgende Pakete reviewbar.
+- **Alternatives:** Kompletten Canvas-Mock auf alle Routen in einem PR umbauen (zu grosser Regressionsradius); Coach-Route loeschen (bricht Deep Links und Prompt-Flows); Home nur optisch stylen und alte Karten darunter lassen (Dichteproblem bleibt).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Route-Dichte wird ueber progressive Details reduziert
 
 - **Decision:** Der naechste UI/UX-Slice reduziert sichtbare Dichte nicht durch Entfernen von Evidenz, sondern durch progressive Details: Settings zeigt technische Diagnose erst nach `Diagnose anzeigen`, Plan zeigt die tiefe `Saisonlinie` erst nach `Saisonlinie anzeigen`, und der mobile Wochenstreifen passt sieben Tage ohne versteckten Horizontal-Scroller ein.

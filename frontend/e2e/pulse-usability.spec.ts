@@ -280,6 +280,93 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
 });
 
+test('Home Focus hero Coach CTA keeps the prepared daily prompt', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    home: {
+      nextBestActions: [
+        {
+          id: 'focus-coach-cta',
+          source: 'plan',
+          priority: 'high',
+          title: 'Training heute defensiv entscheiden',
+          reason: 'Readiness und TSB sprechen gegen einen ungeprüften harten Reiz.',
+          cta: 'Coach fragen',
+          targetPath: '/coach',
+          resolvedBy: 'Entscheidung zur Einheit treffen und Plan bei Bedarf anpassen.',
+        },
+      ],
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/');
+  await page.getByTestId('focus-decision-hero').getByRole('button', { name: 'Coach öffnen' }).click();
+
+  await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Training heute defensiv entscheiden/);
+  expect(coachSends).toBe(0);
+});
+
+test('Home diary treats today nextWorkout as planned execution', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: null,
+      nextWorkout: {
+        id: 'workout-today',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 60,
+        targetTss: 78,
+        status: 'planned',
+        description: 'Schwellenreiz mit klarer Pulsgrenze.',
+      },
+    },
+  });
+
+  await page.goto('/');
+  const diary = page.getByTestId('focus-day-diary');
+
+  await expect(diary.getByText('EXECUTE · GEPLANT')).toBeVisible();
+  await expect(diary.getByText('Radfahren · Z4 · 60 min', { exact: true })).toBeVisible();
+  await expect(diary.getByText('Kein Pflichttraining geplant')).toHaveCount(0);
+});
+
+test('Coach command drawer manages focus and ignores command shortcut while typing', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop shell command drawer');
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  await page.locator('.pulse-focus-sidebar').getByRole('button', { name: '⌘K · COACH', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Coach Command' });
+  await expect(dialog).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => {
+    const dialogElement = document.querySelector('[role="dialog"]');
+    return Boolean(dialogElement?.contains(document.activeElement));
+  })).toBe(true);
+
+  await page.keyboard.press('Tab');
+  await expect.poll(async () => page.evaluate(() => {
+    const dialogElement = document.querySelector('[role="dialog"]');
+    return Boolean(dialogElement?.contains(document.activeElement));
+  })).toBe(true);
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+
+  await page.goto('/coach');
+  const input = page.getByPlaceholder('Frage…');
+  await input.fill('Ich tippe gerade');
+  await input.focus();
+  await input.dispatchEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
+
+  await expect(page.getByRole('dialog', { name: 'Coach Command' })).toHaveCount(0);
+  await expect(input).toHaveValue('Ich tippe gerade');
+});
+
 test('Daily loop clarity keeps Home guidance plain and slim support on task routes', async ({ page }) => {
   await mockPulseApi(page);
 
@@ -4423,7 +4510,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
 
   await page.goto('/');
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
-  await expect(bottomNav.locator('a[href="/insights"]')).toHaveCount(0);
+  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
   await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
@@ -4463,7 +4550,7 @@ test('Mobile routes avoid unintended horizontal overflow', async ({ page }) => {
 
   await mockPulseApi(page);
 
-  for (const route of ['/', '/coach', '/data', '/data?tab=analysis', '/plan', '/settings']) {
+  for (const route of ['/', '/coach', '/data', '/data?tab=analysis', '/plan', '/insights', '/settings']) {
     await expectNoHorizontalOverflow(page, route);
   }
 });

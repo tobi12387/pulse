@@ -1,20 +1,17 @@
 import { useId, useState } from 'react';
-import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, usePulseMetrics, usePulseBriefing, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
-import { SparkLine } from '@/components/SparkChart';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { RiskWatchBanner } from '@/components/RiskWatchBanner';
 import { TodayOptionsCard } from '@/components/TodayOptionsCard';
-import { RaceCard } from '@/components/RaceCard';
-import { RecoveryStrip } from '@/components/RecoveryStrip';
-import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
-import { activityLabel } from '@/pulse/activity-labels';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { HomeSurfaceFocusCard, useHomeSurfaceFocus, type HomeFocusSlot } from '@/features/home/home-surface-preferences';
+import { DecisionHero } from '@/features/today/DecisionHero';
+import { DayDiary } from '@/features/today/DayDiary';
 import type { PulseActionState, PulseAdaptationEvent, PulseDailyDeltaItem, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
@@ -27,27 +24,12 @@ function fmtSigned(v: number, dec = 1): string {
   return `${v < 0 ? '' : '+'}${fmt(v, dec)}`;
 }
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Guten Morgen, Tobi';
-  if (h < 18) return 'Guten Tag, Tobi';
-  return 'Guten Abend, Tobi';
-}
-
 function fmtDate(iso: string) {
   const d = new Date(iso + 'T12:00:00');
   const day = d.toLocaleDateString('de-DE', { weekday: 'short' }).toUpperCase();
   const date = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   return `${date} · ${day}`;
 }
-
-const ZONE_COLOR: Record<number, string> = {
-  1: '#3F4854',
-  2: 'var(--blue)',
-  3: 'var(--green)',
-  4: 'var(--amber)',
-  5: 'var(--rose)',
-};
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
@@ -193,33 +175,6 @@ function Tooltip({ id, children }: { id: string; children: React.ReactNode }) {
         </>
       )}
     </span>
-  );
-}
-
-// ─── Zone Bar ─────────────────────────────────────────────────────────────────
-
-function ZoneBar({ zone }: { zone: number }) {
-  const segments =
-    zone <= 2
-      ? [{ z: 1, w: 15 }, { z: 2, w: 70 }, { z: 1, w: 15 }]
-      : zone === 3
-      ? [{ z: 1, w: 10 }, { z: 2, w: 15 }, { z: 3, w: 60 }, { z: 1, w: 15 }]
-      : [
-          { z: 1, w: 15 },
-          { z: zone, w: 20 },
-          { z: 1, w: 5 },
-          { z: zone, w: 20 },
-          { z: 1, w: 5 },
-          { z: zone, w: 20 },
-          { z: 1, w: 15 },
-        ];
-
-  return (
-    <div style={{ display: 'flex', height: 5, gap: 1, borderRadius: 2, overflow: 'hidden', marginTop: 12 }}>
-      {segments.map((s, i) => (
-        <div key={i} style={{ flex: `0 0 ${s.w}%`, background: ZONE_COLOR[s.z] ?? 'var(--text-3)' }} />
-      ))}
-    </div>
   );
 }
 
@@ -900,8 +855,6 @@ export default function Home() {
   const checkin = usePulseCheckin();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
-  const { data: metricsData } = usePulseMetrics(14);
-  const { data: briefingData } = usePulseBriefing();
   const adaptationEvents = useAdaptationEvents();
   const garminSync = useGarminSync();
   const todayOptionsQuery = useTodayOptions();
@@ -934,7 +887,6 @@ export default function Home() {
     );
   }
 
-  const m  = data.todayMetrics;
   const readiness = readinessQuery.data ?? data.readiness;
   const fl = loadQuery.data ?? data.fitnessLoad;
   const nw = data.nextWorkout;
@@ -975,11 +927,7 @@ export default function Home() {
     navigate(path);
   }
 
-  const metrics  = metricsData?.metrics ?? [];
-  const hrvSpark = metrics.map(d => d.hrvRmssd ?? null);
-
   const readinessColor = colorOf(readiness.color);
-  const readinessLabel = readiness.shortLabel;
   const tsbBucket = bucketize(fl.tsb, TSB_BUCKETS);
   const tsbColor = colorOf(tsbBucket.color);
 
@@ -1112,13 +1060,17 @@ export default function Home() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
 
-      {/* ── Date + Greeting ── */}
-      <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 4 }}>
-          {fmtDate(data.date)}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 4 }}>
+            // {fmtDate(data.date)}
+          </div>
+          <h1 style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)', margin: 0 }}>
+            Heute
+          </h1>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)' }}>
-          {greeting()}
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', letterSpacing: '.14em' }}>
+          TRAIN WINDOW <span style={{ color: 'var(--accent)' }}>OPEN</span>
         </div>
       </div>
 
@@ -1206,11 +1158,31 @@ export default function Home() {
       )}
 
       {dailyDecision && (
-        <DailyDecisionCard
+        <DecisionHero
+          date={data.date}
           decision={dailyDecision}
-          labelCase="upper"
+          readiness={readiness}
+          fitnessLoad={fl}
+          recovery={data.recovery}
+          todayWorkout={data.todayWorkout}
+          nextWorkout={nw}
+          todayActivities={data.todayActivities ?? []}
+          recentActivities={data.recentActivities}
+          readinessLabel={<Tooltip id="READINESS">READINESS</Tooltip>}
           onActivate={handleDailyDecisionActivate}
           onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
+          onOpenCoach={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
+        />
+      )}
+
+      {dailyDecision && (
+        <DayDiary
+          data={data}
+          decision={dailyDecision}
+          hasMentalCheckin={hasMentalCheckin}
+          latestDeltaTitle={latestDelta?.title}
+          latestOutcomeTitle={latestOutcome?.title}
+          adaptationSummary={primaryAdaptationEvent?.summary}
         />
       )}
 
@@ -1248,192 +1220,6 @@ export default function Home() {
       <HomeSurfaceFocusCard focus={homeSurface.focus} onFocusChange={homeSurface.setFocus} />
 
       {homeSurface.order.map(slot => renderFocusSlot(slot))}
-
-      {/* ── Race Card (next/current race) ── */}
-      <RaceCard />
-
-      {/* ── Recovery Strip (sleep debt / HRV / RHR) ── */}
-      <RecoveryStrip />
-
-      {/* ── Hero: Readiness ── */}
-      <div style={{
-        padding: '18px',
-        background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%)',
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.16em' }}>
-            <Tooltip id="READINESS">READINESS</Tooltip> · TODAY
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: readinessColor }}>
-            ● {readinessLabel}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 500, color: readinessColor, letterSpacing: '-.02em', lineHeight: 1 }}>
-            {readiness.score}
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)' }}>/ 100</span>
-          {data.prognosis.alert && (
-            <span style={{ marginLeft: 8, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)', letterSpacing: '.1em' }}>
-              HINWEIS
-            </span>
-          )}
-        </div>
-
-        {hrvSpark.some(v => v !== null) && (
-          <SparkLine values={hrvSpark} height={28} color={readinessColor} fillOpacity={0.12} />
-        )}
-
-        {/* 3-up: HRV / RHR / Sleep */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-          gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginTop: 14,
-        }}>
-          {[
-            { id: 'HRV',    v: fmt(m?.hrvRmssd),       u: 'ms',  d: m?.hrvStatus ?? null,                          dc: 'var(--green)' },
-            { id: 'RHR',    v: fmt(m?.restingHr),       u: 'bpm', d: m?.restingHr ? '↓ gut' : null,                dc: 'var(--green)' },
-            { id: 'SCHLAF', v: fmt(m?.sleepHours, 1),   u: 'h',   d: m?.sleepScore ? `Score ${m.sleepScore}` : null, dc: 'var(--blue)'  },
-          ].map(s => (
-            <div key={s.id} style={{ padding: '10px', background: 'var(--surface)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '.14em' }}>
-                <Tooltip id={s.id}>{s.id}</Tooltip>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 4 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--text)' }}>{s.v}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>{s.u}</span>
-              </div>
-              {s.d && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: s.dc, marginTop: 2 }}>{s.d}</div>}
-            </div>
-          ))}
-        </div>
-
-        {data.prognosis.factors.length > 0 && (
-          <div style={{ marginTop: 12, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', lineHeight: 1.6 }}>
-            {data.prognosis.factors.map((f, i) => (
-              <span key={i}>
-                <span style={{ color: 'var(--green)', marginRight: 4 }}>+</span>{f}
-                {i < data.prognosis.factors.length - 1 && ' · '}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Today's workout ── */}
-      {nw && (
-        <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
-              NÄCHSTES TRAINING
-            </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-2)' }}>
-              {new Date(nw.plannedDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
-            </span>
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{activityLabel(nw.activityType)}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', marginTop: 3 }}>
-            Zone {nw.zone} · {nw.durationMin} min{nw.targetTss ? ` · TSS ${nw.targetTss}` : ''}
-          </div>
-          <ZoneBar zone={nw.zone} />
-          {nw.description && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', marginTop: 10, lineHeight: 1.55 }}>
-              {nw.description.split('\n')[0]}
-            </div>
-          )}
-          <button
-            onClick={() => navigate('/plan')}
-            style={{
-              width: '100%', marginTop: 14, padding: '11px',
-              background: 'var(--accent)', color: 'var(--bg)', border: 'none', borderRadius: 5,
-              fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.16em', fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            ZUM PLAN →
-          </button>
-        </div>
-      )}
-
-      {/* ── Form: CTL / ATL / TSB ── */}
-      <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>FORM · FITNESS</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-2)' }}>
-            {tsbBucket.label}
-          </span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {[
-            { id: 'CTL', v: fmt(fl.ctl, 1), sub: 'Fitness',   color: 'var(--accent)' },
-            { id: 'ATL', v: fmt(fl.atl, 1), sub: 'Ermüdung',  color: 'var(--amber)'  },
-            { id: 'TSB', v: fmtSigned(fl.tsb), sub: 'Form', color: tsbColor },
-          ].map(s => (
-            <div key={s.id}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em' }}>
-                <Tooltip id={s.id}>{s.id}</Tooltip>
-              </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, color: s.color, marginTop: 3 }}>{s.v}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', marginTop: 2 }}>{s.sub}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Coach Briefing ── */}
-      {briefingData?.briefing && (
-        <div style={{
-          padding: '14px 16px',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderLeft: '3px solid var(--accent)',
-          borderRadius: '4px 6px 6px 4px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em' }}>
-              COACH · DAILY BRIEF
-            </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
-              {new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-          <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-2)' }}>
-            {briefingData.briefing}
-          </div>
-        </div>
-      )}
-
-      <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', marginBottom: 5 }}>
-              KI-ANALYSE
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              Trends und Zusammenhänge aus Schlaf, HRV, Belastung, Gewicht und Mentaldaten.
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/data?tab=analysis')}
-            style={{
-              flexShrink: 0,
-              padding: '9px 11px',
-              background: 'var(--surface-2)',
-              color: 'var(--text)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '.12em',
-              cursor: 'pointer',
-            }}
-          >
-            ANALYSEN
-          </button>
-        </div>
-      </div>
 
     </div>
   );

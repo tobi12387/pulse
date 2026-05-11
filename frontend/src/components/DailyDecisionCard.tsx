@@ -121,12 +121,14 @@ export function DailyDecisionCard({
   decision,
   labelCase = 'upper',
   density = 'default',
+  framed = true,
   onActivate,
   onPrompt,
 }: {
   decision: DailyDecision;
   labelCase?: LabelCase;
   density?: Density;
+  framed?: boolean;
   onActivate?: (path: string) => void;
   onPrompt?: () => void;
 }) {
@@ -237,7 +239,15 @@ export function DailyDecisionCard({
   );
 
   return (
-    <div data-testid="daily-decision-card" style={{ padding: compact ? '10px 12px' : '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6 }}>
+    <div
+      data-testid="daily-decision-card"
+      style={{
+        padding: framed ? (compact ? '10px 12px' : '14px 16px') : 0,
+        background: framed ? 'var(--surface)' : 'transparent',
+        border: framed ? '1px solid var(--border)' : 'none',
+        borderRadius: framed ? 6 : 0,
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: compact ? 7 : 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em' }}>
           {label('Tagesentscheidung', labelCase)}

@@ -2,17 +2,19 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
-  { path: '/', label: 'Heute', navHref: '/', visibleText: 'READINESS' },
+  { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
   { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Heute, Trends, Qualität & Analyse' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/insights', label: 'Insights', navHref: '/insights', visibleText: 'Insights' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
 
 const primaryNavRoutes = [
-  { path: '/', label: 'Heute', navHref: '/', visibleText: 'READINESS' },
+  { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
   { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Heute, Trends, Qualität & Analyse' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/insights', label: 'Insights', navHref: '/insights', visibleText: 'Insights' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
 
@@ -30,9 +32,9 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.locator('a[href="/"]')).toContainText('Heute');
   await expect(primaryNav.locator('a[href="/data"]')).toContainText('Data');
   await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
+  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Insights');
   await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Settings');
   await expect(primaryNav.locator('a[href="/coach"]')).toHaveCount(0);
-  await expect(primaryNav.locator('a[href="/insights"]')).toHaveCount(0);
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
 
@@ -393,7 +395,7 @@ test('mobile Home free-day intent opens reduce-volume preview without creating a
     todayOptionsState: 'unplanned_trainable',
     onRequest: (pathname, method) => requests.push(`${method} ${pathname}`),
     onPlanScenarioPreview: body => { previewBody = body; },
-    planScenarioPreview: body => ({
+    planScenarioPreview: () => ({
       preview: {
         type: 'reduce_volume',
         summary: 'Heute frei: Pulse prueft defensivere offene Planlast.',
@@ -471,14 +473,14 @@ test('mobile Home planned workout state shows the concrete plan option without a
   await expect(page.getByTestId('today-options-card')).toContainText('Workout oeffnen');
 });
 
-test('/insights redirects to the Data analysis tab', async ({ page }) => {
+test('/insights renders as a top-level evidence route', async ({ page }) => {
   await page.goto('/insights');
-  await expect(page).toHaveURL('/data?tab=analysis');
-  await expect(page.getByRole('tab', { name: 'Analyse' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
+  await expect(page).toHaveURL('/insights');
+  await expect(page.getByRole('heading', { name: 'Insights', exact: true })).toBeVisible();
+  await expect(page.getByTestId('data-analysis-decision-quality-card')).toBeVisible();
 });
 
-test('primary navigation exposes only Heute, Data, Plan and Settings', async ({ page }) => {
+test('primary navigation exposes Focus routes without Coach tab', async ({ page }) => {
   await page.goto('/');
   await expectPrimaryNavigationWithoutCoach(page);
 
@@ -617,11 +619,11 @@ test('Plan mobile workout rows wrap status chips without horizontal overflow', a
   expect(rowOverflow).toEqual([]);
 });
 
-test('top-level hotkeys follow the four-tab navigation order', async ({ page }, testInfo) => {
+test('top-level hotkeys follow the Focus navigation order', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'top-level numeric hotkeys are a desktop navigation affordance');
 
   await page.goto('/');
-  await expectHealthyPage(page, 'READINESS');
+  await expectHealthyPage(page, 'TAGESENTSCHEIDUNG');
 
   await page.keyboard.press('2');
   await expect(page).toHaveURL('/data');
@@ -632,6 +634,10 @@ test('top-level hotkeys follow the four-tab navigation order', async ({ page }, 
   await expectHealthyPage(page, 'Training, Ziele & Statistik');
 
   await page.keyboard.press('4');
+  await expect(page).toHaveURL('/insights');
+  await expectHealthyPage(page, 'Insights');
+
+  await page.keyboard.press('5');
   await expect(page).toHaveURL('/settings');
   await expectHealthyPage(page, 'Settings');
 });
