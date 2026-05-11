@@ -96,6 +96,7 @@
 | `2026-05-11-customizable-daily-surface-v1.md` | Customizable Daily Surface v1 — local per-device Home focus-card ordering with safe defaults and no backend/Garmin writes | Customizable Daily Surface PR |
 | `2026-05-11-desktop-plan-daily-focus.md` | Desktop Plan Daily Focus — Plan starts with action plus week before compact season evidence, backed by route evidence | Desktop Density PR |
 | `2026-05-11-insights-synthesis-focus.md` | Insights Synthesis Focus — top-level Insights becomes a synthesis surface while Data Analyse remains the deep evidence workbench | Insights Density PR |
+| `2026-05-11-data-daily-action-focus.md` | Data Daily Action Focus — Data starts with one daily data action while triage and secondary evidence stay optional | Data Density PR |
 
 ## Bekannte veraltete Stellen
 

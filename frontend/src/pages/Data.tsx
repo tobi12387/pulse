@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader, SegmentedControl } from '@/components/PulseChrome';
 import { CoverageTab } from '@/features/data/coverage/coverage-components';
@@ -247,6 +247,44 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
 }
 
 function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
+  const homeQuery = usePulseHome();
+  const checkinToday = useCheckinToday();
+  const navigate = useNavigate();
+  const home = homeQuery.data;
+  const garmin = home?.dataStatus.garmin;
+  const hasCheckin = checkinToday.data?.checkin != null;
+  const garminReady = garmin?.status === 'ready';
+  const mentalValue = checkinToday.isLoading ? 'lädt' : hasCheckin ? 'vorhanden' : 'offen';
+  const primaryAction = !checkinToday.isLoading && !hasCheckin
+    ? {
+      title: 'Mental Check-in abschließen',
+      reason: 'Heute fehlt noch dein subjektives Signal. Pulse kann Training, Briefing und Erholung dadurch vorsichtiger, aber weniger persönlich einordnen.',
+      result: 'Öffnet den geführten Check-in. Nach dem Speichern nutzen Home, Plan und Coach dieselbe mentale Tageslage.',
+      cta: 'Check-in öffnen',
+      run: () => onOpen('heute', 'data-mental'),
+    }
+    : garmin?.status && !garminReady
+      ? {
+        title: 'Garmin-Daten prüfen',
+        reason: `Garmin meldet gerade ${garminStatusLabel(garmin.status).toLowerCase()}. Bevor du Werte interpretierst, sollte klar sein, welche Daten frisch sind.`,
+        result: 'Öffnet die Datenqualität mit Abdeckung, Lücken und sicheren Sync-/Backfill-Aktionen.',
+        cta: 'Datenqualität öffnen',
+        run: () => onOpen('qualitaet', 'data-garmin-quality'),
+      }
+      : {
+        title: 'Planwirkung prüfen',
+        reason: 'Deine heutigen Kernsignale sind nutzbar. Der sinnvollste nächste Blick ist, wie Readiness, TSB und Planlast die nächste Entscheidung verändern.',
+        result: 'Öffnet die Plan-Szenariofläche mit Data-Kontext, ohne Plan oder Garmin automatisch zu verändern.',
+        cta: 'Planwirkung öffnen',
+        run: () => navigate('/plan?tab=training&source=data-load#plan-scenario-preview'),
+      };
+  const evidence = [
+    { label: 'Readiness', value: `${fmtMetric(home?.readiness.score)}/100`, tone: readinessTone(home?.readiness.color) },
+    { label: 'TSB', value: fmtMetric(home?.fitnessLoad.tsb, 1), tone: 'var(--accent)' },
+    { label: 'Mental', value: mentalValue, tone: hasCheckin ? 'var(--green)' : 'var(--amber)' },
+    { label: 'Garmin', value: garminStatusLabel(garmin?.status), tone: garminTone(garmin?.status) },
+  ];
   const cards: Array<{ tab: Tab; hash?: string; title: string; text: string; cta: string }> = [
     {
       tab: 'analyse',
@@ -304,72 +342,174 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           Heute relevant
         </h2>
         <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-          Starte mit nutzbaren Signalen und öffne Details nur dann, wenn sie die Tagesentscheidung erklären.
+          Starte mit einer Daten-Aufgabe. Details bleiben verfügbar, wenn sie die Tagesentscheidung erklären.
         </p>
       </div>
-      <EvidenceTriage onOpen={onOpen} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
-        {cards.map(card => (
-          <div key={card.tab} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{card.title}</div>
-              <p style={{ margin: '5px 0 0', color: 'var(--text-2)', fontSize: 12, lineHeight: 1.45 }}>{card.text}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onOpen(card.tab, card.hash)}
-              style={{
-                alignSelf: 'flex-start',
-                minWidth: 44,
-                minHeight: 44,
-                padding: '7px 10px',
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                borderRadius: 5,
-                color: 'var(--accent)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: 0,
-                textTransform: 'uppercase',
-              }}
-            >
-              {card.cta}
-            </button>
+      <section
+        className="card"
+        data-testid="data-primary-action"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
+          gap: 14,
+          alignItems: 'start',
+          borderColor: 'rgba(94,230,207,0.26)',
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 6 }}>
+            Daten-Aktion
           </div>
-        ))}
-      </div>
-      <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '10px 11px', background: 'var(--surface-2)' }}>
-        <div className="label-mono" style={{ marginBottom: 8, color: 'var(--accent)' }}>ENTSCHEIDUNGS-EVIDENZ</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {provenance.map(item => (
-            <button
-              key={item.hash}
-              type="button"
-              onClick={() => onOpen(item.tab, item.hash)}
-              style={{
-                minWidth: 44,
-                minHeight: 44,
-                maxWidth: '100%',
-                padding: '8px 10px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 5,
-                color: 'var(--text-2)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: 0,
-                textAlign: 'left',
-                textTransform: 'uppercase',
-              }}
-              title={item.detail}
-            >
-              {item.label}
-            </button>
-          ))}
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 650, color: 'var(--text)' }}>
+            {primaryAction.title}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 9, marginTop: 12 }}>
+            <div>
+              <div className="label-mono" style={{ marginBottom: 4 }}>Warum jetzt</div>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
+                {primaryAction.reason}
+              </p>
+            </div>
+            <div>
+              <div className="label-mono" style={{ marginBottom: 4 }}>Nach dem Klick</div>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
+                {primaryAction.result}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+            {evidence.map(item => (
+              <span
+                key={item.label}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  padding: '5px 7px',
+                  background: 'var(--surface-2)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  color: 'var(--text-2)',
+                }}
+              >
+                <span style={{ color: 'var(--text-3)', textTransform: 'uppercase' }}>{item.label}</span>{' '}
+                <span style={{ color: item.tone }}>{item.value}</span>
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+        <button
+          type="button"
+          onClick={primaryAction.run}
+          style={{
+            minWidth: 44,
+            minHeight: 44,
+            padding: '9px 12px',
+            background: 'var(--accent)',
+            border: '1px solid var(--accent)',
+            borderRadius: 5,
+            color: 'var(--bg)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            justifySelf: 'end',
+          }}
+        >
+          {primaryAction.cta}
+        </button>
+      </section>
+      <button
+        type="button"
+        aria-expanded={secondaryOpen}
+        onClick={() => setSecondaryOpen(open => !open)}
+        style={{
+          alignSelf: 'flex-start',
+          minWidth: 44,
+          minHeight: 44,
+          padding: '8px 10px',
+          background: secondaryOpen ? 'rgba(94,230,207,0.12)' : 'transparent',
+          border: `1px dashed ${secondaryOpen ? 'rgba(94,230,207,0.45)' : 'var(--border)'}`,
+          borderRadius: 5,
+          color: secondaryOpen ? 'var(--accent)' : 'var(--text-2)',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: 0,
+          textTransform: 'uppercase',
+        }}
+      >
+        {secondaryOpen ? 'Weitere Datenbereiche ausblenden' : 'Weitere Datenbereiche anzeigen'}
+      </button>
+      {secondaryOpen && (
+        <div data-testid="data-secondary-areas" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <EvidenceTriage onOpen={onOpen} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
+            {cards.map(card => (
+              <div key={card.tab} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{card.title}</div>
+                  <p style={{ margin: '5px 0 0', color: 'var(--text-2)', fontSize: 12, lineHeight: 1.45 }}>{card.text}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onOpen(card.tab, card.hash)}
+                  style={{
+                    alignSelf: 'flex-start',
+                    minWidth: 44,
+                    minHeight: 44,
+                    padding: '7px 10px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 5,
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: 0,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {card.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '10px 11px', background: 'var(--surface-2)' }}>
+            <div className="label-mono" style={{ marginBottom: 8, color: 'var(--accent)' }}>ENTSCHEIDUNGS-EVIDENZ</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {provenance.map(item => (
+                <button
+                  key={item.hash}
+                  type="button"
+                  onClick={() => onOpen(item.tab, item.hash)}
+                  style={{
+                    minWidth: 44,
+                    minHeight: 44,
+                    maxWidth: '100%',
+                    padding: '8px 10px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 5,
+                    color: 'var(--text-2)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: 0,
+                    textAlign: 'left',
+                    textTransform: 'uppercase',
+                  }}
+                  title={item.detail}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
