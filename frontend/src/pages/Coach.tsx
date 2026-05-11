@@ -12,15 +12,19 @@ import {
   useCheckinToday,
   useDailyDecisionQuality,
   useDailyOutcomeLearning,
+  useGoalProjection,
+  usePersonalResponse,
   usePulseBriefing,
   usePulseActions,
   usePulseHome,
+  useSeasonStrategy,
 } from '@/pulse/hooks';
 import { pulseApi } from '@/pulse/api-client';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
 import { InlineFeedback, errorMessage } from '@/components/Feedback';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { mentalImpact } from '@/features/mental/mental-impact';
+import { ContextualCoachModeCard } from '@/features/coach/contextual-coach-mode';
 import type { PulseActionState, PulseDailyDecisionQualityResponse, PulseDailyOutcomeLearningItem, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
 
 type MicState = 'idle' | 'recording' | 'processing';
@@ -664,6 +668,9 @@ export default function Coach() {
   const { data: checkinGuidance } = useCheckinGuidance();
   const { data: checkinToday } = useCheckinToday();
   const { data: checkinHistory } = useCheckinHistory(7);
+  const personalResponse = usePersonalResponse(42);
+  const goalProjection = useGoalProjection(180);
+  const seasonStrategy = useSeasonStrategy();
   const m = home?.todayMetrics;
 
   const { data: historyData, isLoading } = useCoachHistory();
@@ -843,6 +850,16 @@ export default function Coach() {
             compact={hasMessages}
             primaryQuestion={checkinGuidance?.questions[0] ?? null}
             mentalCheckin={todayMentalCheckin}
+            onPrompt={setInput}
+          />
+        )}
+
+        {!isLoading && !hasMessages && !voiceCard && (
+          <ContextualCoachModeCard
+            personalResponse={personalResponse.data ?? null}
+            goalProjection={goalProjection.data ?? null}
+            seasonStrategy={seasonStrategy.data ?? null}
+            isLoading={personalResponse.isLoading || goalProjection.isLoading || seasonStrategy.isLoading}
             onPrompt={setInput}
           />
         )}

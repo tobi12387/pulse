@@ -1,6 +1,6 @@
 # Pulse Product Roadmap
 
-> Stand: 2026-05-11 after Personal Response Model, Predictive Goal Engine and Adaptive Season Builder v1. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
+> Stand: 2026-05-11 after Personal Response Model, Predictive Goal Engine, Adaptive Season Builder v1 and Contextual Coach Mode v1. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
 
 ## Product North Star
 
@@ -135,8 +135,8 @@ These build on the calmer daily UI.
 | Personal Response Model | Implemented v1: Pulse exposes deterministic, read-only response evidence in Data > Analyse and labels weak evidence instead of mutating plans or Garmin. |
 | Predictive Goal Engine | Implemented v1: Pulse exposes deterministic, read-only goal probability, limiter risk and next best intervention in Data > Analyse, using Personal Response, capability, fueling, load and execution evidence without mutating plan or Garmin. |
 | Adaptive Season Builder | Implemented v1: Plan shows a read-only `Saisonvertrag` that combines Season Strategy and Goal Projection evidence, including top-goal probability, next 14-day contract, hard-day cap, load guardrail and next intervention without hidden mutations. |
-| Contextual Coach Mode | Next non-gated build: after response, goal and season-contract evidence exist, Coach becomes an explanation/reflection mode that can live as a tab, overlay or route depending on evidence. |
-| Customizable Daily Surface | After the daily command surface has stable response/goal inputs, Tobi can choose which focus cards appear first while Pulse keeps safe defaults for the daily decision. |
+| Contextual Coach Mode | Implemented v1: Coach shows a read-only context card that combines Personal Response, Goal Projection and Season Strategy evidence, then prepares a focused prompt only after an explicit click. |
+| Customizable Daily Surface | Next non-gated build: after the daily command surface has stable response/goal/season/coach inputs, Tobi can choose which focus cards appear first while Pulse keeps safe defaults for the daily decision. |
 
 ## Active Plan Surface
 
@@ -154,8 +154,8 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 1. **Predictive Goal Engine v1:** implemented as read-only goal probability, limiter risk and next-intervention evidence from Personal Response, capability, fueling and execution data. No hidden plan mutation in v1.
 2. **Adaptive Season Builder v1:** implemented as a read-only Plan `Saisonvertrag` that consumes existing season strategy and goal projection evidence. No hidden workout, goal or Garmin mutation in v1.
-3. **Contextual Coach Mode:** next non-gated build; after response, goal and season-contract evidence exist, let Coach explain response patterns and ask focused follow-up questions, either as tab, overlay or route based on evidence.
-4. **Customizable Daily Surface:** after daily command has stable response/goal inputs, allow Tobi to choose which focus cards appear first while Pulse keeps safe defaults.
+3. **Contextual Coach Mode:** implemented as a read-only Coach context card using Personal Response, Goal Projection and Season Strategy evidence. No automatic send, new backend endpoint, LLM prompt mutation or Garmin write in v1.
+4. **Customizable Daily Surface:** next non-gated build; after daily command has stable response/goal/season/coach inputs, allow Tobi to choose which focus cards appear first while Pulse keeps safe defaults.
 5. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
 6. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
 7. **Optional Daily Delta echoes / Garmin modal polish:** only if route evidence or user feedback shows a real gap.
