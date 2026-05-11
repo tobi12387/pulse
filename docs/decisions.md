@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Benchmark-Roadmap wird als aktive Produktreihenfolge versoehnt
+
+- **Decision:** Die 2026-05-09/2026-05-10 Benchmark- und Browser-Review-Dokumente bleiben verbindliche Roadmap-Eingaben. Die naechste autonome Produktreihenfolge ist Data IA Compression v1, Settings Status First v1, Workout Alternatives UX v2 und danach Nutrition Trend Summaries nur bei ausreichend wiederholten Logs; Daily-Delta-Echos und Garmin-Modal-Wording bleiben evidence-gated.
+- **Why:** Die letzten PRs haben viele Benchmark-Gaps umgesetzt, aber die kanonische Roadmap zeigte danach nur noch optionale Items. Das konnte so wirken, als wuerden wichtige Benchmark-Luecken wie Data-IA, Settings-Orientierung und Alternatives-UX verschwinden. Die Versoehnung trennt erledigte Benchmark-Wellen, offene nicht-optionale Produktarbeit und bewusst deferte UI-Echos.
+- **Alternatives:** Optional-Echos als naechstes bauen (mehr UI-Dichte ohne neue Evidence); alle alten Benchmark-Plaene wieder als Backlog oeffnen (Rebuild-Risiko); nur `current-focus` korrigieren (Roadmap bleibt widerspruechlich).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-10 — Optional UI-Echos werden nach Route Evidence nicht gebaut
 
 - **Decision:** Nach frischer Route Evidence auf `7c087da` werden Daily-Delta-Plan/Data-Echos und weiteres Garmin-Modal-Wording vorerst nicht umgesetzt.

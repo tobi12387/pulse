@@ -1,6 +1,6 @@
 # Pulse Product Roadmap
 
-> Stand: 2026-05-10 after the UI/UX benchmark against Garmin, WHOOP, Oura, TrainerRoad, TrainingPeaks, JOIN, Runna, Strava, MacroFactor and Intervals/Xert/WKO-style analytics. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching plan.
+> Stand: 2026-05-11 after reconciling the 2026-05-09/2026-05-10 benchmark and browser-review waves. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
 
 ## Product North Star
 
@@ -76,6 +76,29 @@ Potential future areas are therefore open product options, not exceptions:
 | MacroFactor | Dashboard plus quick actions plus weekly coaching updates explain what changed. | Pulse should summarize deltas and plan changes instead of asking Tobi to reinterpret raw metrics. |
 | Intervals.icu / Xert / WKO | Deep analytics and model provenance are powerful for experts. | Pulse should keep deep analysis in Data and translate it into next actions before surfacing it elsewhere. |
 
+## Benchmark Inputs To Preserve
+
+The 2026-05-09/2026-05-10 benchmark work is part of this roadmap, not disposable history. Use these docs as evidence before changing priority:
+
+- `docs/superpowers/plans/completed/2026-05-09-training-benchmark-gap-plan.md`: TrainerRoad, TrainingPeaks, JOIN, Intervals and WKO gaps that led to capability levels, workout library fit, TrainNow, scenario preview, season load, Garmin sync contracts and goal limiter evidence.
+- `docs/qa/2026-05-10-fresh-benchmark-ui-review.md`: UI/UX review against Garmin, WHOOP, Oura, TrainerRoad, TrainingPeaks, JOIN, Runna, MacroFactor and analytics tools; identified daily-command clarity, mobile density, Garmin execution trust and progression visibility.
+- `docs/superpowers/plans/completed/2026-05-10-fresh-benchmark-ui-roadmap.md`: execution order for UI Accessibility Polish v2, Daily Command Center v2, Garmin Execution Trust v2 and Progression Library v2.
+- `docs/qa/2026-05-10-post-progression-benchmark-ui-review.md`: post-progression review; moved the bottleneck from missing intelligence to plan activation, post-apply Garmin proof, signal labels, fueling closure and limiter mapping.
+- `docs/superpowers/plans/completed/2026-05-10-post-progression-next-roadmap.md`: implemented sequence for Plan Refresh Preview, Garmin Readback Closure, Today Options Signal Labels, Fueling Debt Closure, Limiter-To-Workout Mapping and no-Garmin-write QA.
+- `docs/qa/2026-05-10-next-options-route-evidence.md`: evidence gate that deferred optional Daily Delta Plan/Data echoes and additional Garmin modal wording because screenshots did not show a current user-facing gap.
+
+### Reconciliation Status
+
+| Benchmark theme | Current status | Roadmap consequence |
+|---|---|---|
+| Capability levels, workout fit and plan variation | Implemented through the 2026-05-09 benchmark gap wave and later progression-library work. | Do not rebuild the foundations; improve how alternatives and weekly progression are explained only when route evidence or user friction shows confusion. |
+| Daily command clarity and mobile density | Implemented in Home/Heute, Daily Command Center, UX Task Contract, Plan Action Hierarchy and Daily Delta Home v1. | Continue reducing density by reorganizing existing pages, not by adding more summary cards. |
+| Garmin execution trust | Implemented through sync contract, ledger, readback diff, repeat audit, repair actions and Plan `Ausfuehrung` closure. | Future Garmin work should focus on real-device/write evidence, not generic copy churn. |
+| Plan activation | Implemented through Plan Refresh Preview, Apply + Garmin Readback Closure and no-Garmin-write QA. | Keep preview/apply explicit; do not introduce hidden regeneration or automatic Garmin writes. |
+| Fueling intelligence | Implemented through MNSTRY guidance, practical logs, GI learning, fueling debt closure and outcome baseline. | Wait for repeated long-session logs before trend summaries; keep sodium/heat/sweat-rate claims as evidence gaps until measured. |
+| Data/Settings information architecture | Partially addressed by Data evidence links and Settings diagnostics, but not fully compressed. | This is the next non-optional UX/product gap from the benchmarks. |
+| iPhone/PWA reliability | Evidence record and diagnostics exist; real-device certificate/push gates remain manual. | Keep as a manual/evidence gate unless Tobi reports concrete iPhone friction. |
+
 ## Harmonized Roadmap
 
 ### Short Term: Make Pulse Easier To Use Daily
@@ -99,9 +122,9 @@ These build on the calmer daily UI.
 | Theme | Outcome | Benchmark Link |
 |---|---|---|
 | Pulse Athlete Levels | Implemented: energy-system capability is visible in daily decisions and scenario previews as `Machbar`, `Produktiv`, `Stretch` or `Zu hart heute` before apply. | TrainerRoad Workout/Progression Levels |
-| Workout Alternatives v2 | Every relevant workout can offer shorter, easier, same-purpose, outside/indoor, group/solo or recovery alternatives. | TrainerRoad TrainNow, JOIN availability |
-| Data IA Compression | Data becomes `Heute relevant`, `Trends`, `Datenqualitaet` and `Analyse`, instead of many equal tabs. | Oura Trends, Intervals analytics |
-| Settings Status First | Settings starts with `Alles bereit` or `Problem beheben`, then details. | Garmin/WHOOP app diagnostics |
+| Workout Alternatives v2 | Partially implemented: Pulse has recommended alternatives, scenario previews and capability-aware fit. Next slice should make alternatives easier to understand and ensure every visible alternative follows the UX Task Contract. | TrainerRoad TrainNow, JOIN availability |
+| Data IA Compression | Next: Data should become `Heute relevant`, `Trends`, `Datenqualitaet` and `Analyse`, instead of many equal tabs. | Oura Trends, Intervals analytics |
+| Settings Status First | Next: Settings should start with `Alles bereit` or `Problem beheben`, then details for Garmin, PWA, Push, profile and local ops. | Garmin/WHOOP app diagnostics |
 | Nutrition Intelligence | Implemented: low-intake GI logs change the concrete next long-session target to a controlled `50-70 g/h`, and outcome baselines now structure carb target, bottles, powder, fluid and sodium evidence gaps in Activity and Plan. Future slices should add repeated-log trend summaries and real heat/sweat-rate context. | MacroFactor coaching update pattern |
 | iPhone/PWA Field Reliability | Real device evidence decides whether PWA fixes are enough or whether a native/wrapper path is worth planning. | WHOOP/Oura mobile-first reliability |
 
@@ -129,9 +152,12 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Optional Daily Delta echoes:** add compact Plan/Data mirrors only if route evidence shows the Home v1 card is insufficient.
-2. **Optional Garmin modal polish:** refine workout-detail copy only if route evidence shows `vor Upload`/readback wording still confuses execution.
-3. **Nutrition trend summaries:** only after more repeated fueling logs exist, summarize stable/learning trends and heat/sodium gaps without medical claims.
+1. **Data IA Compression v1:** reorganize Data into fewer task-oriented areas (`Heute relevant`, `Trends`, `Datenqualitaet`, `Analyse`) so evidence stays available without reading like a diagnostics dashboard. Start with a PR-sized plan and fresh route evidence.
+2. **Settings Status First v1:** make Settings open with one status summary (`Alles bereit` / `Problem beheben`) and clear repair actions before technical detail.
+3. **Workout Alternatives UX v2:** keep the implemented capability/alternative foundations, but make each visible alternative state purpose, why-now, Garmin/result impact and safest recommendation in one compact contract.
+4. **Nutrition trend summaries:** only after more repeated fueling logs exist, summarize stable/learning trends and heat/sodium gaps without medical claims.
+5. **Optional Daily Delta echoes:** only if route evidence or Tobi reports that the Home v1 card is insufficient in Plan/Data.
+6. **Optional Garmin modal polish:** only if live/user evidence shows `vor Upload`/readback wording still confuses execution.
 
 ## Manual Gates
 
