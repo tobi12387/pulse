@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Contextual Coach Mode v1 bleibt read-only
+
+- **Decision:** Contextual Coach Mode v1 wird als read-only Coach-Kontextkarte umgesetzt, die Personal Response, Goal Projection und Season Strategy Evidence sichtbar macht und nur per Klick eine fokussierte Frage vorbereitet.
+- **Why:** Coach soll persoenlicher wirken, aber nicht heimlich LLM-Kontext, Planlogik oder Garmin-Writes veraendern. Erst muss sichtbar werden, welche Evidenz der Coach nutzt und welche Frage daraus folgt.
+- **Alternatives:** Backend-/LLM-Prompt sofort erweitern (zu versteckt); Coach als neuen Haupttab bauen (zu grosser IA-Scope); automatische Coach-Nachricht senden (bricht Nutzerkontrolle).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Adaptive Season Builder v1 nutzt vorhandene Season- und Goal-Evidenz
 
 - **Decision:** Adaptive Season Builder v1 wird als read-only Saisonvertrag in Plan umgesetzt, der bestehende Season Strategy und Goal Projection Evidence kombiniert. Er erzeugt keine parallele Saisonlogik und schreibt keine Workouts, Ziele oder Garmin-Daten.

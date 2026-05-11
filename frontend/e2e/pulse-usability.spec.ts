@@ -269,7 +269,7 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByText('WARUM')).toBeVisible();
-  await expect(page.getByText('WAS JETZT?', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('NÄCHSTER SCHRITT', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -285,7 +285,7 @@ test('Daily loop clarity keeps Home guidance plain and slim support on task rout
 
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByText('WAS JETZT?', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('NÄCHSTER SCHRITT', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -827,7 +827,7 @@ test('Home owns the full daily decision while Coach carries slim prompt context'
   await page.goto('/');
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Training heute defensiv entscheiden' })).toBeVisible();
-  await expect(page.getByText('WAS JETZT?', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('NÄCHSTER SCHRITT', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -1027,6 +1027,38 @@ test('Coach uses today mental check-in as planning context instead of asking aga
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Mental Fitness schonen/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Stimmung 3\/10/);
   expect(coachSends).toBe(0);
+});
+
+test('Contextual Coach mode surfaces response goal and season evidence without sending', async ({ page }) => {
+  let coachSends = 0;
+  let insightRequests = 0;
+  const writeRequests: string[] = [];
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+      if (pathname === '/api/pulse/insights') insightRequests += 1;
+      if (method !== 'GET' && method !== 'OPTIONS') writeRequests.push(`${method} ${pathname}`);
+    },
+  });
+
+  await page.goto('/coach');
+
+  const card = page.getByTestId('coach-contextual-mode-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Coach-Kontext');
+  await expect(card).toContainText('Pulse lernt deine Reaktionsmuster');
+  await expect(card).toContainText('70.3 Kraichgau');
+  await expect(card).toContainText('Fueling-Praxis absichern');
+  await expect(card).toContainText('Build');
+
+  await card.getByRole('button', { name: 'Mit Kontext fragen' }).click();
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Pulse lernt deine Reaktionsmuster/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/70\.3 Kraichgau/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Fueling-Praxis absichern/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Saisonvertrag: Build/);
+  expect(coachSends).toBe(0);
+  expect(insightRequests).toBe(0);
+  expect(writeRequests).toEqual([]);
 });
 
 test('Data mental check-in uses quick choices with guided context', async ({ page }) => {
