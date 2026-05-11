@@ -17,7 +17,7 @@ type EvidenceItem = {
   value: string;
   window: string;
   status: EvidenceStatus;
-  targetRoute?: '/data' | '/data?tab=analysen' | '/plan' | '/insights' | `/activities/${number}`;
+  targetRoute?: '/data' | '/data?tab=analysis' | '/data?tab=analysen' | '/plan' | '/insights' | `/activities/${number}`;
   targetLabel?: string;
 };
 type MissingDataItem = { label: string; reason: string; action?: string };
@@ -559,5 +559,5 @@ export function DataAnalysenTab() {
 }
 
 export default function InsightsRedirect() {
-  return <Navigate to="/data?tab=analysen" replace />;
+  return <Navigate to="/data?tab=analysis" replace />;
 }

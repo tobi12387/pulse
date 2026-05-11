@@ -130,10 +130,10 @@ function mapEvidence(item: string): DailyDecisionEvidence {
     normalized.includes('motivation') ||
     normalized.includes('mental')
   ) {
-    return { label: item, targetPath: '/data?tab=mental#data-mental' };
+    return { label: item, targetPath: '/data?tab=today#data-mental' };
   }
   if (normalized.includes('garmin') || normalized.includes('abdeckung') || normalized.includes('coverage')) {
-    return { label: item, targetPath: '/data?tab=coverage#data-garmin-quality' };
+    return { label: item, targetPath: '/data?tab=quality#data-garmin-quality' };
   }
   if (
     normalized.includes('tsb') ||
@@ -143,7 +143,7 @@ function mapEvidence(item: string): DailyDecisionEvidence {
     normalized.includes('risiko') ||
     normalized.includes('risk')
   ) {
-    return { label: item, targetPath: '/data?tab=analysen#data-plan-trace' };
+    return { label: item, targetPath: '/data?tab=analysis#data-plan-trace' };
   }
   return item;
 }
@@ -182,8 +182,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const emptyState = feedbackDone ? 'Für heute ist nichts mehr offen. Training und Feedback sind erledigt.' : undefined;
     const evidence: DailyDecisionEvidence[] = [
       { label: `Erledigt: ${completedLabel}`, targetPath: '/plan?tab=training' },
-      { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data#data-recovery' },
-      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' },
+      { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
+      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ];
     const reason = 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
     const alternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
@@ -240,8 +240,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const emptyState = feedbackDone ? 'Für heute ist nichts mehr offen. Garmin-Aktivität und Feedback sind erledigt.' : undefined;
     const evidence: DailyDecisionEvidence[] = [
       { label: `Garmin: ${completedLabel}`, targetPath: feedbackTargetPath },
-      { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data#data-recovery' },
-      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' },
+      { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
+      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ];
     const reason = 'Garmin hat heute bereits Training erfasst, obwohl kein Pulse-Workout geplant war. Für heute zählt jetzt Feedback, Versorgung und Regeneration statt eine weitere Einheit zu suchen.';
     const alternative = 'Kein Zusatztraining nachschieben; wenn die Aktivität anders geplant war, danach den Plan neu abgleichen.';
@@ -292,8 +292,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const supportCta = !action && !todayWorkout ? 'Coach fragen' : undefined;
   const supportPath = !action && !todayWorkout ? '/coach?focus=daily' : undefined;
   const evidence: DailyDecisionEvidence[] = [
-    { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data#data-recovery' },
-    { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysen#data-plan-trace' },
+    { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
+    { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
     ...(action?.evidence?.map(mapEvidence) ?? []),
   ];

@@ -7,9 +7,9 @@ import { MOCK_TODAY, mockPulseApi } from './fixtures/pulse-api';
 const routes = [
   { path: '/', label: 'home', visibleText: 'READINESS' },
   { path: '/coach', label: 'coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'data', visibleText: 'Schlaf, Metriken, Mental & Analysen' },
-  { path: '/data?tab=mental', label: 'data-mental', visibleText: 'Quick Check-in' },
-  { path: '/data?tab=analysen', label: 'data-analysen', visibleText: 'Analysen' },
+  { path: '/data', label: 'data', visibleText: 'Heute, Trends, Qualität & Analyse' },
+  { path: '/data?tab=today#data-mental', label: 'data-mental', visibleText: 'Quick Check-in' },
+  { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analyse' },
   { path: '/plan', label: 'plan', visibleText: 'Training, Ziele & Statistik' },
   { path: '/settings', label: 'settings', visibleText: 'Settings' },
 ] as const;
@@ -226,7 +226,7 @@ test.describe('Route evidence screenshot pack', () => {
 
       await mockPulseApi(page, { checkinToday: { checkin: null } });
       await capture(
-        { path: '/data?tab=mental', label: 'data-mental-first-viewport', visibleText: 'Quick Check-in' },
+        { path: '/data?tab=today#data-mental', label: 'data-mental-first-viewport', visibleText: 'Quick Check-in' },
         async () => {
           await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
           await expect(page.getByRole('button', { name: 'Mehr beschreiben' })).toBeVisible();

@@ -21,10 +21,10 @@ test('/data opens a user-facing overview by default', async ({ page }) => {
 
   await page.goto('/data');
 
-  await expect(page.getByRole('tab', { name: 'Überblick' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('heading', { name: 'Datenüberblick', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Analysen öffnen' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Abdeckung' })).toHaveAttribute('aria-selected', 'false');
+  await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('heading', { name: 'Heute relevant', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Analyse öffnen' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Datenqualität' })).toHaveAttribute('aria-selected', 'false');
 });
 
 test('/data?tab=coverage still opens the coverage tab', async ({ page }) => {
@@ -32,8 +32,8 @@ test('/data?tab=coverage still opens the coverage tab', async ({ page }) => {
 
   await page.goto('/data?tab=coverage');
 
-  await expect(page.getByRole('tab', { name: 'Abdeckung' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tab', { name: 'Analysen' })).toHaveAttribute('aria-selected', 'false');
+  await expect(page.getByRole('tab', { name: 'Datenqualität' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Analyse' })).toHaveAttribute('aria-selected', 'false');
 });
 
 test('Mental check-in keeps quick choices behind optional detail entry', async ({ page }) => {

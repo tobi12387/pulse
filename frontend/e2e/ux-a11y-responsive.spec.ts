@@ -79,9 +79,9 @@ test('mobile Data tabs wrap without document-level horizontal overflow', async (
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab containment check');
 
   await page.goto('/data');
-  await expect(page.getByRole('tab', { name: 'Abdeckung' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Datenqualität' })).toBeVisible();
 
-  const tabState = await page.getByRole('tab', { name: 'Abdeckung' }).evaluate((element) => {
+  const tabState = await page.getByRole('tab', { name: 'Datenqualität' }).evaluate((element) => {
     const parent = element.parentElement as HTMLElement;
     const rect = parent.getBoundingClientRect();
     const tabs = Array.from(parent.querySelectorAll<HTMLElement>('[role="tab"]'))
@@ -123,13 +123,13 @@ test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
   const tablist = page.getByRole('tablist', { name: 'Data Bereiche' });
   await expect(tablist).toBeVisible();
 
-  await page.getByRole('tab', { name: 'Überblick' }).focus();
+  await page.getByRole('tab', { name: 'Heute relevant' }).focus();
   await page.keyboard.press('ArrowRight');
 
-  const coverageTab = page.getByRole('tab', { name: 'Abdeckung' });
-  await expect(coverageTab).toBeFocused();
-  await expect(coverageTab).toHaveAttribute('aria-selected', 'true');
-  await expect(page).toHaveURL('/data?tab=coverage');
+  const trendsTab = page.getByRole('tab', { name: 'Trends' });
+  await expect(trendsTab).toBeFocused();
+  await expect(trendsTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL('/data?tab=trends');
 });
 
 test('desktop operational routes use a wider shell than Home', async ({ page }, testInfo) => {
@@ -140,7 +140,7 @@ test('desktop operational routes use a wider shell than Home', async ({ page }, 
   const homeWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
   await page.goto('/data');
-  await expect(page.getByText('Schlaf, Metriken, Mental & Analysen')).toBeVisible();
+  await expect(page.getByText('Heute, Trends, Qualität & Analyse')).toBeVisible();
   const dataWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
   expect(homeWidth).toBeLessThanOrEqual(820);

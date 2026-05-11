@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Data IA wird auf vier evidence-orientierte Bereiche verdichtet
+
+- **Decision:** Data nutzt kuenftig vier Top-Level-Bereiche (`Heute relevant`, `Trends`, `Datenqualitaet`, `Analyse`) statt sieben gleichrangiger Implementierungs-Tabs. Alte Query-/Hash-Ziele wie `tab=mental`, `tab=metrics`, `tab=coverage`, `tab=weight`, `tab=analysen`, `#data-mental`, `#data-recovery` und `#data-plan-trace` bleiben kompatibel und werden intern in die neuen Bereiche gemappt.
+- **Why:** Die Benchmark- und Browser-Reviews zeigten, dass Data als Beweisraum wichtig ist, aber zu viel Tab-Flache erzeugt und dadurch wie Wartung statt Tagesnutzen wirkt. Die Verdichtung reduziert Orientierungsarbeit, ohne bestehende Mental-, Garmin-, Recovery- oder Analyse-Komponenten und ohne Backend/API-Vertraege umzubauen.
+- **Alternatives:** Sieben Tabs belassen (zu viel kognitive Last); alte Links brechen und nur neue URLs erlauben (Deep-Link-Regression); neue Backend-/Datenmodelle fuer Data bauen (nicht noetig fuer die beobachtete UX-Friktion).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Benchmark-Roadmap wird als aktive Produktreihenfolge versoehnt
 
 - **Decision:** Die 2026-05-09/2026-05-10 Benchmark- und Browser-Review-Dokumente bleiben verbindliche Roadmap-Eingaben. Die naechste autonome Produktreihenfolge ist Data IA Compression v1, Settings Status First v1, Workout Alternatives UX v2 und danach Nutrition Trend Summaries nur bei ausreichend wiederholten Logs; Daily-Delta-Echos und Garmin-Modal-Wording bleiben evidence-gated.

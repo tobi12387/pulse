@@ -264,7 +264,7 @@ export default function Settings() {
               <Row label="Backfill">
                 <button
                   type="button"
-                  onClick={() => navigate('/data?tab=coverage')}
+                  onClick={() => navigate('/data?tab=quality')}
                   style={{
                     background: 'var(--surface-2)',
                     border: '1px solid var(--border)',
@@ -542,7 +542,7 @@ function SettingsDiagnosticsMatrix({
           ? `Tagesmetriken 30T: ${garminCoverageDays}.`
           : 'Garmin-Status wird geladen.',
       action: { label: 'Garmin öffnen', path: '/settings?section=garmin' },
-      secondaryAction: { label: 'Abdeckung', path: '/data?tab=coverage' },
+      secondaryAction: { label: 'Abdeckung', path: '/data?tab=quality' },
     },
     {
       key: 'cert',
