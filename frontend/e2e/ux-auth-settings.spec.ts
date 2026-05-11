@@ -54,6 +54,8 @@ test('Settings keeps Garmin diagnostics honest when status is unknown', async ({
 
   await page.goto('/settings');
 
+  await expect(page.getByTestId('settings-status-summary')).toContainText('Problem beheben');
+  await expect(page.getByTestId('settings-status-summary')).toContainText('Garmin');
   await expect(page.getByTestId('settings-diagnostics-matrix')).toContainText('Unbekannt');
 });
 

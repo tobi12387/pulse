@@ -38,6 +38,19 @@ interface GarminBackfillSnapshot {
   failed: number;
 }
 
+type SettingsDiagnosticAction = { label: string; path: string };
+type SettingsDiagnosticRow = {
+  key: string;
+  label: string;
+  value: string;
+  color: string;
+  detail: string;
+  action: SettingsDiagnosticAction;
+  secondaryAction?: SettingsDiagnosticAction;
+  blocksReadiness: boolean;
+  optionalSetup?: boolean;
+};
+
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
 type SettingsSection = 'profile' | 'coach' | 'garmin' | 'equipment' | 'push' | 'device' | 'health';
 const SETTINGS_SECTIONS = new Set<SettingsSection>(['profile', 'coach', 'garmin', 'equipment', 'push', 'device', 'health']);
@@ -487,8 +500,11 @@ function SettingsDiagnosticsMatrix({
       ? 'var(--green)'
       : 'var(--amber)';
   const certificateLabel = device.secure ? 'manuell prüfen' : 'nicht sicher';
+  const pushBlocksReadiness = !pushConfigured || !pushSupported || pushPermission === 'denied';
+  const pushOptionalSetup = !pushBlocksReadiness && pushSubscriptions === 0;
+  const garminBlocksReadiness = !garminLoading && garminLabel !== 'Bereit';
 
-  const rows = [
+  const rows: SettingsDiagnosticRow[] = [
     {
       key: 'access',
       label: 'Zugriff',
@@ -498,6 +514,7 @@ function SettingsDiagnosticsMatrix({
         ? `${device.origin} ist als sicherer Kontext erreichbar.`
         : `${device.origin} läuft nicht als sicherer Kontext.`,
       action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+      blocksReadiness: !device.secure,
     },
     {
       key: 'pwa',
@@ -506,6 +523,7 @@ function SettingsDiagnosticsMatrix({
       color: device.standalone ? 'var(--green)' : 'var(--text-3)',
       detail: device.standalone ? 'Pulse läuft im Home-Screen-Modus.' : 'Aktuell als Browser-Tab geöffnet.',
       action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+      blocksReadiness: false,
     },
     {
       key: 'worker',
@@ -514,6 +532,7 @@ function SettingsDiagnosticsMatrix({
       color: device.serviceWorker ? 'var(--green)' : 'var(--amber)',
       detail: device.serviceWorker ? 'Offline-/PWA-Grundlage ist im Browser vorhanden.' : 'Dieser Browser meldet keine Service-Worker-Unterstützung.',
       action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+      blocksReadiness: !device.serviceWorker,
     },
     {
       key: 'push',
@@ -526,6 +545,8 @@ function SettingsDiagnosticsMatrix({
           ? `${pushSubscriptions} Gerät(e) aktiv.`
           : 'Aktivierung passiert bewusst pro Browser/Gerät.',
       action: { label: 'Push öffnen', path: '/settings?section=push' },
+      blocksReadiness: pushBlocksReadiness,
+      optionalSetup: pushOptionalSetup,
     },
     {
       key: 'garmin',
@@ -543,6 +564,7 @@ function SettingsDiagnosticsMatrix({
           : 'Garmin-Status wird geladen.',
       action: { label: 'Garmin öffnen', path: '/settings?section=garmin' },
       secondaryAction: { label: 'Abdeckung', path: '/data?tab=quality' },
+      blocksReadiness: garminBlocksReadiness,
     },
     {
       key: 'cert',
@@ -551,8 +573,21 @@ function SettingsDiagnosticsMatrix({
       color: device.secure ? 'var(--amber)' : 'var(--rose)',
       detail: 'Pulse kann iOS-Zertifikatsvertrauen nicht automatisch erkennen; Safari zeigt Warnungen selbst.',
       action: { label: 'Gerät öffnen', path: '/settings?section=device' },
+      blocksReadiness: !device.secure,
     },
   ];
+  const readinessProblems = rows.filter(row => row.blocksReadiness);
+  const optionalActions = rows.filter(row => row.optionalSetup);
+  const summaryActions = readinessProblems.length > 0 ? readinessProblems.slice(0, 3) : optionalActions.slice(0, 1);
+  const ready = readinessProblems.length === 0;
+  const statusTitle = ready ? 'Alles bereit' : 'Problem beheben';
+  const statusDetail = ready
+    ? (optionalActions.length > 0
+      ? 'Keine Blocker erkannt. Optional kannst du noch Geräte- oder Push-Schritte abschließen.'
+      : 'Zugriff, Garmin, Push-Basis und Gerätefähigkeit sind aktuell nutzbar.')
+    : `${readinessProblems.length} ${readinessProblems.length === 1 ? 'Punkt' : 'Punkte'} prüfen: ${readinessProblems.map(row => row.label).join(', ')}.`;
+  const statusPill = ready ? 'BEREIT' : 'PRÜFEN';
+  const statusColor = ready ? 'var(--green)' : 'var(--amber)';
 
   const shortcuts: Array<{ label: string; path: string }> = [
     { label: 'Gerät', path: '/settings?section=device' },
@@ -568,6 +603,104 @@ function SettingsDiagnosticsMatrix({
       data-testid="settings-diagnostics-matrix"
       style={{ display: 'flex', flexDirection: 'column', gap: 12, borderColor: 'rgba(94,230,207,0.22)' }}
     >
+      <div
+        data-testid="settings-status-summary"
+        style={{
+          border: `1px solid ${ready ? 'rgba(74,222,128,0.28)' : 'rgba(245,158,11,0.34)'}`,
+          borderRadius: 6,
+          background: ready ? 'rgba(74,222,128,0.05)' : 'rgba(245,158,11,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          padding: '12px 13px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+          <div>
+            <div className="label-mono" style={{ color: ready ? 'var(--green)' : 'var(--amber)', marginBottom: 4 }}>
+              SETTINGS STATUS
+            </div>
+            <h2 style={{ margin: 0, fontSize: 18, color: 'var(--text)', fontWeight: 650 }}>
+              {statusTitle}
+            </h2>
+          </div>
+          <Pill color={statusColor}>{statusPill}</Pill>
+        </div>
+        <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          {statusDetail}
+        </p>
+        {summaryActions.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
+            {summaryActions.map(row => (
+              <div
+                key={row.key}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  background: 'var(--surface)',
+                  padding: '9px 10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text)' }}>{row.label}</span>
+                  <Pill color={row.color}>{row.value}</Pill>
+                </div>
+                <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+                  {row.optionalSetup ? 'Optional: Aktivierung pro Gerät abschließen.' : row.detail}
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(row.action.path)}
+                    style={{
+                      minWidth: 44,
+                      minHeight: 44,
+                      padding: '6px 9px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      color: 'var(--text-2)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      letterSpacing: 0,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {row.action.label}
+                  </button>
+                  {row.secondaryAction && !row.optionalSetup && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(row.secondaryAction!.path)}
+                      style={{
+                        minWidth: 44,
+                        minHeight: 44,
+                        padding: '6px 9px',
+                        background: 'transparent',
+                        border: '1px solid rgba(94,230,207,0.3)',
+                        borderRadius: 4,
+                        color: 'var(--accent)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        letterSpacing: 0,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {row.secondaryAction.label}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <div>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 4 }}>
@@ -577,9 +710,7 @@ function SettingsDiagnosticsMatrix({
             Zugriff, PWA, Push & Garmin
           </h2>
         </div>
-        <Pill color={device.secure && device.serviceWorker ? 'var(--green)' : 'var(--amber)'}>
-          {device.secure && device.serviceWorker ? 'BEREIT' : 'PRÜFEN'}
-        </Pill>
+        <Pill color={statusColor}>{statusPill}</Pill>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -653,7 +784,7 @@ function SettingsDiagnosticsMatrix({
               {row.secondaryAction && (
                 <button
                   type="button"
-                  onClick={() => onNavigate(row.secondaryAction.path)}
+                  onClick={() => onNavigate(row.secondaryAction!.path)}
                   style={{
                     minWidth: 44,
                     minHeight: 44,
