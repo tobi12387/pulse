@@ -11,6 +11,7 @@ const routes = [
   { path: '/data?tab=today#data-mental', label: 'data-mental', visibleText: 'Quick Check-in' },
   { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analyse' },
   { path: '/plan', label: 'plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/insights', label: 'insights', visibleText: 'Insights' },
   { path: '/settings', label: 'settings', visibleText: 'Settings' },
 ] as const;
 

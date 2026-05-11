@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDailyDecisionQuality, useDeepInsight, usePlanTrace, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
@@ -525,7 +525,7 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
   );
 }
 
-export function DataAnalysenTab() {
+export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' } = {}) {
   const [days, setDays] = useState(30);
   const { data: decisionQuality } = useDailyDecisionQuality(14);
   const capability = useTrainingCapabilities(90);
@@ -536,9 +536,11 @@ export function DataAnalysenTab() {
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow="DATA · ANALYSEN"
-        title="Analysen"
-        description="Öffne eine Karte, um die Analyse gezielt zu laden."
+        eyebrow={mode === 'insights' ? 'INSIGHTS · 90D' : 'DATA · ANALYSEN'}
+        title={mode === 'insights' ? 'Insights' : 'Analysen'}
+        description={mode === 'insights'
+          ? 'Trends, Korrelationen und belastbare Muster aus deinen Pulse-Daten.'
+          : 'Öffne eine Karte, um die Analyse gezielt zu laden.'}
         action={<RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />}
       />
 
@@ -562,6 +564,6 @@ export function DataAnalysenTab() {
   );
 }
 
-export default function InsightsRedirect() {
-  return <Navigate to="/data?tab=analysis" replace />;
+export default function Insights() {
+  return <DataAnalysenTab mode="insights" />;
 }

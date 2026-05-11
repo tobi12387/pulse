@@ -38,15 +38,13 @@ test-results/route-evidence/<date>-<commit>/<project>/
 Primary route set:
 
 - `/`
+- `/coach` (compatibility route; Coach is not a primary nav item)
 - `/data`
-- `/data?tab=mental`
-- `/data?tab=analysen`
+- `/data?tab=today#data-mental`
+- `/data?tab=analysis`
 - `/plan`
+- `/insights`
 - `/settings`
-
-Compatibility route still captured while old links and push targets can open it:
-
-- `/coach`
 
 Mobile Daily Command evidence routes:
 
@@ -54,18 +52,18 @@ Mobile Daily Command evidence routes:
 - `/` with `today-availability-intent` under `unplanned_trainable`
 - `/` with completed Garmin activity and no `today-availability-intent`
 - `/` with `recovery_protect` and no `today-availability-intent`
-- `/data?tab=mental` with the primary `Heute speichern` action in the first viewport
+- `/data?tab=today#data-mental` with the primary `Heute speichern` action in the first viewport
 - `/plan?tab=training&source=mobile-intent&scenario=workout...#plan-scenario-preview`
 
 Each project directory contains:
 
-- `01-home.png` through `07-settings.png`
+- `01-home.png` through `08-settings.png`
 - `manifest.json`
 - `README.md`
 
 The `mobile-chromium` project additionally contains:
 
-- `08-home-planned-command.png` through `13-plan-mobile-intent-scenario.png`
+- `09-home-planned-command.png` through `14-plan-mobile-intent-scenario.png`
 
 ## Manifest Fields
 
