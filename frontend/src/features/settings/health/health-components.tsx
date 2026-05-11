@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { InlineFeedback } from '@/components/Feedback';
+import { errorMessage } from '@/components/feedback-utils';
 import { MiniButton } from '@/components/PulseChrome';
 import {
   useCreateHealthState,

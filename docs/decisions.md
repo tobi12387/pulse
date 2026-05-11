@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Plan startet auf Desktop mit Aktion und Woche
+
+- **Decision:** Der naechste Focus-Redesign-Slice priorisiert `/plan` als Daily-Planning-Surface: aktuelle Plan-Aktion und Wochenstreifen kommen vor Saison-/Strategie-Evidenz; der `Saisonvertrag` bleibt sichtbar, aber Details sind progressiv.
+- **Why:** Die Route-Evidence und Subagent-Review zeigen, dass Plan die staerkste Desktop-Dichte erzeugt: Tobi sieht Strategie-Evidenz, bevor klar ist, was heute bzw. diese Woche konkret ansteht. Die operative Wochenantwort muss vor Hintergrund-Erklaerung kommen.
+- **Alternatives:** Saisonvertrag entfernen (verliert Vertrauen in Ziel-/Season-Evidenz); nur CSS-Abstaende reduzieren (loest kognitive Last nicht); alle Routen gleichzeitig umbauen (zu grosser Regressionsradius).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Focus-Redesign startet mit Shell und Heute
 
 - **Decision:** Pulse setzt die neue `Single Decision + Diary`-Aesthetik in PR-Slices um. Slice 1 baut Design-Tokens, Focus-Shell, fuenf Hauptziele (`Heute`, `Data`, `Plan`, `Insights`, `Settings`) und Home als Tagesentscheidung plus read-only Tagesverlauf; Coach bleibt als `/coach` Kompatibilitaetsroute und wird in der Haupt-IA ueber `⌘K` angeboten.

@@ -2783,6 +2783,10 @@ test('Plan shows adaptive season contract from season and goal projection eviden
   await expect(contract).toContainText('Fueling-Praxis absichern');
   await expect(contract).toContainText('Naechste 14 Tage');
   await expect(contract).toContainText('Hard-Day-Cap');
+  await expect(contract.getByRole('button', { name: 'Saisonvertrag anzeigen' })).toBeVisible();
+  await expect(contract).not.toContainText('Keine zusaetzlichen harten Tage ohne klare Evidenz.');
+  await contract.getByRole('button', { name: 'Saisonvertrag anzeigen' }).click();
+  await expect(contract).toContainText('Keine zusaetzlichen harten Tage ohne klare Evidenz.');
   expect(insightRequests).toBe(0);
   expect(writeRequests).toEqual([]);
   expect(garminWriteRequests).toEqual([]);

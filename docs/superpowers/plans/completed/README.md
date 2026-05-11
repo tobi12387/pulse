@@ -94,6 +94,7 @@
 | `2026-05-11-adaptive-season-builder-v1.md` | Adaptive Season Builder v1 — read-only Plan Saisonvertrag from Season Strategy and Goal Projection evidence | Adaptive Season Builder PR |
 | `2026-05-11-contextual-coach-mode-v1.md` | Contextual Coach Mode v1 — read-only Coach context card from Personal Response, Goal Projection and Season Strategy evidence | Contextual Coach Mode PR |
 | `2026-05-11-customizable-daily-surface-v1.md` | Customizable Daily Surface v1 — local per-device Home focus-card ordering with safe defaults and no backend/Garmin writes | Customizable Daily Surface PR |
+| `2026-05-11-desktop-plan-daily-focus.md` | Desktop Plan Daily Focus — Plan starts with action plus week before compact season evidence, backed by route evidence | Desktop Density PR |
 
 ## Bekannte veraltete Stellen
 

@@ -15,7 +15,8 @@ import { StrengthLogger } from '@/components/StrengthLogger';
 import { TodayOptionsCard } from '@/components/TodayOptionsCard';
 import { WorkoutDetailModal } from '@/components/WorkoutDetailModal';
 import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseChrome';
-import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { InlineFeedback } from '@/components/Feedback';
+import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
 import {
   buildPlanAlternative,
@@ -2389,6 +2390,14 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         onNavigate={navigate}
       />
 
+      {/* WeekStrip */}
+      <WeekStrip
+        workouts={workouts}
+        weekOffset={weekOffset}
+        onChangeWeek={d => setWeekOffset(o => o + d)}
+        onSelectWorkout={openWorkout}
+      />
+
       <PlanRefreshPreviewCard weekStart={selectedWeekStart} />
 
       <PlanAdaptationReviewCard
@@ -2411,14 +2420,6 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
       <SeasonStrategyCard
         strategy={seasonStrategy.data?.strategy ?? planTrace?.inputSnapshot.seasonStrategy ?? null}
         isLoading={seasonStrategy.isLoading}
-      />
-
-      {/* WeekStrip */}
-      <WeekStrip
-        workouts={workouts}
-        weekOffset={weekOffset}
-        onChangeWeek={d => setWeekOffset(o => o + d)}
-        onSelectWorkout={openWorkout}
       />
 
       <PlanLimiterWorkoutSummary

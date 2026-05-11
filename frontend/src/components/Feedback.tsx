@@ -18,12 +18,6 @@ const TONE_STYLES: Record<Tone, { color: string; background: string; border: str
   },
 };
 
-export function errorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === 'string' && error.trim()) return error;
-  return fallback;
-}
-
 export function InlineFeedback({
   title,
   message,

@@ -2,7 +2,8 @@ import { BatteryCharging, ClipboardCheck, Dumbbell, RotateCcw } from 'lucide-rea
 import type { LucideIcon } from 'lucide-react';
 import type { PulseTodayOption, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 import { useTodayOptions } from '@/pulse/hooks';
-import { InlineFeedback, errorMessage } from '@/components/Feedback';
+import { InlineFeedback } from '@/components/Feedback';
+import { errorMessage } from '@/components/feedback-utils';
 import { activityLabel } from '@/pulse/activity-labels';
 import { dailyCommandAllowsTodayOptions, type DailyCommandKind } from '@/pulse/daily-command';
 
