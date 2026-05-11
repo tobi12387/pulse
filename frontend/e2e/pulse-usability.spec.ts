@@ -2660,9 +2660,10 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
 
   await page.goto('/plan');
 
-  const seasonLine = page.locator('.card').filter({ hasText: 'Saisonlinie' }).first();
+  const seasonLine = page.getByTestId('plan-season-strategy-card');
   await expect(seasonLine).toBeVisible();
   await expect(seasonLine).toContainText('Build · 70.3 Kraichgau');
+  await seasonLine.getByRole('button', { name: 'Saisonlinie anzeigen' }).click();
   await expect(seasonLine).toContainText('4 Einheiten');
   await expect(seasonLine).toContainText('max. 1');
   await expect(seasonLine).toContainText('8h / 384 TSS');
@@ -2728,9 +2729,10 @@ test('Plan season strategy keeps rendering when load model is absent', async ({ 
 
   await page.goto('/plan');
 
-  const seasonLine = page.locator('.card').filter({ hasText: 'Saisonlinie' }).first();
+  const seasonLine = page.getByTestId('plan-season-strategy-card');
   await expect(seasonLine).toBeVisible();
   await expect(seasonLine.getByRole('heading', { name: 'Maintenance' })).toBeVisible();
+  await seasonLine.getByRole('button', { name: 'Saisonlinie anzeigen' }).click();
   await expect(seasonLine.getByText('Saisonlast')).toHaveCount(0);
   await expect(seasonLine).toContainText('Maintenance ohne Race-Ziel');
   await expect(page.getByText('Diese Ansicht ist gerade abgestürzt.')).toHaveCount(0);
@@ -4298,7 +4300,8 @@ test('Settings diagnostics matrix is visible first and routes to support section
   await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
   await expect(matrix).toContainText('DIAGNOSE');
   await expect(matrix).toContainText('Zugriff');
-  await expect(matrix).toContainText('Zertifikat');
+  await expect(matrix).toContainText('Diagnose anzeigen');
+  await expect(matrix.getByText('Zertifikat')).toHaveCount(0);
 
   const matrixBox = await matrix.boundingBox();
   const profileBox = await page.getByRole('heading', { name: 'Profil', exact: true }).boundingBox();
@@ -4310,6 +4313,8 @@ test('Settings diagnostics matrix is visible first and routes to support section
   await expect(page).toHaveURL('/settings?section=push');
 
   await page.goto('/settings');
+  await matrix.getByText('Diagnose anzeigen').click();
+  await expect(matrix).toContainText('Zertifikat');
   await matrix.getByRole('button', { name: 'Gerät', exact: true }).click();
   await expect(page).toHaveURL('/settings?section=device');
   await expect(page.getByRole('heading', { name: 'iPhone & PWA' })).toBeVisible();
@@ -4359,6 +4364,7 @@ test('Settings diagnostics matrix separates denied push and blocked Garmin state
   await expect(summary).toContainText('2 Punkte prüfen');
   await expect(summary).toContainText('Garmin');
   await expect(summary).toContainText('Push');
+  await matrix.getByRole('button', { name: 'Diagnose anzeigen' }).click();
   await expect(matrix).toContainText('Push');
   await expect(matrix).toContainText('Browser blockiert');
   await expect(matrix).toContainText('Garmin');
@@ -4384,6 +4390,7 @@ test('Settings PWA diagnostics reflect standalone iPhone context', async ({ page
   await page.goto('/settings');
 
   const matrix = page.getByTestId('settings-diagnostics-matrix');
+  await matrix.getByRole('button', { name: 'Diagnose anzeigen' }).click();
   await expect(matrix).toContainText('PWA');
   await expect(matrix).toContainText('Installiert');
   await expect(matrix).toContainText('Service Worker');
@@ -4543,6 +4550,7 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
   await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(2);
   await expectTouchTargetAt(page, 'Bearbeiten', 0);
   await expectTouchTargetAt(page, 'Bearbeiten', 1);
+  await page.getByRole('button', { name: 'Diagnose anzeigen' }).click();
   await expectTouchTarget(page, 'Abdeckung');
   await expectTouchTarget(page, 'ERLEDIGT');
   await expectTouchTarget(page, 'LÖSCHEN');

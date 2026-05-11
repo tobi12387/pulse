@@ -256,14 +256,13 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
         data-testid="plan-week-strip-scroller"
         style={{
           maxWidth: '100%',
-          overflowX: 'auto',
+          overflowX: 'visible',
           overflowY: 'hidden',
           paddingBottom: 2,
           WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'thin',
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(72px, 1fr))', gap: 6, minWidth: 540 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 5, minWidth: 0 }}>
           {days.map(({ date, dayNum, dayIdx }) => {
             const workout = workouts.find(w => w.plannedDate === date);
             const isToday = date === today;
@@ -286,8 +285,8 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
                   appearance: 'none',
                   textAlign: 'left',
                   width: '100%',
-                  minHeight: 92,
-                  padding: '10px 10px 12px',
+                  minHeight: 84,
+                  padding: '8px 7px 10px',
                   background: isToday ? 'var(--surface-2)' : 'var(--surface)',
                   border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
                   borderRadius: 5,
@@ -313,7 +312,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
 
                 <div style={{
                   marginTop: 6,
-                  fontSize: 10,
+                  fontSize: 9.5,
                   color: zone === 0 ? 'var(--text-3)' : 'var(--text)',
                   lineHeight: 1.3,
                   overflowWrap: 'anywhere',
@@ -323,7 +322,7 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
                 </div>
 
                 {workout && zone > 0 && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)', marginTop: 2, overflowWrap: 'anywhere' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', marginTop: 2, overflowWrap: 'anywhere' }}>
                     {isDone ? <span style={{ color: 'var(--green)' }}>✓ </span> : ''}Z{zone} · {workout.durationMin}'
                   </div>
                 )}

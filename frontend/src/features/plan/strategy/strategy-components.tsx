@@ -2,6 +2,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import { ACTIVITY_LABEL } from '@/pulse/activity-labels';
 import type { PulseGoalProjectionResponse, PulsePlanDecision, PulsePlanTrace, PulseRaceCommandSummary, PulseSeasonStrategy } from '@coaching-os/shared/pulse';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPlanDate } from '../plan-utils';
 import { buildPlanDecisionEvidence, type PlanDecisionEvidenceTone } from './plan-decision-insights';
@@ -561,6 +562,8 @@ export function AdaptiveSeasonContractCard({
 }
 
 export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSeasonStrategy | null; isLoading: boolean }) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   if (isLoading && !strategy) {
     return (
       <div className="card" style={{ borderColor: 'rgba(94,230,207,0.16)' }}>
@@ -582,15 +585,39 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
   const loadModel = (strategy as PulseSeasonStrategy & { loadModel?: PulseSeasonStrategy['loadModel'] }).loadModel ?? null;
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
-        <span className="label-mono" style={{ color: 'var(--accent)' }}>Saisonlinie</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-          {strategy.horizonWeeks} Wochen
-        </span>
+    <div className="card" data-testid="plan-season-strategy-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span className="label-mono" style={{ color: 'var(--accent)' }}>Saisonlinie</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+            {strategy.horizonWeeks} Wochen
+          </span>
+        </div>
+        <button
+          type="button"
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen(open => !open)}
+          style={{
+            minWidth: 44,
+            minHeight: 44,
+            padding: '7px 10px',
+            background: detailsOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+            border: `1px solid ${detailsOpen ? 'rgba(94,230,207,0.38)' : 'var(--border)'}`,
+            borderRadius: 4,
+            color: detailsOpen ? 'var(--accent)' : 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {detailsOpen ? 'Saisonlinie ausblenden' : 'Saisonlinie anzeigen'}
+        </button>
       </div>
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: detailsOpen ? 10 : 0 }}>
         <h2 style={{ fontSize: 15, color: 'var(--text)', margin: '0 0 4px', fontWeight: 600 }}>
           {strategy.currentBlock.label}
           {strategy.primaryGoal ? ` · ${strategy.primaryGoal.title}` : ''}
@@ -600,95 +627,99 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
-        <RaceCommandFact
-          label="Zielwoche"
-          value={`${guardrails.targetSessions} Einheiten`}
-          detail={guardrails.freeDayRationale}
-          color="var(--accent)"
-        />
-        <RaceCommandFact
-          label="Harte Tage"
-          value={`max. ${guardrails.maxHardDays}`}
-          detail={guardrails.deload ? 'Deload/Konsolidierung aktiv.' : 'Health- und Risk-Regeln bleiben staerker.'}
-          color={guardrails.deload ? 'var(--amber)' : 'var(--green)'}
-        />
-        <RaceCommandFact
-          label="Naechste Grenze"
-          value={nextBoundary}
-          detail={guardrails.rationale.slice(0, 2).join(' ')}
-          color="var(--blue)"
-        />
-        {loadModel && (
-          <RaceCommandFact
-            label="Saisonlast"
-            value={`${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS`}
-            detail={`${loadModel.currentWeek.note} Ramp-Cap ${loadModel.rampRateCapPct}%.`}
-            color={loadModel.currentWeek.kind === 'deload' || loadModel.currentWeek.kind === 'taper' ? 'var(--amber)' : 'var(--accent)'}
-          />
-        )}
-      </div>
-
-      {loadModel?.annualTargetHours != null && (
-        <div
-          data-testid="season-atp-row"
-          style={{
-            border: '1px solid var(--border)',
-            borderRadius: 6,
-            padding: '8px 10px',
-            background: 'var(--surface-2)',
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
-            <span className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>Jahresziel</span>
-            <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>
-              {loadModel.annualTargetHours} h / {loadModel.annualTargetTss ?? 0} TSS
-            </strong>
+      {detailsOpen && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
+            <RaceCommandFact
+              label="Zielwoche"
+              value={`${guardrails.targetSessions} Einheiten`}
+              detail={guardrails.freeDayRationale}
+              color="var(--accent)"
+            />
+            <RaceCommandFact
+              label="Harte Tage"
+              value={`max. ${guardrails.maxHardDays}`}
+              detail={guardrails.deload ? 'Deload/Konsolidierung aktiv.' : 'Health- und Risk-Regeln bleiben staerker.'}
+              color={guardrails.deload ? 'var(--amber)' : 'var(--green)'}
+            />
+            <RaceCommandFact
+              label="Naechste Grenze"
+              value={nextBoundary}
+              detail={guardrails.rationale.slice(0, 2).join(' ')}
+              color="var(--blue)"
+            />
+            {loadModel && (
+              <RaceCommandFact
+                label="Saisonlast"
+                value={`${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS`}
+                detail={`${loadModel.currentWeek.note} Ramp-Cap ${loadModel.rampRateCapPct}%.`}
+                color={loadModel.currentWeek.kind === 'deload' || loadModel.currentWeek.kind === 'taper' ? 'var(--amber)' : 'var(--accent)'}
+              />
+            )}
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
-            {loadModel.missedLoadCompensation.capReason}
-          </p>
-        </div>
-      )}
 
-      {loadModel && loadModel.forecast.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
-          {loadModel.forecast.slice(0, 4).map(week => (
-            <div key={week.weekStart} style={{ background: 'var(--surface-2)', padding: '7px 8px', minWidth: 0 }}>
-              <div className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>{formatPlanDate(week.weekStart)}</div>
-              <div style={{ marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}>
-                {week.kind} · {week.targetTss} TSS
+          {loadModel?.annualTargetHours != null && (
+            <div
+              data-testid="season-atp-row"
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                padding: '8px 10px',
+                background: 'var(--surface-2)',
+                marginBottom: 10,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                <span className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>Jahresziel</span>
+                <strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>
+                  {loadModel.annualTargetHours} h / {loadModel.annualTargetTss ?? 0} TSS
+                </strong>
               </div>
+              <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
+                {loadModel.missedLoadCompensation.capReason}
+              </p>
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      {loadModel && loadModel.warnings.length > 0 && (
-        <div style={{ display: 'grid', gap: 5, marginBottom: 10 }}>
-          {loadModel.warnings.slice(0, 2).map(warning => (
-            <div key={warning} style={{ fontSize: 11, color: 'var(--amber)', lineHeight: 1.45 }}>
-              {warning}
+          {loadModel && loadModel.forecast.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 1, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
+              {loadModel.forecast.slice(0, 4).map(week => (
+                <div key={week.weekStart} style={{ background: 'var(--surface-2)', padding: '7px 8px', minWidth: 0 }}>
+                  <div className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>{formatPlanDate(week.weekStart)}</div>
+                  <div style={{ marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}>
+                    {week.kind} · {week.targetTss} TSS
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {strategy.evidence.map(item => (
-          <span key={item} style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            color: 'var(--text-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 4,
-            padding: '3px 7px',
-          }}>
-            {item}
-          </span>
-        ))}
-      </div>
+          {loadModel && loadModel.warnings.length > 0 && (
+            <div style={{ display: 'grid', gap: 5, marginBottom: 10 }}>
+              {loadModel.warnings.slice(0, 2).map(warning => (
+                <div key={warning} style={{ fontSize: 11, color: 'var(--amber)', lineHeight: 1.45 }}>
+                  {warning}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {strategy.evidence.map(item => (
+              <span key={item} style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--text-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '3px 7px',
+              }}>
+                {item}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Route-Dichte wird ueber progressive Details reduziert
+
+- **Decision:** Der naechste UI/UX-Slice reduziert sichtbare Dichte nicht durch Entfernen von Evidenz, sondern durch progressive Details: Settings zeigt technische Diagnose erst nach `Diagnose anzeigen`, Plan zeigt die tiefe `Saisonlinie` erst nach `Saisonlinie anzeigen`, und der mobile Wochenstreifen passt sieben Tage ohne versteckten Horizontal-Scroller ein.
+- **Why:** Tobi meldet, dass die Seiten insgesamt zu voll wirken. Die frische Route-Evidence zeigt besonders auf Settings und Plan doppelte Diagnose-/Evidenzebenen im ersten Viewport; diese Informationen bleiben wichtig, sollen aber nicht jedes Mal sofort Aufmerksamkeit ziehen.
+- **Alternatives:** Karten loeschen (verliert Vertrauen/Evidenz); komplett neue Desktop-IA bauen (zu grosser Scope); nur CSS-Abstaende reduzieren (kaschiert Dichte, loest aber die kognitive Last nicht).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Live UI/UX Slice fokussiert Home-Fokus-Dichte
 
 - **Decision:** Die frische Live-UI/UX-Runde nach PR #311 wird als kleiner Frontend-Slice auf die Dichte der `Heute-Fokus`-Kontrolle begrenzt. Plan-Wochenscroller und tiefe Settings-Diagnose-Buttons bleiben dokumentierte Kandidaten, werden aber nicht im gleichen PR veraendert.

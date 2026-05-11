@@ -461,6 +461,7 @@ function SettingsDiagnosticsMatrix({
   pushSubscriptions: number;
   onNavigate: (path: string) => void;
 }) {
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const device = browserDeviceStatus();
   const pushSupported = isPushSupported();
   const pushLabel = !pushConfigured
@@ -701,7 +702,7 @@ function SettingsDiagnosticsMatrix({
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <div>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 4 }}>
             DIAGNOSE
@@ -710,65 +711,43 @@ function SettingsDiagnosticsMatrix({
             Zugriff, PWA, Push & Garmin
           </h2>
         </div>
-        <Pill color={statusColor}>{statusPill}</Pill>
+        <button
+          type="button"
+          aria-expanded={diagnosticsOpen}
+          onClick={() => setDiagnosticsOpen(open => !open)}
+          style={{
+            minWidth: 44,
+            minHeight: 44,
+            padding: '7px 10px',
+            background: diagnosticsOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+            border: `1px solid ${diagnosticsOpen ? 'rgba(94,230,207,0.38)' : 'var(--border)'}`,
+            borderRadius: 4,
+            color: diagnosticsOpen ? 'var(--accent)' : 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {diagnosticsOpen ? 'Diagnose ausblenden' : 'Diagnose anzeigen'}
+        </button>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {shortcuts.map(shortcut => (
-          <button
-            key={shortcut.path}
-            type="button"
-            onClick={() => onNavigate(shortcut.path)}
-            style={{
-              minWidth: 44,
-              minHeight: 44,
-              padding: '7px 10px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 4,
-              color: 'var(--text-2)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              letterSpacing: 0,
-              textTransform: 'uppercase',
-            }}
-          >
-            {shortcut.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
-        {rows.map(row => (
-          <div
-            key={row.key}
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '10px 11px',
-              background: 'var(--surface-2)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 7,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{row.label}</span>
-              <Pill color={row.color}>{row.value}</Pill>
-            </div>
-            <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
-              {row.detail}
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto' }}>
+      {diagnosticsOpen && (
+        <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {shortcuts.map(shortcut => (
               <button
+                key={shortcut.path}
                 type="button"
-                onClick={() => onNavigate(row.action.path)}
+                onClick={() => onNavigate(shortcut.path)}
                 style={{
                   minWidth: 44,
                   minHeight: 44,
-                  padding: '6px 9px',
-                  background: 'transparent',
+                  padding: '7px 10px',
+                  background: 'var(--surface-2)',
                   border: '1px solid var(--border)',
                   borderRadius: 4,
                   color: 'var(--text-2)',
@@ -779,38 +758,85 @@ function SettingsDiagnosticsMatrix({
                   textTransform: 'uppercase',
                 }}
               >
-                {row.action.label}
+                {shortcut.label}
               </button>
-              {row.secondaryAction && (
-                <button
-                  type="button"
-                  onClick={() => onNavigate(row.secondaryAction!.path)}
-                  style={{
-                    minWidth: 44,
-                    minHeight: 44,
-                    padding: '6px 9px',
-                    background: 'transparent',
-                    border: '1px solid rgba(94,230,207,0.3)',
-                    borderRadius: 4,
-                    color: 'var(--accent)',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
-                    letterSpacing: 0,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {row.secondaryAction.label}
-                </button>
-              )}
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.5 }}>
-        Zertifikatvertrauen bleibt ein manueller iOS-/Browser-Schritt: Pulse zeigt den lokalen HTTPS-Kontext, aber nicht, ob Safari die lokale CA dauerhaft vertraut.
-      </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
+            {rows.map(row => (
+              <div
+                key={row.key}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '10px 11px',
+                  background: 'var(--surface-2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 7,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{row.label}</span>
+                  <Pill color={row.color}>{row.value}</Pill>
+                </div>
+                <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+                  {row.detail}
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto' }}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(row.action.path)}
+                    style={{
+                      minWidth: 44,
+                      minHeight: 44,
+                      padding: '6px 9px',
+                      background: 'transparent',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      color: 'var(--text-2)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      letterSpacing: 0,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {row.action.label}
+                  </button>
+                  {row.secondaryAction && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(row.secondaryAction!.path)}
+                      style={{
+                        minWidth: 44,
+                        minHeight: 44,
+                        padding: '6px 9px',
+                        background: 'transparent',
+                        border: '1px solid rgba(94,230,207,0.3)',
+                        borderRadius: 4,
+                        color: 'var(--accent)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        letterSpacing: 0,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {row.secondaryAction.label}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.5 }}>
+            Zertifikatvertrauen bleibt ein manueller iOS-/Browser-Schritt: Pulse zeigt den lokalen HTTPS-Kontext, aber nicht, ob Safari die lokale CA dauerhaft vertraut.
+          </p>
+        </>
+      )}
     </section>
   );
 }
