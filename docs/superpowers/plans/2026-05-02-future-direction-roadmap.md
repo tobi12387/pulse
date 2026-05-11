@@ -152,7 +152,7 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Nutrition trend summaries:** only after more repeated fueling logs exist, summarize stable/learning trends and heat/sodium gaps without medical claims.
+1. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
 2. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
 3. **Optional Daily Delta echoes:** only if route evidence or Tobi reports that the Home v1 card is insufficient in Plan/Data.
 4. **Optional Garmin modal polish:** only if live/user evidence shows `vor Upload`/readback wording still confuses execution.

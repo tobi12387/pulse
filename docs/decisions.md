@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Nutrition Trend Summaries bleiben daten-gated
+
+- **Decision:** Nutrition Trend Summaries werden nicht aus den aktuell vorhandenen Fueling-Logs gebaut. Als Startkriterium gelten mindestens drei vergleichbare, vollstaendige `during`-Logs mit Aktivitaets-/Dauerkontext, Kohlenhydraten und GI-Komfort; Sodium-, Hitze- und Schweissraten bleiben bis zu Messdaten als Evidenzluecken markiert.
+- **Why:** Der Server hat am 2026-05-11 zwar 5 Nutrition-Logs, davon 4 `during`, aber nur einen langen vollstaendigen praktischen Log plus einen kurzen Carb-Log. Das reicht fuer aktuelle Baseline-/Guidance-Sprache, aber nicht fuer stabile Trends ohne Scheingenauigkeit.
+- **Alternatives:** Trend-Summaries sofort aus einem langen Log ableiten (zu fragil); die vorhandene Baseline entfernen (verliert Tagesnutzen); Sodium/Heat/Sweat-Rate schaetzen (zu spekulativ).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Workout Alternatives UX v2 bleibt eine Erklaerschicht
 
 - **Decision:** Workout Alternatives UX v2 wird als Frontend-Erklaerschicht ueber den bestehenden Today-Options- und Scenario-Preview-Vertraegen umgesetzt. Plan-Alternativen zeigen im Full-Layout `Ausweichoptionen`, `Sicherste Option`, `Zweck`, `Warum jetzt`, `Nach dem Klick` und `Sicher wenn`; Scenario Preview trennt Preview-Pending von Apply-Pending und zeigt `Nach Apply` plus `Sicherste Entscheidung`.
