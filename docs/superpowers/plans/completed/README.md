@@ -91,6 +91,7 @@
 | `2026-05-10-nutrition-outcome-baseline.md` | Nutrition Outcome Baseline — recent long-session logs become a structured baseline for carb target, bottles, powder, fluid and sodium evidence gaps | Nutrition Outcome Baseline PR |
 | `2026-05-11-personal-response-model-v1.md` | Personal Response Model v1 — deterministic read-only response summary, API endpoint and compact Data > Analyse evidence block | Personal Response Model PR |
 | `2026-05-11-predictive-goal-engine-v1.md` | Predictive Goal Engine v1 — deterministic read-only goal probability, limiter risk and next-intervention evidence in Data > Analyse | Predictive Goal Engine PR |
+| `2026-05-11-adaptive-season-builder-v1.md` | Adaptive Season Builder v1 — read-only Plan Saisonvertrag from Season Strategy and Goal Projection evidence | Adaptive Season Builder PR |
 
 ## Bekannte veraltete Stellen
 

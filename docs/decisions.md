@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Adaptive Season Builder v1 nutzt vorhandene Season- und Goal-Evidenz
+
+- **Decision:** Adaptive Season Builder v1 wird als read-only Saisonvertrag in Plan umgesetzt, der bestehende Season Strategy und Goal Projection Evidence kombiniert. Er erzeugt keine parallele Saisonlogik und schreibt keine Workouts, Ziele oder Garmin-Daten.
+- **Why:** Die Backend-Season-Foundation existiert bereits; der naechste Nutzen ist sichtbare Orientierung, nicht ein weiterer Modellpfad. Pulse soll erst erklaeren, wie Saisonlinie, Zielwahrscheinlichkeit, Guardrails und naechste Intervention zusammenpassen.
+- **Alternatives:** Neuen Backend-Endpunkt bauen (dupliziert vorhandene Season Strategy); Plan automatisch anpassen (zu riskant ohne neue Nutzerevidenz); Thema deferen (Roadmap-Luecke bleibt unsichtbar).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Predictive Goal Engine v1 bleibt read-only
 
 - **Decision:** Pulse zeigt Zielwahrscheinlichkeit, Limiter-Risiko und naechste Intervention als deterministischen Evidence Layer ueber `GET /api/pulse/goal-projection` in Data > Analyse. v1 schreibt keine Ziele, Workouts, Garmin-Objekte, Plan-Generationen, Nutrition-Logs oder LLM-Artefakte.

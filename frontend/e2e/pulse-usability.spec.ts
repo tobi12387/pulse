@@ -2517,14 +2517,44 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
 
   await page.goto('/plan');
 
-  await expect(page.getByText('Saisonlinie')).toBeVisible();
-  await expect(page.getByText('Build · 70.3 Kraichgau')).toBeVisible();
-  await expect(page.getByText('4 Einheiten')).toBeVisible();
-  await expect(page.getByText('max. 1')).toBeVisible();
-  await expect(page.getByText('8h / 384 TSS')).toBeVisible();
-  await expect(page.getByText(/Pulse nutzt nicht alle verfügbaren Tage/)).toBeVisible();
-  await expect(page.getByText(/Taper ab .*29\.06/)).toBeVisible();
-  await expect(page.getByText('6 verfügbare Tage')).toBeVisible();
+  const seasonLine = page.locator('.card').filter({ hasText: 'Saisonlinie' }).first();
+  await expect(seasonLine).toBeVisible();
+  await expect(seasonLine).toContainText('Build · 70.3 Kraichgau');
+  await expect(seasonLine).toContainText('4 Einheiten');
+  await expect(seasonLine).toContainText('max. 1');
+  await expect(seasonLine).toContainText('8h / 384 TSS');
+  await expect(seasonLine).toContainText(/Pulse nutzt nicht alle verfügbaren Tage/);
+  await expect(seasonLine).toContainText(/Taper ab .*29\.06/);
+  await expect(seasonLine).toContainText('6 verfügbare Tage');
+});
+
+test('Plan shows adaptive season contract from season and goal projection evidence', async ({ page }) => {
+  let insightRequests = 0;
+  const writeRequests: string[] = [];
+  const garminWriteRequests: string[] = [];
+  await mockPulseApi(page, {
+    onRequest(pathname, method) {
+      if (pathname === '/api/pulse/insights') insightRequests += 1;
+      if (method !== 'GET') writeRequests.push(`${method} ${pathname}`);
+      if (method !== 'GET' && pathname.toLocaleLowerCase().includes('garmin')) {
+        garminWriteRequests.push(`${method} ${pathname}`);
+      }
+    },
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const contract = page.getByTestId('plan-adaptive-season-contract');
+  await expect(contract).toBeVisible();
+  await expect(contract).toContainText('Saisonvertrag');
+  await expect(contract).toContainText('70.3 Kraichgau');
+  await expect(contract).toContainText('ca. 64%');
+  await expect(contract).toContainText('Fueling-Praxis absichern');
+  await expect(contract).toContainText('Naechste 14 Tage');
+  await expect(contract).toContainText('Hard-Day-Cap');
+  expect(insightRequests).toBe(0);
+  expect(writeRequests).toEqual([]);
+  expect(garminWriteRequests).toEqual([]);
 });
 
 test('Plan season strategy keeps rendering when load model is absent', async ({ page }) => {
@@ -2555,10 +2585,11 @@ test('Plan season strategy keeps rendering when load model is absent', async ({ 
 
   await page.goto('/plan');
 
-  await expect(page.getByText('Saisonlinie')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Maintenance' })).toBeVisible();
-  await expect(page.getByText('Saisonlast')).toHaveCount(0);
-  await expect(page.getByText('Maintenance ohne Race-Ziel')).toBeVisible();
+  const seasonLine = page.locator('.card').filter({ hasText: 'Saisonlinie' }).first();
+  await expect(seasonLine).toBeVisible();
+  await expect(seasonLine.getByRole('heading', { name: 'Maintenance' })).toBeVisible();
+  await expect(seasonLine.getByText('Saisonlast')).toHaveCount(0);
+  await expect(seasonLine).toContainText('Maintenance ohne Race-Ziel');
   await expect(page.getByText('Diese Ansicht ist gerade abgestürzt.')).toHaveCount(0);
 });
 
