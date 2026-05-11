@@ -6,7 +6,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 - Source of truth: GitHub `main`.
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
-- Latest recorded main/deploy mirror: `2d2e2ff` / PR #304. Verify live deploy state with `scripts/verify-server.sh` when it matters.
+- Do not rely on this file as a deploy register. Verify the exact live server commit with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
@@ -25,7 +25,9 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Training-plan intelligence now has the benchmark foundations: capability levels, workout library/archetype fit, TrainNow options, scenario preview/apply, season load modeling, Garmin sync contracts, execution ledger/readback, goal limiter evidence, Plan Refresh Preview, Today Options signal labels, Fueling Debt Closure, Limiter-To-Workout Mapping and no-Garmin-write QA. Do not rebuild these completed plans.
 - Data IA Compression v1 has compressed Data into four evidence-oriented areas (`Heute relevant`, `Trends`, `Datenqualität`, `Analyse`) while legacy Data query/hash links remain compatible.
 - Settings Status First v1 is implemented: `/settings` now answers `Alles bereit` or `Problem beheben` before showing technical diagnostics.
-- Workout Alternatives UX v2 is implemented: full Plan alternatives now explain purpose, why-now, click result and safest choice; scenario previews distinguish preview-loading from apply-running. The remaining roadmap work is evidence-gated: Nutrition Trend Summaries only when repeated fueling logs exist, optional Daily Delta/Garmin wording only when route evidence or user feedback shows a real gap, and Mobile Field Reliability remains a real-iPhone gate.
+- Workout Alternatives UX v2 is implemented: full Plan alternatives now explain purpose, why-now, click result and safest choice; scenario previews distinguish preview-loading from apply-running.
+- Personal Response Model v1 is the next non-gated long-term foundation. Use `docs/superpowers/plans/2026-05-11-personal-response-model-v1.md`; it should be deterministic, read-only, Data-first and based on evidence strength before later Plan/Goal/Coach consumers.
+- Remaining gated roadmap work: Nutrition Trend Summaries only when repeated fueling logs exist, optional Daily Delta/Garmin wording only when route evidence or user feedback shows a real gap, and Mobile Field Reliability remains a real-iPhone gate.
 - Nutrition Trend Summaries gate checked on 2026-05-11 server data: 5 nutrition logs total, 4 `during`, but only one long complete practical log plus one short carb log. Keep trend summaries gated until there are at least three comparable, complete `during` logs with carbs, duration/activity context and GI comfort; sodium/heat/sweat-rate should remain explicit evidence gaps until measured.
 - Route evidence on `7c087da` found no overflow and no current proof that optional Daily Delta Plan/Data echoes or additional Garmin modal copy are needed; see `docs/qa/2026-05-10-next-options-route-evidence.md`.
 - Native iOS is evidence-gated; the current access model remains local web/PWA over VPN.

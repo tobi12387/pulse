@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Long-Term Roadmap startet mit Personal Response Model v1
+
+- **Decision:** Die naechste nicht-gegatete Long-Term-Phase ist Personal Response Model v1: ein deterministisches, read-only und Data-first Modell, das Reaktionsmuster aus bestehenden Pulse-Daten erklaert, bevor Plan, Goal Engine oder Coach diese Signale konsumieren.
+- **Why:** Predictive Goal Engine, Adaptive Season Builder und Contextual Coach Mode brauchen zuerst eine vertrauenswuerdige, sichtbare Antwort darauf, welche persoenlichen Reaktionsmuster ueberhaupt belegbar sind. Ein Data-first Erklaerlayer vermeidet versteckte Planmutation und verhindert, dass Pulse schwache Evidenz als Prognose verkauft.
+- **Alternatives:** Direkt Predictive Goal Engine bauen (zu wenig Evidenzgrundlage); Response-Modell sofort in Planentscheidungen einbauen (zu riskant ohne sichtbare Kontrolle); alle Long-Term-Themen in einen grossen PR packen (zu grosser Review- und Regressionsradius).
+- **Decided by:** Tobi + Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Nutrition Trend Summaries bleiben daten-gated
 
 - **Decision:** Nutrition Trend Summaries werden nicht aus den aktuell vorhandenen Fueling-Logs gebaut. Als Startkriterium gelten mindestens drei vergleichbare, vollstaendige `during`-Logs mit Aktivitaets-/Dauerkontext, Kohlenhydraten und GI-Komfort; Sodium-, Hitze- und Schweissraten bleiben bis zu Messdaten als Evidenzluecken markiert.
