@@ -37,6 +37,7 @@ type MockPulseApiOptions = {
   dailyOutcomes?: unknown[];
   dailyDelta?: unknown[];
   decisionQuality?: unknown;
+  personalResponse?: unknown;
   goals?: unknown[];
   actions?: unknown[];
   suppressedActions?: unknown[];
@@ -624,6 +625,44 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
       suggestedAdjustment: 'Diesen Entscheidungstyp beibehalten und weiter mit aktueller Evidenz begründen.',
     };
   }
+  if (pathname === '/api/pulse/personal-response') {
+    const days = Number(searchParams.get('days') ?? 42);
+    return {
+      summary: {
+        generatedAt: `${today}T00:00:00.000Z`,
+        range: { from: '2026-03-20', to: today, days },
+        strength: 'learning',
+        headline: 'Pulse lernt deine Reaktionsmuster.',
+        signals: [
+          {
+            kind: 'execution_response',
+            label: 'Ausführung reagiert sichtbar',
+            strength: 'learning',
+            summary: '3 Entscheidungen wurden bestätigt, 0 wiederholte Muster sollten vorsichtig angepasst werden.',
+            evidence: ['3 bestätigte Entscheidung(en)', '0 stale Entscheidungsmuster'],
+            nextAdjustment: 'Bestätigte Entscheidungstypen beibehalten und stale Muster kleiner oder anders getaktet anbieten.',
+          },
+          {
+            kind: 'mental_response',
+            label: 'Mentale Last einbeziehen',
+            strength: 'learning',
+            summary: '2 von 4 Check-ins zeigen niedrige Energie oder hohen Stress.',
+            evidence: ['4 Check-in(s) im Zeitraum', '2 Check-in(s) mit Energie <=4 oder Stress >=7'],
+            nextAdjustment: 'An Tagen mit niedriger Energie oder hohem Stress zuerst Boundary, Warm-up und leichtere Alternative anbieten.',
+          },
+          {
+            kind: 'fueling_response',
+            label: 'Fueling-Baseline offen',
+            strength: 'insufficient',
+            summary: 'Noch keine belastbare Fueling-Baseline für lange Einheiten.',
+            evidence: ['Fueling-Logs mit Carbs, Dauer, Flaschen und GI-Komfort fehlen.'],
+            nextAdjustment: 'Lange Einheiten mit vollständigem During-Log abschließen.',
+          },
+        ],
+        missingEvidence: ['Mindestens drei vergleichbare vollständige During-Fueling-Logs fehlen.'],
+      },
+    };
+  }
   if (pathname === '/api/pulse/health-state') return { active: [], recent: [] };
   if (pathname === '/api/pulse/plan/today/options') {
     return {
@@ -1038,6 +1077,9 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     }
     if (url.pathname === '/api/pulse/decisions/quality' && options.decisionQuality) {
       return json(route, options.decisionQuality);
+    }
+    if (url.pathname === '/api/pulse/personal-response' && options.personalResponse) {
+      return json(route, options.personalResponse);
     }
     if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
       const decisionId = url.pathname.split('/').at(-1) ?? 'decision-1';

@@ -561,6 +561,47 @@ describe('Daily decision quality', () => {
   });
 });
 
+describe('Personal response model', () => {
+  it('returns a read-only response summary from existing daily evidence', async () => {
+    const dates = [dateDaysAgo(3), dateDaysAgo(2), dateDaysAgo(1)];
+    await db.insert(pulseActionDecisions).values(dates.map((date, index) => ({
+      userId,
+      source: 'next_best_action',
+      sourceId: `checkin-${index}`,
+      kind: 'checkin',
+      title: 'Check-in eintragen',
+      status: 'completed',
+      targetRoute: '/data',
+      createdAt: new Date(`${date}T07:00:00.000Z`),
+      resolvedAt: new Date(`${date}T08:00:00.000Z`),
+      resolutionReason: 'Erledigt.',
+    })));
+    await db.insert(pulseMentalCheckins).values([
+      { userId, date: dates[0]!, mood: 6, energy: 4, stress: 7, motivation: 6, source: 'text' },
+      { userId, date: dates[1]!, mood: 7, energy: 5, stress: 5, motivation: 7, source: 'text' },
+      { userId, date: dates[2]!, mood: 7, energy: 6, stress: 4, motivation: 8, source: 'text' },
+    ]);
+
+    const beforeRows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/personal-response?days=42',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const afterRows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ summary: { strength: string; headline: string; signals: Array<{ kind: string; strength: string }> } }>();
+    expect(body.summary.strength).toBe('learning');
+    expect(body.summary.headline).toBe('Pulse lernt deine Reaktionsmuster.');
+    expect(body.summary.signals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'execution_response', strength: 'learning' }),
+      expect.objectContaining({ kind: 'mental_response', strength: 'learning' }),
+    ]));
+    expect(afterRows).toHaveLength(beforeRows.length);
+  });
+});
+
 describe('Coach preferences', () => {
   it('returns defaults and persists explicit visible preferences', async () => {
     const defaults = await app.inject({

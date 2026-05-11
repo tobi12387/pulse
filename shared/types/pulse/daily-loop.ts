@@ -26,6 +26,36 @@ export interface PulseDailyOutcomeLearningResponse {
   items: PulseDailyOutcomeLearningItem[];
 }
 
+export type PulsePersonalResponseEvidenceStrength = 'insufficient' | 'learning' | 'useful';
+export type PulsePersonalResponseSignalKind =
+  | 'load_response'
+  | 'mental_response'
+  | 'fueling_response'
+  | 'recovery_response'
+  | 'execution_response';
+
+export interface PulsePersonalResponseSignal {
+  kind: PulsePersonalResponseSignalKind;
+  label: string;
+  strength: PulsePersonalResponseEvidenceStrength;
+  summary: string;
+  evidence: string[];
+  nextAdjustment: string;
+}
+
+export interface PulsePersonalResponseSummary {
+  generatedAt: string;
+  range: { from: string; to: string; days: number };
+  strength: PulsePersonalResponseEvidenceStrength;
+  headline: string;
+  signals: PulsePersonalResponseSignal[];
+  missingEvidence: string[];
+}
+
+export interface PulsePersonalResponseResponse {
+  summary: PulsePersonalResponseSummary;
+}
+
 export type PulseDailyDeltaStatus = 'matched' | 'replaced' | 'missed' | 'off_plan';
 
 export interface PulseDailyDeltaItem {

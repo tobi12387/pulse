@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Personal Response Model v1 bleibt Data-first und read-only
+
+- **Decision:** Personal Response Model v1 wird als deterministischer `GET /api/pulse/personal-response` im Daily-Loop-Kontext umgesetzt und in Data > Analyse als kompakter Evidenzblock angezeigt. Es schreibt keine Garmin-, Plan-, Profil- oder LLM-Daten und beeinflusst Plan/Goal/Coach noch nicht automatisch.
+- **Why:** Tobi braucht zuerst eine sichtbare, schwach/stark gelabelte Erklaerung, welche persoenlichen Reaktionsmuster Pulse wirklich belegen kann. Der Daily-Loop-Kontext ist fachlich passend, weil das Modell Daily Outcome Learning, Decision Quality, mentale Check-ins, Execution/RPE und Fueling-Baseline zusammenfuehrt.
+- **Alternatives:** Route in `training-routes.ts` platzieren (weniger passend fuer Daily Outcome/Decision Quality); sofort Planentscheidungen mutieren (zu versteckt und zu riskant); einen neuen Data-Tab bauen (mehr UI-Dichte statt ruhiger Analyseflaeche).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Long-Term Roadmap startet mit Personal Response Model v1
 
 - **Decision:** Die naechste nicht-gegatete Long-Term-Phase ist Personal Response Model v1: ein deterministisches, read-only und Data-first Modell, das Reaktionsmuster aus bestehenden Pulse-Daten erklaert, bevor Plan, Goal Engine oder Coach diese Signale konsumieren.

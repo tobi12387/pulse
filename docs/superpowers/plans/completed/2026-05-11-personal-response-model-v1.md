@@ -1,12 +1,14 @@
 # Personal Response Model v1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build a read-only Personal Response Model that explains how Tobi tends to respond to training, recovery, mental load and fueling signals without pretending to be predictive beyond the available evidence.
 
 **Architecture:** Start with a deterministic backend summary service over existing Pulse tables and contracts. Expose it through one read-only endpoint, surface it in Data > Analyse as a compact evidence block, and feed only safe summaries into later Plan/Coach phases. No migration is required for v1.
 
 **Tech Stack:** TypeScript, Fastify, Drizzle, React/Vite, TanStack Query, shared Pulse contracts, Vitest, Playwright.
+
+**Implementation note:** The endpoint was implemented in `backend/src/pulse/routes/daily-loop-routes.ts` rather than `training-routes.ts`, because the final integration point combines Daily Outcome Learning, Daily Decision Quality, mental check-ins, execution/RPE and Fueling Baseline as a daily-loop evidence surface.
 
 ---
 
@@ -59,7 +61,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
 - Modify: `shared/types/pulse/daily-loop.ts`
 - Test: `backend/src/pulse/services/personal-response-model.test.ts`
 
-- [ ] **Step 1: Add response model types**
+- [x] **Step 1: Add response model types**
 
   Add these exports near the existing daily-learning contracts:
 
@@ -95,7 +97,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   }
   ```
 
-- [ ] **Step 2: Write a compile-facing service test**
+- [x] **Step 2: Write a compile-facing service test**
 
   Create `backend/src/pulse/services/personal-response-model.test.ts`:
 
@@ -121,7 +123,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   });
   ```
 
-- [ ] **Step 3: Run the failing test**
+- [x] **Step 3: Run the failing test**
 
   Run:
 
@@ -138,7 +140,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
 - Create: `backend/src/pulse/services/personal-response-model.ts`
 - Modify: `backend/src/pulse/services/personal-response-model.test.ts`
 
-- [ ] **Step 1: Implement the model input and summary builder**
+- [x] **Step 1: Implement the model input and summary builder**
 
   Create `backend/src/pulse/services/personal-response-model.ts`:
 
@@ -275,7 +277,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   }
   ```
 
-- [ ] **Step 2: Extend tests for useful/learning states**
+- [x] **Step 2: Extend tests for useful/learning states**
 
   Add tests that pass representative `dailyOutcomes`, `mentalCheckins` and a learning `fuelingBaseline`, then assert:
 
@@ -285,7 +287,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   expect(summary.signals.find(signal => signal.kind === 'mental_response')?.nextAdjustment).toContain('Boundary');
   ```
 
-- [ ] **Step 3: Run backend service tests**
+- [x] **Step 3: Run backend service tests**
 
   Run:
 
@@ -302,7 +304,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
 - Modify: `backend/src/pulse/routes/training-routes.ts`
 - Test: `backend/src/pulse/services/personal-response-model.test.ts`
 
-- [ ] **Step 1: Add a route-level loader**
+- [x] **Step 1: Add a route-level loader**
 
   In `training-routes.ts`, add a read-only `GET /personal-response` endpoint near existing `/outcomes/daily` and `/fueling/debt` routes. Reuse existing loaders where possible:
 
@@ -318,7 +320,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   { summary: buildPersonalResponseSummary(...) }
   ```
 
-- [ ] **Step 2: Keep the endpoint side-effect-free**
+- [x] **Step 2: Keep the endpoint side-effect-free**
 
   Verify the endpoint does not call:
 
@@ -327,7 +329,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   - LLM helpers;
   - migration or profile write paths.
 
-- [ ] **Step 3: Run backend build**
+- [x] **Step 3: Run backend build**
 
   Run:
 
@@ -347,11 +349,11 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
 - Modify: `frontend/src/pages/Data.tsx`
 - Test: `frontend/e2e/pulse-usability.spec.ts`
 
-- [ ] **Step 1: Add API client and hook**
+- [x] **Step 1: Add API client and hook**
 
   Add `pulseApi.personalResponse.get()` and `usePersonalResponse()` following the existing query-key style.
 
-- [ ] **Step 2: Render inside Data > Analyse**
+- [x] **Step 2: Render inside Data > Analyse**
 
   Create `PersonalResponsePanel` with:
 
@@ -361,7 +363,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   - `missingEvidence` as a collapsed or subdued evidence list;
   - no new top-level tab in v1.
 
-- [ ] **Step 3: Add Playwright coverage**
+- [x] **Step 3: Add Playwright coverage**
 
   In `frontend/e2e/pulse-usability.spec.ts`, add a mocked API test:
 
@@ -394,7 +396,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   });
   ```
 
-- [ ] **Step 4: Run focused frontend checks**
+- [x] **Step 4: Run focused frontend checks**
 
   Run:
 
@@ -413,7 +415,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
 - Modify: `docs/ai/current-focus.md`
 - Move on completion: this plan to `docs/superpowers/plans/completed/2026-05-11-personal-response-model-v1.md`
 
-- [ ] **Step 1: Full touched-surface verification**
+- [x] **Step 1: Full touched-surface verification**
 
   Run:
 
@@ -424,7 +426,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   npm run test:e2e -- frontend/e2e/pulse-usability.spec.ts --project=mobile-chromium --grep "personal response|Data Analyse"
   ```
 
-- [ ] **Step 2: Route evidence if the Data layout changes visibly**
+- [x] **Step 2: Route evidence if the Data layout changes visibly**
 
   If `Data.tsx` changes layout or ordering beyond adding the panel, run:
 
@@ -432,7 +434,7 @@ Later PR: let Coach explain response patterns and ask one focused follow-up ques
   PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence/personal-response-v1 npm run qa:ux-evidence
   ```
 
-- [ ] **Step 3: Record decision**
+- [x] **Step 3: Record decision**
 
   Add a newest-first `docs/decisions.md` entry:
 
