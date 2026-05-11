@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-11 — Settings startet mit einem Status vor der Diagnose
+
+- **Decision:** Settings zeigt oberhalb der technischen Diagnosematrix eine Statuskarte (`Alles bereit` oder `Problem beheben`), die aus den bestehenden Zugriff-, PWA-, Push- und Garmin-Signalen abgeleitet wird. Die Karte routet nur zu vorhandenen Settings-/Data-Abschnitten und loest keine Push-Prompts, Garmin-Writes, Backend-Jobs oder Migrationen aus.
+- **Why:** Die Benchmark-Roadmap hat Settings als technisch korrekt, aber zu diagnostisch beschrieben: Tobi braucht zuerst die Antwort, ob iPhone/PWA, Garmin und Push einsatzbereit sind oder welcher konkrete Punkt blockiert. Eine Frontend-Orchestrierung nutzt vorhandene Evidenz, reduziert Scan-Aufwand und bleibt klein genug fuer einen PR.
+- **Alternatives:** Diagnosematrix unveraendert lassen (zu viel technische Eigenarbeit); Settings in neue Top-Level-Tabs splitten (zu grosser IA-Scope fuer den beobachteten Friktionspunkt); Live-Probes oder automatische Reparaturen ausloesen (zu riskant fuer eine Statusansicht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Data IA wird auf vier evidence-orientierte Bereiche verdichtet
 
 - **Decision:** Data nutzt kuenftig vier Top-Level-Bereiche (`Heute relevant`, `Trends`, `Datenqualitaet`, `Analyse`) statt sieben gleichrangiger Implementierungs-Tabs. Alte Query-/Hash-Ziele wie `tab=mental`, `tab=metrics`, `tab=coverage`, `tab=weight`, `tab=analysen`, `#data-mental`, `#data-recovery` und `#data-plan-trace` bleiben kompatibel und werden intern in die neuen Bereiche gemappt.

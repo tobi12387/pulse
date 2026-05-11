@@ -4070,11 +4070,18 @@ test('Settings separates push server, browser and device state', async ({ page }
 });
 
 test('Settings diagnostics matrix is visible first and routes to support sections', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window.Notification, 'permission', { get: () => 'default' });
+  });
   await mockPulseApi(page);
 
   await page.goto('/settings');
   const matrix = page.getByTestId('settings-diagnostics-matrix');
+  const summary = page.getByTestId('settings-status-summary');
   await expect(matrix).toBeVisible();
+  await expect(summary).toContainText('Alles bereit');
+  await expect(summary).toContainText('Optional');
+  await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
   await expect(matrix).toContainText('DIAGNOSE');
   await expect(matrix).toContainText('Zugriff');
   await expect(matrix).toContainText('Zertifikat');
@@ -4085,6 +4092,10 @@ test('Settings diagnostics matrix is visible first and routes to support section
   expect(profileBox).not.toBeNull();
   expect(matrixBox!.y).toBeLessThan(profileBox!.y);
 
+  await summary.getByRole('button', { name: 'Push öffnen' }).click();
+  await expect(page).toHaveURL('/settings?section=push');
+
+  await page.goto('/settings');
   await matrix.getByRole('button', { name: 'Gerät', exact: true }).click();
   await expect(page).toHaveURL('/settings?section=device');
   await expect(page.getByRole('heading', { name: 'iPhone & PWA' })).toBeVisible();
@@ -4129,12 +4140,20 @@ test('Settings diagnostics matrix separates denied push and blocked Garmin state
 
   await page.goto('/settings');
   const matrix = page.getByTestId('settings-diagnostics-matrix');
+  const summary = page.getByTestId('settings-status-summary');
+  await expect(summary).toContainText('Problem beheben');
+  await expect(summary).toContainText('2 Punkte prüfen');
+  await expect(summary).toContainText('Garmin');
+  await expect(summary).toContainText('Push');
   await expect(matrix).toContainText('Push');
   await expect(matrix).toContainText('Browser blockiert');
   await expect(matrix).toContainText('Garmin');
   await expect(matrix).toContainText('Blockiert');
   await expect(matrix).toContainText('Zertifikat');
   await expect(matrix).toContainText('manuell');
+
+  await summary.getByRole('button', { name: 'Garmin öffnen' }).click();
+  await expect(page).toHaveURL('/settings?section=garmin');
 });
 
 test('Settings PWA diagnostics reflect standalone iPhone context', async ({ page }, testInfo) => {

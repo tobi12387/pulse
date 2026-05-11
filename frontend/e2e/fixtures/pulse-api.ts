@@ -1196,6 +1196,14 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
       return json(route, options.garminCalendarSyncResult ?? { uploaded: 1, repaired: 0, removed: 0, errors: [] });
     }
     if (url.pathname === '/api/pulse/garmin/coverage' && options.garminCoverage) return json(route, options.garminCoverage);
+    if (url.pathname === '/api/garmin/status') {
+      return json(route, {
+        connected: true,
+        lastSync: `${today}T06:00:00.000Z`,
+        syncStatus: 'ok',
+        errorMessage: null,
+      });
+    }
     if (url.pathname === '/api/pulse/garmin/signal-usefulness' && options.garminSignalUsefulness) return json(route, options.garminSignalUsefulness);
     if (url.pathname === '/api/pulse/garmin/execution-diff') {
       return json(route, options.garminExecutionDiff ?? { generatedAt: `${today}T08:00:00.000Z`, window: { from: today, to: today, days: 1 }, rows: [] });
