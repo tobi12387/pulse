@@ -8,6 +8,7 @@ Default desktop plus mobile Chromium pack:
 
 ```bash
 npm run qa:ux-evidence
+npm run qa:ux-summary -- test-results/route-evidence
 ```
 
 Optional desktop plus iPhone WebKit pack:
@@ -32,6 +33,8 @@ test-results/route-evidence/<date>-<commit>/<project>/
 ```
 
 `test-results/` is git-ignored. Do not commit PNGs unless the repo explicitly changes that policy.
+
+`npm run qa:ux-summary -- <evidence-root>` prints a compact manifest summary with screenshot counts and horizontal-overflow findings. Use it to sanity-check the pack before opening images manually.
 
 ## Captured Routes
 
@@ -82,6 +85,19 @@ The manifest records:
 ## Review Loop
 
 1. Run the pack before UI/UX planning or after relevant UI changes.
-2. Review screenshots locally from `test-results/route-evidence/`.
-3. Record the generated path and conclusions in the active `docs/qa/` record.
-4. Use Canva/FigJam as visual companions only after the repo evidence record is current.
+2. Run `npm run qa:ux-summary -- <evidence-root>` and fix any horizontal overflow before adding new UI scope.
+3. Review screenshots locally from `test-results/route-evidence/`.
+4. Record the generated path, summary output and conclusions in the active `docs/qa/` record.
+5. Use Canva/FigJam as visual companions only after the repo evidence record is current.
+
+## Next-Slice Intake
+
+Before creating a UI/UX implementation PR, write a short QA record that answers:
+
+- Which route and viewport has the friction?
+- Is it a real daily-flow problem, or only aesthetic preference?
+- What is the smallest change that reduces decision load without adding another summary card?
+- Which screenshot or browser interaction proves the before-state?
+- Which focused test or route-evidence rerun proves the after-state?
+
+If the answer is only "more polish might be nice", keep the finding as a note and do not open an implementation slice yet.

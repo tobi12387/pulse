@@ -11,6 +11,7 @@ BACKEND_PROC="${PULSE_PM2_BACKEND:-pulse}"
 FRONTEND_PROC="${PULSE_PM2_FRONTEND:-pulse-frontend}"
 EXPECTED_COMMIT="${PULSE_EXPECTED_COMMIT:-$(git rev-parse --short HEAD)}"
 LOG_LINES="${PULSE_SERVER_LOG_LINES:-300}"
+LOG_WINDOW_MINUTES="${PULSE_SERVER_LOG_WINDOW_MINUTES:-60}"
 
 usage() {
   cat <<'USAGE'
@@ -24,6 +25,9 @@ Environment overrides:
   PULSE_PM2_FRONTEND     Frontend PM2 process, default pulse-frontend
   PULSE_EXPECTED_COMMIT  Expected short commit, default local HEAD
   PULSE_SERVER_LOG_LINES Recent PM2 error-log lines to summarize, default 300
+  PULSE_SERVER_LOG_WINDOW_MINUTES
+                         Timestamped log attention window, default 60
+  PULSE_SERVER_LOG_SINCE ISO timestamp override for timestamped log attention
 
 Checks:
   - server worktree is clean on main
@@ -47,6 +51,8 @@ fail() {
 }
 
 [[ "$LOG_LINES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_LINES must be numeric"
+[[ "$LOG_WINDOW_MINUTES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_WINDOW_MINUTES must be numeric"
+LOG_SINCE_ISO="${PULSE_SERVER_LOG_SINCE:-$(PULSE_SERVER_LOG_WINDOW_MINUTES="$LOG_WINDOW_MINUTES" node --input-type=module -e 'const minutes = Number(process.env.PULSE_SERVER_LOG_WINDOW_MINUTES); console.log(new Date(Date.now() - minutes * 60_000).toISOString())')}"
 
 echo "==> server git status"
 server_info="$(ssh "$HOST" "cd '$APP_PATH' && \
@@ -83,15 +89,16 @@ for (const name of required) {
 }
 NODE
 
-echo "==> recent server log signals"
-ssh "$HOST" "for file in /root/.pm2/logs/${BACKEND_PROC}-error.log /root/.pm2/logs/${FRONTEND_PROC}-error.log; do
-  if [ -f \"\$file\" ]; then
-    recent_attention=\$(tail -n '$LOG_LINES' \"\$file\" | grep -Eic 'Too Many Requests|Cloudflare|ClientAuthorizationException|ECONNREFUSED|ECONNRESET|/api/garmin/status' || true)
-    printf '%s recent_attention=%s\n' \"\$(basename \"\$file\")\" \"\$recent_attention\"
+echo "==> recent server log signals since $LOG_SINCE_ISO"
+for log_name in "${BACKEND_PROC}-error.log" "${FRONTEND_PROC}-error.log"; do
+  log_path="/root/.pm2/logs/${log_name}"
+  if ssh "$HOST" "[ -f '$log_path' ]"; then
+    summary="$(ssh "$HOST" "tail -n '$LOG_LINES' '$log_path'" | node scripts/server-log-attention.mjs --since "$LOG_SINCE_ISO")"
+    printf '%s %s\n' "$log_name" "$summary"
   else
-    printf '%s recent_attention=missing\n' \"\$(basename \"\$file\")\"
+    printf '%s recent_attention=missing\n' "$log_name"
   fi
-done"
+done
 
 echo "==> public frontend"
 http_code="$(curl -ksS -o /dev/null -w '%{http_code}' "$URL")"
