@@ -7,7 +7,8 @@ import { errorMessage } from '@/components/feedback-utils';
 import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseCheckinTextPreview, usePulseHome } from '@/pulse/hooks';
 import { GarminDomainHint } from '@/features/data/coverage/coverage-components';
 import { mentalImpactLabels, mentalImpactLevel, type MentalImpactLevel } from '@/features/mental/mental-impact';
-import type { PulseHomeScreenData } from '@coaching-os/shared/pulse';
+import { ResilienceGuidanceCard } from '@/features/data/resilience/ResilienceGuidanceCard';
+import type { PulseHomeScreenData, PulseMentalCheckin } from '@coaching-os/shared/pulse';
 import { MENTAL_CHECKIN_SUGGESTION_THRESHOLDS } from '@coaching-os/shared/pulse-thresholds';
 import type { PulseCheckinTextPreview } from '@/pulse/api-client';
 
@@ -22,6 +23,7 @@ type EnergyChoice = 'easy' | 'middle' | 'hard';
 type PressureChoice = 'easy' | 'middle' | 'hard';
 type NeedChoice = 'activation' | 'structure' | 'rest';
 type StateProfile = MentalImpactLevel;
+type ScoredMentalCheckin = Partial<PulseMentalCheckin> & Pick<PulseMentalCheckin, 'mood' | 'energy' | 'stress' | 'motivation'>;
 
 type QuickChoices = {
   head: HeadChoice;
@@ -37,6 +39,15 @@ type CheckinForm = {
   motivation: number;
   notes: string;
 };
+
+function hasMentalScores(checkin: unknown): checkin is ScoredMentalCheckin {
+  const value = checkin as Partial<Record<'mood' | 'energy' | 'stress' | 'motivation', unknown>> | null | undefined;
+  return value != null
+    && Number.isFinite(value.mood)
+    && Number.isFinite(value.energy)
+    && Number.isFinite(value.stress)
+    && Number.isFinite(value.motivation);
+}
 
 type CheckinScoreKey = keyof Omit<CheckinForm, 'notes'>;
 
@@ -572,7 +583,11 @@ export function MentalTab() {
     }
   }
 
-  const alreadyDone = today?.checkin != null;
+  const todayCheckin = today?.checkin ?? null;
+  const alreadyDone = todayCheckin != null;
+  const scoredTodayCheckin = hasMentalScores(todayCheckin)
+    ? todayCheckin
+    : null;
   const checkins = histData?.checkins ?? [];
   const guidedQuestions = guidance?.questions.length
     ? guidance.questions
@@ -597,6 +612,7 @@ export function MentalTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <GarminDomainHint domains={['daily_metrics', 'hrv', 'sleep']} />
+      {scoredTodayCheckin && <ResilienceGuidanceCard home={home ?? null} checkin={scoredTodayCheckin} />}
 
       {alreadyDone || submitted ? (
         <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
@@ -612,7 +628,7 @@ export function MentalTab() {
               Wie ist deine mentale Lage? Wähle einen Zustand und speichere direkt; Details bleiben optional.
             </p>
           </div>
-          <form onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <form id="mental-checkin-form" tabIndex={-1} onSubmit={(e) => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <StateProfileGroup value={stateProfile} onChange={updateStateProfile} />
             <div
               data-testid="mental-derived-summary"

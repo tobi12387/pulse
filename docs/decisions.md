@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Recovery/Mental Resilience bleibt Boundary-Guidance statt Diagnose
+
+- **Decision:** Data > Mental bekommt eine kompakte Resilienzkarte, die Recovery-, Readiness-, Load- und Mental-Check-in-Signale in `Grenze`, `Planwirkung` und `Signalqualität` übersetzt.
+- **Why:** Der Benchmark-Gap ist nicht ein weiterer Metrikblock, sondern eine alltagstaugliche Grenze: Tobi soll sehen, ob heute Schutz, dosierter Rahmen oder normaler Start sinnvoll ist. Ohne echten Check-in bleibt der Check-in die primäre Aufgabe, damit Mobile nicht überladen wird.
+- **Alternatives:** Recovery/Mental als neuen Tab bauen (mehr IA-Dichte); klinische Labels oder Diagnosen ableiten (fachlich und produktethisch falsch); Karte immer vor dem offenen Check-in zeigen (drängt den Speichern-Flow auf Mobile nach unten).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Weekly Coach Review bleibt deterministische Plan-Review-Schicht
 
 - **Decision:** Weekly Coach Review wird als kompakte, frontend-first Review-Schicht in `/plan?tab=review` umgesetzt und nutzt vorhandene Review-, Adaptions-, Response-, Goal- und Season-Evidenz.

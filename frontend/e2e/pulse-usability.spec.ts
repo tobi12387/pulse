@@ -1220,6 +1220,54 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   expect(String((submitted as { notes?: string }).notes)).toContain('Bedarf: Ruhe');
 });
 
+test('Data Mental shows resilience guidance without clinical labels', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      readiness: {
+        score: 48,
+        label: 'erholen',
+        shortLabel: 'Erholen',
+        color: 'rose',
+        components: { sleep: 45, hrv: 50, tsb: 42, battery: 45, mental: 40, stress: 35 },
+      },
+      fitnessLoad: { date: '2026-05-01', ctl: 42.4, atl: 52.1, tsb: -9.7, cached: false },
+      recovery: {
+        sleepDebt7d: { hours: 2.4, targetH: 7.5, baselineSource: 'garmin_sleep_need', status: 'severe' },
+        hrvDeviation7d: { pct: -8, recentMs: 43, baselineMs: 47, status: 'declining' },
+        rhrDrift7d: { bpmAboveBaseline: 5, recent: 54, baseline: 49, status: 'elevated' },
+        recoveryScore: 46,
+        recommendation: 'Heute Belastung reduzieren.',
+      },
+    },
+    checkinToday: {
+      checkin: {
+        id: 'checkin-1',
+        userId: 'user-1',
+        date: '2026-05-01',
+        mood: 5,
+        energy: 3,
+        stress: 8,
+        motivation: 4,
+        notes: null,
+        themes: null,
+        source: 'manual',
+        coachQuestions: null,
+        createdAt: '2026-05-01T08:00:00.000Z',
+      },
+    },
+  });
+
+  await page.goto('/data?tab=today#data-mental');
+
+  const card = page.getByTestId('resilience-guidance-card');
+  await expect(card).toContainText('Resilienz heute');
+  await expect(card).toContainText('Grenze');
+  await expect(card).toContainText('Planwirkung');
+  await expect(card).toContainText('Signalqualität');
+  await expect(card.getByRole('button', { name: 'Planwirkung prüfen' })).toBeVisible();
+  await expect(card).not.toContainText(/Diagnose|Depression|Krankheit/i);
+});
+
 test('Data mental check-in keeps the primary save action in the first mobile viewport', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
