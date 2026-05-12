@@ -70,7 +70,7 @@ function optionResultPreview(option: PulseTodayOption): string {
   if (option.targetPath.includes('#plan-scenario-preview')) {
     return 'Plan-Szenario öffnen; Pulse zeigt Load, Recovery und Garmin-Auswirkung vor Änderungen.';
   }
-  if (option.targetPath.startsWith('/activity/')) {
+  if (option.targetPath.startsWith('/activity/') || option.targetPath.startsWith('/plan/activity/')) {
     return 'Aktivität öffnen; dein Feedback beeinflusst die nächsten Empfehlungen.';
   }
   if (option.targetPath.startsWith('/data')) {

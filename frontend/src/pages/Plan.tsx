@@ -2585,7 +2585,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
                   <td style={{ padding: 0, fontSize: 12, color: 'var(--text)' }}>
                     <button
                       type="button"
-                      onClick={() => navigate(`/activity/${a.id}`)}
+                      onClick={() => navigate(`/plan/activity/${a.id}`)}
                       aria-label={`${a.name ?? a.activityType} Aktivität öffnen`}
                       style={{
                         width: '100%',

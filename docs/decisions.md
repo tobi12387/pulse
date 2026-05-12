@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Focus-Handoff wird als Designsystem plus kompatible Routen behandelt
+
+- **Decision:** Pulse richtet den Focus-Handoff weiter an Tokens, Shell, Page-Header-Rhythmus, `?`-Keyboard-Hilfe und der kanonischen Activity-Detail-Route `/plan/activity/:id` aus. Die bestehende `/activity/:id` Route bleibt als Kompatibilitätsroute erhalten; `/coach` bleibt ebenfalls ein Kompatibilitäts-/Deep-Link-Screen, während Coach in der Haupt-IA über `⌘K` lebt.
+- **Why:** Der Handoff definiert die gewünschte Oberfläche, aber die späteren Produktentscheidungen haben einzelne Screens bewusst weiterentwickelt. Ein kleiner Alignment-Slice verbessert Struktur und QA-Evidence, ohne tiefe Data/Plan/Insights/Settings-Redesigns oder bestehende Deep Links zu brechen.
+- **Alternatives:** Den kompletten Handoff pixelgenau auf alle Routen zurückbauen (zu großer Regressionsradius und widerspricht späteren UX-Entscheidungen); `/activity/:id` oder `/coach` hart entfernen (bricht bestehende Links/Flows); nur dokumentieren und nichts angleichen (lässt konkrete Handoff-Lücken bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-11 — Data-Backfill-Aktionen erfüllen Mobile-Touch-Baseline
 
 - **Decision:** Der nächste Mini-Slice beschränkt sich auf die Touch-Zielgröße der bestehenden `Vorschau`- und `Nachladen`-Buttons in Data > Datenqualität. Backfill-Logik, Garmin-Schreibgrenze und Copy bleiben unverändert.

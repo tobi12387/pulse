@@ -31,6 +31,27 @@ test('Plan evidence does not show an empty decision beside a planned-workout tod
   await expect(page.getByText('Kein offenes Training geplant')).toHaveCount(0);
 });
 
+test('Focus shell exposes handoff keyboard help with ?', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('focus-decision-hero')).toBeVisible();
+
+  await page.keyboard.press('Shift+/');
+  const dialog = page.getByRole('dialog', { name: 'Tastaturhilfe' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('⌘K');
+  await expect(dialog).toContainText('Coach');
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+});
+
+test('Activity detail is available under the Plan route namespace', async ({ page }) => {
+  await page.goto('/plan/activity/activity-detail');
+
+  await expect(page).toHaveURL(/\/plan\/activity\/activity-detail/);
+  await expect(page.getByText('Rennrad Tour').first()).toBeVisible();
+});
+
 test('Today options show compact signal labels for the strongest reason', async ({ page }) => {
   await mockPulseApi(page, {
     todayOptions: {
@@ -103,7 +124,7 @@ test('Plan renders completed planned workout today options as a closed decision'
             title: 'Feedback ist erledigt',
             detail: 'Die Einheit hat bereits Feedback. Pulse kann die Belastung fuer die naechste Planung einordnen.',
             cta: 'Aktivität ansehen',
-            targetPath: '/activity/activity-planned-bike',
+            targetPath: '/plan/activity/activity-planned-bike',
             evidence: ['Geplant: Rad 80 min Z2', 'Abgeschlossen: Rad 82 min · 33 km'],
           },
           {
@@ -113,7 +134,7 @@ test('Plan renders completed planned workout today options as a closed decision'
             title: 'Fueling-Log prüfen',
             detail: 'Lange Belastung: Flaschen, Pulver, Snacks und GI-Komfort festhalten.',
             cta: 'Fueling öffnen',
-            targetPath: '/activity/activity-planned-bike',
+            targetPath: '/plan/activity/activity-planned-bike',
             evidence: ['Fueling heute bereits geloggt'],
           },
           {
@@ -158,7 +179,7 @@ test('Home shows the latest planned-vs-completed daily delta', async ({ page }) 
       recoveryDelta: 'Recovery seit Vortag: Schlaf +0.6 h',
       nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln und die nächste Empfehlung darauf aufbauen.',
       evidence: ['Geplant: Radfahren · Z2 · 75 min', 'Garmin: Radfahren · 80 min · TSS 72'],
-      targetPath: '/activity/activity-planned-bike',
+      targetPath: '/plan/activity/activity-planned-bike',
     }],
   });
   await page.goto('/');

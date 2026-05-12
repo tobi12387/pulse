@@ -14,14 +14,25 @@ type PageHeaderProps = {
 
 export function PageHeader({ eyebrow, title, description, action }: PageHeaderProps) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+    <div
+      style={{
+        minHeight: 72,
+        padding: '18px 0 16px',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: 12,
+        flexWrap: 'wrap',
+      }}
+    >
       <div style={{ minWidth: 0 }}>
         {eyebrow && (
           <div className="label-mono" style={{ marginBottom: 3 }}>
             {eyebrow}
           </div>
         )}
-        <h1 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', margin: 0 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)', margin: 0 }}>
           {title}
         </h1>
         {description && (

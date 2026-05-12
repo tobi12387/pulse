@@ -762,7 +762,7 @@ test('Home routes to activity feedback only when completed training still misses
   await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Für heute ist nichts mehr offen');
 
   await page.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
-  await expect(page).toHaveURL(/\/activity\/activity-done/);
+  await expect(page).toHaveURL(/\/plan\/activity\/activity-done/);
 });
 
 test('Home treats a completed off-plan Garmin activity as today done', async ({ page }) => {
@@ -849,7 +849,7 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
     },
   });
 
-  await page.goto('/activity/activity-fueling');
+  await page.goto('/plan/activity/activity-fueling');
   await expect(page.getByTestId('activity-fueling-debt')).toContainText('GI-Schutz offen');
   await expect(page.getByTestId('activity-fueling-debt')).toContainText('75-120 min locker');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Fueling-Baseline lernen');
@@ -1331,7 +1331,7 @@ test('Daily Surface focus mode is local and read-only', async ({ page }) => {
       recoveryDelta: null,
       nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln.',
       evidence: ['Geplant: Rad 75 min', 'Garmin: Rad 77 min'],
-      targetPath: '/activity/activity-done',
+      targetPath: '/plan/activity/activity-done',
     }],
   });
 
@@ -1404,7 +1404,7 @@ test('Daily Surface resets to the safe default order', async ({ page }) => {
       recoveryDelta: null,
       nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln.',
       evidence: ['Geplant: Rad 75 min', 'Garmin: Rad 77 min'],
-      targetPath: '/activity/activity-done',
+      targetPath: '/plan/activity/activity-done',
     }],
   });
 

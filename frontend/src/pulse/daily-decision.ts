@@ -32,6 +32,10 @@ export interface DailyDecision {
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
 type HomeActivity = PulseHomeScreenData['recentActivities'][number];
 
+function activityDetailPath(activityId: string): string {
+  return `/plan/activity/${activityId}`;
+}
+
 function readinessBoundary(score: number | null | undefined, tsb: number | null | undefined): string {
   if (score != null && score < 55) return 'Heute defensiv bleiben: keine harte Intensität erzwingen.';
   if (score != null && score < 70) return 'Belastung sauber dosieren und harte Spitzen nur bewusst setzen.';
@@ -160,7 +164,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const completedLabel = `${activityLabel(completedWorkout.activityType)} · Z${completedWorkout.zone} · ${completedWorkout.durationMin} min`;
     const feedbackDone = hasCompletedWorkoutFeedback(home, completedWorkout);
     const feedbackTargetPath = completedWorkout.completedActivityId
-      ? `/activity/${completedWorkout.completedActivityId}`
+      ? activityDetailPath(completedWorkout.completedActivityId)
       : '/plan?tab=training';
     const steps: DailyDecisionStep[] = [
       { status: 'done', label: 'Training abgeschlossen', detail: completedLabel },
@@ -219,7 +223,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   if (offPlanActivity && !todayWorkout) {
     const completedLabel = completedActivityLabel(offPlanActivity);
     const feedbackDone = offPlanActivity.feedbackLoggedAt != null || offPlanActivity.rpe != null;
-    const feedbackTargetPath = `/activity/${offPlanActivity.id}`;
+    const feedbackTargetPath = activityDetailPath(offPlanActivity.id);
     const steps: DailyDecisionStep[] = [
       { status: 'done', label: 'Garmin-Aktivität abgeschlossen', detail: completedLabel },
       ...(feedbackDone

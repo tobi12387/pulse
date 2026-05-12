@@ -19,6 +19,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [coachOpen, setCoachOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   useNavHotkeys();
 
   const isOperationalRoute = location.pathname === '/' || location.pathname.startsWith('/data') || location.pathname.startsWith('/plan') || location.pathname.startsWith('/insights');
@@ -33,10 +34,18 @@ export default function Layout() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         if (isTyping) return;
         event.preventDefault();
+        setHelpOpen(false);
         setCoachOpen(open => !open);
+      }
+      const isHelpShortcut = event.key === '?' || (event.shiftKey && (event.key === '/' || event.code === 'Slash'));
+      if (!isTyping && !event.metaKey && !event.ctrlKey && !event.altKey && isHelpShortcut) {
+        event.preventDefault();
+        setCoachOpen(false);
+        setHelpOpen(open => !open);
       }
       if (!isTyping && event.key === 'Escape') {
         setCoachOpen(false);
+        setHelpOpen(false);
       }
     }
 
@@ -229,8 +238,99 @@ export default function Layout() {
           navigate('/data?tab=today#data-mental');
         }}
       />
+      <KeyboardHelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
       </div>
     </div>
+  );
+}
+
+function KeyboardHelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const restoreTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = window.requestAnimationFrame(() => dialogRef.current?.focus({ preventScroll: true }));
+    return () => {
+      window.cancelAnimationFrame(frame);
+      restoreTarget?.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  const shortcuts = [
+    ['1', 'Heute'],
+    ['2', 'Data'],
+    ['3', 'Plan'],
+    ['4', 'Insights'],
+    ['5', 'Settings'],
+    ['⌘K', 'Coach'],
+    ['?', 'Tastaturhilfe'],
+    ['Esc', 'Schließen'],
+  ];
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        onMouseDown={onClose}
+        style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.56)' }}
+      />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tastaturhilfe"
+        tabIndex={-1}
+        style={{
+          position: 'fixed',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 51,
+          width: 'min(420px, calc(100vw - 32px))',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 6,
+          padding: 18,
+          boxShadow: '0 22px 60px rgba(0,0,0,0.42)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 14 }}>
+          <div>
+            <div className="label-mono" style={{ color: 'var(--accent)' }}>SHORTCUTS</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 500 }}>Tastaturhilfe</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tastaturhilfe schließen"
+            style={{ minWidth: 44, minHeight: 44, background: 'transparent', color: 'var(--text-3)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}
+          >
+            ×
+          </button>
+        </div>
+        <div style={{ display: 'grid', gap: 7 }}>
+          {shortcuts.map(([key, label]) => (
+            <div
+              key={`${key}-${label}`}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '72px 1fr',
+                alignItems: 'center',
+                gap: 12,
+                padding: '8px 0',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{key}</span>
+              <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
