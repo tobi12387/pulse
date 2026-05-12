@@ -238,6 +238,16 @@ function planScenarioTargetPath(input: {
   return `/plan?${params.toString()}#plan-scenario-preview`;
 }
 
+function plannedWorkoutChangeTargetPath(workoutId: string, intent: 'easier' | 'rest'): string {
+  const params = new URLSearchParams({
+    tab: 'training',
+    source: 'today-change',
+    intent,
+    workoutId,
+  });
+  return `/plan?${params.toString()}#next-training-decision`;
+}
+
 function primaryEnduranceOption(input: TodayOptionsInput): PulseTodayOption {
   const activityType = mostUsefulEnduranceSport(input.recentSportMix, input.goals);
   const durationMin = input.readinessScore >= 75 && input.tsb >= -2 ? 60 : 45;
@@ -485,13 +495,7 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
       title: 'Leichtere Alternative',
       detail: easierDetail,
       cta: 'Plan anpassen',
-      targetPath: planScenarioTargetPath({
-        activityType: planned.activityType,
-        zone: easierZone,
-        durationMin: easierDuration,
-        description: easierDetail,
-        archetypeId: easierZone <= 1 ? 'recovery_spin' : planned.activityType === 'bike' ? 'endurance_cadence' : 'endurance_steady',
-      }),
+      targetPath: plannedWorkoutChangeTargetPath(planned.id, 'easier'),
       evidence: baseEvidence(input),
       activityType: planned.activityType,
       zone: easierZone,
@@ -500,7 +504,11 @@ function plannedWorkoutOptions(input: TodayOptionsInput): PulseTodayOptionsRespo
       capabilityFit: 'maintenance',
       signalLabels: compactSignals(input, { recovery: easierZone <= 1 }),
     },
-    restOption(input),
+    {
+      ...restOption(input),
+      cta: 'Plan prüfen',
+      targetPath: plannedWorkoutChangeTargetPath(planned.id, 'rest'),
+    },
   ];
   return {
     date: input.date,
