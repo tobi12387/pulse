@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — UI/UX- und Ops-Vorarbeiten bleiben Evidence/Tooling statt Produktfläche
+
+- **Decision:** Die Vorarbeit für neue UI/UX-Slices besteht aus Route-Evidence-Zusammenfassung plus Next-Slice-Intake; die Vorarbeit für Ops besteht aus timestamp-basierter Server-Log-Aufmerksamkeit in `verify-server.sh`.
+- **Why:** Pulse soll nicht wieder durch spekulative Karten oder stale Log-Zähler voller wirken. UI-Arbeit braucht vorher eine konkrete Screenshot-/Flow-Reibung, und Server-Verifikation soll alte Garmin/Cloudflare/Proxy-Historie von frischen Problemen trennen.
+- **Alternatives:** Direkt neue UI-Flächen bauen (mehr Dichte ohne Evidenz); Log-Zeilen weiter nur per Tail zählen (alte Fehler wirken frisch); alte Logs löschen/truncaten (verliert Verlauf und ist als Verify-Schritt zu destruktiv).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Push blockiert Settings-Kernbereitschaft nicht
 
 - **Decision:** Settings behandelt Push-Zustände wie `Browser blockiert`, `Server nicht bereit` oder fehlende Geräte-Subscription als optionale Geräte-/Benachrichtigungsaufgabe, nicht als Blocker für die Kernbereitschaft.
