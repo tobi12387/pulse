@@ -4198,6 +4198,13 @@ test('Plan Ausführung shows Garmin execution trust without live sync on load', 
   await page.getByRole('tab', { name: 'Ausführung' }).click();
 
   const panel = page.getByTestId('garmin-execution-trust-panel');
+  const chain = page.getByTestId('garmin-execution-chain');
+  await expect(chain).toContainText('Vorlage');
+  await expect(chain).toContainText('Kalender');
+  await expect(chain).toContainText('Readback');
+  await expect(chain).toContainText('Repeats');
+  await expect(chain).toContainText('Ausführung');
+  await expect(page.getByTestId('garmin-execution-next-action')).toContainText('Kalendertermin schließen');
   await expect(panel).toContainText('Auf Garmin bereit');
   await expect(panel).toContainText('Fehlt im Garmin-Kalender');
   await expect(panel).toContainText('Wiederholungen prüfen');

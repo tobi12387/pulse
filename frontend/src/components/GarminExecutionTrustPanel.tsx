@@ -3,6 +3,12 @@ import { useGarminCalendarSync, useGarminExecutionDiff, useSyncWorkoutToGarmin }
 import { InlineFeedback } from '@/components/Feedback';
 import { errorMessage } from '@/components/feedback-utils';
 import { Skeleton } from '@/components/Skeleton';
+import {
+  buildGarminExecutionChain,
+  type GarminExecutionChain,
+  type GarminExecutionChainStage,
+  type GarminExecutionChainState,
+} from '@/features/plan/garmin-execution-chain-model';
 import type {
   PulseGarminExecutionDiffRow,
   PulseGarminExecutionDiffStatus,
@@ -48,22 +54,10 @@ function statusPill(status: PulseGarminExecutionDiffStatus) {
   );
 }
 
-function SummaryStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div
-      style={{
-        border: '1px solid var(--border)',
-        borderRadius: 6,
-        minWidth: 108,
-        padding: '8px 10px',
-      }}
-    >
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase' }}>
-        {label}
-      </div>
-      <div style={{ color, fontSize: 20, fontWeight: 500, marginTop: 2 }}>{value}</div>
-    </div>
-  );
+function chainTone(state: GarminExecutionChainState): string {
+  if (state === 'ok') return 'var(--green)';
+  if (state === 'attention') return 'var(--amber)';
+  return 'var(--text-3)';
 }
 
 function LoadingRows() {
@@ -76,6 +70,116 @@ function LoadingRows() {
           <Skeleton height={10} width="72%" />
         </div>
       ))}
+    </div>
+  );
+}
+
+function ChainStage({ stage }: { stage: GarminExecutionChainStage }) {
+  const tone = chainTone(stage.state);
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        padding: '8px 9px',
+        background: stage.state === 'attention' ? 'color-mix(in srgb, var(--amber) 7%, transparent)' : 'var(--surface)',
+        borderLeft: `2px solid ${tone}`,
+      }}
+      title={stage.summary}
+    >
+      <div style={{ color: tone, fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase' }}>
+        {stage.label}
+      </div>
+      <div style={{ color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: 15, fontVariantNumeric: 'tabular-nums', marginTop: 3 }}>
+        {stage.value}
+      </div>
+    </div>
+  );
+}
+
+function ExecutionChainStrip({ stages }: { stages: GarminExecutionChainStage[] }) {
+  return (
+    <div
+      data-testid="garmin-execution-chain"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))',
+        gap: 1,
+        border: '1px solid var(--border)',
+        borderRadius: 6,
+        overflow: 'hidden',
+        background: 'var(--border)',
+      }}
+    >
+      {stages.map(stage => (
+        <ChainStage key={stage.id} stage={stage} />
+      ))}
+    </div>
+  );
+}
+
+function ExecutionNextAction({
+  chain,
+  rows,
+  onRepair,
+  pendingAction,
+}: {
+  chain: GarminExecutionChain;
+  rows: PulseGarminExecutionDiffRow[];
+  onRepair: (row: PulseGarminExecutionDiffRow, action: PulseGarminExecutionRepairAction) => void;
+  pendingAction: string | null;
+}) {
+  const action = chain.nextAction.action;
+  const row = action && chain.nextAction.workoutId
+    ? rows.find(candidate => candidate.workoutId === chain.nextAction.workoutId) ?? null
+    : null;
+  const tone = chainTone(chain.overallState);
+  const actionKey = row && action ? `${row.workoutId}:${action}` : null;
+  const isPending = actionKey != null && pendingAction === actionKey;
+
+  return (
+    <div
+      data-testid="garmin-execution-next-action"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: action && row ? 'minmax(0, 1fr) auto' : '1fr',
+        gap: 10,
+        alignItems: 'center',
+        border: `1px solid color-mix(in srgb, ${tone} 35%, var(--border))`,
+        borderRadius: 6,
+        padding: '9px 10px',
+        background: `color-mix(in srgb, ${tone} 6%, transparent)`,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div className="label-mono" style={{ color: tone, marginBottom: 4 }}>Nächster Schritt</div>
+        <div style={{ color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>{chain.nextAction.title}</div>
+        <p style={{ color: 'var(--text-2)', fontSize: 11.5, lineHeight: 1.45, margin: '4px 0 0' }}>
+          {chain.nextAction.summary}
+        </p>
+      </div>
+      {action && row && (
+        <button
+          type="button"
+          onClick={() => onRepair(row, action)}
+          disabled={pendingAction != null}
+          style={{
+            minHeight: 40,
+            border: `1px solid ${tone}`,
+            borderRadius: 4,
+            background: chain.overallState === 'attention' ? 'var(--surface-2)' : 'transparent',
+            color: isPending ? 'var(--text-3)' : tone,
+            cursor: pendingAction == null ? 'pointer' : 'default',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: 0,
+            padding: '8px 10px',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {isPending ? 'Läuft' : ACTION_LABEL[action]}
+        </button>
+      )}
     </div>
   );
 }
@@ -129,12 +233,15 @@ function GarminExecutionRow({
   row,
   onRepair,
   pendingAction,
+  primaryActionKey,
 }: {
   row: PulseGarminExecutionDiffRow;
   onRepair: (row: PulseGarminExecutionDiffRow, action: PulseGarminExecutionRepairAction) => void;
   pendingAction: string | null;
+  primaryActionKey: string | null;
 }) {
   const ui = STATUS_UI[row.status];
+  const repairActions = row.repairActions.filter(action => `${row.workoutId}:${action}` !== primaryActionKey);
   return (
     <div
       data-testid={`garmin-execution-row-${row.workoutId}`}
@@ -171,9 +278,9 @@ function GarminExecutionRow({
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
         {statusPill(row.status)}
-        {row.repairActions.length > 0 && (
+        {repairActions.length > 0 && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, flexWrap: 'wrap', maxWidth: 180 }}>
-            {row.repairActions.map(action => (
+            {repairActions.map(action => (
               <button
                 key={action}
                 type="button"
@@ -214,16 +321,10 @@ export function GarminExecutionTrustPanel({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [repairNotice, setRepairNotice] = useState<{ tone: 'info' | 'warning'; title: string; message: string } | null>(null);
   const rows = useMemo(() => query.data?.rows ?? [], [query.data?.rows]);
-  const counts = useMemo(() => {
-    return rows.reduce(
-      (acc, row) => {
-        acc.total += 1;
-        acc[STATUS_UI[row.status].group] += 1;
-        return acc;
-      },
-      { total: 0, ready: 0, attention: 0, info: 0 },
-    );
-  }, [rows]);
+  const chain = useMemo(() => buildGarminExecutionChain(rows), [rows]);
+  const primaryActionKey = chain.nextAction.workoutId && chain.nextAction.action
+    ? `${chain.nextAction.workoutId}:${chain.nextAction.action}`
+    : null;
 
   async function handleRepair(row: PulseGarminExecutionDiffRow, action: PulseGarminExecutionRepairAction) {
     const actionKey = `${row.workoutId}:${action}`;
@@ -313,11 +414,13 @@ export function GarminExecutionTrustPanel({
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <SummaryStat label="Bereit" value={counts.ready} color="var(--green)" />
-        <SummaryStat label="Handeln" value={counts.attention} color="var(--amber)" />
-        <SummaryStat label="Hinweis" value={counts.info} color="var(--accent)" />
-      </div>
+      <ExecutionChainStrip stages={chain.stages} />
+      <ExecutionNextAction
+        chain={chain}
+        rows={rows}
+        onRepair={handleRepair}
+        pendingAction={pendingAction}
+      />
 
       {query.isLoading && <LoadingRows />}
       {repairNotice && (
@@ -347,7 +450,13 @@ export function GarminExecutionTrustPanel({
       {!query.isLoading && !query.isError && rows.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map(row => (
-            <GarminExecutionRow key={row.workoutId} row={row} onRepair={handleRepair} pendingAction={pendingAction} />
+            <GarminExecutionRow
+              key={row.workoutId}
+              row={row}
+              onRepair={handleRepair}
+              pendingAction={pendingAction}
+              primaryActionKey={primaryActionKey}
+            />
           ))}
         </div>
       )}
