@@ -23,6 +23,10 @@ test('/data opens a user-facing overview by default', async ({ page }) => {
 
   await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'Heute relevant', exact: true })).toBeVisible();
+  await expect(page.getByTestId('data-primary-action')).toContainText('Daten-Aktion');
+  await expect(page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Analyse öffnen' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   await expect(page.getByRole('button', { name: 'Analyse öffnen' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Datenqualität' })).toHaveAttribute('aria-selected', 'false');
 });

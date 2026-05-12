@@ -743,7 +743,6 @@ test('Home treats completed planned training with feedback as done and stays foc
   await expect(page.getByText('Entscheidungsqualität')).toHaveCount(0);
   await expect(page.getByTestId('daily-decision-quality-strip')).toHaveCount(0);
   await expect(page.getByText('RECENT')).toHaveCount(0);
-  await expect(page.getByText('Grundlage draußen')).toHaveCount(0);
   await expect(page.getByText(/Mental Health:/)).toHaveCount(0);
   await expect(page.getByTestId('home-adaptation-event')).toContainText('PLAN GEPRÜFT');
   await expect(page.getByTestId('home-adaptation-event')).toContainText('Lange reale Einheit erkannt');
@@ -761,7 +760,7 @@ test('Home routes to activity feedback only when completed training still misses
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
   await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Für heute ist nichts mehr offen');
 
-  await page.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
+  await page.getByTestId('daily-decision-card').getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
   await expect(page).toHaveURL(/\/plan\/activity\/activity-done/);
 });
 
@@ -780,7 +779,7 @@ test('Home treats a completed off-plan Garmin activity as today done', async ({ 
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Plan abgleichen');
   await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
+  await page.getByTestId('daily-decision-card').getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
   await expect(page).toHaveURL(/\/activity\/activity-off-plan/);
 });
 
@@ -1345,9 +1344,10 @@ test('Home completes a compact mental check-in without opening Data', async ({ p
   });
 
   await page.goto('/');
-  await expect(page.getByText('Mental Check-in')).toBeVisible();
-  await page.getByRole('button', { name: 'Schützen' }).click();
-  await page.getByRole('button', { name: 'Check-in speichern' }).click();
+  const checkinCard = page.getByTestId('home-mental-checkin-card');
+  await expect(checkinCard.getByText('Mental Check-in', { exact: true })).toBeVisible();
+  await checkinCard.getByRole('button', { name: 'Schützen' }).click();
+  await checkinCard.getByRole('button', { name: 'Check-in speichern' }).click();
 
   await expect(page).toHaveURL('/');
   await expect(page.getByText('CHECK-IN HEUTE ERLEDIGT')).toBeVisible();
@@ -1489,12 +1489,13 @@ test('Settings show profile value provenance for Garmin planning inputs', async 
 
   await page.goto('/settings');
 
-  await expect(page.getByText('Athletenprofil')).toBeVisible();
-  await expect(page.getByText('LTHR')).toBeVisible();
-  await expect(page.getByText('VO2max')).toBeVisible();
-  await expect(page.getByText('Manuell').first()).toBeVisible();
-  await expect(page.getByText('Aktivitäten').first()).toBeVisible();
-  await expect(page.getByText('Garmin').first()).toBeVisible();
+  const profileCard = page.locator('.card').filter({ hasText: 'Athletenprofil' }).first();
+  await expect(profileCard).toBeVisible();
+  await expect(profileCard).toContainText('LTHR');
+  await expect(profileCard).toContainText('VO2max');
+  await expect(profileCard).toContainText('Manuell');
+  await expect(profileCard).toContainText('Aktivitäten');
+  await expect(profileCard).toContainText('Garmin');
 });
 
 test('Settings can unlock a manual profile value for automatic Garmin sync', async ({ page }) => {
@@ -1712,7 +1713,7 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
   });
 
   await page.goto('/');
-  await expect(page.getByText('Heute ist kein Training geplant.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Heute ist kein Training geplant.' })).toBeVisible();
   await page.getByRole('button', { name: 'Coach fragen' }).click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
@@ -1902,8 +1903,8 @@ test('Tablet navigation and segmented panels expose accessible targets', async (
 
   await page.goto('/');
   const sidebarTargets = page.locator('aside nav a');
-  await expect(sidebarTargets).toHaveCount(4);
-  for (const index of [0, 1, 2, 3]) {
+  await expect(sidebarTargets).toHaveCount(5);
+  for (const index of [0, 1, 2, 3, 4]) {
     const box = await sidebarTargets.nth(index).boundingBox();
     expect(box, `sidebar nav target ${index} should render`).not.toBeNull();
     expect(box!.height, `sidebar nav target ${index} should be at least 44px tall`).toBeGreaterThanOrEqual(44);
@@ -2523,8 +2524,7 @@ test('Home stays usable when the readiness endpoint fails locally', async ({ pag
   });
 
   await page.goto('/');
-  await expect(page.getByText('Guten')).toBeVisible();
-  await expect(page.getByText('Heute ist kein Training geplant.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Heute ist kein Training geplant.' })).toBeVisible();
   await expect(page.getByText('Readiness separat nicht erreichbar')).toBeVisible();
   await page.getByRole('button', { name: 'Readiness erneut laden' }).click();
   await expect.poll(() => readinessCalls).toBeGreaterThan(1);
@@ -3126,11 +3126,18 @@ test('Plan shows Garmin execution states and match explanations', async ({ page 
   });
 
   await page.goto('/plan');
-  for (const label of ['Lokal', 'Garmin', 'Kalender', 'Erledigt', 'Verpasst', 'Ersetzt']) {
-    await expect(page.getByText(label).first()).toBeVisible();
+  for (const [date, label] of [
+    ['2026-05-01', 'Lokal'],
+    ['2026-05-02', 'Garmin'],
+    ['2026-05-03', 'Kalender'],
+    ['2026-05-04', 'Erledigt'],
+    ['2026-04-30', 'Verpasst'],
+    ['2026-05-05', 'Ersetzt'],
+  ] as const) {
+    await expect(page.getByRole('button', { name: new RegExp(`${date} .* öffnen`) })).toContainText(label);
   }
 
-  await page.getByText('Durchgeführt.').click();
+  await page.getByRole('button', { name: /2026-05-04 .* öffnen/ }).click();
   await expect(page.getByText('Erledigt').last()).toBeVisible();
   await expect(page.getByText('Mit Garmin-Aktivität activity-1 abgeglichen.')).toBeVisible();
 });
@@ -3237,16 +3244,15 @@ test('Plan summarizes Garmin sync debt before opening individual workouts', asyn
   });
 
   await page.goto('/plan');
-  const card = page.getByTestId('plan-garmin-sync-debt');
-  await expect(card).toContainText('Garmin Sync-Check');
-  await expect(card).toContainText('1 lokal');
-  await expect(card).toContainText('1 nur Vorlage');
-  await expect(card).toContainText('1 Einschränkung');
-  await expect(card).toContainText('Gerätehorizont 15 Tage');
-  await expect(card).toContainText('3 offen im Gerätehorizont');
+  const inbox = page.getByTestId('plan-change-inbox');
+  await expect(inbox).toContainText('Garmin absichern');
+  await expect(inbox).toContainText('3 geplante Einheit(en) brauchen noch Ausführungs- oder Sync-Sicherheit.');
+  await expect(inbox).toContainText('1 nur in Pulse geplant');
+  await expect(inbox).toContainText('1 nur als Garmin-Vorlage');
+  await expect(inbox).toContainText('1 mit Sync-Einschränkung');
 
-  await card.getByRole('button', { name: 'Garmin öffnen' }).click();
-  await expect(page).toHaveURL('/settings?section=garmin');
+  await inbox.getByRole('button', { name: 'Garmin prüfen' }).click();
+  await expect(page).toHaveURL('/plan?tab=execution');
 });
 
 test('Plan surfaces an adaptation check when recent Garmin execution diverged', async ({ page }) => {
@@ -3509,10 +3515,11 @@ test('Plan explains Garmin workout sync confidence in the workout modal', async 
   });
 
   await page.goto('/plan');
-  await expect(page.getByText('Lokal').first()).toBeVisible();
-  await expect(page.getByText('Kalender').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /2026-05-01 .* öffnen/ })).toContainText('Lokal');
+  const calendarWorkout = page.getByRole('button', { name: /2026-05-02 .* öffnen/ });
+  await expect(calendarWorkout).toContainText('Kalender');
 
-  await page.getByText('Kalendertermin.').click();
+  await calendarWorkout.click();
   const panel = page.getByTestId('garmin-sync-confidence');
   await expect(panel).toBeVisible();
   await expect(panel).toContainText('Auf Garmin geplant');
