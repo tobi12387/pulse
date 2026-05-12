@@ -143,7 +143,7 @@ export function rankNextBestActionVisibility(input: NextBestActionsInput): Actio
       'RPE nachtragen',
       `Die letzte ${unratedRecentActivity.activityType}-Einheit hat noch kein Belastungsfeedback; das hilft dem nächsten Plan.`,
       'Feedback öffnen',
-      `/activity/${unratedRecentActivity.id}`,
+      `/plan/activity/${unratedRecentActivity.id}`,
       {
         openedAt: unratedRecentActivity.startTime.toISOString(),
         resolvedBy: 'RPE-Feedback für diese Aktivität speichern.',

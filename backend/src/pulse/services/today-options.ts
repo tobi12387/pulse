@@ -353,7 +353,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
         ? 'Die Einheit hat bereits Feedback. Pulse kann die Belastung fuer die naechste Planung einordnen.'
         : 'Kurz RPE, Beine und Magen notieren. Das ist heute wertvoller als ein weiteres Training.',
       cta: feedbackDone ? 'Aktivität ansehen' : 'Feedback erfassen',
-      targetPath: `/activity/${activity.id}`,
+      targetPath: `/plan/activity/${activity.id}`,
       evidence,
       signalLabels: compactSignals(input, { recovery: true }),
     },
@@ -366,7 +366,7 @@ function completedActivityOptions(input: TodayOptionsInput): PulseTodayOptionsRe
         ? 'Lange Belastung: Flaschen, Pulver, Snacks und GI-Komfort festhalten.'
         : 'Kurz festhalten, ob Versorgung und Magen gepasst haben.',
       cta: 'Fueling öffnen',
-      targetPath: `/activity/${activity.id}`,
+      targetPath: `/plan/activity/${activity.id}`,
       evidence: [
         ...evidence,
         input.fueling.loggedToday ? 'Fueling heute bereits geloggt' : 'Fueling heute noch offen',

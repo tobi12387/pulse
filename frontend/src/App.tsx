@@ -90,6 +90,7 @@ export default function App() {
                 <Route path="coach" element={<Coach />} />
                 <Route path="data" element={<Data />} />
                 <Route path="plan" element={<Plan />} />
+                <Route path="plan/activity/:id" element={<ActivityDetail />} />
                 <Route path="insights" element={<Insights />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="activity/:id" element={<ActivityDetail />} />

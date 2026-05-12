@@ -157,7 +157,7 @@ function itemForDate(
       recoveryDelta,
       nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln und die nächste Empfehlung darauf aufbauen.',
       evidence,
-      targetPath: `/activity/${bestActivity.id}`,
+      targetPath: `/plan/activity/${bestActivity.id}`,
     };
   }
 
@@ -175,7 +175,7 @@ function itemForDate(
       recoveryDelta,
       nextPlanEffect: 'Nächste Empfehlung sollte echte Belastung und Sportmix höher gewichten als den alten Plan.',
       evidence,
-      targetPath: `/activity/${anyActivity.id}`,
+      targetPath: `/plan/activity/${anyActivity.id}`,
     };
   }
 
@@ -205,7 +205,7 @@ function itemForDate(
       recoveryDelta,
       nextPlanEffect: 'Pulse sollte die echte Belastung in den nächsten Plan einrechnen.',
       evidence,
-      targetPath: `/activity/${anyActivity.id}`,
+      targetPath: `/plan/activity/${anyActivity.id}`,
     };
   }
 

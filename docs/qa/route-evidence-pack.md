@@ -43,6 +43,7 @@ Primary route set:
 - `/data?tab=today#data-mental`
 - `/data?tab=analysis`
 - `/plan`
+- `/plan/activity/activity-detail`
 - `/insights`
 - `/settings`
 
@@ -57,13 +58,13 @@ Mobile Daily Command evidence routes:
 
 Each project directory contains:
 
-- `01-home.png` through `08-settings.png`
+- numbered core route PNGs for the routes above
 - `manifest.json`
 - `README.md`
 
 The `mobile-chromium` project additionally contains:
 
-- `09-home-planned-command.png` through `14-plan-mobile-intent-scenario.png`
+- mobile Daily Command scenario PNGs after the core route set
 
 ## Manifest Fields
 
