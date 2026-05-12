@@ -4,6 +4,7 @@ import { ACTIVITY_LABEL, activityLabel, workoutArchetypeCopy } from '@/pulse/act
 import type { PulseGoalLimiter, PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { executionStatusFor, garminConfidenceCopy, getMonday, isoDate } from '../plan-utils';
 import { DAY_SHORT } from './training-copy';
+import { buildWorkoutProgressionInsight, type WorkoutProgressionInsight } from '../workout-progression-model';
 
 type PlannedWorkout = PulsePlannedWorkout;
 
@@ -32,6 +33,13 @@ const EXECUTION_META: Record<NonNullable<PlannedWorkout['executionStatus']>, { l
 
 function translucent(color: string, percent: number) {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
+
+function progressionToneColor(tone: WorkoutProgressionInsight['tone']): string {
+  if (tone === 'green') return 'var(--green)';
+  if (tone === 'amber') return 'var(--amber)';
+  if (tone === 'rose') return 'var(--rose)';
+  return 'var(--text-2)';
 }
 
 function splitWorkoutRationale(description: string | null): { rationale: string | null; body: string | null } {
@@ -335,7 +343,19 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
   );
 }
 
-export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedWorkout; index: number; onOpen: () => void }) {
+export function WorkoutRow({
+  workout: w,
+  workouts,
+  today,
+  index: i,
+  onOpen,
+}: {
+  workout: PlannedWorkout;
+  workouts: PlannedWorkout[];
+  today: string;
+  index: number;
+  onOpen: () => void;
+}) {
   const update = useUpdateWorkout();
   const [switching, setSwitching] = useState(false);
   const [updateNotice, setUpdateNotice] = useState<{ tone: 'ok' | 'warning' | 'error'; text: string } | null>(null);
@@ -343,6 +363,8 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
   const structureSummary = workoutStructureSummary(w);
   const archetypeCopy = workoutArchetypeCopy(w.archetypeId);
   const descriptionParts = splitWorkoutRationale(w.description);
+  const progressionInsight = buildWorkoutProgressionInsight({ workout: w, workouts, today });
+  const progressionTone = progressionToneColor(progressionInsight.tone);
 
   async function handleTypeChange(type: string) {
     if (type === w.activityType) {
@@ -486,6 +508,31 @@ export function WorkoutRow({ workout: w, index: i, onOpen }: { workout: PlannedW
             >
               <span style={{ color: 'var(--accent)' }}>{w.activityType === 'strength' ? 'Support-Blockliste' : 'Garmin-Struktur'}</span>
               <span>{structureSummary}</span>
+            </div>
+          )}
+          {!switching && (
+            <div
+              data-testid="plan-workout-progression-row"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                flexWrap: 'wrap',
+                maxWidth: '100%',
+                marginTop: 5,
+                padding: '3px 6px',
+                borderRadius: 3,
+                border: `1px solid color-mix(in srgb, ${progressionTone} 28%, transparent)`,
+                background: `color-mix(in srgb, ${progressionTone} 6%, transparent)`,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--text-2)',
+                lineHeight: 1.25,
+              }}
+            >
+              <span style={{ color: progressionTone }}>Progression</span>
+              <span>{progressionInsight.label}</span>
+              <span style={{ color: 'var(--text-3)' }}>{progressionInsight.repetition}</span>
             </div>
           )}
         </button>
