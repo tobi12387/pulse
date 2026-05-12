@@ -100,6 +100,7 @@
 | `2026-05-11-data-backfill-touch-polish.md` | Data Backfill Touch Polish — Garmin Backfill preview/write buttons meet the mobile touch-target baseline | Data A11y PR |
 | `2026-05-12-workout-progression-clarity-v3.md` | Workout Progression Clarity v3 — Plan explains progression role, calibration, repetition rationale and change triggers without plan/Garmin writes | Workout Progression Clarity PR |
 | `2026-05-12-garmin-execution-chain-ui.md` | Garmin Execution Chain UI — Plan Ausführung shows template, calendar, readback, repeats and execution as one compact chain with one next action | Garmin Execution Chain PR |
+| `2026-05-12-weekly-coach-review.md` | Weekly Coach Review — Plan Review starts with learned/proposed/decision summary and one next action from existing evidence | Weekly Coach Review PR |
 
 ## Bekannte veraltete Stellen
 

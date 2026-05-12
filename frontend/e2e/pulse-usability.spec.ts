@@ -3302,6 +3302,112 @@ test('Plan shows persisted adaptation events with concrete actions', async ({ pa
   await expect(page).toHaveURL('/plan?tab=execution');
 });
 
+test('Plan Review surfaces the weekly coach review with a clear next action', async ({ page }) => {
+  await mockPulseApi(page, {
+    adaptationEvents: {
+      events: [{
+        id: 'weekly-regen',
+        userId: 'user-1',
+        eventDate: '2026-05-01',
+        kind: 'planned_workout_missed',
+        sourceId: null,
+        severity: 'action',
+        recommendation: 'regenerate_week',
+        summary: 'Lange reale Einheit erkannt; die Woche sollte neu geprüft werden.',
+        evidence: ['Garmin-Ausführung weicht vom Plan ab'],
+        resolvedAt: null,
+        createdAt: '2026-05-01T08:00:00.000Z',
+      }],
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T08:00:00.000Z',
+        range: { from: '2026-04-01', to: '2026-05-01', days: 30 },
+        strength: 'learning',
+        headline: 'Pulse lernt deine Reaktionsmuster.',
+        signals: [{
+          kind: 'mental_response',
+          label: 'Mentale Last einbeziehen',
+          strength: 'learning',
+          summary: 'Stressreiche Tage brauchen klarere Boundaries.',
+          evidence: ['2 Check-ins mit Stress >=7'],
+          nextAdjustment: 'Vor harten Einheiten zuerst Boundary und Warm-up prüfen.',
+        }],
+        missingEvidence: [],
+      },
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Top-Ziel braucht Aufmerksamkeit.',
+      projections: [{
+        goalId: 'race-1',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-07-11',
+        daysUntil: 71,
+        probabilityPct: 64,
+        status: 'watch',
+        confidence: 'medium',
+        summary: '70.3 Kraichgau beobachten.',
+        limiterRisk: { status: 'watch', label: 'Long Endurance', summary: 'Lange Ausdauer kontrolliert aufbauen.', evidence: ['Long Endurance lernt'] },
+        nextBestIntervention: {
+          kind: 'fueling_practice',
+          title: 'Fueling-Praxis absichern',
+          summary: 'Die nächste lange Einheit sollte kontrolliert Fueling und GI-Verträglichkeit schließen.',
+          actionLabel: 'Fueling planen',
+          targetPath: '/plan?tab=training',
+          evidence: ['GI-Komfort noch Lernfeld'],
+        },
+        evidence: ['Ziel in 71 Tagen'],
+        missingEvidence: [],
+      }],
+      missingEvidence: [],
+    },
+    seasonStrategy: {
+      horizonWeeks: 12,
+      primaryGoal: { id: 'race-1', title: '70.3 Kraichgau', category: 'race', targetDate: '2026-07-11', priority: 'A' },
+      currentBlock: { kind: 'build', label: 'Build', startWeek: '2026-05-01', endWeek: '2026-06-01', focus: 'Spezifität aufbauen, aber freie Tage schützen.' },
+      upcomingBlocks: [],
+      guardrails: {
+        targetSessions: 4,
+        maxHardDays: 1,
+        deload: false,
+        freeDayRationale: 'Mindestens ein freier Tag bleibt geschützt.',
+        rationale: ['Verfügbarkeit ist größer als sinnvolle Trainingsdichte.'],
+        nextBoundary: { label: 'Taper', date: '2026-06-29' },
+      },
+      loadModel: {
+        method: 'weekly_hours_tss_ctl',
+        rampRateCapPct: 8,
+        deloadEveryWeeks: 4,
+        taperWeeks: 2,
+        annualTargetHours: null,
+        annualTargetTss: null,
+        eventPriorityBias: 'a_event',
+        missedLoadCompensation: { missedTssLast14d: 0, compensationTssNext14d: 0, capReason: 'Keine Kompensation nötig.' },
+        currentWeek: { weekStart: '2026-05-01', kind: 'build', targetHours: 8, targetTss: 384, ctlTarget: 55, rampPct: 5, note: 'Build ruhig halten.' },
+        forecast: [],
+        warnings: [],
+      },
+      evidence: ['A-Race in 71 Tagen'],
+    },
+  });
+
+  await page.goto('/plan?tab=review');
+
+  const review = page.getByTestId('weekly-coach-review');
+  await expect(review).toContainText('Wochenentscheidung offen');
+  await expect(review).toContainText('Gelernt');
+  await expect(review).toContainText('Planänderung');
+  await expect(review).toContainText('Entscheidung');
+  await expect(review).toContainText('Planpunkte prüfen');
+
+  await review.getByRole('button', { name: 'Planpunkte prüfen' }).click();
+  await expect(page).toHaveURL('/plan?tab=training&source=weekly-review#plan-change-inbox');
+  await expect(page.getByTestId('plan-change-inbox')).toBeVisible();
+});
+
 test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [
