@@ -2040,6 +2040,28 @@ test('Home planned-day change option opens the existing plan decision without cr
   expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout' });
 });
 
+test('Plan full today action does not duplicate the planned-day summary copy', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planWorkouts: [],
+    todayOptionsState: 'planned_workout',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const card = page.getByTestId('today-options-card-full');
+  await expect(card).toBeVisible();
+  await expect(card.getByTestId('plan-primary-action')).toContainText(
+    'Warum jetzt: Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+  );
+
+  const summary = 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.';
+  const occurrences = await card.evaluate((element, expectedSummary) => (
+    (element.textContent ?? '').split(expectedSummary).length - 1
+  ), summary);
+  expect(occurrences).toBe(1);
+});
+
 test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
