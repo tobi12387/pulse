@@ -69,6 +69,7 @@ export function PlanChangeInboxCard({
 
   return (
     <section
+      id="plan-change-inbox"
       className="card"
       data-testid="plan-change-inbox"
       style={{

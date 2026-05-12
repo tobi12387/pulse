@@ -6,7 +6,7 @@ import {
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanRefreshPreview, usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
   useGoalProjection,
-  useTodayOptions, useFitnessLoad, useAdaptationEvents,
+  useTodayOptions, useFitnessLoad, useAdaptationEvents, usePersonalResponse,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -19,6 +19,7 @@ import { InlineFeedback } from '@/components/Feedback';
 import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { PlanChangeInboxCard } from '@/features/plan/PlanChangeInboxCard';
+import { buildWeeklyCoachReview, type WeeklyCoachReviewSummary, type WeeklyCoachReviewTone } from '@/features/plan/weekly-coach-review-model';
 import { buildPlanChangeInbox } from '@/features/plan/change-inbox-model';
 import { buildWorkoutProgressionInsight, type WorkoutProgressionInsight } from '@/features/plan/workout-progression-model';
 import {
@@ -2762,9 +2763,153 @@ function ZieleTab() {
 
 // ─── Review Tab ───────────────────────────────────────────────────────────────
 
+function weeklyReviewToneColor(tone: WeeklyCoachReviewTone): string {
+  if (tone === 'attention') return 'var(--amber)';
+  if (tone === 'ok') return 'var(--green)';
+  return 'var(--accent)';
+}
+
+function WeeklyCoachReviewCard({
+  summary,
+  onPrimaryAction,
+  pending,
+}: {
+  summary: WeeklyCoachReviewSummary;
+  onPrimaryAction: () => void;
+  pending: boolean;
+}) {
+  const tone = weeklyReviewToneColor(summary.tone);
+
+  return (
+    <section
+      className="card"
+      data-testid="weekly-coach-review"
+      style={{
+        borderColor: `color-mix(in srgb, ${tone} 26%, var(--border))`,
+        background: summary.tone === 'attention' ? 'rgba(251,191,36,0.04)' : 'var(--surface)',
+      }}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(190px, auto)', gap: 16, alignItems: 'start' }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="label-mono" style={{ color: tone, marginBottom: 7 }}>
+            Wochenreview
+          </div>
+          <h2 style={{ margin: '0 0 7px', color: 'var(--text)', fontSize: 17, fontWeight: 600, lineHeight: 1.25 }}>
+            {summary.title}
+          </h2>
+          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 12.5, lineHeight: 1.55, maxWidth: 760 }}>
+            {summary.summary}
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'stretch' }}>
+          <button
+            type="button"
+            onClick={onPrimaryAction}
+            disabled={pending}
+            style={{
+              minHeight: 42,
+              minWidth: 44,
+              border: `1px solid ${tone}`,
+              borderRadius: 'var(--radius)',
+              background: summary.tone === 'attention' || summary.tone === 'info' ? `color-mix(in srgb, ${tone} 12%, transparent)` : 'transparent',
+              color: tone,
+              cursor: pending ? 'wait' : 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0,
+              padding: '9px 12px',
+              textTransform: 'uppercase',
+            }}
+          >
+            {pending ? 'Erstellt…' : summary.primaryAction.label}
+          </button>
+          <span style={{ color: 'var(--text-3)', fontSize: 10.5, lineHeight: 1.45 }}>
+            {summary.primaryAction.resultPreview}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8, marginTop: 14 }}>
+        {summary.lanes.map(lane => {
+          const laneTone = weeklyReviewToneColor(lane.tone);
+          return (
+            <div
+              key={lane.id}
+              style={{
+                border: `1px solid color-mix(in srgb, ${laneTone} 18%, var(--border))`,
+                borderRadius: 5,
+                background: 'var(--surface-2)',
+                padding: '10px 11px',
+                minWidth: 0,
+              }}
+            >
+              <div className="label-mono" style={{ color: laneTone, fontSize: 9, marginBottom: 6 }}>
+                {lane.label}
+              </div>
+              <div style={{ color: 'var(--text)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
+                {lane.title}
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.5, lineHeight: 1.45 }}>
+                {lane.body}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {summary.evidence.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>
+          {summary.evidence.slice(0, 4).map(item => (
+            <span
+              key={item}
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                color: 'var(--text-3)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                padding: '3px 6px',
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ReviewTab() {
   const { data, isLoading } = usePulseReview();
   const generate = useGenerateReview();
+  const adaptationEvents = useAdaptationEvents();
+  const personalResponse = usePersonalResponse(42);
+  const goalProjection = useGoalProjection(180);
+  const seasonStrategy = useSeasonStrategy();
+  const navigate = useNavigate();
+  const weeklyReview = buildWeeklyCoachReview({
+    review: data ?? null,
+    adaptationEvents: adaptationEvents.data?.events ?? [],
+    personalResponse: personalResponse.data ?? null,
+    goalProjection: goalProjection.data ?? null,
+    seasonStrategy: seasonStrategy.data ?? null,
+  });
+
+  function handleWeeklyPrimaryAction() {
+    if (weeklyReview.primaryAction.kind === 'open_plan_inbox' && weeklyReview.primaryAction.targetPath) {
+      navigate(weeklyReview.primaryAction.targetPath);
+      return;
+    }
+    if (weeklyReview.primaryAction.kind === 'read_review') {
+      document.getElementById('weekly-review-narrative')?.scrollIntoView({ block: 'start' });
+      document.getElementById('weekly-review-narrative')?.focus({ preventScroll: true });
+      return;
+    }
+    generate.mutate();
+  }
 
   // Parse wins + watch from narrative heuristically
   function extractSections(narrative: string): { wins: string[]; watch: string[]; body: string } {
@@ -2797,6 +2942,12 @@ function ReviewTab() {
           {generate.isPending ? '● Erstelle…' : 'Neu erstellen'}
         </button>
       </div>
+
+      <WeeklyCoachReviewCard
+        summary={weeklyReview}
+        pending={weeklyReview.primaryAction.kind === 'generate_review' && generate.isPending}
+        onPrimaryAction={handleWeeklyPrimaryAction}
+      />
 
       {isLoading && <Loading rows={2} />}
 
@@ -2844,7 +2995,7 @@ function ReviewTab() {
             )}
 
             {/* Full narrative */}
-            <div className="card">
+            <div id="weekly-review-narrative" className="card" tabIndex={-1} data-testid="weekly-review-narrative">
               <div className="label-mono" style={{ marginBottom: 8 }}>Analyse</div>
               <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 {body}
@@ -3297,6 +3448,7 @@ function tabFromQuery(value: string | null): Tab {
 const HASH_TAB: Record<string, Tab> = {
   'plan-scenario-preview': 'training',
   'plan-adaptation-review': 'training',
+  'plan-change-inbox': 'training',
 };
 
 function hashFromLocation(hash: string): string {

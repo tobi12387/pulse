@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Weekly Coach Review bleibt deterministische Plan-Review-Schicht
+
+- **Decision:** Weekly Coach Review wird als kompakte, frontend-first Review-Schicht in `/plan?tab=review` umgesetzt und nutzt vorhandene Review-, Adaptions-, Response-, Goal- und Season-Evidenz.
+- **Why:** Der offene Benchmark-Gap ist das Wochenritual und die Entscheidung, nicht eine neue Coach-Route oder automatische LLM-/Planmutation. Die Karte zeigt eine klare Wochenentscheidung mit genau einer nächsten Aktion.
+- **Alternatives:** Neue Backend-Weekly-Coach-API (zu gross fuer diesen Slice); automatischer Review-Generate beim Laden (versteckter LLM-Call); neuer Top-Level-Tab (mehr Navigation vor Evidenz).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Garmin Execution Chain UI bleibt Frontend-Orchestrierung
 
 - **Decision:** Garmin Execution Chain UI wird als kompakter Frontend-Chain-Strip auf `/plan?tab=execution` umgesetzt und nutzt nur den bestehenden Execution-Diff plus explizite Repair-Aktionen.

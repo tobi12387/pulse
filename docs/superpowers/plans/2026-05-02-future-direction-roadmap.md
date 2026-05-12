@@ -109,7 +109,7 @@ The latest benchmark against TrainerRoad, TrainingPeaks, Garmin, JOIN/Runna, WHO
 | Today change flow must be direct | Planned-day alternatives from Home must route to the existing workout decision, not create a new custom workout scenario. | Implemented v1 in the 2026-05-12 Today Change Flow slice. |
 | Progression needs calibration clarity | Every workout should explain the progression purpose and why repetition is still valid or why the stimulus changed. | Implemented v3 in the 2026-05-12 Workout Progression Clarity slice. |
 | Garmin execution chain needs one visible path | Template, calendar, device/readback, repeat audit, repair and execution result should read as one chain. | Implemented in the 2026-05-12 Garmin Execution Chain UI slice. |
-| Weekly coaching ritual is missing | Weekly update should summarize what Pulse learned, what changes this week and what Tobi can accept/reject. | Medium-term candidate. |
+| Weekly coaching ritual is missing | Weekly update should summarize what Pulse learned, what changes this week and what Tobi can accept/reject. | Implemented in the 2026-05-12 Weekly Coach Review slice. |
 | Recovery/Mental should become resilience guidance | Reduce metric-wall feel; explain boundaries, energy/stress signal quality and recovery actions without clinical labeling. | Medium-term candidate. |
 | Nutrition trends stay gated | Trend summaries only after enough comparable complete logs. | Still gated. |
 
@@ -170,8 +170,8 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 2. **Today Change Flow v1:** implemented for planned-day Home alternatives. `Leichtere Alternative` and `Bewusst frei lassen` now open the existing Plan decision via `source=today-change` instead of the custom-workout scenario path.
 3. **Workout Progression Clarity v3:** implemented as a frontend-first, read-only Plan explanation for progression role, calibration, repetition rationale and change triggers.
 4. **Garmin Execution Chain UI:** implemented as a frontend-first Plan execution chain from template to calendar, readback, repeats and execution result, with one explicit next action and no automatic writes on load.
-5. **Weekly Coach Review:** next PR-sized candidate. Summarize what Pulse learned this week, which plan changes are proposed and what Tobi should accept, reject or defer.
-6. **Recovery & Mental Resilience:** turn recovery/mental evidence into calmer boundary guidance and signal-quality explanations, not another metrics wall.
+5. **Weekly Coach Review:** implemented as a frontend-first Plan Review surface with `Gelernt`, `Planänderung`, `Entscheidung` and one explicit next action. It reuses existing evidence and does not automatically generate reviews, mutate plans or write Garmin.
+6. **Recovery & Mental Resilience:** next PR-sized candidate. Turn recovery/mental evidence into calmer boundary guidance and signal-quality explanations, not another metrics wall.
 7. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
 8. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
 
