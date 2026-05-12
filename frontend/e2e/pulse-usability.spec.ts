@@ -1956,6 +1956,42 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
   });
 });
 
+test('Home planned-day change option opens the existing plan decision without creating a new workout', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  const requests: Array<{ method: string; pathname: string }> = [];
+  const plannedWorkout = {
+    id: 'planned-default',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 75,
+    targetTss: 64,
+    status: 'planned',
+    description: 'Ruhige Grundlage mit Garmin-Handoff.',
+    executionStatus: 'garmin_scheduled',
+    garminWorkoutId: 'garmin-workout-planned',
+    garminScheduledId: 'garmin-scheduled-planned',
+  };
+
+  await mockPulseApi(page, {
+    home: { todayWorkout: plannedWorkout, nextWorkout: plannedWorkout },
+    planWorkouts: [plannedWorkout],
+    todayOptionsState: 'planned_workout',
+    onRequest: (pathname, method) => requests.push({ pathname, method }),
+  });
+
+  await page.goto('/');
+  const todayOptions = page.getByTestId('today-options-card');
+  await expect(todayOptions).toContainText('Heute trainieren');
+  await todayOptions.getByRole('button', { name: /Leichtere Alternative/i }).click();
+
+  await expect(page).toHaveURL(/source=today-change/);
+  await expect(page).toHaveURL(/#next-training-decision/);
+  await expect(page.getByTestId('next-training-decision')).toBeInViewport();
+  expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/scenario/preview' });
+  expect(requests).not.toContainEqual({ method: 'POST', pathname: '/api/pulse/plan/workout' });
+});
+
 test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
@@ -3250,9 +3286,9 @@ test('Plan shows persisted adaptation events with concrete actions', async ({ pa
   });
 
   await page.goto('/plan');
-  const card = page.getByTestId('plan-adaptation-events');
-  await expect(card).toContainText('Adaptionshinweise');
-  await expect(card).toContainText('Garmin-Sync-Schulden');
+  const card = page.getByTestId('plan-change-inbox');
+  await expect(card).toContainText('Plan-Änderungen');
+  await expect(card).toContainText('Garmin-Handoff prüfen');
   await expect(card).toContainText('Lange reale Einheit erkannt');
 
   await card.getByRole('button', { name: 'Szenario prüfen' }).first().click();
@@ -3262,8 +3298,8 @@ test('Plan shows persisted adaptation events with concrete actions', async ({ pa
   await card.getByRole('button', { name: 'Szenario prüfen' }).nth(1).click();
   await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Verschieben');
 
-  await card.getByRole('button', { name: 'Garmin öffnen' }).click();
-  await expect(page).toHaveURL('/settings?section=garmin');
+  await card.getByRole('button', { name: 'Garmin prüfen' }).click();
+  await expect(page).toHaveURL('/plan?tab=execution');
 });
 
 test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {

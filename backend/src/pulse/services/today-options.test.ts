@@ -344,6 +344,37 @@ describe('buildTodayOptions', () => {
     expect(result.options[0]?.evidence).toContain('Level-Fit: Stretch');
   });
 
+  it('routes planned-day change options to the existing workout decision instead of custom workout creation', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 78,
+      tsb: 1,
+      plannedToday: {
+        id: 'planned-bike-1',
+        activityType: 'bike',
+        zone: 3,
+        durationMin: 90,
+        targetTss: 80,
+        capabilityFit: 'productive',
+      },
+      completedTodayActivities: [],
+      recentSportMix: { bike: 2, run: 1 },
+      riskSignals: [],
+      mental: { mood: 7, energy: 7, stress: 3, motivation: 7 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: null,
+    });
+
+    const easier = result.options.find(option => option.id === 'planned-easier-planned-bike-1');
+    expect(easier?.targetPath).toContain('/plan?');
+    expect(easier?.targetPath).toContain('source=today-change');
+    expect(easier?.targetPath).toContain('intent=easier');
+    expect(easier?.targetPath).toContain('workoutId=planned-bike-1');
+    expect(easier?.targetPath).toContain('#next-training-decision');
+    expect(easier?.targetPath).not.toContain('scenario=workout');
+    expect(easier?.targetPath).not.toContain('#plan-scenario-preview');
+  });
+
   it('marks too-hard planned workouts with a clear daily signal label before recovery blocks', () => {
     const result = buildTodayOptions({
       date: '2026-05-09',

@@ -18,6 +18,8 @@ import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseCh
 import { InlineFeedback } from '@/components/Feedback';
 import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
+import { PlanChangeInboxCard } from '@/features/plan/PlanChangeInboxCard';
+import { buildPlanChangeInbox } from '@/features/plan/change-inbox-model';
 import {
   buildPlanAlternative,
   executionStatusFor,
@@ -381,7 +383,7 @@ function NextTrainingDecisionCard({
 
   if (!nextWorkout) {
     return (
-      <div className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+      <div id="next-training-decision" tabIndex={-1} className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
         <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>
           NÄCHSTE TRAININGSENTSCHEIDUNG
         </div>
@@ -600,7 +602,7 @@ function NextTrainingDecisionCard({
   }
 
   return (
-    <div className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+    <div id="next-training-decision" tabIndex={-1} className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>
           NÄCHSTE TRAININGSENTSCHEIDUNG
@@ -2280,6 +2282,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [planNotice, setPlanNotice] = useState<PlanMutationNotice | null>(null);
   const [adaptationDismissed, setAdaptationDismissed] = useState(false);
+  const [dismissedAdaptationEventIds, setDismissedAdaptationEventIds] = useState<Set<string>>(() => new Set());
   const [scenarioReviewRequest, setScenarioReviewRequest] = useState<{ seq: number; mode: AdaptationScenarioMode }>({ seq: 0, mode: 'reduce' });
 
   const selectedWeekDate = getMonday(new Date());
@@ -2304,6 +2307,8 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const decisionAvailableDays = decisionAvailability?.availableDays
     ?? (decisionWeekStart === selectedWeekStart ? availableDays : []);
   const decisionPlanTrace = decisionWeekStart === selectedWeekStart ? planTrace : null;
+  const refreshPreviewQuery = usePlanRefreshPreview(selectedWeekStart);
+  const refreshPreview = refreshPreviewQuery.data?.preview ?? null;
   const todayCheckinDate = checkinToday.data?.checkin?.date ?? today;
   const todayMentalCheckin = checkinToday.data?.checkin
     ? checkinHistory.data?.checkins.find(checkin => checkin.date === todayCheckinDate) ?? null
@@ -2327,7 +2332,14 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const adaptationSignals = adaptationDismissed
     ? []
     : buildPlanAdaptationSignals(workouts, planTrace, today);
-  const openAdaptationEvents = (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info');
+  const openAdaptationEvents = (adaptationEvents.data?.events ?? [])
+    .filter(event => event.severity !== 'info' && !dismissedAdaptationEventIds.has(event.id));
+  const planChangeInbox = buildPlanChangeInbox({
+    today,
+    workouts,
+    adaptationEvents: openAdaptationEvents,
+    refreshPreview,
+  });
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -2358,6 +2370,23 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
     window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
   }
 
+  function openRefreshPreview() {
+    const target = document.querySelector<HTMLElement>('[data-testid="plan-refresh-preview-card"]');
+    target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
+  }
+
+  useEffect(() => {
+    if (entrySource !== 'today-change') return;
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.getElementById('next-training-decision');
+      if (!target) return;
+      target.scrollIntoView({ block: 'start' });
+      target.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [entrySource, nextDecisionWorkout?.id, todayOptions.data?.todayOptions.state]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
@@ -2382,13 +2411,38 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
         showPlanActionContract={!nextDecisionWorkout && todayOptions.data?.todayOptions.state === 'planned_workout'}
       />
 
-      <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
-
-      <PlanAdaptationEventsCard
-        events={openAdaptationEvents}
-        onReview={reviewAdaptations}
+      <PlanChangeInboxCard
+        today={today}
+        workouts={workouts}
+        adaptationEvents={openAdaptationEvents}
+        refreshPreview={refreshPreview}
+        onOpenRefreshPreview={openRefreshPreview}
+        onReviewScenario={reviewAdaptations}
         onNavigate={navigate}
+        onKeep={(itemId) => {
+          if (itemId.startsWith('adaptation-')) {
+            const eventId = itemId.slice('adaptation-'.length);
+            setDismissedAdaptationEventIds(previous => {
+              const next = new Set(previous);
+              next.add(eventId);
+              return next;
+            });
+          }
+          setAdaptationDismissed(true);
+        }}
       />
+
+      {planChangeInbox.items.length === 0 && (
+        <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
+      )}
+
+      {planChangeInbox.items.length === 0 && (
+        <PlanAdaptationEventsCard
+          events={openAdaptationEvents}
+          onReview={reviewAdaptations}
+          onNavigate={navigate}
+        />
+      )}
 
       {/* WeekStrip */}
       <WeekStrip

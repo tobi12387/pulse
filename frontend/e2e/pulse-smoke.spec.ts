@@ -141,6 +141,79 @@ test('Plan shows the week before season evidence on desktop', async ({ page }) =
   expect(weekBeforeSeasonEvidence).toBe(true);
 });
 
+test('Plan exposes open change signals in one inbox before detailed evidence', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'change-inbox-local',
+        plannedDate: localIsoDate(1),
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        targetTss: 60,
+        status: 'planned',
+        description: 'Noch nicht auf Garmin.',
+        executionStatus: 'local_planned',
+      },
+      {
+        id: 'change-inbox-template',
+        plannedDate: localIsoDate(2),
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        targetTss: 35,
+        status: 'planned',
+        description: 'Garmin Vorlage ohne Kalendertermin.',
+        executionStatus: 'garmin_template',
+        garminWorkoutId: 'garmin-template-only',
+      },
+    ],
+    adaptationEvents: {
+      events: [
+        {
+          id: 'change-inbox-recovery',
+          userId: 'user-1',
+          eventDate: '2026-05-01',
+          kind: 'activity_completed',
+          sourceId: 'activity-long',
+          severity: 'action',
+          recommendation: 'protect_recovery',
+          summary: 'Lange reale Einheit erkannt; Folgetage müssen Belastung absorbieren.',
+          evidence: ['bike 430 min', 'TSS 310'],
+          resolvedAt: null,
+          createdAt: '2026-05-01T06:00:00.000Z',
+        },
+      ],
+    },
+    planRefreshPreview: {
+      preview: {
+        weekStart: localIsoDate(),
+        generatedAt: '2026-05-01T08:00:00.000Z',
+        stale: true,
+        summary: 'Neue Garmin- und Recovery-Daten würden den Wochenplan verändern.',
+        triggers: [{ kind: 'missed_or_replaced', label: 'Ausführung anders', detail: 'Eine echte Einheit weicht vom Plan ab.', severity: 'action', evidence: ['Garmin'] }],
+        comparisons: [],
+        loadImpact: { tssDelta: -40, durationDeltaMin: -20 },
+        garminImpact: { creates: 0, updates: 1, deletes: 0, unchanged: 1, summary: 'Garmin würde eine Einheit aktualisieren.' },
+        applySupported: true,
+        mutationBoundary: 'Die Vorschau schreibt nichts in Plan oder Garmin.',
+      },
+    },
+  });
+
+  await page.goto('/plan');
+
+  const inbox = page.getByTestId('plan-change-inbox');
+  await expect(inbox).toBeVisible();
+  await expect(inbox).toContainText('Plan-Änderungen');
+  await expect(inbox).toContainText('Wochenplan prüfen');
+  await expect(inbox).toContainText('Planabweichung bewerten');
+  await expect(inbox).toContainText('Garmin absichern');
+
+  await inbox.getByRole('button', { name: 'Vorschau prüfen' }).click();
+  await expect(page.getByTestId('plan-refresh-preview-card')).toBeInViewport();
+});
+
 test('Plan keeps the action contract when only Today Options has the planned workout', async ({ page }) => {
   await page.goto('/plan');
   const action = page.getByTestId('plan-primary-action');

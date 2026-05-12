@@ -230,7 +230,9 @@ function adaptationTone(event: PulseAdaptationEvent): string {
 
 function adaptationTarget(event: PulseAdaptationEvent): { path: string; label: string } {
   if (event.recommendation === 'sync_garmin') return { path: '/settings?section=garmin', label: 'Garmin öffnen' };
-  if (event.recommendation === 'log_feedback') return { path: '/data?tab=activities', label: 'Feedback öffnen' };
+  if (event.recommendation === 'log_feedback') {
+    return { path: event.sourceId ? `/plan/activity/${event.sourceId}` : '/data?tab=analysis', label: 'Feedback öffnen' };
+  }
   if (event.recommendation === 'keep_plan') return { path: '/plan', label: 'Plan ansehen' };
   return { path: '/plan#plan-adaptation-review', label: 'Im Plan prüfen' };
 }

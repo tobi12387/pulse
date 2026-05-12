@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Fresh-Benchmark-Luecken werden als Plan-Inbox und Today-Change-Flow priorisiert
+
+- **Decision:** Der nächste Benchmark-Slice priorisiert erstens eine read-only Plan-Änderungs-Inbox aus Refresh Preview, Adaptionssignalen und Garmin-Sync-Schulden und zweitens einen direkten Today-Change-Flow für geplante Tage. Planned-day Home-Alternativen öffnen die bestehende Planentscheidung statt den Custom-Workout-Szenario-Pfad.
+- **Why:** Der frische Vergleich mit TrainerRoad, TrainingPeaks, Garmin, JOIN/Runna, WHOOP/Oura und MacroFactor zeigte nicht fehlende Rohintelligenz als größten Gap, sondern fehlende operative Klarheit: was hat sich geändert, warum, und was passiert nach dem Klick. Der kleinste sichere Schritt nutzt vorhandene Contracts und vermeidet versteckte Plan- oder Garmin-Writes.
+- **Alternatives:** Neue Backend-Inbox mit Persistenz (zu groß für v1); Adaptionskarten unverändert lassen (zu verstreut); Home-Alternativen weiter ins `scenario=workout`-Szenario leiten (Risiko unbeabsichtigter neuer Workouts); automatische Plan-/Garmin-Anpassung (zu versteckt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Focus-Handoff wird als Designsystem plus kompatible Routen behandelt
 
 - **Decision:** Pulse richtet den Focus-Handoff weiter an Tokens, Shell, Page-Header-Rhythmus, `?`-Keyboard-Hilfe und der kanonischen Activity-Detail-Route `/plan/activity/:id` aus. Die bestehende `/activity/:id` Route bleibt als Kompatibilitätsroute erhalten; `/coach` bleibt ebenfalls ein Kompatibilitäts-/Deep-Link-Screen, während Coach in der Haupt-IA über `⌘K` lebt.

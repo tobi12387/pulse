@@ -1,6 +1,6 @@
 # Pulse Product Roadmap
 
-> Stand: 2026-05-11 after Personal Response Model, Predictive Goal Engine, Adaptive Season Builder v1 and Contextual Coach Mode v1. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
+> Stand: 2026-05-12 after Focus-Handoff alignment and the fresh top-tools benchmark. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
 
 ## Product North Star
 
@@ -99,6 +99,20 @@ The 2026-05-09/2026-05-10 benchmark work is part of this roadmap, not disposable
 | Data/Settings information architecture | Implemented through Data IA Compression v1 and Settings Status First v1. | Do not rebuild the IA foundations; future work needs route evidence or a concrete reported gap. |
 | iPhone/PWA reliability | Evidence record and diagnostics exist; real-device certificate/push gates remain manual. | Keep as a manual/evidence gate unless Tobi reports concrete iPhone friction. |
 
+### 2026-05-12 Fresh Benchmark Translation
+
+The latest benchmark against TrainerRoad, TrainingPeaks, Garmin, JOIN/Runna, WHOOP/Oura, MacroFactor, Intervals.icu and WKO reframes the remaining gap: Pulse has enough intelligence foundations, but must close daily product loops more clearly.
+
+| Fresh benchmark theme | Pulse direction | Status |
+|---|---|---|
+| Plan changes need an inbox | Centralize refresh preview, adaptation events and Garmin sync debt into one `what changed / why / what happens after click` surface. | Implemented v1 in the 2026-05-12 Plan Change Inbox slice. |
+| Today change flow must be direct | Planned-day alternatives from Home must route to the existing workout decision, not create a new custom workout scenario. | Implemented v1 in the 2026-05-12 Today Change Flow slice. |
+| Progression needs calibration clarity | Every workout should explain the progression purpose and why repetition is still valid or why the stimulus changed. | Next candidate. |
+| Garmin execution chain needs one visible path | Template, calendar, device/readback, repeat audit, repair and execution result should read as one chain. | Next candidate after progression clarity. |
+| Weekly coaching ritual is missing | Weekly update should summarize what Pulse learned, what changes this week and what Tobi can accept/reject. | Medium-term candidate. |
+| Recovery/Mental should become resilience guidance | Reduce metric-wall feel; explain boundaries, energy/stress signal quality and recovery actions without clinical labeling. | Medium-term candidate. |
+| Nutrition trends stay gated | Trend summaries only after enough comparable complete logs. | Still gated. |
+
 ## Harmonized Roadmap
 
 ### Short Term: Make Pulse Easier To Use Daily
@@ -152,15 +166,16 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 ## Next Implementation Order
 
-1. **Predictive Goal Engine v1:** implemented as read-only goal probability, limiter risk and next-intervention evidence from Personal Response, capability, fueling and execution data. No hidden plan mutation in v1.
-2. **Adaptive Season Builder v1:** implemented as a read-only Plan `Saisonvertrag` that consumes existing season strategy and goal projection evidence. No hidden workout, goal or Garmin mutation in v1.
-3. **Contextual Coach Mode:** implemented as a read-only Coach context card using Personal Response, Goal Projection and Season Strategy evidence. No automatic send, new backend endpoint, LLM prompt mutation or Garmin write in v1.
-4. **Customizable Daily Surface:** implemented as a local read-only Home focus ordering control. No backend, plan, Garmin or check-in mutation in v1.
-5. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
-6. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
-7. **Optional Daily Delta echoes / Garmin modal polish:** only if route evidence or user feedback shows a real gap.
+1. **Plan Change Inbox v1:** implemented as a frontend-first, read-only Plan surface combining refresh preview, adaptation events and Garmin sync debt. It routes to preview, scenario review or execution checks; it does not write plan or Garmin by itself.
+2. **Today Change Flow v1:** implemented for planned-day Home alternatives. `Leichtere Alternative` and `Bewusst frei lassen` now open the existing Plan decision via `source=today-change` instead of the custom-workout scenario path.
+3. **Workout Progression Clarity v3:** next PR-sized candidate. Make planned workouts explain progression role, repetition rationale, capability fit and why the same-looking workout is still useful or should change.
+4. **Garmin Execution Chain UI:** next after progression clarity. Tie template, calendar, device/readback, repeat audit, repair and execution result into one understandable path without automatic writes.
+5. **Weekly Coach Review:** summarize what Pulse learned this week, which plan changes are proposed and what Tobi should accept, reject or defer.
+6. **Recovery & Mental Resilience:** turn recovery/mental evidence into calmer boundary guidance and signal-quality explanations, not another metrics wall.
+7. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
+8. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
 
-Keep each long-term theme as a separate PR-sized plan. Do not merge Predictive Goal, Season, Coach and Daily Surface into one large product PR.
+Keep each theme as a separate PR-sized slice unless a test-only or docs-only update is required to keep the roadmap coherent.
 
 ## Manual Gates
 
