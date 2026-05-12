@@ -107,7 +107,7 @@ The latest benchmark against TrainerRoad, TrainingPeaks, Garmin, JOIN/Runna, WHO
 |---|---|---|
 | Plan changes need an inbox | Centralize refresh preview, adaptation events and Garmin sync debt into one `what changed / why / what happens after click` surface. | Implemented v1 in the 2026-05-12 Plan Change Inbox slice. |
 | Today change flow must be direct | Planned-day alternatives from Home must route to the existing workout decision, not create a new custom workout scenario. | Implemented v1 in the 2026-05-12 Today Change Flow slice. |
-| Progression needs calibration clarity | Every workout should explain the progression purpose and why repetition is still valid or why the stimulus changed. | Next candidate. |
+| Progression needs calibration clarity | Every workout should explain the progression purpose and why repetition is still valid or why the stimulus changed. | Implemented v3 in the 2026-05-12 Workout Progression Clarity slice. |
 | Garmin execution chain needs one visible path | Template, calendar, device/readback, repeat audit, repair and execution result should read as one chain. | Next candidate after progression clarity. |
 | Weekly coaching ritual is missing | Weekly update should summarize what Pulse learned, what changes this week and what Tobi can accept/reject. | Medium-term candidate. |
 | Recovery/Mental should become resilience guidance | Reduce metric-wall feel; explain boundaries, energy/stress signal quality and recovery actions without clinical labeling. | Medium-term candidate. |
@@ -168,8 +168,8 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 
 1. **Plan Change Inbox v1:** implemented as a frontend-first, read-only Plan surface combining refresh preview, adaptation events and Garmin sync debt. It routes to preview, scenario review or execution checks; it does not write plan or Garmin by itself.
 2. **Today Change Flow v1:** implemented for planned-day Home alternatives. `Leichtere Alternative` and `Bewusst frei lassen` now open the existing Plan decision via `source=today-change` instead of the custom-workout scenario path.
-3. **Workout Progression Clarity v3:** next PR-sized candidate. Make planned workouts explain progression role, repetition rationale, capability fit and why the same-looking workout is still useful or should change.
-4. **Garmin Execution Chain UI:** next after progression clarity. Tie template, calendar, device/readback, repeat audit, repair and execution result into one understandable path without automatic writes.
+3. **Workout Progression Clarity v3:** implemented as a frontend-first, read-only Plan explanation for progression role, calibration, repetition rationale and change triggers.
+4. **Garmin Execution Chain UI:** next PR-sized candidate. Tie template, calendar, device/readback, repeat audit, repair and execution result into one understandable path without automatic writes.
 5. **Weekly Coach Review:** summarize what Pulse learned this week, which plan changes are proposed and what Tobi should accept, reject or defer.
 6. **Recovery & Mental Resilience:** turn recovery/mental evidence into calmer boundary guidance and signal-quality explanations, not another metrics wall.
 7. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.

@@ -107,6 +107,9 @@ test('Plan starts with the current action contract', async ({ page }) => {
       targetTss: 64,
       status: 'planned',
       archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
       description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
     }],
     todayOptionsState: 'unplanned_trainable',
@@ -118,6 +121,14 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(action).toContainText('Plan-Aktion');
   await expect(action).toContainText('Nach dem Klick');
   await expect(action.getByRole('button', { name: /Einheit öffnen/i })).toBeVisible();
+
+  const progression = page.getByTestId('plan-workout-progression');
+  await expect(progression).toBeVisible();
+  await expect(progression).toContainText('Progression');
+  await expect(progression).toContainText('Rolle');
+  await expect(progression).toContainText('Kalibrierung');
+  await expect(progression).toContainText('Wiederholung');
+  await expect(progression).toContainText('Ändern wenn');
 });
 
 test('Plan shows the week before season evidence on desktop', async ({ page }) => {

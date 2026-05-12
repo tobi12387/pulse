@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Workout-Progression wird als kompakte Plan-Erklaerung statt neue Engine umgesetzt
+
+- **Decision:** Workout Progression Clarity v3 bleibt frontend-first und read-only: Pulse erklaert geplante Einheiten mit vorhandenen Feldern (`archetypeId`, `difficultyLevel`, `difficultyEnergySystem`, `capabilityFit`, `steps`, sichtbare Schwester-Workouts), statt eine neue Backend-Progression-Engine oder Garmin-Schreiblogik einzufuehren.
+- **Why:** Die Benchmark-Luecke ist aktuell Verstaendlichkeit, nicht fehlende Trainingslogik. Tobi soll sehen, ob eine Einheit Fortschritt, Konsolidierung, Recovery oder Grenzreiz ist und warum Wiederholung sinnvoll sein kann, ohne dass Plan- oder Garmin-Mutationen versteckt passieren.
+- **Alternatives:** Neue persistierte Progression-Entitaet (zu gross und dupliziert Capability-Level); Progression nur in Details verstecken (loest die Irritation auf der Plan-Hauptflaeche nicht); jede Wiederholung automatisch vermeiden (fachlich falsch, weil Grundlage/Konsolidierung Wiederholung braucht).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Fresh-Benchmark-Luecken werden als Plan-Inbox und Today-Change-Flow priorisiert
 
 - **Decision:** Der nächste Benchmark-Slice priorisiert erstens eine read-only Plan-Änderungs-Inbox aus Refresh Preview, Adaptionssignalen und Garmin-Sync-Schulden und zweitens einen direkten Today-Change-Flow für geplante Tage. Planned-day Home-Alternativen öffnen die bestehende Planentscheidung statt den Custom-Workout-Szenario-Pfad.

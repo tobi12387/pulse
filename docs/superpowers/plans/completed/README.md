@@ -98,6 +98,7 @@
 | `2026-05-11-insights-synthesis-focus.md` | Insights Synthesis Focus — top-level Insights becomes a synthesis surface while Data Analyse remains the deep evidence workbench | Insights Density PR |
 | `2026-05-11-data-daily-action-focus.md` | Data Daily Action Focus — Data starts with one daily data action while triage and secondary evidence stay optional | Data Density PR |
 | `2026-05-11-data-backfill-touch-polish.md` | Data Backfill Touch Polish — Garmin Backfill preview/write buttons meet the mobile touch-target baseline | Data A11y PR |
+| `2026-05-12-workout-progression-clarity-v3.md` | Workout Progression Clarity v3 — Plan explains progression role, calibration, repetition rationale and change triggers without plan/Garmin writes | Workout Progression Clarity PR |
 
 ## Bekannte veraltete Stellen
 

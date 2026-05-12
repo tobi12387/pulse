@@ -20,6 +20,7 @@ import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { PlanChangeInboxCard } from '@/features/plan/PlanChangeInboxCard';
 import { buildPlanChangeInbox } from '@/features/plan/change-inbox-model';
+import { buildWorkoutProgressionInsight, type WorkoutProgressionInsight } from '@/features/plan/workout-progression-model';
 import {
   buildPlanAlternative,
   executionStatusFor,
@@ -169,6 +170,13 @@ function athleteLevelSummary(workout: PlannedWorkout): {
     workoutLevel: workout.difficultyLevel != null ? `Workout-Level ${workout.difficultyLevel.toFixed(1)}` : null,
     nextAction: meta?.nextAction ?? 'Noch keine belastbare Level-Einschätzung. Erst Ausführung und Feedback sammeln.',
   };
+}
+
+function progressionToneColor(tone: WorkoutProgressionInsight['tone']): string {
+  if (tone === 'green') return 'var(--green)';
+  if (tone === 'amber') return 'var(--amber)';
+  if (tone === 'rose') return 'var(--rose)';
+  return 'var(--text-2)';
 }
 
 function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMessage: string): PlanMutationNotice | null {
@@ -348,6 +356,7 @@ function PlanGarminSyncDebtCard({
 
 function NextTrainingDecisionCard({
   nextWorkout,
+  workouts,
   availableDays,
   activeGoalsCount,
   currentLoad,
@@ -361,6 +370,7 @@ function NextTrainingDecisionCard({
   onOpenGenerator,
 }: {
   nextWorkout: PlannedWorkout | null;
+  workouts: PlannedWorkout[];
   availableDays: number[];
   activeGoalsCount: number;
   currentLoad: PulseFitnessLoad | null;
@@ -486,6 +496,8 @@ function NextTrainingDecisionCard({
   const goalsCount = activeGoalsCount || planTrace?.inputSnapshot.goals.length || 0;
   const fitDecision = nextWorkout.capabilityFit ? FIT_DECISION_META[nextWorkout.capabilityFit] : null;
   const levelSummary = athleteLevelSummary(nextWorkout);
+  const progressionInsight = buildWorkoutProgressionInsight({ workout: nextWorkout, workouts, today });
+  const progressionTone = progressionToneColor(progressionInsight.tone);
   const sourceChips: SourceChip[] = [
     load
       ? { label: `Einbezogen: TSB ${load.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' }
@@ -622,31 +634,57 @@ function NextTrainingDecisionCard({
           {nextWorkout.description.split('\n')[0]}
         </p>
       )}
-      {levelSummary && (
-        <div
-          data-testid="plan-athlete-level-summary"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 5,
-            margin: '0 0 12px',
-            padding: '9px 10px',
-            border: `1px solid color-mix(in srgb, ${levelSummary.tone} 34%, transparent)`,
-            borderRadius: 5,
-            background: `color-mix(in srgb, ${levelSummary.tone} 8%, transparent)`,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-            <span className="label-mono" style={{ color: levelSummary.tone }}>Athlete-Level</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: levelSummary.tone, textTransform: 'uppercase' }}>
-              {levelSummary.label}
-            </span>
-          </div>
-          <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
-            {levelSummary.workoutLevel ? `${levelSummary.workoutLevel}: ` : ''}{levelSummary.nextAction}
-          </p>
+      <div
+        data-testid="plan-workout-progression"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 7,
+          margin: '0 0 12px',
+          padding: '10px 11px',
+          border: `1px solid color-mix(in srgb, ${progressionTone} 30%, transparent)`,
+          borderRadius: 5,
+          background: `color-mix(in srgb, ${progressionTone} 7%, transparent)`,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <span className="label-mono" style={{ color: progressionTone }}>Progression</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: progressionTone, textTransform: 'uppercase' }}>
+            {progressionInsight.label}
+          </span>
         </div>
-      )}
+        {levelSummary && (
+          <div data-testid="plan-athlete-level-summary" style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            Athlete-Level: {levelSummary.label}{levelSummary.workoutLevel ? ` · ${levelSummary.workoutLevel}` : ''}
+          </div>
+        )}
+        {[
+          ['Rolle', progressionInsight.role],
+          ['Kalibrierung', progressionInsight.calibration],
+          ['Wiederholung', progressionInsight.repetition],
+          ['Ändern wenn', progressionInsight.changeTrigger.replace(/^Aendern wenn: /i, '')],
+        ].map(([label, value]) => (
+          <p key={label} style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            <span style={{ color: 'var(--text)', fontWeight: 600 }}>{label}: </span>{value}
+          </p>
+        ))}
+        {progressionInsight.evidence.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {progressionInsight.evidence.slice(0, 3).map(item => (
+              <span key={item} style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--text-3)',
+                border: '1px solid var(--border)',
+                borderRadius: 3,
+                padding: '2px 5px',
+              }}>
+                {item}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
       {mentalPlanImpact && (
         <p
           data-testid="mental-plan-impact"
@@ -2392,6 +2430,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
 
       <NextTrainingDecisionCard
         nextWorkout={nextDecisionWorkout}
+        workouts={workouts}
         availableDays={decisionAvailableDays}
         activeGoalsCount={activeGoals.length}
         currentLoad={fitnessLoad.data ?? null}
@@ -2600,7 +2639,7 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
       {workouts.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {workouts.map((w, i) => (
-            <WorkoutRow key={w.id} workout={w} index={i} onOpen={() => openWorkout(w)} />
+            <WorkoutRow key={w.id} workout={w} workouts={workouts} today={today} index={i} onOpen={() => openWorkout(w)} />
           ))}
         </div>
       )}

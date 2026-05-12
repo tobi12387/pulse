@@ -4257,7 +4257,7 @@ test('Plan explains Athlete-Level fit and recommends the safer stretch alternati
     planWorkouts: [{
       id: 'stretch-level-workout',
       userId: 'user-1',
-      plannedDate: '2026-05-11',
+      plannedDate: localIsoDateDaysFrom(1),
       activityType: 'bike',
       zone: 4,
       durationMin: 75,
@@ -4291,8 +4291,87 @@ test('Plan explains Athlete-Level fit and recommends the safer stretch alternati
   await expect(level).toContainText('Athlete-Level');
   await expect(level).toContainText('Stretch');
   await expect(level).toContainText('Workout-Level 4.4');
+  const progression = page.getByTestId('plan-workout-progression');
+  await expect(progression).toContainText('Grenzreiz kontrollieren');
+  await expect(progression).toContainText('Ändern wenn');
+  await expect(progression).toContainText(/entschärfen|verschieben/);
   await expect(page.getByTestId('plan-adaptation-status')).toContainText('Athlete-Level: Stretch kontrollieren');
   await expect(page.getByText('Level-Wirkung: Zielreiz bleibt, Belastung sinkt')).toBeVisible();
+});
+
+test('Plan Training explains repeated-looking workouts as deliberate consolidation', async ({ page }) => {
+  const repeatedWorkouts = [
+    {
+      id: 'repeat-endurance-1',
+      userId: 'user-1',
+      plannedDate: localIsoDateDaysFrom(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      distanceKm: null,
+      targetTss: 58,
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.1,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'maintenance',
+      description: 'Aerobe Grundlage, bewusst gleichmaessig.',
+      steps: [{ type: 'steady', durationMin: 75, zone: 2 }],
+      garminWorkoutId: null,
+      garminScheduledId: null,
+      garminSyncContract: null,
+      status: 'planned',
+      workoutFeedback: null,
+      complianceScore: null,
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: null,
+    },
+    {
+      id: 'repeat-endurance-2',
+      userId: 'user-1',
+      plannedDate: localIsoDateDaysFrom(3),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 80,
+      distanceKm: null,
+      targetTss: 62,
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.1,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'maintenance',
+      description: 'Aerobe Grundlage, zweite Konsolidierung.',
+      steps: [{ type: 'steady', durationMin: 80, zone: 2 }],
+      garminWorkoutId: null,
+      garminScheduledId: null,
+      garminSyncContract: null,
+      status: 'planned',
+      workoutFeedback: null,
+      complianceScore: null,
+      origin: 'generated',
+      userLocked: false,
+      completedActivityId: null,
+      executionStatus: 'local_planned',
+      executionMatchedAt: null,
+      executionMatchConfidence: null,
+      executionNotes: null,
+    },
+  ];
+
+  await mockPulseApi(page, { planWorkouts: repeatedWorkouts });
+  await page.goto('/plan?tab=training');
+
+  const progression = page.getByTestId('plan-workout-progression');
+  await expect(progression).toContainText('Bewusste Konsolidierung');
+  await expect(progression).toContainText('2x');
+  await expect(progression).toContainText('bewusst wiederholbar');
+
+  const rowProgression = page.getByTestId('plan-workout-progression-row').first();
+  await expect(rowProgression).toContainText('Progression');
+  await expect(rowProgression).toContainText('Bewusste Konsolidierung');
 });
 
 test('Plan Statistik shows progression guidance in capability levels', async ({ page }) => {
