@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Plan-Aktionsvertrag besitzt die Planned-Day-Begründung
+
+- **Decision:** Wenn `/plan` den vollständigen Today-Options-Block mit `Plan-Aktion` zeigt, wird die Planned-Day-Zusammenfassung nur im Aktionsvertrag gerendert; der Kartenkopf bleibt bei Status und Aktualisieren-Aktion.
+- **Why:** Mobile Route-Evidence zeigte, dass dieselbe Erklärung direkt übereinander im Kartenkopf und im Aktionsvertrag auftauchte. Die kleinere Lösung reduziert Dichte und Entscheidungsrauschen, ohne neue Tabs, Karten oder Plan-/Garmin-Logik einzuführen.
+- **Alternatives:** Tab-Leiste oder gesamte Plan-Card umbauen (größerer Regressionsradius); beide Texte behalten (unnötige Wiederholung im ersten mobilen Viewport); Plan-Aktion entfernen (verliert den klaren nächsten Schritt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — UI/UX- und Ops-Vorarbeiten bleiben Evidence/Tooling statt Produktfläche
 
 - **Decision:** Die Vorarbeit für neue UI/UX-Slices besteht aus Route-Evidence-Zusammenfassung plus Next-Slice-Intake; die Vorarbeit für Ops besteht aus timestamp-basierter Server-Log-Aufmerksamkeit in `verify-server.sh`.

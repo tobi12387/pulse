@@ -164,6 +164,7 @@ export function TodayOptionsCard({
 
   const options = variant === 'compact' ? data.options.slice(0, 2) : data.options;
   const primaryOption = options.find(option => option.priority === 'primary') ?? options[0] ?? null;
+  const planActionContractVisible = showPlanActionContract && primaryOption != null;
   const visibleOptions = showPlanActionContract && primaryOption
     ? options.filter(option => option.id !== primaryOption.id)
     : options;
@@ -182,9 +183,11 @@ export function TodayOptionsCard({
           <div className="label-mono" style={{ color: data.state === 'recovery_protect' ? 'var(--green)' : 'var(--accent)', marginBottom: 5 }}>
             {showMobileIntent ? 'Heute möglich' : STATE_LABEL[data.state]}
           </div>
-          <p style={{ margin: 0, fontSize: variant === 'compact' ? 12 : 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
-            {data.summary}
-          </p>
+          {!planActionContractVisible && (
+            <p style={{ margin: 0, fontSize: variant === 'compact' ? 12 : 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
+              {data.summary}
+            </p>
+          )}
           {data.fuelingDebt?.hasOpenDebt && (
             <div
               data-testid="today-options-fueling-debt"
