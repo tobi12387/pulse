@@ -194,6 +194,13 @@ test('Plan no-Garmin-write harness exercises preview, today labels and execution
   await expect(executionPanel).toContainText('Geräte-Check abschließen');
   await expect(executionPanel).toContainText('Warum jetzt');
   await expect(executionPanel).toContainText('Nach dem Klick');
+  const chain = page.getByTestId('garmin-execution-chain');
+  await expect(chain).toContainText('Vorlage');
+  await expect(chain).toContainText('Kalender');
+  await expect(chain).toContainText('Readback');
+  await expect(chain).toContainText('Repeats');
+  await expect(chain).toContainText('Ausführung');
+  await expect(page.getByTestId('garmin-execution-next-action')).toContainText('Wiederholungen reparieren');
   await expect(executionPanel).toContainText('Pulse bekannt');
   await expect(executionPanel).toContainText('Garmin Readback');
   await expect(executionPanel).toContainText('Auf Garmin bereit');

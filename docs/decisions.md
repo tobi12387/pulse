@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Garmin Execution Chain UI bleibt Frontend-Orchestrierung
+
+- **Decision:** Garmin Execution Chain UI wird als kompakter Frontend-Chain-Strip auf `/plan?tab=execution` umgesetzt und nutzt nur den bestehenden Execution-Diff plus explizite Repair-Aktionen.
+- **Why:** Die Grundlagen fuer Template, Kalender, Readback, Repeat-Audit und Repair existieren bereits; der offene Nutzen ist eine ruhigere Orientierung, nicht neue Garmin-Schreiblogik. Die Ansicht soll eine naechste Aktion zeigen und Detail-Reparaturbuttons nicht duplizieren.
+- **Alternatives:** Neue Route `Ausfuehrung` (mehr Navigation vor Evidenz); automatische Reparaturen beim Laden (bricht Kontrollvertrag); weitere Settings-Diagnosekarten (erhoeht Dichte).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Workout-Progression wird als kompakte Plan-Erklaerung statt neue Engine umgesetzt
 
 - **Decision:** Workout Progression Clarity v3 bleibt frontend-first und read-only: Pulse erklaert geplante Einheiten mit vorhandenen Feldern (`archetypeId`, `difficultyLevel`, `difficultyEnergySystem`, `capabilityFit`, `steps`, sichtbare Schwester-Workouts), statt eine neue Backend-Progression-Engine oder Garmin-Schreiblogik einzufuehren.
