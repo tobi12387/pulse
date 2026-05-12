@@ -138,7 +138,7 @@ These build on the calmer daily UI.
 | Pulse Athlete Levels | Implemented: energy-system capability is visible in daily decisions and scenario previews as `Machbar`, `Produktiv`, `Stretch` or `Zu hart heute` before apply. | TrainerRoad Workout/Progression Levels |
 | Workout Alternatives v2 | Implemented: full Plan alternatives now state purpose, why-now, result impact and safest recommendation; scenario previews distinguish preview-loading from apply-running. | TrainerRoad TrainNow, JOIN availability |
 | Data IA Compression | Implemented: Data uses `Heute relevant`, `Trends`, `Datenqualitaet` and `Analyse`, while old query/hash links remain compatible. | Oura Trends, Intervals analytics |
-| Settings Status First | Implemented: Settings starts with `Alles bereit` or `Problem beheben`, then details for Garmin, PWA, Push, profile and local ops. | Garmin/WHOOP app diagnostics |
+| Settings Status First | Implemented: Settings starts with core readiness (`Alles bereit` or `Problem beheben`), then details for Garmin, PWA, Push, profile and local ops. Push is visible as an optional device action, not a core blocker when access, Service Worker and Garmin are ready. | Garmin/WHOOP app diagnostics |
 | Nutrition Intelligence | Implemented: low-intake GI logs change the concrete next long-session target to a controlled `50-70 g/h`, and outcome baselines now structure carb target, bottles, powder, fluid and sodium evidence gaps in Activity and Plan. Future slices should add repeated-log trend summaries and real heat/sweat-rate context. | MacroFactor coaching update pattern |
 | iPhone/PWA Field Reliability | Real device evidence decides whether PWA fixes are enough or whether a native/wrapper path is worth planning. | WHOOP/Oura mobile-first reliability |
 

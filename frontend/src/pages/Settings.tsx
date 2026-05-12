@@ -501,8 +501,7 @@ function SettingsDiagnosticsMatrix({
       ? 'var(--green)'
       : 'var(--amber)';
   const certificateLabel = device.secure ? 'manuell prüfen' : 'nicht sicher';
-  const pushBlocksReadiness = !pushConfigured || !pushSupported || pushPermission === 'denied';
-  const pushOptionalSetup = !pushBlocksReadiness && pushSubscriptions === 0;
+  const pushOptionalSetup = pushSubscriptions === 0;
   const garminBlocksReadiness = !garminLoading && garminLabel !== 'Bereit';
 
   const rows: SettingsDiagnosticRow[] = [
@@ -546,7 +545,7 @@ function SettingsDiagnosticsMatrix({
           ? `${pushSubscriptions} Gerät(e) aktiv.`
           : 'Aktivierung passiert bewusst pro Browser/Gerät.',
       action: { label: 'Push öffnen', path: '/settings?section=push' },
-      blocksReadiness: pushBlocksReadiness,
+      blocksReadiness: false,
       optionalSetup: pushOptionalSetup,
     },
     {
