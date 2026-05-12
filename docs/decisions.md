@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Push blockiert Settings-Kernbereitschaft nicht
+
+- **Decision:** Settings behandelt Push-Zustände wie `Browser blockiert`, `Server nicht bereit` oder fehlende Geräte-Subscription als optionale Geräte-/Benachrichtigungsaufgabe, nicht als Blocker für die Kernbereitschaft.
+- **Why:** Push ist nützlich für Briefings und Reminder, aber Pulse bleibt ohne Push auf Home, Data, Plan, Insights, Settings, Garmin und PWA/VPN nutzbar. Ein blockierter Browser-Push darf die erste Settings-Fläche nicht unnötig als `Problem beheben` dominieren, wenn Zugriff, Service Worker und Garmin bereit sind.
+- **Alternatives:** Push weiterhin als Readiness-Blocker führen (zu alarmistisch für einen optionalen Kanal); Push aus Settings entfernen (verliert Diagnose und Aktivierungspfad); Push automatisch erneut anfordern (bricht explizite Browser-/Gerätekontrolle).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Recovery/Mental Resilience bleibt Boundary-Guidance statt Diagnose
 
 - **Decision:** Data > Mental bekommt eine kompakte Resilienzkarte, die Recovery-, Readiness-, Load- und Mental-Check-in-Signale in `Grenze`, `Planwirkung` und `Signalqualität` übersetzt.

@@ -4735,6 +4735,33 @@ test('Settings diagnostics matrix is visible first and routes to support section
   await expect(page.getByRole('heading', { name: 'iPhone & PWA' })).toBeVisible();
 });
 
+test('Settings treats blocked push as optional when core access is ready', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window.Notification, 'permission', { get: () => 'denied' });
+  });
+  await mockPulseApi(page, {
+    pushSettings: {
+      configured: true,
+      publicKey: 'test-vapid-key',
+      topics: {
+        briefing: true,
+        checkin_reminder: true,
+        risk_critical: true,
+      },
+      quietHours: { start: '21:00', end: '07:00' },
+      subscriptions: [],
+    },
+  });
+
+  await page.goto('/settings');
+  const summary = page.getByTestId('settings-status-summary');
+  await expect(summary).toContainText('Alles bereit');
+  await expect(summary).toContainText('Optional');
+  await expect(summary).toContainText('Push');
+  await expect(summary).not.toContainText('Problem beheben');
+  await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
+});
+
 test('Settings diagnostics matrix separates denied push and blocked Garmin states', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window.Notification, 'permission', { get: () => 'denied' });
@@ -4776,9 +4803,9 @@ test('Settings diagnostics matrix separates denied push and blocked Garmin state
   const matrix = page.getByTestId('settings-diagnostics-matrix');
   const summary = page.getByTestId('settings-status-summary');
   await expect(summary).toContainText('Problem beheben');
-  await expect(summary).toContainText('2 Punkte prüfen');
+  await expect(summary).toContainText('1 Punkt prüfen');
   await expect(summary).toContainText('Garmin');
-  await expect(summary).toContainText('Push');
+  await expect(summary).not.toContainText('1 Punkt prüfen: Push');
   await matrix.getByRole('button', { name: 'Diagnose anzeigen' }).click();
   await expect(matrix).toContainText('Push');
   await expect(matrix).toContainText('Browser blockiert');
