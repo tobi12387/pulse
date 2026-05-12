@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-12 — Full-E2E-Verträge folgen Focus-Komponenten statt globaler Textsuche
+
+- **Decision:** Browser-E2E-Tests fuer Focus/Home/Data/Plan/Settings werden auf konkrete Komponenten, Karten, Row-Buttons oder Inbox-Verträge gescoped, statt globale Texttreffer wie `Lokal`, `Feedback erfassen` oder `Heute ist kein Training geplant` zu verwenden.
+- **Why:** Das Focus-Redesign rendert dieselben Begriffe absichtlich an mehreren Stellen (Hero, Diary, Bottom/System UI, Inbox). Globale Text-Locators erzeugten falsche Main-CI-Fehler, obwohl die UI-Verträge funktionierten. Komponenten-Scopes testen den Nutzervertrag präziser und bleiben robuster, ohne Produktcode zu verbiegen.
+- **Alternatives:** Produkttexte entfernen, nur damit alte Tests eindeutig bleiben (verschlechtert UI); Tests löschen oder breit skippen (verliert Schutz); Full-E2E-Fehler ignorieren und deployen (bricht den Main-Vertrag).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Plan-Aktionsvertrag besitzt die Planned-Day-Begründung
 
 - **Decision:** Wenn `/plan` den vollständigen Today-Options-Block mit `Plan-Aktion` zeigt, wird die Planned-Day-Zusammenfassung nur im Aktionsvertrag gerendert; der Kartenkopf bleibt bei Status und Aktualisieren-Aktion.
