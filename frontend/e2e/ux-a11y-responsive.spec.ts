@@ -117,6 +117,24 @@ test('mobile Data tabs wrap without document-level horizontal overflow', async (
   expect(await documentOverflow(page)).toEqual({ bodyOverflow: 0, documentOverflow: 0 });
 });
 
+test('mobile top-level headers use compact route titles before the work surface', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile header density check');
+
+  const routes = [
+    { path: '/data', title: 'Data' },
+    { path: '/plan', title: 'Plan' },
+    { path: '/settings', title: 'Settings' },
+  ] as const;
+
+  for (const route of routes) {
+    await page.goto(route.path);
+    const title = page.locator('main h1').first();
+    await expect(title).toBeVisible();
+    await expect.poll(async () => title.evaluate((element) => (element as HTMLElement).innerText.trim()))
+      .toBe(route.title);
+  }
+});
+
 test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
   await page.goto('/data');
 

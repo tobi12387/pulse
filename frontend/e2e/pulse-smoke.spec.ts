@@ -4,16 +4,16 @@ import { mockPulseApi } from './fixtures/pulse-api';
 const routes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Heute, Trends, Qualität & Analyse' },
-  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'DATA' },
+  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'PLAN' },
   { path: '/insights', label: 'Insights', navHref: '/insights', visibleText: 'Insights' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
 
 const primaryNavRoutes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'Heute, Trends, Qualität & Analyse' },
-  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'DATA' },
+  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'PLAN' },
   { path: '/insights', label: 'Insights', navHref: '/insights', visibleText: 'Insights' },
   { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
 ] as const;
@@ -600,7 +600,7 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data');
-  await expectHealthyPage(page, 'Heute, Trends, Qualität & Analyse');
+  await expectHealthyPage(page, 'DATA');
 
   const viewportWidth = page.viewportSize()?.width ?? 0;
   const labels = ['Heute relevant', 'Trends', 'Datenqualität', 'Analyse'];
@@ -619,7 +619,7 @@ test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data?tab=mental');
-  await expectHealthyPage(page, 'Heute, Trends, Qualität & Analyse');
+  await expectHealthyPage(page, 'DATA');
 
   const overflow = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
@@ -734,11 +734,11 @@ test('top-level hotkeys follow the Focus navigation order', async ({ page }, tes
 
   await page.keyboard.press('2');
   await expect(page).toHaveURL('/data');
-  await expectHealthyPage(page, 'Heute, Trends, Qualität & Analyse');
+  await expectHealthyPage(page, 'DATA');
 
   await page.keyboard.press('3');
   await expect(page).toHaveURL('/plan');
-  await expectHealthyPage(page, 'Training, Ziele & Statistik');
+  await expectHealthyPage(page, 'PLAN');
 
   await page.keyboard.press('4');
   await expect(page).toHaveURL('/insights');

@@ -7,10 +7,10 @@ import { MOCK_TODAY, mockPulseApi } from './fixtures/pulse-api';
 const routes = [
   { path: '/', label: 'home', visibleText: 'READINESS' },
   { path: '/coach', label: 'coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'data', visibleText: 'Heute, Trends, Qualität & Analyse' },
+  { path: '/data', label: 'data', visibleText: 'DATA' },
   { path: '/data?tab=today#data-mental', label: 'data-mental', visibleText: 'Quick Check-in' },
-  { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analyse' },
-  { path: '/plan', label: 'plan', visibleText: 'Training, Ziele & Statistik' },
+  { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analysen' },
+  { path: '/plan', label: 'plan', visibleText: 'PLAN' },
   { path: '/plan/activity/activity-detail', label: 'activity-detail', visibleText: 'Rennrad Tour' },
   { path: '/insights', label: 'insights', visibleText: 'Insights' },
   { path: '/settings', label: 'settings', visibleText: 'Settings' },
@@ -250,13 +250,13 @@ test.describe('Route evidence screenshot pack', () => {
         {
           path: '/plan?tab=training&source=mobile-intent&scenario=workout&activityType=bike&zone=1&durationMin=60&description=Heute%2060%20min%20moeglich%3B%20Pulse%20prueft%20Auswirkung%20auf%20Woche%20und%20Garmin.#plan-scenario-preview',
           label: 'plan-mobile-intent-scenario',
-          visibleText: 'Training, Ziele & Statistik',
+          visibleText: 'Szenario-Vorschau',
         },
         async () => {
           const scenarioCard = page.getByTestId('plan-scenario-preview-card');
           await expect(scenarioCard).toBeVisible();
           await expect(scenarioCard).toBeInViewport();
-          await expect(page.getByRole('heading', { name: /Training, Ziele|Szenario/i }).first()).toBeVisible();
+          await expect(page.getByRole('heading', { name: /Plan|Training, Ziele|Szenario/i }).first()).toBeVisible();
           await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
           await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
           await expect(scenarioCard).toContainText('Mobile Quick Decision');

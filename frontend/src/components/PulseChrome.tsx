@@ -8,11 +8,12 @@ function colorMix(color: string, percent: number) {
 type PageHeaderProps = {
   eyebrow?: string;
   title: string;
+  mobileTitle?: string;
   description?: string;
   action?: ReactNode;
 };
 
-export function PageHeader({ eyebrow, title, description, action }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, mobileTitle, description, action }: PageHeaderProps) {
   return (
     <div
       style={{
@@ -33,7 +34,12 @@ export function PageHeader({ eyebrow, title, description, action }: PageHeaderPr
           </div>
         )}
         <h1 style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)', margin: 0 }}>
-          {title}
+          {mobileTitle ? (
+            <>
+              <span className="pulse-page-title-desktop">{title}</span>
+              <span className="pulse-page-title-mobile">{mobileTitle}</span>
+            </>
+          ) : title}
         </h1>
         {description && (
           <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, maxWidth: 560 }}>

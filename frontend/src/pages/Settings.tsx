@@ -187,7 +187,7 @@ export default function Settings() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" />
+      <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" mobileTitle="Settings" />
 
       <SettingsDiagnosticsMatrix
         garminStatus={garminStatus ?? null}
