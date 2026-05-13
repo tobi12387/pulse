@@ -2068,6 +2068,22 @@ test('Plan full today action does not duplicate the planned-day summary copy', a
   expect(occurrences).toBe(1);
 });
 
+test('Plan mobile promotes the action contract above refresh chrome', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planWorkouts: [],
+    todayOptionsState: 'planned_workout',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const card = page.getByTestId('today-options-card-full');
+  await expect(card.getByTestId('plan-primary-action')).toBeVisible();
+  await expect(card.getByRole('button', { name: /Workout (öffnen|oeffnen)|Einheit (öffnen|oeffnen)/i })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Tagesoptionen aktualisieren' })).toBeHidden();
+});
+
 test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },

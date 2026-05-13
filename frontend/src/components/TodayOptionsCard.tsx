@@ -168,17 +168,21 @@ export function TodayOptionsCard({
   const visibleOptions = showPlanActionContract && primaryOption
     ? options.filter(option => option.id !== primaryOption.id)
     : options;
+  const cardClassName = [
+    'card',
+    planActionContractVisible ? 'today-options-card--plan-action' : null,
+  ].filter(Boolean).join(' ');
 
   return (
     <section
-      className="card"
+      className={cardClassName}
       data-testid={variant === 'compact' ? 'today-options-card' : 'today-options-card-full'}
       style={{
         padding: variant === 'compact' ? 12 : 14,
         borderColor: data.state === 'recovery_protect' ? 'rgba(74,222,128,0.26)' : 'rgba(94,230,207,0.18)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+      <div className="today-options-card__header" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
         <div style={{ minWidth: 0 }}>
           <div className="label-mono" style={{ color: data.state === 'recovery_protect' ? 'var(--green)' : 'var(--accent)', marginBottom: 5 }}>
             {showMobileIntent ? 'Heute möglich' : STATE_LABEL[data.state]}
@@ -221,6 +225,7 @@ export function TodayOptionsCard({
         </div>
         <button
           type="button"
+          className="today-options-card__refresh"
           onClick={() => { void query.refetch(); }}
           aria-label="Tagesoptionen aktualisieren"
           title="Tagesoptionen aktualisieren"
@@ -244,6 +249,7 @@ export function TodayOptionsCard({
 
       {showPlanActionContract && primaryOption && (
         <div
+          className="plan-primary-action-card"
           data-testid="plan-primary-action"
           style={{
             display: 'grid',
