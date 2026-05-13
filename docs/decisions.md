@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-13 — Insights wiederholt den aktuellen Fokus nicht als zweite Prüfung
+
+- **Decision:** Wenn `/insights` denselben Ziel-Interventionspunkt bereits im Hero als `Aktueller Fokus` zeigt, rendert der Bereich `Nächste sinnvolle Prüfung` keine zweite `Intervention`-Zeile mit identischem Titel. Stattdessen zeigt er eine kurze Bestätigung, dass die wichtigste Prüfung im Fokus enthalten ist; sekundäre Prüfungen bleiben hinter `Weitere Prüfungen anzeigen`.
+- **Why:** Frische Mobile-Route-Evidence auf `f46d71d` zeigte `Fueling-Praxis absichern` direkt zweimal hintereinander. Das erzeugt scheinbar zwei Aufgaben, obwohl es dieselbe Empfehlung ist. Insights soll eine Synthese liefern und Wiederholung nur dann nutzen, wenn sie zusätzlichen Handlungswert hat.
+- **Alternatives:** Den kompletten Prüfbereich entfernen (verliert Datenqualität/Capability-Gates); den Hero kürzen (verliert die wichtigste Synthese); nur Copy umbenennen (Dopplung bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-13 — Plan zeigt Saisonvertrag als echte Offenlegung
 
 - **Decision:** Der Adaptive Season Contract auf `/plan` zeigt standardmäßig nur Status, Zielwahrscheinlichkeit, Headline und kurze Zielzusammenfassung. Guardrails, nächste Intervention und Evidenzchips erscheinen erst nach `Saisonvertrag anzeigen`.
