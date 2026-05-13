@@ -356,7 +356,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         </p>
       </div>
       <section
-        className="card"
+        className="card data-primary-action-card"
         data-testid="data-primary-action"
         style={{
           display: 'grid',
@@ -366,28 +366,31 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           borderColor: 'rgba(94,230,207,0.26)',
         }}
       >
-        <div style={{ minWidth: 0 }}>
+        <div className="data-primary-action-copy" style={{ minWidth: 0 }}>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 6 }}>
             Daten-Aktion
           </div>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 650, color: 'var(--text)' }}>
             {primaryAction.title}
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 9, marginTop: 12 }}>
-            <div>
+          <div
+            className="data-primary-action-contract"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 9, marginTop: 12 }}
+          >
+            <div className="data-primary-action-contract-block">
               <div className="label-mono" style={{ marginBottom: 4 }}>Warum jetzt</div>
               <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
                 {primaryAction.reason}
               </p>
             </div>
-            <div>
+            <div className="data-primary-action-contract-block">
               <div className="label-mono" style={{ marginBottom: 4 }}>Nach dem Klick</div>
               <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
                 {primaryAction.result}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+          <div className="data-primary-action-evidence" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
             {evidence.map(item => (
               <span
                 key={item.label}
@@ -409,6 +412,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         </div>
         <button
           type="button"
+          className="data-primary-action-button"
           onClick={primaryAction.run}
           style={{
             minWidth: 44,

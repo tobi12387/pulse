@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Data-Mobile verdichtet den täglichen Aktionsvertrag
+
+- **Decision:** `/data` behält den vollständigen täglichen Task-Contract (`Warum jetzt`, `Nach dem Klick`, Evidence, CTA), rendert ihn auf Mobile aber als kompakte Label/Wert-Struktur mit voller CTA-Breite statt als große zweispaltige Textkarte.
+- **Why:** Frische Live-Route-Evidence zeigte, dass Data fachlich richtig startet, der primäre Datenauftrag auf Mobile aber zu viel vertikalen Raum einnimmt. Die Änderung reduziert Dichte, ohne Check-in-, Garmin-, Plan- oder Secondary-Area-Logik zu verändern.
+- **Alternatives:** `Nach dem Klick` auf Mobile ausblenden (bricht den UX Task Contract); weitere Datenbereiche wieder direkt anzeigen (mehr Dichte); die komplette Data-IA umbauen (zu großer Scope für diesen Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — GitHub Actions nutzt Node-24-native Action-Tags
 
 - **Decision:** Pulse aktualisiert die Workflows auf Node-24-native Action-Tags (`actions/checkout@v6`, `actions/setup-node@v6`, `dorny/paths-filter@v4`) und entfernt den temporären `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`-Opt-in wieder. Diese Entscheidung ersetzt den reinen Force-Opt-in vom 2026-05-13.
