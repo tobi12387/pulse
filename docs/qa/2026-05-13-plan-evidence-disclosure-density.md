@@ -49,8 +49,8 @@ Green:
 
 After evidence:
 
-- `/tmp/pulse-plan-evidence-disclosure-density-final/2026-05-13-6eced65/desktop-chromium/06-plan.png`
-- `/tmp/pulse-plan-evidence-disclosure-density-final/2026-05-13-6eced65/mobile-chromium/06-plan.png`
+- `/tmp/pulse-plan-evidence-disclosure-density-final/2026-05-13-aee015a/desktop-chromium/06-plan.png`
+- `/tmp/pulse-plan-evidence-disclosure-density-final/2026-05-13-aee015a/mobile-chromium/06-plan.png`
 
 Route evidence summary:
 
