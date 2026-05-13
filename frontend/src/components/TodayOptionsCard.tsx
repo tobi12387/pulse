@@ -261,18 +261,21 @@ export function TodayOptionsCard({
             background: 'rgba(94,230,207,0.05)',
           }}
         >
-          <div className="label-mono" style={{ color: 'var(--accent)' }}>Plan-Aktion</div>
-          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
-            {primaryOption.title}
+          <div className="plan-primary-action-copy">
+            <div className="label-mono" style={{ color: 'var(--accent)' }}>Plan-Aktion</div>
+            <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+              {primaryOption.title}
+            </div>
+            <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
+              Warum jetzt: {data.summary}
+            </p>
+            <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
+              Nach dem Klick: Pulse öffnet die Einheit oder den passenden Plan-Schritt; Änderungen bleiben bewusst, bevor Garmin betroffen ist.
+            </p>
           </div>
-          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
-            Warum jetzt: {data.summary}
-          </p>
-          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
-            Nach dem Klick: Pulse öffnet die Einheit oder den passenden Plan-Schritt; Änderungen bleiben bewusst, bevor Garmin betroffen ist.
-          </p>
           <button
             type="button"
+            className="plan-primary-action-button"
             onClick={() => onNavigate(primaryOption.targetPath)}
             style={{
               minHeight: 42,

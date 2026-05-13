@@ -2165,6 +2165,28 @@ test('Plan desktop avoids nesting the primary action inside a second card shell'
   await expect(action).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 });
 
+test('Plan desktop keeps the primary action CTA from dominating the action contract', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific action CTA density');
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planWorkouts: [],
+    todayOptionsState: 'planned_workout',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const action = page.getByTestId('today-options-card-full').getByTestId('plan-primary-action');
+  const button = action.getByRole('button', { name: /Workout (öffnen|oeffnen)|Einheit (öffnen|oeffnen)/i });
+  await expect(button).toBeVisible();
+
+  const actionBox = await action.boundingBox();
+  const buttonBox = await button.boundingBox();
+  expect(actionBox, 'Missing plan action bounds').not.toBeNull();
+  expect(buttonBox, 'Missing plan action CTA bounds').not.toBeNull();
+  expect(buttonBox!.width, 'Desktop primary CTA should be a compact command, not a full-width banner').toBeLessThanOrEqual(260);
+  expect(buttonBox!.x, 'Desktop primary CTA should sit in the right action column').toBeGreaterThan(actionBox!.x + actionBox!.width - 320);
+});
+
 test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },

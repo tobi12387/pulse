@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Plan-Desktop macht die Primäraktion zur rechten Kommando-Spalte
+
+- **Decision:** Der Plan-Aktionsvertrag in der Desktop-Variante von `/plan` behält `Warum jetzt` und `Nach dem Klick` links, rendert den primären CTA aber als schmale rechte Kommando-Spalte statt als vollbreiten Cyan-Banner. Mobile bleibt vollbreit und touchfreundlich.
+- **Why:** Frische Route-Evidence nach der letzten Plan-Dichte-Runde zeigte, dass zwar die innere Kartenverschachtelung weg war, der erste Desktop-Viewport aber weiterhin durch einen sehr dominanten Vollbreiten-CTA schwerer wirkte als nötig. Die neue Struktur hält die Aktion klar, senkt aber die visuelle Lautstärke.
+- **Alternatives:** Vollbreiten-CTA beibehalten (zu viel Gewicht für eine einzelne Aktion); CTA unter die Woche verschieben (versteckt den Task Contract); Mobile ebenfalls schmal machen (schlechtere Touch-Ergonomie).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Settings-Profil verdichtet manuelle Garmin-Felder auf Mobile
 
 - **Decision:** Das Athletenprofil in `/settings` rendert Profilwert, Herkunft und `Automatisch`-Aktion auf Mobile als kompakte Zeile pro Metrik, statt die Auto-Aktion unter den Wert zu stapeln. Desktop behält die bisherige ruhige Tabellenanmutung.

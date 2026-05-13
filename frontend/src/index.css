@@ -364,6 +364,16 @@
     background: transparent !important;
   }
 
+  .plan-primary-action-copy {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .plan-primary-action-button {
+    justify-self: stretch;
+  }
+
   .settings-profile-header {
     display: flex;
     justify-content: space-between;
@@ -447,6 +457,25 @@
       height: calc(100vh - 3rem);
       height: calc(100dvh - 3rem);
       min-height: 0;
+    }
+
+    .today-options-card--plan-action .plan-primary-action-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      column-gap: 18px !important;
+      row-gap: 7px !important;
+    }
+
+    .today-options-card--plan-action .plan-primary-action-copy {
+      grid-column: 1;
+    }
+
+    .today-options-card--plan-action .plan-primary-action-button {
+      grid-column: 2;
+      min-width: 180px;
+      max-width: 240px;
+      justify-self: end;
+      align-self: end;
     }
   }
 
