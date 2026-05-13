@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Insights-Prüfpunkte werden Liste statt Blockraster
+
+- **Decision:** Der Bereich `Nächste sinnvolle Prüfung` auf `/insights` rendert Intervention, Datenqualität und Capability als kompakte Listenzeilen mit Meta-Spalte statt als gleich schwere innere Blöcke.
+- **Why:** Frische Route-Evidence zeigte keinen Overflow, aber der erste Insights-Viewport wirkte durch Hero, drei Synthese-Karten, drei Prüfblöcke und Deep-Dive zu kartenschwer. Die Liste erhält dieselbe Evidenz, senkt aber die visuelle Priorität der sekundären Prüfpunkte.
+- **Alternatives:** Den gesamten Insights-Header umbauen (zu groß für diesen Slice); Prüfpunkte ausblenden (verliert Transparenz); nur Abstände reduzieren (lässt die gleiche Kartenhierarchie bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Plan-Desktop nutzt eine statt zwei Aktionskarten
 
 - **Decision:** Wenn `/plan` auf Desktop den vollständigen Today-Options-Aktionsvertrag zeigt, bleibt der äußere Status-/Refresh-Rahmen erhalten, aber die innere `Plan-Aktion` verliert Border, Hintergrund und Padding; Mobile behält den bereits kompakten kopflosen Zustand.

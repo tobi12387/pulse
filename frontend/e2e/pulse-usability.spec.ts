@@ -557,6 +557,18 @@ test('Insights starts as synthesis and defers deep AI analysis until requested',
   expect(insightRequests).toBeGreaterThan(0);
 });
 
+test('Insights keeps next checks compact without nested cards', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/insights');
+
+  const nextChecks = page.getByTestId('insights-next-actions');
+  await expect(nextChecks).toContainText('Nächste sinnvolle Prüfung');
+  await expect(nextChecks.locator('.card')).toHaveCount(0);
+  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(3);
+  await expect(nextChecks.getByTestId('insights-next-check-item').first()).toContainText('Intervention');
+});
+
 test('Data analyses explain personal response patterns without opening AI cards', async ({ page }) => {
   let insightRequests = 0;
   await mockPulseApi(page, {
