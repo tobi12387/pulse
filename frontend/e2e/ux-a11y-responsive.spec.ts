@@ -150,6 +150,16 @@ test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
   await expect(page).toHaveURL('/data?tab=trends');
 });
 
+test('mobile Data overview skips duplicate intro copy before the daily action', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile Data density check');
+
+  await page.goto('/data');
+  await expect(page.getByRole('heading', { name: 'Heute relevant', exact: true })).toBeVisible();
+  await expect(page.getByTestId('data-today-intro-eyebrow')).toBeHidden();
+  await expect(page.getByTestId('data-today-intro-summary')).toBeHidden();
+  await expect(page.getByTestId('data-primary-action')).toBeInViewport();
+});
+
 test('desktop Focus operational routes share the wide shell', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop shell width check');
 

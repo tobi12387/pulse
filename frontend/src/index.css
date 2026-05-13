@@ -338,6 +338,11 @@
       display: inline;
     }
 
+    .data-today-intro-eyebrow,
+    .data-today-intro-summary {
+      display: none;
+    }
+
     .focus-decision-body {
       padding: 20px 16px;
       grid-template-columns: minmax(0, 1fr);

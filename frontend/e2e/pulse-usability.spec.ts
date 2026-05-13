@@ -1801,11 +1801,16 @@ test('Plan evidence chips deep-link to Data plan trace', async ({ page }) => {
   await expect(page.locator('#data-plan-trace')).toBeVisible();
 });
 
-test('Data overview exposes provenance shortcuts', async ({ page }) => {
+test('Data overview exposes provenance shortcuts', async ({ page }, testInfo) => {
   await mockPulseApi(page);
 
   await page.goto('/data');
-  await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
+  if (testInfo.project.name === 'mobile-chromium') {
+    await expect(page.getByTestId('data-today-intro-eyebrow')).toBeHidden();
+    await expect(page.getByTestId('data-today-intro-summary')).toBeHidden();
+  } else {
+    await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
+  }
   await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   const triage = page.getByTestId('data-evidence-triage');
   await expect(triage).toContainText('Readiness 78/100');
