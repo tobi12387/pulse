@@ -234,6 +234,10 @@
     padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 12px);
   }
 
+  .pulse-page-title-mobile {
+    display: none;
+  }
+
   .pulse-shell-topbar {
     height: 44px;
     min-height: 44px;
@@ -326,6 +330,14 @@
   }
 
   @media (max-width: 600px) {
+    .pulse-page-title-desktop {
+      display: none;
+    }
+
+    .pulse-page-title-mobile {
+      display: inline;
+    }
+
     .focus-decision-body {
       padding: 20px 16px;
       grid-template-columns: minmax(0, 1fr);

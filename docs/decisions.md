@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-13 — Mobile Routenköpfe werden kurz, Desktop bleibt erklärend
+
+- **Decision:** Data, Plan und Settings behalten auf Desktop ihre ausführlichen PageHeader-Titel, zeigen auf Mobile aber kurze Routentitel (`Data`, `Plan`, `Settings`) vor der eigentlichen Arbeitsfläche.
+- **Why:** Frische Route-Evidence zeigte keinen technischen Overflow, aber unnötige mobile Kopflast: lange Routentitel wiederholten die Tab-/Routenstruktur und schoben die Tagesaktion nach unten. Der kleinste UI-Slice reduziert Dichte, ohne Navigation, Datenlogik, Garmin-Verhalten oder Desktop-Orientierung umzubauen.
+- **Alternatives:** Titel global kürzen (verliert Desktop-Kontext); neue Tabs/Sections einführen (mehr IA statt weniger Dichte); nur Abstände reduzieren (lässt die doppelte mobile Erklärung bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-12 — Full-E2E-Verträge folgen Focus-Komponenten statt globaler Textsuche
 
 - **Decision:** Browser-E2E-Tests fuer Focus/Home/Data/Plan/Settings werden auf konkrete Komponenten, Karten, Row-Buttons oder Inbox-Verträge gescoped, statt globale Texttreffer wie `Lokal`, `Feedback erfassen` oder `Heute ist kein Training geplant` zu verwenden.

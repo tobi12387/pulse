@@ -3505,6 +3505,7 @@ export default function Plan() {
       <PageHeader
         eyebrow="PLAN"
         title="Training, Ziele & Statistik"
+        mobileTitle="Plan"
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
       {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} /></TabPanel>}
