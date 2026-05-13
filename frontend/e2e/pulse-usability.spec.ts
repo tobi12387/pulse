@@ -1877,7 +1877,7 @@ test('Data ignores malformed hashes and stays usable', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data#%');
-  await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Heute relevant', exact: true })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
 });
 
