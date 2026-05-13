@@ -103,6 +103,7 @@
 | `2026-05-12-weekly-coach-review.md` | Weekly Coach Review — Plan Review starts with learned/proposed/decision summary and one next action from existing evidence | Weekly Coach Review PR |
 | `2026-05-12-recovery-mental-resilience.md` | Recovery Mental Resilience — Data Mental translates recovery/readiness/load/check-in evidence into boundary guidance without clinical labels | Recovery Mental Resilience PR |
 | `2026-05-13-settings-profile-preferences-disclosure.md` | Settings Profile Preferences Disclosure — secondary Fueling & Recovery preferences collapse behind an explicit profile disclosure | Settings Density PR |
+| `2026-05-13-plan-season-contract-disclosure.md` | Plan Season Contract Disclosure — Adaptive Season Contract shows the decision first and moves guardrails/intervention evidence behind the disclosure | Plan Density PR |
 
 ## Bekannte veraltete Stellen
 

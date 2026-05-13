@@ -459,30 +459,8 @@ export function AdaptiveSeasonContractCard({
   const topGoalSummary = top
     ? top.summary.toLocaleLowerCase().startsWith(top.title.toLocaleLowerCase())
       ? top.summary
-      : `${top.title}: ${top.summary}`
+    : `${top.title}: ${top.summary}`
     : 'Pulse verbindet Saisonlinie und Zielprojektion, sobald ein aktives Ziel belastbar genug ist.';
-  const compactFacts = [
-    {
-      label: 'Naechste 14 Tage',
-      value: guardrails ? `${guardrails.targetSessions} Einheiten` : 'offen',
-      color: 'var(--accent)',
-    },
-    {
-      label: 'Hard-Day-Cap',
-      value: guardrails ? `max. ${guardrails.maxHardDays}` : 'offen',
-      color: guardrails?.deload ? 'var(--amber)' : 'var(--green)',
-    },
-    {
-      label: 'Load-Vertrag',
-      value: loadModel ? `${loadModel.currentWeek.targetHours}h / ${loadModel.currentWeek.targetTss} TSS` : 'offen',
-      color: 'var(--blue)',
-    },
-    {
-      label: 'Naechste Grenze',
-      value: nextBoundary,
-      color: top?.limiterRisk.status === 'blocked' ? 'var(--rose)' : top?.limiterRisk.status === 'watch' ? 'var(--amber)' : 'var(--accent)',
-    },
-  ];
 
   return (
     <div className="card" data-testid="plan-adaptive-season-contract" style={{ borderColor: translucent(tone, 24) }}>
@@ -526,53 +504,42 @@ export function AdaptiveSeasonContractCard({
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 6, marginBottom: 10 }}>
-        {compactFacts.map(fact => (
-          <div key={fact.label} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '7px 8px', background: 'var(--surface)' }}>
-            <div className="label-mono" style={{ fontSize: 8, color: fact.color, marginBottom: 3 }}>{fact.label}</div>
-            <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3, overflowWrap: 'anywhere' }}>
-              {fact.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {top?.nextBestIntervention && (
-        <div
-          style={{
-            border: '1px solid var(--border)',
-            borderRadius: 6,
-            padding: '8px 10px',
-            background: 'var(--surface-2)',
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
-            <span className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>Naechste Intervention</span>
-            <Link
-              to={top.nextBestIntervention.targetPath}
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                color: 'var(--accent)',
-                letterSpacing: 0,
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-              }}
-            >
-              {top.nextBestIntervention.actionLabel}
-            </Link>
-          </div>
-          <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
-            <strong style={{ color: 'var(--text)' }}>{top.nextBestIntervention.title}</strong>
-            {' '}
-            {detailsOpen ? top.nextBestIntervention.summary : 'als naechster sauberer Hebel.'}
-          </p>
-        </div>
-      )}
-
       {detailsOpen && (
         <>
+          {top?.nextBestIntervention && (
+            <div
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                padding: '8px 10px',
+                background: 'var(--surface-2)',
+                marginBottom: 10,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                <span className="label-mono" style={{ fontSize: 8, color: 'var(--text-3)' }}>Naechste Intervention</span>
+                <Link
+                  to={top.nextBestIntervention.targetPath}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    color: 'var(--accent)',
+                    letterSpacing: 0,
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {top.nextBestIntervention.actionLabel}
+                </Link>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45, margin: '5px 0 0' }}>
+                <strong style={{ color: 'var(--text)' }}>{top.nextBestIntervention.title}</strong>
+                {' '}
+                {top.nextBestIntervention.summary}
+              </p>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 8, marginBottom: 10 }}>
             <RaceCommandFact
               label="Naechste 14 Tage"
