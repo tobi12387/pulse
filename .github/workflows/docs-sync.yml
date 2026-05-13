@@ -30,14 +30,11 @@ on:
       - '.codex/skills/**'
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   check-rule-consistency:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify canonical rules appear in AGENTS.md and AI summary
         run: |

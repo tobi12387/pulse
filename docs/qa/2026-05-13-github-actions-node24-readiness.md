@@ -22,4 +22,8 @@ After PR #336 merged to `main`, GitHub Actions emitted warnings that `actions/ch
   - Passed: all workflow YAML files parsed.
 - `git diff --check`
   - Passed.
-- GitHub PR checks must prove the actual runner behavior because the relevant warning originates in GitHub Actions.
+- GitHub PR checks proved the workflows run under Node 24, but GitHub still emitted warnings while Node-20-targeting action tags were forced to Node 24.
+
+## Follow-Up
+
+- The native action-tag upgrade is tracked in `docs/qa/2026-05-13-github-actions-node24-native-tags.md`.
