@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Plan-Review legt lange Wochenanalyse hinter eine Offenlegung
+
+- **Decision:** `/plan?tab=review` zeigt die Wochenentscheidung und die Plan-Aktion direkt, rendert die lange Review-Narrative aber erst nach `Analyse anzeigen`. Wenn die primäre Aktion `Review lesen` ist, öffnet Pulse die Analyse automatisch und fokussiert sie.
+- **Why:** Die Live-Dichte-Messung nach `61f7cdb` zeigte `/plan?tab=review` als lauteste Desktop-Route. Die lange Analyse dominierte den Erstviewport, obwohl sie erklärender Kontext und nicht die nächste Entscheidung ist. Der Review soll zuerst sagen, was jetzt zu tun ist; Tiefe bleibt bewusst erreichbar.
+- **Alternatives:** Narrative kuerzen (Datenverlust und unklare Grenze); Analyse ganz entfernen (verliert Review-Nutzen); nur Typografie verkleinern (kognitive Last bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Mental-Check-in trennt Lagewahl und Ableitung
 
 - **Decision:** Die drei Lagekarten im Mental Check-in zeigen nur noch Zustand und kurzen Hinweis; die Ableitung `Mental Health`/`Mental Fitness` steht einmal in der Summary darunter. Die Karten bleiben als Button-Radios bedienbar und speichern weiterhin in den bestehenden numerischen Check-in-Vertrag.
