@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Mental-Check-in trennt Lagewahl und Ableitung
+
+- **Decision:** Die drei Lagekarten im Mental Check-in zeigen nur noch Zustand und kurzen Hinweis; die Ableitung `Mental Health`/`Mental Fitness` steht einmal in der Summary darunter. Die Karten bleiben als Button-Radios bedienbar und speichern weiterhin in den bestehenden numerischen Check-in-Vertrag.
+- **Why:** Die mobile Data-Mental-Evidence zeigte, dass die Check-in-Erstansicht trotz Kontext-Disclosure noch durch wiederholte Health-/Fitness-Badges in den drei Karten zu hoch und zu redundant war. Fuer den taeglichen iPhone/PWA-Flow soll die erste Wahl schnell lesbar sein, waehrend die fachliche Bedeutung sichtbar und testbar bleibt.
+- **Alternatives:** Health-/Fitness-Badges in jeder Karte belassen (redundant und hoch); Summary entfernen (weniger Nachvollziehbarkeit); Check-in in einen separaten Screen auslagern (zu grosser Scope fuer diesen Dichte-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Data-Mental legt Kontext-Evidenz hinter eine Offenlegung
 
 - **Decision:** `/data?tab=today#data-mental` zeigt den Mental Check-in als primaere Tagesaktion und rendert Readiness-, Garmin- und Plan-Kontext erst nach `Kontext anzeigen`. Die normale `/data`-Uebersicht behaelt die direkt sichtbare Triage.

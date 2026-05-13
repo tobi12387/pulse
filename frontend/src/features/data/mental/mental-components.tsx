@@ -110,19 +110,19 @@ const STATE_PROFILES: Record<StateProfile, StateProfileOption> = {
   stable: {
     value: 'stable',
     label: 'Stabil starten',
-    hint: 'Mental Health ruhig, Mental Fitness bereit. Einfach speichern reicht.',
+    hint: 'Ruhig und bereit. Direkt speichern reicht.',
     choices: { head: 'easy', energy: 'easy', pressure: 'easy', need: 'activation' },
   },
   steady: {
     value: 'steady',
     label: 'Dosiert bleiben',
-    hint: 'Etwas Reibung, aber steuerbar. Der Tag braucht Leitplanken.',
+    hint: 'Etwas Reibung. Ein klarer Rahmen hilft.',
     choices: { head: 'middle', energy: 'middle', pressure: 'middle', need: 'structure' },
   },
   protect: {
     value: 'protect',
     label: 'Schutzmodus',
-    hint: 'Kopf und Reserven schützen. Heute kleiner planen.',
+    hint: 'Kopf und Reserven schützen. Kleiner planen.',
     choices: { head: 'hard', energy: 'hard', pressure: 'hard', need: 'rest' },
   },
 };
@@ -350,12 +350,12 @@ function StateProfileGroup({
       </div>
       <div
         role="radiogroup"
+        data-testid="mental-state-profile-group"
         aria-label="Mentale Lage"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}
       >
         {STATE_PROFILE_OPTIONS.map((option, index) => {
           const selected = option.value === value;
-          const labels = mentalImpactLabels(option.value);
           return (
             <button
               key={option.value}
@@ -372,8 +372,8 @@ function StateProfileGroup({
                 })
               }
               style={{
-                minHeight: 88,
-                padding: '10px 11px',
+                minHeight: 74,
+                padding: '9px 10px',
                 background: selected ? 'rgba(96,165,250,0.15)' : 'var(--surface-2)',
                 border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 6,
@@ -382,33 +382,11 @@ function StateProfileGroup({
                 textAlign: 'left',
               }}
             >
-              <span style={{ display: 'block', fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>
+              <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, lineHeight: 1.15 }}>
                 {option.label}
               </span>
-              <span style={{ display: 'block', marginTop: 6, fontSize: 11, lineHeight: 1.35, color: 'var(--text-3)' }}>
+              <span style={{ display: 'block', marginTop: 5, fontSize: 10.5, lineHeight: 1.3, color: 'var(--text-3)' }}>
                 {option.hint}
-              </span>
-              <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 9 }}>
-                <span style={{
-                  padding: '3px 6px',
-                  borderRadius: 4,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-2)',
-                  fontSize: 10.5,
-                }}>
-                  Mental Health: {labels.health}
-                </span>
-                <span style={{
-                  padding: '3px 6px',
-                  borderRadius: 4,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-2)',
-                  fontSize: 10.5,
-                }}>
-                  Mental Fitness: {labels.fitness}
-                </span>
               </span>
             </button>
           );

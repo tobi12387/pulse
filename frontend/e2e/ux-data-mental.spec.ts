@@ -134,6 +134,27 @@ test('Mental check-in can be saved from mental-health and mental-fitness state c
   expect(String((submitted as { notes?: string }).notes)).toContain('Mental Fitness: schonen');
 });
 
+test('Mental state choices keep the quick check-in compact on mobile', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile mental density check');
+
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+  });
+
+  await page.goto('/data?tab=today#data-mental');
+
+  const stateGroup = page.getByTestId('mental-state-profile-group');
+  await expect(stateGroup).toBeVisible();
+  await expect(stateGroup).not.toContainText('Mental Health:');
+  await expect(stateGroup).not.toContainText('Mental Fitness:');
+
+  const stateBox = await stateGroup.boundingBox();
+  expect(stateBox).not.toBeNull();
+  expect(stateBox!.height).toBeLessThanOrEqual(180);
+  await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+});
+
 test('saved Schutzmodus check-in uses the same mental impact language across Data, Home, Plan and Coach', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   let submitted: { mood: number; energy: number; stress: number; motivation: number; notes?: string } | null = null;
