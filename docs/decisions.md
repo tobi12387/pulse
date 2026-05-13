@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — GitHub Actions nutzt Node-24-Opt-in für Action-Runtime
+
+- **Decision:** Pulse setzt in allen GitHub-Workflows `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`, lässt die Projekt-Node-Version für Build/Test aber vorerst bei Node 22.
+- **Why:** Main-CI warnte nach PR #336, dass Node-20-basierte Actions ab Juni 2026 standardmäßig auf Node 24 laufen und im September 2026 nicht mehr auf Node 20 ausgeführt werden. Der Opt-in testet die kommende Action-Runtime frühzeitig, ohne App-Runtime, Dependencies oder Lockfile in denselben PR zu ziehen.
+- **Alternatives:** Sofort alle `actions/*`-Versionen und Projekt-Node auf 24 anheben (größerer Scope); Warnung ignorieren (späteres CI-Risiko); nur `ci.yml` ändern (Docs-/Migration-Workflows würden weiter dieselbe Warnung tragen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Settings zeigt optionale Push-Aktion kompakt
 
 - **Decision:** Wenn Settings keine Kernblocker erkennt, aber Push im aktuellen Browser/Gerät noch blockiert oder nicht aktiviert ist, erscheint Push nur als kompakte optionale Zeile im Statusblock; die ausführliche Geräte-/Push-Diagnose bleibt hinter `Diagnose anzeigen` und den Abschnitts-Links.

@@ -18,6 +18,9 @@ on:
       - '.github/workflows/migrations.yml'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   check-migrations:
     runs-on: ubuntu-latest

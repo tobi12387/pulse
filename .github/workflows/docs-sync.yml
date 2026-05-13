@@ -30,6 +30,9 @@ on:
       - '.codex/skills/**'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   check-rule-consistency:
     runs-on: ubuntu-latest
