@@ -1176,7 +1176,6 @@ export default function Home() {
           readinessLabel={<Tooltip id="READINESS">READINESS</Tooltip>}
           onActivate={handleDailyDecisionActivate}
           onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
-          onOpenCoach={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
         />
       )}
 
