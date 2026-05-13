@@ -631,59 +631,43 @@ function SettingsDiagnosticsMatrix({
         </p>
         {summaryActions.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
-            {summaryActions.map(row => (
-              <div
-                key={row.key}
-                style={{
-                  border: '1px solid var(--border)',
-                  borderRadius: 5,
-                  background: 'var(--surface)',
-                  padding: '9px 10px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text)' }}>{row.label}</span>
-                  <Pill color={row.color}>{row.value}</Pill>
-                </div>
-                <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
-                  {row.optionalSetup ? 'Optional: Aktivierung pro Gerät abschließen.' : row.detail}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(row.action.path)}
+            {summaryActions.map(row => {
+              if (row.optionalSetup) {
+                return (
+                  <div
+                    key={row.key}
+                    data-testid="settings-optional-summary-row"
                     style={{
-                      minWidth: 44,
-                      minHeight: 44,
-                      padding: '6px 9px',
-                      background: 'var(--surface-2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      color: 'var(--text-2)',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
-                      letterSpacing: 0,
-                      textTransform: 'uppercase',
+                      borderTop: '1px solid var(--border)',
+                      paddingTop: 8,
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(0, 1fr) auto auto',
+                      gap: 8,
+                      alignItems: 'center',
+                      minWidth: 0,
+                      gridColumn: '1 / -1',
                     }}
                   >
-                    {row.action.label}
-                  </button>
-                  {row.secondaryAction && !row.optionalSetup && (
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
+                        {row.label}
+                      </div>
+                      <div style={{ marginTop: 2, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
+                        Optional pro Gerät aktivieren.
+                      </div>
+                    </div>
+                    <Pill color={row.color}>{row.value}</Pill>
                     <button
                       type="button"
-                      onClick={() => onNavigate(row.secondaryAction!.path)}
+                      onClick={() => onNavigate(row.action.path)}
                       style={{
                         minWidth: 44,
                         minHeight: 44,
                         padding: '6px 9px',
-                        background: 'transparent',
-                        border: '1px solid rgba(94,230,207,0.3)',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
                         borderRadius: 4,
-                        color: 'var(--accent)',
+                        color: 'var(--text-2)',
                         cursor: 'pointer',
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
@@ -691,12 +675,79 @@ function SettingsDiagnosticsMatrix({
                         textTransform: 'uppercase',
                       }}
                     >
-                      {row.secondaryAction.label}
+                      {row.action.label}
                     </button>
-                  )}
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={row.key}
+                  style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: 5,
+                    background: 'var(--surface)',
+                    padding: '9px 10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text)' }}>{row.label}</span>
+                    <Pill color={row.color}>{row.value}</Pill>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+                    {row.detail}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(row.action.path)}
+                      style={{
+                        minWidth: 44,
+                        minHeight: 44,
+                        padding: '6px 9px',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 4,
+                        color: 'var(--text-2)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        letterSpacing: 0,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {row.action.label}
+                    </button>
+                    {row.secondaryAction && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigate(row.secondaryAction!.path)}
+                        style={{
+                          minWidth: 44,
+                          minHeight: 44,
+                          padding: '6px 9px',
+                          background: 'transparent',
+                          border: '1px solid rgba(94,230,207,0.3)',
+                          borderRadius: 4,
+                          color: 'var(--accent)',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          letterSpacing: 0,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {row.secondaryAction.label}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

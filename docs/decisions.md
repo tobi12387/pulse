@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Settings zeigt optionale Push-Aktion kompakt
+
+- **Decision:** Wenn Settings keine Kernblocker erkennt, aber Push im aktuellen Browser/Gerät noch blockiert oder nicht aktiviert ist, erscheint Push nur als kompakte optionale Zeile im Statusblock; die ausführliche Geräte-/Push-Diagnose bleibt hinter `Diagnose anzeigen` und den Abschnitts-Links.
+- **Why:** Frische mobile Route-Evidence zeigte, dass der optionale Push-Hinweis trotz `Alles bereit` noch zu viel visuelle Priorität bekam. Push ist pro Gerät nützlich, aber kein Blocker für Zugriff, Garmin, PWA und die tägliche Nutzung.
+- **Alternatives:** Push wieder als Problemkarte darstellen (zu alarmistisch); Push aus der Summary entfernen (verliert den Aktivierungspfad); die komplette Settings-IA umbauen (zu großer Scope für diesen Dichte-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Home-No-Training öffnet Check-in statt No-op-Abschluss
 
 - **Decision:** Wenn Home keinen geplanten oder erledigten Trainingstag und keine konkrete Backend-Aktion hat, ist die primäre Tagesaktion `Check-in öffnen` mit Ziel `Data > Heute relevant > Mental`; `Nach dem Klick` beschreibt das gespeicherte mentale Tagessignal statt denselben Abschluss-Satz zu wiederholen. Diese Entscheidung ersetzt die ältere lokale No-op-Abschlussregel vom 2026-05-05.

@@ -4841,7 +4841,13 @@ test('Settings treats blocked push as optional when core access is ready', async
   await expect(summary).toContainText('Optional');
   await expect(summary).toContainText('Push');
   await expect(summary).not.toContainText('Problem beheben');
+  const optionalRow = summary.getByTestId('settings-optional-summary-row');
+  await expect(optionalRow).toContainText('Push');
+  await expect(optionalRow).toContainText('Browser blockiert');
   await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
+  const optionalBox = await optionalRow.boundingBox();
+  expect(optionalBox).not.toBeNull();
+  expect(optionalBox!.height).toBeLessThan(80);
 });
 
 test('Settings diagnostics matrix separates denied push and blocked Garmin states', async ({ page }) => {
