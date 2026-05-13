@@ -1847,7 +1847,7 @@ test('Data overview exposes provenance shortcuts', async ({ page }, testInfo) =>
   await expect(page.locator('#data-plan-trace')).toBeVisible();
 });
 
-test('Data starts with one daily action before secondary areas', async ({ page }) => {
+test('Data starts with one daily action before secondary areas', async ({ page }, testInfo) => {
   await mockPulseApi(page);
 
   await page.goto('/data');
@@ -1857,6 +1857,12 @@ test('Data starts with one daily action before secondary areas', async ({ page }
   await expect(action).toContainText('Warum jetzt');
   await expect(action).toContainText('Nach dem Klick');
   await expect(action).toContainText('Planwirkung prüfen');
+  if (testInfo.project.name === 'mobile-chromium') {
+    const actionBox = await action.boundingBox();
+    expect(actionBox).not.toBeNull();
+    expect(actionBox!.height).toBeLessThan(340);
+    await expect(action.getByRole('button', { name: /öffnen/i })).toBeInViewport();
+  }
 
   await expect(page.getByTestId('data-secondary-areas')).toHaveCount(0);
   await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();

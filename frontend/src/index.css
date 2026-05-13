@@ -391,6 +391,48 @@
       display: none;
     }
 
+    .data-primary-action-card {
+      padding: 13px 14px !important;
+      gap: 10px !important;
+    }
+
+    .data-primary-action-copy h3 {
+      font-size: 17px !important;
+      line-height: 1.2;
+    }
+
+    .data-primary-action-contract {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 6px !important;
+      margin-top: 8px !important;
+    }
+
+    .data-primary-action-contract-block {
+      display: grid;
+      grid-template-columns: 94px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .data-primary-action-contract-block .label-mono {
+      margin-bottom: 0 !important;
+      padding-top: 2px;
+    }
+
+    .data-primary-action-contract-block p {
+      line-height: 1.38 !important;
+    }
+
+    .data-primary-action-evidence {
+      gap: 5px !important;
+      margin-top: 9px !important;
+    }
+
+    .data-primary-action-button {
+      width: 100%;
+      justify-self: stretch !important;
+    }
+
     .today-options-card--plan-action {
       padding: 12px !important;
     }
