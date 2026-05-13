@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-13 — Plan-Desktop nutzt eine statt zwei Aktionskarten
+
+- **Decision:** Wenn `/plan` auf Desktop den vollständigen Today-Options-Aktionsvertrag zeigt, bleibt der äußere Status-/Refresh-Rahmen erhalten, aber die innere `Plan-Aktion` verliert Border, Hintergrund und Padding; Mobile behält den bereits kompakten kopflosen Zustand.
+- **Why:** Frische Route-Evidence zeigte keinen Overflow, aber die Plan-Erstansicht war weiterhin visuell verschachtelt: `Heute trainieren`-Karte plus eigene `Plan-Aktion`-Karte für dieselbe Entscheidung. Der kleinste Slice reduziert Desktop-Dichte, ohne Plan-/Garmin-Logik, Alternativen, Refresh-Kontrolle oder Navigation zu verändern.
+- **Alternatives:** Den Refresh-Kopf auch auf Desktop entfernen (verliert explizite Aktualisierung); die komplette Plan-IA umbauen (zu großer Scope); nur Abstand reduzieren (lässt die doppelte Kartenhierarchie bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-13 — Plan-Mobile priorisiert Aktionsvertrag vor Refresh-Chrome
 
 - **Decision:** Wenn `/plan` mobil den vollständigen Today-Options-Aktionsvertrag zeigt, blendet Pulse den sekundären Kartenkopf mit Refresh-Aktion aus und entfernt die innere Aktionskarten-Schale; Desktop behält den ausführlicheren Kopf.
