@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Settings-Profil verdichtet manuelle Garmin-Felder auf Mobile
+
+- **Decision:** Das Athletenprofil in `/settings` rendert Profilwert, Herkunft und `Automatisch`-Aktion auf Mobile als kompakte Zeile pro Metrik, statt die Auto-Aktion unter den Wert zu stapeln. Desktop behält die bisherige ruhige Tabellenanmutung.
+- **Why:** Der Worst Case mit mehreren manuell geschützten Profilwerten machte die erste Profilkarte auf dem iPhone unnötig hoch und erschwerte genau den gewünschten Wechsel von manuell zu automatisch. Die Verdichtung spart vertikalen Raum, erhält aber Touch-Ziele und die Garmin-Provenienz.
+- **Alternatives:** Auto-Aktionen einklappen (versteckt die Lösung für die Nutzerfrage); Herkunftsdaten kürzen oder ausblenden (weniger Vertrauen); den ganzen Profilbereich in einen neuen Screen verschieben (zu großer Scope für diesen Dichte-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Data-Mobile verdichtet den täglichen Aktionsvertrag
 
 - **Decision:** `/data` behält den vollständigen täglichen Task-Contract (`Warum jetzt`, `Nach dem Klick`, Evidence, CTA), rendert ihn auf Mobile aber als kompakte Label/Wert-Struktur mit voller CTA-Breite statt als große zweispaltige Textkarte.
