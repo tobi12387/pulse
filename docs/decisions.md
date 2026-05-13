@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Home-No-Training öffnet Check-in statt No-op-Abschluss
+
+- **Decision:** Wenn Home keinen geplanten oder erledigten Trainingstag und keine konkrete Backend-Aktion hat, ist die primäre Tagesaktion `Check-in öffnen` mit Ziel `Data > Heute relevant > Mental`; `Nach dem Klick` beschreibt das gespeicherte mentale Tagessignal statt denselben Abschluss-Satz zu wiederholen. Diese Entscheidung ersetzt die ältere lokale No-op-Abschlussregel vom 2026-05-05.
+- **Why:** Route-Evidence zeigte im Home-Hero eine UX-Task-Contract-Lücke: `Nächster Schritt` und `Nach dem Klick` sagten dasselbe, und der bisherige `Erholungstag abschliessen`-Button hatte keinen sichtbaren Effekt. Der Check-in ist die echte fehlende Tagesaufgabe und verbessert danach Home, Plan und Coach.
+- **Alternatives:** Den No-op-Button nur anders beschriften (weiterhin kein Ergebnis); lokalen Abschluss-State ohne Check-in bauen (verschiebt das fehlende Signal); Coach als primären Weg nutzen (macht Coach wieder Pflicht statt optional).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Insights-Prüfpunkte werden Liste statt Blockraster
 
 - **Decision:** Der Bereich `Nächste sinnvolle Prüfung` auf `/insights` rendert Intervention, Datenqualität und Capability als kompakte Listenzeilen mit Meta-Spalte statt als gleich schwere innere Blöcke.

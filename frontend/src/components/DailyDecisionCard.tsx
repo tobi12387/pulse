@@ -35,7 +35,7 @@ function stepStatusColor(status: DailyDecisionStepStatus, actionColor: string): 
 }
 
 function resultPreview(decision: DailyDecision): string {
-  return decision.emptyState ?? decision.completionCriterion;
+  return decision.resultPreview ?? decision.emptyState ?? decision.completionCriterion;
 }
 
 function visibleStepSummary(decision: DailyDecision, openSteps: DailyDecisionStep[]) {
