@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Plan zeigt Saisonvertrag als echte Offenlegung
+
+- **Decision:** Der Adaptive Season Contract auf `/plan` zeigt standardmäßig nur Status, Zielwahrscheinlichkeit, Headline und kurze Zielzusammenfassung. Guardrails, nächste Intervention und Evidenzchips erscheinen erst nach `Saisonvertrag anzeigen`.
+- **Why:** Die Live-Route-Evidence nach dem Settings-Slice zeigte, dass der Button `Saisonvertrag anzeigen` vorhanden war, aber viele Vertragsdetails trotzdem direkt im mobilen Erstfluss standen. Plan soll zuerst die heutige Aktion und Woche zeigen; Saisonlogik ist Kontext und darf bei Bedarf geöffnet werden.
+- **Alternatives:** Fakten sichtbar lassen und nur Typografie reduzieren (kognitive Last bleibt); Saisonvertrag ganz entfernen (verliert Langfrist-Kontext); nur Mobile einklappen (Desktop bleibt inkonsistent und Tests werden schwerer).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Settings versteckt sekundäre Profilpräferenzen in der Leseansicht
 
 - **Decision:** Das Athletenprofil in `/settings` zeigt Garmin-relevante Planwerte und manuelle `Automatisch`-Aktionen direkt, rendert die detaillierten Fueling-&-Recovery-Präferenzen aber erst nach `Fueling & Recovery anzeigen`. Die kompakte Zusammenfassung und das Bearbeiten-Formular bleiben erreichbar.
