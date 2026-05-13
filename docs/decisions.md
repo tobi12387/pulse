@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — GitHub Actions nutzt Node-24-native Action-Tags
+
+- **Decision:** Pulse aktualisiert die Workflows auf Node-24-native Action-Tags (`actions/checkout@v6`, `actions/setup-node@v6`, `dorny/paths-filter@v4`) und entfernt den temporären `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`-Opt-in wieder. Diese Entscheidung ersetzt den reinen Force-Opt-in vom 2026-05-13.
+- **Why:** Der Force-Opt-in hat auf PR #337 und `main` bewiesen, dass CI, Docs-Sync und Migration-Check unter Node 24 laufen, erzeugte aber weiterhin Warnungen, solange die Action-Tags selbst Node 20 als Zielruntime deklarieren. Die offiziellen Action-/Marketplace-Seiten weisen aktuelle Node-24-kompatible Tags aus.
+- **Alternatives:** Force-Opt-in behalten (CI bleibt grün, aber Warnungen bleiben laut); Projekt-Node gleichzeitig auf 24 heben (anderer Runtime-Scope); Warnung bis Juni 2026 ignorieren (unnötiges späteres CI-Risiko).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — GitHub Actions nutzt Node-24-Opt-in für Action-Runtime
 
 - **Decision:** Pulse setzt in allen GitHub-Workflows `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`, lässt die Projekt-Node-Version für Build/Test aber vorerst bei Node 22.
