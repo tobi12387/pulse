@@ -1510,6 +1510,49 @@ test('Settings show profile value provenance for Garmin planning inputs', async 
   await expect(profileCard).toContainText('Garmin');
 });
 
+test('Settings keeps manual profile unlock actions compact on mobile', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile profile density check');
+
+  await mockPulseApi(page, {
+    profile: {
+      userId: 'user-1',
+      ftpWatts: 250,
+      maxHrBpm: 185,
+      lthrBpm: 170,
+      restingHrBpm: 49,
+      weeklyHoursTarget: 6,
+      trainingPhase: 'base',
+      vo2max: 52,
+      fuelingEnabled: true,
+      dietaryConstraints: [],
+      preferredFuelingProducts: 'Ministry',
+      carbGuidanceStyle: 'suggest_ranges',
+      sodiumGuidanceStyle: 'suggest_ranges',
+      bodyWeightGuidanceEnabled: true,
+      provenance: {
+        fields: {
+          ftpWatts: { key: 'ftpWatts', label: 'FTP', value: 250, source: 'manual', sourceLabel: 'Manuell', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+          maxHrBpm: { key: 'maxHrBpm', label: 'Max. Puls', value: 185, source: 'manual', sourceLabel: 'Manuell', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+          lthrBpm: { key: 'lthrBpm', label: 'LTHR', value: 170, source: 'manual', sourceLabel: 'Manuell', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+          vo2max: { key: 'vo2max', label: 'VO2max', value: 52, source: 'manual', sourceLabel: 'Manuell', updatedAt: '2026-05-01T06:00:00.000Z', warning: null },
+        },
+        warnings: [],
+      },
+    },
+  });
+
+  await page.goto('/settings?section=profile');
+
+  const profileCard = page.locator('.card').filter({ hasText: 'Athletenprofil' }).first();
+  await expect(profileCard).toBeVisible();
+  await expect(profileCard.getByRole('button', { name: /automatisch übernehmen/ })).toHaveCount(4);
+
+  const box = await profileCard.boundingBox();
+  expect(box, 'Missing profile card bounds').not.toBeNull();
+  expect(box!.height, 'Profile card should fit manual unlock controls without dominating the mobile page').toBeLessThanOrEqual(560);
+});
+
 test('Settings can unlock a manual profile value for automatic Garmin sync', async ({ page }) => {
   let syncPayload: unknown = null;
   let profile = {

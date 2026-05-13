@@ -31,10 +31,10 @@ const PROFILE_SOURCE_COLOR: Record<string, string> = {
   missing: 'var(--text-3)',
 };
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-      <span style={{ fontSize: 12, color: 'var(--text-2)', flexShrink: 0 }}>{label}</span>
+    <div className={`settings-profile-row${className ? ` ${className}` : ''}`}>
+      <span className="settings-profile-row-label">{label}</span>
       {children}
     </div>
   );
@@ -42,7 +42,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 function Val({ children }: { children: ReactNode }) {
   return (
-    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)' }}>{children}</span>
+    <span className="settings-profile-value">{children}</span>
   );
 }
 
@@ -83,15 +83,9 @@ function ProfileMetricValue({ metric, unit }: { metric?: PulseProfileMetricProve
     : null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, minWidth: 110 }}>
+    <div className="settings-profile-metric-value">
       <Val>{value}</Val>
-      <span style={{
-        fontFamily: 'var(--font-mono)',
-        fontSize: 9,
-        color,
-        textAlign: 'right',
-        lineHeight: 1.35,
-      }}>
+      <span className="settings-profile-source" style={{ color }}>
         {metric?.sourceLabel ?? 'Fehlt'}{refreshed ? ` · ${refreshed}` : ''}
       </span>
     </div>
@@ -116,18 +110,20 @@ function ProfileMetricRow({
   const isManual = metric?.source === 'manual';
 
   return (
-    <Row label={label}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+    <Row label={label} className="settings-profile-row--metric">
+      <div className="settings-profile-metric-cell">
         <ProfileMetricValue metric={metric} unit={unit} />
         {isManual && (
-          <MiniButton
-            onClick={onAutomatic}
-            disabled={disabled}
-            tone="accent"
-            ariaLabel={`${label} automatisch übernehmen`}
-          >
-            {syncing ? '…' : 'Automatisch'}
-          </MiniButton>
+          <span className="settings-profile-auto-action">
+            <MiniButton
+              onClick={onAutomatic}
+              disabled={disabled}
+              tone="accent"
+              ariaLabel={`${label} automatisch übernehmen`}
+            >
+              {syncing ? '…' : 'Automatisch'}
+            </MiniButton>
+          </span>
         )}
       </div>
     </Row>
@@ -205,11 +201,11 @@ export function AthleteProfileCard({ setMessage }: {
   }
 
   return (
-    <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+    <div className="card settings-profile-card">
+      <div className="settings-profile-header">
         <span className="label-mono">Athletenprofil</span>
         {!profileForm && (
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="settings-profile-actions">
             <MiniButton
               onClick={() => void handleSyncProfile()}
               disabled={syncingProfile != null}
@@ -354,7 +350,7 @@ export function AthleteProfileCard({ setMessage }: {
           </div>
         </form>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="settings-profile-body">
           <ProfileMetricRow
             label="FTP"
             metric={profile?.provenance.fields.ftpWatts}
@@ -392,7 +388,7 @@ export function AthleteProfileCard({ setMessage }: {
           <Row label="Phase">
             <Pill color="var(--accent)">{(profile?.trainingPhase ?? 'base').toUpperCase()}</Pill>
           </Row>
-          <div style={{ borderTop: '1px solid var(--border)', marginTop: 2, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="settings-profile-fueling-block">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <span className="label-mono">Fueling & Recovery</span>
               <Pill color={profile?.fuelingEnabled === false ? 'var(--text-3)' : 'var(--green)'}>
