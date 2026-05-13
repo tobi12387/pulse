@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Insights versteckt sekundäre Synthese-Signale hinter eine Offenlegung
+
+- **Decision:** `/insights` zeigt zuerst nur den aktuellen Fokus und die nächste sinnvolle Prüfung. Die sekundären Synthese-Signale `Ziel`, `Reaktion` und `Planqualität` werden erst nach `Weitere Signale anzeigen` gerendert.
+- **Why:** Die Live-Dichte-Messung nach `8b4d405` zeigte `/insights` als weiterhin lauteste Route nach den Plan- und Mental-Slices. Die drei sekundären Karten erklärten den Fokus, konkurrierten aber im Erstviewport mit der eigentlichen Entscheidung. Insights soll zuerst eine priorisierte Lesart liefern und Kontext erst auf Nachfrage öffnen.
+- **Alternatives:** Karten ganz entfernen (verliert Nachvollziehbarkeit); nur auf Mobile ausblenden (Desktop bleibt überfüllt); Typografie verkleinern (reduziert nicht die kognitive Last).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Plan-Review legt lange Wochenanalyse hinter eine Offenlegung
 
 - **Decision:** `/plan?tab=review` zeigt die Wochenentscheidung und die Plan-Aktion direkt, rendert die lange Review-Narrative aber erst nach `Analyse anzeigen`. Wenn die primäre Aktion `Review lesen` ist, öffnet Pulse die Analyse automatisch und fokussiert sie.

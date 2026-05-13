@@ -665,6 +665,7 @@ function NextCheckItem({
 function InsightsSynthesis() {
   const [days, setDays] = useState(30);
   const [deepOpen, setDeepOpen] = useState(false);
+  const [signalsOpen, setSignalsOpen] = useState(false);
   const navigate = useNavigate();
   const personalResponse = usePersonalResponse(42);
   const goalProjection = useGoalProjection(180);
@@ -772,30 +773,6 @@ function InsightsSynthesis() {
         </div>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-        <SynthesisCard
-          eyebrow="Ziel"
-          title={topGoal?.title ?? 'Zielprojektion offen'}
-          body={topGoal?.summary ?? goalProjection.data?.headline ?? 'Sobald ein aktives Ziel belastbar genug ist, fasst Pulse Wahrscheinlichkeit, Limiter und nächste Intervention hier zusammen.'}
-          meta={heroMeta}
-          color={goalStatusTone(topGoal?.status)}
-        />
-        <SynthesisCard
-          eyebrow="Reaktion"
-          title={personalSummary?.headline ?? 'Reaktionsmuster offen'}
-          body={personalSignal?.nextAdjustment ?? 'Pulse lernt noch, welche mentalen, Fueling- und Load-Signale wirklich wiederholbar wirken.'}
-          meta={responseStrengthLabel(personalSummary?.strength)}
-          color={responseStrengthTone(personalSummary?.strength)}
-        />
-        <SynthesisCard
-          eyebrow="Planqualität"
-          title={decisionQuality.data?.statusLabel ?? limiter?.label ?? 'Plan-Evidenz läuft'}
-          body={decisionQuality.data?.suggestedAdjustment ?? limiter?.planBias ?? 'Plan-Trace, Capability und Entscheidungshistorie werden gelesen, ohne den Plan automatisch zu verändern.'}
-          meta={decisionQuality.data ? `${decisionQuality.data.qualityScore}/100` : 'read-only'}
-          color={decisionQuality.data ? decisionQualityColor(decisionQuality.data.status) : 'var(--text-3)'}
-        />
-      </div>
-
       <section className="card" data-testid="insights-next-actions" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
@@ -828,6 +805,71 @@ function InsightsSynthesis() {
             color="var(--amber)"
           />
         </div>
+      </section>
+
+      <section className="card" data-testid="insights-secondary-signals-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Kontextsignale
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
+              Ziel, Reaktion und Planqualität bei Bedarf.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-expanded={signalsOpen}
+            aria-controls="insights-secondary-signals"
+            onClick={() => setSignalsOpen(open => !open)}
+            style={{
+              minHeight: 44,
+              minWidth: 44,
+              padding: '8px 12px',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              background: signalsOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+              color: signalsOpen ? 'var(--accent)' : 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {signalsOpen ? 'Weitere Signale ausblenden' : 'Weitere Signale anzeigen'}
+          </button>
+        </div>
+
+        {signalsOpen && (
+          <div
+            id="insights-secondary-signals"
+            data-testid="insights-secondary-signals"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}
+          >
+            <SynthesisCard
+              eyebrow="Ziel"
+              title={topGoal?.title ?? 'Zielprojektion offen'}
+              body={topGoal?.summary ?? goalProjection.data?.headline ?? 'Sobald ein aktives Ziel belastbar genug ist, fasst Pulse Wahrscheinlichkeit, Limiter und nächste Intervention hier zusammen.'}
+              meta={heroMeta}
+              color={goalStatusTone(topGoal?.status)}
+            />
+            <SynthesisCard
+              eyebrow="Reaktion"
+              title={personalSummary?.headline ?? 'Reaktionsmuster offen'}
+              body={personalSignal?.nextAdjustment ?? 'Pulse lernt noch, welche mentalen, Fueling- und Load-Signale wirklich wiederholbar wirken.'}
+              meta={responseStrengthLabel(personalSummary?.strength)}
+              color={responseStrengthTone(personalSummary?.strength)}
+            />
+            <SynthesisCard
+              eyebrow="Planqualität"
+              title={decisionQuality.data?.statusLabel ?? limiter?.label ?? 'Plan-Evidenz läuft'}
+              body={decisionQuality.data?.suggestedAdjustment ?? limiter?.planBias ?? 'Plan-Trace, Capability und Entscheidungshistorie werden gelesen, ohne den Plan automatisch zu verändern.'}
+              meta={decisionQuality.data ? `${decisionQuality.data.qualityScore}/100` : 'read-only'}
+              color={decisionQuality.data ? decisionQualityColor(decisionQuality.data.status) : 'var(--text-3)'}
+            />
+          </div>
+        )}
       </section>
 
       <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
