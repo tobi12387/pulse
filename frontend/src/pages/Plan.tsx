@@ -386,6 +386,7 @@ function NextTrainingDecisionCard({
 }) {
   const update = useUpdateWorkout();
   const [alternativeError, setAlternativeError] = useState<{ id: PlanAlternativeId; message: string } | null>(null);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const today = isoDateLocal(new Date());
 
   if (!nextWorkout && todayOptionsState === 'planned_workout') {
@@ -765,72 +766,121 @@ function NextTrainingDecisionCard({
           </button>
         </div>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-        {sourceChips.map(chip => (
-          chip.targetPath ? (
-            <button
-              key={`${chip.targetPath}:${chip.label}`}
-              type="button"
-              onClick={() => onNavigate(chip.targetPath!)}
-              style={{
-                minWidth: 44,
-                minHeight: 44,
-                maxWidth: '100%',
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                color: 'var(--text-2)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                letterSpacing: 0,
-                overflowWrap: 'anywhere',
-                padding: '8px 9px',
-              }}
-            >
-              {chip.label}
-            </button>
-          ) : (
-            <span key={chip.label} style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              color: 'var(--text-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 4,
-              padding: '3px 6px',
-            }}>
-              {chip.label}
-            </span>
-          )
-        ))}
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 12 }}>
-        {[
-          ['Metriken prüfen', '/data?tab=trends#data-recovery'],
-          ['Mental prüfen', '/data?tab=today#data-mental'],
-          ['Ziele prüfen', '/plan?tab=goals'],
-        ].map(([label, path]) => (
-          <button
-            key={path}
-            type="button"
-            onClick={() => onNavigate(path)}
+      <div style={{ marginBottom: 12 }}>
+        <button
+          type="button"
+          data-testid="plan-evidence-disclosure-toggle"
+          aria-expanded={evidenceOpen}
+          aria-controls="plan-decision-evidence-panel"
+          onClick={() => setEvidenceOpen(open => !open)}
+          style={{
+            width: '100%',
+            minHeight: 42,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 0,
+            padding: '8px 10px',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span>{evidenceOpen ? 'Details & Evidenz ausblenden' : 'Details & Evidenz anzeigen'}</span>
+          <span style={{ color: 'var(--text-3)', fontSize: 9, textAlign: 'right', textTransform: 'none' }}>
+            Load, Ziele, Risiko
+          </span>
+        </button>
+        {evidenceOpen && (
+          <div
+            id="plan-decision-evidence-panel"
+            data-testid="plan-decision-evidence-panel"
             style={{
-              minHeight: 40,
-              background: 'transparent',
+              display: 'grid',
+              gap: 9,
+              marginTop: 8,
+              padding: '9px 10px',
               border: '1px solid var(--border)',
-              borderRadius: 4,
-              color: 'var(--text-2)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              letterSpacing: 0,
-              padding: '7px 10px',
-              textTransform: 'uppercase',
+              borderRadius: 5,
+              background: 'rgba(255,255,255,0.02)',
             }}
           >
-            {label}
-          </button>
-        ))}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {sourceChips.map(chip => (
+                chip.targetPath ? (
+                  <button
+                    key={`${chip.targetPath}:${chip.label}`}
+                    type="button"
+                    onClick={() => onNavigate(chip.targetPath!)}
+                    style={{
+                      minWidth: 44,
+                      minHeight: 44,
+                      maxWidth: '100%',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      color: 'var(--text-2)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      letterSpacing: 0,
+                      overflowWrap: 'anywhere',
+                      padding: '8px 9px',
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                ) : (
+                  <span key={chip.label} style={{
+                    alignSelf: 'center',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    color: 'var(--text-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    padding: '3px 6px',
+                  }}>
+                    {chip.label}
+                  </span>
+                )
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+              {[
+                ['Metriken prüfen', '/data?tab=trends#data-recovery'],
+                ['Mental prüfen', '/data?tab=today#data-mental'],
+                ['Ziele prüfen', '/plan?tab=goals'],
+              ].map(([label, path]) => (
+                <button
+                  key={path}
+                  type="button"
+                  onClick={() => onNavigate(path)}
+                  style={{
+                    minHeight: 40,
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    color: 'var(--text-2)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: 0,
+                    padding: '7px 10px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div
         data-testid="plan-adaptation-status"
