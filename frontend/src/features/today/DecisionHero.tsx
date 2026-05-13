@@ -117,6 +117,7 @@ export function DecisionHero({
             decision={decision}
             labelCase="upper"
             framed={false}
+            inlineActions
             onActivate={onActivate}
             onPrompt={onPrompt}
           />
