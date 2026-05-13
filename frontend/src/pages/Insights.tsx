@@ -70,6 +70,10 @@ function responseStrengthLabel(strength: string | null | undefined): string {
   return 'offen';
 }
 
+function normalizeInsightCopy(value: string | null | undefined): string {
+  return (value ?? '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('de-DE');
+}
+
 function insightErrorState(error: unknown): { title: string; message: string; retryable: boolean } {
   if (error instanceof PulseApiError) {
     if (error.code === 'provider_unavailable') {
@@ -695,6 +699,14 @@ function InsightsSynthesis() {
     ?? personalSignal?.nextAdjustment
     ?? decisionQuality.data?.suggestedAdjustment
     ?? 'Insights verdichtet vorhandene Evidenz und verlinkt in die Details, statt jede Analyse sofort auszubreiten.';
+  const primaryNextCheck = {
+    eyebrow: 'Intervention',
+    title: topGoal?.nextBestIntervention.title ?? 'Noch keine Intervention',
+    body: topGoal?.nextBestIntervention.summary ?? 'Pulse wartet auf belastbare Ziel- und Reaktionsdaten, bevor es eine Intervention hervorhebt.',
+    meta: topGoal?.nextBestIntervention.actionLabel ?? 'offen',
+    color: 'var(--blue)',
+  };
+  const primaryCheckAlreadyInFocus = normalizeInsightCopy(primaryNextCheck.title) === normalizeInsightCopy(focusTitle);
   const heroMeta = topGoal?.probabilityPct == null
     ? goalStatusLabel(topGoal?.status)
     : `${goalStatusLabel(topGoal?.status)} · ca. ${topGoal.probabilityPct}%`;
@@ -784,13 +796,13 @@ function InsightsSynthesis() {
           </span>
         </div>
         <div className="insights-next-check-list">
-          <NextCheckItem
-            eyebrow="Intervention"
-            title={topGoal?.nextBestIntervention.title ?? 'Noch keine Intervention'}
-            body={topGoal?.nextBestIntervention.summary ?? 'Pulse wartet auf belastbare Ziel- und Reaktionsdaten, bevor es eine Intervention hervorhebt.'}
-            meta={topGoal?.nextBestIntervention.actionLabel ?? 'offen'}
-            color="var(--blue)"
-          />
+          {primaryCheckAlreadyInFocus ? (
+            <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+              Die wichtigste Prüfung steckt bereits im aktuellen Fokus.
+            </p>
+          ) : (
+            <NextCheckItem {...primaryNextCheck} />
+          )}
           {nextChecksOpen && (
             <>
               <NextCheckItem

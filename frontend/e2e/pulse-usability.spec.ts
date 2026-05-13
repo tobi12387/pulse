@@ -577,21 +577,24 @@ test('Insights starts as synthesis and defers deep AI analysis until requested',
   expect(insightRequests).toBeGreaterThan(0);
 });
 
-test('Insights keeps next checks compact without nested cards', async ({ page }) => {
+test('Insights does not repeat the current focus as a second next-check card', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/insights');
 
+  const hero = page.getByTestId('insights-synthesis-hero');
+  await expect(hero).toContainText('Fueling-Praxis absichern');
+
   const nextChecks = page.getByTestId('insights-next-actions');
   await expect(nextChecks).toContainText('Nächste sinnvolle Prüfung');
   await expect(nextChecks.locator('.card')).toHaveCount(0);
-  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(1);
-  await expect(nextChecks.getByTestId('insights-next-check-item').first()).toContainText('Intervention');
-  await expect(nextChecks).not.toContainText('Datenqualität');
+  await expect(nextChecks).toContainText('Die wichtigste Prüfung steckt bereits im aktuellen Fokus.');
+  await expect(nextChecks.getByText('Fueling-Praxis absichern', { exact: true })).toHaveCount(0);
+  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(0);
 
   await nextChecks.getByRole('button', { name: 'Weitere Prüfungen anzeigen' }).click();
 
-  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(3);
+  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(2);
   await expect(nextChecks).toContainText('Datenqualität');
   await expect(nextChecks).toContainText('Capability');
 });
