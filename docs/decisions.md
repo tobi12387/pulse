@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Plan-Entscheidung legt sekundäre Evidenz hinter eine Offenlegung
+
+- **Decision:** Die nächste Trainingsentscheidung auf `/plan` zeigt Load-/Ziel-/Risiko-Evidenzchips und Deep-Links nicht mehr direkt im ersten Viewport, sondern hinter `Details & Evidenz anzeigen`. Die primäre Plan-Aktion, der Adaptionsstatus und Alternativen bleiben sichtbar.
+- **Why:** Frische Live-Route-Evidence auf `f86e839` hatte keinen Overflow, aber die Plan-Erstansicht enthielt weiterhin viele action-artige Evidenzbuttons neben der eigentlichen Entscheidung. Das widerspricht der Roadmap-Regel `Lead, then explain`: Pulse soll zuerst die Entscheidung und den nächsten Schritt zeigen, Evidenz aber erreichbar halten.
+- **Alternatives:** Evidenzchips komplett entfernen (verliert Vertrauen und Deep-Link-Pfade); nur CSS-Abstände reduzieren (kognitive Last bleibt); Adaptionsstatus oder Alternativen verstecken (würde die eigentliche Planentscheidung schwächen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Home blendet leere freie-Tag-Workout-Snapshots aus
 
 - **Decision:** Der Home-Hero zeigt den Workout-Snapshot nur noch, wenn es heute eine geplante Einheit oder eine erledigte Aktivität gibt. Auf freien Tagen bleibt der Task Contract die einzige Aktion; die ehemals zusätzliche Hero-Aktionsreihe entfällt, damit `Check-in öffnen` nicht doppelt erscheint.

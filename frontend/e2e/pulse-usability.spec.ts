@@ -1869,6 +1869,8 @@ test('Plan evidence chips deep-link to Data plan trace', async ({ page }) => {
   await page.goto('/plan?tab=training');
   await expect(page.getByText('NÄCHSTE TRAININGSENTSCHEIDUNG')).toBeVisible();
 
+  await expect(page.getByRole('button', { name: /Einbezogen: TSB -5\.7/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await page.getByRole('button', { name: /Einbezogen: TSB -5\.7/ }).click();
   await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
   await expect(page.getByRole('tab', { name: 'Analyse' })).toHaveAttribute('aria-selected', 'true');
@@ -4016,6 +4018,7 @@ test('Plan alternatives adapt the next workout with semantic choices', async ({ 
 
   const decision = page.getByTestId('next-training-decision');
   await expect(page.getByText('ALTERNATIVEN')).toBeVisible();
+  await decision.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await expect(page.getByText('Einbezogen: TSB -15.8')).toBeVisible();
   await expect(page.getByText('Ziele 1 aktiv')).toBeVisible();
   await expect(decision.getByText('ADAPTIONS-CHECK')).toBeVisible();
@@ -4135,6 +4138,7 @@ test('Plan decision uses current fitness load instead of a stale generation trac
   await page.goto('/plan');
 
   const decision = page.getByTestId('next-training-decision');
+  await decision.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await expect(decision.getByText('Einbezogen: TSB -26.8')).toBeVisible();
   await expect(decision.getByText('TSB -0.3')).toHaveCount(0);
   await expect(decision.getByText('Frei lassen empfohlen')).toBeVisible();
@@ -4180,6 +4184,7 @@ test('Plan alternatives avoid stale trace context for next-week workouts', async
 
   await page.goto('/plan');
 
+  await page.getByTestId('next-training-decision').getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await expect(page.getByText('Einbezogen: TSB -15.8')).toHaveCount(0);
   await expect(page.getByText('Einbezogen: TSB -26.8')).toBeVisible();
   await expect(page.getByText('Verfügbarkeit offen')).toBeVisible();
