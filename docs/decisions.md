@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Home legt Hero-Aktionen in den Tagesauftrag
+
+- **Decision:** Der Focus-Hero auf `/` rendert seine primären Aktionsbuttons direkt innerhalb des `Nächster Schritt`-Blocks der Tagesentscheidung. Andere `DailyDecisionCard`-Verwendungen behalten die bisherige Footer-Aktionsreihe.
+- **Why:** Die Live-Mobile-Evidence nach `c36de95` zeigte auf freien Tagen `Check-in öffnen` als nächsten Schritt und zusätzlich als getrennte große Aktionsreihe darunter. Das wirkte wie zwei Entscheidungsebenen, obwohl es nur eine Aufgabe gibt. Home soll den Task Contract und die Aktion als eine Einheit zeigen.
+- **Alternatives:** CTA separat lassen (visuelle Dopplung); den Task-Contract kürzen (verliert `Warum jetzt`/`Nach dem Klick`); alle DailyDecisionCards umbauen (zu breiter Scope für diesen UI-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Insights zeigt nur eine nächste Prüfung direkt
 
 - **Decision:** `/insights` rendert in `Nächste sinnvolle Prüfung` nur noch die primäre Intervention direkt. Sekundäre Prüfungen wie `Datenqualität` und `Capability` öffnen erst nach `Weitere Prüfungen anzeigen`.

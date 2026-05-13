@@ -297,6 +297,7 @@ test('Home skips empty workout snapshot when no workout or completed activity ex
   await expect(hero.getByText('WORKOUT · HEUTE')).toHaveCount(0);
   await expect(hero.getByText('Heute frei · kein Pflichttraining')).toHaveCount(0);
   await expect(hero.getByRole('button', { name: 'Check-in öffnen' })).toHaveCount(1);
+  await expect(hero.getByTestId('daily-decision-next-steps').getByRole('button', { name: 'Check-in öffnen' })).toBeVisible();
 });
 
 test('Home Focus hero Coach CTA keeps the prepared daily prompt', async ({ page }) => {

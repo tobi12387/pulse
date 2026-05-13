@@ -122,6 +122,7 @@ export function DailyDecisionCard({
   labelCase = 'upper',
   density = 'default',
   framed = true,
+  inlineActions = false,
   onActivate,
   onPrompt,
 }: {
@@ -129,6 +130,7 @@ export function DailyDecisionCard({
   labelCase?: LabelCase;
   density?: Density;
   framed?: boolean;
+  inlineActions?: boolean;
   onActivate?: (path: string) => void;
   onPrompt?: () => void;
 }) {
@@ -148,6 +150,82 @@ export function DailyDecisionCard({
   const primarySummary = visibleStepSummary(decision, openSteps);
   const primaryAction = promptIsPrimary ? onPrompt : onActivate ? () => onActivate(decision.targetPath) : undefined;
   const showPromptAction = Boolean(onPrompt && !promptIsPrimary && !(decision.supportCta && onActivate));
+  const showSupportAction = Boolean(decision.supportCta && decision.supportPath && onActivate);
+  const actionColumns = primaryAction && (showPromptAction || showSupportAction) && !compact ? '1fr 1fr' : '1fr';
+
+  const renderActions = (marginTop: number) => (
+    <div style={{ display: 'grid', gridTemplateColumns: actionColumns, gap: 8, marginTop }}>
+      {primaryAction && (
+        <button
+          type="button"
+          onClick={primaryAction}
+          style={{
+            minHeight: 44,
+            padding: compact ? '8px 10px' : '9px 10px',
+            background: 'var(--surface-2)',
+            border: `1px solid ${color}`,
+            borderRadius: 5,
+            color,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}
+        >
+          {decision.cta}
+        </button>
+      )}
+      {showPromptAction && (
+        <button
+          type="button"
+          onClick={onPrompt}
+          style={{
+            minHeight: 44,
+            padding: compact ? '8px 10px' : '9px 10px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--accent)',
+            borderRadius: 5,
+            color: 'var(--accent)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}
+        >
+          Gespräch damit starten
+        </button>
+      )}
+      {showSupportAction && (
+        <button
+          type="button"
+          onClick={() => {
+            if (decision.supportPath?.startsWith('/coach') && onPrompt) {
+              onPrompt();
+              return;
+            }
+            onActivate?.(decision.supportPath!);
+          }}
+          style={{
+            minHeight: 44,
+            padding: compact ? '8px 10px' : '9px 10px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 5,
+            color: 'var(--text-2)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 0,
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}
+        >
+          {decision.supportCta}
+        </button>
+      )}
+    </div>
+  );
 
   const renderStructuredSteps = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -291,6 +369,8 @@ export function DailyDecisionCard({
             </div>
           </div>
 
+          {inlineActions && renderActions(10)}
+
           <button
             type="button"
             aria-expanded={detailsOpen}
@@ -335,77 +415,7 @@ export function DailyDecisionCard({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: (primaryAction && (showPromptAction || decision.supportCta) && !compact) ? '1fr 1fr' : '1fr', gap: 8, marginTop: compact ? 10 : 12 }}>
-        {primaryAction && (
-          <button
-            type="button"
-            onClick={primaryAction}
-            style={{
-              minHeight: 44,
-              padding: compact ? '8px 10px' : '9px 10px',
-              background: 'var(--surface-2)',
-              border: `1px solid ${color}`,
-              borderRadius: 5,
-              color,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: 0,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
-          >
-            {decision.cta}
-          </button>
-        )}
-        {showPromptAction && (
-          <button
-            type="button"
-            onClick={onPrompt}
-            style={{
-              minHeight: 44,
-              padding: compact ? '8px 10px' : '9px 10px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--accent)',
-              borderRadius: 5,
-              color: 'var(--accent)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: 0,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
-          >
-            Gespräch damit starten
-          </button>
-        )}
-        {decision.supportCta && decision.supportPath && onActivate && (
-          <button
-            type="button"
-            onClick={() => {
-              if (decision.supportPath?.startsWith('/coach') && onPrompt) {
-                onPrompt();
-                return;
-              }
-              onActivate(decision.supportPath!);
-            }}
-            style={{
-              minHeight: 44,
-              padding: compact ? '8px 10px' : '9px 10px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              color: 'var(--text-2)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: 0,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
-          >
-            {decision.supportCta}
-          </button>
-        )}
-      </div>
+      {!inlineActions && renderActions(compact ? 10 : 12)}
     </div>
   );
 }
