@@ -2157,6 +2157,10 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
   await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
   await expect(page.getByTestId('scenario-result-contract')).toContainText('Sicherste Entscheidung');
   await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Wende an');
+  await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Mobile Vorschau simuliert');
+  await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Mobile Vorschau: erst Wochenlast');
+  await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Plan oder Garmin werden erst nach Apply verändert.');
+  await expect(scenarioCard).not.toContainText('Mobile Quick Decision vorbereitet');
   await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
   await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
   await expect(scenarioCard).not.toContainText('155 km');

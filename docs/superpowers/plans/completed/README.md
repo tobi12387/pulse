@@ -105,6 +105,7 @@
 | `2026-05-13-settings-profile-preferences-disclosure.md` | Settings Profile Preferences Disclosure — secondary Fueling & Recovery preferences collapse behind an explicit profile disclosure | Settings Density PR |
 | `2026-05-13-plan-season-contract-disclosure.md` | Plan Season Contract Disclosure — Adaptive Season Contract shows the decision first and moves guardrails/intervention evidence behind the disclosure | Plan Density PR |
 | `2026-05-13-insights-duplicate-focus-merge.md` | Insights Duplicate Focus Merge — Insights avoids repeating the current focus as a second next-check task | Insights Density PR |
+| `2026-05-13-plan-mobile-scenario-copy.md` | Plan Mobile Scenario Copy — Mobile scenario preview keeps the no-write guardrail once and removes repeated summary/reason reminders | Plan Density PR |
 
 ## Bekannte veraltete Stellen
 

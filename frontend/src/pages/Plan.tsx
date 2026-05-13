@@ -190,6 +190,15 @@ function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMe
   };
 }
 
+function isQuickScenarioNoWriteReminder(text: string): boolean {
+  const normalized = text.toLocaleLowerCase('de-DE');
+  if (normalized.includes('mobile vorschau')) return true;
+  if (normalized.includes('mobile quick decision vorbereitet')) return true;
+  if (normalized.includes('preview-only')) return true;
+  if (normalized.includes('plan oder garmin werden erst')) return true;
+  return normalized.includes('plan') && normalized.includes('garmin') && normalized.includes('schreibt nichts');
+}
+
 function activityTypeFromParam(value: string | null): PulseActivityType {
   return CUSTOM_ACTIVITY_TYPES.includes(value as PulseActivityType) ? value as PulseActivityType : 'bike';
 }
@@ -1812,9 +1821,18 @@ function PlanScenarioPreviewCard({
     );
   }
 
+  const previewSummary = preview && !(isQuickScenarioEntry && isQuickScenarioNoWriteReminder(preview.summary))
+    ? preview.summary
+    : null;
+  const previewReasons = preview
+    ? preview.reasons.filter(reason => !(isQuickScenarioEntry && isQuickScenarioNoWriteReminder(reason)))
+    : [];
+
   const previewResult = preview ? (
     <div style={{ marginTop: 12, display: 'grid', gap: 10 }} data-testid="plan-scenario-preview-result">
-      <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{preview.summary}</div>
+      {previewSummary && (
+        <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{previewSummary}</div>
+      )}
       <div
         data-testid="scenario-result-contract"
         style={{
@@ -1922,9 +1940,9 @@ function PlanScenarioPreviewCard({
           ))}
         </div>
       )}
-      {preview.reasons.length > 0 && (
+      {previewReasons.length > 0 && (
         <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.55 }}>
-          {preview.reasons.slice(0, 3).map(reason => <div key={reason}>- {reason}</div>)}
+          {previewReasons.slice(0, 3).map(reason => <div key={reason}>- {reason}</div>)}
         </div>
       )}
       {preview.warnings.map(warning => (
@@ -1936,6 +1954,9 @@ function PlanScenarioPreviewCard({
       {!isQuickScenarioEntry && renderPreviewActions()}
     </div>
   ) : null;
+  const visibleReviewHint = isQuickScenarioEntry && preview && reviewHint && isQuickScenarioNoWriteReminder(reviewHint)
+    ? null
+    : reviewHint;
 
   return (
     <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
@@ -2040,7 +2061,7 @@ function PlanScenarioPreviewCard({
           ))}
         </div>
 
-        {reviewHint && (
+        {visibleReviewHint && (
           <p
             data-testid="plan-scenario-review-hint"
             style={{
@@ -2054,7 +2075,7 @@ function PlanScenarioPreviewCard({
               lineHeight: 1.45,
             }}
           >
-            {reviewHint}
+            {visibleReviewHint}
           </p>
         )}
 

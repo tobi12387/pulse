@@ -18,6 +18,24 @@
 
 ---
 
+## 2026-05-13 — Plan Quick-Szenarien behalten echte Intent-Hinweise
+
+- **Decision:** Quick-Szenarien auf `/plan` verstecken nach einer Preview nur Review-Hints, die reine No-write-/Preview-Reminder sind. Inhaltliche Hinweise zur gewählten Absicht, z. B. einen freien Tag bewusst frei zu halten, bleiben sichtbar.
+- **Why:** Der CI-Mobile-Smoke fing ab, dass die erste Reduktion zu breit war und auch echten Entscheidungs-Text aus dem Free-Day-Flow entfernte. Mobile soll Redundanz abbauen, aber nicht den Grund der gewählten Option verschlucken.
+- **Alternatives:** Alle Quick-Review-Hints nach Preview verstecken (zu grob); alle Hinweise sichtbar lassen (ursprüngliche Redundanz bleibt); Test-Expectation lockern (würde einen echten UX-Verlust akzeptieren).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
+## 2026-05-13 — Plan Mobile-Intent-Vorschau zeigt No-write-Sicherheit nur einmal
+
+- **Decision:** Im Mobile-Intent-Szenario auf `/plan` filtert Pulse redundante No-write-Reminder aus dem Preview-Ergebnis, wenn sie bereits im Szenario-Kontext erklärt sind. Summary, Reasons, Garmin-Impact und Apply-Vertrag bleiben sichtbar, solange sie neuen Entscheidungswert liefern.
+- **Why:** Live-Evidence auf `02528e7` zeigte `Preview-only`/`schreibt nichts` als Header, Mobile-Kontext, Summary und Reason-Bullets direkt übereinander. Das machte den bewussten Apply-Flow schwerer, obwohl die Sicherheitsinformation wichtig bleibt. Mobile soll die Sicherheit einmal klar zeigen und danach die Auswirkung lesbar machen.
+- **Alternatives:** Alle Hinweise sichtbar lassen (zu redundant); Header-Sicherheit entfernen (verliert wichtigste Guardrail); Fixture-/Backend-Texte ändern (größerer Scope und weniger robust gegen echte API-Texte).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-13 — Insights wiederholt den aktuellen Fokus nicht als zweite Prüfung
 
 - **Decision:** Wenn `/insights` denselben Ziel-Interventionspunkt bereits im Hero als `Aktueller Fokus` zeigt, rendert der Bereich `Nächste sinnvolle Prüfung` keine zweite `Intervention`-Zeile mit identischem Titel. Stattdessen zeigt er eine kurze Bestätigung, dass die wichtigste Prüfung im Fokus enthalten ist; sekundäre Prüfungen bleiben hinter `Weitere Prüfungen anzeigen`.
