@@ -316,6 +316,13 @@
     display: block;
   }
 
+  .today-options-card--plan-action .plan-primary-action-card {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
   @media (min-width: 768px) {
     .pulse-page-shell {
       padding-top: 1.5rem;
@@ -349,13 +356,6 @@
 
     .today-options-card--plan-action .today-options-card__header {
       display: none !important;
-    }
-
-    .today-options-card--plan-action .plan-primary-action-card {
-      padding: 0 !important;
-      border: 0 !important;
-      border-radius: 0 !important;
-      background: transparent !important;
     }
 
     .focus-decision-body {

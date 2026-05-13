@@ -2084,6 +2084,26 @@ test('Plan mobile promotes the action contract above refresh chrome', async ({ p
   await expect(card.getByRole('button', { name: 'Tagesoptionen aktualisieren' })).toBeHidden();
 });
 
+test('Plan desktop avoids nesting the primary action inside a second card shell', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific action shell contract');
+  await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
+  await mockPulseApi(page, {
+    planWorkouts: [],
+    todayOptionsState: 'planned_workout',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const card = page.getByTestId('today-options-card-full');
+  const action = card.getByTestId('plan-primary-action');
+  await expect(card).toContainText('Heute trainieren');
+  await expect(card.getByRole('button', { name: 'Tagesoptionen aktualisieren' })).toBeVisible();
+  await expect(action).toContainText('Plan-Aktion');
+
+  await expect(action).toHaveCSS('border-top-width', '0px');
+  await expect(action).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
 test('Home does not show planned-training options when the daily decision says no training is planned', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
