@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Home blendet leere freie-Tag-Workout-Snapshots aus
+
+- **Decision:** Der Home-Hero zeigt den Workout-Snapshot nur noch, wenn es heute eine geplante Einheit oder eine erledigte Aktivität gibt. Auf freien Tagen bleibt der Task Contract die einzige Aktion; die ehemals zusätzliche Hero-Aktionsreihe entfällt, damit `Check-in öffnen` nicht doppelt erscheint.
+- **Why:** Frische Mobile-Evidence zeigte auf freien Tagen einen redundanten `WORKOUT · HEUTE`-Block mit leerer Balken-Grafik. Nach dessen Entfernung wurde außerdem sichtbar, dass die Hero-eigene Aktionsreihe dieselben Aktionen wie der Task Contract wiederholte. Beides erhöhte Dichte, ohne eine neue Entscheidung oder ein neues Ergebnis zu liefern.
+- **Alternatives:** Den Snapshot nur umbenennen (weiterhin redundant); die zweite Aktionsreihe nur auf Mobile verstecken (uneinheitliches Verhalten); den Task Contract kürzen (würde die erklärende Kernstruktur schwächen).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Plan-Desktop macht die Primäraktion zur rechten Kommando-Spalte
 
 - **Decision:** Der Plan-Aktionsvertrag in der Desktop-Variante von `/plan` behält `Warum jetzt` und `Nach dem Klick` links, rendert den primären CTA aber als schmale rechte Kommando-Spalte statt als vollbreiten Cyan-Banner. Mobile bleibt vollbreit und touchfreundlich.

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { PulseActivity, PulseFitnessLoad, PulseHomeScreenData, PulsePlannedWorkout, PulseReadiness } from '@coaching-os/shared/pulse';
 import { DailyDecisionCard } from '@/components/DailyDecisionCard';
-import { FButton, FCard, FPill, StageStrip, WorkoutProfileBars } from '@/components/ui/focus';
+import { FCard, FPill, StageStrip, WorkoutProfileBars } from '@/components/ui/focus';
 import { activityLabel } from '@/pulse/activity-labels';
 import type { DailyDecision } from '@/pulse/daily-decision';
 
@@ -18,7 +18,6 @@ type DecisionHeroProps = {
   readinessLabel: ReactNode;
   onActivate: (path: string) => void;
   onPrompt: () => void;
-  onOpenCoach: () => void;
 };
 
 function signed(value: number, decimals = 1) {
@@ -90,10 +89,10 @@ export function DecisionHero({
   readinessLabel,
   onActivate,
   onPrompt,
-  onOpenCoach,
 }: DecisionHeroProps) {
   const workout = todayPlannedWorkout(date, todayWorkout, nextWorkout);
   const completedActivity = completedTodayActivity(date, todayActivities, recentActivities);
+  const showWorkoutSnapshot = Boolean(workout || completedActivity);
   const stage = stageFor(decision, workout, completedActivity);
   const tone = readinessTone(readiness);
   const snapshotTitle = workout
@@ -106,15 +105,6 @@ export function DecisionHero({
     : completedActivity
       ? `${Math.round((completedActivity.durationSec ?? 0) / 60)} min · TSS ${completedActivity.tss ?? '–'}`
       : 'Erholung, Check-in und Planruhe zählen';
-  const primaryActionLabel = decision.targetPath.startsWith('/coach') ? 'Coach öffnen' : decision.cta;
-  const handlePrimaryAction = () => {
-    if (decision.targetPath.startsWith('/coach')) {
-      onPrompt();
-      return;
-    }
-    onActivate(decision.targetPath);
-  };
-
   return (
     <FCard pad="0" testId="focus-decision-hero" style={{ overflow: 'hidden' }}>
       <StageStrip active={stage} />
@@ -131,32 +121,22 @@ export function DecisionHero({
             onPrompt={onPrompt}
           />
 
-          <div style={{ marginTop: 22, padding: '14px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
-              <span className="label-mono" style={{ fontSize: 9 }}>
-                WORKOUT · HEUTE
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
-                {snapshotTitle}
-              </span>
+          {showWorkoutSnapshot && (
+            <div style={{ marginTop: 22, padding: '14px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+                <span className="label-mono" style={{ fontSize: 9 }}>
+                  WORKOUT · HEUTE
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                  {snapshotTitle}
+                </span>
+              </div>
+              <WorkoutProfileBars profile={workoutProfile(workout)} />
+              <div style={{ marginTop: 9, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', lineHeight: 1.45 }}>
+                {snapshotMeta}
+              </div>
             </div>
-            <WorkoutProfileBars profile={workoutProfile(workout)} />
-            <div style={{ marginTop: 9, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', lineHeight: 1.45 }}>
-              {snapshotMeta}
-            </div>
-          </div>
-
-          <div className="focus-hero-actions">
-            <FButton variant="primary" onClick={handlePrimaryAction}>
-              {primaryActionLabel}
-            </FButton>
-            <FButton onClick={() => onActivate('/plan?tab=training')}>
-              Plan prüfen
-            </FButton>
-            <FButton variant="ghost" onClick={onOpenCoach}>
-              ⌘K · Coach
-            </FButton>
-          </div>
+          )}
         </div>
 
         <aside className="focus-recovery-panel" aria-label="Readiness und Recovery">

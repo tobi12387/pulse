@@ -280,6 +280,25 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
 });
 
+test('Home skips empty workout snapshot when no workout or completed activity exists', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: null,
+      nextWorkout: null,
+      todayActivities: [],
+      recentActivities: [],
+    },
+  });
+
+  await page.goto('/');
+
+  const hero = page.getByTestId('focus-decision-hero');
+  await expect(hero).toBeVisible();
+  await expect(hero.getByText('WORKOUT · HEUTE')).toHaveCount(0);
+  await expect(hero.getByText('Heute frei · kein Pflichttraining')).toHaveCount(0);
+  await expect(hero.getByRole('button', { name: 'Check-in öffnen' })).toHaveCount(1);
+});
+
 test('Home Focus hero Coach CTA keeps the prepared daily prompt', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {
@@ -303,7 +322,7 @@ test('Home Focus hero Coach CTA keeps the prepared daily prompt', async ({ page 
   });
 
   await page.goto('/');
-  await page.getByTestId('focus-decision-hero').getByRole('button', { name: 'Coach öffnen' }).click();
+  await page.getByTestId('focus-decision-hero').getByRole('button', { name: 'Coach fragen' }).click();
 
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Training heute defensiv entscheiden/);
