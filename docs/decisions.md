@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Data-Mental legt Kontext-Evidenz hinter eine Offenlegung
+
+- **Decision:** `/data?tab=today#data-mental` zeigt den Mental Check-in als primaere Tagesaktion und rendert Readiness-, Garmin- und Plan-Kontext erst nach `Kontext anzeigen`. Die normale `/data`-Uebersicht behaelt die direkt sichtbare Triage.
+- **Why:** Frische Route-Evidence auf `c6becc6` hatte keinen Overflow, aber der Mental-Deep-Link brachte viele lange Evidenzkarten in denselben Erstkontext wie den Check-in. Fuer den taeglichen iPhone/PWA-Flow soll die Eingabe zuerst kommen; Evidenz bleibt fuer Vertrauen und Deep-Links bewusst erreichbar.
+- **Alternatives:** Kontext komplett entfernen (verliert Nachvollziehbarkeit); Triage immer sichtbar lassen (zu hohe Erstviewport-Dichte); neue Unterseite einfuehren (zu schwer fuer einen Dichte-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Plan-Entscheidung legt sekundäre Evidenz hinter eine Offenlegung
 
 - **Decision:** Die nächste Trainingsentscheidung auf `/plan` zeigt Load-/Ziel-/Risiko-Evidenzchips und Deep-Links nicht mehr direkt im ersten Viewport, sondern hinter `Details & Evidenz anzeigen`. Die primäre Plan-Aktion, der Adaptionsstatus und Alternativen bleiben sichtbar.
