@@ -1309,6 +1309,24 @@ test('Data mental check-in keeps the primary save action in the first mobile vie
   await expect(page.getByRole('button', { name: /Heute speichern|Check-in speichern|Check-in senden/i })).toBeInViewport();
 });
 
+test('Data mental focus keeps evidence context behind disclosure', async ({ page }) => {
+  await mockPulseApi(page, {
+    checkinToday: { checkin: null },
+  });
+
+  await page.goto('/data?tab=today#data-mental');
+
+  await expect(page.getByRole('heading', { name: 'Mental Check-in' })).toBeVisible();
+  await expect(page.getByText('Quick Check-in')).toBeVisible();
+  await expect(page.getByTestId('data-evidence-triage')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Kontext anzeigen' }).click();
+  const triage = page.getByTestId('data-evidence-triage');
+  await expect(triage).toBeVisible();
+  await expect(triage).toContainText('Readiness');
+  await expect(triage).toContainText('Garmin');
+});
+
 test('Data mental check-in turns free text into editable scores before saving', async ({ page }) => {
   let textPreviewBody: unknown = null;
   let submitted: unknown = null;

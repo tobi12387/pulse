@@ -529,6 +529,8 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
 }
 
 function DataHeuteTab({ onOpen, focus }: { onOpen: (tab: Tab, hash?: string) => void; focus: DataFocus }) {
+  const [contextOpen, setContextOpen] = useState(false);
+
   if (focus === 'mental') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -542,7 +544,36 @@ function DataHeuteTab({ onOpen, focus }: { onOpen: (tab: Tab, hash?: string) => 
           </p>
         </div>
         <EvidenceSection id="data-mental"><MentalTab /></EvidenceSection>
-        <EvidenceTriage onOpen={onOpen} />
+        <button
+          type="button"
+          data-testid="data-mental-context-toggle"
+          aria-expanded={contextOpen}
+          aria-controls="data-mental-context-panel"
+          onClick={() => setContextOpen(open => !open)}
+          style={{
+            minHeight: 44,
+            alignSelf: 'flex-start',
+            maxWidth: '100%',
+            padding: '10px 12px',
+            background: 'transparent',
+            border: '1px dashed var(--accent)',
+            borderRadius: 5,
+            color: 'var(--accent)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 500,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {contextOpen ? 'Kontext ausblenden' : 'Kontext anzeigen'}
+        </button>
+        {contextOpen && (
+          <div id="data-mental-context-panel" data-testid="data-mental-context-panel">
+            <EvidenceTriage onOpen={onOpen} />
+          </div>
+        )}
       </div>
     );
   }
