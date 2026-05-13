@@ -191,7 +191,7 @@ test('Home shows the latest planned-vs-completed daily delta', async ({ page }) 
   await expect(delta).toContainText('Plan kann diesen Reiz als erledigt behandeln');
 });
 
-test('Home no-training daily decision offers local closure before Coach support', async ({ page }) => {
+test('Home no-training daily decision opens the missing check-in before Coach support', async ({ page }) => {
   let actionPatches = 0;
   await mockPulseApi(page, {
     onActionPatch: () => { actionPatches += 1; },
@@ -202,16 +202,18 @@ test('Home no-training daily decision offers local closure before Coach support'
   await expect(decision).toContainText('Heute ist kein Training geplant.');
   await expect(decision).toContainText(/Warum jetzt/i);
   await expect(decision).toContainText(/Nach dem Klick/i);
+  await expect(decision).toContainText('Kurz Stimmung, Energie, Stress und Motivation eintragen');
+  await expect(decision).toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
   await expect(decision.getByText('Readiness 78/100')).not.toBeVisible();
-  const localClosure = decision.getByRole('button', { name: /Erholungstag abschliessen|Heute abschliessen/i });
-  await expect(localClosure).toBeVisible();
+  const checkinAction = decision.getByRole('button', { name: /Check-in öffnen/i });
+  await expect(checkinAction).toBeVisible();
   await expect(decision.getByRole('button', { name: /Coach/i })).toHaveCount(1);
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   await expect(decision.getByText('Readiness 78/100')).toBeVisible();
 
-  await localClosure.click();
-  await expect(page).toHaveURL('/');
+  await checkinAction.click();
+  await expect(page).toHaveURL('/data?tab=today#data-mental');
   expect(actionPatches).toBe(0);
 });
 

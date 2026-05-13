@@ -18,6 +18,7 @@ export interface DailyDecision {
   boundary: string;
   alternative: string;
   completionCriterion: string;
+  resultPreview?: string;
   cta: string;
   targetPath: string;
   prompt: string;
@@ -150,6 +151,20 @@ function mapEvidence(item: string): DailyDecisionEvidence {
     return { label: item, targetPath: '/data?tab=analysis#data-plan-trace' };
   }
   return item;
+}
+
+function actionResultPreview(action: PulseNextBestAction | null, fallbackPath: string): string {
+  const targetPath = action?.targetPath ?? fallbackPath;
+  if (targetPath.startsWith('/coach')) {
+    return 'Pulse öffnet Coach mit vorbereiteter Tagesfrage; Plan und Garmin bleiben unverändert.';
+  }
+  if (targetPath.startsWith('/data')) {
+    return 'Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.';
+  }
+  if (targetPath.startsWith('/plan')) {
+    return 'Pulse öffnet die passende Planentscheidung; Änderungen bleiben bewusst, bevor Garmin betroffen ist.';
+  }
+  return 'Pulse öffnet den passenden Schritt, ohne automatisch Plan oder Garmin zu verändern.';
 }
 
 export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined): DailyDecision | null {
@@ -288,11 +303,13 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       : 'Ohne geplantes Training zählt heute vor allem, ob Erholung, Check-in und mentale Stabilität sauber abgeschlossen werden.');
   const completionCriterion = action?.resolvedBy
     ?? (todayWorkout
-      ? 'Entscheidung zur Einheit treffen und bei Anpassung den Plan aktualisieren.'
-      : 'Check-in abschließen und einen klaren Erholungsanker für heute setzen.');
+      ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
+      : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
   const alternative = alternativeFor(home, action);
-  const cta = action?.cta ?? (todayWorkout ? 'Plan prüfen' : 'Erholungstag abschliessen');
-  const targetPath = action?.targetPath ?? (todayWorkout ? '/plan?tab=training' : '/');
+  const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
+  const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
+  const targetPath = action?.targetPath ?? fallbackPath;
+  const resultPreview = actionResultPreview(action, fallbackPath);
   const supportCta = !action && !todayWorkout ? 'Coach fragen' : undefined;
   const supportPath = !action && !todayWorkout ? '/coach?focus=daily' : undefined;
   const evidence: DailyDecisionEvidence[] = [
@@ -316,6 +333,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     boundary,
     alternative,
     completionCriterion,
+    resultPreview,
     cta,
     targetPath,
     prompt,
