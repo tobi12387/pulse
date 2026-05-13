@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-13 — Data-Mobile überspringt doppelte Intro-Copy
+
+- **Decision:** `/data` behält auf Desktop den erklärenden `DATA · HEUTE RELEVANT`-Introblock, blendet auf Mobile aber Eyebrow und Zusammenfassung aus, sodass nach Seitentitel und Tab-Leiste direkt die tägliche Daten-Aktion sichtbar bleibt.
+- **Why:** Frische Route-Evidence nach dem Mobile-Header-Slice zeigte keinen Overflow, aber auf Mobile wiederholte Data dieselbe Orientierung in PageHeader, Tab und Section-Intro, bevor der eigentliche Check-in-/Planwirkungsauftrag kam. Der kleinste UI-Slice reduziert Dichte, ohne Tab-Struktur, Datenlogik, Deep Links oder Desktop-Kontext umzubauen.
+- **Alternatives:** Data-IA erneut umbauen (zu grosser Scope und bereits komprimiert); Tab-Leiste umbenennen oder entfernen (verliert Navigation); nur Abstände reduzieren (lässt doppelte Erklärung bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-13 — Mobile Routenköpfe werden kurz, Desktop bleibt erklärend
 
 - **Decision:** Data, Plan und Settings behalten auf Desktop ihre ausführlichen PageHeader-Titel, zeigen auf Mobile aber kurze Routentitel (`Data`, `Plan`, `Settings`) vor der eigentlichen Arbeitsfläche.

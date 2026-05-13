@@ -336,12 +336,22 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div>
-        <div className="label-mono" style={{ marginBottom: 3 }}>DATA · HEUTE RELEVANT</div>
+      <div className="data-today-intro">
+        <div
+          className="label-mono data-today-intro-eyebrow"
+          data-testid="data-today-intro-eyebrow"
+          style={{ marginBottom: 3 }}
+        >
+          DATA · HEUTE RELEVANT
+        </div>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
           Heute relevant
         </h2>
-        <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        <p
+          className="data-today-intro-summary"
+          data-testid="data-today-intro-summary"
+          style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}
+        >
           Starte mit einer Daten-Aufgabe. Details bleiben verfügbar, wenn sie die Tagesentscheidung erklären.
         </p>
       </div>
