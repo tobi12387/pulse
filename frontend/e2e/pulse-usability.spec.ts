@@ -1803,6 +1803,7 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
   await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
   await expect(page.getByText('Radfahren · Zone 2')).toBeVisible();
 
+  await page.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await page.getByRole('button', { name: 'Metriken prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=trends#data-recovery');
   await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
