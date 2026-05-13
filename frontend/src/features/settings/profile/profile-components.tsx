@@ -138,6 +138,7 @@ export function AthleteProfileCard({ setMessage }: {
   const updateProfile = useUpdateProfile();
   const [syncingProfile, setSyncingProfile] = useState<'all' | PulseProfileMetricKey | null>(null);
   const [profileForm, setProfileForm] = useState<ProfileForm | null>(null);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   function openProfile() {
     setProfileForm({
@@ -389,27 +390,42 @@ export function AthleteProfileCard({ setMessage }: {
             <Pill color="var(--accent)">{(profile?.trainingPhase ?? 'base').toUpperCase()}</Pill>
           </Row>
           <div className="settings-profile-fueling-block">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <span className="label-mono">Fueling & Recovery</span>
-              <Pill color={profile?.fuelingEnabled === false ? 'var(--text-3)' : 'var(--green)'}>
-                {profile?.fuelingEnabled === false ? 'AUS' : 'BEREIT'}
-              </Pill>
+            <div className="settings-profile-fueling-heading">
+              <div className="settings-profile-fueling-title">
+                <span className="label-mono">Fueling & Recovery</span>
+                <Pill color={profile?.fuelingEnabled === false ? 'var(--text-3)' : 'var(--green)'}>
+                  {profile?.fuelingEnabled === false ? 'AUS' : 'BEREIT'}
+                </Pill>
+              </div>
+              <MiniButton
+                onClick={() => setPreferencesOpen(open => !open)}
+                ariaLabel={`Fueling & Recovery ${preferencesOpen ? 'ausblenden' : 'anzeigen'}`}
+              >
+                {preferencesOpen ? 'Ausblenden' : 'Anzeigen'}
+              </MiniButton>
             </div>
-            <Row label="Produkte">
-              <Val>{profile?.preferredFuelingProducts ?? 'Ministry'}</Val>
-            </Row>
-            <Row label="Einschränkungen">
-              <Val>{(profile?.dietaryConstraints ?? []).join(', ') || 'keine'}</Val>
-            </Row>
-            <Row label="Carbs">
-              <Val>{guidanceLabel(profile?.carbGuidanceStyle, 'carbs')}</Val>
-            </Row>
-            <Row label="Sodium">
-              <Val>{guidanceLabel(profile?.sodiumGuidanceStyle, 'sodium')}</Val>
-            </Row>
-            <Row label="Körpergewicht">
-              <Val>{profile?.bodyWeightGuidanceEnabled === false ? 'nicht nutzen' : 'darf genutzt werden'}</Val>
-            </Row>
+            <p className="settings-profile-fueling-summary">
+              {profile?.preferredFuelingProducts ?? 'Ministry'} · {(profile?.dietaryConstraints ?? []).join(', ') || 'keine Einschränkungen'}
+            </p>
+            {preferencesOpen && (
+              <div className="settings-profile-fueling-details">
+                <Row label="Produkte">
+                  <Val>{profile?.preferredFuelingProducts ?? 'Ministry'}</Val>
+                </Row>
+                <Row label="Einschränkungen">
+                  <Val>{(profile?.dietaryConstraints ?? []).join(', ') || 'keine'}</Val>
+                </Row>
+                <Row label="Carbs">
+                  <Val>{guidanceLabel(profile?.carbGuidanceStyle, 'carbs')}</Val>
+                </Row>
+                <Row label="Sodium">
+                  <Val>{guidanceLabel(profile?.sodiumGuidanceStyle, 'sodium')}</Val>
+                </Row>
+                <Row label="Körpergewicht">
+                  <Val>{profile?.bodyWeightGuidanceEnabled === false ? 'nicht nutzen' : 'darf genutzt werden'}</Val>
+                </Row>
+              </div>
+            )}
           </div>
         </div>
       )}
