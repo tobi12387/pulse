@@ -588,6 +588,25 @@ test('Insights keeps next checks compact without nested cards', async ({ page })
   await expect(nextChecks.getByTestId('insights-next-check-item').first()).toContainText('Intervention');
 });
 
+test('Insights keeps secondary synthesis signals behind a disclosure', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/insights');
+
+  await expect(page.getByTestId('insights-synthesis-hero')).toBeVisible();
+  await expect(page.getByText('Ziel', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Reaktion', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Planqualität', { exact: true })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Weitere Signale anzeigen' }).click();
+
+  const secondarySignals = page.getByTestId('insights-secondary-signals');
+  await expect(secondarySignals).toBeVisible();
+  await expect(secondarySignals).toContainText('Ziel');
+  await expect(secondarySignals).toContainText('Reaktion');
+  await expect(secondarySignals).toContainText('Planqualität');
+});
+
 test('Data analyses explain personal response patterns without opening AI cards', async ({ page }) => {
   let insightRequests = 0;
   await mockPulseApi(page, {
