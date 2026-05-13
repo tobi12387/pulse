@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-13 — Plan-Mobile priorisiert Aktionsvertrag vor Refresh-Chrome
+
+- **Decision:** Wenn `/plan` mobil den vollständigen Today-Options-Aktionsvertrag zeigt, blendet Pulse den sekundären Kartenkopf mit Refresh-Aktion aus und entfernt die innere Aktionskarten-Schale; Desktop behält den ausführlicheren Kopf.
+- **Why:** Frische Route-Evidence zeigte, dass im ersten mobilen Plan-Viewport PageHeader, Tab-Leiste, `Heute trainieren`, Refresh-Button und `Plan-Aktion` um dieselbe Entscheidung konkurrierten. Der kleinste Slice reduziert visuelle Verschachtelung und zieht die eigentliche Aktion nach oben, ohne Plan-, Garmin-, Alternativen- oder Desktop-Verhalten zu ändern.
+- **Alternatives:** Refresh global entfernen (verliert Desktop-Kontrolle); Plan-Tabs umbauen (größerer IA-Scope); nur Abstände reduzieren (lässt konkurrierenden Kopf und Nested-Card bestehen).
+- **Decided by:** Codex.
+- **Status:** active.
+
 ## 2026-05-13 — Data-Mobile überspringt doppelte Intro-Copy
 
 - **Decision:** `/data` behält auf Desktop den erklärenden `DATA · HEUTE RELEVANT`-Introblock, blendet auf Mobile aber Eyebrow und Zusammenfassung aus, sodass nach Seitentitel und Tab-Leiste direkt die tägliche Daten-Aktion sichtbar bleibt.

@@ -343,6 +343,21 @@
       display: none;
     }
 
+    .today-options-card--plan-action {
+      padding: 12px !important;
+    }
+
+    .today-options-card--plan-action .today-options-card__header {
+      display: none !important;
+    }
+
+    .today-options-card--plan-action .plan-primary-action-card {
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+    }
+
     .focus-decision-body {
       padding: 20px 16px;
       grid-template-columns: minmax(0, 1fr);
