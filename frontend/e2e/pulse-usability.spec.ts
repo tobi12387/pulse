@@ -3648,6 +3648,33 @@ test('Plan Review surfaces the weekly coach review with a clear next action', as
   await expect(page.getByTestId('plan-change-inbox')).toBeVisible();
 });
 
+test('Plan Review keeps the long weekly narrative behind disclosure', async ({ page }) => {
+  await mockPulseApi(page);
+  await page.route('**/api/pulse/review/latest', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id: 'review-density',
+      userId: 'user-1',
+      weekStart: '2026-04-27',
+      weekEnd: '2026-05-03',
+      narrative: 'Starke Woche: Du hast solide trainiert und bewusst Pausen zugelassen. Die Analyse bleibt hilfreich, sollte aber nicht die Entscheidung im ersten Viewport dominieren.\\n\\nFür die nächste Woche zählt vor allem, die Belastung gleichmäßig zu verteilen und Planpunkte bewusst zu prüfen.',
+      metrics: {},
+      recommendations: [],
+      createdAt: '2026-05-03T20:00:00.000Z',
+    }),
+  }));
+
+  await page.goto('/plan?tab=review');
+
+  await expect(page.getByTestId('weekly-coach-review')).toBeVisible();
+  await expect(page.getByTestId('weekly-review-narrative')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Analyse anzeigen' }).click();
+  await expect(page.getByTestId('weekly-review-narrative')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Analyse ausblenden' })).toBeVisible();
+});
+
 test('Plan explains Garmin workout sync confidence in the workout modal', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

@@ -2940,6 +2940,7 @@ function ReviewTab() {
   const goalProjection = useGoalProjection(180);
   const seasonStrategy = useSeasonStrategy();
   const navigate = useNavigate();
+  const [narrativeOpen, setNarrativeOpen] = useState(false);
   const weeklyReview = buildWeeklyCoachReview({
     review: data ?? null,
     adaptationEvents: adaptationEvents.data?.events ?? [],
@@ -2954,8 +2955,11 @@ function ReviewTab() {
       return;
     }
     if (weeklyReview.primaryAction.kind === 'read_review') {
-      document.getElementById('weekly-review-narrative')?.scrollIntoView({ block: 'start' });
-      document.getElementById('weekly-review-narrative')?.focus({ preventScroll: true });
+      setNarrativeOpen(true);
+      window.setTimeout(() => {
+        document.getElementById('weekly-review-narrative')?.scrollIntoView({ block: 'start' });
+        document.getElementById('weekly-review-narrative')?.focus({ preventScroll: true });
+      }, 0);
       return;
     }
     generate.mutate();
@@ -3016,6 +3020,28 @@ function ReviewTab() {
             {/* Week header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <div className="label-mono">{data.weekStart} — {data.weekEnd}</div>
+              <button
+                type="button"
+                aria-expanded={narrativeOpen}
+                aria-controls="weekly-review-narrative"
+                onClick={() => setNarrativeOpen(open => !open)}
+                style={{
+                  minHeight: 44,
+                  minWidth: 44,
+                  padding: '7px 10px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  color: narrativeOpen ? 'var(--accent)' : 'var(--text-2)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {narrativeOpen ? 'Analyse ausblenden' : 'Analyse anzeigen'}
+              </button>
             </div>
 
             {/* Wins + Watch (if extracted) */}
@@ -3045,12 +3071,14 @@ function ReviewTab() {
             )}
 
             {/* Full narrative */}
-            <div id="weekly-review-narrative" className="card" tabIndex={-1} data-testid="weekly-review-narrative">
-              <div className="label-mono" style={{ marginBottom: 8 }}>Analyse</div>
-              <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                {body}
-              </p>
-            </div>
+            {narrativeOpen && (
+              <div id="weekly-review-narrative" className="card" tabIndex={-1} data-testid="weekly-review-narrative">
+                <div className="label-mono" style={{ marginBottom: 8 }}>Analyse</div>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {body}
+                </p>
+              </div>
+            )}
           </>
         );
       })()}
