@@ -1617,6 +1617,35 @@ test('Settings keeps manual profile unlock actions compact on mobile', async ({ 
   expect(box!.height, 'Profile card should fit manual unlock controls without dominating the mobile page').toBeLessThanOrEqual(560);
 });
 
+test('Settings keeps Fueling and Recovery preferences collapsed in profile read mode', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile profile density check');
+
+  await mockPulseApi(page);
+
+  await page.goto('/settings?section=profile');
+
+  const profileCard = page.locator('.card').filter({ hasText: 'Athletenprofil' }).first();
+  await expect(profileCard).toBeVisible();
+  await expect(profileCard).toContainText('FTP');
+  await expect(profileCard).toContainText('LTHR');
+  await expect(profileCard.getByRole('button', { name: /automatisch übernehmen/ })).toBeVisible();
+  await expect(profileCard.getByText('Fueling & Recovery')).toBeVisible();
+  await expect(profileCard.getByText('Produkte', { exact: true })).toHaveCount(0);
+  await expect(profileCard.getByText('Einschränkungen', { exact: true })).toHaveCount(0);
+  await expect(profileCard.getByText('Carbs', { exact: true })).toHaveCount(0);
+  await expect(profileCard.getByText('Sodium', { exact: true })).toHaveCount(0);
+  await expect(profileCard.getByText('Körpergewicht', { exact: true })).toHaveCount(0);
+
+  await profileCard.getByRole('button', { name: 'Fueling & Recovery anzeigen' }).click();
+
+  await expect(profileCard.getByText('Produkte', { exact: true })).toBeVisible();
+  await expect(profileCard.getByText('Einschränkungen', { exact: true })).toBeVisible();
+  await expect(profileCard.getByText('Carbs', { exact: true })).toBeVisible();
+  await expect(profileCard.getByText('Sodium', { exact: true })).toBeVisible();
+  await expect(profileCard.getByText('Körpergewicht', { exact: true })).toBeVisible();
+});
+
 test('Settings can unlock a manual profile value for automatic Garmin sync', async ({ page }) => {
   let syncPayload: unknown = null;
   let profile = {
@@ -1686,11 +1715,13 @@ test('Settings edits Fueling and Recovery preferences for future guidance', asyn
   });
 
   await page.goto('/settings');
-  await expect(page.getByText('Fueling & Recovery')).toBeVisible();
-  await expect(page.getByText('Ministry')).toBeVisible();
-  await expect(page.getByText('Carbs: Pulse schlägt g/h vor')).toBeVisible();
+  const profileCard = page.locator('.card').filter({ hasText: 'Athletenprofil' }).first();
+  await expect(profileCard.getByText('Fueling & Recovery')).toBeVisible();
+  await expect(profileCard.getByText('Ministry')).toBeVisible();
+  await profileCard.getByRole('button', { name: 'Fueling & Recovery anzeigen' }).click();
+  await expect(profileCard.getByText('Carbs: Pulse schlägt g/h vor')).toBeVisible();
 
-  await page.locator('.card').filter({ hasText: 'Athletenprofil' }).getByRole('button', { name: 'Bearbeiten' }).click();
+  await profileCard.getByRole('button', { name: 'Bearbeiten' }).click();
   await page.getByLabel('Bevorzugte Fueling-Produkte').fill('Ministry Drink Mix und Gels');
   await page.getByLabel('Ernährungseinschränkungen').fill('keine');
   await page.getByRole('button', { name: 'Profil speichern' }).click();

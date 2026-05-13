@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Settings versteckt sekundäre Profilpräferenzen in der Leseansicht
+
+- **Decision:** Das Athletenprofil in `/settings` zeigt Garmin-relevante Planwerte und manuelle `Automatisch`-Aktionen direkt, rendert die detaillierten Fueling-&-Recovery-Präferenzen aber erst nach `Fueling & Recovery anzeigen`. Die kompakte Zusammenfassung und das Bearbeiten-Formular bleiben erreichbar.
+- **Why:** Nach den Status- und Profil-Dichte-Slices war die Settings-Profilkarte weiterhin schwer, weil selten geänderte Präferenzdetails denselben Rang wie FTP, Pulswerte und Garmin-Automatik hatten. Für iPhone/PWA und Desktop soll Settings zuerst Bereitschaft und planrelevante Felder zeigen; sekundäre Preferences bleiben bewusst erreichbar, ohne die erste Profilfläche zu dominieren.
+- **Alternatives:** Preferences komplett aus dem Profil entfernen (verliert den Bearbeiten-Kontext); nur auf Mobile verstecken (uneinheitlich und schwerer testbar); alles sichtbar lassen (Dichteproblem bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Home legt Hero-Aktionen in den Tagesauftrag
 
 - **Decision:** Der Focus-Hero auf `/` rendert seine primären Aktionsbuttons direkt innerhalb des `Nächster Schritt`-Blocks der Tagesentscheidung. Andere `DailyDecisionCard`-Verwendungen behalten die bisherige Footer-Aktionsreihe.

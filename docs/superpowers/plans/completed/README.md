@@ -102,6 +102,7 @@
 | `2026-05-12-garmin-execution-chain-ui.md` | Garmin Execution Chain UI — Plan Ausführung shows template, calendar, readback, repeats and execution as one compact chain with one next action | Garmin Execution Chain PR |
 | `2026-05-12-weekly-coach-review.md` | Weekly Coach Review — Plan Review starts with learned/proposed/decision summary and one next action from existing evidence | Weekly Coach Review PR |
 | `2026-05-12-recovery-mental-resilience.md` | Recovery Mental Resilience — Data Mental translates recovery/readiness/load/check-in evidence into boundary guidance without clinical labels | Recovery Mental Resilience PR |
+| `2026-05-13-settings-profile-preferences-disclosure.md` | Settings Profile Preferences Disclosure — secondary Fueling & Recovery preferences collapse behind an explicit profile disclosure | Settings Density PR |
 
 ## Bekannte veraltete Stellen
 

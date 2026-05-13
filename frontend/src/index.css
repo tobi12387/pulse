@@ -447,6 +447,37 @@
     gap: 8px;
   }
 
+  .settings-profile-fueling-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .settings-profile-fueling-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .settings-profile-fueling-summary {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--text-3);
+    overflow-wrap: anywhere;
+  }
+
+  .settings-profile-fueling-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   @media (min-width: 768px) {
     .pulse-page-shell {
       padding-top: 1.5rem;
@@ -624,6 +655,29 @@
     .settings-profile-fueling-block {
       margin-top: 4px !important;
       padding-top: 9px !important;
+      gap: 5px !important;
+    }
+
+    .settings-profile-fueling-heading {
+      gap: 6px !important;
+    }
+
+    .settings-profile-fueling-heading button {
+      min-height: 44px !important;
+      padding: 6px 9px !important;
+      font-size: 8.5px !important;
+    }
+
+    .settings-profile-fueling-title {
+      gap: 6px !important;
+    }
+
+    .settings-profile-fueling-summary {
+      font-size: 9.5px !important;
+      line-height: 1.35 !important;
+    }
+
+    .settings-profile-fueling-details {
       gap: 5px !important;
     }
 
