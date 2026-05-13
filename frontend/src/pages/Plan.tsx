@@ -193,6 +193,7 @@ function garminSyncNotice(outcome: GarminSyncOutcome | null | undefined, savedMe
 function isQuickScenarioNoWriteReminder(text: string): boolean {
   const normalized = text.toLocaleLowerCase('de-DE');
   if (normalized.includes('mobile vorschau')) return true;
+  if (normalized.includes('mobile quick decision vorbereitet')) return true;
   if (normalized.includes('preview-only')) return true;
   if (normalized.includes('plan oder garmin werden erst')) return true;
   return normalized.includes('plan') && normalized.includes('garmin') && normalized.includes('schreibt nichts');
@@ -1953,7 +1954,9 @@ function PlanScenarioPreviewCard({
       {!isQuickScenarioEntry && renderPreviewActions()}
     </div>
   ) : null;
-  const visibleReviewHint = isQuickScenarioEntry && preview ? null : reviewHint;
+  const visibleReviewHint = isQuickScenarioEntry && preview && reviewHint && isQuickScenarioNoWriteReminder(reviewHint)
+    ? null
+    : reviewHint;
 
   return (
     <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>

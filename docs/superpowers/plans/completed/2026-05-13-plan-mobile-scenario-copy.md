@@ -11,6 +11,7 @@ The Focus roadmap says every action needs a contract, but optional evidence shou
 - Keep the scenario preview read-only until explicit apply.
 - Keep `Nach Apply`, `Sicherste Entscheidung`, Garmin impact and apply/cancel actions.
 - Filter summary/reason text that only repeats the no-write safety reminder for quick scenario entries.
+- Hide the quick-entry review hint only when that hint is also a no-write/preview reminder; preserve real intent hints like free-day reduce-volume rationale.
 - Leave backend scenario preview data and mutation semantics untouched.
 
 ## Non-Goals
