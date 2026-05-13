@@ -666,6 +666,7 @@ function InsightsSynthesis() {
   const [days, setDays] = useState(30);
   const [deepOpen, setDeepOpen] = useState(false);
   const [signalsOpen, setSignalsOpen] = useState(false);
+  const [nextChecksOpen, setNextChecksOpen] = useState(false);
   const navigate = useNavigate();
   const personalResponse = usePersonalResponse(42);
   const goalProjection = useGoalProjection(180);
@@ -790,21 +791,47 @@ function InsightsSynthesis() {
             meta={topGoal?.nextBestIntervention.actionLabel ?? 'offen'}
             color="var(--blue)"
           />
-          <NextCheckItem
-            eyebrow="Datenqualität"
-            title={powerQuality ? powerDataQualityMeta(powerQuality.status).label : 'Power-Daten offen'}
-            body={powerDuration?.durabilityLine ?? powerQuality?.limitations[0] ?? 'Durability und Power-Qualität bleiben als Evidenz-Gate sichtbar, bevor Pulse härtere Schlüsse zieht.'}
-            meta={powerQuality ? `${powerQuality.coveragePct}% Coverage` : 'prüft'}
-            color={powerQuality ? powerDataQualityMeta(powerQuality.status).color : 'var(--text-3)'}
-          />
-          <NextCheckItem
-            eyebrow="Capability"
-            title={capabilityLevel?.label ?? 'Capability offen'}
-            body={capabilityLevel?.lastProgressionReason ?? capabilityLevel?.staleReason ?? capability.data?.capabilitySummary.recommendations[0] ?? 'Workout-Fit wird aus Ausführung und Feedback gelernt.'}
-            meta={capability.isLoading ? 'lädt' : '90T'}
-            color="var(--amber)"
-          />
+          {nextChecksOpen && (
+            <>
+              <NextCheckItem
+                eyebrow="Datenqualität"
+                title={powerQuality ? powerDataQualityMeta(powerQuality.status).label : 'Power-Daten offen'}
+                body={powerDuration?.durabilityLine ?? powerQuality?.limitations[0] ?? 'Durability und Power-Qualität bleiben als Evidenz-Gate sichtbar, bevor Pulse härtere Schlüsse zieht.'}
+                meta={powerQuality ? `${powerQuality.coveragePct}% Coverage` : 'prüft'}
+                color={powerQuality ? powerDataQualityMeta(powerQuality.status).color : 'var(--text-3)'}
+              />
+              <NextCheckItem
+                eyebrow="Capability"
+                title={capabilityLevel?.label ?? 'Capability offen'}
+                body={capabilityLevel?.lastProgressionReason ?? capabilityLevel?.staleReason ?? capability.data?.capabilitySummary.recommendations[0] ?? 'Workout-Fit wird aus Ausführung und Feedback gelernt.'}
+                meta={capability.isLoading ? 'lädt' : '90T'}
+                color="var(--amber)"
+              />
+            </>
+          )}
         </div>
+        <button
+          type="button"
+          aria-expanded={nextChecksOpen}
+          onClick={() => setNextChecksOpen(open => !open)}
+          style={{
+            alignSelf: 'flex-start',
+            minHeight: 38,
+            minWidth: 44,
+            padding: '7px 10px',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            background: nextChecksOpen ? 'rgba(94,230,207,0.12)' : 'transparent',
+            color: nextChecksOpen ? 'var(--accent)' : 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {nextChecksOpen ? 'Weitere Prüfungen ausblenden' : 'Weitere Prüfungen anzeigen'}
+        </button>
       </section>
 
       <section className="card" data-testid="insights-secondary-signals-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

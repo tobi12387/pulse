@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Insights zeigt nur eine nächste Prüfung direkt
+
+- **Decision:** `/insights` rendert in `Nächste sinnvolle Prüfung` nur noch die primäre Intervention direkt. Sekundäre Prüfungen wie `Datenqualität` und `Capability` öffnen erst nach `Weitere Prüfungen anzeigen`.
+- **Why:** Nach der Auslagerung der sekundären Synthese-Signale war die Insights-Seite fachlich klarer, aber der mobile Erstviewport wurde weiterhin von drei langen Prüfzeilen dominiert. Für den täglichen Flow soll Insights zuerst eine konkrete nächste Prüfung zeigen und technische Gates nur bei Bedarf erklären.
+- **Alternatives:** Alle drei Prüfungen direkt sichtbar lassen (weiterhin zu hoher Erstviewport); Datenqualität/Capability entfernen (verliert Vertrauen); nur Text kürzen (weniger präzise, aber weiterhin drei konkurrierende Signale).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Insights versteckt sekundäre Synthese-Signale hinter eine Offenlegung
 
 - **Decision:** `/insights` zeigt zuerst nur den aktuellen Fokus und die nächste sinnvolle Prüfung. Die sekundären Synthese-Signale `Ziel`, `Reaktion` und `Planqualität` werden erst nach `Weitere Signale anzeigen` gerendert.

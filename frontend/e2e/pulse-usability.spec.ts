@@ -584,8 +584,15 @@ test('Insights keeps next checks compact without nested cards', async ({ page })
   const nextChecks = page.getByTestId('insights-next-actions');
   await expect(nextChecks).toContainText('Nächste sinnvolle Prüfung');
   await expect(nextChecks.locator('.card')).toHaveCount(0);
-  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(3);
+  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(1);
   await expect(nextChecks.getByTestId('insights-next-check-item').first()).toContainText('Intervention');
+  await expect(nextChecks).not.toContainText('Datenqualität');
+
+  await nextChecks.getByRole('button', { name: 'Weitere Prüfungen anzeigen' }).click();
+
+  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(3);
+  await expect(nextChecks).toContainText('Datenqualität');
+  await expect(nextChecks).toContainText('Capability');
 });
 
 test('Insights keeps secondary synthesis signals behind a disclosure', async ({ page }) => {
