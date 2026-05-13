@@ -623,7 +623,7 @@ function SynthesisCard({
   );
 }
 
-function SynthesisBlock({
+function NextCheckItem({
   eyebrow,
   title,
   body,
@@ -637,21 +637,27 @@ function SynthesisBlock({
   color?: string;
 }) {
   return (
-    <div style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', background: 'var(--surface-2)', minWidth: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', marginBottom: 6 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          {eyebrow}
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)' }}>
-          {meta}
-        </span>
+    <div className="insights-next-check-item" data-testid="insights-next-check-item">
+      <div
+        className="insights-next-check-label"
+        style={{ color }}
+      >
+        {eyebrow}
       </div>
-      <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 650, lineHeight: 1.35 }}>
-        {title}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 650, lineHeight: 1.35 }}>
+          {title}
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, margin: '5px 0 0' }}>
+          {body}
+        </p>
       </div>
-      <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, margin: '5px 0 0' }}>
-        {body}
-      </p>
+      <div
+        className="insights-next-check-meta"
+        style={{ color }}
+      >
+        {meta}
+      </div>
     </div>
   );
 }
@@ -799,22 +805,22 @@ function InsightsSynthesis() {
             read-only
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
-          <SynthesisBlock
+        <div className="insights-next-check-list">
+          <NextCheckItem
             eyebrow="Intervention"
             title={topGoal?.nextBestIntervention.title ?? 'Noch keine Intervention'}
             body={topGoal?.nextBestIntervention.summary ?? 'Pulse wartet auf belastbare Ziel- und Reaktionsdaten, bevor es eine Intervention hervorhebt.'}
             meta={topGoal?.nextBestIntervention.actionLabel ?? 'offen'}
             color="var(--blue)"
           />
-          <SynthesisBlock
+          <NextCheckItem
             eyebrow="Datenqualität"
             title={powerQuality ? powerDataQualityMeta(powerQuality.status).label : 'Power-Daten offen'}
             body={powerDuration?.durabilityLine ?? powerQuality?.limitations[0] ?? 'Durability und Power-Qualität bleiben als Evidenz-Gate sichtbar, bevor Pulse härtere Schlüsse zieht.'}
             meta={powerQuality ? `${powerQuality.coveragePct}% Coverage` : 'prüft'}
             color={powerQuality ? powerDataQualityMeta(powerQuality.status).color : 'var(--text-3)'}
           />
-          <SynthesisBlock
+          <NextCheckItem
             eyebrow="Capability"
             title={capabilityLevel?.label ?? 'Capability offen'}
             body={capabilityLevel?.lastProgressionReason ?? capabilityLevel?.staleReason ?? capability.data?.capabilitySummary.recommendations[0] ?? 'Workout-Fit wird aus Ausführung und Feedback gelernt.'}
