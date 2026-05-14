@@ -159,7 +159,7 @@ function goalImpactSummary(home: PulseHomeScreenData, workout: HomeWorkout | nul
     return 'Zielwirkung: ungeplante Belastung in die naechste Planentscheidung einrechnen.';
   }
   if (workout) {
-    if (workout.capabilityFit === 'too_hard') return 'Zielwirkung: Fortschritt schuetzen, aber heute keine zu harte Einheit erzwingen.';
+    if (workout.capabilityFit === 'too_hard_today') return 'Zielwirkung: Fortschritt schuetzen, aber heute keine zu harte Einheit erzwingen.';
     if (workout.capabilityFit === 'stretch') return 'Zielwirkung: kontrollierter Reiz, solange Readiness und Grenze passen.';
     if (workout.capabilityFit === 'productive') return 'Zielwirkung: produktiver Trainingsreiz im Wochenziel.';
     return 'Zielwirkung: Wochenstruktur halten, ohne Zusatzumfang zu erzwingen.';
@@ -190,7 +190,7 @@ function topSignals(home: PulseHomeScreenData, workout: HomeWorkout | null, comp
     signals.push({
       label: 'Training',
       detail: `${activityLabel(workout.activityType)} Z${workout.zone} · ${workout.durationMin} min`,
-      tone: workout.capabilityFit === 'too_hard' ? 'rose' : workout.capabilityFit === 'stretch' ? 'amber' : 'accent',
+      tone: workout.capabilityFit === 'too_hard_today' ? 'rose' : workout.capabilityFit === 'stretch' ? 'amber' : 'accent',
       targetPath: '/plan?tab=training',
     });
   } else if (completedActivity) {
@@ -443,19 +443,53 @@ After `Home renders exactly one main daily decision card`, add:
 
 ```ts
 test('Home daily decision details expose top signals goal impact Garmin state and safest option', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-default',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        distanceKm: null,
+        targetTss: 62,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3.8,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Ausdauer mit sauberem Fueling.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+  });
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');
-  await expect(contract).toContainText('Warum diese Aktion?');
+  await expect(contract).toContainText(/Warum diese Aktion/i);
   await expect(contract).toContainText('Koerper');
   await expect(contract).toContainText('Readiness 78/100');
   await expect(contract).toContainText('Belastung');
-  await expect(contract).toContainText('TSB 4.0');
+  await expect(contract).toContainText('TSB -5.7');
   await expect(contract).toContainText('Zielwirkung');
-  await expect(contract).toContainText('Wochenstruktur halten');
+  await expect(contract).toContainText('produktiver Trainingsreiz');
   await expect(contract).toContainText('Garmin');
   await expect(contract).toContainText('Pulse plant lokal');
   await expect(contract).toContainText('Sicherste Option');
