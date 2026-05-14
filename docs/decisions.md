@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Plan startet auf Desktop mit der Woche
+
+- **Decision:** `/plan` rendert im Training-Tab die Wochenleiste vor der naechsten Trainingsentscheidung. Die Aktions- und Aenderungsflaechen bleiben direkt darunter erhalten.
+- **Why:** Nach den Dichte-Slices zeigte die Live-Desktop-Seite weiterhin erst naechste Einheit, Progression, Aktion und Adaptionscheck; die eigentliche Wochenplanung lag unterhalb des ersten Viewports. Da Home die Tagesentscheidung besitzt, soll Plan als Kalender-/Wochensteuerung starten.
+- **Alternatives:** Nur weitere Details einklappen (Woche bleibt abhaengig von Daten unterhalb); neue Plan-Tabs bauen (groesserer Scope); Action-first beibehalten (konkurriert weiter mit Home).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Plan zeigt Progression kompakt und Details auf Nachfrage
 
 - **Decision:** `/plan` zeigt in der naechsten Trainingsentscheidung nur noch den Progression-Status, Athlete-Level und die Rolle der Einheit direkt. Kalibrierung, Wiederholung, Aenderungsbedingung und Evidence-Chips liegen hinter `Progression pruefen`.

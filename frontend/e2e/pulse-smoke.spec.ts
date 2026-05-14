@@ -196,6 +196,40 @@ test('Plan desktop keeps progression evidence collapsed by default', async ({ pa
   await expect(progression.getByText(/Ändern wenn:/i)).toBeVisible();
 });
 
+test('Plan desktop starts the planning surface with the week before the next decision', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific week-first contract');
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-week-first',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+    }],
+    todayOptionsState: 'unplanned_trainable',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const weekStrip = page.getByTestId('plan-week-strip-scroller');
+  const decision = page.getByTestId('next-training-decision');
+  await expect(weekStrip).toBeVisible();
+  await expect(decision).toBeVisible();
+
+  const weekBox = await weekStrip.boundingBox();
+  const decisionBox = await decision.boundingBox();
+  expect(weekBox, 'Missing week strip bounds').not.toBeNull();
+  expect(decisionBox, 'Missing next decision bounds').not.toBeNull();
+  expect(weekBox!.y, 'Desktop Plan should show the week before the next-training decision').toBeLessThan(decisionBox!.y);
+});
+
 test('Plan shows the week before season evidence on desktop', async ({ page }) => {
   await page.goto('/plan');
 

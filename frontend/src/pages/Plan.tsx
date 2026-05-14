@@ -2635,6 +2635,13 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* WeekStrip */}
+      <WeekStrip
+        workouts={workouts}
+        weekOffset={weekOffset}
+        onChangeWeek={d => setWeekOffset(o => o + d)}
+        onSelectWorkout={openWorkout}
+      />
 
       <NextTrainingDecisionCard
         nextWorkout={nextDecisionWorkout}
@@ -2690,14 +2697,6 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
           onNavigate={navigate}
         />
       )}
-
-      {/* WeekStrip */}
-      <WeekStrip
-        workouts={workouts}
-        weekOffset={weekOffset}
-        onChangeWeek={d => setWeekOffset(o => o + d)}
-        onSelectWorkout={openWorkout}
-      />
 
       <PlanRefreshPreviewCard weekStart={selectedWeekStart} />
 
