@@ -405,9 +405,11 @@ test('Daily loop clarity keeps Home guidance plain and slim support on task rout
   await expect(page.getByText('Abschluss', { exact: true })).toHaveCount(0);
 
   await page.goto('/plan');
-  await expect(page.getByText('Plan-Aktion').first()).toBeVisible();
-  await expect(page.getByText(/Nach dem Klick/i).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /Workout öffnen|Einheit öffnen|Verfügbarkeit prüfen/i }).first()).toBeVisible();
+  const planAction = page.getByTestId('plan-primary-action').first();
+  await expect(planAction.getByText('Plan-Aktion')).toBeVisible();
+  await expect(planAction.getByText(/Nach dem Klick/i)).toBeHidden();
+  await expect(planAction.getByText(/Warum diese|Warum dieser/i)).toBeVisible();
+  await expect(planAction.getByRole('button', { name: /Workout öffnen|Einheit öffnen|Verfügbarkeit prüfen/i })).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -2265,15 +2267,20 @@ test('Plan full today action does not duplicate the planned-day summary copy', a
 
   const card = page.getByTestId('today-options-card-full');
   await expect(card).toBeVisible();
-  await expect(card.getByTestId('plan-primary-action')).toContainText(
-    'Warum jetzt: Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
-  );
+  const action = card.getByTestId('plan-primary-action');
+  await expect(action.locator('p').filter({
+    hasText: /^Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen\.$/,
+  })).toBeVisible();
+  await expect(action.getByText(/Warum jetzt:/i)).toBeHidden();
 
   const summary = 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.';
   const occurrences = await card.evaluate((element, expectedSummary) => (
-    (element.textContent ?? '').split(expectedSummary).length - 1
+    ((element as HTMLElement).innerText ?? '').split(expectedSummary).length - 1
   ), summary);
   expect(occurrences).toBe(1);
+
+  await action.getByText(/Warum dieser Plan-Schritt/i).click();
+  await expect(action.getByText(/Warum jetzt:/i)).toBeVisible();
 });
 
 test('Plan mobile promotes the action contract above refresh chrome', async ({ page }) => {
