@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Plan versteckt Tagesbegruendung hinter Disclosure
+
+- **Decision:** `/plan` zeigt die primaere Plan-Aktion weiter direkt, versteckt die wiederholten Erklaertexte `Warum jetzt` und `Nach dem Klick` auf Desktop und Mobile aber standardmaessig hinter einer expliziten `Warum ...?`-Offenlegung. `/` bleibt die direkte Tagesentscheidungsflaeche.
+- **Why:** Benchmark und Desktop-Route-Evidence zeigten dass fuehrende Apps Today/Readiness und Kalender/Planung trennen. Pulse wiederholte den Home-Tagesvertrag oben im Plan, wodurch der Wochenplan trotz gruenem Layout-Check schwerer wirkte und Home/Plan mental konkurrierten.
+- **Alternatives:** Neue Plan-Tabs/Renames sofort einfuehren (groesserer IA-Scope); die Begruendung komplett entfernen (verliert Vertrauen); alle Erklaertexte sichtbar lassen (Dopplung bleibt).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Settings-Deep-Link-Guard laeuft auch in PR-Smoke
 
 - **Decision:** Der Settings-Deep-Link-Check fuer `/settings?section=push` wird zusaetzlich in `frontend/e2e/pulse-smoke.spec.ts` abgedeckt, damit PRs mit Frontend-Aenderungen diesen Layout-Regressionstyp vor dem Merge sehen.

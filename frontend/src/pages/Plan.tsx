@@ -429,11 +429,38 @@ function NextTrainingDecisionCard({
             Verfügbarkeit klären
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
-            Warum jetzt: Ohne verfügbare Tage kann Pulse keinen sinnvollen Wochenplan statt nur freie Slots erzeugen.
+            Erst die Woche belastbar machen, dann Plan und Garmin-Handoff prüfen.
           </p>
-          <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: '6px 0 0' }}>
-            Nach dem Klick: Du setzt die Trainingsfenster; danach kann Pulse Planvorschlag und Garmin-Handoff konkreter prüfen.
-          </p>
+          <details
+            data-testid="plan-primary-action-explanation"
+            style={{
+              marginTop: 7,
+              borderTop: '1px solid var(--border)',
+              paddingTop: 7,
+              fontSize: 11.5,
+              color: 'var(--text-2)',
+              lineHeight: 1.45,
+            }}
+          >
+            <summary
+              style={{
+                color: 'var(--accent)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9.5,
+                letterSpacing: 0,
+                textTransform: 'uppercase',
+              }}
+            >
+              Warum diese Aufgabe?
+            </summary>
+            <p style={{ margin: '7px 0 0' }}>
+              Warum jetzt: Ohne verfügbare Tage kann Pulse keinen sinnvollen Wochenplan statt nur freie Slots erzeugen.
+            </p>
+            <p style={{ margin: '5px 0 0' }}>
+              Nach dem Klick: Du setzt die Trainingsfenster; danach kann Pulse Planvorschlag und Garmin-Handoff konkreter prüfen.
+            </p>
+          </details>
           <button
             type="button"
             onClick={onOpenAvailability}
@@ -728,11 +755,40 @@ function NextTrainingDecisionCard({
           {primaryActionTitle}
         </div>
         <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
-          Warum jetzt: {primaryActionReason}
+          {recommendedOption
+            ? `${recommendedOption.label} ist als Alternative markiert. Struktur und Garmin-Handoff bleiben explizit.`
+            : 'Passt aktuell zu Load, Risiko, mentaler Lage und aktiven Zielen.'}
         </p>
-        <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: '6px 0 0' }}>
-          Nach dem Klick: {primaryActionResult}
-        </p>
+        <details
+          data-testid="plan-primary-action-explanation"
+          style={{
+            marginTop: 7,
+            borderTop: '1px solid var(--border)',
+            paddingTop: 7,
+            fontSize: 11.5,
+            color: 'var(--text-2)',
+            lineHeight: 1.45,
+          }}
+        >
+          <summary
+            style={{
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9.5,
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+            }}
+          >
+            Warum diese Einheit?
+          </summary>
+          <p style={{ margin: '7px 0 0' }}>
+            Warum jetzt: {primaryActionReason}
+          </p>
+          <p style={{ margin: '5px 0 0' }}>
+            Nach dem Klick: {primaryActionResult}
+          </p>
+        </details>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 7, marginTop: 10 }}>
           <button
             type="button"

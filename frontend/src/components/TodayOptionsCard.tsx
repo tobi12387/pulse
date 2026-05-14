@@ -267,11 +267,37 @@ export function TodayOptionsCard({
               {primaryOption.title}
             </div>
             <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
-              Warum jetzt: {data.summary}
+              {data.summary}
             </p>
-            <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0 }}>
-              Nach dem Klick: Pulse öffnet die Einheit oder den passenden Plan-Schritt; Änderungen bleiben bewusst, bevor Garmin betroffen ist.
-            </p>
+            <details
+              data-testid="plan-primary-action-explanation"
+              style={{
+                borderTop: '1px solid var(--border)',
+                paddingTop: 7,
+                fontSize: 11.5,
+                color: 'var(--text-2)',
+                lineHeight: 1.45,
+              }}
+            >
+              <summary
+                style={{
+                  color: 'var(--accent)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9.5,
+                  letterSpacing: 0,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Warum dieser Plan-Schritt?
+              </summary>
+              <p style={{ margin: '7px 0 0' }}>
+                Warum jetzt: {data.summary}
+              </p>
+              <p style={{ margin: '5px 0 0' }}>
+                Nach dem Klick: Pulse öffnet die Einheit oder den passenden Plan-Schritt; Änderungen bleiben bewusst, bevor Garmin betroffen ist.
+              </p>
+            </details>
           </div>
           <button
             type="button"
