@@ -167,6 +167,60 @@ test('Home renders exactly one main daily decision card', async ({ page }) => {
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toHaveCount(1);
 });
 
+test('Home daily decision details expose top signals goal impact Garmin state and safest option', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-default',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 75,
+        distanceKm: null,
+        targetTss: 62,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3.8,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Ausdauer mit sauberem Fueling.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText(/Warum diese Aktion/i);
+  await expect(contract).toContainText('Koerper');
+  await expect(contract).toContainText('Readiness 78/100');
+  await expect(contract).toContainText('Belastung');
+  await expect(contract).toContainText('TSB -5.7');
+  await expect(contract).toContainText('Zielwirkung');
+  await expect(contract).toContainText('produktiver Trainingsreiz');
+  await expect(contract).toContainText('Garmin');
+  await expect(contract).toContainText('Pulse plant lokal');
+  await expect(contract).toContainText('Sicherste Option');
+  await expect(contract).toContainText('Einheit locker halten');
+});
+
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
   await mockPulseApi(page, {
     dailyDelta: [{
@@ -212,7 +266,8 @@ test('Home no-training daily decision opens the missing check-in before Coach su
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   await expect(decision).toContainText(/Nach dem Klick/i);
   await expect(decision).toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
-  await expect(decision.getByText('Readiness 78/100')).toBeVisible();
+  await expect(page.getByTestId('daily-decision-contract')).toContainText('Garmin: kein Schreibpfad fuer heute');
+  await expect(decision.getByRole('button', { name: 'Readiness 78/100', exact: true })).toBeVisible();
   await expect(decision.getByRole('button', { name: /Coach fragen/i })).toHaveCount(1);
 
   await checkinAction.click();

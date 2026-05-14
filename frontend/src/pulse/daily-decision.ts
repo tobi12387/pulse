@@ -2,6 +2,22 @@ import type { PulseHomeScreenData, PulseNextBestAction } from '@coaching-os/shar
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
+export type DailyDecisionSignalTone = 'green' | 'amber' | 'rose' | 'accent' | 'muted';
+
+export interface DailyDecisionSignal {
+  label: string;
+  detail: string;
+  tone: DailyDecisionSignalTone;
+  targetPath?: string;
+}
+
+export interface DailyDecisionContract {
+  goalImpact: string;
+  garminExecution: string;
+  safestAlternative: string;
+  signals: DailyDecisionSignal[];
+}
+
 export type DailyDecisionStepStatus = 'done' | 'open' | 'note';
 
 export interface DailyDecisionStep {
@@ -24,6 +40,7 @@ export interface DailyDecision {
   prompt: string;
   priority: PulseNextBestAction['priority'];
   evidence: DailyDecisionEvidence[];
+  contract: DailyDecisionContract;
   steps?: DailyDecisionStep[];
   emptyState?: string;
   supportCta?: string;
@@ -167,6 +184,114 @@ function actionResultPreview(action: PulseNextBestAction | null, fallbackPath: s
   return 'Pulse öffnet den passenden Schritt, ohne automatisch Plan oder Garmin zu verändern.';
 }
 
+function signalToneForReadiness(score: number): DailyDecisionSignalTone {
+  if (score < 55) return 'rose';
+  if (score < 70) return 'amber';
+  if (score >= 85) return 'accent';
+  return 'green';
+}
+
+function signalToneForTsb(tsb: number): DailyDecisionSignalTone {
+  if (tsb < -12) return 'amber';
+  if (tsb > 8) return 'green';
+  return 'muted';
+}
+
+function executionSummary(workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
+  if (completedActivity) return 'Garmin: Aktivitaet erledigt und bereit fuer Feedback/Planabgleich.';
+  if (!workout) return 'Garmin: kein Schreibpfad fuer heute; Erholung und Check-in bleiben lokal.';
+  if (workout.executionStatus === 'completed_matched') return 'Garmin: geplante Einheit erledigt und zugeordnet.';
+  if (workout.executionStatus === 'garmin_scheduled') return 'Garmin: Kalender bereit; Ausfuehrung auf dem Geraet pruefbar.';
+  if (workout.executionStatus === 'garmin_template') return 'Garmin: Workout-Template bereit, Kalenderstatus noch pruefen.';
+  if (workout.executionStatus === 'missed') return 'Garmin: geplante Einheit wirkt verpasst; Planabgleich vor Nachholen.';
+  if (workout.executionStatus === 'replaced_or_off_plan') return 'Garmin: echte Aktivitaet weicht vom Plan ab; Planwirkung pruefen.';
+  return 'Garmin: Pulse plant lokal; kein automatischer Geraete-Write.';
+}
+
+function goalImpactSummary(home: PulseHomeScreenData, workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
+  if (workout?.status === 'completed' || workout?.completedActivityId) {
+    return 'Zielwirkung: Reiz als erledigt behandeln; Feedback macht die naechste Planung genauer.';
+  }
+  if (completedActivity) {
+    return 'Zielwirkung: ungeplante Belastung in die naechste Planentscheidung einrechnen.';
+  }
+  if (workout) {
+    if (workout.capabilityFit === 'too_hard_today') return 'Zielwirkung: Fortschritt schuetzen, aber heute keine zu harte Einheit erzwingen.';
+    if (workout.capabilityFit === 'stretch') return 'Zielwirkung: kontrollierter Reiz, solange Readiness und Grenze passen.';
+    if (workout.capabilityFit === 'productive') return 'Zielwirkung: produktiver Trainingsreiz im Wochenziel.';
+    return 'Zielwirkung: Wochenstruktur halten, ohne Zusatzumfang zu erzwingen.';
+  }
+  if (home.nextWorkout) {
+    return 'Zielwirkung: Erholung heute verbessert die Qualitaet der naechsten Einheit.';
+  }
+  return 'Zielwirkung: Erholung und mentaler Check-in halten die Routine stabil.';
+}
+
+function topSignals(home: PulseHomeScreenData, workout: HomeWorkout | null, completedActivity: HomeActivity | null, action: PulseNextBestAction | null): DailyDecisionSignal[] {
+  const signals: DailyDecisionSignal[] = [
+    {
+      label: 'Koerper',
+      detail: `Readiness ${home.readiness.score}/100`,
+      tone: signalToneForReadiness(home.readiness.score),
+      targetPath: '/data?tab=trends#data-recovery',
+    },
+    {
+      label: 'Belastung',
+      detail: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,
+      tone: signalToneForTsb(home.fitnessLoad.tsb),
+      targetPath: '/data?tab=analysis#data-plan-trace',
+    },
+  ];
+
+  if (workout) {
+    signals.push({
+      label: 'Training',
+      detail: `${activityLabel(workout.activityType)} Z${workout.zone} · ${workout.durationMin} min`,
+      tone: workout.capabilityFit === 'too_hard_today' ? 'rose' : workout.capabilityFit === 'stretch' ? 'amber' : 'accent',
+      targetPath: '/plan?tab=training',
+    });
+  } else if (completedActivity) {
+    signals.push({
+      label: 'Garmin',
+      detail: completedActivityLabel(completedActivity),
+      tone: 'accent',
+      targetPath: activityDetailPath(completedActivity.id),
+    });
+  }
+
+  if (action?.source === 'checkin' || action?.source === 'mental') {
+    signals.push({
+      label: 'Mental',
+      detail: action.source === 'checkin' ? 'Check-in offen' : action.title,
+      tone: action.priority === 'critical' ? 'rose' : action.priority === 'high' ? 'amber' : 'accent',
+      targetPath: action.targetPath,
+    });
+  }
+
+  return signals.slice(0, 4);
+}
+
+function buildContract({
+  home,
+  action,
+  workout,
+  completedActivity,
+  alternative,
+}: {
+  home: PulseHomeScreenData;
+  action: PulseNextBestAction | null;
+  workout: HomeWorkout | null;
+  completedActivity: HomeActivity | null;
+  alternative: string;
+}): DailyDecisionContract {
+  return {
+    goalImpact: goalImpactSummary(home, workout, completedActivity),
+    garminExecution: executionSummary(workout, completedActivity),
+    safestAlternative: alternative,
+    signals: topSignals(home, workout, completedActivity, action),
+  };
+}
+
 export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined): DailyDecision | null {
   if (!home) return null;
 
@@ -208,6 +333,13 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const alternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
     const completionCriterion = emptyState
       ?? 'Feedback erfassen, damit Pulse die Belastung und den nächsten Plan sauber einordnen kann.';
+    const contract = buildContract({
+      home,
+      action,
+      workout: completedWorkout,
+      completedActivity: completedActivityFor(home, completedWorkout),
+      alternative,
+    });
     const prompt = [
       'Tagesentscheidung: Training heute erledigt.',
       `Warum: ${reason}`,
@@ -228,6 +360,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       prompt,
       priority: 'normal',
       evidence,
+      contract,
       steps,
       emptyState,
       supportCta: 'Coach fragen',
@@ -266,6 +399,13 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const alternative = 'Kein Zusatztraining nachschieben; wenn die Aktivität anders geplant war, danach den Plan neu abgleichen.';
     const completionCriterion = emptyState
       ?? 'Feedback erfassen, damit Pulse die ungeplante Belastung in den nächsten Plan einbeziehen kann.';
+    const contract = buildContract({
+      home,
+      action,
+      workout: null,
+      completedActivity: offPlanActivity,
+      alternative,
+    });
     const prompt = [
       'Tagesentscheidung: Garmin-Training heute erledigt.',
       `Warum: ${reason}`,
@@ -286,6 +426,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       prompt,
       priority: 'normal',
       evidence,
+      contract,
       steps,
       emptyState,
       supportCta: 'Coach fragen',
@@ -318,6 +459,14 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
     ...(action?.evidence?.map(mapEvidence) ?? []),
   ];
+  const decisionWorkout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : null;
+  const contract = buildContract({
+    home,
+    action,
+    workout: decisionWorkout,
+    completedActivity: null,
+    alternative,
+  });
   const prompt = [
     `Tagesentscheidung: ${title}.`,
     `Warum: ${reason}`,
@@ -339,6 +488,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     prompt,
     priority: action?.priority ?? 'normal',
     evidence,
+    contract,
     supportCta,
     supportPath,
   };

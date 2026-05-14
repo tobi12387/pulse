@@ -1,6 +1,6 @@
 # Performance Operating System Design
 
-> Status: draft for Tobi review.
+> Status: accepted for autonomous execution after Tobi's 2026-05-14 approval.
 > Scope: docs-only product design. This spec does not implement runtime behavior, migrations, Garmin writes, LLM calls or UI changes.
 
 ## Goal
@@ -180,6 +180,6 @@ This spec is complete when:
 
 Future implementation plans should add focused verification for their touched surface: contract/unit tests for synthesis logic, route evidence for UI hierarchy, no-write guards for Garmin/plan-sensitive flows, and nutrition/resilience fixtures for weak-evidence cases.
 
-## Review Gate
+## Execution Gate
 
-Tobi should review this spec before any implementation plan is written. After approval, the next step is to create a focused implementation plan for the first chosen slice, most likely **Daily Intelligent Action Contract v2** unless Tobi selects a different slice.
+Tobi granted Codex autonomy to continue specs, plans and implementation slices without manual approval, provided Pulse hard rules, PR flow, safety boundaries and verification still hold. The first selected implementation slice is **Daily Intelligent Action Contract v2**.

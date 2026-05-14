@@ -10,6 +10,14 @@ function priorityColor(priority: DailyDecision['priority']): string {
   return 'var(--accent)';
 }
 
+function signalToneColor(tone: DailyDecision['contract']['signals'][number]['tone']): string {
+  if (tone === 'green') return 'var(--green)';
+  if (tone === 'amber') return 'var(--amber)';
+  if (tone === 'rose') return 'var(--rose)';
+  if (tone === 'accent') return 'var(--accent)';
+  return 'var(--text-3)';
+}
+
 function label(text: string, labelCase: LabelCase): string {
   return labelCase === 'upper' ? text.toUpperCase() : text;
 }
@@ -111,6 +119,73 @@ function evidenceItems({
           <span key={key} style={baseStyle}>
             {text}
           </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function contractSignalItems({
+  signals,
+  onActivate,
+}: {
+  signals: DailyDecision['contract']['signals'];
+  onActivate?: (path: string) => void;
+}) {
+  if (signals.length === 0) return null;
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6 }}>
+      {signals.map(signal => {
+        const content = (
+          <>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: signalToneColor(signal.tone), letterSpacing: '.08em', textTransform: 'uppercase' }}>
+              {signal.label}
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>
+              {signal.detail}
+            </span>
+          </>
+        );
+        if (signal.targetPath && onActivate) {
+          return (
+            <button
+              key={`${signal.label}-${signal.detail}`}
+              type="button"
+              onClick={() => onActivate(signal.targetPath!)}
+              style={{
+                minHeight: 44,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                padding: '7px 8px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 5,
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              {content}
+            </button>
+          );
+        }
+        return (
+          <div
+            key={`${signal.label}-${signal.detail}`}
+            style={{
+              minHeight: 44,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              padding: '7px 8px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+            }}
+          >
+            {content}
+          </div>
         );
       })}
     </div>
@@ -412,6 +487,30 @@ export function DailyDecisionCard({
 
           {detailsOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              <div data-testid="daily-decision-contract">
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 7 }}>
+                  {label('Warum diese Aktion?', labelCase)}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {contractSignalItems({ signals: decision.contract.signals, onActivate })}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 6 }}>
+                    {[
+                      ['Zielwirkung', decision.contract.goalImpact],
+                      ['Garmin', decision.contract.garminExecution],
+                      ['Sicherste Option', decision.contract.safestAlternative],
+                    ].map(([title, detail]) => (
+                      <div key={title} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>
+                          {title}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                          {detail}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               {showDeferredResultPreview && (
                 <div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 7 }}>

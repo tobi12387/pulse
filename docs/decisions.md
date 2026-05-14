@@ -18,6 +18,26 @@
 
 ---
 
+## 2026-05-14 — Daily Intelligent Action Contract v2 bleibt frontend-first
+
+- **Decision:** Pulse implementiert Daily Intelligent Action Contract v2 als frontend-first Uebersetzung vorhandener Home-Daten: Details der Tagesentscheidung zeigen Top-Signale, Zielwirkung, Garmin-Ausfuehrungsstatus und sicherste Option, ohne neue API, Migration, Plan-Mutation oder Garmin-Write.
+- **Why:** Der Performance-OS-Nordstern braucht eine ruhigere Antwort auf die Tagesfrage, nicht sofort neue Datenmodelle. Die vorhandenen Home-, Plan-, Garmin-, Readiness- und Mental-Signale reichen fuer einen ersten sichtbaren Entscheidungsvertrag aus und lassen sich mit fokussierten E2E-Checks absichern.
+- **Alternatives:** Backend-Synthesevertrag bauen (groesserer Scope); neue Home-Karte ausserhalb der bestehenden Tagesentscheidung einfuehren (mehr UI-Dichte); Garmin-/Plan-Aenderungen direkt an die Entscheidung koppeln (verletzt explizite Preview-/No-write-Grenzen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
+## 2026-05-14 — Performance-OS-Freigaben laufen autonom
+
+- **Decision:** Tobi gibt Codex fuer den Performance-OS-Nordstern dauerhafte Autonomie: Specs, Plaene und PR-grosse Implementierungsslices duerfen ohne weitere manuelle Freigabe fortgesetzt werden, solange Pulse-Hard-Rules, PR-Flow, Safety-Gates und Verifikation eingehalten werden.
+- **Why:** Das Ziel ist ein Ende-2026-Produktzustand, nicht eine einzelne Spezifikation. Manuelle Freigaben fuer jeden Zwischenschritt wuerden den Fortschritt kuenstlich blockieren; GitHub-PRs, Tests, Decisions und deploy-sichere Grenzen bleiben die Kontrollschicht.
+- **Alternatives:** Nach jedem Spec oder Plan warten (zu langsam und vom Nutzer explizit aufgehoben); direkt auf `main` arbeiten (verletzt Pulse-Regeln); alle Slices in einen Gross-PR packen (zu riskant).
+- **Decided by:** Tobi.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Performance Operating System wird reviewbarer 2026-Produktvertrag
 
 - **Decision:** Pulse erhaelt einen docs-only Performance-Operating-System-Spec, der Tobis Ende-2026-Nordstern in Erfolgskriterien, Benchmark-Rollen, Produktgrenzen und PR-grosse Folgeslices uebersetzt.
