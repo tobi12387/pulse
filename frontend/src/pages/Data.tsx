@@ -248,6 +248,7 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
 
 function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
   const [secondaryOpen, setSecondaryOpen] = useState(false);
+  const [actionDetailOpen, setActionDetailOpen] = useState(false);
   const homeQuery = usePulseHome();
   const checkinToday = useCheckinToday();
   const navigate = useNavigate();
@@ -333,6 +334,22 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       detail: 'Welche Muster Pulse bei dir gerade wirklich lernen darf.',
     },
   ];
+  const actionContract = (
+    <>
+      <div className="data-primary-action-contract-block">
+        <div className="label-mono" style={{ marginBottom: 4 }}>Warum jetzt</div>
+        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
+          {primaryAction.reason}
+        </p>
+      </div>
+      <div className="data-primary-action-contract-block">
+        <div className="label-mono" style={{ marginBottom: 4 }}>Nach dem Klick</div>
+        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
+          {primaryAction.result}
+        </p>
+      </div>
+    </>
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -374,21 +391,10 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
             {primaryAction.title}
           </h3>
           <div
-            className="data-primary-action-contract"
+            className="data-primary-action-contract data-primary-action-contract--desktop"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 9, marginTop: 12 }}
           >
-            <div className="data-primary-action-contract-block">
-              <div className="label-mono" style={{ marginBottom: 4 }}>Warum jetzt</div>
-              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
-                {primaryAction.reason}
-              </p>
-            </div>
-            <div className="data-primary-action-contract-block">
-              <div className="label-mono" style={{ marginBottom: 4 }}>Nach dem Klick</div>
-              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-2)' }}>
-                {primaryAction.result}
-              </p>
-            </div>
+            {actionContract}
           </div>
           <div className="data-primary-action-evidence" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
             {evidence.map(item => (
@@ -434,6 +440,27 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         >
           {primaryAction.cta}
         </button>
+        <div className="data-primary-action-mobile-details">
+          <button
+            type="button"
+            className="data-primary-action-mobile-details-toggle"
+            aria-expanded={actionDetailOpen}
+            aria-controls="data-primary-action-mobile-contract"
+            onClick={() => setActionDetailOpen(open => !open)}
+          >
+            Warum diese Aufgabe?
+          </button>
+          {actionDetailOpen && (
+            <div
+              id="data-primary-action-mobile-contract"
+              data-testid="data-primary-action-mobile-contract"
+              className="data-primary-action-contract data-primary-action-contract--mobile"
+              style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 6 }}
+            >
+              {actionContract}
+            </div>
+          )}
+        </div>
       </section>
       <button
         type="button"

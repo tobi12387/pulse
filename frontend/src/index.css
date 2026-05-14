@@ -478,6 +478,10 @@
     gap: 8px;
   }
 
+  .data-primary-action-mobile-details {
+    display: none;
+  }
+
   @media (min-width: 768px) {
     .pulse-page-shell {
       padding-top: 1.5rem;
@@ -564,6 +568,43 @@
     .data-primary-action-button {
       width: 100%;
       justify-self: stretch !important;
+    }
+
+    .data-primary-action-contract--desktop {
+      display: none !important;
+    }
+
+    .data-primary-action-mobile-details {
+      display: grid !important;
+      gap: 8px;
+    }
+
+    .data-primary-action-mobile-details-toggle {
+      min-width: 44px;
+      min-height: 44px;
+      justify-self: start;
+      max-width: 100%;
+      padding: 8px 10px;
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 5px;
+      color: var(--text-2);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .data-primary-action-mobile-details-toggle[aria-expanded="true"] {
+      background: rgba(94,230,207,0.12);
+      border-color: rgba(94,230,207,0.45);
+      color: var(--accent);
+    }
+
+    .data-primary-action-contract--mobile {
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
     }
 
     .settings-profile-card {

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Data-Mobile zeigt die Tagesaktion vor Detail-Erklärungen
+
+- **Decision:** `/data` behält den vollständigen Daten-Aktionsvertrag auf Desktop sichtbar, legt `Warum jetzt` und `Nach dem Klick` auf Mobile aber hinter `Warum diese Aufgabe?`. Evidenzchips und der primäre CTA bleiben direkt sichtbar.
+- **Why:** Live-Mobile-Evidence zeigte, dass der fehlende Mental-Check-in zwar als Tagesaktion priorisiert war, der ausführbare Button aber erst nach zwei langen Erklärabsätzen kam. Für den iPhone/PWA-Alltag soll die Seite zuerst ausführbar sein und danach erklären.
+- **Alternatives:** Erklärtexte komplett entfernen (verliert Vertrauen); Desktop ebenfalls einklappen (unnötiger Informationsverlust); nur Typografie/Spacing reduzieren (CTA bleibt im schweren Textfluss).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Mental Check-in legt Vorschlags-Evidenz hinter `Warum?`
 
 - **Decision:** Der Mental Check-in zeigt Pulse' Garmin-/Readiness-Vorschlag nicht mehr als direkte Evidenzkarte unter `Heute speichern`, sondern hinter `Warum dieser Vorschlag?`. Die deterministische Vorauswahl bleibt unverändert.

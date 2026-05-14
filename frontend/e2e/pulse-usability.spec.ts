@@ -2021,6 +2021,23 @@ test('Data starts with one daily action before secondary areas', async ({ page }
   await expect(secondary.getByRole('button', { name: 'Plan-/Load-Analyse prüfen' })).toBeVisible();
 });
 
+test('Data mobile keeps the missing-check-in action before optional detail copy', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile action-first check');
+
+  await mockPulseApi(page, { checkinToday: { checkin: null } });
+
+  await page.goto('/data');
+  const action = page.getByTestId('data-primary-action');
+  await expect(action).toContainText('Mental Check-in abschließen');
+  await expect(action.getByRole('button', { name: 'Check-in öffnen' })).toBeInViewport();
+  await expect(action.getByRole('button', { name: 'Warum diese Aufgabe?' })).toBeVisible();
+  await expect(action.getByTestId('data-primary-action-mobile-contract')).toHaveCount(0);
+
+  await action.getByRole('button', { name: 'Warum diese Aufgabe?' }).click();
+  await expect(action.getByTestId('data-primary-action-mobile-contract')).toContainText('Nach dem Klick');
+});
+
 test('Data Plan Load triage hands off to the actionable Plan scenario surface', async ({ page }) => {
   await mockPulseApi(page);
 
