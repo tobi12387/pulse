@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Settings-Deep-Link-Guard laeuft auch in PR-Smoke
+
+- **Decision:** Der Settings-Deep-Link-Check fuer `/settings?section=push` wird zusaetzlich in `frontend/e2e/pulse-smoke.spec.ts` abgedeckt, damit PRs mit Frontend-Aenderungen diesen Layout-Regressionstyp vor dem Merge sehen.
+- **Why:** Die Regression aus dem Settings-Desktop-Layout fiel erst im Main-Full-Browser-Lauf auf. Ein einzelner Smoke-Guard ist deutlich guenstiger als Full-E2E auf jedem PR und schuetzt genau die URL-backed-Settings-Navigation, die Diagnosekarten benutzen.
+- **Alternatives:** Full-E2E fuer alle PRs aktivieren (zu langsam fuer den gewuenschten GitHub-Flow); nur auf Main testen (zu spaet); den bestehenden Full-Test duplizieren ohne Smoke (kein schnelleres Feedback).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Insights zeigt bei Fokus-Duplikat die naechste unterschiedliche Pruefung
 
 - **Decision:** Wenn der primaere Insights-Check bereits im Hero-Fokus steckt, rendert `Nächste sinnvolle Prüfung` nicht mehr eine No-op-Bestaetigung, sondern die naechste unterschiedliche read-only Pruefung aus Datenqualitaet oder Capability.

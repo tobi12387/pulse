@@ -379,6 +379,17 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
   }
 });
 
+test('Settings section deep links land near the target section', async ({ page }) => {
+  await page.goto('/settings?section=push');
+  await expectHealthyPage(page, 'Settings');
+
+  const pushHeading = page.getByRole('heading', { name: 'Benachrichtigungen' });
+  await expect(pushHeading).toBeVisible();
+  const box = await pushHeading.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeLessThan(260);
+});
+
 test('daily training surfaces use localized activity labels', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const runWorkout = {
