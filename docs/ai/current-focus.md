@@ -13,6 +13,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 
 ## Active Direction
 
+- Product north star: Pulse is a personal resilience and performance coach that connects physical training, nutrition, recovery and mental wellbeing. It should support earlier awareness of overload, low-mood patterns and routine breakdowns, while staying safety-bounded: no clinical diagnosis, no hidden sensitive labels and no alarmist wording.
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the canonical product roadmap. It now includes the 2026-05-10 UI/UX benchmark translation, UX Task Contract, navigation-as-product-tool rule and short/medium/long roadmap order.
 - Future UI/UX work should first regenerate evidence via `docs/qa/route-evidence-pack.md`; the 2026-05-02 deep-friction roadmap is completed history.
 - Focus navigation baseline is Heute (`/`), Data, Plan, Insights and Settings. Coach is not a primary tab; keep `/coach` as a compatibility/deep-link route and prefer `⌘K`/prepared prompts for Coach entry. Future tabs, areas or modes remain allowed when they make a recurring flow clearer or calmer; validate with route evidence before changing primary navigation.

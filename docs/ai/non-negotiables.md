@@ -31,6 +31,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 
 - Optimize for daily usefulness before feature breadth.
 - Garmin, training, recovery and mental-health signals must visibly influence coaching, plans and explanations.
+- Mental wellbeing is part of the core product: guide reflection, boundaries, healthy routines and user-approved support activation without clinical diagnosis or hidden sensitive labels.
 - Planned workouts should match current data and goals; do not fill every available day by default.
 - Repeated generic recommendations are a product bug unless the data genuinely supports the same answer.
 - iPhone/PWA over VPN is a real usage path, so mobile touch, readable density, offline/cert friction and Settings diagnostics matter.

@@ -118,6 +118,8 @@ export function DecisionHero({
             labelCase="upper"
             framed={false}
             inlineActions
+            deferResultPreview
+            deferSupportAction
             onActivate={onActivate}
             onPrompt={onPrompt}
           />

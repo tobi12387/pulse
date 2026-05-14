@@ -1,17 +1,21 @@
 # Pulse Product Roadmap
 
-> Stand: 2026-05-12 after Focus-Handoff alignment and the fresh top-tools benchmark. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
+> Stand: 2026-05-14 after Focus-Handoff alignment, fresh top-tools benchmark work and the resilience/performance north-star update. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
 
 ## Product North Star
 
-Pulse should be the quiet daily operating system for training, recovery and execution: it turns Garmin, plan, mental, fueling and goal evidence into one understandable next action, then explains enough that Tobi can trust, override or refine it.
+Pulse should become a personal resilience and performance coach: it connects physical training, nutrition, recovery and mental wellbeing into one understandable daily next action, then explains enough that Tobi can trust, override or refine it.
 
-The product target is not "more data". The target is better daily judgment:
+The product target is not "more data". The target is better daily judgment and earlier self-awareness:
 
 - what should I do today;
 - why is that the right call;
 - what happens if I accept, change or skip it;
-- how does it affect my goal, recovery, Garmin device and next plan decision.
+- how does it affect my goal, recovery, Garmin device and next plan decision;
+- what does this say about energy, stress, mood, overload risk and routine stability;
+- when should I keep the day small, rebuild a healthy routine or activate support.
+
+Pulse should help Tobi become stronger without ignoring mental strain. It can surface possible overload patterns, low-mood trends and routine breakdowns early, but it must stay safety-bounded: no clinical diagnosis, no hidden sensitive labels and no alarmist wording. Sensitive guidance should be framed as reflection, boundaries, healthy routines and user-approved support activation.
 
 ## Product Principles
 
@@ -20,9 +24,10 @@ The product target is not "more data". The target is better daily judgment:
 3. **Navigation is a product tool.** Pulse may add, rename or remove tabs, areas or modes when that makes a recurring flow clearer, faster or calmer. The number of tabs is not the goal; orientation is.
 4. **Daily usefulness beats feature breadth.** A small daily flow that is trusted matters more than a larger dashboard that Tobi must interpret.
 5. **Garmin execution must close the loop.** Planning is not complete until the workout's device/calendar/repeat status is understandable and repairable.
-6. **Mental fitness is first-class but careful.** Pulse can guide reflection, boundaries and adaptation; it must not infer clinical labels or hide sensitive assumptions.
+6. **Mental resilience is first-class and safety-bounded.** Pulse can guide reflection, boundaries, routine repair and adaptation; it must not infer clinical labels or hide sensitive assumptions.
 7. **PWA over VPN remains the default platform.** Native iOS is evaluated only after real iPhone/PWA friction proves a concrete need.
 8. **Local ops must be boring.** Deploy, health, test services and browser QA need repeatable checks so agents do not rediscover the same failures.
+9. **Support activation is part of the product.** When patterns suggest overload, isolation, low mood or repeated routine collapse, Pulse should offer gentle next steps and user-configured support paths instead of silently scoring the problem.
 
 ## UX Task Contract
 

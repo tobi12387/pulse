@@ -201,16 +201,19 @@ test('Home no-training daily decision opens the missing check-in before Coach su
   const decision = page.getByTestId('daily-decision-card');
   await expect(decision).toContainText('Heute ist kein Training geplant.');
   await expect(decision).toContainText(/Warum jetzt/i);
-  await expect(decision).toContainText(/Nach dem Klick/i);
   await expect(decision).toContainText('Kurz Stimmung, Energie, Stress und Motivation eintragen');
-  await expect(decision).toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
+  await expect(decision).not.toContainText(/Nach dem Klick/i);
+  await expect(decision).not.toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
   await expect(decision.getByText('Readiness 78/100')).not.toBeVisible();
   const checkinAction = decision.getByRole('button', { name: /Check-in öffnen/i });
   await expect(checkinAction).toBeVisible();
-  await expect(decision.getByRole('button', { name: /Coach/i })).toHaveCount(1);
+  await expect(decision.getByRole('button', { name: /Coach fragen/i })).toHaveCount(0);
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision).toContainText(/Nach dem Klick/i);
+  await expect(decision).toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
   await expect(decision.getByText('Readiness 78/100')).toBeVisible();
+  await expect(decision.getByRole('button', { name: /Coach fragen/i })).toHaveCount(1);
 
   await checkinAction.click();
   await expect(page).toHaveURL('/data?tab=today#data-mental');
