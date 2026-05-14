@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-13 — Quick-Szenario-Editor bleibt nach Preview eingeklappt
+
+- **Decision:** Quick-Szenarien aus Home/TrainNow zeigen nach der automatischen Preview zuerst Ergebnis, Apply-Vertrag und Garmin-Auswirkung. Der komplette Szenario-Editor wird erst nach `Option ändern` sichtbar und behält die vorbereiteten Werte.
+- **Why:** Live-Mobile-Evidence auf `c19f143` zeigte, dass die Vorschau zwar klarer wurde, aber darunter sofort wieder Mode-Grid und Formular konkurrierten. Für den täglichen iPhone/PWA-Flow soll die Entscheidung nach der Preview im Vordergrund stehen; Editieren bleibt bewusst erreichbar.
+- **Alternatives:** Editor immer sichtbar lassen (zu laut); Editor komplett entfernen (verliert Kontrolle); nur Mobile per CSS verstecken (schlechter testbar und Desktop-/Quick-Flows driften).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Plan Quick-Szenarien behalten echte Intent-Hinweise
 
 - **Decision:** Quick-Szenarien auf `/plan` verstecken nach einer Preview nur Review-Hints, die reine No-write-/Preview-Reminder sind. Inhaltliche Hinweise zur gewählten Absicht, z. B. einen freien Tag bewusst frei zu halten, bleiben sichtbar.

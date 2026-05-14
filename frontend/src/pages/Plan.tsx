@@ -1583,10 +1583,12 @@ function PlanScenarioPreviewCard({
   const [applyError, setApplyError] = useState<string | null>(null);
   const [reviewHint, setReviewHint] = useState<string | null>(null);
   const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
+  const [quickEditorOpen, setQuickEditorOpen] = useState(false);
   const autoPreviewKeyRef = useRef<string | null>(null);
   const previewPending = previewScenario.isPending;
   const applyPending = createWorkout.isPending || updateWorkout.isPending;
-  const pending = previewPending || applyPending;
+  const previewChecking = previewPending && !preview;
+  const pending = previewChecking || applyPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
   const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent';
@@ -1614,6 +1616,7 @@ function PlanScenarioPreviewCard({
         setError(null);
         setApplyError(null);
         setReviewHint(descriptionParam || 'Heute bewusst frei halten.');
+        setQuickEditorOpen(false);
       });
       void runAutoPreview(request);
       return;
@@ -1654,6 +1657,7 @@ function PlanScenarioPreviewCard({
       setReviewHint(entrySource === 'mobile-intent'
         ? 'Mobile Quick Decision vorbereitet: Pulse prueft erst Wochenlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
         : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
+      setQuickEditorOpen(false);
     });
     void runAutoPreview(request);
   }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isQuickScenarioEntry, previewScenarioMutateAsync, scenarioParam, searchKey, today, zoneParam]);
@@ -1665,6 +1669,7 @@ function PlanScenarioPreviewCard({
       setPreview(null);
       setError(null);
       setApplyError(null);
+      setQuickEditorOpen(true);
       setReviewHint(reviewRequest.mode === 'move'
         ? 'Adaptions-Check vorbereitet: Verschieben prueft, ob die naechste offene Einheit sinnvoller auf einen anderen verfuegbaren Tag passt.'
         : 'Adaptions-Check vorbereitet: Umfang senken prueft, ob die naechsten Workouts nach verpassten oder anders ausgefuehrten Einheiten defensiver werden sollten.');
@@ -1707,9 +1712,11 @@ function PlanScenarioPreviewCard({
     e?.preventDefault();
     setError(null);
     setApplyError(null);
+    setPreview(null);
     try {
       const result = await previewScenarioMutateAsync(scenario());
       setPreview(result.preview);
+      if (isQuickScenarioEntry) setQuickEditorOpen(false);
     } catch (err) {
       setError(errorMessage(err, 'Die Vorschau konnte nicht berechnet werden.'));
     }
@@ -1768,7 +1775,7 @@ function PlanScenarioPreviewCard({
       ? 'Im Verfügbarkeitsbereich speichern'
       : applyPending
       ? '● Wende an…'
-      : previewPending
+      : previewChecking
       ? 'Vorschau prüft…'
       : 'Vorschau anwenden';
     return (
@@ -1957,6 +1964,8 @@ function PlanScenarioPreviewCard({
   const visibleReviewHint = isQuickScenarioEntry && preview && reviewHint && isQuickScenarioNoWriteReminder(reviewHint)
     ? null
     : reviewHint;
+  const showScenarioEditor = !isQuickScenarioEntry || !preview || quickEditorOpen || Boolean(error);
+  const showQuickEditorToggle = isQuickScenarioEntry && preview && !quickEditorOpen;
 
   return (
     <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
@@ -2026,7 +2035,69 @@ function PlanScenarioPreviewCard({
 
       {isQuickScenarioEntry && previewResult}
 
-      <form onSubmit={handlePreview} style={{ display: 'grid', gap: 10 }}>
+      {visibleReviewHint && (
+        <p
+          data-testid="plan-scenario-review-hint"
+          style={{
+            margin: '10px 0 0',
+            padding: '8px 10px',
+            border: '1px solid rgba(245,158,11,0.28)',
+            borderRadius: 5,
+            background: 'rgba(245,158,11,0.08)',
+            color: 'var(--text-2)',
+            fontSize: 11.5,
+            lineHeight: 1.45,
+          }}
+        >
+          {visibleReviewHint}
+        </p>
+      )}
+
+      {showQuickEditorToggle && (
+        <div
+          data-testid="plan-scenario-editor-disclosure"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 10,
+            marginTop: 10,
+            padding: '8px 10px',
+            border: '1px solid var(--border)',
+            borderRadius: 5,
+            background: 'var(--surface-2)',
+          }}
+        >
+          <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+            Option passt? Details nur öffnen, wenn du sie ändern willst.
+          </span>
+          <button
+            type="button"
+            data-testid="plan-scenario-edit-toggle"
+            onClick={() => setQuickEditorOpen(true)}
+            style={{
+              minHeight: 38,
+              minWidth: 44,
+              padding: '7px 10px',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--text-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9.5,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Option ändern
+          </button>
+        </div>
+      )}
+
+      {showScenarioEditor && (
+      <form data-testid="plan-scenario-editor" onSubmit={handlePreview} style={{ display: 'grid', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
           {[
             ['tour', 'Eigene Einheit'],
@@ -2041,6 +2112,7 @@ function PlanScenarioPreviewCard({
                 setMode(id as typeof mode);
                 setPreview(null);
                 setReviewHint(null);
+                setQuickEditorOpen(true);
               }}
               style={{
                 minHeight: 44,
@@ -2060,24 +2132,6 @@ function PlanScenarioPreviewCard({
             </button>
           ))}
         </div>
-
-        {visibleReviewHint && (
-          <p
-            data-testid="plan-scenario-review-hint"
-            style={{
-              margin: 0,
-              padding: '8px 10px',
-              border: '1px solid rgba(245,158,11,0.28)',
-              borderRadius: 5,
-              background: 'rgba(245,158,11,0.08)',
-              color: 'var(--text-2)',
-              fontSize: 11.5,
-              lineHeight: 1.45,
-            }}
-          >
-            {visibleReviewHint}
-          </p>
-        )}
 
         {mode === 'tour' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 10 }}>
@@ -2166,6 +2220,7 @@ function PlanScenarioPreviewCard({
           {previewScenario.isPending ? '● Prüfe…' : 'Szenario prüfen'}
         </button>
       </form>
+      )}
 
       {error && (
         <div style={{ marginTop: 10 }}>

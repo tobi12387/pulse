@@ -2149,9 +2149,6 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
   await expect(scenarioCard).toBeVisible();
   await expect(scenarioCard).toBeInViewport();
   await expect(scenarioCard).toContainText('Mobile Quick Decision');
-  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('60');
-  await expect(scenarioCard.getByLabel('Sportart')).toHaveValue('bike');
-  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
   await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
@@ -2161,6 +2158,15 @@ test('Home surfaces quick availability intents when no workout is planned', asyn
   await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Mobile Vorschau: erst Wochenlast');
   await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Plan oder Garmin werden erst nach Apply verändert.');
   await expect(scenarioCard).not.toContainText('Mobile Quick Decision vorbereitet');
+  await expect(scenarioCard.getByTestId('plan-scenario-editor')).toHaveCount(0);
+  const editToggle = scenarioCard.getByTestId('plan-scenario-edit-toggle');
+  await expect(editToggle).toBeVisible();
+  await editToggle.click();
+  const editor = scenarioCard.getByTestId('plan-scenario-editor');
+  await expect(editor).toBeVisible();
+  await expect(editor.getByLabel('Dauer min')).toHaveValue('60');
+  await expect(editor.getByLabel('Sportart')).toHaveValue('bike');
+  await expect(editor.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
   await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
   await expect(scenarioCard).not.toContainText('155 km');
