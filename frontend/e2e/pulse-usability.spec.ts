@@ -5055,7 +5055,7 @@ test('Settings diagnostics matrix is visible first and routes to support section
   const profileBox = await page.getByRole('heading', { name: 'Profil', exact: true }).boundingBox();
   expect(matrixBox).not.toBeNull();
   expect(profileBox).not.toBeNull();
-  expect(matrixBox!.y).toBeLessThan(profileBox!.y);
+  expect(matrixBox!.y).toBeLessThanOrEqual(profileBox!.y + 4);
 
   await summary.getByRole('button', { name: 'Push öffnen' }).click();
   await expect(page).toHaveURL('/settings?section=push');
@@ -5066,6 +5066,32 @@ test('Settings diagnostics matrix is visible first and routes to support section
   await matrix.getByRole('button', { name: 'Gerät', exact: true }).click();
   await expect(page).toHaveURL('/settings?section=device');
   await expect(page.getByRole('heading', { name: 'iPhone & PWA' })).toBeVisible();
+});
+
+test('Settings uses desktop width for status and profile while keeping mobile stacked', async ({ page }) => {
+  await mockPulseApi(page);
+
+  await page.goto('/settings');
+
+  const status = page.getByTestId('settings-diagnostics-matrix');
+  const profile = page.locator('[data-settings-section="profile"]');
+  await expect(status).toBeVisible();
+  await expect(profile).toBeVisible();
+
+  const statusBox = await status.boundingBox();
+  const profileBox = await profile.boundingBox();
+  const viewport = page.viewportSize();
+  expect(statusBox, 'Missing settings status bounds').not.toBeNull();
+  expect(profileBox, 'Missing settings profile bounds').not.toBeNull();
+  expect(viewport, 'Missing viewport').not.toBeNull();
+
+  if (viewport!.width >= 1024) {
+    expect(profileBox!.y, 'desktop profile should start beside the status card').toBeLessThan(statusBox!.y + 80);
+    expect(profileBox!.x, 'desktop profile should use the second column').toBeGreaterThan(statusBox!.x + statusBox!.width * 0.75);
+  } else {
+    expect(profileBox!.y, 'mobile profile should remain below the status card').toBeGreaterThan(statusBox!.y + statusBox!.height - 4);
+    expect(Math.abs(profileBox!.x - statusBox!.x), 'mobile profile should stay in the same column').toBeLessThanOrEqual(2);
+  }
 });
 
 test('Settings treats blocked push as optional when core access is ready', async ({ page }) => {

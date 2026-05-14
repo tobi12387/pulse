@@ -478,6 +478,20 @@
     gap: 8px;
   }
 
+  .settings-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .settings-primary-grid,
+  .settings-secondary-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+
   .data-primary-action-mobile-details {
     display: none;
   }
@@ -511,6 +525,19 @@
       max-width: 240px;
       justify-self: end;
       align-self: end;
+    }
+
+  }
+
+  @media (min-width: 1024px) {
+    .settings-primary-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr);
+      gap: 18px;
+    }
+
+    .settings-secondary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 18px;
     }
   }
 

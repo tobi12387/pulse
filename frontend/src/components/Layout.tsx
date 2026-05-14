@@ -22,7 +22,11 @@ export default function Layout() {
   const [helpOpen, setHelpOpen] = useState(false);
   useNavHotkeys();
 
-  const isOperationalRoute = location.pathname === '/' || location.pathname.startsWith('/data') || location.pathname.startsWith('/plan') || location.pathname.startsWith('/insights');
+  const isOperationalRoute = location.pathname === '/'
+    || location.pathname.startsWith('/data')
+    || location.pathname.startsWith('/plan')
+    || location.pathname.startsWith('/insights')
+    || location.pathname.startsWith('/settings');
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1120 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
 
