@@ -109,6 +109,7 @@
 | `2026-05-13-plan-scenario-editor-disclosure.md` | Plan Scenario Editor Disclosure — Quick scenario previews keep the editor behind `Option ändern` after the result is visible | Plan Density PR |
 | `2026-05-14-data-mental-suggestion-disclosure.md` | Data Mental Suggestion Disclosure — Mental Check-in keeps quick state choice and save first while Garmin/readiness rationale opens on demand | Data Density PR |
 | `2026-05-14-data-mobile-action-first.md` | Data Mobile Action First — Mobile Data shows the executable daily action before optional task-contract detail copy | Data Density PR |
+| `2026-05-14-home-completed-noop-copy.md` | Home Completed No-op Copy — completed Home states avoid repeating the same no-op result as `Nach dem Klick` | Home Density PR |
 
 ## Bekannte veraltete Stellen
 

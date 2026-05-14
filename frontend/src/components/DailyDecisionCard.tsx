@@ -148,6 +148,10 @@ export function DailyDecisionCard({
   const hasStructuredSteps = !compact && stepGroups.length > 0;
   const openSteps = decision.steps?.filter(step => step.status === 'open') ?? [];
   const primarySummary = visibleStepSummary(decision, openSteps);
+  const previewText = resultPreview(decision);
+  const hideDuplicateCompletedPreview = openSteps.length === 0
+    && Boolean(decision.emptyState)
+    && previewText.trim() === primarySummary.detail.trim();
   const primaryAction = promptIsPrimary ? onPrompt : onActivate ? () => onActivate(decision.targetPath) : undefined;
   const showPromptAction = Boolean(onPrompt && !promptIsPrimary && !(decision.supportCta && onActivate));
   const showSupportAction = Boolean(decision.supportCta && decision.supportPath && onActivate);
@@ -359,14 +363,16 @@ export function DailyDecisionCard({
                 {primarySummary.detail}
               </div>
             </div>
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
-                {label('Nach dem Klick', labelCase)}
+            {!hideDuplicateCompletedPreview && (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
+                  {label('Nach dem Klick', labelCase)}
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+                  {previewText}
+                </div>
               </div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
-                {resultPreview(decision)}
-              </div>
-            </div>
+            )}
           </div>
 
           {inlineActions && renderActions(10)}

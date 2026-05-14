@@ -798,6 +798,7 @@ test('Home treats completed planned training with feedback as done and stays foc
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Heute beachten');
   await expect(page.getByTestId('daily-decision-next-steps')).toContainText('Kein Zusatztraining');
   await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText('Noch offen');
+  await expect(page.getByTestId('daily-decision-next-steps')).not.toContainText(/Nach dem Klick/i);
   await expect(page.getByRole('button', { name: /Feedback erfassen/i })).toHaveCount(0);
   await expect(page.getByText(/Feedback prüfen/i)).toHaveCount(0);
   await expect(page.getByText('Heute ist kein Training geplant.')).toHaveCount(0);
@@ -842,6 +843,20 @@ test('Home treats a completed off-plan Garmin activity as today done', async ({ 
 
   await page.getByTestId('daily-decision-card').getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
   await expect(page).toHaveURL(/\/activity\/activity-off-plan/);
+});
+
+test('Home completed off-plan activity with feedback avoids no-op post-click copy', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: offPlanActivityHome({ rpe: 5, feedbackLoggedAt: '2026-05-01T09:45:00.000Z' }),
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: /Training heute erledigt/i })).toBeVisible();
+  const nextSteps = page.getByTestId('daily-decision-next-steps');
+  await expect(nextSteps).toContainText('Alles Relevante ist erledigt');
+  await expect(nextSteps).toContainText('Für heute ist nichts mehr offen. Garmin-Aktivität und Feedback sind erledigt.');
+  await expect(nextSteps).not.toContainText(/Nach dem Klick/i);
 });
 
 test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort', async ({ page }) => {
