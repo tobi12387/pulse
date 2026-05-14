@@ -355,6 +355,53 @@ test('Plan keeps the action contract when only Today Options has the planned wor
   await expect(action.getByRole('button', { name: /Workout öffnen/i })).toBeVisible();
 });
 
+test('Plan everyday adaptation inbox opens preview without plan writes', async ({ page }) => {
+  let previewBody: unknown = null;
+  const requests: string[] = [];
+
+  await mockPulseApi(page, {
+    onRequest: (pathname, method) => requests.push(`${method} ${pathname}`),
+    onPlanScenarioPreview: body => { previewBody = body; },
+    planScenarioPreview: () => ({
+      preview: {
+        type: 'reduce_volume',
+        summary: 'Alltag geaendert: Pulse prueft defensivere offene Planlast.',
+        projectedWorkouts: [],
+        changedDays: [{
+          date: '2026-05-03',
+          before: { sessions: 1, durationMin: 90, tss: 68 },
+          after: { sessions: 1, durationMin: 65, tss: 48 },
+          label: '-25 min',
+        }],
+        loadImpact: { tssDelta: -20, durationDeltaMin: -25, nextDayRecoveryDate: null },
+        reasons: ['Alltagsanpassung bleibt Preview-only bis zur expliziten Anwendung.'],
+        warnings: [],
+        applySupported: true,
+      },
+    }),
+  });
+
+  await page.goto('/plan');
+  const inbox = page.getByTestId('everyday-adaptation-inbox');
+  await expect(inbox).toBeVisible();
+  await expect(inbox).toContainText('Heute anders?');
+  await expect(inbox).toContainText('Weniger Zeit');
+  await expect(inbox).toContainText('Nicht bereit');
+  await expect(inbox).toContainText('Anders erledigt');
+  await expect(inbox).toContainText('Heute skippen');
+
+  await inbox.getByRole('button', { name: 'Defensiv prüfen' }).click();
+  await expect(page).toHaveURL(/source=everyday-adaptation/);
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+  await expect(scenarioCard).toBeVisible();
+  await expect(page.getByTestId('plan-scenario-entry-context')).toContainText('Alltagsanpassung');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
+  await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.7 });
+  expect(requests).not.toContain('POST /api/pulse/plan/workout');
+});
+
 test('Plan alternatives explain purpose result and safest choice', async ({ page }) => {
   await mockPulseApi(page, {
     todayOptions: {

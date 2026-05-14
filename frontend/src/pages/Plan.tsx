@@ -18,6 +18,7 @@ import { PageHeader, RangeControl, SegmentedControl } from '@/components/PulseCh
 import { InlineFeedback } from '@/components/Feedback';
 import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
+import { EverydayAdaptationInboxCard } from '@/features/plan/EverydayAdaptationInboxCard';
 import { PlanChangeInboxCard } from '@/features/plan/PlanChangeInboxCard';
 import { buildWeeklyCoachReview, type WeeklyCoachReviewSummary, type WeeklyCoachReviewTone } from '@/features/plan/weekly-coach-review-model';
 import { buildPlanChangeInbox } from '@/features/plan/change-inbox-model';
@@ -1674,7 +1675,8 @@ function PlanScenarioPreviewCard({
   const pending = previewChecking || applyPending;
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
-  const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent';
+  const isEverydayAdaptationEntry = entrySource === 'everyday-adaptation';
+  const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent' || isEverydayAdaptationEntry;
   const hashTargetsScenario = hashFromLocation(location.hash) === 'plan-scenario-preview';
   const scenarioToolsOpen = isQuickScenarioEntry
     || entrySource === 'data-load'
@@ -1695,7 +1697,7 @@ function PlanScenarioPreviewCard({
       }
     }
 
-    if (scenarioParam === 'reduce_volume' && entrySource === 'mobile-intent') {
+    if (scenarioParam === 'reduce_volume' && (entrySource === 'mobile-intent' || isEverydayAdaptationEntry)) {
       const request: PulsePlanScenarioRequest = { type: 'reduce_volume', factor: 0.7 };
       queueMicrotask(() => {
         setMode('reduce');
@@ -1704,7 +1706,9 @@ function PlanScenarioPreviewCard({
         setPreview(null);
         setError(null);
         setApplyError(null);
-        setReviewHint(descriptionParam || 'Heute bewusst frei halten.');
+        setReviewHint(descriptionParam || (isEverydayAdaptationEntry
+          ? 'Alltagsanpassung vorbereitet: Pulse prüft reduzierte Planlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+          : 'Heute bewusst frei halten.'));
         setQuickEditorOpen(false);
       });
       void runAutoPreview(request);
@@ -1714,8 +1718,13 @@ function PlanScenarioPreviewCard({
     const activityType = activityTypeFromParam(activityTypeParam);
     const zone = numberFromParam(zoneParam, 2, 1, 5);
     const durationMin = numberFromParam(durationParam, 45, 5, 900);
+    const quickSourceLabel = entrySource === 'mobile-intent'
+      ? 'Mobile Quick Decision'
+      : isEverydayAdaptationEntry
+        ? 'Alltagsanpassung'
+        : 'TrainNow';
     const description = descriptionParam
-      || `${ACTIVITY_LABEL[activityType] ?? activityType} ${durationMin} min Z${zone} aus ${entrySource === 'mobile-intent' ? 'Mobile Quick Decision' : 'TrainNow'}.`;
+      || `${ACTIVITY_LABEL[activityType] ?? activityType} ${durationMin} min Z${zone} aus ${quickSourceLabel}.`;
     const request: PulsePlanScenarioRequest = {
       type: 'add_custom_tour',
       workout: {
@@ -1745,11 +1754,13 @@ function PlanScenarioPreviewCard({
       setApplyError(null);
       setReviewHint(entrySource === 'mobile-intent'
         ? 'Mobile Quick Decision vorbereitet: Pulse prueft erst Wochenlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+        : isEverydayAdaptationEntry
+          ? 'Alltagsanpassung vorbereitet: Pulse prüft erst Zielwirkung, Recovery und Garmin-Auswirkung, bevor etwas gespeichert wird.'
         : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
       setQuickEditorOpen(false);
     });
     void runAutoPreview(request);
-  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isQuickScenarioEntry, previewScenarioMutateAsync, scenarioParam, searchKey, today, zoneParam]);
+  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isEverydayAdaptationEntry, isQuickScenarioEntry, previewScenarioMutateAsync, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
     if (reviewRequest.seq <= 0) return;
@@ -2166,6 +2177,23 @@ function PlanScenarioPreviewCard({
           }}
         >
           Mobile Quick Decision: Prüfe hier zuerst Planlast, Recovery und Garmin-Auswirkung. Pulse schreibt erst nach dem Anwenden.
+        </p>
+      )}
+      {entrySource === 'everyday-adaptation' && (
+        <p
+          data-testid="plan-scenario-entry-context"
+          style={{
+            margin: '0 0 10px',
+            padding: '8px 10px',
+            border: '1px solid rgba(94,230,207,0.24)',
+            borderRadius: 5,
+            background: 'rgba(94,230,207,0.07)',
+            color: 'var(--text-2)',
+            fontSize: 11.5,
+            lineHeight: 1.45,
+          }}
+        >
+          Alltagsanpassung: Prüfe hier zuerst Zielwirkung, Recovery und Garmin-Auswirkung. Pulse schreibt erst nach dem Anwenden.
         </p>
       )}
 
@@ -2738,6 +2766,8 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
           setAdaptationDismissed(true);
         }}
       />
+
+      <EverydayAdaptationInboxCard onNavigate={navigate} />
 
       {planChangeInbox.items.length === 0 && (
         <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
