@@ -19,6 +19,7 @@ import {
 import { normalizeCoachMessages } from '../services/coach.js';
 import { getMentalLoadOverlay } from '../services/mental-load-overlay.js';
 import { listMentalThemes } from '../services/mental-themes.js';
+import { getResilienceRadar } from '../services/resilience-radar.js';
 import { refreshAdaptationEventsForUser } from '../services/adaptation-events.js';
 
 const checkinSchema = z.object({
@@ -247,5 +248,13 @@ export async function registerPulseCheckinRoutes(app: FastifyInstance) {
     const parsed = Number.parseInt(q.days ?? '56', 10);
     const days = Number.isFinite(parsed) ? parsed : 56;
     return getMentalLoadOverlay(userId, days);
+  });
+
+  app.get('/mental/resilience-radar', { onRequest: [app.authenticate] }, async (req) => {
+    const userId = req.user.sub;
+    const q = req.query as { days?: string };
+    const parsed = Number.parseInt(q.days ?? '14', 10);
+    const days = Number.isFinite(parsed) ? parsed : 14;
+    return getResilienceRadar(userId, days);
   });
 }

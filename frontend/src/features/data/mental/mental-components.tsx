@@ -4,10 +4,11 @@ import { RangeControl } from '@/components/PulseChrome';
 import { ThemeTimeline } from '@/components/ThemeTimeline';
 import { InlineFeedback } from '@/components/Feedback';
 import { errorMessage } from '@/components/feedback-utils';
-import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseCheckinTextPreview, usePulseHome } from '@/pulse/hooks';
+import { useCheckinGuidance, useCheckinHistory, useCheckinToday, usePulseCheckin, usePulseCheckinTextPreview, usePulseHome, useResilienceRadar } from '@/pulse/hooks';
 import { GarminDomainHint } from '@/features/data/coverage/coverage-components';
 import { mentalImpactLabels, mentalImpactLevel, type MentalImpactLevel } from '@/features/mental/mental-impact';
 import { ResilienceGuidanceCard } from '@/features/data/resilience/ResilienceGuidanceCard';
+import { ResilienceRadarCard } from '@/features/data/resilience/ResilienceRadarCard';
 import type { PulseHomeScreenData, PulseMentalCheckin } from '@coaching-os/shared/pulse';
 import { MENTAL_CHECKIN_SUGGESTION_THRESHOLDS } from '@coaching-os/shared/pulse-thresholds';
 import type { PulseCheckinTextPreview } from '@/pulse/api-client';
@@ -464,6 +465,7 @@ export function MentalTab() {
   const { data: today } = useCheckinToday();
   const { data: guidance } = useCheckinGuidance();
   const { data: home } = usePulseHome();
+  const resilienceRadar = useResilienceRadar(14);
   const checkin = usePulseCheckin();
   const textPreview = usePulseCheckinTextPreview();
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
@@ -567,6 +569,14 @@ export function MentalTab() {
   const scoredTodayCheckin = hasMentalScores(todayCheckin)
     ? todayCheckin
     : null;
+  const showRadarBeforeCheckin = Boolean(alreadyDone || submitted || scoredTodayCheckin);
+  const radarCard = (
+    <ResilienceRadarCard
+      radar={resilienceRadar.data}
+      isLoading={resilienceRadar.isLoading}
+      isError={resilienceRadar.isError}
+    />
+  );
   const checkins = histData?.checkins ?? [];
   const guidedQuestions = guidance?.questions.length
     ? guidance.questions
@@ -592,6 +602,7 @@ export function MentalTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <GarminDomainHint domains={['daily_metrics', 'hrv', 'sleep']} />
       {scoredTodayCheckin && <ResilienceGuidanceCard home={home ?? null} checkin={scoredTodayCheckin} />}
+      {showRadarBeforeCheckin && radarCard}
 
       {alreadyDone || submitted ? (
         <div className="card" style={{ borderColor: 'rgba(74,222,128,0.3)' }}>
@@ -1058,6 +1069,7 @@ export function MentalTab() {
           </form>
         </div>
       )}
+      {!showRadarBeforeCheckin && radarCard}
 
       <ThemeTimeline />
 

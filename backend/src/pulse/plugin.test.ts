@@ -1129,6 +1129,74 @@ describe('GET /api/pulse/mental/themes', () => {
   });
 });
 
+describe('GET /api/pulse/mental/resilience-radar', () => {
+  it('surfaces a visible support prompt from repeated resilience patterns without Garmin writes', async () => {
+    await db.insert(pulseMentalCheckins).values([
+      {
+        userId,
+        date: dateDaysAgo(0),
+        mood: 3,
+        energy: 3,
+        stress: 8,
+        motivation: 3,
+        notes: 'Rueckzug und viel Druck.',
+        themes: ['Rueckzug'],
+        source: 'manual',
+      },
+      {
+        userId,
+        date: dateDaysAgo(1),
+        mood: 4,
+        energy: 3,
+        stress: 8,
+        motivation: 4,
+        notes: 'Arbeit zieht.',
+        themes: ['Arbeit'],
+        source: 'manual',
+      },
+      {
+        userId,
+        date: dateDaysAgo(2),
+        mood: 3,
+        energy: 4,
+        stress: 7,
+        motivation: 3,
+        notes: 'Muede.',
+        themes: ['Muedigkeit'],
+        source: 'manual',
+      },
+    ]);
+    await db.insert(pulseCoachPreferences).values({
+      userId,
+      supportWarningSigns: ['Rueckzug'],
+      supportStabilizingActions: ['10 Minuten rausgehen'],
+      supportContactNote: 'Max kurz schreiben.',
+      supportActivationPreference: 'coach_prompt',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/mental/resilience-radar?days=14',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      state: string;
+      primaryAction: { label: string; targetPath: string };
+      signals: Array<{ id: string }>;
+      support: { configured: boolean; suggested: boolean };
+    }>();
+    expect(body.state).toBe('protect');
+    expect(body.support).toMatchObject({ configured: true, suggested: true });
+    expect(body.signals.map(signal => signal.id)).toContain('support_plan');
+    expect(body.primaryAction).toMatchObject({ label: 'Supportplan vorbereiten' });
+    expect(body.primaryAction.targetPath).toMatch(/^\/coach\?prompt=/);
+    expect(garminMocks.post).not.toHaveBeenCalled();
+    expect(garminMocks.delete).not.toHaveBeenCalled();
+  });
+});
+
 describe('GET /api/pulse/sleep', () => {
   it('returns 200 with empty sessions', async () => {
     const res = await app.inject({

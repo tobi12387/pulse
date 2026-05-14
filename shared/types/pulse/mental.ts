@@ -80,3 +80,48 @@ export interface PulseMentalLoadOverlayResponse {
     lowTsbCheckins: number;
   };
 }
+
+export type PulseResilienceRadarState = 'learning' | 'steady' | 'watch' | 'protect' | 'rebuild';
+export type PulseResilienceRadarSignalId =
+  | 'low_mood_trend'
+  | 'low_energy_trend'
+  | 'stress_pressure'
+  | 'load_pressure'
+  | 'routine_gap'
+  | 'support_plan';
+
+export interface PulseResilienceRadarAction {
+  label: string;
+  targetPath: string;
+  resultPreview: string;
+}
+
+export interface PulseResilienceRadarSignal {
+  id: PulseResilienceRadarSignalId;
+  label: string;
+  summary: string;
+  evidence: string[];
+}
+
+export interface PulseResilienceRadarSupport {
+  configured: boolean;
+  suggested: boolean;
+  preference: 'suggest_only' | 'coach_prompt' | 'manual_only';
+  note: string | null;
+}
+
+export interface PulseResilienceRadarResponse {
+  days: number;
+  state: PulseResilienceRadarState;
+  title: string;
+  summary: string;
+  primaryAction: PulseResilienceRadarAction;
+  signals: PulseResilienceRadarSignal[];
+  support: PulseResilienceRadarSupport;
+  evidenceQuality: {
+    checkins: number;
+    garminDays: number;
+    loadDays: number;
+    confidence: 'insufficient' | 'learning' | 'usable';
+  };
+}

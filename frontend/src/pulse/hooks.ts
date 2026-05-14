@@ -26,6 +26,7 @@ export const pulseKeys = {
   checkinHistory:  (days: number) => ['pulse', 'checkin', 'history', days] as const,
   mentalThemes:    (days: number) => ['pulse', 'mental', 'themes', days] as const,
   mentalLoadOverlay: (days: number) => ['pulse', 'mental', 'load-overlay', days] as const,
+  resilienceRadar: (days: number) => ['pulse', 'mental', 'resilience-radar', days] as const,
   metrics:      (days: number) => ['pulse', 'metrics', days] as const,
   weight:       (days: number) => ['pulse', 'weight', days] as const,
   profile:      ['pulse', 'profile'] as const,
@@ -420,6 +421,14 @@ export function useMentalLoadOverlay(days = 56) {
   });
 }
 
+export function useResilienceRadar(days = 14) {
+  return useQuery({
+    queryKey: pulseKeys.resilienceRadar(days),
+    queryFn: () => pulseApi.checkin.resilienceRadar(days),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useCoachSend() {
   const qc = useQueryClient();
   return useMutation({
@@ -460,6 +469,7 @@ export function usePulseCheckin() {
       qc.invalidateQueries({ queryKey: ['pulse', 'checkin', 'history'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'themes'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'load-overlay'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'mental', 'resilience-radar'] });
       qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
     },
   });
