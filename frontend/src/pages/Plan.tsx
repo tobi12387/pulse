@@ -1637,6 +1637,7 @@ function PlanScenarioPreviewCard({
   onApplied: (workout: PlannedWorkout | null, notice: PlanMutationNotice | null) => void;
 }) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const searchKey = searchParams.toString();
   const scenarioParam = searchParams.get('scenario');
   const activityTypeParam = searchParams.get('activityType');
@@ -1665,6 +1666,7 @@ function PlanScenarioPreviewCard({
   const [reviewHint, setReviewHint] = useState<string | null>(null);
   const [preview, setPreview] = useState<PulsePlanScenarioPreview | null>(null);
   const [quickEditorOpen, setQuickEditorOpen] = useState(false);
+  const [manualScenarioOpen, setManualScenarioOpen] = useState(false);
   const autoPreviewKeyRef = useRef<string | null>(null);
   const previewPending = previewScenario.isPending;
   const applyPending = createWorkout.isPending || updateWorkout.isPending;
@@ -1673,6 +1675,12 @@ function PlanScenarioPreviewCard({
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
   const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent';
+  const hashTargetsScenario = hashFromLocation(location.hash) === 'plan-scenario-preview';
+  const scenarioToolsOpen = isQuickScenarioEntry
+    || entrySource === 'data-load'
+    || reviewRequest.seq > 0
+    || hashTargetsScenario
+    || manualScenarioOpen;
 
   useEffect(() => {
     if (!isQuickScenarioEntry) return;
@@ -1746,6 +1754,7 @@ function PlanScenarioPreviewCard({
   useEffect(() => {
     if (reviewRequest.seq <= 0) return;
     queueMicrotask(() => {
+      setManualScenarioOpen(true);
       setMode(reviewRequest.mode);
       setPreview(null);
       setError(null);
@@ -2045,8 +2054,54 @@ function PlanScenarioPreviewCard({
   const visibleReviewHint = isQuickScenarioEntry && preview && reviewHint && isQuickScenarioNoWriteReminder(reviewHint)
     ? null
     : reviewHint;
-  const showScenarioEditor = !isQuickScenarioEntry || !preview || quickEditorOpen || Boolean(error);
+  const showScenarioEditor = scenarioToolsOpen && (!isQuickScenarioEntry || !preview || quickEditorOpen || Boolean(error));
   const showQuickEditorToggle = isQuickScenarioEntry && preview && !quickEditorOpen;
+
+  if (!scenarioToolsOpen) {
+    return (
+      <section
+        id="plan-scenario-preview"
+        tabIndex={-1}
+        className="card evidence-section"
+        data-testid="plan-scenario-preview-card"
+        style={{
+          borderColor: 'var(--border)',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          gap: 12,
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <div className="label-mono" style={{ color: 'var(--text-3)', marginBottom: 5 }}>Szenario-Vorschau</div>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            Planänderungen erst prüfen, wenn du wirklich eine Einheit verschieben, senken oder ergänzen willst.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setManualScenarioOpen(true)}
+          style={{
+            minHeight: 44,
+            minWidth: 44,
+            padding: '8px 12px',
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Szenario-Vorschau öffnen
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
@@ -2512,8 +2567,6 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
   const checkinToday = useCheckinToday();
   const checkinHistory = useCheckinHistory(7);
   const raceCommand = useRaceCommand();
-  const seasonStrategy = useSeasonStrategy();
-  const goalProjection = useGoalProjection(180);
   const todayOptions = useTodayOptions();
   const fitnessLoad = useFitnessLoad();
   const availability = useWeekAvailability();
@@ -2709,17 +2762,6 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
       <RaceCommandCard
         command={raceCommand.data?.command ?? null}
         isLoading={raceCommand.isLoading}
-      />
-
-      <AdaptiveSeasonContractCard
-        strategy={seasonStrategy.data?.strategy ?? planTrace?.inputSnapshot.seasonStrategy ?? null}
-        goalProjection={goalProjection.data ?? null}
-        isLoading={seasonStrategy.isLoading || goalProjection.isLoading}
-      />
-
-      <SeasonStrategyCard
-        strategy={seasonStrategy.data?.strategy ?? planTrace?.inputSnapshot.seasonStrategy ?? null}
-        isLoading={seasonStrategy.isLoading}
       />
 
       <PlanLimiterWorkoutSummary
@@ -2937,11 +2979,24 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
 
 function ZieleTab() {
   const { data, isLoading } = usePulseGoals();
+  const seasonStrategy = useSeasonStrategy();
+  const goalProjection = useGoalProjection(180);
   const [showForm, setShowForm] = useState(false);
   const goals = data?.goals ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <AdaptiveSeasonContractCard
+        strategy={seasonStrategy.data?.strategy ?? null}
+        goalProjection={goalProjection.data ?? null}
+        isLoading={seasonStrategy.isLoading || goalProjection.isLoading}
+      />
+
+      <SeasonStrategyCard
+        strategy={seasonStrategy.data?.strategy ?? null}
+        isLoading={seasonStrategy.isLoading}
+      />
+
       {showForm && <GoalForm onDone={() => setShowForm(false)} />}
 
       <div className="card">

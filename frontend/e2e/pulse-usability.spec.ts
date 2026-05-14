@@ -2392,6 +2392,7 @@ test('Plan scenario preview shows long-tour load and recovery impact before appl
   await page.goto('/plan?tab=training');
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
+  await scenarioCard.getByRole('button', { name: 'Szenario-Vorschau öffnen' }).click();
   await scenarioCard.getByLabel('km optional').fill('155');
   await scenarioCard.getByLabel('km/h optional').fill('22');
   await scenarioCard.getByLabel('Notiz').fill('Entspannte Rennradtour mit Stops.');
@@ -2547,6 +2548,7 @@ test('Plan scenario preview lists affected future workouts before applying', asy
   });
 
   await page.goto('/plan?tab=training');
+  await page.getByTestId('plan-scenario-preview-card').getByRole('button', { name: 'Szenario-Vorschau öffnen' }).click();
   await page.getByRole('button', { name: 'Umfang senken' }).click();
   await page.getByTestId('plan-scenario-preview-card').getByRole('button', { name: 'Szenario prüfen' }).click();
 
@@ -2699,6 +2701,7 @@ test('Plan surfaces Garmin sync failure after applying a custom tour scenario', 
   await page.goto('/plan?tab=training');
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
+  await scenarioCard.getByRole('button', { name: 'Szenario-Vorschau öffnen' }).click();
   await scenarioCard.getByLabel('km optional').fill('155');
   await scenarioCard.getByLabel('km/h optional').fill('22');
   await scenarioCard.getByLabel('Notiz').fill('Entspannte Rennradtour mit Stops.');
@@ -3177,7 +3180,7 @@ test('Plan shows season strategy guardrails and intentional free-day rationale',
     },
   });
 
-  await page.goto('/plan');
+  await page.goto('/plan?tab=goals');
 
   const seasonLine = page.getByTestId('plan-season-strategy-card');
   await expect(seasonLine).toBeVisible();
@@ -3205,7 +3208,7 @@ test('Plan shows adaptive season contract from season and goal projection eviden
     },
   });
 
-  await page.goto('/plan?tab=training');
+  await page.goto('/plan?tab=goals');
 
   const contract = page.getByTestId('plan-adaptive-season-contract');
   await expect(contract).toBeVisible();
@@ -3254,7 +3257,7 @@ test('Plan season strategy keeps rendering when load model is absent', async ({ 
     },
   });
 
-  await page.goto('/plan');
+  await page.goto('/plan?tab=goals');
 
   const seasonLine = page.getByTestId('plan-season-strategy-card');
   await expect(seasonLine).toBeVisible();
