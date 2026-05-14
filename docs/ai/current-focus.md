@@ -8,6 +8,7 @@ Keep this file as a short snapshot, not a PR archive. If it grows past roughly 8
 - Server `/root/pulse` on `192.168.178.46` is a deploy mirror only.
 - Do not rely on this file as a deploy register. Verify the exact live server commit with `scripts/verify-server.sh` when it matters.
 - Do not use this file as an open-PR registry; query GitHub when PR state matters.
+- Performance Operating System spec is ready for Tobi review in `docs/superpowers/specs/2026-05-14-performance-operating-system-design.md`; do not implement a follow-up slice until that spec is approved.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 - UI/UX Foundation Flow, Nav/Mental/Garmin trust slice, Home Daily Decision Closure, Mental Signal Impact, Garmin Sync Confidence, Mobile Touch Targets, Mobile A11y Keyboard and Data Decision Evidence Trail are deployed through PR #188.
 

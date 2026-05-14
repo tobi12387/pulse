@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Performance Operating System wird reviewbarer 2026-Produktvertrag
+
+- **Decision:** Pulse erhaelt einen docs-only Performance-Operating-System-Spec, der Tobis Ende-2026-Nordstern in Erfolgskriterien, Benchmark-Rollen, Produktgrenzen und PR-grosse Folgeslices uebersetzt.
+- **Why:** Der Nordstern verbindet Tagesklarheit, Trainingslogik, Garmin-Naehe, Alltagsadaption, Ernaehrungslernen und Analyse-Tiefe. Ohne reviewbaren Produktvertrag wuerden naechste PRs leicht wieder einzelne Evidenzflaechen statt die eine ruhige Tagesentscheidung optimieren.
+- **Alternatives:** Direkt ein Runtime-Feature bauen (zu breit ohne Prioritaetsschnitt); die bestehende Roadmap gross umschreiben (zu konflikttraechtig); den Nordstern nur im Chat belassen (nicht dauerhaft fuer Agenten nutzbar).
+- **Decided by:** Tobi + Codex, siehe `docs/superpowers/specs/2026-05-14-performance-operating-system-design.md`.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Resilience Radar v1 macht Mehrtagesmuster sichtbar
 
 - **Decision:** Pulse fuehrt Resilience Radar v1 als read-only Early-Pattern-Layer in Data > Mental ein. Der Layer verbindet Mental-Check-ins, Garmin-/Recovery- und Load-Evidenz mit expliziten Support-Praeferenzen und kann einen vorbereiteten Coach-Supportprompt anbieten.
