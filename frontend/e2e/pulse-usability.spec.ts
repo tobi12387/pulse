@@ -588,14 +588,15 @@ test('Insights does not repeat the current focus as a second next-check card', a
   const nextChecks = page.getByTestId('insights-next-actions');
   await expect(nextChecks).toContainText('Nächste sinnvolle Prüfung');
   await expect(nextChecks.locator('.card')).toHaveCount(0);
-  await expect(nextChecks).toContainText('Die wichtigste Prüfung steckt bereits im aktuellen Fokus.');
+  await expect(nextChecks).not.toContainText('Die wichtigste Prüfung steckt bereits im aktuellen Fokus.');
   await expect(nextChecks.getByText('Fueling-Praxis absichern', { exact: true })).toHaveCount(0);
-  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(0);
+  await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(1);
+  await expect(nextChecks).toContainText('Datenqualität');
+  await expect(nextChecks).not.toContainText('Capability');
 
   await nextChecks.getByRole('button', { name: 'Weitere Prüfungen anzeigen' }).click();
 
   await expect(nextChecks.getByTestId('insights-next-check-item')).toHaveCount(2);
-  await expect(nextChecks).toContainText('Datenqualität');
   await expect(nextChecks).toContainText('Capability');
 });
 

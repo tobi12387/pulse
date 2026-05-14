@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Insights zeigt bei Fokus-Duplikat die naechste unterschiedliche Pruefung
+
+- **Decision:** Wenn der primaere Insights-Check bereits im Hero-Fokus steckt, rendert `Nächste sinnvolle Prüfung` nicht mehr eine No-op-Bestaetigung, sondern die naechste unterschiedliche read-only Pruefung aus Datenqualitaet oder Capability.
+- **Why:** Live-Route-Evidence zeigte, dass Insights zwar keine doppelte Fueling-Karte mehr hatte, aber eine eigene Karte nur noch erklaerte, dass die wichtigste Pruefung schon im Fokus liegt. Das reduziert nicht die kognitive Last; eine echte zweite Pruefung ist nuetzlicher und bleibt weiterhin optional.
+- **Alternatives:** Die No-op-Bestaetigung behalten (korrekt, aber wenig handlungsorientiert); den gesamten Next-Check-Bereich ausblenden (ruhiger, aber sekundäre Pruefungen verschwinden); eine neue Insights-Navigation bauen (zu grosser Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Settings-Deep-Links warten kurz auf stabile Layout-Hoehe
 
 - **Decision:** URL-Anker wie `/settings?section=push` scrollen den Zielbereich nach dem ersten Render und erneut bei kurzzeitigen Layout-Aenderungen der Settings-Seite in den sichtbaren Bereich. Das breite Settings-Desktop-Grid bleibt unveraendert.
