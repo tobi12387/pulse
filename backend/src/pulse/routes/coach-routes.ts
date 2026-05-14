@@ -26,6 +26,10 @@ const coachPreferencesPatchSchema = z.object({
   preferredLongDays: z.array(z.number().int().min(0).max(6)).max(7).optional(),
   injurySensitiveConstraints: z.array(z.string().trim().min(1).max(160)).max(10).optional(),
   communicationStyle: z.enum(['direct', 'gentle', 'data_first']).optional(),
+  supportWarningSigns: z.array(z.string().trim().min(1).max(160)).max(12).optional(),
+  supportStabilizingActions: z.array(z.string().trim().min(1).max(180)).max(12).optional(),
+  supportContactNote: z.string().trim().max(500).optional(),
+  supportActivationPreference: z.enum(['suggest_only', 'coach_prompt', 'manual_only']).optional(),
 }).strict().refine(value => Object.keys(value).length > 0, { message: 'Mindestens ein Feld erforderlich' });
 
 export async function registerPulseCoachRoutes(app: FastifyInstance) {
@@ -55,6 +59,16 @@ export async function registerPulseCoachRoutes(app: FastifyInstance) {
       updates.injurySensitiveConstraints = [...new Set(parsed.data.injurySensitiveConstraints)];
     }
     if (parsed.data.communicationStyle !== undefined) updates.communicationStyle = parsed.data.communicationStyle;
+    if (parsed.data.supportWarningSigns !== undefined) {
+      updates.supportWarningSigns = [...new Set(parsed.data.supportWarningSigns)];
+    }
+    if (parsed.data.supportStabilizingActions !== undefined) {
+      updates.supportStabilizingActions = [...new Set(parsed.data.supportStabilizingActions)];
+    }
+    if (parsed.data.supportContactNote !== undefined) updates.supportContactNote = parsed.data.supportContactNote;
+    if (parsed.data.supportActivationPreference !== undefined) {
+      updates.supportActivationPreference = parsed.data.supportActivationPreference;
+    }
 
     const [row] = await db.insert(pulseCoachPreferences)
       .values({ userId, ...updates } as typeof pulseCoachPreferences.$inferInsert)

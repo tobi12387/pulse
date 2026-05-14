@@ -620,6 +620,10 @@ describe('Coach preferences', () => {
         preferredLongDays: [],
         injurySensitiveConstraints: [],
         communicationStyle: 'data_first',
+        supportWarningSigns: [],
+        supportStabilizingActions: [],
+        supportContactNote: '',
+        supportActivationPreference: 'suggest_only',
         updatedAt: null,
       },
     });
@@ -634,6 +638,10 @@ describe('Coach preferences', () => {
         preferredLongDays: [6, 6, 5],
         injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
         communicationStyle: 'data_first',
+        supportWarningSigns: ['Rueckzug', 'mehrere Tage sehr wenig Energie', 'Rueckzug'],
+        supportStabilizingActions: ['10 Minuten rausgehen', 'Training bewusst klein halten'],
+        supportContactNote: 'Wenn ich festhaenge: Max kurz schreiben.',
+        supportActivationPreference: 'coach_prompt',
       },
     });
 
@@ -645,12 +653,27 @@ describe('Coach preferences', () => {
       preferredLongDays: [5, 6],
       injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
       communicationStyle: 'data_first',
+      supportWarningSigns: ['Rueckzug', 'mehrere Tage sehr wenig Energie'],
+      supportStabilizingActions: ['10 Minuten rausgehen', 'Training bewusst klein halten'],
+      supportContactNote: 'Wenn ich festhaenge: Max kurz schreiben.',
+      supportActivationPreference: 'coach_prompt',
     });
     expect(body.preferences.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
     const rows = await db.select().from(pulseCoachPreferences).where(eq(pulseCoachPreferences.userId, userId));
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ timeWindows: 'Werktags vor 07:30 oder nach 18:30.' });
+  });
+
+  it('rejects invalid support activation preferences', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/pulse/coach/preferences',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: { supportActivationPreference: 'auto_contact' },
+    });
+
+    expect(res.statusCode).toBe(400);
   });
 });
 

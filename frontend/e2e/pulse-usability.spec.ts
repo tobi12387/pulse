@@ -1770,6 +1770,10 @@ test('Settings edits explicit coach preferences for future recommendations', asy
       preferredLongDays: [6],
       injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
       communicationStyle: 'data_first',
+      supportWarningSigns: ['Rueckzug'],
+      supportStabilizingActions: ['10 Minuten rausgehen'],
+      supportContactNote: 'Max kurz schreiben.',
+      supportActivationPreference: 'suggest_only',
       updatedAt: '2026-05-01T08:00:00.000Z',
     },
     onCoachPreferencesPatch: (body) => {
@@ -1780,6 +1784,9 @@ test('Settings edits explicit coach preferences for future recommendations', asy
   await page.goto('/settings');
   await expect(page.getByText('Coach-Präferenzen')).toBeVisible();
   await expect(page.getByText('lange Sweetspot-Blöcke')).toBeVisible();
+  await expect(page.getByText('Unterstützung')).toBeVisible();
+  await expect(page.getByText('Pulse kontaktiert niemanden automatisch.')).toBeVisible();
+  await expect(page.getByText('Rueckzug')).toBeVisible();
 
   await page.locator('.card').filter({ hasText: 'Coach-Präferenzen' }).getByRole('button', { name: 'Bearbeiten' }).click();
   await page.getByLabel('Zeitfenster').fill('Werktags vor 07:30 oder nach 18:30.');
@@ -1787,6 +1794,10 @@ test('Settings edits explicit coach preferences for future recommendations', asy
   await page.getByRole('button', { name: 'Fr' }).click();
   await page.getByLabel('Vorsicht / Constraints').fill('Achillessehne vorsichtig steigern');
   await page.getByLabel('Kommunikation').selectOption('direct');
+  await page.getByLabel('Warnzeichen').fill('Rueckzug\nmehrere Tage sehr wenig Energie');
+  await page.getByLabel('Stabilisierende Schritte').fill('10 Minuten rausgehen\nTraining bewusst klein halten');
+  await page.getByLabel('Support-Hinweis').fill('Wenn ich festhaenge: Max kurz schreiben.');
+  await page.getByLabel('Support-Aktivierung').selectOption('coach_prompt');
   await page.getByRole('button', { name: 'Coach speichern' }).click();
 
   await expect.poll(() => patched).toEqual({
@@ -1795,6 +1806,10 @@ test('Settings edits explicit coach preferences for future recommendations', asy
     preferredLongDays: [5, 6],
     injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
     communicationStyle: 'direct',
+    supportWarningSigns: ['Rueckzug', 'mehrere Tage sehr wenig Energie'],
+    supportStabilizingActions: ['10 Minuten rausgehen', 'Training bewusst klein halten'],
+    supportContactNote: 'Wenn ich festhaenge: Max kurz schreiben.',
+    supportActivationPreference: 'coach_prompt',
   });
   await expect(page.getByText('Coach-Präferenzen gespeichert.')).toBeVisible();
 });

@@ -150,7 +150,3 @@ One PR-sized slice:
 - No new notification topic.
 - No Telegram integration.
 - No data export.
-- No new top-level navigation.
-- No diagnosis, severity scoring, or hidden mental-health labels.
-- No plan or Garmin mutation when the support plan is opened.
-- No broad redesign of Coach, Data, Home or Settings beyond the support-plan section.

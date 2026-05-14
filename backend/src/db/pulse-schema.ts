@@ -19,6 +19,7 @@ import type {
   PulsePlanDecision,
   PulsePlanTrace,
   PulsePushTopics,
+  PulseSupportActivationPreference,
   PulseTrainingEnergySystem,
   PulseTrainingProgressionSignal,
   PulseWorkoutFitLabel,
@@ -140,6 +141,10 @@ export const pulseCoachPreferences = pgTable('pulse_coach_preferences', {
   preferredLongDays:          integer('preferred_long_days').array().notNull().default(sql`ARRAY[]::INTEGER[]`),
   injurySensitiveConstraints: text('injury_sensitive_constraints').array().notNull().default(sql`ARRAY[]::TEXT[]`),
   communicationStyle:         varchar('communication_style', { length: 32 }).$type<PulseCoachCommunicationStyle>().notNull().default('data_first'),
+  supportWarningSigns:        text('support_warning_signs').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  supportStabilizingActions:  text('support_stabilizing_actions').array().notNull().default(sql`ARRAY[]::TEXT[]`),
+  supportContactNote:         text('support_contact_note').notNull().default(''),
+  supportActivationPreference: varchar('support_activation_preference', { length: 32 }).$type<PulseSupportActivationPreference>().notNull().default('suggest_only'),
   updatedAt:                  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
