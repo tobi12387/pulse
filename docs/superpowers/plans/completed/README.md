@@ -110,6 +110,7 @@
 | `2026-05-14-data-mental-suggestion-disclosure.md` | Data Mental Suggestion Disclosure — Mental Check-in keeps quick state choice and save first while Garmin/readiness rationale opens on demand | Data Density PR |
 | `2026-05-14-data-mobile-action-first.md` | Data Mobile Action First — Mobile Data shows the executable daily action before optional task-contract detail copy | Data Density PR |
 | `2026-05-14-home-completed-noop-copy.md` | Home Completed No-op Copy — completed Home states avoid repeating the same no-op result as `Nach dem Klick` | Home Density PR |
+| `2026-05-14-settings-desktop-layout.md` | Settings Desktop Layout — Settings uses a wider desktop shell with status/profile side by side while mobile remains stacked | Settings Density PR |
 
 ## Bekannte veraltete Stellen
 

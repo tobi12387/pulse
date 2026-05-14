@@ -186,23 +186,34 @@ export default function Settings() {
   const status = garminStatus?.syncStatus ?? 'never';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="settings-layout">
       <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" mobileTitle="Settings" />
 
-      <SettingsDiagnosticsMatrix
-        garminStatus={garminStatus ?? null}
-        garminBlocked={garminCoverage?.domains.some(domain => domain.status === 'blocked') ?? false}
-        garminPartial={garminCoverage?.domains.some(domain => domain.status !== 'fresh') ?? false}
-        garminStatusLoading={garminStatusLoading}
-        garminStatusUnknown={garminStatusError || garminStatus?.syncStatus == null}
-        garminCoverageLoading={coverage30Query.isLoading || garminCoverageQuery.isLoading}
-        garminCoverageUnknown={coverage30Query.isError || garminCoverageQuery.isError}
-        garminCoverageDays={coverage30 ? `${coverage30.summary.dailyMetricsDays}/${coverage30.range.days}` : null}
-        pushConfigured={pushSettings.data?.configured ?? false}
-        pushPermission={pushPermission ?? null}
-        pushSubscriptions={pushSettings.data?.subscriptions.filter(sub => sub.enabled).length ?? 0}
-        onNavigate={path => navigate(path)}
-      />
+      <div className="settings-primary-grid">
+        <SettingsDiagnosticsMatrix
+          garminStatus={garminStatus ?? null}
+          garminBlocked={garminCoverage?.domains.some(domain => domain.status === 'blocked') ?? false}
+          garminPartial={garminCoverage?.domains.some(domain => domain.status !== 'fresh') ?? false}
+          garminStatusLoading={garminStatusLoading}
+          garminStatusUnknown={garminStatusError || garminStatus?.syncStatus == null}
+          garminCoverageLoading={coverage30Query.isLoading || garminCoverageQuery.isLoading}
+          garminCoverageUnknown={coverage30Query.isError || garminCoverageQuery.isError}
+          garminCoverageDays={coverage30 ? `${coverage30.summary.dailyMetricsDays}/${coverage30.range.days}` : null}
+          pushConfigured={pushSettings.data?.configured ?? false}
+          pushPermission={pushPermission ?? null}
+          pushSubscriptions={pushSettings.data?.subscriptions.filter(sub => sub.enabled).length ?? 0}
+          onNavigate={path => navigate(path)}
+        />
+
+        <SettingsGroup
+          sectionId="profile"
+          active={activeSection === 'profile'}
+          title="Profil"
+          description="Trainingszonen, Wochenziel und Phase steuern Plan- und Coach-Kontext."
+        >
+          <AthleteProfileCard setMessage={setMessage} />
+        </SettingsGroup>
+      </div>
 
       {message && (
         <div className="card" style={{
@@ -218,218 +229,211 @@ export default function Settings() {
         </div>
       )}
 
-      <SettingsGroup
-        sectionId="profile"
-        active={activeSection === 'profile'}
-        title="Profil"
-        description="Trainingszonen, Wochenziel und Phase steuern Plan- und Coach-Kontext."
-      >
-        <AthleteProfileCard setMessage={setMessage} />
-      </SettingsGroup>
+      <div className="settings-secondary-grid">
+        <SettingsGroup
+          sectionId="coach"
+          active={activeSection === 'coach'}
+          title="Coach"
+          description="Explizite Präferenzen steuern Ton, Zeitfenster und Trainingsmuster ohne versteckte Annahmen."
+        >
+          <CoachPreferencesCard setMessage={setMessage} />
+        </SettingsGroup>
 
-      <SettingsGroup
-        sectionId="coach"
-        active={activeSection === 'coach'}
-        title="Coach"
-        description="Explizite Präferenzen steuern Ton, Zeitfenster und Trainingsmuster ohne versteckte Annahmen."
-      >
-        <CoachPreferencesCard setMessage={setMessage} />
-      </SettingsGroup>
-
-      <SettingsGroup
-        sectionId="garmin"
-        active={activeSection === 'garmin'}
-        title="Verbindung"
-        description="Kalender-Sync und Backfill sind getrennt von Profil- und Push-Aktionen."
-      >
-      <div className="card">
-        <div className="label-mono" style={{ marginBottom: 14 }}>Garmin Connect</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Row label="Verbindung">
-            <Pill color="var(--green)">VERBUNDEN</Pill>
-          </Row>
-          <Row label="Datenstatus">
-            <Pill color={SYNC_COLOR[status]}>{SYNC_LABEL[status]}</Pill>
-          </Row>
-          {garminStatus?.lastSync && (
-            <Row label="Letzter Sync">
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
-                {new Date(garminStatus.lastSync).toLocaleString('de-DE')}
-              </span>
+        <SettingsGroup
+          sectionId="garmin"
+          active={activeSection === 'garmin'}
+          title="Verbindung"
+          description="Kalender-Sync und Backfill sind getrennt von Profil- und Push-Aktionen."
+        >
+        <div className="card">
+          <div className="label-mono" style={{ marginBottom: 14 }}>Garmin Connect</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Row label="Verbindung">
+              <Pill color="var(--green)">VERBUNDEN</Pill>
             </Row>
-          )}
-          {coverage30 && (
-            <>
-              <Row label="Metriken 30T">
-                <Val>{coverage30.summary.dailyMetricsDays}/{coverage30.range.days}</Val>
-              </Row>
-              <Row label="Schlaf 30T">
-                <Val>{coverage30.summary.sleepDays}/{coverage30.range.days}</Val>
-              </Row>
-              <Row label="Aktivität/Wetter">
-                <Val>{coverage30.summary.activities} / {coverage30.summary.weatherActivities}</Val>
-              </Row>
-              <Row label="Profilstatus">
-                <Pill color={coverage30.profile.missing.length === 0 ? 'var(--green)' : 'var(--amber)'}>
-                  {coverage30.profile.missing.length === 0 ? 'VOLLSTÄNDIG' : `${coverage30.profile.missing.length} FEHLT`}
-                </Pill>
-              </Row>
-              <Row label="Backfill">
-                <button
-                  type="button"
-                  onClick={() => navigate('/data?tab=quality')}
-                  style={{
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 4,
-                    color: 'var(--text-2)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.12em',
-                    minWidth: 44,
-                    minHeight: 44,
-                    padding: '4px 8px',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  Abdeckung
-                </button>
-              </Row>
-              <Row label="Backfill-Regel">
-                <Val>31 Tage max.</Val>
-              </Row>
-              <Row label="Ausführung">
-                <button
-                  type="button"
-                  onClick={() => navigate('/plan?tab=execution')}
-                  style={{
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 4,
-                    color: 'var(--text-2)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.12em',
-                    minWidth: 44,
-                    minHeight: 44,
-                    padding: '4px 8px',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  Plan prüfen
-                </button>
-              </Row>
-              <Row label="Letzter Backfill">
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: lastBackfill ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'right', overflowWrap: 'anywhere', minWidth: 0, maxWidth: '62%', lineHeight: 1.35 }}>
-                  {lastBackfill
-                    ? `${lastBackfill.dryRun ? 'Vorschau' : 'Sync'} ${lastBackfill.from}–${lastBackfill.to} · ${lastBackfill.synced}/${lastBackfill.planned}`
-                    : 'Noch keiner'}
+            <Row label="Datenstatus">
+              <Pill color={SYNC_COLOR[status]}>{SYNC_LABEL[status]}</Pill>
+            </Row>
+            {garminStatus?.lastSync && (
+              <Row label="Letzter Sync">
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+                  {new Date(garminStatus.lastSync).toLocaleString('de-DE')}
                 </span>
               </Row>
-            </>
-          )}
-          {garminCoverage && (
-            <>
-              <Row label="Domainqualität">
-                <GarminQualityPill status={garminCoverage.domains.some(domain => domain.status === 'blocked')
-                  ? 'blocked'
-                  : garminCoverage.domains.some(domain => domain.status !== 'fresh')
-                    ? 'partial'
-                    : 'fresh'}
+            )}
+            {coverage30 && (
+              <>
+                <Row label="Metriken 30T">
+                  <Val>{coverage30.summary.dailyMetricsDays}/{coverage30.range.days}</Val>
+                </Row>
+                <Row label="Schlaf 30T">
+                  <Val>{coverage30.summary.sleepDays}/{coverage30.range.days}</Val>
+                </Row>
+                <Row label="Aktivität/Wetter">
+                  <Val>{coverage30.summary.activities} / {coverage30.summary.weatherActivities}</Val>
+                </Row>
+                <Row label="Profilstatus">
+                  <Pill color={coverage30.profile.missing.length === 0 ? 'var(--green)' : 'var(--amber)'}>
+                    {coverage30.profile.missing.length === 0 ? 'VOLLSTÄNDIG' : `${coverage30.profile.missing.length} FEHLT`}
+                  </Pill>
+                </Row>
+                <Row label="Backfill">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/data?tab=quality')}
+                    style={{
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      color: 'var(--text-2)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.12em',
+                      minWidth: 44,
+                      minHeight: 44,
+                      padding: '4px 8px',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    Abdeckung
+                  </button>
+                </Row>
+                <Row label="Backfill-Regel">
+                  <Val>31 Tage max.</Val>
+                </Row>
+                <Row label="Ausführung">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/plan?tab=execution')}
+                    style={{
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      color: 'var(--text-2)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.12em',
+                      minWidth: 44,
+                      minHeight: 44,
+                      padding: '4px 8px',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    Plan prüfen
+                  </button>
+                </Row>
+                <Row label="Letzter Backfill">
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: lastBackfill ? 'var(--text-2)' : 'var(--text-3)', textAlign: 'right', overflowWrap: 'anywhere', minWidth: 0, maxWidth: '62%', lineHeight: 1.35 }}>
+                    {lastBackfill
+                      ? `${lastBackfill.dryRun ? 'Vorschau' : 'Sync'} ${lastBackfill.from}–${lastBackfill.to} · ${lastBackfill.synced}/${lastBackfill.planned}`
+                      : 'Noch keiner'}
+                  </span>
+                </Row>
+              </>
+            )}
+            {garminCoverage && (
+              <>
+                <Row label="Domainqualität">
+                  <GarminQualityPill status={garminCoverage.domains.some(domain => domain.status === 'blocked')
+                    ? 'blocked'
+                    : garminCoverage.domains.some(domain => domain.status !== 'fresh')
+                      ? 'partial'
+                      : 'fresh'}
+                  />
+                </Row>
+                <GarminQualityList
+                  domains={garminCoverage.domains}
+                  showActions
+                  onRepairAction={openGarminRepair}
                 />
-              </Row>
-              <GarminQualityList
-                domains={garminCoverage.domains}
-                showActions
-                onRepairAction={openGarminRepair}
-              />
-            </>
-          )}
-        </div>
-        <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
-          Nachladen passiert in Data → Abdeckung. Die Vorschau bleibt read-only; ein echter Backfill schreibt Garmin-Daten in Pulse.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            style={{
-              width: '100%',
-              background: 'var(--surface-2)', border: '1px solid var(--accent)',
-              borderRadius: 'var(--radius)', minHeight: 44, padding: '10px',
-              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: 'var(--accent)',
-              cursor: syncing ? 'default' : 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
-          </button>
-          <button
-            onClick={handleCalendarSync}
-            disabled={syncingCalendar}
-            style={{
-              width: '100%',
-              background: 'var(--surface-2)', border: '1px solid var(--text-3)',
-              borderRadius: 'var(--radius)', minHeight: 44, padding: '10px',
-              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-              textTransform: 'uppercase', color: 'var(--text-2)',
-              cursor: syncingCalendar ? 'default' : 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {syncingCalendar ? '● Kalender sync…' : 'Kalender synchronisieren'}
-          </button>
-          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
-            Lädt fehlende geplante Workouts zu Garmin und entfernt veraltete Pulse-Kalendereinträge.
+              </>
+            )}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
+            Nachladen passiert in Data → Abdeckung. Die Vorschau bleibt read-only; ein echter Backfill schreibt Garmin-Daten in Pulse.
           </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              style={{
+                width: '100%',
+                background: 'var(--surface-2)', border: '1px solid var(--accent)',
+                borderRadius: 'var(--radius)', minHeight: 44, padding: '10px',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: 'var(--accent)',
+                cursor: syncing ? 'default' : 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              {syncing ? '● Synchronisiere…' : 'Jetzt syncen'}
+            </button>
+            <button
+              onClick={handleCalendarSync}
+              disabled={syncingCalendar}
+              style={{
+                width: '100%',
+                background: 'var(--surface-2)', border: '1px solid var(--text-3)',
+                borderRadius: 'var(--radius)', minHeight: 44, padding: '10px',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: 'var(--text-2)',
+                cursor: syncingCalendar ? 'default' : 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              {syncingCalendar ? '● Kalender sync…' : 'Kalender synchronisieren'}
+            </button>
+            <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+              Lädt fehlende geplante Workouts zu Garmin und entfernt veraltete Pulse-Kalendereinträge.
+            </p>
+          </div>
         </div>
+        </SettingsGroup>
+
+        <SettingsGroup
+          sectionId="equipment"
+          active={activeSection === 'equipment'}
+          title="Datenpflege"
+          description="Equipment, Abdeckung und Wartung bleiben bei wiederholten Alltagsaufgaben zusammen."
+        >
+          <EquipmentList setMessage={setMessage} />
+        </SettingsGroup>
+
+        <SettingsGroup
+          sectionId="push"
+          active={activeSection === 'push'}
+          title="Benachrichtigungen"
+          description="Push-Regeln betreffen Geräte und Erlaubnisse, nicht Garmin-Daten."
+        >
+          <PushNotificationsCard setMessage={setMessage} />
+        </SettingsGroup>
+
+        <SettingsGroup
+          sectionId="device"
+          active={activeSection === 'device'}
+          title="iPhone & PWA"
+          description="Lokaler Zugriff, HTTPS und Browser-Fähigkeiten für iPhone/VPN bleiben sichtbar."
+        >
+          <PwaDeviceCard />
+        </SettingsGroup>
+
+        <SettingsGroup
+          sectionId="health"
+          active={activeSection === 'health'}
+          title="Health-State"
+          description="Health-State setzt harte Trainingsgrenzen und ist bewusst separat."
+        >
+          <HealthStateCard />
+        </SettingsGroup>
       </div>
-      </SettingsGroup>
-
-      <SettingsGroup
-        sectionId="equipment"
-        active={activeSection === 'equipment'}
-        title="Datenpflege"
-        description="Equipment, Abdeckung und Wartung bleiben bei wiederholten Alltagsaufgaben zusammen."
-      >
-        <EquipmentList setMessage={setMessage} />
-      </SettingsGroup>
-
-      <SettingsGroup
-        sectionId="push"
-        active={activeSection === 'push'}
-        title="Benachrichtigungen"
-        description="Push-Regeln betreffen Geräte und Erlaubnisse, nicht Garmin-Daten."
-      >
-        <PushNotificationsCard setMessage={setMessage} />
-      </SettingsGroup>
-
-      <SettingsGroup
-        sectionId="device"
-        active={activeSection === 'device'}
-        title="iPhone & PWA"
-        description="Lokaler Zugriff, HTTPS und Browser-Fähigkeiten für iPhone/VPN bleiben sichtbar."
-      >
-        <PwaDeviceCard />
-      </SettingsGroup>
-
-      <SettingsGroup
-        sectionId="health"
-        active={activeSection === 'health'}
-        title="Health-State"
-        description="Health-State setzt harte Trainingsgrenzen und ist bewusst separat."
-      >
-        <HealthStateCard />
-      </SettingsGroup>
     </div>
   );
 }

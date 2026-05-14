@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Settings nutzt Desktop-Breite als Arbeitsfläche
+
+- **Decision:** `/settings` zählt künftig zu den breiten Operational-Routes und rendert Status/Diagnose plus Athletenprofil auf Desktop nebeneinander. Mobile bleibt weiterhin strikt einspaltig.
+- **Why:** Route-Evidence zeigte Settings als schmalen Single-Column-Stack mit viel leerem Desktop-Raum rechts. Das machte die Seite vertikal länger und schwerer zu scannen, obwohl Status und Profil zwei primäre Settings-Aufgaben sind.
+- **Alternatives:** Settings weiter schmal lassen (verschwendet Desktop und verlängert die Seite); alle Settings-Karten weiter verdichten (würde Mobile riskieren); neue Settings-Tabs einführen (zu großer IA-Scope für die beobachtete Lücke).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Home wiederholt erledigte Tagesabschlüsse nicht als Klickfolge
 
 - **Decision:** `DailyDecisionCard` blendet den Block `Nach dem Klick` aus, wenn keine offenen Schritte existieren und die Vorschau exakt denselben Text wie die erledigte Primärzusammenfassung enthält. Offene Entscheidungen, Plan-/Data-Karten und Evidenzdetails behalten den bestehenden Task-Contract.
