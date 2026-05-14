@@ -163,6 +163,39 @@ test('Plan desktop keeps daily reasoning behind an explicit disclosure', async (
   await expect(action.getByText(/Nach dem Klick:/i)).toBeVisible();
 });
 
+test('Plan desktop keeps progression evidence collapsed by default', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific progression density');
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-progression-density',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+    }],
+    todayOptionsState: 'unplanned_trainable',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const progression = page.getByTestId('plan-workout-progression');
+  await expect(progression).toContainText('Progression');
+  await expect(progression.getByText(/Rolle:/i)).toBeVisible();
+  await expect(progression.getByText(/Kalibrierung:/i)).toBeHidden();
+
+  await progression.getByText(/Progression prüfen/i).click();
+  await expect(progression.getByText(/Kalibrierung:/i)).toBeVisible();
+  await expect(progression.getByText(/Wiederholung:/i)).toBeVisible();
+  await expect(progression.getByText(/Ändern wenn:/i)).toBeVisible();
+});
+
 test('Plan shows the week before season evidence on desktop', async ({ page }) => {
   await page.goto('/plan');
 

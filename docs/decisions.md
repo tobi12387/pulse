@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Plan zeigt Progression kompakt und Details auf Nachfrage
+
+- **Decision:** `/plan` zeigt in der naechsten Trainingsentscheidung nur noch den Progression-Status, Athlete-Level und die Rolle der Einheit direkt. Kalibrierung, Wiederholung, Aenderungsbedingung und Evidence-Chips liegen hinter `Progression pruefen`.
+- **Why:** Nach der Tagesaktions-Reduktion zeigte die Live-Desktop-Seite weiterhin zu viel Erklaertext vor dem Wochenplan. Fuehrende Planungs-Tools priorisieren im Plan die Kalender-/Wochensteuerung; tiefe Begruendung bleibt wichtig, muss aber nicht den ersten Desktop-Viewport dominieren.
+- **Alternatives:** Progression komplett entfernen (verliert Transparenz); alles sichtbar lassen (Woche bleibt nach unten gedrueckt); neue Plan-IA in demselben PR bauen (zu grosser Scope).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Plan versteckt Tagesbegruendung hinter Disclosure
 
 - **Decision:** `/plan` zeigt die primaere Plan-Aktion weiter direkt, versteckt die wiederholten Erklaertexte `Warum jetzt` und `Nach dem Klick` auf Desktop und Mobile aber standardmaessig hinter einer expliziten `Warum ...?`-Offenlegung. `/` bleibt die direkte Tagesentscheidungsflaeche.
