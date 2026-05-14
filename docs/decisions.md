@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Resilience Radar v1 macht Mehrtagesmuster sichtbar
+
+- **Decision:** Pulse fuehrt Resilience Radar v1 als read-only Early-Pattern-Layer in Data > Mental ein. Der Layer verbindet Mental-Check-ins, Garmin-/Recovery- und Load-Evidenz mit expliziten Support-Praeferenzen und kann einen vorbereiteten Coach-Supportprompt anbieten.
+- **Why:** Der Resilienz- und Performance-Nordstern braucht fruehere Wahrnehmung von Ueberlastung, Low-Mood-Tendenzen und Routineabbruechen, nicht nur eine Tageskarte. Ein sichtbarer Evidence-Layer schliesst diese Luecke ohne LLM, Diagnose, versteckte Labels, Push-/Kontakt-Eskalation, Plan-Mutation oder Garmin-Schreibpfad.
+- **Alternatives:** Nur das bestehende Risk-Signal nutzen (zu wenig sichtbar und nicht supportplan-nah); Supportplan nur in Settings/Coach belassen (zu spaet im Tagesfluss); neue Navigation bauen (zu gross fuer v1).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Resilienz-/Performance-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Support Activation v1 Scope-Sperren werden gelockert
 
 - **Decision:** Die Support-Activation-v1-Spezifikation entfernt die No-Goal-Sperren gegen neue Top-Level-Navigation, Diagnose-/Severity-/Label-Scope, Plan-/Garmin-Mutation beim Oeffnen des Supportplans und breitere Redesigns von Coach, Data, Home oder Settings.

@@ -1349,6 +1349,71 @@ test('Data Mental shows resilience guidance without clinical labels', async ({ p
   await expect(card).not.toContainText(/Diagnose|Depression|Krankheit/i);
 });
 
+test('Data mental shows resilience radar support prompt', async ({ page }) => {
+  let coachSends = 0;
+  await mockPulseApi(page, {
+    checkinToday: { checkin: { id: 'checkin-1', date: '2026-05-01' } },
+    checkinHistory: {
+      checkins: [
+        { id: 'checkin-1', date: '2026-05-01', mood: 3, energy: 3, stress: 8, motivation: 3 },
+      ],
+    },
+    resilienceRadar: {
+      days: 14,
+      state: 'protect',
+      title: 'Heute bewusst schützen.',
+      summary: 'Mehrere sichtbare Signale sprechen dafür, Druck aus dem Tag zu nehmen.',
+      primaryAction: {
+        label: 'Supportplan vorbereiten',
+        targetPath: `/coach?prompt=${encodeURIComponent('Bitte hilf mir, meinen Supportplan ruhig zu aktivieren. Max kurz schreiben.')}`,
+        resultPreview: 'Coach öffnet mit vorbereitetem Supportplan-Prompt; Pulse kontaktiert niemanden automatisch.',
+      },
+      signals: [
+        {
+          id: 'low_mood_trend',
+          label: 'Stimmung',
+          summary: 'Ø 3.4/10 in den letzten Check-ins.',
+          evidence: ['2026-05-01: Stimmung 3/10'],
+        },
+        {
+          id: 'support_plan',
+          label: 'Supportplan',
+          summary: 'Ein vorbereiteter Coach-Prompt ist erlaubt.',
+          evidence: ['Warnzeichen: Rueckzug', 'Stabilisieren: 10 Minuten rausgehen'],
+        },
+      ],
+      support: {
+        configured: true,
+        suggested: true,
+        preference: 'coach_prompt',
+        note: 'Max kurz schreiben.',
+      },
+      evidenceQuality: {
+        checkins: 4,
+        garminDays: 7,
+        loadDays: 14,
+        confidence: 'usable',
+      },
+    },
+    onRequest: (pathname, method) => {
+      if (pathname === '/api/pulse/coach' && method === 'POST') coachSends += 1;
+    },
+  });
+
+  await page.goto('/data?tab=mental');
+
+  const radar = page.getByTestId('resilience-radar-card');
+  await expect(radar).toContainText('Resilienz-Radar');
+  await expect(radar).toContainText('Heute bewusst schützen.');
+  await expect(radar).toContainText('Supportplan vorbereiten');
+  await expect(radar).toContainText('Warnzeichen: Rueckzug');
+
+  await radar.getByRole('button', { name: 'Supportplan vorbereiten' }).click();
+  await expect(page).toHaveURL(/\/coach\?prompt=/);
+  await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Supportplan ruhig zu aktivieren/);
+  expect(coachSends).toBe(0);
+});
+
 test('Data mental check-in keeps the primary save action in the first mobile viewport', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },

@@ -10,7 +10,7 @@ import type {
   PulseProfileMetricKey, PulseProfileProvenanceView, PulseProfileValueSource,
   EquipmentCategory, PulseActivityType, PulseEquipment, PulseEquipmentDefault,
   PulseStrengthSession, PulseStrengthTrendPoint, PulseMentalThemesResponse,
-  PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
+  PulseMentalLoadOverlayResponse, PulseGuidedCheckinResponse, PulseResilienceRadarResponse, PulseActionState, PulseActionsResponse, PulseCoachPreferences,
   PulseFuelingDebtSummary, PulseFuelingOutcomeBaseline, PulseFuelingPreferences, PulseFuelingRecoveryGuidanceResponse, PulsePlanRefreshPreview, PulsePlanScenarioPreview, PulsePlanScenarioRequest,
   PulseAdaptationEvent, PulseGarminExecutionLedgerEntry, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse, PulseTrainingCapabilitySummary,
   PulseGarminExecutionDiffResponse, PulseGoalProjectionResponse, PulsePersonalResponseResponse,
@@ -203,6 +203,8 @@ export const pulseApi = {
       request(`/mental/themes?days=${days}`),
     loadOverlay: (days = 56): Promise<PulseMentalLoadOverlayResponse> =>
       request(`/mental/load-overlay?days=${days}`),
+    resilienceRadar: (days = 14): Promise<PulseResilienceRadarResponse> =>
+      request(`/mental/resilience-radar?days=${encodeURIComponent(String(days))}`),
   },
 
   sleep: {

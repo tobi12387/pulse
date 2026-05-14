@@ -59,6 +59,7 @@ type MockPulseApiOptions = {
   checkinToday?: unknown;
   checkinHistory?: unknown;
   checkinGuidance?: unknown;
+  resilienceRadar?: unknown;
   onCheckinSubmit?: (body: unknown) => void;
   textCheckinResult?: unknown | ((body: unknown) => unknown);
   onTextCheckinSubmit?: (body: unknown) => void;
@@ -1015,6 +1016,32 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
       stats: { checkins: 0, avgMood: null, avgStress: null, moodTsbCorrelation: null, lowTsbCheckins: 0 },
     };
   }
+  if (pathname === '/api/pulse/mental/resilience-radar') {
+    return {
+      days: Number(searchParams.get('days') ?? 14),
+      state: 'steady',
+      title: 'Resilienz wirkt stabil.',
+      summary: 'Die letzten Check-ins und Recovery-Signale zeigen keinen akuten Anpassungsbedarf.',
+      primaryAction: {
+        label: 'Routine beibehalten',
+        targetPath: '/data?tab=today#data-mental',
+        resultPreview: 'Hält den Check-in als kurze tägliche Stabilitätsroutine offen.',
+      },
+      signals: [],
+      support: {
+        configured: false,
+        suggested: false,
+        preference: 'suggest_only',
+        note: null,
+      },
+      evidenceQuality: {
+        checkins: 0,
+        garminDays: 0,
+        loadDays: 0,
+        confidence: 'insufficient',
+      },
+    };
+  }
   if (pathname === '/api/pulse/insights') {
     return {
       domain: searchParams.get('domain') ?? 'overall',
@@ -1201,6 +1228,7 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/checkin/today' && options.checkinToday) return json(route, options.checkinToday);
     if (url.pathname === '/api/pulse/checkin/history' && options.checkinHistory) return json(route, options.checkinHistory);
     if (url.pathname === '/api/pulse/checkin/guidance' && options.checkinGuidance) return json(route, options.checkinGuidance);
+    if (url.pathname === '/api/pulse/mental/resilience-radar' && options.resilienceRadar) return json(route, options.resilienceRadar);
     if (url.pathname === '/api/pulse/checkin/text' && request.method() === 'POST') {
       const body = request.postDataJSON();
       options.onTextCheckinSubmit?.(body);
