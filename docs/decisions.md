@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Home wiederholt erledigte Tagesabschlüsse nicht als Klickfolge
+
+- **Decision:** `DailyDecisionCard` blendet den Block `Nach dem Klick` aus, wenn keine offenen Schritte existieren und die Vorschau exakt denselben Text wie die erledigte Primärzusammenfassung enthält. Offene Entscheidungen, Plan-/Data-Karten und Evidenzdetails behalten den bestehenden Task-Contract.
+- **Why:** Home zeigte bei bereits erledigter Garmin-Aktivität mit erfasstem Feedback denselben Satz zweimal: einmal als Abschluss und erneut als angebliche Klickfolge. Das wirkte wie eine offene Handlung, obwohl für den Tag nichts mehr zu tun war.
+- **Alternatives:** `Nach dem Klick` für alle Completed-Zustände entfernen (zu breit, falls künftig ein Completed-Zustand echten Folge-Nutzen beschreibt); nur die Copy im Backend ändern (würde andere doppelte Quellen nicht absichern); den ganzen Details-Block ausblenden (verliert Evidenzzugang).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Data-Mobile zeigt die Tagesaktion vor Detail-Erklärungen
 
 - **Decision:** `/data` behält den vollständigen Daten-Aktionsvertrag auf Desktop sichtbar, legt `Warum jetzt` und `Nach dem Klick` auf Mobile aber hinter `Warum diese Aufgabe?`. Evidenzchips und der primäre CTA bleiben direkt sichtbar.
