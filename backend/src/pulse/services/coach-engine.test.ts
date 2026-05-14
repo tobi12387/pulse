@@ -223,6 +223,10 @@ describe('buildRichSystemPrompt', () => {
         preferredLongDays: [6],
         injurySensitiveConstraints: ['Achillessehne vorsichtig steigern'],
         communicationStyle: 'data_first',
+        supportWarningSigns: [],
+        supportStabilizingActions: [],
+        supportContactNote: '',
+        supportActivationPreference: 'suggest_only',
         updatedAt: '2026-05-02T06:00:00.000Z',
       },
     });
@@ -234,6 +238,73 @@ describe('buildRichSystemPrompt', () => {
     expect(prompt).toContain('Achillessehne vorsichtig steigern');
     expect(prompt).toContain('Kommunikation: datenorientiert');
     expect(prompt).not.toContain('Persönlichkeitsprofil');
+  });
+
+  it('includes an explicit support plan without automatic contact', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-05-02',
+      readiness: { score: 58, label: 'sensibel' },
+      todayMetrics: null,
+      todayCheckin: { mood: 4, energy: 3, stress: 8, motivation: 4, notes: null },
+      load: { ctl: 44, atl: 52, tsb: -8 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      coachPreferences: {
+        timeWindows: '',
+        dislikedWorkoutPatterns: [],
+        preferredLongDays: [],
+        injurySensitiveConstraints: [],
+        communicationStyle: 'gentle',
+        supportWarningSigns: ['Rueckzug', 'mehrere Tage sehr wenig Energie'],
+        supportStabilizingActions: ['10 Minuten rausgehen', 'Training bewusst klein halten'],
+        supportContactNote: 'Wenn ich festhaenge: Max kurz schreiben.',
+        supportActivationPreference: 'coach_prompt',
+        updatedAt: '2026-05-02T06:00:00.000Z',
+      },
+    });
+
+    expect(prompt).toContain('== EXPLIZITER SUPPORTPLAN ==');
+    expect(prompt).toContain('Warnzeichen: Rueckzug; mehrere Tage sehr wenig Energie');
+    expect(prompt).toContain('Stabilisieren: 10 Minuten rausgehen; Training bewusst klein halten');
+    expect(prompt).toContain('Support-Hinweis: Wenn ich festhaenge: Max kurz schreiben.');
+    expect(prompt).toContain('Aktivierung: Coach darf einen Supportplan-Prompt vorbereiten.');
+    expect(prompt).toContain('Keine automatische Kontaktaufnahme.');
+  });
+
+  it('omits the explicit support plan when no support fields are configured', async () => {
+    const { buildRichSystemPrompt } = await import('./coach-engine.js');
+    const prompt = buildRichSystemPrompt({
+      today: '2026-05-02',
+      readiness: { score: 70, label: 'gut' },
+      todayMetrics: null,
+      todayCheckin: null,
+      load: { ctl: 44, atl: 48, tsb: -4 },
+      profile: null,
+      recentActivities: [],
+      upcomingWorkouts: [],
+      metrics14: [],
+      checkins14: [],
+      latestWeight: null,
+      coachPreferences: {
+        timeWindows: '',
+        dislikedWorkoutPatterns: [],
+        preferredLongDays: [],
+        injurySensitiveConstraints: [],
+        communicationStyle: 'data_first',
+        supportWarningSigns: [],
+        supportStabilizingActions: [],
+        supportContactNote: '',
+        supportActivationPreference: 'suggest_only',
+        updatedAt: '2026-05-02T06:00:00.000Z',
+      },
+    });
+
+    expect(prompt).not.toContain('== EXPLIZITER SUPPORTPLAN ==');
   });
 
   it('includes guided mental-fitness questions and keeps future workouts out of today framing', async () => {

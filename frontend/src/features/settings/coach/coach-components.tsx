@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { useCoachPreferences, useUpdateCoachPreferences } from '@/pulse/hooks';
-import type { PulseCoachCommunicationStyle, PulseCoachPreferences } from '@coaching-os/shared/pulse';
+import type { PulseCoachCommunicationStyle, PulseCoachPreferences, PulseSupportActivationPreference } from '@coaching-os/shared/pulse';
 
 type SettingsMessage = { text: string; ok: boolean } | null;
 
@@ -10,6 +10,10 @@ const COACH_DEFAULT_PREFERENCES: PulseCoachPreferences = {
   preferredLongDays: [],
   injurySensitiveConstraints: [],
   communicationStyle: 'data_first',
+  supportWarningSigns: [],
+  supportStabilizingActions: [],
+  supportContactNote: '',
+  supportActivationPreference: 'suggest_only',
   updatedAt: null,
 };
 
@@ -29,12 +33,22 @@ const COACH_STYLE_LABELS: Record<PulseCoachCommunicationStyle, string> = {
   gentle: 'Behutsam',
 };
 
+const SUPPORT_ACTIVATION_LABELS: Record<PulseSupportActivationPreference, string> = {
+  suggest_only: 'Sichtbar vorschlagen',
+  coach_prompt: 'Coach-Prompt vorbereiten',
+  manual_only: 'Nur manuell öffnen',
+};
+
 interface CoachPreferencesForm {
   timeWindows: string;
   dislikedWorkoutPatterns: string;
   preferredLongDays: number[];
   injurySensitiveConstraints: string;
   communicationStyle: PulseCoachCommunicationStyle;
+  supportWarningSigns: string;
+  supportStabilizingActions: string;
+  supportContactNote: string;
+  supportActivationPreference: PulseSupportActivationPreference;
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -99,6 +113,10 @@ function preferencesToForm(preferences: PulseCoachPreferences): CoachPreferences
     preferredLongDays: preferences.preferredLongDays,
     injurySensitiveConstraints: preferences.injurySensitiveConstraints.join('\n'),
     communicationStyle: preferences.communicationStyle,
+    supportWarningSigns: preferences.supportWarningSigns.join('\n'),
+    supportStabilizingActions: preferences.supportStabilizingActions.join('\n'),
+    supportContactNote: preferences.supportContactNote,
+    supportActivationPreference: preferences.supportActivationPreference,
   };
 }
 
@@ -151,6 +169,10 @@ export function CoachPreferencesCard({ setMessage }: {
         preferredLongDays: form.preferredLongDays,
         injurySensitiveConstraints: preferenceLines(form.injurySensitiveConstraints),
         communicationStyle: form.communicationStyle,
+        supportWarningSigns: preferenceLines(form.supportWarningSigns),
+        supportStabilizingActions: preferenceLines(form.supportStabilizingActions),
+        supportContactNote: form.supportContactNote.trim(),
+        supportActivationPreference: form.supportActivationPreference,
       });
       setForm(null);
       setMessage({ text: 'Coach-Präferenzen gespeichert.', ok: true });
@@ -162,6 +184,9 @@ export function CoachPreferencesCard({ setMessage }: {
   const longDayLabels = preferences.preferredLongDays
     .map(day => COACH_DAYS.find(item => item.value === day)?.label ?? String(day))
     .join(', ');
+  const supportConfigured = preferences.supportWarningSigns.length > 0
+    || preferences.supportStabilizingActions.length > 0
+    || preferences.supportContactNote.trim().length > 0;
 
   return (
     <div className="card">
@@ -261,6 +286,59 @@ export function CoachPreferencesCard({ setMessage }: {
             </select>
           </label>
 
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>Unterstützung</div>
+              <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45 }}>
+                Pulse kontaktiert niemanden automatisch.
+              </p>
+            </div>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Warnzeichen</span>
+              <textarea
+                value={form.supportWarningSigns}
+                onChange={e => setForm(current => current ? { ...current, supportWarningSigns: e.target.value } : current)}
+                rows={3}
+                style={settingsTextAreaStyle}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Stabilisierende Schritte</span>
+              <textarea
+                value={form.supportStabilizingActions}
+                onChange={e => setForm(current => current ? { ...current, supportStabilizingActions: e.target.value } : current)}
+                rows={3}
+                style={settingsTextAreaStyle}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Support-Hinweis</span>
+              <textarea
+                value={form.supportContactNote}
+                onChange={e => setForm(current => current ? { ...current, supportContactNote: e.target.value } : current)}
+                rows={2}
+                style={settingsTextAreaStyle}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Support-Aktivierung</span>
+              <select
+                value={form.supportActivationPreference}
+                onChange={e => setForm(current => current ? { ...current, supportActivationPreference: e.target.value as PulseSupportActivationPreference } : current)}
+                style={{
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)', minHeight: 40, padding: '7px 8px',
+                  fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)',
+                  outline: 'none',
+                }}
+              >
+                <option value="suggest_only">Sichtbar vorschlagen</option>
+                <option value="coach_prompt">Coach-Prompt vorbereiten</option>
+                <option value="manual_only">Nur manuell öffnen</option>
+              </select>
+            </label>
+          </div>
+
           <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
             <button
               type="submit"
@@ -307,6 +385,32 @@ export function CoachPreferencesCard({ setMessage }: {
           <Row label="Kommunikation">
             <Pill color="var(--accent)">{COACH_STYLE_LABELS[preferences.communicationStyle].toUpperCase()}</Pill>
           </Row>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Row label="Unterstützung">
+              <Pill color={supportConfigured ? 'var(--accent)' : 'var(--text-3)'}>
+                {supportConfigured ? 'KONFIGURIERT' : 'OFFEN'}
+              </Pill>
+            </Row>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-3)', lineHeight: 1.45 }}>
+              Pulse kontaktiert niemanden automatisch.
+            </p>
+            {supportConfigured && (
+              <>
+                <Row label="Warnzeichen">
+                  <WrapVal>{preferences.supportWarningSigns.length ? preferences.supportWarningSigns.join(', ') : '–'}</WrapVal>
+                </Row>
+                <Row label="Stabilisieren">
+                  <WrapVal>{preferences.supportStabilizingActions.length ? preferences.supportStabilizingActions.join(', ') : '–'}</WrapVal>
+                </Row>
+                <Row label="Support-Hinweis">
+                  <WrapVal>{preferences.supportContactNote || '–'}</WrapVal>
+                </Row>
+              </>
+            )}
+            <Row label="Aktivierung">
+              <WrapVal>{SUPPORT_ACTIVATION_LABELS[preferences.supportActivationPreference]}</WrapVal>
+            </Row>
+          </div>
           {preferences.updatedAt && (
             <Row label="Aktualisiert">
               <Val>{new Date(preferences.updatedAt).toLocaleDateString('de-DE')}</Val>

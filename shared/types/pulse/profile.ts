@@ -18,6 +18,7 @@ export interface PulseProfileProvenanceView {
 }
 export type PulseCoachCommunicationStyle = 'direct' | 'gentle' | 'data_first';
 export type PulseFuelingGuidanceStyle = 'suggest_ranges' | 'avoid_amounts';
+export type PulseSupportActivationPreference = 'suggest_only' | 'coach_prompt' | 'manual_only';
 
 export interface PulseFuelingPreferences {
   fuelingEnabled: boolean;
@@ -34,5 +35,9 @@ export interface PulseCoachPreferences {
   preferredLongDays: number[];
   injurySensitiveConstraints: string[];
   communicationStyle: PulseCoachCommunicationStyle;
+  supportWarningSigns: string[];
+  supportStabilizingActions: string[];
+  supportContactNote: string;
+  supportActivationPreference: PulseSupportActivationPreference;
   updatedAt: string | null;
 }

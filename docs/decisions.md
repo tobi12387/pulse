@@ -18,6 +18,26 @@
 
 ---
 
+## 2026-05-14 — Support Activation v1 Scope-Sperren werden gelockert
+
+- **Decision:** Die Support-Activation-v1-Spezifikation entfernt die No-Goal-Sperren gegen neue Top-Level-Navigation, Diagnose-/Severity-/Label-Scope, Plan-/Garmin-Mutation beim Oeffnen des Supportplans und breitere Redesigns von Coach, Data, Home oder Settings.
+- **Why:** Tobi hat diese No-Goals explizit zur Loeschung freigegeben. Damit blockieren sie kuenftige Produkt-Slices nicht mehr pauschal; konkrete Erweiterungen brauchen trotzdem eine eigene sichere Produkt- und Implementierungsentscheidung.
+- **Alternatives:** Die No-Goals im Spec belassen (widerspricht Tobis Freigabe); sie stillschweigend loeschen ohne Decision-Log (spaetere Agenten wuerden die Scope-Aenderung uebersehen).
+- **Decided by:** Tobi.
+- **Status:** active.
+
+---
+
+## 2026-05-14 — Support Activation v1 ist ein expliziter Supportplan
+
+- **Decision:** Pulse implementiert Support Activation v1 als explizit konfigurierten Supportplan in den Coach-/Settings-Praeferenzen; Pulse darf den Plan bei passenden Mental-/Overload-Signalen sichtbar vorschlagen, kontaktiert aber niemanden automatisch.
+- **Why:** Der neue Resilienz- und Performance-Nordstern verlangt rechtzeitige Unterstuetzung, aber sicher und user-approved. Ein sichtbarer Supportplan verbindet mentale Muster, Routinen und Coach-Kontext, ohne klinische Labels, versteckte sensitive Annahmen oder automatische Eskalation einzufuehren.
+- **Alternatives:** Nur Self-Stabilization-Prompts ohne Supportpfad (zu schwach fuer "Unterstuetzung aktivieren"); nur Krisenhinweise (zu eng fuer alltaegliche Ueberforderung); automatische Kontakt-/Push-Eskalation (nicht sicher und nicht explizit freigegeben).
+- **Decided by:** Tobi + Codex, siehe `docs/superpowers/specs/2026-05-14-support-activation-v1-design.md`.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Pulse wird Resilienz- und Performance-Coach
 
 - **Decision:** Pulse' Produkt-Nordstern erweitert sich von Trainings-/Recovery-OS zu einem persoenlichen Resilienz- und Performance-Coach, der Training, Ernaehrung, Regeneration und mentales Wohlbefinden verbindet.

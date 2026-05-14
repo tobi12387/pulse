@@ -950,6 +950,10 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
         preferredLongDays: [],
         injurySensitiveConstraints: [],
         communicationStyle: 'data_first',
+        supportWarningSigns: [],
+        supportStabilizingActions: [],
+        supportContactNote: '',
+        supportActivationPreference: 'suggest_only',
         updatedAt: null,
       },
     };
@@ -1168,6 +1172,10 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           preferredLongDays: [],
           injurySensitiveConstraints: [],
           communicationStyle: 'data_first',
+          supportWarningSigns: [],
+          supportStabilizingActions: [],
+          supportContactNote: '',
+          supportActivationPreference: 'suggest_only',
           updatedAt: null,
         },
       });
@@ -1182,6 +1190,10 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
           preferredLongDays: body.preferredLongDays ?? [],
           injurySensitiveConstraints: body.injurySensitiveConstraints ?? [],
           communicationStyle: body.communicationStyle ?? 'data_first',
+          supportWarningSigns: body.supportWarningSigns ?? [],
+          supportStabilizingActions: body.supportStabilizingActions ?? [],
+          supportContactNote: body.supportContactNote ?? '',
+          supportActivationPreference: body.supportActivationPreference ?? 'suggest_only',
           updatedAt: `${today}T08:00:00.000Z`,
         },
       });

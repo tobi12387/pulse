@@ -93,6 +93,12 @@ const COACH_COMMUNICATION_LABELS: Record<PulseCoachPreferences['communicationSty
   data_first: 'datenorientiert',
 };
 
+const SUPPORT_ACTIVATION_LABELS: Record<PulseCoachPreferences['supportActivationPreference'], string> = {
+  suggest_only: 'Pulse darf den Supportplan sichtbar vorschlagen.',
+  coach_prompt: 'Coach darf einen Supportplan-Prompt vorbereiten.',
+  manual_only: 'Pulse speichert den Supportplan nur manuell sichtbar.',
+};
+
 function hasVisibleCoachPreferences(preferences: PulseCoachPreferences | null | undefined): preferences is PulseCoachPreferences {
   if (!preferences) return false;
   return Boolean(
@@ -124,6 +130,35 @@ function formatCoachPreferences(preferences: PulseCoachPreferences): string {
   }
   lines.push(`Kommunikation: ${COACH_COMMUNICATION_LABELS[preferences.communicationStyle] ?? preferences.communicationStyle}`);
   lines.push('Nur diese expliziten Präferenzen verwenden; keine versteckten Eigenschaften ableiten.');
+
+  return lines.join('\n');
+}
+
+function hasVisibleSupportPlan(preferences: PulseCoachPreferences | null | undefined): preferences is PulseCoachPreferences {
+  if (!preferences) return false;
+  return Boolean(
+    preferences.supportWarningSigns.length > 0
+      || preferences.supportStabilizingActions.length > 0
+      || preferences.supportContactNote.trim(),
+  );
+}
+
+function formatSupportPlan(preferences: PulseCoachPreferences): string {
+  const lines = [
+    '== EXPLIZITER SUPPORTPLAN ==',
+    'Nur als sichtbare, von Tobi eingegebene Support-Praeferenz verwenden. Keine Diagnose, keine versteckte sensitive Annahme. Keine automatische Kontaktaufnahme.',
+  ];
+
+  if (preferences.supportWarningSigns.length > 0) {
+    lines.push(`Warnzeichen: ${preferences.supportWarningSigns.join('; ')}`);
+  }
+  if (preferences.supportStabilizingActions.length > 0) {
+    lines.push(`Stabilisieren: ${preferences.supportStabilizingActions.join('; ')}`);
+  }
+  if (preferences.supportContactNote.trim()) {
+    lines.push(`Support-Hinweis: ${preferences.supportContactNote.trim()}`);
+  }
+  lines.push(`Aktivierung: ${SUPPORT_ACTIVATION_LABELS[preferences.supportActivationPreference] ?? SUPPORT_ACTIVATION_LABELS.suggest_only}`);
 
   return lines.join('\n');
 }
@@ -237,6 +272,9 @@ Readiness: ${ctx.readiness.score}/100 (${ctx.readiness.label})`;
 
   if (hasVisibleCoachPreferences(ctx.coachPreferences)) {
     s += `\n\n${formatCoachPreferences(ctx.coachPreferences)}`;
+  }
+  if (hasVisibleSupportPlan(ctx.coachPreferences)) {
+    s += `\n\n${formatSupportPlan(ctx.coachPreferences)}`;
   }
 
   s += `\n\n== TRAININGSBELASTUNG ==\nCTL ${ctx.load.ctl.toFixed(0)} | ATL ${ctx.load.atl.toFixed(0)} | TSB ${ctx.load.tsb.toFixed(0)}`;

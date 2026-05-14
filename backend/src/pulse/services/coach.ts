@@ -13,6 +13,10 @@ const DEFAULT_COACH_PREFERENCES: PulseCoachPreferences = {
   preferredLongDays: [],
   injurySensitiveConstraints: [],
   communicationStyle: 'data_first',
+  supportWarningSigns: [],
+  supportStabilizingActions: [],
+  supportContactNote: '',
+  supportActivationPreference: 'suggest_only',
   updatedAt: null,
 };
 
@@ -24,6 +28,10 @@ export function serializeCoachPreferences(row: CoachPreferencesRow | null | unde
     preferredLongDays: row.preferredLongDays,
     injurySensitiveConstraints: row.injurySensitiveConstraints,
     communicationStyle: row.communicationStyle as PulseCoachCommunicationStyle,
+    supportWarningSigns: row.supportWarningSigns,
+    supportStabilizingActions: row.supportStabilizingActions,
+    supportContactNote: row.supportContactNote,
+    supportActivationPreference: row.supportActivationPreference,
     updatedAt: row.updatedAt?.toISOString() ?? null,
   };
 }
