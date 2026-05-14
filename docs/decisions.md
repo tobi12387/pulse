@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Performance-OS-Freigaben laufen autonom
+
+- **Decision:** Tobi gibt Codex fuer den Performance-OS-Nordstern dauerhafte Autonomie: Specs, Plaene und PR-grosse Implementierungsslices duerfen ohne weitere manuelle Freigabe fortgesetzt werden, solange Pulse-Hard-Rules, PR-Flow, Safety-Gates und Verifikation eingehalten werden.
+- **Why:** Das Ziel ist ein Ende-2026-Produktzustand, nicht eine einzelne Spezifikation. Manuelle Freigaben fuer jeden Zwischenschritt wuerden den Fortschritt kuenstlich blockieren; GitHub-PRs, Tests, Decisions und deploy-sichere Grenzen bleiben die Kontrollschicht.
+- **Alternatives:** Nach jedem Spec oder Plan warten (zu langsam und vom Nutzer explizit aufgehoben); direkt auf `main` arbeiten (verletzt Pulse-Regeln); alle Slices in einen Gross-PR packen (zu riskant).
+- **Decided by:** Tobi.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Performance Operating System wird reviewbarer 2026-Produktvertrag
 
 - **Decision:** Pulse erhaelt einen docs-only Performance-Operating-System-Spec, der Tobis Ende-2026-Nordstern in Erfolgskriterien, Benchmark-Rollen, Produktgrenzen und PR-grosse Folgeslices uebersetzt.
