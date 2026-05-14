@@ -472,14 +472,18 @@ test('mobile Home availability intent opens a workout scenario preview', async (
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
   await expect(scenarioCard).toContainText('Mobile Quick Decision');
-  await expect(scenarioCard.getByLabel('Dauer min')).toHaveValue('60');
-  await expect(scenarioCard.getByLabel('Sportart')).toHaveValue('bike');
-  await expect(scenarioCard.getByLabel('Zone')).toHaveValue('1');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
   await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
   await expect(page.getByTestId('scenario-result-contract')).toContainText('Sicherste Entscheidung');
   await expect(page.getByTestId('plan-scenario-preview-result')).not.toContainText('Wende an');
+  await expect(scenarioCard.getByTestId('plan-scenario-editor')).toHaveCount(0);
+  await scenarioCard.getByTestId('plan-scenario-edit-toggle').click();
+  const editor = scenarioCard.getByTestId('plan-scenario-editor');
+  await expect(editor).toBeVisible();
+  await expect(editor.getByLabel('Dauer min')).toHaveValue('60');
+  await expect(editor.getByLabel('Sportart')).toHaveValue('bike');
+  await expect(editor.getByLabel('Zone')).toHaveValue('1');
   expect(previewBody).toMatchObject({
     type: 'add_custom_tour',
     workout: {
@@ -526,9 +530,11 @@ test('mobile Home free-day intent opens reduce-volume preview without creating a
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
   await expect(scenarioCard).toContainText('Heute bewusst frei halten.');
-  await expect(scenarioCard).toContainText('Nicht gesperrte Zukunfts-Workouts auf 70%');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
+  await expect(scenarioCard.getByTestId('plan-scenario-editor')).toHaveCount(0);
+  await scenarioCard.getByTestId('plan-scenario-edit-toggle').click();
+  await expect(scenarioCard.getByTestId('plan-scenario-editor')).toContainText('Nicht gesperrte Zukunfts-Workouts auf 70%');
   expect(previewBody).toMatchObject({ type: 'reduce_volume', factor: 0.7 });
   expect(requests).not.toContain('POST /api/pulse/plan/workout');
 });
