@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Everyday Adaptation Inbox v1 nutzt bestehende Preview-Schleuse
+
+- **Decision:** Pulse implementiert Everyday Adaptation Inbox v1 als Plan-Karte `Heute anders?`, die weniger Zeit, nicht bereit, anders erledigt und heute skippen in bestehende Szenario-Preview- oder Feedback-Flows routet.
+- **Why:** Der Performance-OS-Nordstern braucht Alltagstauglichkeit wie Runna/JOIN, aber ohne versteckte Plan- oder Garmin-Mutation. Die vorhandene Szenario-Vorschau zeigt bereits Ziel-, Recovery-, Wochen- und Garmin-Auswirkungen vor Apply; ein neuer Schreibpfad waere unnoetig riskant.
+- **Alternatives:** Neue Backend-Intent-API bauen (zu gross fuer v1); Home mit weiteren Aktionskarten belasten (konkurriert mit der Tagesentscheidung); Plan direkt beim Klick mutieren (verletzt Preview-/No-write-Grenzen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Daily Intelligent Action Contract v2 bleibt frontend-first
 
 - **Decision:** Pulse implementiert Daily Intelligent Action Contract v2 als frontend-first Uebersetzung vorhandener Home-Daten: Details der Tagesentscheidung zeigen Top-Signale, Zielwirkung, Garmin-Ausfuehrungsstatus und sicherste Option, ohne neue API, Migration, Plan-Mutation oder Garmin-Write.
