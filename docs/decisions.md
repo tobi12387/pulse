@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Mental Check-in legt Vorschlags-Evidenz hinter `Warum?`
+
+- **Decision:** Der Mental Check-in zeigt Pulse' Garmin-/Readiness-Vorschlag nicht mehr als direkte Evidenzkarte unter `Heute speichern`, sondern hinter `Warum dieser Vorschlag?`. Die deterministische Vorauswahl bleibt unverändert.
+- **Why:** Mobile Route-Evidence zeigte, dass der eigentliche Check-in zwar vereinfacht war, die Vorschlagsbegründung aber wieder eine große Datenkarte in den ersten Blick brachte. Für den täglichen Flow soll zuerst Zustand wählen und speichern sichtbar sein; Evidenz bleibt erreichbar.
+- **Alternatives:** Vorschlag direkt sichtbar lassen (zu dicht); Vorschlag ganz entfernen (verliert Vertrauen); nur Text kürzen (Evidenz bleibt im Primärfluss).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-13 — Quick-Szenario-Editor bleibt nach Preview eingeklappt
 
 - **Decision:** Quick-Szenarien aus Home/TrainNow zeigen nach der automatischen Preview zuerst Ergebnis, Apply-Vertrag und Garmin-Auswirkung. Der komplette Szenario-Editor wird erst nach `Option ändern` sichtbar und behält die vorbereiteten Werte.

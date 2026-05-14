@@ -469,6 +469,7 @@ export function MentalTab() {
   const { data: histData, isLoading: histLoading } = useCheckinHistory(days);
   const suggestion = useMemo(() => buildSuggestion(home), [home]);
   const [manualQuickChoices, setManualQuickChoices] = useState<QuickChoices | null>(null);
+  const [suggestionOpen, setSuggestionOpen] = useState(false);
   const [describeOpen, setDescribeOpen] = useState(false);
   const [fineTuneOpen, setFineTuneOpen] = useState(false);
   const [fineTuned, setFineTuned] = useState(false);
@@ -658,33 +659,63 @@ export function MentalTab() {
                 actionPending={checkin.isPending}
               />
             )}
-            <div style={{
-              padding: '10px 12px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-            }}>
-              <div className="label-mono" style={{ marginBottom: 6 }}>Pulse Vorschlag</div>
-              <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
-                {suggestion.tone}
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {suggestion.factors.map(factor => (
-                  <span
-                    key={factor}
-                    style={{
-                      padding: '4px 7px',
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      fontSize: 10.5,
-                      color: 'var(--text-2)',
-                    }}
-                  >
-                    {factor}
-                  </span>
-                ))}
-              </div>
+            <div>
+              <button
+                type="button"
+                aria-expanded={suggestionOpen}
+                aria-controls="mental-suggestion-panel"
+                onClick={() => setSuggestionOpen(open => !open)}
+                style={{
+                  minHeight: 44,
+                  padding: '7px 10px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 5,
+                  color: 'var(--text-2)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                Warum dieser Vorschlag?
+              </button>
+              {suggestionOpen && (
+                <div
+                  id="mental-suggestion-panel"
+                  data-testid="mental-suggestion-panel"
+                  style={{
+                    marginTop: 10,
+                    padding: '10px 12px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 5,
+                  }}
+                >
+                  <div className="label-mono" style={{ marginBottom: 6 }}>Pulse Vorschlag</div>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--text)', lineHeight: 1.45 }}>
+                    {suggestion.tone}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {suggestion.factors.map(factor => (
+                      <span
+                        key={factor}
+                        style={{
+                          padding: '4px 7px',
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 4,
+                          fontSize: 10.5,
+                          color: 'var(--text-2)',
+                        }}
+                      >
+                        {factor}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <button
