@@ -1888,7 +1888,10 @@ test('Daily loop keeps context from Home to Coach, Plan and evidence tabs', asyn
 
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Heute ist kein Training geplant.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Coach fragen' }).click();
+  const homeDecision = page.getByTestId('daily-decision-card');
+  await expect(homeDecision.getByRole('button', { name: 'Coach fragen' })).toHaveCount(0);
+  await homeDecision.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
+  await homeDecision.getByRole('button', { name: 'Coach fragen' }).click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Heute ist kein Training geplant/);
   await expect(page.getByText('TAGESBRIEFING')).toBeVisible();

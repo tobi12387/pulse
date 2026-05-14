@@ -18,6 +18,26 @@
 
 ---
 
+## 2026-05-14 — Pulse wird Resilienz- und Performance-Coach
+
+- **Decision:** Pulse' Produkt-Nordstern erweitert sich von Trainings-/Recovery-OS zu einem persoenlichen Resilienz- und Performance-Coach, der Training, Ernaehrung, Regeneration und mentales Wohlbefinden verbindet.
+- **Why:** Tobi will nicht nur sportlich staerker werden, sondern Ueberforderung, depressive Muster, mentale Tiefphasen und Routineabbrueche frueher wahrnehmen und rechtzeitig gesunde Routinen oder Unterstuetzung aktivieren. Pulse soll deshalb taegliche Entscheidungen, mentale Resilienz, Fueling, Erholung und Support-Pfade zusammen denken.
+- **Alternatives:** Mental weiterhin nur als Readiness-Faktor behandeln (zu eng); klinische Labels oder Diagnosen ableiten (nicht sicher und ausserhalb des Produkts); mentale Themen in einen separaten Coach-Silo auslagern (verliert die Verbindung zu Training, Routine und Alltag).
+- **Decided by:** Tobi.
+- **Status:** active.
+
+---
+
+## 2026-05-14 — Home zeigt eine Primaeraktion und legt Support in Details
+
+- **Decision:** Der Home-Focus-Hero zeigt in der Tagesentscheidung nur noch eine sichtbare Primaeraktion. `Nach dem Klick` und optionale Coach-Unterstuetzung liegen hinter `Details & Evidenz anzeigen`, waehrend Plan/Data/Coach-Karten ihr bisheriges Verhalten behalten.
+- **Why:** Frische Route-Evidence zeigte, dass Home zwar die richtige Tagesentscheidung besitzt, aber `Warum jetzt`, `Nach dem Klick`, `Check-in oeffnen` und `Coach fragen` gleichzeitig als Erstviewport-Inhalt zeigte. Fuer die Desktop-Prioritaet und das Single-Decision-plus-Diary-Ziel soll Home zuerst ausfuehrbar sein und erst danach erklaeren.
+- **Alternatives:** `Nach dem Klick` komplett entfernen (verliert Vertrauen); Coach-Support komplett entfernen (verliert Hilfe-Pfad); das Verhalten global auf alle `DailyDecisionCard`-Instanzen anwenden (zu breiter Scope fuer diesen Home-Slice).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Plan Training trennt Woche von Strategie- und Tool-Flaechen
 
 - **Decision:** `/plan?tab=training` zeigt standardmaessig nur Wochenleiste, aktuelle Trainingsaktion, Aenderungs-/Sync-Hinweise und den Plan selbst. `Saisonvertrag` und `Saisonlinie` liegen im Ziele-Bereich (`/plan?tab=goals`), und die manuelle `Szenario-Vorschau` startet als kompakter Intent statt als offenes Formular.

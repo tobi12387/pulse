@@ -123,6 +123,8 @@ export function DailyDecisionCard({
   density = 'default',
   framed = true,
   inlineActions = false,
+  deferResultPreview = false,
+  deferSupportAction = false,
   onActivate,
   onPrompt,
 }: {
@@ -131,6 +133,8 @@ export function DailyDecisionCard({
   density?: Density;
   framed?: boolean;
   inlineActions?: boolean;
+  deferResultPreview?: boolean;
+  deferSupportAction?: boolean;
   onActivate?: (path: string) => void;
   onPrompt?: () => void;
 }) {
@@ -155,7 +159,39 @@ export function DailyDecisionCard({
   const primaryAction = promptIsPrimary ? onPrompt : onActivate ? () => onActivate(decision.targetPath) : undefined;
   const showPromptAction = Boolean(onPrompt && !promptIsPrimary && !(decision.supportCta && onActivate));
   const showSupportAction = Boolean(decision.supportCta && decision.supportPath && onActivate);
-  const actionColumns = primaryAction && (showPromptAction || showSupportAction) && !compact ? '1fr 1fr' : '1fr';
+  const showInlineSupportAction = showSupportAction && !deferSupportAction;
+  const showDeferredSupportAction = showSupportAction && deferSupportAction;
+  const showInlineResultPreview = !hideDuplicateCompletedPreview && !deferResultPreview;
+  const showDeferredResultPreview = !hideDuplicateCompletedPreview && deferResultPreview;
+  const actionColumns = primaryAction && (showPromptAction || showInlineSupportAction) && !compact ? '1fr 1fr' : '1fr';
+  const runSupportAction = () => {
+    if (decision.supportPath?.startsWith('/coach') && onPrompt) {
+      onPrompt();
+      return;
+    }
+    onActivate?.(decision.supportPath!);
+  };
+  const renderSupportAction = () => (
+    <button
+      type="button"
+      onClick={runSupportAction}
+      style={{
+        minHeight: 44,
+        padding: compact ? '8px 10px' : '9px 10px',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
+        borderRadius: 5,
+        color: 'var(--text-2)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        letterSpacing: 0,
+        textTransform: 'uppercase',
+        cursor: 'pointer',
+      }}
+    >
+      {decision.supportCta}
+    </button>
+  );
 
   const renderActions = (marginTop: number) => (
     <div style={{ display: 'grid', gridTemplateColumns: actionColumns, gap: 8, marginTop }}>
@@ -201,33 +237,7 @@ export function DailyDecisionCard({
           Gespräch damit starten
         </button>
       )}
-      {showSupportAction && (
-        <button
-          type="button"
-          onClick={() => {
-            if (decision.supportPath?.startsWith('/coach') && onPrompt) {
-              onPrompt();
-              return;
-            }
-            onActivate?.(decision.supportPath!);
-          }}
-          style={{
-            minHeight: 44,
-            padding: compact ? '8px 10px' : '9px 10px',
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 5,
-            color: 'var(--text-2)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: 0,
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-          }}
-        >
-          {decision.supportCta}
-        </button>
-      )}
+      {showInlineSupportAction && renderSupportAction()}
     </div>
   );
 
@@ -363,7 +373,7 @@ export function DailyDecisionCard({
                 {primarySummary.detail}
               </div>
             </div>
-            {!hideDuplicateCompletedPreview && (
+            {showInlineResultPreview && (
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
                   {label('Nach dem Klick', labelCase)}
@@ -402,6 +412,16 @@ export function DailyDecisionCard({
 
           {detailsOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              {showDeferredResultPreview && (
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 7 }}>
+                    {label('Nach dem Klick', labelCase)}
+                  </div>
+                  <p style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, margin: 0, overflowWrap: 'anywhere' }}>
+                    {previewText}
+                  </p>
+                </div>
+              )}
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 7 }}>
                   {label(hasStructuredSteps ? 'Was jetzt?' : 'Grenzen & Alternativen', labelCase)}
@@ -414,6 +434,16 @@ export function DailyDecisionCard({
                     {label('Evidenz', labelCase)}
                   </div>
                   {evidenceItems({ evidence: decision.evidence, onActivate })}
+                </div>
+              )}
+              {showDeferredSupportAction && (
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 7 }}>
+                    {label('Optionale Hilfe', labelCase)}
+                  </div>
+                  <div style={{ display: 'grid' }}>
+                    {renderSupportAction()}
+                  </div>
                 </div>
               )}
             </div>
