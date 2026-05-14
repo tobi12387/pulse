@@ -131,6 +131,38 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(progression).toContainText('Ändern wenn');
 });
 
+test('Plan desktop keeps daily reasoning behind an explicit disclosure', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific density contract');
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-action-contract',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+    }],
+    todayOptionsState: 'unplanned_trainable',
+  });
+
+  await page.goto('/plan?tab=training');
+
+  const action = page.getByTestId('plan-primary-action');
+  await expect(action).toBeVisible();
+  await expect(action.getByText(/Warum jetzt:/i)).toBeHidden();
+  await expect(action.getByText(/Nach dem Klick:/i)).toBeHidden();
+
+  await action.getByText(/Warum diese Einheit/i).click();
+  await expect(action.getByText(/Warum jetzt:/i)).toBeVisible();
+  await expect(action.getByText(/Nach dem Klick:/i)).toBeVisible();
+});
+
 test('Plan shows the week before season evidence on desktop', async ({ page }) => {
   await page.goto('/plan');
 
