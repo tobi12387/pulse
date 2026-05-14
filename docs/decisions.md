@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Settings-Deep-Links warten kurz auf stabile Layout-Hoehe
+
+- **Decision:** URL-Anker wie `/settings?section=push` scrollen den Zielbereich nach dem ersten Render und erneut bei kurzzeitigen Layout-Aenderungen der Settings-Seite in den sichtbaren Bereich. Das breite Settings-Desktop-Grid bleibt unveraendert.
+- **Why:** Der Main-Browser-Test zeigte, dass der erste Scroll vor asynchron geladenen Settings-Karten lief; danach verschoben Profil-/Garmin-Inhalte den Push-Bereich wieder nach unten. Deep-Links aus Diagnosekarten muessen aber nach dem Laden direkt am relevanten Abschnitt landen.
+- **Alternatives:** Settings-Grid rueckgaengig machen (verliert Desktop-Nutzen); Test-Erwartung lockern (akzeptiert eine echte Deep-Link-Regression); alle Daten vor dem Render blockieren (verschlechtert Ladegefuehl).
+- **Decided by:** Codex.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Settings nutzt Desktop-Breite als Arbeitsfläche
 
 - **Decision:** `/settings` zählt künftig zu den breiten Operational-Routes und rendert Status/Diagnose plus Athletenprofil auf Desktop nebeneinander. Mobile bleibt weiterhin strikt einspaltig.
