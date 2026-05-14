@@ -1244,9 +1244,12 @@ test('Data mental check-in uses quick choices with guided context', async ({ pag
   await page.goto('/data?tab=mental');
 
   await expect(page.getByText('Quick Check-in')).toBeVisible();
-  await expect(page.getByText('Pulse Vorschlag')).toBeVisible();
-  await expect(page.getByText('Schlafscore 82')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Warum dieser Vorschlag?' })).toBeVisible();
+  await expect(page.getByTestId('mental-suggestion-panel')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
+  await page.getByRole('button', { name: 'Warum dieser Vorschlag?' }).click();
+  await expect(page.getByTestId('mental-suggestion-panel')).toContainText('Pulse Vorschlag');
+  await expect(page.getByTestId('mental-suggestion-panel')).toContainText('Schlafscore 82');
   await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expect(page.getByRole('radio', { name: 'Kopf: schwer' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Energie: begrenzt' })).toBeVisible();
@@ -5278,6 +5281,7 @@ test('Mobile repeated controls have reliable touch targets', async ({ page }) =>
 
   await page.goto('/data?tab=mental');
   await expectTouchTarget(page, 'Heute speichern');
+  await expectTouchTarget(page, 'Warum dieser Vorschlag?');
   await expectTouchTarget(page, 'Mehr beschreiben');
   await page.getByRole('button', { name: 'Mehr beschreiben' }).click();
   await expectSelectorTouchTarget(page, 'button:has-text("Text auswerten")');
