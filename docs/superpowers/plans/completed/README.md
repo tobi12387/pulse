@@ -112,6 +112,7 @@
 | `2026-05-14-home-completed-noop-copy.md` | Home Completed No-op Copy — completed Home states avoid repeating the same no-op result as `Nach dem Klick` | Home Density PR |
 | `2026-05-14-settings-desktop-layout.md` | Settings Desktop Layout — Settings uses a wider desktop shell with status/profile side by side while mobile remains stacked | Settings Density PR |
 | `2026-05-14-settings-section-scroll-repair.md` | Settings Section Scroll Repair — URL-backed Settings sections re-scroll after async layout stabilization | Settings CI Repair PR |
+| `2026-05-14-insights-distinct-next-check.md` | Insights Distinct Next Check — duplicate focus checks are filtered so the card shows a useful next distinct check | Insights Density PR |
 
 ## Bekannte veraltete Stellen
 
