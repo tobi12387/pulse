@@ -87,7 +87,7 @@ test('Data analysis shows power data provenance', async ({ page }) => {
 });
 
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
-  await page.goto('/plan');
+  await page.goto('/plan?tab=goals');
   const seasonLine = page.getByTestId('plan-season-strategy-card');
   await expect(seasonLine.getByText('Saisonlinie', { exact: true })).toBeVisible();
   await seasonLine.getByRole('button', { name: 'Saisonlinie anzeigen' }).click();
@@ -230,25 +230,45 @@ test('Plan desktop starts the planning surface with the week before the next dec
   expect(weekBox!.y, 'Desktop Plan should show the week before the next-training decision').toBeLessThan(decisionBox!.y);
 });
 
-test('Plan shows the week before season evidence on desktop', async ({ page }) => {
+test('Plan exposes season evidence in the goals area', async ({ page }) => {
   await page.goto('/plan');
 
-  const action = page.getByTestId('plan-primary-action');
   const weekStrip = page.getByTestId('plan-week-strip-scroller');
-  const seasonContract = page.getByTestId('plan-adaptive-season-contract');
 
-  await expect(action).toBeVisible();
   await expect(weekStrip).toBeVisible();
   await expect(weekStrip).toBeInViewport({ ratio: 0.45 });
-  await expect(seasonContract).toBeVisible();
+  await expect(page.getByTestId('plan-adaptive-season-contract')).toHaveCount(0);
 
-  const weekBeforeSeasonEvidence = await page.evaluate(() => {
-    const week = document.querySelector('[data-testid="plan-week-strip-scroller"]');
-    const contract = document.querySelector('[data-testid="plan-adaptive-season-contract"]');
-    if (!week || !contract) return false;
-    return Boolean(week.compareDocumentPosition(contract) & Node.DOCUMENT_POSITION_FOLLOWING);
-  });
-  expect(weekBeforeSeasonEvidence).toBe(true);
+  await page.getByRole('tab', { name: 'Ziele' }).click();
+  await expect(page.getByTestId('plan-adaptive-season-contract')).toBeVisible();
+  await expect(page.getByTestId('plan-season-strategy-card')).toBeVisible();
+});
+
+test('Plan desktop keeps season strategy out of the default training surface', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific route information architecture');
+
+  await page.goto('/plan?tab=training');
+  await expect(page.getByTestId('plan-week-strip-scroller')).toBeVisible();
+  await expect(page.getByTestId('plan-adaptive-season-contract')).toHaveCount(0);
+  await expect(page.getByTestId('plan-season-strategy-card')).toHaveCount(0);
+
+  await page.getByRole('tab', { name: 'Ziele' }).click();
+  await expect(page.getByTestId('plan-adaptive-season-contract')).toBeVisible();
+  await expect(page.getByTestId('plan-season-strategy-card')).toBeVisible();
+});
+
+test('Plan desktop keeps manual scenario tools collapsed until requested', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific tool density contract');
+
+  await page.goto('/plan?tab=training');
+  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
+
+  await expect(scenarioCard).toBeVisible();
+  await expect(scenarioCard.getByTestId('plan-scenario-editor')).toHaveCount(0);
+  await expect(scenarioCard.getByRole('button', { name: 'Szenario-Vorschau öffnen' })).toBeVisible();
+
+  await scenarioCard.getByRole('button', { name: 'Szenario-Vorschau öffnen' }).click();
+  await expect(scenarioCard.getByTestId('plan-scenario-editor')).toBeVisible();
 });
 
 test('Plan exposes open change signals in one inbox before detailed evidence', async ({ page }) => {

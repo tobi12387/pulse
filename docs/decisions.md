@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Plan Training trennt Woche von Strategie- und Tool-Flaechen
+
+- **Decision:** `/plan?tab=training` zeigt standardmaessig nur Wochenleiste, aktuelle Trainingsaktion, Aenderungs-/Sync-Hinweise und den Plan selbst. `Saisonvertrag` und `Saisonlinie` liegen im Ziele-Bereich (`/plan?tab=goals`), und die manuelle `Szenario-Vorschau` startet als kompakter Intent statt als offenes Formular.
+- **Why:** Frische Desktop-Route-Evidence nach dem Week-first-Slice zeigte, dass zwar die Woche oben stand, aber Saisonkarten bzw. danach die grosse Szenario-Vorschau den ersten Viewport sofort wieder zu einer Sammelflaeche machten. Training soll wie ein Kalender-/Ausfuehrungsdesk wirken; Strategie und What-if-Tools bleiben verfuegbar, aber erst nach bewusstem Wechsel oder Klick.
+- **Alternatives:** Saisonkarten nur weiter einklappen (Training bleibt konzeptionell gemischt); neue sechste Strategie-Tab einfuehren (mehr Navigation fuer eng verwandte Ziele-/Season-Evidenz); Szenario-Tool komplett nach unten verschieben (schlechter fuer Deep-Links und Home-Quick-Flows).
+- **Decided by:** Codex, auf Tobis Desktop-Prioritaet.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Plan startet auf Desktop mit der Woche
 
 - **Decision:** `/plan` rendert im Training-Tab die Wochenleiste vor der naechsten Trainingsentscheidung. Die Aktions- und Aenderungsflaechen bleiben direkt darunter erhalten.
