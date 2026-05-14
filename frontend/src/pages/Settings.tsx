@@ -61,6 +61,12 @@ function settingsSectionFromQuery(value: string | null): SettingsSection | null 
   return value && SETTINGS_SECTIONS.has(value as SettingsSection) ? value as SettingsSection : null;
 }
 
+function scrollSettingsSectionIntoView(section: SettingsSection) {
+  const target = document.getElementById(`settings-section-${section}`);
+  if (!target) return;
+  target.scrollIntoView({ block: 'start' });
+}
+
 function browserDeviceStatus() {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return {
@@ -138,9 +144,39 @@ export default function Settings() {
 
   useEffect(() => {
     if (!activeSection) return;
-    window.requestAnimationFrame(() => {
-      document.getElementById(`settings-section-${activeSection}`)?.scrollIntoView({ block: 'start' });
-    });
+    const target = document.getElementById(`settings-section-${activeSection}`);
+    if (!target) return;
+
+    let cancelled = false;
+    let frame: number | null = null;
+
+    const scroll = () => {
+      if (cancelled) return;
+      if (frame != null) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        scrollSettingsSectionIntoView(activeSection);
+      });
+    };
+
+    scroll();
+
+    const layoutRoot = target.closest('.settings-layout') ?? target;
+    const observer = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(scroll);
+    observer?.observe(layoutRoot);
+
+    const finalScroll = window.setTimeout(() => {
+      scroll();
+      observer?.disconnect();
+    }, 800);
+
+    return () => {
+      cancelled = true;
+      if (frame != null) window.cancelAnimationFrame(frame);
+      window.clearTimeout(finalScroll);
+      observer?.disconnect();
+    };
   }, [activeSection]);
 
   async function handleSync() {
