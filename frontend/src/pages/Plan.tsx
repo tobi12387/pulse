@@ -696,32 +696,57 @@ function NextTrainingDecisionCard({
             Athlete-Level: {levelSummary.label}{levelSummary.workoutLevel ? ` · ${levelSummary.workoutLevel}` : ''}
           </div>
         )}
-        {[
-          ['Rolle', progressionInsight.role],
-          ['Kalibrierung', progressionInsight.calibration],
-          ['Wiederholung', progressionInsight.repetition],
-          ['Ändern wenn', progressionInsight.changeTrigger.replace(/^Aendern wenn: /i, '')],
-        ].map(([label, value]) => (
-          <p key={label} style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
-            <span style={{ color: 'var(--text)', fontWeight: 600 }}>{label}: </span>{value}
-          </p>
-        ))}
-        {progressionInsight.evidence.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-            {progressionInsight.evidence.slice(0, 3).map(item => (
-              <span key={item} style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                color: 'var(--text-3)',
-                border: '1px solid var(--border)',
-                borderRadius: 3,
-                padding: '2px 5px',
-              }}>
-                {item}
-              </span>
-            ))}
-          </div>
-        )}
+        <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+          <span style={{ color: 'var(--text)', fontWeight: 600 }}>Rolle: </span>{progressionInsight.role}
+        </p>
+        <details
+          data-testid="plan-workout-progression-details"
+          style={{
+            borderTop: '1px solid var(--border)',
+            paddingTop: 7,
+            fontSize: 11.5,
+            color: 'var(--text-2)',
+            lineHeight: 1.45,
+          }}
+        >
+          <summary
+            style={{
+              color: progressionTone,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9.5,
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+            }}
+          >
+            Progression prüfen
+          </summary>
+          {[
+            ['Kalibrierung', progressionInsight.calibration],
+            ['Wiederholung', progressionInsight.repetition],
+            ['Ändern wenn', progressionInsight.changeTrigger.replace(/^Aendern wenn: /i, '')],
+          ].map(([label, value]) => (
+            <p key={label} style={{ margin: '7px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45 }}>
+              <span style={{ color: 'var(--text)', fontWeight: 600 }}>{label}: </span>{value}
+            </p>
+          ))}
+          {progressionInsight.evidence.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+              {progressionInsight.evidence.slice(0, 3).map(item => (
+                <span key={item} style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  color: 'var(--text-3)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 3,
+                  padding: '2px 5px',
+                }}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+        </details>
       </div>
       {mentalPlanImpact && (
         <p
