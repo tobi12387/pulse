@@ -8,6 +8,7 @@ import { PulseApiError } from '@/pulse/api-client';
 import { TrainingCapabilityCard } from '@/features/training/TrainingCapabilityCard';
 import { PersonalResponseCard } from '@/features/data/response/personal-response-components';
 import { GoalProjectionCard } from '@/features/data/goals/goal-projection-components';
+import { AnalysisTranslationCard } from '@/features/data/analysis/AnalysisTranslationCard';
 import { getMonday, isoDate } from '@/features/plan/plan-utils';
 import type { LucideIcon } from 'lucide-react';
 import type { PulseDailyDecisionQualityResponse, PulsePlanTrace, PulsePowerDataQualitySummary, PulsePowerDurationSummary, PulseTrainingCapabilityLevel } from '@coaching-os/shared/pulse';
@@ -557,11 +558,19 @@ function InsightCard({ domain, days }: { domain: Domain; days: number }) {
 
 export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' } = {}) {
   const [days, setDays] = useState(30);
-  const { data: decisionQuality } = useDailyDecisionQuality(14);
+  const decisionQualityQuery = useDailyDecisionQuality(14);
+  const personalResponse = usePersonalResponse(42);
+  const goalProjection = useGoalProjection(180);
   const capability = useTrainingCapabilities(90);
   const trainingAnalytics = useTrainingAnalytics(12);
   const currentWeekStart = isoDate(getMonday(new Date()));
   const planTrace = usePlanTrace(currentWeekStart);
+  const decisionQuality = decisionQualityQuery.data;
+  const translationLoading = decisionQualityQuery.isLoading
+    || personalResponse.isLoading
+    || goalProjection.isLoading
+    || trainingAnalytics.isLoading
+    || planTrace.isLoading;
 
   return (
     <div className="flex flex-col gap-3">
@@ -574,6 +583,14 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
         action={<RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />}
       />
 
+      <AnalysisTranslationCard
+        decisionQuality={decisionQuality}
+        goalProjection={goalProjection.data}
+        personalResponse={personalResponse.data}
+        planTrace={planTrace.data?.trace}
+        trainingAnalytics={trainingAnalytics.data}
+        loading={translationLoading}
+      />
       <MentalLoadOverlay />
       <PersonalResponseCard days={42} />
       <GoalProjectionCard horizonDays={180} />

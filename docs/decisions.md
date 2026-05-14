@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-14 — Analysis Translation v1 uebersetzt Tiefe in Tageswirkung
+
+- **Decision:** Pulse implementiert Analysis Translation v1 als read-only Karte in Data > Analyse, die aus Zielprojektion, Reaktionsmodell, Plan-Limiter, Entscheidungsqualitaet und Trainingsanalyse genau ein handlungsrelevantes Tiefensignal und eine interessante, aber noch nicht entscheidungsreife Evidenzluecke ableitet.
+- **Why:** Der Performance-OS-Nordstern braucht Intervals.icu-/WKO-Tiefe, aber nicht als weiteres Dashboard im Tagesfluss. Die vorhandenen Analysebloecke werden wertvoller, wenn Pulse zuerst sagt, welcher Befund die heutige Handlung beeinflusst und welcher nur als Lern- oder Qualitaetsgap beobachtet wird.
+- **Alternatives:** Neue Backend-Synthese-API bauen (zu gross fuer v1); Deep-Insight-Karten automatisch oeffnen (LLM-/Lade- und Dichte-Risiko); Home mit Analyse-Details belasten (konkurriert mit der Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Everyday Adaptation Inbox v1 nutzt bestehende Preview-Schleuse
 
 - **Decision:** Pulse implementiert Everyday Adaptation Inbox v1 als Plan-Karte `Heute anders?`, die weniger Zeit, nicht bereit, anders erledigt und heute skippen in bestehende Szenario-Preview- oder Feedback-Flows routet.

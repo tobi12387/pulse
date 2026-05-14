@@ -86,6 +86,28 @@ test('Data analysis shows power data provenance', async ({ page }) => {
   await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
 });
 
+test('Data analysis translates deep evidence into daily impact without AI cards', async ({ page }) => {
+  let insightRequests = 0;
+  await mockPulseApi(page, {
+    onRequest: (pathname) => {
+      if (pathname === '/api/pulse/insights') insightRequests += 1;
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Analyse -> Tageswirkung');
+  await expect(card).toContainText('Handlungsrelevant');
+  await expect(card).toContainText('Fueling-Praxis absichern');
+  await expect(card).toContainText('70.3 Kraichgau');
+  await expect(card).toContainText('Interessant, aber noch nicht entscheidend');
+  await expect(card).toContainText('Wiederholte stabile Fueling');
+  await expect(card).toContainText('Read-only');
+  expect(insightRequests).toBe(0);
+});
+
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await page.goto('/plan?tab=goals');
   const seasonLine = page.getByTestId('plan-season-strategy-card');
