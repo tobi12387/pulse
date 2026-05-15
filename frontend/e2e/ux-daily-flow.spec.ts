@@ -336,6 +336,102 @@ test('Home daily decision uses recovery pressure as a leading body signal', asyn
   await expect(contract).toContainText('RHR +6 bpm');
 });
 
+test('Home daily decision uses low readiness as the safest body option for a planned workout', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-readiness-pressure',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 3,
+    durationMin: 45,
+    distanceKm: null,
+    targetTss: 52,
+    archetypeId: 'tempo_sustained',
+    difficultyLevel: 3.8,
+    difficultyEnergySystem: 'tempo',
+    capabilityFit: 'productive',
+    description: 'Tempo-Reiz nur wenn der Körper mitzieht.',
+    steps: null,
+    garminWorkoutId: 'garmin-readiness-pressure',
+    garminScheduledId: 'scheduled-readiness-pressure',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      readiness: {
+        date: '2026-05-01',
+        score: 48,
+        label: 'niedrig',
+        shortLabel: 'niedrig',
+        color: 'red',
+        cached: false,
+        components: {
+          sleep: 52,
+          hrv: 44,
+          tsb: 62,
+          battery: 45,
+          mental: 68,
+          stress: 58,
+        },
+      },
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'insufficient',
+        headline: 'Keine Response-Muster fuer diesen Test.',
+        signals: [],
+        missingEvidence: [],
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Koerper');
+  await expect(leading).toContainText('Readiness 48/100');
+  const primaryCta = decision.getByRole('button', { name: 'Readiness prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Körper zuerst schützen');
+  await expect(safestOption).toContainText('Readiness 48/100');
+  await expect(safestOption).toContainText('keine harte Intensität');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/data?tab=trends#data-recovery');
+});
+
 test('Home daily decision uses load pressure as the safest option for a planned workout', async ({ page }) => {
   const plannedWorkout = {
     id: 'planned-load-pressure',
