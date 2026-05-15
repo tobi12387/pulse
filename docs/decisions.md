@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Reaktionsmuster duerfen offene Workouts fuehren
+
+- **Decision:** Home darf bestehende Personal-Response-Signale als vorsichtiges `Reaktion`-Signal in den Daily-Decision-Contract aufnehmen; bei offenen geplanten Workouts kann dieses Signal den Primaer-CTA zu Data > Analyse / Reaktionsmuster fuehren.
+- **Why:** Historische Ausfuehrungs-, Mental-, Recovery-, Load- und Fueling-Reaktionen sind genau die Lernschleife, die eine ruhige Tagesentscheidung persoenlich macht. Das Signal bleibt auf offene Workout-Entscheidungen begrenzt und wird von aktuellen harten Tagesgrenzen wie Mental Boundary, Recovery, Ziel, Garmin oder Fueling-Schuld ueberstimmt.
+- **Alternatives:** Personal Response nur in Data/Coach/Plan anzeigen (zu weit weg von der heutigen Handlung); eine neue Home-Karte bauen (mehr Oberflaeche statt eine Entscheidung); Reaktionsmuster auf freie oder erledigte Tage anwenden (zu laut und weniger alltagstauglich).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Garmin-Ausfuehrung darf offene Workouts fuehren
 
 - **Decision:** Home darf bestehende Workout-Ausfuehrungsdaten als `Garmin`-Signal in den Daily-Decision-Contract aufnehmen; lokal geplante, nur als Vorlage vorhandene oder degradierte/blockierte Sync-Zustaende koennen bei offenen geplanten Workouts den Primaer-CTA zu Plan > Ausfuehrung fuehren.

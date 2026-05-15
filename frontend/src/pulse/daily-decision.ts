@@ -1,4 +1,4 @@
-import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
+import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulsePersonalResponseResponse, PulsePersonalResponseSignal, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -67,6 +67,7 @@ export interface DailyDecisionContext {
   adaptationEvent?: PulseAdaptationEvent | null;
   trainingAnalytics?: PulseTrainingAnalyticsResponse | null;
   fuelingOutcomeBaseline?: PulseFuelingOutcomeBaseline | null;
+  personalResponse?: PulsePersonalResponseResponse | null;
 }
 
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
@@ -325,6 +326,7 @@ const signalLabelPriority: Record<string, number> = {
   Ziel: 3,
   Training: 4,
   Garmin: 5,
+  Reaktion: 6,
   Koerper: 6,
   Belastung: 7,
 };
@@ -352,6 +354,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Analyse') return 'Analyse prüfen';
   if (signal.label === 'Fueling-Lernen') return 'Fueling vorbereiten';
   if (signal.label === 'Garmin') return 'Garmin prüfen';
+  if (signal.label === 'Reaktion') return 'Reaktion prüfen';
   return null;
 }
 
@@ -544,6 +547,46 @@ function garminExecutionSignal(
   return null;
 }
 
+const personalResponseKindPriority: Record<PulsePersonalResponseSignal['kind'], number> = {
+  mental_response: 0,
+  recovery_response: 1,
+  load_response: 2,
+  fueling_response: 3,
+  execution_response: 4,
+};
+
+function personalResponseSignalRank(signal: PulsePersonalResponseSignal): number {
+  return signal.strength === 'useful' ? 0 : signal.strength === 'learning' ? 1 : 2;
+}
+
+function personalResponseSignal(
+  personalResponse: PulsePersonalResponseResponse | null | undefined,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
+): DailyDecisionSignal | null {
+  const openWorkoutDecision = Boolean(workout && !completedActivity && workout.status !== 'completed' && !workout.completedActivityId);
+  if (!openWorkoutDecision || mentalBoundary) return null;
+
+  const signal = personalResponse?.summary.signals
+    .filter(item => item.strength !== 'insufficient')
+    .sort((a, b) => (
+      personalResponseSignalRank(a) - personalResponseSignalRank(b)
+      || personalResponseKindPriority[a.kind] - personalResponseKindPriority[b.kind]
+    ))[0] ?? null;
+  if (!signal) return null;
+
+  return {
+    label: 'Reaktion',
+    detail: [
+      `${signal.label}: ${signal.nextAdjustment}`,
+      signal.evidence[0] ?? null,
+    ].filter(Boolean).join(' · '),
+    tone: 'amber',
+    targetPath: '/data?tab=analysis#data-personal-response',
+  };
+}
+
 function recoverySignal(recovery: HomeRecovery): DailyDecisionSignal | null {
   if (!recovery) return null;
 
@@ -661,6 +704,7 @@ function topSignals(
   adaptationEvent: PulseAdaptationEvent | null,
   trainingAnalytics: PulseTrainingAnalyticsResponse | null,
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null,
+  personalResponse: PulsePersonalResponseResponse | null,
 ): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
     {
@@ -685,6 +729,7 @@ function topSignals(
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
   const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
   const garminExecution = garminExecutionSignal(workout, completedActivity);
+  const responsePattern = personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
 
   if (adaptation) {
     signals.push(adaptation);
@@ -706,6 +751,9 @@ function topSignals(
   }
   if (garminExecution) {
     signals.push(garminExecution);
+  }
+  if (responsePattern) {
+    signals.push(responsePattern);
   }
 
   if (fuelingDebt) {
@@ -778,6 +826,7 @@ function buildContract({
   adaptationEvent,
   trainingAnalytics,
   fuelingOutcomeBaseline,
+  personalResponse,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
@@ -792,8 +841,9 @@ function buildContract({
   adaptationEvent: PulseAdaptationEvent | null;
   trainingAnalytics: PulseTrainingAnalyticsResponse | null;
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null;
+  personalResponse: PulsePersonalResponseResponse | null;
 }): DailyDecisionContract {
-  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent, trainingAnalytics, fuelingOutcomeBaseline);
+  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent, trainingAnalytics, fuelingOutcomeBaseline, personalResponse);
 
   return {
     leadingFactor: leadingFactorSummary(signals),
@@ -817,6 +867,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const adaptationEvent = context.adaptationEvent ?? null;
   const trainingAnalytics = context.trainingAnalytics ?? null;
   const fuelingOutcomeBaseline = context.fuelingOutcomeBaseline ?? null;
+  const personalResponse = context.personalResponse ?? null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
   const todayWorkout = workoutLabel(home);
@@ -868,6 +919,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       adaptationEvent,
       trainingAnalytics,
       fuelingOutcomeBaseline,
+      personalResponse,
     });
     const prompt = [
       'Tagesentscheidung: Training heute erledigt.',
@@ -942,6 +994,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       adaptationEvent,
       trainingAnalytics,
       fuelingOutcomeBaseline,
+      personalResponse,
     });
     const prompt = [
       'Tagesentscheidung: Garmin-Training heute erledigt.',
@@ -1011,6 +1064,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     adaptationEvent,
     trainingAnalytics,
     fuelingOutcomeBaseline,
+    personalResponse,
   });
   const primaryAction = primaryActionForLeadingSignal(contract.signals, { cta, targetPath, resultPreview }, { canOverride: action == null });
   const prompt = [

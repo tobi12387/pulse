@@ -432,6 +432,99 @@ test('Home daily decision uses Garmin execution gaps as a leading signal for pla
   await expect(page.getByTestId('garmin-execution-trust-panel')).toContainText('In Pulse geplant');
 });
 
+test('Home daily decision uses personal response patterns as a leading signal for planned workouts', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-response-pattern',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 55,
+        distanceKm: null,
+        targetTss: 44,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 2.5,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Grundlage mit mentaler Boundary.',
+        steps: null,
+        garminWorkoutId: 'gw-response',
+        garminScheduledId: 'sched-response',
+        garminSyncContract: {
+          version: 1,
+          status: 'ready',
+          payloadReady: true,
+          checkedAt: '2026-05-01T07:00:00.000Z',
+          summary: 'Garmin bereit.',
+          issues: [],
+        },
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T00:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'useful',
+        headline: 'Mentale Belastung veraendert deine Trainingsantwort sichtbar.',
+        signals: [{
+          kind: 'mental_response',
+          label: 'Mentale Last begrenzt Ausführung',
+          strength: 'useful',
+          summary: 'Niedrige Energie oder hoher Stress kippen geplante Einheiten haeufig in kleinere Ausfuehrung.',
+          evidence: ['5 Check-ins mit Energie <=4 oder Stress >=7', '3 bestaetigte kleinere Ausfuehrungen'],
+          nextAdjustment: 'Heute zuerst Boundary setzen und die Einheit bewusst klein halten.',
+        }],
+        missingEvidence: [],
+      },
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion im Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Reaktion');
+  await expect(leading).toContainText('Mentale Last begrenzt Ausführung');
+  await expect(leading).toContainText('Heute zuerst Boundary setzen');
+  const primaryCta = decision.getByRole('button', { name: 'Reaktion prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Reaktion');
+  await expect(contract).toContainText('5 Check-ins mit Energie <=4');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-personal-response');
+  await expect(page.getByTestId('data-personal-response-card')).toContainText('Mentale Last begrenzt Ausführung');
+});
+
 test('Home daily decision uses durability analysis as a leading signal for a planned workout', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
