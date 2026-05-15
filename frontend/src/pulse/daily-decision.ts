@@ -881,7 +881,7 @@ function completedDayAlternative(steps: DailyDecisionStep[], fallback: string): 
     const feedbackSuffix = feedbackStep
       ? ' Feedback danach kurz erfassen, damit Belastung ebenfalls eingeordnet bleibt.'
       : '';
-    return `Fueling-Evidence zuerst schließen: ${fuelingStep.cta ?? fuelingStep.label}; ${fuelingDetail}.${feedbackSuffix} Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.`;
+    return `Fueling-Evidence zuerst schließen: ${fuelingStep.cta ?? fuelingStep.label}; ${fuelingDetail}.${feedbackSuffix} ${sentenceWithoutTrailingPeriod(fallback)}.`;
   }
 
   const firstOpenStep = feedbackStep ?? steps.find(step => step.status === 'open');
@@ -898,6 +898,17 @@ function completedDayAlternative(steps: DailyDecisionStep[], fallback: string): 
 function completedClosureSteps(feedbackStep: DailyDecisionStep, fuelingStep: DailyDecisionStep | null): DailyDecisionStep[] {
   if (fuelingStep && feedbackStep.status === 'open') return [fuelingStep, feedbackStep];
   return [feedbackStep, ...(fuelingStep ? [fuelingStep] : [])];
+}
+
+function completedStepResultPreview(step: DailyDecisionStep | undefined): string | undefined {
+  if (!step?.targetPath) return undefined;
+  if (step.targetPath.includes('#activity-fueling-log')) {
+    return 'Pulse öffnet die Aktivität und den Fueling-Log; Plan und Garmin bleiben unverändert.';
+  }
+  if (step.targetPath.startsWith('/plan/activity/')) {
+    return 'Pulse öffnet die Aktivität; Feedback verbessert die nächste Planentscheidung.';
+  }
+  return undefined;
 }
 
 function fuelingLearningSignal(
@@ -1377,6 +1388,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       boundary,
       alternative,
       completionCriterion,
+      resultPreview: completedStepResultPreview(firstOpenStep),
       cta: firstOpenStep?.cta ?? (feedbackDone ? 'Plan ansehen' : 'Feedback erfassen'),
       targetPath: firstOpenStep?.targetPath ?? (feedbackDone ? '/plan?tab=training' : feedbackTargetPath),
       prompt,
@@ -1460,6 +1472,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       boundary,
       alternative,
       completionCriterion,
+      resultPreview: completedStepResultPreview(firstOpenStep),
       cta: firstOpenStep?.cta ?? (feedbackDone ? 'Aktivität ansehen' : 'Feedback erfassen'),
       targetPath: firstOpenStep?.targetPath ?? feedbackTargetPath,
       prompt,

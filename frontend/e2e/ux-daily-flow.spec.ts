@@ -1847,6 +1847,8 @@ test('Home daily decision closes completed long workouts with fueling evidence c
   const primaryCta = decision.getByRole('button', { name: 'GI-Komfort ergänzen', exact: true });
   await expect(primaryCta).toBeVisible();
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision).toContainText(/Nach dem Klick/i);
+  await expect(decision).toContainText('Pulse öffnet die Aktivität und den Fueling-Log; Plan und Garmin bleiben unverändert.');
   await expect(decision).toContainText('Feedback erfassen');
 
   await primaryCta.click();
@@ -1854,6 +1856,124 @@ test('Home daily decision closes completed long workouts with fueling evidence c
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Fueling-Baseline offen');
   await expect(page.getByTestId('activity-fueling-evidence-quality')).toContainText('GI-Komfort ergänzen');
   await expect(page.getByRole('button', { name: 'Magen ok' })).toBeVisible();
+});
+
+test('Home off-plan long activity keeps plan reconciliation after fueling evidence', async ({ page }) => {
+  const outcomeBaseline = {
+    status: 'insufficient_data',
+    label: 'Fueling-Baseline offen',
+    summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
+    latestLogDate: null,
+    observedCarbsPerHour: null,
+    targetCarbsPerHour: null,
+    bottles750Ml: null,
+    powderG: null,
+    fluidMlPerHour: null,
+    sodiumMgPerHour: null,
+    evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
+    learningReadiness: {
+      comparableCompleteLogs: 1,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+      missingEvidence: [
+        'Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.',
+        'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.',
+      ],
+      nextAction: {
+        kind: 'complete_gi_comfort',
+        label: 'GI-Komfort ergänzen',
+        detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
+        activityId: 'activity-offplan-fueling',
+      },
+    },
+  };
+  const completedActivity = {
+    id: 'activity-offplan-fueling',
+    userId: 'user-1',
+    externalId: 'garmin-activity-offplan-fueling',
+    source: 'garmin',
+    startTime: '2026-05-01T08:00:00.000Z',
+    activityType: 'bike',
+    name: 'Spontane lange Ausfahrt',
+    durationSec: 2.5 * 3600,
+    distanceM: 68000,
+    avgHr: 133,
+    maxHr: 158,
+    avgPowerW: 166,
+    normalizedPowerW: 178,
+    tss: 132,
+    calories: 1780,
+    elevationGainM: 480,
+    trainingEffectAerobic: 2.8,
+    trainingEffectAnaerobic: 0.0,
+    vo2maxEstimate: null,
+    rpe: null,
+    rpeNote: null,
+    sorenessAreas: null,
+    feedbackLoggedAt: null,
+    equipmentIds: [],
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: null,
+      todayActivities: [completedActivity],
+      recentActivities: [completedActivity],
+      nextWorkout: null,
+    },
+    planWorkouts: [],
+    activityDetail: {
+      activity: completedActivity,
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
+    nutritionLogs: [{
+      id: 'nutrition-offplan-fueling-carbs',
+      userId: 'user-1',
+      date: '2026-05-01',
+      workoutId: null,
+      activityId: completedActivity.id,
+      context: 'during',
+      mealType: null,
+      description: 'During-Fueling',
+      calories: null,
+      proteinG: null,
+      carbsG: 112,
+      fatG: null,
+      gelsCount: null,
+      drinksMl: 2400,
+      sodiumMg: 1000,
+      ambientTempC: 24,
+      sweatRateLPerHour: 0.8,
+      bottles750Ml: 3,
+      powderG: 240,
+      fuelingProducts: [],
+      giComfort: null,
+      notes: null,
+      createdAt: '2026-05-01T11:00:00.000Z',
+    }],
+    outcomeBaseline,
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision).toContainText('Garmin hat heute bereits Training erfasst');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Fueling-Lernen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Fueling-Evidence zuerst schließen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('GI-Komfort ergänzen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('danach den Plan neu abgleichen');
+  const primaryCta = decision.getByRole('button', { name: 'GI-Komfort ergänzen', exact: true });
+  await expect(primaryCta).toBeVisible();
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision).toContainText(/Nach dem Klick/i);
+  await expect(decision).toContainText('Pulse öffnet die Aktivität und den Fueling-Log; Plan und Garmin bleiben unverändert.');
+  await expect(decision).toContainText('Feedback erfassen');
+  await expect(decision).toContainText('Plan abgleichen');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/plan/activity/activity-offplan-fueling#activity-fueling-log');
+  await expect(page.getByTestId('activity-fueling-evidence-quality')).toContainText('GI-Komfort ergänzen');
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
