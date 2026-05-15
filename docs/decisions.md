@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Lernen darf lange Workouts fuehren
+
+- **Decision:** Home darf die bestehende Fueling-Outcome-Baseline-Readiness als `Fueling-Lernen`-Signal in den Daily-Decision-Contract aufnehmen; bei offenen langen/fueling-relevanten Workouts und fehlender Trend-Evidenz kann sie den Primaer-CTA zur bestehenden Workout-Fueling-Guidance im Plan fuehren.
+- **Why:** MacroFactor-aehnliches Lernen braucht nicht nur spaetere Trends, sondern heute saubere vergleichbare Logs. Solange Trend-Summaries gegated bleiben, soll Pulse die naechste lange Einheit als Lerngelegenheit markieren und klar sagen, welche Evidence noch fehlt.
+- **Alternatives:** Trends trotz 0/3 Evidence anzeigen (verletzt das Nutrition-Gate); Fueling-Readiness nur in Activity/Workout-Details lassen (zu spaet fuer die Tagesentscheidung); neue Nutrition-Seite bauen (zu breit und mehr Navigation statt mehr Entscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Tiefe Analyse darf offene Trainingsentscheidungen fuehren
 
 - **Decision:** Home uebergibt bestehende Training-Analytics-Durability an den Daily-Decision-Contract; `limited`/`watch` Durability wird als priorisiertes `Analyse`-Signal sichtbar und kann bei offenen geplanten Workouts den Primaer-CTA zu Data > Analyse fuehren.

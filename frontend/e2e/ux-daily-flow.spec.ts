@@ -432,6 +432,110 @@ test('Home daily decision uses durability analysis as a leading signal for a pla
   await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
 });
 
+test('Home daily decision uses fueling learning readiness as a leading signal for long workout practice', async ({ page }) => {
+  const outcomeBaseline = {
+    status: 'insufficient_data',
+    label: 'Fueling-Baseline offen',
+    summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
+    latestLogDate: null,
+    observedCarbsPerHour: null,
+    targetCarbsPerHour: null,
+    bottles750Ml: null,
+    powderG: null,
+    fluidMlPerHour: null,
+    sodiumMgPerHour: null,
+    evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
+    learningReadiness: {
+      comparableCompleteLogs: 0,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+      missingEvidence: ['Noch drei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.'],
+    },
+  };
+  const fuelingDebt = {
+    status: 'resolved',
+    hasOpenDebt: false,
+    label: 'Fueling frei',
+    summary: 'Kein offener GI-/Fueling-Blocker.',
+    closureCondition: 'Weiterhin lange oder harte Einheiten mit Fueling-Log schließen.',
+    evidence: ['Stand heute: kein offener GI-Hinweis'],
+    openIssueDate: null,
+    controlledWorkoutId: null,
+    followUpActivityId: null,
+    updatedAt: '2026-05-01T08:00:00.000Z',
+  };
+  const plannedWorkout = {
+    id: 'planned-fueling-learning',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 150,
+    distanceKm: null,
+    targetTss: 108,
+    archetypeId: 'long_endurance_fueling_practice',
+    difficultyLevel: 4.4,
+    difficultyEnergySystem: 'long_endurance',
+    capabilityFit: 'productive',
+    description: 'Langer Z2-Reiz mit bewusst frühem, gleichmäßigem Fueling als Lernziel.',
+    steps: null,
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'local_planned',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    fuelingDebt,
+    outcomeBaseline,
+    fuelingGuidance: (workoutId) => ({
+      shouldShow: workoutId === 'planned-fueling-learning',
+      preferenceStatus: 'ready',
+      fuelingDebt,
+      outcomeBaseline,
+      before: [],
+      during: [{ id: 'during-carbs', text: '50-70 g/h kontrolliert testen und danach GI-Komfort loggen.' }],
+      after: [],
+      recoveryCautions: [],
+      evidence: [],
+    }),
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Fueling-Lernen');
+  await expect(leading).toContainText('Trend-Evidenz 0/3');
+  await expect(leading).toContainText('Noch drei vergleichbare During-Logs');
+  const primaryCta = decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  await primaryCta.click();
+  await expect(page).toHaveURL(/\/plan\?tab=training&source=fueling-learning&workoutId=planned-fueling-learning#workout-fueling-baseline/);
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Baseline offen');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Trend-Evidenz: 0/3');
+});
+
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {

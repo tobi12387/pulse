@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDecisionQuality, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, useGoalProjection, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useTrainingAnalytics, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDecisionQuality, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, useFuelingDebt, useGoalProjection, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useTrainingAnalytics, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { RiskWatchBanner } from '@/components/RiskWatchBanner';
@@ -864,6 +864,7 @@ export default function Home() {
   const goalProjection = useGoalProjection(180);
   const adaptationEvents = useAdaptationEvents();
   const trainingAnalytics = useTrainingAnalytics(12);
+  const fuelingDebt = useFuelingDebt();
   const garminSync = useGarminSync();
   const todayOptionsQuery = useTodayOptions();
   const navigate = useNavigate();
@@ -932,6 +933,7 @@ export default function Home() {
     todayOptions: todaysOptions,
     adaptationEvent: primaryAdaptationEvent,
     trainingAnalytics: trainingAnalytics.data ?? null,
+    fuelingOutcomeBaseline: fuelingDebt.data?.outcomeBaseline ?? null,
   });
   const mentalDaySignal = mentalImpactSummary && mentalImpactSummary.level !== 'stable'
     ? `Mentale Tageslage: ${mentalImpactSummary.level === 'protect' ? 'Schutzmodus' : 'sensibel'}. ${mentalImpactSummary.labels.dailyImpact}`
