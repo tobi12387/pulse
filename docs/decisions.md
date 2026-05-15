@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Activity-Fueling strukturiert alte Praxisdetails in-place
+
+- **Decision:** Activity Detail darf bei bestehenden langen During-Logs offensichtliche Praxisdetails aus vorhandenen strukturierten/Text-Evidenzen in-place nachstrukturieren: z. B. `3000 ml` als `4 x 750 ml` oder Text wie `300 g POWER CARB Pulver` als strukturiertes Pulverfeld.
+- **Why:** Die Fueling-Lernschleife braucht nicht nur Carbs und GI-Komfort, sondern alltagstaugliche Praxisdetails, damit Baseline, Plan-Guidance und spaetere Vergleiche wirklich nutzbar werden. Alte Logs sollen nicht neu angelegt werden muessen, wenn die Evidenz bereits vorhanden ist; Trend-Summaries bleiben trotzdem bis 3/3 vergleichbaren vollstaendigen Logs gegated.
+- **Alternatives:** Praxisdetails nur im Freitext lassen (zu wenig lernbar); einen kompletten Log-Editor bauen (zu breit fuer diesen Slice); Freitext automatisch serverseitig umschreiben (zu viel versteckte Magie).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Activity-Fueling vervollstaendigt GI-Komfort in-place
 
 - **Decision:** Activity Detail darf bei langen/fueling-relevanten Einheiten einen bestehenden During-Log mit Carbs, aber fehlendem GI-Komfort direkt aus der Evidence-Qualitaetszeile per PATCH vervollstaendigen.

@@ -2795,18 +2795,33 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
 
   app.patch('/nutrition/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
     const schema = z.object({
+      carbsG: z.number().min(0).max(2000).optional(),
+      drinksMl: z.number().int().min(0).max(20000).optional(),
+      bottles750Ml: z.number().min(0).max(40).optional(),
+      powderG: z.number().min(0).max(3000).optional(),
+      fuelingProducts: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
       giComfort: z.enum(['ok','mild_issue','issue']).optional(),
       notes: z.string().max(1000).optional(),
-    }).refine(data => data.giComfort !== undefined || data.notes !== undefined);
+    }).refine(data => Object.values(data).some(value => value !== undefined));
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
 
     const userId = req.user.sub;
     const { id } = req.params as { id: string };
     const updateValues: {
+      carbsG?: number | null;
+      drinksMl?: number | null;
+      bottles750Ml?: number | null;
+      powderG?: number | null;
+      fuelingProducts?: string[];
       giComfort?: 'ok' | 'mild_issue' | 'issue' | null;
       notes?: string | null;
     } = {};
+    if (parsed.data.carbsG !== undefined) updateValues.carbsG = parsed.data.carbsG;
+    if (parsed.data.drinksMl !== undefined) updateValues.drinksMl = parsed.data.drinksMl;
+    if (parsed.data.bottles750Ml !== undefined) updateValues.bottles750Ml = parsed.data.bottles750Ml;
+    if (parsed.data.powderG !== undefined) updateValues.powderG = parsed.data.powderG;
+    if (parsed.data.fuelingProducts !== undefined) updateValues.fuelingProducts = parsed.data.fuelingProducts;
     if (parsed.data.giComfort !== undefined) updateValues.giComfort = parsed.data.giComfort;
     if (parsed.data.notes !== undefined) updateValues.notes = parsed.data.notes;
 

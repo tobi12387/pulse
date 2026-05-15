@@ -511,6 +511,11 @@ export interface NutritionLogInput {
   description?: string; notes?: string;
 }
 export interface NutritionLogPatch {
+  carbsG?: number;
+  drinksMl?: number;
+  bottles750Ml?: number;
+  powderG?: number;
+  fuelingProducts?: string[];
   giComfort?: 'ok' | 'mild_issue' | 'issue';
   notes?: string;
 }

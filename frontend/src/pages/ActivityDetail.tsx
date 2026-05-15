@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
-import type { ActivityAnalytics, NutritionLog } from '@/pulse/api-client';
+import type { ActivityAnalytics, NutritionLog, NutritionLogPatch } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
 import {
   useActivityFeedback,
@@ -634,6 +634,21 @@ function WeatherCard({ weather }: { weather: NonNullable<ActivityAnalytics['weat
 
 // ─── Fueling Section ─────────────────────────────────────────────────────────
 
+const POWER_CARB_ID = 'mnstry-power-carb-sour-cherry-1-0-8';
+
+const FUELING_PRODUCT_LABELS: Record<string, string> = {
+  [POWER_CARB_ID]: 'POWER CARB',
+  'mnstry-bicarb-gel-40-lemon-1-0-8': 'BICARB GEL',
+  'mnstry-porridge-bar-sour-cherry': 'PORRIDGE BAR',
+  'mnstry-protein-bar-8-peanut-cranberry': 'PROTEIN BAR 8',
+  mars: 'Mars',
+};
+
+type FuelingEvidenceCompletion = {
+  label: string;
+  patch: NutritionLogPatch;
+};
+
 function isLongFuelingActivity(activityType: string, durationMin: number): boolean {
   return ['bike', 'run', 'hike'].includes(activityType) && durationMin >= 75;
 }
@@ -646,6 +661,62 @@ function fuelingTrendEvidenceLabel(baseline: PulseFuelingOutcomeBaseline | null)
   const learningReadiness = baseline?.learningReadiness ?? null;
   if (!learningReadiness) return 'Trend-Evidenz offen';
   return `Trend-Evidenz ${learningReadiness.comparableCompleteLogs}/${learningReadiness.requiredComparableCompleteLogs}`;
+}
+
+function parseGermanNumber(value: string): number | null {
+  const parsed = Number(value.replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function fuelingLogText(log: NutritionLog): string {
+  return [log.description, log.notes].filter((item): item is string => Boolean(item)).join(' ');
+}
+
+function inferBottles750Ml(log: NutritionLog): number | null {
+  if (log.bottles750Ml != null || log.drinksMl == null || log.drinksMl <= 0) return null;
+  const bottles = log.drinksMl / 750;
+  return Number.isInteger(bottles) && bottles > 0 && bottles <= 40 ? bottles : null;
+}
+
+function inferPowerCarbPowderG(log: NutritionLog): number | null {
+  if (log.powderG != null) return null;
+  const text = fuelingLogText(log);
+  const match = text.match(/(\d+(?:[,.]\d+)?)\s*g\s+power\s*carb\s+pulver/i)
+    ?? text.match(/power\s*carb\s+(\d+(?:[,.]\d+)?)\s*g\s+pulver/i)
+    ?? text.match(/(\d+(?:[,.]\d+)?)\s*g\s+power\s*carb/i);
+  if (!match?.[1]) return null;
+  const powderG = parseGermanNumber(match[1]);
+  return powderG != null && powderG > 0 && powderG <= 3000 ? Math.round(powderG) : null;
+}
+
+function uniqueFuelingProducts(products: string[], productId: string): string[] {
+  return products.includes(productId) ? products : [...products, productId];
+}
+
+function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletion[] {
+  const completions: FuelingEvidenceCompletion[] = [];
+  const bottles750Ml = inferBottles750Ml(log);
+  if (bottles750Ml != null) {
+    completions.push({
+      label: `${bottles750Ml} x 750 ml übernehmen`,
+      patch: { bottles750Ml },
+    });
+  }
+
+  const powderG = inferPowerCarbPowderG(log);
+  if (powderG != null) {
+    completions.push({
+      label: `${powderG} g Pulver übernehmen`,
+      patch: {
+        powderG,
+        fuelingProducts: fuelingLogText(log).toLocaleLowerCase('de-DE').includes('power carb')
+          ? uniqueFuelingProducts(log.fuelingProducts, POWER_CARB_ID)
+          : undefined,
+      },
+    });
+  }
+
+  return completions;
 }
 
 function fuelingEvidenceQuality({
@@ -664,6 +735,8 @@ function fuelingEvidenceQuality({
   items: string[];
   tone: 'green' | 'amber';
   giComfortCompletionLogId: string | null;
+  detailCompletionLogId: string | null;
+  detailCompletions: FuelingEvidenceCompletion[];
 } | null {
   if (!isLongFuelingActivity(activityType, durationMin)) return null;
 
@@ -676,11 +749,14 @@ function fuelingEvidenceQuality({
       items: ['During-Log fehlt', trendEvidence],
       tone: 'amber',
       giComfortCompletionLogId: null,
+      detailCompletionLogId: null,
+      detailCompletions: [],
     };
   }
 
   const hasCarbs = hasFuelingCarbEvidence(latest);
   const hasGiComfort = latest.giComfort != null;
+  const detailCompletions = fuelingEvidenceCompletions(latest);
   if (!hasCarbs || !hasGiComfort) {
     return {
       label: 'Lernevidenz unvollständig',
@@ -692,6 +768,8 @@ function fuelingEvidenceQuality({
       ],
       tone: 'amber',
       giComfortCompletionLogId: hasCarbs && !hasGiComfort ? latest.id : null,
+      detailCompletionLogId: detailCompletions.length > 0 ? latest.id : null,
+      detailCompletions,
     };
   }
 
@@ -701,6 +779,8 @@ function fuelingEvidenceQuality({
     items: ['Carbs erfasst', 'GI-Komfort erfasst', trendEvidence],
     tone: 'green',
     giComfortCompletionLogId: null,
+    detailCompletionLogId: detailCompletions.length > 0 ? latest.id : null,
+    detailCompletions,
   };
 }
 
@@ -725,17 +805,11 @@ function FuelingSection({
     trendEvidence: fuelingTrendEvidenceLabel(fuelingOutcomeBaseline),
   });
   const giComfortCompletionLogId = evidenceQuality?.giComfortCompletionLogId ?? null;
+  const detailCompletionLogId = evidenceQuality?.detailCompletionLogId ?? null;
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
     : 'other';
-  const productLabels: Record<string, string> = {
-    'mnstry-power-carb-sour-cherry-1-0-8': 'POWER CARB',
-    'mnstry-bicarb-gel-40-lemon-1-0-8': 'BICARB GEL',
-    'mnstry-porridge-bar-sour-cherry': 'PORRIDGE BAR',
-    'mnstry-protein-bar-8-peanut-cranberry': 'PROTEIN BAR 8',
-    mars: 'Mars',
-  };
   const giLabels: Record<string, string> = {
     ok: 'Magen ok',
     mild_issue: 'Magen leicht unruhig',
@@ -806,7 +880,7 @@ function FuelingSection({
                   )}
                   {log.fuelingProducts?.length > 0 && (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)' }}>
-                      {log.fuelingProducts.map(id => productLabels[id] ?? id).join(', ')}
+                      {log.fuelingProducts.map(id => FUELING_PRODUCT_LABELS[id] ?? id).join(', ')}
                     </span>
                   )}
                   {log.giComfort && (
@@ -916,6 +990,46 @@ function FuelingSection({
                       }}
                     >
                       {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {detailCompletionLogId && evidenceQuality.detailCompletions.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  color: 'var(--text-3)',
+                  letterSpacing: 0,
+                  textTransform: 'uppercase',
+                  marginBottom: 6,
+                }}>
+                  Praxisdetails strukturieren
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {evidenceQuality.detailCompletions.map(completion => (
+                    <button
+                      key={completion.label}
+                      type="button"
+                      onClick={() => updateNutrition.mutate({
+                        id: detailCompletionLogId,
+                        data: completion.patch,
+                      })}
+                      disabled={updateNutrition.isPending}
+                      style={{
+                        minHeight: 44,
+                        background: 'rgba(0,0,0,0.18)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 4,
+                        padding: '6px 9px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 10,
+                        color: 'var(--text-2)',
+                        cursor: updateNutrition.isPending ? 'wait' : 'pointer',
+                      }}
+                    >
+                      {completion.label}
                     </button>
                   ))}
                 </div>
