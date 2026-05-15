@@ -481,23 +481,64 @@ function isFuelingLearningWorkout(workout: HomeWorkout | null): boolean {
     || /fueling/i.test(workout.archetypeId ?? '');
 }
 
+function isFuelingLearningActivity(activity: HomeActivity | null): boolean {
+  if (!activity) return false;
+  const isFuelingSport = activity.activityType === 'bike' || activity.activityType === 'run' || activity.activityType === 'hike';
+  if (!isFuelingSport) return false;
+  return (activity.durationSec ?? 0) >= 75 * 60
+    || /fueling|verpflegung|magen|gi/i.test(activity.name ?? '');
+}
+
+function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
+  const readiness = baseline?.learningReadiness ?? null;
+  if (!readiness || readiness.readyForTrendSummary) return null;
+
+  const missing = readiness.missingEvidence[0] ?? 'Vergleichbare During-Logs fehlen noch.';
+  return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${missing}`;
+}
+
+function activityFuelingTargetPath(activity: HomeActivity): string {
+  return `${activityDetailPath(activity.id)}#activity-fueling-log`;
+}
+
+function fuelingClosureStep(
+  baseline: PulseFuelingOutcomeBaseline | null | undefined,
+  activity: HomeActivity | null,
+  workout: HomeWorkout | null,
+): DailyDecisionStep | null {
+  if (!activity || (!isFuelingLearningWorkout(workout) && !isFuelingLearningActivity(activity))) return null;
+
+  const readinessDetail = fuelingReadinessDetail(baseline);
+  if (!readinessDetail) return null;
+
+  return {
+    status: 'open',
+    label: 'Fueling-Log prüfen',
+    detail: `${readinessDetail}. Carbs, Flaschen/Pulver und GI-Komfort prüfen oder nachtragen, damit Pulse die Fueling-Baseline lernt.`,
+    cta: 'Fueling loggen',
+    targetPath: activityFuelingTargetPath(activity),
+  };
+}
+
 function fuelingLearningSignal(
   baseline: PulseFuelingOutcomeBaseline | null | undefined,
   workout: HomeWorkout | null,
   completedActivity: HomeActivity | null,
 ): DailyDecisionSignal | null {
   const openWorkoutDecision = Boolean(workout && !completedActivity && workout.status !== 'completed' && !workout.completedActivityId);
-  if (!openWorkoutDecision || !isFuelingLearningWorkout(workout)) return null;
+  const completedFuelingDecision = Boolean(completedActivity && (isFuelingLearningWorkout(workout) || isFuelingLearningActivity(completedActivity)));
+  if ((!openWorkoutDecision || !isFuelingLearningWorkout(workout)) && !completedFuelingDecision) return null;
 
-  const readiness = baseline?.learningReadiness ?? null;
-  if (!readiness || readiness.readyForTrendSummary) return null;
+  const readinessDetail = fuelingReadinessDetail(baseline);
+  if (!readinessDetail) return null;
 
-  const missing = readiness.missingEvidence[0] ?? 'Vergleichbare During-Logs fehlen noch.';
   return {
     label: 'Fueling-Lernen',
-    detail: `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${missing}`,
+    detail: readinessDetail,
     tone: 'amber',
-    targetPath: `/plan?tab=training&source=fueling-learning&workoutId=${encodeURIComponent(workout!.id)}#workout-fueling-baseline`,
+    targetPath: completedActivity
+      ? activityFuelingTargetPath(completedActivity)
+      : `/plan?tab=training&source=fueling-learning&workoutId=${encodeURIComponent(workout!.id)}#workout-fueling-baseline`,
   };
 }
 
@@ -875,9 +916,11 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   if (completedWorkout) {
     const completedLabel = `${activityLabel(completedWorkout.activityType)} · Z${completedWorkout.zone} · ${completedWorkout.durationMin} min`;
     const feedbackDone = hasCompletedWorkoutFeedback(home, completedWorkout);
+    const completedActivity = completedActivityFor(home, completedWorkout);
     const feedbackTargetPath = completedWorkout.completedActivityId
       ? activityDetailPath(completedWorkout.completedActivityId)
       : '/plan?tab=training';
+    const fuelingStep = fuelingClosureStep(fuelingOutcomeBaseline, completedActivity, completedWorkout);
     const steps: DailyDecisionStep[] = [
       { status: 'done', label: 'Training abgeschlossen', detail: completedLabel },
       ...(feedbackDone
@@ -889,27 +932,33 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
             cta: 'Feedback erfassen',
             targetPath: feedbackTargetPath,
           }]),
+      ...(fuelingStep ? [fuelingStep] : []),
       {
         status: 'note',
         label: 'Heute nicht nachlegen',
         detail: 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.',
       },
     ];
-    const emptyState = feedbackDone ? 'Für heute ist nichts mehr offen. Training und Feedback sind erledigt.' : undefined;
+    const firstOpenStep = steps.find(step => step.status === 'open');
+    const emptyState = feedbackDone && !firstOpenStep ? 'Für heute ist nichts mehr offen. Training und Feedback sind erledigt.' : undefined;
     const evidence: DailyDecisionEvidence[] = [
       { label: `Erledigt: ${completedLabel}`, targetPath: '/plan?tab=training' },
+      ...(fuelingStep?.targetPath
+        ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
+        : []),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ];
     const reason = 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
     const alternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
     const completionCriterion = emptyState
+      ?? firstOpenStep?.detail
       ?? 'Feedback erfassen, damit Pulse die Belastung und den nächsten Plan sauber einordnen kann.';
     const contract = buildContract({
       home,
       action,
       workout: completedWorkout,
-      completedActivity: completedActivityFor(home, completedWorkout),
+      completedActivity,
       alternative,
       dailyDelta,
       decisionQuality,
@@ -936,8 +985,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       boundary,
       alternative,
       completionCriterion,
-      cta: feedbackDone ? 'Plan ansehen' : 'Feedback erfassen',
-      targetPath: feedbackDone ? '/plan?tab=training' : feedbackTargetPath,
+      cta: firstOpenStep?.cta ?? (feedbackDone ? 'Plan ansehen' : 'Feedback erfassen'),
+      targetPath: firstOpenStep?.targetPath ?? (feedbackDone ? '/plan?tab=training' : feedbackTargetPath),
       prompt,
       priority: 'normal',
       evidence,
@@ -953,6 +1002,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const completedLabel = completedActivityLabel(offPlanActivity);
     const feedbackDone = offPlanActivity.feedbackLoggedAt != null || offPlanActivity.rpe != null;
     const feedbackTargetPath = activityDetailPath(offPlanActivity.id);
+    const fuelingStep = fuelingClosureStep(fuelingOutcomeBaseline, offPlanActivity, null);
     const steps: DailyDecisionStep[] = [
       { status: 'done', label: 'Garmin-Aktivität abgeschlossen', detail: completedLabel },
       ...(feedbackDone
@@ -964,21 +1014,27 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
             cta: 'Feedback erfassen',
             targetPath: feedbackTargetPath,
           }]),
+      ...(fuelingStep ? [fuelingStep] : []),
       {
         status: 'note',
         label: 'Plan abgleichen',
         detail: 'Heute nicht zusätzlich trainieren; die nächste Planentscheidung sollte diese echte Garmin-Belastung berücksichtigen.',
       },
     ];
-    const emptyState = feedbackDone ? 'Für heute ist nichts mehr offen. Garmin-Aktivität und Feedback sind erledigt.' : undefined;
+    const firstOpenStep = steps.find(step => step.status === 'open');
+    const emptyState = feedbackDone && !firstOpenStep ? 'Für heute ist nichts mehr offen. Garmin-Aktivität und Feedback sind erledigt.' : undefined;
     const evidence: DailyDecisionEvidence[] = [
       { label: `Garmin: ${completedLabel}`, targetPath: feedbackTargetPath },
+      ...(fuelingStep?.targetPath
+        ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
+        : []),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ];
     const reason = 'Garmin hat heute bereits Training erfasst, obwohl kein Pulse-Workout geplant war. Für heute zählt jetzt Feedback, Versorgung und Regeneration statt eine weitere Einheit zu suchen.';
     const alternative = 'Kein Zusatztraining nachschieben; wenn die Aktivität anders geplant war, danach den Plan neu abgleichen.';
     const completionCriterion = emptyState
+      ?? firstOpenStep?.detail
       ?? 'Feedback erfassen, damit Pulse die ungeplante Belastung in den nächsten Plan einbeziehen kann.';
     const contract = buildContract({
       home,
@@ -1011,8 +1067,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       boundary,
       alternative,
       completionCriterion,
-      cta: feedbackDone ? 'Aktivität ansehen' : 'Feedback erfassen',
-      targetPath: feedbackTargetPath,
+      cta: firstOpenStep?.cta ?? (feedbackDone ? 'Aktivität ansehen' : 'Feedback erfassen'),
+      targetPath: firstOpenStep?.targetPath ?? feedbackTargetPath,
       prompt,
       priority: 'normal',
       evidence,
