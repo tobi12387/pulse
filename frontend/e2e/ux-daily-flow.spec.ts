@@ -340,12 +340,17 @@ test('Home daily decision uses open plan adaptation as a leading signal', async 
   const leading = decision.getByTestId('daily-decision-leading-factor');
   await expect(leading).toContainText('Anpassung');
   await expect(leading).toContainText('Garmin-Sync-Schulden');
+  const primaryCta = decision.getByRole('button', { name: 'Garmin prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Anpassung');
   await expect(contract).toContainText('1 offene Einheit');
   await expect(contract).toContainText('Garmin prüfen');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL(/\/settings\?section=garmin/);
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {

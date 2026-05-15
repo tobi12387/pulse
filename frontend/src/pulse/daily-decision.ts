@@ -56,6 +56,8 @@ export interface DailyDecision {
   supportPath?: string;
 }
 
+type DailyDecisionPrimaryAction = Pick<DailyDecision, 'cta' | 'targetPath' | 'resultPreview'>;
+
 export interface DailyDecisionContext {
   dailyDelta?: PulseDailyDeltaItem | null;
   decisionQuality?: PulseDailyDecisionQualityResponse | null;
@@ -334,6 +336,55 @@ function leadingFactorSummary(signals: DailyDecisionSignal[]): string {
   const leading = signals[0];
   if (!leading) return 'Keine harte Begrenzung: Entscheidung aus Zielwirkung, Garmin-Zustand und sicherster Option ableiten.';
   return `${leading.label}: ${leading.detail}`;
+}
+
+function signalActionCta(signal: DailyDecisionSignal): string | null {
+  if (signal.label === 'Anpassung') return signal.detail.split(':')[0]?.trim() || 'Anpassung prüfen';
+  if (signal.label === 'Daten') return 'Daten prüfen';
+  if (signal.label === 'Fueling') return 'Fueling schließen';
+  if (signal.label === 'Mental') return 'Check-in öffnen';
+  if (signal.label === 'Recovery') return 'Recovery ansehen';
+  if (signal.label === 'Lernen') return 'Lernen prüfen';
+  return null;
+}
+
+function signalActionResultPreview(targetPath: string): string {
+  if (targetPath.startsWith('/settings?section=garmin')) {
+    return 'Pulse öffnet Garmin in Settings; Sync oder Reparatur passiert erst nach deinem Klick.';
+  }
+  if (targetPath.startsWith('/plan/activity/')) {
+    return 'Pulse öffnet die Aktivität; Feedback verbessert die nächste Planentscheidung.';
+  }
+  if (targetPath.startsWith('/plan')) {
+    return 'Pulse öffnet die passende Planprüfung; Plan oder Garmin ändern sich erst nach einem bewussten Klick.';
+  }
+  if (targetPath.startsWith('/data')) {
+    return 'Pulse öffnet die Evidenz; Plan und Garmin bleiben unverändert.';
+  }
+  if (targetPath.startsWith('/settings')) {
+    return 'Pulse öffnet Settings; Änderungen passieren erst nach deinem Klick.';
+  }
+  return 'Pulse öffnet den passenden Schritt, ohne automatisch Plan oder Garmin zu verändern.';
+}
+
+function primaryActionForLeadingSignal(
+  signals: DailyDecisionSignal[],
+  fallback: DailyDecisionPrimaryAction,
+  options: { canOverride: boolean },
+): DailyDecisionPrimaryAction {
+  if (!options.canOverride) return fallback;
+
+  const leading = signals[0];
+  if (!leading?.targetPath) return fallback;
+
+  const cta = signalActionCta(leading);
+  if (!cta) return fallback;
+
+  return {
+    cta,
+    targetPath: leading.targetPath,
+    resultPreview: signalActionResultPreview(leading.targetPath),
+  };
 }
 
 function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null | undefined): DailyDecisionSignal | null {
@@ -833,6 +884,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     todayOptions,
     adaptationEvent,
   });
+  const primaryAction = primaryActionForLeadingSignal(contract.signals, { cta, targetPath, resultPreview }, { canOverride: action == null });
   const prompt = [
     `Tagesentscheidung: ${title}.`,
     `Warum: ${reason}`,
@@ -848,9 +900,9 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     boundary,
     alternative,
     completionCriterion,
-    resultPreview,
-    cta,
-    targetPath,
+    resultPreview: primaryAction.resultPreview,
+    cta: primaryAction.cta,
+    targetPath: primaryAction.targetPath,
     prompt,
     priority: action?.priority ?? 'normal',
     evidence,
