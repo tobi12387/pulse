@@ -1,4 +1,4 @@
-import type { PulseDailyDeltaItem, PulseHomeScreenData, PulseNextBestAction } from '@coaching-os/shared/pulse';
+import type { PulseDailyDeltaItem, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -50,6 +50,7 @@ export interface DailyDecision {
 
 export interface DailyDecisionContext {
   dailyDelta?: PulseDailyDeltaItem | null;
+  todayOptions?: PulseTodayOptionsResponse | null;
 }
 
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
@@ -125,15 +126,35 @@ function hasCompletedWorkoutFeedback(home: PulseHomeScreenData, workout: HomeWor
     || activity?.rpe != null;
 }
 
-function alternativeFor(home: PulseHomeScreenData, action: PulseNextBestAction | null): string {
+function openFuelingDebt(todayOptions: PulseTodayOptionsResponse | null | undefined) {
+  const debt = todayOptions?.fuelingDebt;
+  return debt?.hasOpenDebt ? debt : null;
+}
+
+function fuelingProtectDetail(todayOptions: PulseTodayOptionsResponse | null | undefined): string | null {
+  const label = todayOptions?.options
+    .flatMap(option => option.signalLabels ?? [])
+    .find(signal => signal.kind === 'fueling_protect');
+  return label?.detail ?? null;
+}
+
+function alternativeFor(
+  home: PulseHomeScreenData,
+  action: PulseNextBestAction | null,
+  todayOptions: PulseTodayOptionsResponse | null,
+): string {
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
+  const fuelingDebt = openFuelingDebt(todayOptions);
 
   if (action?.source === 'checkin') {
     return 'Kurz in Coach oder Data einchecken; wenn wenig Zeit ist, nur Kopf, Energie und Stress notieren.';
   }
   if (action?.source === 'risk') {
     return 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
+  }
+  if (fuelingDebt) {
+    return `Fueling-Schutz zuerst schließen: ${fuelingDebt.closureCondition}`;
   }
   if (todayWorkout && todayWorkout.zone >= 3) {
     return `Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.`;
@@ -265,7 +286,13 @@ function continuitySummary({
   return 'Bleibt gültig: Ohne geplantes Training schließen Check-in und Erholung den Tag ruhiger als eine neue Einheit.';
 }
 
-function topSignals(home: PulseHomeScreenData, workout: HomeWorkout | null, completedActivity: HomeActivity | null, action: PulseNextBestAction | null): DailyDecisionSignal[] {
+function topSignals(
+  home: PulseHomeScreenData,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+  action: PulseNextBestAction | null,
+  todayOptions: PulseTodayOptionsResponse | null,
+): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
     {
       label: 'Koerper',
@@ -280,6 +307,17 @@ function topSignals(home: PulseHomeScreenData, workout: HomeWorkout | null, comp
       targetPath: '/data?tab=analysis#data-plan-trace',
     },
   ];
+  const fuelingDebt = openFuelingDebt(todayOptions);
+
+  if (fuelingDebt) {
+    const protectDetail = fuelingProtectDetail(todayOptions);
+    signals.push({
+      label: 'Fueling',
+      detail: `${fuelingDebt.label}: ${protectDetail ?? fuelingDebt.summary}`,
+      tone: 'amber',
+      targetPath: fuelingDebt.followUpActivityId ? activityDetailPath(fuelingDebt.followUpActivityId) : '/data?tab=trends#data-recovery',
+    });
+  }
 
   if (workout) {
     signals.push({
@@ -316,6 +354,7 @@ function buildContract({
   completedActivity,
   alternative,
   dailyDelta,
+  todayOptions,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
@@ -323,13 +362,14 @@ function buildContract({
   completedActivity: HomeActivity | null;
   alternative: string;
   dailyDelta: PulseDailyDeltaItem | null;
+  todayOptions: PulseTodayOptionsResponse | null;
 }): DailyDecisionContract {
   return {
     goalImpact: goalImpactSummary(home, workout, completedActivity),
     garminExecution: executionSummary(workout, completedActivity),
     continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
     safestAlternative: alternative,
-    signals: topSignals(home, workout, completedActivity, action),
+    signals: topSignals(home, workout, completedActivity, action, todayOptions),
   };
 }
 
@@ -338,6 +378,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
 
   const action = home.nextBestActions?.[0] ?? null;
   const dailyDelta = context.dailyDelta?.date === home.date ? context.dailyDelta : null;
+  const todayOptions = context.todayOptions?.date === home.date ? context.todayOptions : null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
   const todayWorkout = workoutLabel(home);
@@ -382,6 +423,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       completedActivity: completedActivityFor(home, completedWorkout),
       alternative,
       dailyDelta,
+      todayOptions,
     });
     const prompt = [
       'Tagesentscheidung: Training heute erledigt.',
@@ -449,6 +491,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       completedActivity: offPlanActivity,
       alternative,
       dailyDelta,
+      todayOptions,
     });
     const prompt = [
       'Tagesentscheidung: Garmin-Training heute erledigt.',
@@ -490,7 +533,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action);
+  const alternative = alternativeFor(home, action, todayOptions);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;
@@ -511,6 +554,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     completedActivity: null,
     alternative,
     dailyDelta,
+    todayOptions,
   });
   const prompt = [
     `Tagesentscheidung: ${title}.`,

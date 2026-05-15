@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Fueling Debt wird Top-Signal der Tagesentscheidung
+
+- **Decision:** Home darf offenen `todayOptions.fuelingDebt` als `Fueling`-Signal im bestehenden Daily-Decision-Contract anzeigen und die sicherste Option auf die vorhandene Closure-Bedingung legen.
+- **Why:** Der Performance-OS-Nordstern verlangt, dass Nutrition/Fueling die heutige Handlung sichtbar beeinflussen kann. Die vorhandenen Today-Options-Daten enthalten bereits konservative GI-/Fueling-Schutzlogik; Home muss diese Evidenz in die Hauptentscheidung uebersetzen, ohne neue Trendbehauptungen zu erfinden.
+- **Alternatives:** Nutrition weiter nur in Today Options/Activity zeigen (zu getrennt von der einen Tagesentscheidung); neue Nutrition-Home-Karte bauen (mehr UI-Dichte); Trend-Summaries trotz 0/3 vergleichbarer Logs bauen (verletzt das Evidence-Gate).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Daily Decision Continuity gehoert in den Entscheidungsvertrag
 
 - **Decision:** Home zeigt Kontinuitaet der Tagesentscheidung in den bestehenden Details: `Seit letzter Entscheidung` erklaert aus dem heutigen `daily-delta`, was gleich bleibt oder sich geaendert hat; ohne heutiges Delta nutzt Pulse einen deterministischen Fallback aus Workout-, Garmin-, Action- und Recovery-Kontext.
