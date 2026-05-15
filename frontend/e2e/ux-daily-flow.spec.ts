@@ -217,6 +217,11 @@ test('Home daily decision details expose top signals goal impact Garmin state an
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
+  const continuity = decision.getByTestId('daily-decision-continuity');
+  await expect(continuity).toContainText(/Seit letzter Entscheidung/i);
+  await expect(continuity).toContainText('Bleibt gültig: Plan und Ausführung passen zusammen');
+  await expect(continuity).toContainText('Plan kann diesen Reiz als erledigt behandeln');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');
