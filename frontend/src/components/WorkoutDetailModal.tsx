@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import type { PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
 import { pulseApi } from '@/pulse/api-client';
 import { pulseKeys, useFuelingRecoveryGuidance, useGarminExecutionLedger } from '@/pulse/hooks';
@@ -181,6 +182,7 @@ interface Props {
 
 export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate }: Props) {
   const [workout, setWorkout] = useState(initial);
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const fuelingGuidance = useFuelingRecoveryGuidance(workout.id);
   const executionLedger = useGarminExecutionLedger(workout.id);
@@ -491,7 +493,14 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                   ))}
                 </div>
               )}
-              <FuelingOutcomeBaselineBlock baseline={fuelingOutcomeBaseline} testId="workout-fueling-baseline" />
+              <FuelingOutcomeBaselineBlock
+                baseline={fuelingOutcomeBaseline}
+                onOpenNextAction={targetPath => {
+                  onClose();
+                  navigate(targetPath);
+                }}
+                testId="workout-fueling-baseline"
+              />
               <GuidanceList title="Vorher" items={fuelingBefore} />
               <GuidanceList title="Während" items={fuelingDuring} />
               <GuidanceList title="Danach" items={fuelingAfter} />

@@ -1760,6 +1760,7 @@ test('Home daily decision closes completed long workouts with fueling evidence c
     sorenessAreas: null,
     feedbackLoggedAt: null,
     equipmentIds: [],
+    plannedWorkoutId: 'planned-post-fueling',
   };
   const completedWorkout = {
     id: 'planned-post-fueling',
@@ -1855,6 +1856,7 @@ test('Home daily decision closes completed long workouts with fueling evidence c
   await expect(page).toHaveURL('/plan/activity/activity-post-fueling#activity-fueling-log');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Fueling-Baseline offen');
   await expect(page.getByTestId('activity-fueling-evidence-quality')).toContainText('GI-Komfort ergänzen');
+  await expect(page.getByTestId('activity-offplan-plan-followup')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Magen ok' })).toBeVisible();
 });
 
@@ -1912,6 +1914,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
     sorenessAreas: null,
     feedbackLoggedAt: null,
     equipmentIds: [],
+    plannedWorkoutId: null,
   };
 
   await mockPulseApi(page, {
@@ -1974,6 +1977,13 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await primaryCta.click();
   await expect(page).toHaveURL('/plan/activity/activity-offplan-fueling#activity-fueling-log');
   await expect(page.getByTestId('activity-fueling-evidence-quality')).toContainText('GI-Komfort ergänzen');
+  const planFollowUp = page.getByTestId('activity-offplan-plan-followup');
+  await expect(planFollowUp).toContainText('Planabgleich nach Fueling');
+  await expect(planFollowUp).toContainText('keinem geplanten Workout zugeordnet');
+  await expect(planFollowUp).toContainText('erst Carbs/GI-Komfort');
+  await planFollowUp.getByRole('button', { name: 'Plan abgleichen' }).click();
+  await expect(page).toHaveURL('/plan?tab=training&source=offplan-activity&activityId=activity-offplan-fueling#everyday-adaptation-inbox');
+  await expect(page.getByTestId('everyday-adaptation-inbox')).toContainText('Anders erledigt');
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {

@@ -35,11 +35,19 @@ function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | nu
   return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver mitschreiben; ${hydrationLearningContext(baseline)}`;
 }
 
+function learningActionTargetPath(baseline: PulseFuelingOutcomeBaseline): string | null {
+  const nextAction = baseline.learningReadiness?.nextAction ?? null;
+  if (!nextAction || nextAction.kind === 'log_next_long_session' || !nextAction.activityId) return null;
+  return `/plan/activity/${nextAction.activityId}#activity-fueling-log`;
+}
+
 export function FuelingOutcomeBaselineBlock({
   baseline,
+  onOpenNextAction,
   testId = 'fueling-outcome-baseline',
 }: {
   baseline?: PulseFuelingOutcomeBaseline | null;
+  onOpenNextAction?: (targetPath: string) => void;
   testId?: string;
 }) {
   if (!baseline) return null;
@@ -63,6 +71,8 @@ export function FuelingOutcomeBaselineBlock({
     : null;
   const hydrationGap = hydrationGapText(baseline);
   const nextLearningLog = nextLearningLogText(baseline);
+  const nextLearningAction = baseline.learningReadiness?.nextAction ?? null;
+  const nextLearningActionTargetPath = learningActionTargetPath(baseline);
   const trendSummary = baseline.trendSummary?.trim() || null;
 
   return (
@@ -138,6 +148,31 @@ export function FuelingOutcomeBaselineBlock({
         <p style={{ margin: '6px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
           {nextLearningLog}
         </p>
+      )}
+      {nextLearningAction && nextLearningActionTargetPath && onOpenNextAction && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={() => onOpenNextAction(nextLearningActionTargetPath)}
+            style={{
+              alignSelf: 'flex-start',
+              minHeight: 44,
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              padding: '7px 10px',
+              background: 'var(--surface-2)',
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              cursor: 'pointer',
+            }}
+          >
+            {nextLearningAction.label}
+          </button>
+          <span style={{ fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
+            Nach dem Klick: Pulse öffnet die Aktivität und den Fueling-Log; Plan und Garmin bleiben unverändert.
+          </span>
+        </div>
       )}
     </div>
   );

@@ -4729,7 +4729,12 @@ test('Plan workout modal names existing fueling evidence completion before the n
   await expect(baseline).toContainText('Trend-Evidenz: 0/3');
   await expect(baseline).toContainText('Nächste Evidence: GI-Komfort ergänzen');
   await expect(baseline).toContainText('vorhandene Carb-Log');
+  await expect(baseline).toContainText('Plan und Garmin bleiben unverändert');
+  await expect(baseline.getByRole('button', { name: 'GI-Komfort ergänzen' })).toBeVisible();
   await expect(baseline).not.toContainText('Nächster Lernlog');
+
+  await baseline.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-long-carb-log#activity-fueling-log');
 });
 
 test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ page }) => {
