@@ -286,6 +286,10 @@ test('Home daily decision uses stale decision quality as a leading learning sign
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Lernen');
   await expect(contract).toContainText('Mobilität 10 Minuten');
+
+  await decision.getByRole('button', { name: 'Lernen prüfen', exact: true }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+  await expect(page.locator('#data-plan-trace')).toBeVisible();
 });
 
 test('Home daily decision uses recovery pressure as a leading body signal', async ({ page }) => {
