@@ -2594,6 +2594,38 @@ test('Home root-target daily decision does not patch synthetic action ids', asyn
   expect(actionPatches).toBe(0);
 });
 
+test('Home data-evidence daily decision previews read-only evidence instead of mental save', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      nextBestActions: [
+        {
+          id: 'risk:data-analysis:0',
+          source: 'risk',
+          priority: 'high',
+          title: 'Load-Risiko prüfen',
+          reason: 'TSB und Trend-Evidence brauchen heute zuerst eine bewusste Prüfung.',
+          cta: 'Analyse öffnen',
+          targetPath: '/data?tab=analysis#data-plan-trace',
+          resolvedBy: 'Plan-Trace und Load-Evidence geprüft.',
+          evidence: ['TSB -13.2', 'risk'],
+        },
+      ],
+    },
+  });
+
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByRole('button', { name: 'Analyse öffnen', exact: true })).toBeVisible();
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  await expect(decision).toContainText('Pulse öffnet die Evidenz; Plan und Garmin bleiben unverändert.');
+  await expect(decision).not.toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
+
+  await decision.getByRole('button', { name: 'Analyse öffnen', exact: true }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+});
+
 test('Home coach-target daily decision uses one prepared-prompt action', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
