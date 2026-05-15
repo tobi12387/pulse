@@ -1,4 +1,4 @@
-import type { PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -58,6 +58,7 @@ export interface DailyDecision {
 
 export interface DailyDecisionContext {
   dailyDelta?: PulseDailyDeltaItem | null;
+  decisionQuality?: PulseDailyDecisionQualityResponse | null;
   goalProjection?: PulseGoalProjectionResponse | null;
   mentalBoundary?: DailyDecisionMentalBoundary | null;
   todayOptions?: PulseTodayOptionsResponse | null;
@@ -308,6 +309,7 @@ const signalTonePriority: Record<DailyDecisionSignalTone, number> = {
 
 const signalLabelPriority: Record<string, number> = {
   Mental: 0,
+  Lernen: 0,
   Daten: 1,
   Fueling: 2,
   Ziel: 3,
@@ -328,6 +330,29 @@ function leadingFactorSummary(signals: DailyDecisionSignal[]): string {
   const leading = signals[0];
   if (!leading) return 'Keine harte Begrenzung: Entscheidung aus Zielwirkung, Garmin-Zustand und sicherster Option ableiten.';
   return `${leading.label}: ${leading.detail}`;
+}
+
+function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null | undefined): DailyDecisionSignal | null {
+  if (!quality) return null;
+
+  const primaryEvidence = quality.bestEvidence[0];
+  const detail = quality.status === 'helpful' && primaryEvidence
+    ? `${quality.statusLabel}: ${primaryEvidence}`
+    : `${quality.statusLabel}: ${primaryEvidence ? `${primaryEvidence}. ` : ''}${quality.suggestedAdjustment}`;
+  const tone: DailyDecisionSignalTone = quality.status === 'needs_strategy_change'
+    ? 'rose'
+    : quality.status === 'stale' || quality.status === 'watch'
+      ? 'amber'
+      : quality.status === 'helpful'
+        ? 'green'
+        : 'muted';
+
+  return {
+    label: 'Lernen',
+    detail,
+    tone,
+    targetPath: '/data?tab=analyse#data-plan-trace',
+  };
 }
 
 function executionSummary(workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
@@ -398,6 +423,7 @@ function topSignals(
   workout: HomeWorkout | null,
   completedActivity: HomeActivity | null,
   action: PulseNextBestAction | null,
+  decisionQuality: PulseDailyDecisionQualityResponse | null,
   goalProjection: PulseGoalProjectionResponse | null,
   mentalBoundary: DailyDecisionMentalBoundary | null,
   todayOptions: PulseTodayOptionsResponse | null,
@@ -419,9 +445,13 @@ function topSignals(
   const fuelingDebt = openFuelingDebt(todayOptions);
   const goal = topGoalProjection(goalProjection);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
+  const qualitySignal = decisionQualitySignal(decisionQuality);
 
   if (dataSignal) {
     signals.push(dataSignal);
+  }
+  if (qualitySignal) {
+    signals.push(qualitySignal);
   }
 
   if (fuelingDebt) {
@@ -487,6 +517,7 @@ function buildContract({
   completedActivity,
   alternative,
   dailyDelta,
+  decisionQuality,
   goalProjection,
   mentalBoundary,
   todayOptions,
@@ -497,11 +528,12 @@ function buildContract({
   completedActivity: HomeActivity | null;
   alternative: string;
   dailyDelta: PulseDailyDeltaItem | null;
+  decisionQuality: PulseDailyDecisionQualityResponse | null;
   goalProjection: PulseGoalProjectionResponse | null;
   mentalBoundary: DailyDecisionMentalBoundary | null;
   todayOptions: PulseTodayOptionsResponse | null;
 }): DailyDecisionContract {
-  const signals = topSignals(home, workout, completedActivity, action, goalProjection, mentalBoundary, todayOptions);
+  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions);
 
   return {
     leadingFactor: leadingFactorSummary(signals),
@@ -518,6 +550,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
 
   const action = home.nextBestActions?.[0] ?? null;
   const dailyDelta = context.dailyDelta?.date === home.date ? context.dailyDelta : null;
+  const decisionQuality = context.decisionQuality ?? null;
   const goalProjection = context.goalProjection ?? null;
   const mentalBoundary = context.mentalBoundary ?? null;
   const todayOptions = context.todayOptions?.date === home.date ? context.todayOptions : null;
@@ -565,6 +598,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       completedActivity: completedActivityFor(home, completedWorkout),
       alternative,
       dailyDelta,
+      decisionQuality,
       goalProjection,
       mentalBoundary,
       todayOptions,
@@ -635,6 +669,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       completedActivity: offPlanActivity,
       alternative,
       dailyDelta,
+      decisionQuality,
       goalProjection,
       mentalBoundary,
       todayOptions,
@@ -700,6 +735,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     completedActivity: null,
     alternative,
     dailyDelta,
+    decisionQuality,
     goalProjection,
     mentalBoundary,
     todayOptions,

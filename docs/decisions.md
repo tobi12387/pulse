@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Entscheidungsqualitaet fuehrt die Home-Entscheidung mit
+
+- **Decision:** Home uebergibt die bestehende `/decisions/quality`-Lernschleife an den Daily-Decision-Contract; stale, beobachtete oder strategisch kritische Entscheidungsqualitaet erscheint als priorisiertes `Lernen`-Signal und kann `Heute entscheidet` fuehren.
+- **Why:** Der Performance-OS-Nordstern verlangt, dass Pulse aus wiederholten oder nicht bestaetigten Empfehlungen lernt, statt sie nur in Data/Coach zu analysieren. Wenn eine Empfehlung stale wird, muss die Tagesentscheidung selbst vorsichtiger oder kleiner werden.
+- **Alternatives:** Entscheidungsqualitaet nur in Data/Insights/Coach lassen (zu weit weg von der heutigen Handlung); neue Backend-Synthese fuer Home bauen (zu breit); nur hilfreiche Qualitaet anzeigen (verfehlt stale/repeated-recommendation als Produktbug).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Entscheidungs-Kontinuitaet steht auf der Hauptentscheidung
 
 - **Decision:** Die Home-Hauptkarte der Daily Decision zeigt `Seit letzter Entscheidung` aus dem bestehenden Contract bereits vor dem Aufklappen der Details.

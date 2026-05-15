@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, useGoalProjection, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDecisionQuality, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, useGoalProjection, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { RiskWatchBanner } from '@/components/RiskWatchBanner';
@@ -854,6 +854,7 @@ export default function Home() {
   const actionsQuery = usePulseActions({ includeHistory: true });
   const outcomesQuery = useDailyOutcomeLearning(7);
   const dailyDeltaQuery = useDailyDelta(7);
+  const decisionQualityQuery = useDailyDecisionQuality(14);
   const updateAction = useUpdatePulseAction();
   const checkinToday = useCheckinToday();
   const checkinHistory = useCheckinHistory(7);
@@ -921,6 +922,7 @@ export default function Home() {
     : null;
   const dailyDecision = deriveDailyDecision(data, {
     dailyDelta: todaysDelta,
+    decisionQuality: decisionQualityQuery.data ?? null,
     goalProjection: goalProjection.data ?? null,
     mentalBoundary,
     todayOptions: todaysOptions,

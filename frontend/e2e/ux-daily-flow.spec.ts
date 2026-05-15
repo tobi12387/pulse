@@ -241,6 +241,39 @@ test('Home daily decision details expose top signals goal impact Garmin state an
   await expect(contract).toContainText('Einheit locker halten');
 });
 
+test('Home daily decision uses stale decision quality as a leading learning signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 42,
+      status: 'stale',
+      statusLabel: 'Wiederholung prüfen',
+      repeatedThemes: [{
+        theme: 'Mobilität 10 Minuten',
+        count: 3,
+        lastSeen: '2026-05-01',
+        status: 'stale',
+        evidence: ['3x wiederholt ohne Abschluss-/Outcome-Evidenz'],
+      }],
+      bestEvidence: ['Mobilität 10 Minuten: 3x wiederholt ohne Abschluss-/Outcome-Evidenz'],
+      evidence: [],
+      suggestedAdjustment: 'Wiederkehrende Empfehlung kleiner, anders getaktet oder vorerst unterdrückt anbieten.',
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Lernen');
+  await expect(leading).toContainText('Wiederholung prüfen');
+  await expect(leading).toContainText('Wiederkehrende Empfehlung kleiner');
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Lernen');
+  await expect(contract).toContainText('Mobilität 10 Minuten');
+});
+
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
