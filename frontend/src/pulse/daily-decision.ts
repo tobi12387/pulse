@@ -225,10 +225,12 @@ function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
   todayOptions: PulseTodayOptionsResponse | null,
+  fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null,
 ): string {
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
   const fuelingDebt = openFuelingDebt(todayOptions);
+  const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
 
   if (action?.source === 'checkin') {
     return 'Kurz in Coach oder Data einchecken; wenn wenig Zeit ist, nur Kopf, Energie und Stress notieren.';
@@ -238,6 +240,12 @@ function alternativeFor(
   }
   if (fuelingDebt) {
     return `Fueling-Schutz zuerst schließen: ${fuelingDebt.closureCondition}`;
+  }
+  if (todayWorkout && fuelingLearningOpen && isFuelingLearningWorkout(todayWorkout)) {
+    const target = fuelingOutcomeBaseline?.targetCarbsPerHour
+      ? `${fuelingOutcomeBaseline.targetCarbsPerHour.min}-${fuelingOutcomeBaseline.targetCarbsPerHour.max} g/h kontrolliert testen, `
+      : '';
+    return `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
   }
   if (todayWorkout && todayWorkout.zone >= 3) {
     return `Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.`;
@@ -463,10 +471,12 @@ function analysisSignal(
   const durability = trainingAnalytics?.powerDuration?.durability ?? null;
   if (!durability || durability.rating === 'strong') return null;
 
+  const detail = trainingAnalytics?.powerDuration?.durabilityLine
+    ?? `Durability ${durability.rating}: ${durability.evidence.join(' · ')}`;
+
   return {
     label: 'Analyse',
-    detail: trainingAnalytics?.powerDuration?.durabilityLine
-      ?? `Durability ${durability.rating}: ${durability.evidence.join(' · ')}`,
+    detail: `${detail}. Nächste Handlung: Durability-Limiter prüfen, bevor du Ausführung oder Anpassung bestätigst.`,
     tone: durability.rating === 'limited' ? 'rose' : 'amber',
     targetPath: '/data?tab=analysis#data-plan-trace',
   };
@@ -1095,7 +1105,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action, todayOptions);
+  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;

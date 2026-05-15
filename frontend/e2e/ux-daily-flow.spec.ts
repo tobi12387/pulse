@@ -591,6 +591,8 @@ test('Home daily decision uses durability analysis as a leading signal for a pla
   await expect(leading).toContainText('Analyse');
   await expect(leading).toContainText('Durability limited');
   await expect(leading).toContainText('Power -21%');
+  await expect(leading).toContainText('Nächste Handlung: Durability-Limiter prüfen');
+  await expect(leading).toContainText('bevor du Ausführung oder Anpassung bestätigst');
   const primaryCta = decision.getByRole('button', { name: 'Analyse prüfen', exact: true });
   await expect(primaryCta).toBeVisible();
 
@@ -701,6 +703,10 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
   await expect(leading).toContainText('Noch drei vergleichbare During-Logs');
   await expect(leading).toContainText('Nächster Lernlog: 50-70 g/h kontrolliert testen');
   await expect(leading).toContainText('Dauer, Carbs und GI-Komfort zusammen erfassen');
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Fueling-Lernlog vollständig erfassen');
+  await expect(safestOption).toContainText('50-70 g/h kontrolliert testen');
+  await expect(safestOption).toContainText('locker kürzen statt Ziel-Carbs erzwingen');
   const primaryCta = decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true });
   await expect(primaryCta).toBeVisible();
 

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Analyse und Fueling-Lernen werden handlungsnäher auf Home
+
+- **Decision:** Home darf fuehrende Analyse-Signale um eine konkrete naechste Handlung ergaenzen (`Durability-Limiter pruefen, bevor Ausfuehrung oder Anpassung bestaetigt wird`) und bei offenem Fueling-Lernen die sicherste Option auf vollstaendige Evidence statt generische Readiness-Copy ausrichten.
+- **Why:** WKO-/Intervals-aehnliche Analyse und MacroFactor-aehnliches Fueling-Lernen sollen nicht nur als Befund oder Gate erscheinen, sondern direkt in die ruhigste naechste Tageshandlung uebersetzt werden. Plan- und Garmin-Schreibpfade bleiben unveraendert und bewusst; die Entscheidung fuehrt nur zur passenden Evidenz oder Planpruefung.
+- **Alternatives:** Analyse nur als Durability-Zeile anzeigen (zu wenig handlungsnah); Fueling-Lernen mit generischer Workout-Sicherheitscopy lassen (verfehlt die Lernschleife); neue Home-Karten bauen (mehr Oberflaeche statt eine Entscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Lernen benennt den naechsten Lernlog auf Home
 
 - **Decision:** Das Home-`Fueling-Lernen`-Signal darf bei gegateter Trend-Evidenz den konkreten naechsten Lernlog direkt in der Tagesentscheidung benennen: Zielbereich, Dauer, Carbs und GI-Komfort zusammen erfassen.
