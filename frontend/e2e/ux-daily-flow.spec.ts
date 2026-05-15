@@ -308,6 +308,12 @@ test('Home daily decision uses recovery pressure as a leading body signal', asyn
   await expect(leading).toContainText('Recovery');
   await expect(leading).toContainText('Schlafdefizit schwer: 5.8 h offen');
   await expect(leading).toContainText('Heute Belastung klein halten');
+  await expect(decision.getByRole('button', { name: /Recovery ansehen/i })).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Recovery schützen');
+  await expect(safestOption).toContainText('Schlafdefizit schwer');
+  await expect(safestOption).toContainText('keine harte Intensität');
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');

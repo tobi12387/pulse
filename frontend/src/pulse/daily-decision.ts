@@ -283,6 +283,34 @@ function dataConfidenceSignal(dataStatus: HomeDataStatus): DailyDecisionSignal |
   return null;
 }
 
+function recoveryPressureAlternative(recovery: HomeRecovery): string | null {
+  if (!recovery) return null;
+
+  const recommendation = sentenceWithoutTrailingPeriod(recovery.recommendation.trim());
+  const recommendationSuffix = recommendation ? ` ${recommendation}.` : '';
+
+  if (recovery.sleepDebt7d.status === 'severe') {
+    return `Recovery schützen: Schlafdefizit schwer (${recovery.sleepDebt7d.hours.toFixed(1)} h offen) zuerst abbauen; heute keine harte Intensität und keinen Zusatzumfang.${recommendationSuffix}`;
+  }
+  if (recovery.recoveryScore < 45) {
+    return `Recovery schützen: Recovery ${recovery.recoveryScore}/100 respektieren; Belastung klein halten, Schlaf und Versorgung priorisieren.${recommendationSuffix}`;
+  }
+  if (recovery.hrvDeviation7d.status === 'declining' && recovery.rhrDrift7d.status === 'elevated') {
+    return `Recovery schützen: HRV-Abfall und erhöhten Ruhepuls respektieren; nur locker bewegen und morgen neu entscheiden.${recommendationSuffix}`;
+  }
+  if (recovery.hrvDeviation7d.status === 'declining') {
+    return `Recovery schützen: HRV-Abfall respektieren; Intensität kleiner halten und morgen neu entscheiden.${recommendationSuffix}`;
+  }
+  if (recovery.rhrDrift7d.status === 'elevated') {
+    return `Recovery schützen: erhöhten Ruhepuls respektieren; nur locker bewegen und Schlaf/Hydration priorisieren.${recommendationSuffix}`;
+  }
+  if (recovery.sleepDebt7d.status === 'mild') {
+    return `Recovery schützen: Schlafdefizit (${recovery.sleepDebt7d.hours.toFixed(1)} h) nicht vergrößern; lockeren Tag sauber schließen.${recommendationSuffix}`;
+  }
+
+  return null;
+}
+
 function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
@@ -295,12 +323,15 @@ function alternativeFor(
   const fuelingDebt = openFuelingDebt(todayOptions);
   const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
   const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
+  const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   let alternative: string;
 
   if (action?.source === 'checkin') {
     alternative = 'Kurz in Coach oder Data einchecken; wenn wenig Zeit ist, nur Kopf, Energie und Stress notieren.';
   } else if (action?.source === 'risk') {
     alternative = 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
+  } else if (recoveryAlternative) {
+    alternative = recoveryAlternative;
   } else if (fuelingDebt) {
     alternative = `Fueling-Schutz zuerst schließen: ${fuelingDebt.closureCondition}`;
   } else if (todayWorkout && fuelingLearningOpen && isFuelingLearningWorkout(todayWorkout)) {
