@@ -47,6 +47,7 @@ export interface PulseActivity {
   rpeNote: string | null;
   sorenessAreas: RpeSorenessArea[] | null;
   feedbackLoggedAt: string | null;
+  plannedWorkoutId?: string | null;
 }
 export type EquipmentCategory =
   | 'chain'

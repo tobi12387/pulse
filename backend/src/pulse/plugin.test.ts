@@ -191,7 +191,7 @@ beforeEach(async () => {
 describe('GET /api/pulse/health', () => {
   it('returns 200 without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/pulse/health' });
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode, res.body).toBe(200);
     expect(res.json()).toEqual({ status: 'ok', namespace: 'pulse' });
   });
 });
@@ -554,7 +554,7 @@ describe('Daily decision quality', () => {
     });
     const afterRows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode, res.body).toBe(200);
     const body = res.json<{ status: string; qualityScore: number; bestEvidence: string[]; suggestedAdjustment: string }>();
     expect(body.status).toBe('helpful');
     expect(body.qualityScore).toBeGreaterThanOrEqual(70);
@@ -593,7 +593,7 @@ describe('Personal response model', () => {
     });
     const afterRows = await db.select().from(pulseActionDecisions).where(eq(pulseActionDecisions.userId, userId));
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode, res.body).toBe(200);
     const body = res.json<{ summary: { strength: string; headline: string; signals: Array<{ kind: string; strength: string }> } }>();
     expect(body.summary.strength).toBe('learning');
     expect(body.summary.headline).toBe('Pulse lernt deine Reaktionsmuster.');
@@ -1221,6 +1221,36 @@ describe('GET /api/pulse/activities', () => {
 });
 
 describe('GET /api/pulse/activities/:id', () => {
+  it('returns the planned workout match for completed planned activities', async () => {
+    const [activity] = await db.insert(pulseActivities).values({
+      userId,
+      source: 'garmin',
+      startTime: new Date('2026-05-01T07:30:00.000Z'),
+      activityType: 'bike',
+      durationSec: 5_400,
+    }).returning({ id: pulseActivities.id });
+    const [workout] = await db.insert(pulsePlannedWorkouts).values({
+      userId,
+      plannedDate: '2026-05-01',
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 90,
+      status: 'completed',
+      completedActivityId: activity!.id,
+      executionStatus: 'completed_matched',
+    }).returning({ id: pulsePlannedWorkouts.id });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/pulse/activities/${activity!.id}`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ activity: { plannedWorkoutId: string | null } }>();
+    expect(body.activity.plannedWorkoutId).toBe(workout!.id);
+  });
+
   it('caches Garmin detail data without replacing the activity summary rawData', async () => {
     const activitySummary = {
       activityId: 998877,

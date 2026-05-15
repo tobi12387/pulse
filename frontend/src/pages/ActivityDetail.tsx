@@ -832,6 +832,28 @@ function fuelingEvidenceQuality({
   };
 }
 
+function offPlanFuelingPlanFollowUpTarget(activityId: string): string {
+  const params = new URLSearchParams({
+    tab: 'training',
+    source: 'offplan-activity',
+    activityId,
+  });
+  return `/plan?${params.toString()}#everyday-adaptation-inbox`;
+}
+
+function shouldShowOffPlanFuelingPlanFollowUp(
+  logs: NutritionLog[],
+  activityId: string,
+  plannedWorkoutId: string | null | undefined,
+  evidenceQuality: ReturnType<typeof fuelingEvidenceQuality>,
+): boolean {
+  if (plannedWorkoutId) return false;
+  if (!evidenceQuality) return false;
+  const activityLogs = logs.filter(log => log.activityId === activityId);
+  if (activityLogs.length === 0) return false;
+  return activityLogs.every(log => log.workoutId == null);
+}
+
 function FuelingSection({
   activityId, workoutId, durationMin, activityType,
 }: {
@@ -839,6 +861,7 @@ function FuelingSection({
   durationMin: number; activityType: string;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
   const { data } = useNutritionLogs(null, activityId);
   const fuelingDebtQuery = useFuelingDebt();
   const deleteMut = useDeleteNutritionLog();
@@ -857,6 +880,7 @@ function FuelingSection({
   const detailCompletionPatch = evidenceQuality?.detailCompletions.length
     ? mergeFuelingEvidenceCompletionPatches(evidenceQuality.detailCompletions)
     : null;
+  const showOffPlanFuelingPlanFollowUp = shouldShowOffPlanFuelingPlanFollowUp(logs, activityId, workoutId, evidenceQuality);
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -1117,7 +1141,58 @@ function FuelingSection({
           </div>
         )}
 
-        <FuelingOutcomeBaselineBlock baseline={fuelingOutcomeBaseline} testId="activity-fueling-baseline" />
+        <FuelingOutcomeBaselineBlock
+          baseline={fuelingOutcomeBaseline}
+          onOpenNextAction={targetPath => navigate(targetPath)}
+          testId="activity-fueling-baseline"
+        />
+
+        {showOffPlanFuelingPlanFollowUp && (
+          <div
+            data-testid="activity-offplan-plan-followup"
+            style={{
+              marginTop: 10,
+              padding: 10,
+              borderRadius: 'var(--radius)',
+              border: '1px solid rgba(94,230,207,0.28)',
+              background: 'rgba(94,230,207,0.055)',
+            }}
+          >
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 700,
+              color: 'var(--accent)',
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+              marginBottom: 5,
+            }}>
+              Planabgleich nach Fueling
+            </div>
+            <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
+              Diese Aktivität ist keinem geplanten Workout zugeordnet; schließe erst Carbs/GI-Komfort,
+              dann prüfe den Restplan bewusst.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(offPlanFuelingPlanFollowUpTarget(activityId))}
+              style={{
+                marginTop: 9,
+                minHeight: 44,
+                border: '1px solid rgba(94,230,207,0.46)',
+                borderRadius: 4,
+                padding: '7px 10px',
+                background: 'rgba(94,230,207,0.08)',
+                color: 'var(--accent)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Plan abgleichen
+            </button>
+          </div>
+        )}
 
         {fuelingDebt && (fuelingDebt.hasOpenDebt || fuelingDebt.status === 'tolerated_follow_up') && (
           <div
@@ -1403,7 +1478,7 @@ export default function ActivityDetail() {
       {/* Fueling Section */}
       <FuelingSection
         activityId={a.id}
-        workoutId={null}
+        workoutId={a.plannedWorkoutId ?? null}
         durationMin={a.durationSec ? Math.round(a.durationSec / 60) : 60}
         activityType={a.activityType}
       />

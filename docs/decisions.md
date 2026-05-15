@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-15 — Off-plan Activity Detail behaelt Plan-Follow-up sichtbar
+
+- **Decision:** Activity Detail zeigt bei einer langen Activity-Fueling-Lernevidenz ohne verknuepftes Planned Workout einen read-only Follow-up `Planabgleich nach Fueling`. Der Button fuehrt zu Plan > Training / Everyday Adaptation Inbox mit `source=offplan-activity`, ohne Plan oder Garmin automatisch zu schreiben.
+- **Why:** Home darf Off-plan-Fueling nicht in eine Zielort-Sackgasse fuehren. Wenn eine spontane Garmin-Belastung erst Nutrition-Evidence schliessen muss, soll direkt am Log sichtbar bleiben, dass danach der Restplan bewusst neu abgeglichen wird.
+- **Alternatives:** Nur Home den Planabgleich nennen (geht nach Navigation verloren); direkt eine Plananpassung ausloesen (zu versteckt); geplante und ungeplante Activities gleich behandeln (verliert JOIN/Runna-artige Alltagstauglichkeit).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+## 2026-05-15 — Fueling-Baseline Next Evidence wird direkt oeffenbar
+
+- **Decision:** Wenn die Fueling Outcome Baseline eine bestehende Aktivitaet als naechste Evidence nennt, darf der Baseline-Block einen CTA zur Activity-Fueling-Sektion anzeigen. Der Klick oeffnet nur Aktivitaet/Fueling; Plan und Garmin bleiben unveraendert.
+- **Why:** Die Nutrition-Lernschleife soll nicht nur sagen, welche Evidence fehlt, sondern den kleinsten bestehenden Log direkt erreichbar machen. So wird aus MacroFactor-aehnlicher Lernbereitschaft eine ruhige Handlung ohne versteckte Plan- oder Device-Schreibwirkung.
+- **Alternatives:** Evidence nur als Text anzeigen (zu passiv); automatisch in Plan/Fueling schreiben (zu versteckt); eine neue Nutrition-Inbox bauen (mehr Oberflaeche statt direkterer vorhandener Evidence).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Off-plan Fueling-Abschluss fuehrt zurueck in den Planabgleich
 
 - **Decision:** Wenn eine ungeplante Garmin-Aktivitaet die Home-Tagesentscheidung schliesst und offene Fueling-Lernevidenz hat, fuehrt die sicherste Option zuerst zur Activity-Fueling-Sektion und nennt danach den Planabgleich. Der Klick-Ausblick muss klar sagen, dass nur Aktivitaet/Fueling geoeffnet wird und Plan/Garmin unveraendert bleiben.

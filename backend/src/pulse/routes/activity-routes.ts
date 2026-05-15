@@ -8,6 +8,7 @@ import {
   pulseActivities,
   pulseActivityStreams,
   pulseEquipmentActivity,
+  pulsePlannedWorkouts,
   pulsePowerDurationSnapshots,
   pulseSleepSessions,
   type GarminActivityDetailCache,
@@ -117,6 +118,14 @@ export async function registerPulseActivityRoutes(app: FastifyInstance) {
       equipmentId: pulseEquipmentActivity.equipmentId,
     }).from(pulseEquipmentActivity)
       .where(eq(pulseEquipmentActivity.activityId, id));
+    const [plannedWorkoutMatch] = await db.select({
+      id: pulsePlannedWorkouts.id,
+    }).from(pulsePlannedWorkouts)
+      .where(and(
+        eq(pulsePlannedWorkouts.userId, userId),
+        eq(pulsePlannedWorkouts.completedActivityId, id),
+      ))
+      .limit(1);
 
     let laps: GarminActivityLapCache[] = [];
     let hrZones: GarminActivityHrZoneCache[] = [];
@@ -339,6 +348,7 @@ export async function registerPulseActivityRoutes(app: FastifyInstance) {
         ...activity,
         startTime: activity.startTime.toISOString(),
         feedbackLoggedAt: activity.feedbackLoggedAt?.toISOString() ?? null,
+        plannedWorkoutId: plannedWorkoutMatch?.id ?? null,
         equipmentIds: assignedEquipment.map(row => row.equipmentId),
       },
       laps,
