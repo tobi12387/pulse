@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fuehrende Zielsignale steuern die Tagesaktion
+
+- **Decision:** Wenn ein `at_risk` Goal Projection Signal die Home-Tagesentscheidung fuehrt, darf die Daily Decision den vorhandenen `nextBestIntervention`-CTA und Zielpfad als Primaeraktion verwenden und die `Sicherste Option` als konkrete Zielintervention formulieren. Das bleibt read-only und oeffnet nur bestehende Plan-/Data-Pfade; Plan, Garmin oder Ziele werden nicht automatisch geaendert.
+- **Why:** Das Performance-OS soll nicht nur Koerper- und Alltagssignale, sondern auch das wichtigste Ziel in eine konkrete Tageshandlung uebersetzen. Ein gefaehrdetes Ziel mit benannter Intervention darf nicht hinter einem generischen Workout-CTA verschwinden.
+- **Alternatives:** Zielsignal nur in den Details lassen (zu wenig handlungsnah); immer `Ziel pruefen` als generischen CTA zeigen (verliert die bestehende Intervention); automatische Plananpassung bei Zielrisiko (zu versteckt und zu breit).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Recovery-Druck benennt die sicherste Tageshandlung
 
 - **Decision:** Home darf aus bestehenden Recovery-Metriken eine konkrete `Sicherste Option` ableiten, wenn Schlafdefizit, niedriger Recovery-Score, HRV-Abfall oder erhoehter Ruhepuls den Tag begrenzen. Die Handlung bleibt read-only, fuehrt zur bestehenden Recovery-Evidenz in Data und veraendert Plan oder Garmin nicht automatisch.

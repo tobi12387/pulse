@@ -1249,10 +1249,10 @@ test('Home daily decision details expose goal pressure as a top decision signal'
         category: 'race',
         targetDate: '2026-07-11',
         daysUntil: 71,
-        probabilityPct: 64,
-        status: 'watch',
+        probabilityPct: 42,
+        status: 'at_risk',
         confidence: 'medium',
-        summary: '70.3 Kraichgau: beobachten bei ca. 64% mit mittel-Konfidenz.',
+        summary: '70.3 Kraichgau: beobachten bei ca. 42% mit mittel-Konfidenz.',
         limiterRisk: {
           status: 'watch',
           label: 'Long Endurance + Fueling',
@@ -1272,16 +1272,34 @@ test('Home daily decision details expose goal pressure as a top decision signal'
       }],
       missingEvidence: [],
     },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T08:00:00.000Z',
+    },
   });
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Ziel');
+  await expect(leading).toContainText('70.3 Kraichgau');
+  await expect(leading).toContainText('42%');
+  await expect(decision.getByRole('button', { name: /Plan pruefen/i })).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Zielintervention');
+  await expect(safestOption).toContainText('Fueling-Praxis absichern');
+  await expect(safestOption).toContainText('kontrolliert Fueling und GI-Vertraeglichkeit');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Ziel');
   await expect(contract).toContainText('70.3 Kraichgau');
-  await expect(contract).toContainText('64%');
+  await expect(contract).toContainText('42%');
   await expect(contract).toContainText('Fueling-Praxis absichern');
 
   const contractText = await contract.textContent();
@@ -1291,7 +1309,7 @@ test('Home daily decision details expose goal pressure as a top decision signal'
   expect(goalImpactIndex).toBeGreaterThanOrEqual(0);
   expect(garminIndex).toBeGreaterThan(goalImpactIndex);
   const goalImpactText = contractText!.slice(goalImpactIndex, garminIndex);
-  expect(goalImpactText).toContain('70.3 Kraichgau: 64%');
+  expect(goalImpactText).toContain('70.3 Kraichgau: 42%');
   expect(goalImpactText).toContain('Fueling-Praxis absichern');
 });
 

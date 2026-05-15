@@ -9,6 +9,7 @@ export interface DailyDecisionSignal {
   detail: string;
   tone: DailyDecisionSignalTone;
   targetPath?: string;
+  actionLabel?: string;
 }
 
 export interface DailyDecisionContract {
@@ -235,6 +236,14 @@ function goalProbabilityLabel(goal: GoalProjection): string {
   return goal.probabilityPct == null ? 'Evidenz offen' : `${goal.probabilityPct}%`;
 }
 
+function goalPressureAlternative(goalProjection: PulseGoalProjectionResponse | null | undefined): string | null {
+  const goal = topGoalProjection(goalProjection);
+  if (!goal || goal.status !== 'at_risk') return null;
+
+  const limiter = goal.limiterRisk?.summary ? ` Limiter: ${goal.limiterRisk.summary}.` : '';
+  return `Zielintervention: ${goal.nextBestIntervention.title}: ${goal.nextBestIntervention.summary} ${goal.title}: ${goalProbabilityLabel(goal)}.${limiter}`;
+}
+
 function mentalSignalTone(boundary: DailyDecisionMentalBoundary): DailyDecisionSignalTone {
   return boundary.level === 'protect' ? 'rose' : 'amber';
 }
@@ -316,6 +325,7 @@ function alternativeFor(
   action: PulseNextBestAction | null,
   todayOptions: PulseTodayOptionsResponse | null,
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null,
+  goalProjection: PulseGoalProjectionResponse | null,
   mentalBoundary: DailyDecisionMentalBoundary | null,
 ): string {
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
@@ -324,6 +334,7 @@ function alternativeFor(
   const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
   const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
+  const goalAlternative = goalPressureAlternative(goalProjection);
   let alternative: string;
 
   if (action?.source === 'checkin') {
@@ -332,6 +343,8 @@ function alternativeFor(
     alternative = 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
   } else if (recoveryAlternative) {
     alternative = recoveryAlternative;
+  } else if (goalAlternative) {
+    alternative = goalAlternative;
   } else if (fuelingDebt) {
     alternative = `Fueling-Schutz zuerst schließen: ${fuelingDebt.closureCondition}`;
   } else if (todayWorkout && fuelingLearningOpen && isFuelingLearningWorkout(todayWorkout)) {
@@ -460,6 +473,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Alltag') return 'Alternative prüfen';
   if (signal.label === 'Garmin') return 'Garmin prüfen';
   if (signal.label === 'Reaktion') return 'Reaktion prüfen';
+  if (signal.label === 'Ziel') return signal.actionLabel ?? 'Ziel prüfen';
   return null;
 }
 
@@ -984,6 +998,7 @@ function topSignals(
       detail: `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`,
       tone: goalSignalTone(goal),
       targetPath: goal.nextBestIntervention.targetPath,
+      actionLabel: goal.nextBestIntervention.actionLabel,
     });
   }
 
@@ -1254,7 +1269,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, mentalBoundary);
+  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, goalProjection, mentalBoundary);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;
