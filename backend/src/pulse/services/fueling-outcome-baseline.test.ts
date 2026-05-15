@@ -91,6 +91,28 @@ describe('summarizeFuelingOutcomeBaseline', () => {
     expect(hydrationGaps).toContain('Hitze und Schweißrate nicht gemessen.');
   });
 
+  it('closes hydration context gaps when sodium, heat and sweat-rate are measured', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 240,
+        carbsG: 242,
+        sodiumMg: 1300,
+        ambientTempC: 28,
+        sweatRateLPerHour: 0.9,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'ok',
+      }],
+    });
+
+    expect(baseline.hydrationEvidenceGaps ?? []).toEqual([]);
+    expect(baseline.evidence).toContain('Sodium ca. 325 mg/h');
+    expect(baseline.evidence).toContain('Hydration-Kontext: 28°C, Schweißrate 0.9 l/h');
+  });
+
   it('keeps a tolerated follow-up as the stable baseline for the next small step', () => {
     const baseline = summarizeFuelingOutcomeBaseline({
       logs: [

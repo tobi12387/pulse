@@ -93,6 +93,9 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
   const create = useCreateNutritionLog();
   const [gels, setGels]   = useState(0);
   const [drinks, setDrinks] = useState(0);
+  const [sodiumMg, setSodiumMg] = useState(0);
+  const [ambientTempC, setAmbientTempC] = useState(0);
+  const [sweatRateLPerHour, setSweatRateLPerHour] = useState(0);
   const [bottles750Ml, setBottles750Ml] = useState(0);
   const [powderG, setPowderG] = useState(0);
   const [fuelingProducts, setFuelingProducts] = useState<string[]>([]);
@@ -168,6 +171,9 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
       context: 'during',
       gelsCount: gels || undefined,
       drinksMl: drinks || undefined,
+      sodiumMg: sodiumMg || undefined,
+      ambientTempC: ambientTempC || undefined,
+      sweatRateLPerHour: sweatRateLPerHour || undefined,
       carbsG: hasCarbEvidence ? carbs : undefined,
       bottles750Ml: bottles750Ml || undefined,
       powderG: powderG || undefined,
@@ -253,6 +259,33 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>
               Pulver ≈ {powderG > 0 ? `${powderCarbsG(powderG)} g Carbs` : '0 g Carbs'}
             </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+            <NumInput
+              label="Sodium"
+              value={sodiumMg}
+              onChange={setSodiumMg}
+              step={50}
+              quickAdd={250}
+              unit="mg"
+            />
+            <NumInput
+              label="Temperatur"
+              value={ambientTempC}
+              onChange={setAmbientTempC}
+              step={1}
+              quickAdd={5}
+              unit="°C"
+            />
+            <NumInput
+              label="Schweißrate"
+              value={sweatRateLPerHour}
+              onChange={setSweatRateLPerHour}
+              step={0.1}
+              quickAdd={0.1}
+              unit="l/h"
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Logs erfassen gemessenen Hydration-Kontext
+
+- **Decision:** Activity-Fueling-Logs duerfen gemessenen Hydration-Kontext strukturiert erfassen: Sodium in mg, Umgebungstemperatur in °C und Schweißrate in l/h. Diese Werte schliessen Hydration-Kontextluecken in der Fueling-Baseline, bleiben aber Messkontext und schalten Nutrition-Trends nicht ohne komplette vergleichbare During-Logs frei.
+- **Why:** Die zuvor sichtbaren Sodium-/Hitze-/Schweißrate-Luecken muessen einen echten, ruhigen Messpfad haben, sonst bleiben sie nur Copy. Pulse soll daraus konservativ lernen koennen, ohne Sodium oder Schweißrate zu schaetzen oder medizinische/automatische Schluesse zu ziehen.
+- **Alternatives:** Luecken weiter nur anzeigen (kein Lernpfad); Heat/Sweat aus Wetter oder Annahmen schaetzen (zu unzuverlaessig und breit); neue Nutrition-Flaeche bauen (mehr Oberflaeche statt den bestehenden Log zu vervollstaendigen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Baseline benennt Hydration-Kontextluecken
 
 - **Decision:** Die Fueling-Outcome-Baseline fuehrt offene Hydration-Kontextluecken als eigenen Contract mit: fehlendes strukturiertes Sodium sowie nicht gemessene Hitze und Schweissrate bleiben sichtbar in Home, Plan und Activity-Fueling, ohne Nutrition-Trends freizuschalten.
