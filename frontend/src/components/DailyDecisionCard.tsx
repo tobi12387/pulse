@@ -430,9 +430,26 @@ export function DailyDecisionCard({
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 4 }}>
         {label(compact ? 'Warum' : 'Warum jetzt', labelCase)}
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: compact ? '0' : '0 0 12px' }}>
+      <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: compact ? '0' : '0 0 8px' }}>
         {decision.reason}
       </p>
+      <div
+        data-testid="daily-decision-leading-factor"
+        style={{
+          display: 'grid',
+          gap: 3,
+          margin: compact ? '8px 0 0' : '0 0 12px',
+          paddingLeft: 8,
+          borderLeft: `2px solid ${color}`,
+        }}
+      >
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.08em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none' }}>
+          {label('Heute entscheidet', labelCase)}
+        </div>
+        <div style={{ fontSize: compact ? 11 : 11.5, color: 'var(--text-2)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+          {decision.contract.leadingFactor}
+        </div>
+      </div>
 
       {!compact && (
         <div data-testid="daily-decision-next-steps" style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '10px 11px', background: 'var(--surface-2)' }}>

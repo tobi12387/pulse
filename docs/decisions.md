@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fuehrender Tagesfaktor steht auf der Hauptentscheidung
+
+- **Decision:** Die Home-Hauptkarte der Daily Decision zeigt `Heute entscheidet` mit dem fuehrenden Contract-Faktor bereits vor dem Aufklappen der Details.
+- **Why:** Die Performance-OS-Antwort soll eine ruhige Entscheidung sein, nicht erst eine Analyse nach einem Extra-Klick. Tobi sieht dadurch sofort, ob Mental, Datenvertrauen, Fueling, Ziel oder Training heute die Handlung fuehrt; die Details bleiben fuer vollstaendige Evidenz und Reihenfolge.
+- **Alternatives:** `Heute entscheidet` nur in Details lassen (zu versteckt fuer die Tagesklarheit); eine neue Home-Karte einfuehren (mehr Dichte); Backend-Synthese/API bauen (zu gross fuer diesen Frontend-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Decision Contract benennt den fuehrenden Tagesfaktor
 
 - **Decision:** Die aufgeklappten Home-Details des Daily-Decision-Contracts zeigen zusaetzlich `Heute entscheidet` als einen fuehrenden Faktor, abgeleitet aus dem ersten priorisierten Signal.
