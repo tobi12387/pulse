@@ -12,7 +12,9 @@ export function FuelingOutcomeBaselineBlock({
   baseline?: PulseFuelingOutcomeBaseline | null;
   testId?: string;
 }) {
-  if (!baseline || baseline.status === 'insufficient_data') return null;
+  if (!baseline) return null;
+  const readiness = baseline.learningReadiness ?? null;
+  if (baseline.status === 'insufficient_data' && !readiness) return null;
   const tone = baseline.status === 'stable' ? 'var(--green)' : baseline.status === 'learning' ? 'var(--amber)' : 'var(--text-3)';
   const target = baseline.targetCarbsPerHour
     ? `${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h`
@@ -24,7 +26,11 @@ export function FuelingOutcomeBaselineBlock({
     chip('Pulver', baseline.powderG != null ? `${Math.round(baseline.powderG)}g` : null),
     chip('Fluid', baseline.fluidMlPerHour != null ? `${baseline.fluidMlPerHour} ml/h` : null),
     chip('Sodium', baseline.sodiumMgPerHour != null ? `${baseline.sodiumMgPerHour} mg/h` : 'offen'),
+    readiness ? chip('Trend-Evidenz', `${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}`) : null,
   ].filter((item): item is string => item != null);
+  const readinessGap = readiness?.readyForTrendSummary === false
+    ? readiness.missingEvidence[0] ?? null
+    : null;
 
   return (
     <div
@@ -80,6 +86,11 @@ export function FuelingOutcomeBaselineBlock({
           </span>
         ))}
       </div>
+      {readinessGap && (
+        <p style={{ margin: '7px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
+          {readinessGap}
+        </p>
+      )}
     </div>
   );
 }

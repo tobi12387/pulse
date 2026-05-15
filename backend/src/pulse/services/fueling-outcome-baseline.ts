@@ -1,5 +1,6 @@
 import type {
   PulseFuelingCarbRange,
+  PulseFuelingLearningReadiness,
   PulseFuelingOutcomeBaseline,
 } from '@coaching-os/shared/pulse';
 import { and, desc, eq, gte, inArray, isNull, or } from 'drizzle-orm';
@@ -7,6 +8,7 @@ import { pulseActivities, pulseNutritionLogs } from '../../db/pulse-schema.js';
 import { db } from '../../lib/db.js';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
+const REQUIRED_COMPARABLE_COMPLETE_LOGS = 3;
 
 export interface FuelingOutcomeBaselineLogInput {
   date: string;
@@ -91,6 +93,49 @@ function relevantLogs(logs: FuelingOutcomeBaselineLogInput[]): FuelingOutcomeBas
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
+function comparableLearningLogs(logs: FuelingOutcomeBaselineLogInput[]): FuelingOutcomeBaselineLogInput[] {
+  return logs
+    .filter(log => log.context === 'during' || log.context == null)
+    .filter(log => isEnduranceFuelingSport(log.activityType))
+    .filter(log => (log.durationMin ?? 0) >= 75)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function isComparableCompleteLearningLog(log: FuelingOutcomeBaselineLogInput): boolean {
+  return log.carbsG != null && log.giComfort != null;
+}
+
+function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningReadiness {
+  const comparableLogs = comparableLearningLogs(logs);
+  const completeLogs = comparableLogs.filter(isComparableCompleteLearningLog);
+  const readyForTrendSummary = completeLogs.length >= REQUIRED_COMPARABLE_COMPLETE_LOGS;
+  if (readyForTrendSummary) {
+    return {
+      comparableCompleteLogs: completeLogs.length,
+      requiredComparableCompleteLogs: REQUIRED_COMPARABLE_COMPLETE_LOGS,
+      readyForTrendSummary,
+      missingEvidence: [],
+    };
+  }
+
+  const missingEvidence = [
+    `Noch ${completeLogs.length === 0 ? 'drei' : REQUIRED_COMPARABLE_COMPLETE_LOGS - completeLogs.length} vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.`,
+    comparableLogs.some(log => log.giComfort == null)
+      ? 'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.'
+      : null,
+    comparableLogs.some(log => log.carbsG == null)
+      ? 'Carbs fehlen strukturiert fuer mindestens einen langen During-Log.'
+      : null,
+  ].filter((item): item is string => item != null);
+
+  return {
+    comparableCompleteLogs: completeLogs.length,
+    requiredComparableCompleteLogs: REQUIRED_COMPARABLE_COMPLETE_LOGS,
+    readyForTrendSummary,
+    missingEvidence,
+  };
+}
+
 function formatObserved(log: FuelingOutcomeBaselineLogInput, observedCarbsPerHour: number | null): string {
   const parts = [
     observedCarbsPerHour != null ? `${observedCarbsPerHour} g/h` : null,
@@ -105,7 +150,9 @@ function rangeText(range: PulseFuelingCarbRange | null): string | null {
 }
 
 export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaselineInput): PulseFuelingOutcomeBaseline {
-  const latest = relevantLogs(input.logs ?? [])[0] ?? null;
+  const logs = input.logs ?? [];
+  const learningReadiness = summarizeLearningReadiness(logs);
+  const latest = relevantLogs(logs)[0] ?? null;
   if (!latest) {
     return {
       status: 'insufficient_data',
@@ -119,6 +166,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       fluidMlPerHour: null,
       sodiumMgPerHour: null,
       evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
+      learningReadiness,
     };
   }
 
@@ -147,6 +195,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       fluidMlPerHour,
       sodiumMgPerHour,
       evidence,
+      learningReadiness,
     };
   }
 
@@ -163,6 +212,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       fluidMlPerHour,
       sodiumMgPerHour,
       evidence,
+      learningReadiness,
     };
   }
 
@@ -178,6 +228,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
     fluidMlPerHour,
     sodiumMgPerHour,
     evidence,
+    learningReadiness,
   };
 }
 

@@ -890,6 +890,12 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
       fluidMlPerHour: 419,
       sodiumMgPerHour: null,
       evidence: ['Letzter Log: 2026-04-29, 42 g/h, 4 x 750 ml, 300 g Pulver', 'Sodium nicht geloggt'],
+      learningReadiness: {
+        comparableCompleteLogs: 1,
+        requiredComparableCompleteLogs: 3,
+        readyForTrendSummary: false,
+        missingEvidence: ['Noch 2 vergleichbare During-Logs mit Carbs, Dauer und GI-Komfort fehlen.'],
+      },
     },
     onNutritionCreate: body => {
       createdLog = body;
@@ -935,16 +941,23 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('50-70 g/h');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('4x750 ml');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Sodium: offen');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Trend-Evidenz: 1/3');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Noch 2 vergleichbare During-Logs');
   await page.getByRole('button', { name: '+ Fueling-Log' }).click();
 
+  const saveButton = page.getByRole('button', { name: 'SPEICHERN' });
+  await expect(saveButton).toBeDisabled();
   await expect(page.getByText('750-ml-Flaschen')).toBeVisible();
   await page.getByLabel('750-ml-Flaschen').fill('4');
   await page.getByLabel('POWER CARB Pulver (g)').fill('300');
+  await expect(saveButton).toBeDisabled();
   await page.getByRole('button', { name: 'POWER CARB Sour Cherry' }).click();
   await page.getByRole('button', { name: 'Mars' }).click();
+  await expect(saveButton).toBeDisabled();
   await page.getByRole('button', { name: 'Magen leicht unruhig' }).click();
+  await expect(saveButton).toBeEnabled();
   await page.getByLabel('Notizen (optional)').fill('Nach 100 km kurz Magenprobleme, Mars hat geholfen.');
-  await page.getByRole('button', { name: 'SPEICHERN' }).click();
+  await saveButton.click();
 
   await expect.poll(() => createdLog).toMatchObject({
     activityId: 'activity-fueling',

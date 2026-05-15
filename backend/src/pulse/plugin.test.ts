@@ -2163,7 +2163,7 @@ describe('POST /api/pulse/plan/generate', () => {
       userId,
       externalId: 'late-week-long-ride',
       activityType: 'bike',
-      startTime: new Date('2026-05-09T08:00:00.000Z'),
+      startTime: new Date(`${dateDaysAgo(1)}T08:00:00.000Z`),
       durationSec: 6 * 3600,
       tss: 275,
       name: 'Late week long ride',
