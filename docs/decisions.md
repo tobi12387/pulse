@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Activity-Fueling vervollstaendigt GI-Komfort in-place
+
+- **Decision:** Activity Detail darf bei langen/fueling-relevanten Einheiten einen bestehenden During-Log mit Carbs, aber fehlendem GI-Komfort direkt aus der Evidence-Qualitaetszeile per PATCH vervollstaendigen.
+- **Why:** Die neue Evidence-Qualitaet soll nicht nur erklaeren, warum ein Log noch nicht zaehlt, sondern den kleinsten naechsten Schritt anbieten. Bestehende strukturierte Carbs bleiben erhalten, Trend-Summaries bleiben weiter gegated und Tobi muss keinen Log loeschen oder neu anlegen.
+- **Alternatives:** Nur den fehlenden GI-Komfort anzeigen (zu passiv); einen zweiten Log nur fuer GI-Komfort erstellen (spaltet die Evidenz); die komplette Nutrition-Log-Bearbeitung bauen (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Activity-Fueling zeigt Evidence-Qualitaet
 
 - **Decision:** Activity Detail zeigt fuer lange/fueling-relevante Einheiten im bestehenden Fueling-Block eine lokale Evidence-Qualitaet: offen, unvollstaendig oder vollstaendig; die Zeile benennt fehlende Felder wie strukturierte Carbs oder GI-Komfort und zeigt die aktuelle `Trend-Evidenz x/3`.

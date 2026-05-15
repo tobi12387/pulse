@@ -2793,6 +2793,34 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     return reply.status(201).send(log);
   });
 
+  app.patch('/nutrition/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const schema = z.object({
+      giComfort: z.enum(['ok','mild_issue','issue']).optional(),
+      notes: z.string().max(1000).optional(),
+    }).refine(data => data.giComfort !== undefined || data.notes !== undefined);
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'Ungültige Eingabe' });
+
+    const userId = req.user.sub;
+    const { id } = req.params as { id: string };
+    const updateValues: {
+      giComfort?: 'ok' | 'mild_issue' | 'issue' | null;
+      notes?: string | null;
+    } = {};
+    if (parsed.data.giComfort !== undefined) updateValues.giComfort = parsed.data.giComfort;
+    if (parsed.data.notes !== undefined) updateValues.notes = parsed.data.notes;
+
+    const [log] = await db.update(pulseNutritionLogs)
+      .set(updateValues)
+      .where(and(eq(pulseNutritionLogs.id, id), eq(pulseNutritionLogs.userId, userId)))
+      .returning();
+    if (!log) return reply.status(404).send({ error: 'Nicht gefunden' });
+
+    await invalidateUser(userId);
+    await refreshAdaptationEventsSafely(app, userId, new Date().toISOString().split('T')[0]!, 'nutrition-update');
+    return log;
+  });
+
   app.delete('/nutrition/:id', { onRequest: [app.authenticate] }, async (req, reply) => {
     const userId = req.user.sub;
     const { id } = req.params as { id: string };

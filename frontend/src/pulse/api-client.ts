@@ -91,6 +91,8 @@ export const pulseApi = {
       request(`/nutrition?${workoutId ? `workoutId=${workoutId}&` : ''}${activityId ? `activityId=${activityId}&` : ''}days=${days}`),
     create: (data: NutritionLogInput): Promise<NutritionLog> =>
       request('/nutrition', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: NutritionLogPatch): Promise<NutritionLog> =>
+      request(`/nutrition/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string): Promise<void> =>
       request(`/nutrition/${id}`, { method: 'DELETE' }),
   },
@@ -507,6 +509,10 @@ export interface NutritionLogInput {
   bottles750Ml?: number; powderG?: number; fuelingProducts?: string[]; giComfort?: 'ok' | 'mild_issue' | 'issue';
   calories?: number; proteinG?: number; fatG?: number;
   description?: string; notes?: string;
+}
+export interface NutritionLogPatch {
+  giComfort?: 'ok' | 'mild_issue' | 'issue';
+  notes?: string;
 }
 
 export interface PlanWorkoutInput {
