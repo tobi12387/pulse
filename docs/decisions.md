@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Evidence benennt den kleinsten Abschluss-Schritt
+
+- **Decision:** Wenn Home nach einer abgeschlossenen langen Einheit offene Fueling-Lernevidenz sieht und die strukturierte Luecke konkret `GI-Komfort fehlt` lautet, nennt der Daily-Decision-CTA `GI-Komfort ergänzen` statt generisch `Fueling loggen`. Der Klick bleibt bewusst auf der bestehenden Activity-Fueling-Sektion; es gibt keine automatische Nutrition-Mutation.
+- **Why:** Die MacroFactor-aehnliche Lernschleife wird nur alltagstauglich, wenn Pulse nicht nur sagt, dass Evidence fehlt, sondern den kleinsten naechsten Abschluss-Schritt benennt. Ein vorhandener Carb-Log mit fehlendem GI-Komfort braucht keinen neuen Log, sondern eine gezielte Ergaenzung.
+- **Alternatives:** Weiter generisch `Fueling loggen` zeigen (mehr Reibung und potenziell doppelte Logs); neue Nutrition-Inbox bauen (zu breit); GI-Komfort automatisch aus Text setzen (zu versteckt fuer eine koerperbezogene Evidence).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Gemessener Hydration-Kontext spricht in der Tagesentscheidung
 
 - **Decision:** Die Fueling-Outcome-Baseline liefert einen strukturierten `hydrationContextSummary`, und Home/Plan duerfen diesen gemessenen Hydration-Kontext in Fueling-Lernen und sicherster Option benennen. Offene Hydration-Kontextluecken bleiben sichtbar, aber wenn Sodium, Hitze und Schweißrate gemessen sind, ersetzt die Entscheidung den generischen Messhinweis durch die konkrete Evidence.

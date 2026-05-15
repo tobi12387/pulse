@@ -854,7 +854,10 @@ test('Home daily decision closes completed long workouts with fueling evidence c
       comparableCompleteLogs: 1,
       requiredComparableCompleteLogs: 3,
       readyForTrendSummary: false,
-      missingEvidence: ['Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.'],
+      missingEvidence: [
+        'Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.',
+        'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.',
+      ],
     },
   };
   const completedActivity = {
@@ -927,7 +930,31 @@ test('Home daily decision closes completed long workouts with fueling evidence c
       hrZones: [],
       analytics: null,
     },
-    nutritionLogs: [],
+    nutritionLogs: [{
+      id: 'nutrition-post-fueling-carbs',
+      userId: 'user-1',
+      date: '2026-05-01',
+      workoutId: completedWorkout.id,
+      activityId: completedActivity.id,
+      context: 'during',
+      mealType: null,
+      description: 'During-Fueling',
+      calories: null,
+      proteinG: null,
+      carbsG: 125,
+      fatG: null,
+      gelsCount: null,
+      drinksMl: 3000,
+      sodiumMg: 1300,
+      ambientTempC: 28,
+      sweatRateLPerHour: 0.9,
+      bottles750Ml: 4,
+      powderG: 300,
+      fuelingProducts: [],
+      giComfort: null,
+      notes: null,
+      createdAt: '2026-05-01T12:10:00.000Z',
+    }],
     outcomeBaseline,
   });
   await page.goto('/');
@@ -935,13 +962,15 @@ test('Home daily decision closes completed long workouts with fueling evidence c
   const decision = page.getByTestId('daily-decision-card');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Fueling-Log prüfen');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Trend-Evidenz 1/3');
-  const primaryCta = decision.getByRole('button', { name: 'Fueling loggen', exact: true });
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('GI-Komfort am bestehenden During-Log ergänzen');
+  const primaryCta = decision.getByRole('button', { name: 'GI-Komfort ergänzen', exact: true });
   await expect(primaryCta).toBeVisible();
 
   await primaryCta.click();
   await expect(page).toHaveURL('/plan/activity/activity-post-fueling#activity-fueling-log');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Fueling-Baseline offen');
-  await expect(page.getByRole('button', { name: '+ Fueling-Log' })).toBeVisible();
+  await expect(page.getByTestId('activity-fueling-evidence-quality')).toContainText('GI-Komfort ergänzen');
+  await expect(page.getByRole('button', { name: 'Magen ok' })).toBeVisible();
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
