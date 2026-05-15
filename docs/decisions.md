@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Today-Options duerfen als Alltagssignal in die Tagesentscheidung
+
+- **Decision:** Home darf aus bestehenden Today-Options ein vorsichtiges `Alltag`-Signal und eine konkretere `Sicherste Option` ableiten, wenn fuer einen geplanten Tag eine leichtere, kuerzere oder freie Alternative vorhanden ist. Dieses Signal bleibt read-only und fuehrt nur zu bestehenden Plan-Pruefpfaden; Plan oder Garmin werden dadurch nicht automatisch geaendert.
+- **Why:** Das Performance-OS soll nicht nur Koerper- und Zielsignale gewichten, sondern auch den heutigen Alltag uebersetzen: Wenn Zeitfenster, Kopf oder Tagesrealitaet kleiner sind, muss die Entscheidung die vorhandene Ausweichoption konkret nennen statt generisch "senken oder verschieben" zu sagen.
+- **Alternatives:** Today-Options nur als separate Home-Karte lassen (zu weit weg von der eigentlichen Entscheidung); neue Alltagseingabe bauen (zu breit); automatisch die leichtere Option speichern (verstoesst gegen bewusste Plan-/Garmin-Aktionen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Learning-Readiness liefert den naechsten Evidence-Schritt
 
 - **Decision:** `PulseFuelingLearningReadiness` darf einen optionalen `nextAction` liefern, der bei unvollstaendiger vergleichbarer During-Evidence den kleinsten naechsten Schritt benennt, z. B. `GI-Komfort ergänzen` am vorhandenen langen Carb-Log, statt nur eine generische Missing-Evidence-Liste zu zeigen. Plan/Home-Baseline-Texte duerfen diesen Schritt vor einem neuen Lernlog anzeigen.
