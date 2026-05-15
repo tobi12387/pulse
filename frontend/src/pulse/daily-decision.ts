@@ -297,6 +297,32 @@ function signalToneForTsb(tsb: number): DailyDecisionSignalTone {
   return 'muted';
 }
 
+const signalTonePriority: Record<DailyDecisionSignalTone, number> = {
+  rose: 0,
+  amber: 1,
+  accent: 2,
+  green: 3,
+  muted: 4,
+};
+
+const signalLabelPriority: Record<string, number> = {
+  Mental: 0,
+  Daten: 1,
+  Fueling: 2,
+  Ziel: 3,
+  Training: 4,
+  Garmin: 5,
+  Koerper: 6,
+  Belastung: 7,
+};
+
+function prioritizeSignals(signals: DailyDecisionSignal[]): DailyDecisionSignal[] {
+  return [...signals].sort((a, b) => (
+    signalTonePriority[a.tone] - signalTonePriority[b.tone]
+    || (signalLabelPriority[a.label] ?? 99) - (signalLabelPriority[b.label] ?? 99)
+  ));
+}
+
 function executionSummary(workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
   if (completedActivity) return 'Garmin: Aktivitaet erledigt und bereit fuer Feedback/Planabgleich.';
   if (!workout) return 'Garmin: kein Schreibpfad fuer heute; Erholung und Check-in bleiben lokal.';
@@ -444,7 +470,7 @@ function topSignals(
     });
   }
 
-  return signals;
+  return prioritizeSignals(signals);
 }
 
 function buildContract({

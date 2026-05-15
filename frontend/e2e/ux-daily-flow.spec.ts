@@ -670,6 +670,29 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   await expect(contract).toContainText('70.3 Kraichgau');
   await expect(contract).toContainText('Training');
   await expect(contract).toContainText('Radfahren Z2 · 60 min');
+
+  const contractText = await contract.textContent();
+  expect(contractText).toBeTruthy();
+  const signalIndex = (label: string) => {
+    const index = contractText!.indexOf(label);
+    expect(index, `${label} should be visible in the decision contract`).toBeGreaterThanOrEqual(0);
+    return index;
+  };
+
+  const mentalIndex = signalIndex('Mental');
+  const dataIndex = signalIndex('Daten');
+  const fuelingIndex = signalIndex('Fueling');
+  const goalIndex = signalIndex('70.3 Kraichgau');
+  const trainingIndex = signalIndex('Training');
+  const bodyIndex = signalIndex('Koerper');
+  const loadIndex = signalIndex('Belastung');
+
+  expect(mentalIndex).toBeLessThan(dataIndex);
+  expect(dataIndex).toBeLessThan(fuelingIndex);
+  expect(fuelingIndex).toBeLessThan(goalIndex);
+  expect(goalIndex).toBeLessThan(trainingIndex);
+  expect(trainingIndex).toBeLessThan(bodyIndex);
+  expect(bodyIndex).toBeLessThan(loadIndex);
 });
 
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
