@@ -2631,8 +2631,9 @@ function TrainingTab({
   const offPlanActivity = entrySource === 'offplan-activity' && activityIdParam
     ? activities.find(activity => activity.id === activityIdParam) ?? null
     : null;
-  const offPlanActivityContext = entrySource === 'offplan-activity'
+  const offPlanActivityContext = entrySource === 'offplan-activity' && activityIdParam
     ? {
+        activityId: activityIdParam,
         activityName: offPlanActivity?.name ?? null,
         activityTypeLabel: offPlanActivity ? ACTIVITY_LABEL[offPlanActivity.activityType] ?? offPlanActivity.activityType : null,
         durationMin: offPlanActivity?.durationSec != null ? Math.round(offPlanActivity.durationSec / 60) : null,

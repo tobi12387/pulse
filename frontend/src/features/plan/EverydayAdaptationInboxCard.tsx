@@ -10,6 +10,7 @@ type EverydayAdaptationIntent = {
 type Props = {
   onNavigate: (path: string) => void;
   offPlanActivityContext?: {
+    activityId: string;
     activityName: string | null;
     activityTypeLabel: string | null;
     durationMin: number | null;
@@ -74,6 +75,15 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
     offPlanActivityContext?.durationMin != null ? `${offPlanActivityContext.durationMin} min` : null,
     offPlanActivityContext?.activityTypeLabel,
   ].filter(Boolean).join(' · ');
+  const visibleIntents = offPlanActivityContext
+    ? intents.map(intent => intent.id === 'done-differently'
+        ? {
+            ...intent,
+            resultPreview: 'Pulse öffnet diese Aktivität und RPE Feedback; Planwirkung entsteht erst aus gespeicherter Evidenz.',
+            targetPath: `/plan/activity/${encodeURIComponent(offPlanActivityContext.activityId)}#activity-feedback`,
+          }
+        : intent)
+    : intents;
 
   return (
     <section
@@ -123,7 +133,7 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8, marginTop: 12 }}>
-        {intents.map(intent => (
+        {visibleIntents.map(intent => (
           <div key={intent.id} style={{ border: '1px solid var(--border)', borderRadius: 5, background: 'var(--surface-2)', padding: '10px 11px', display: 'grid', gap: 8 }}>
             <div>
               <div className="label-mono" style={{ color: 'var(--accent)', fontSize: 9, marginBottom: 5 }}>

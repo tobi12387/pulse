@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Off-plan Plan-Handoff oeffnet den konkreten Feedback-Log
+
+- **Decision:** Wenn Plan > Training ueber `source=offplan-activity` und `activityId` geoeffnet wird, fuehrt `Anders erledigt` in der Everyday Adaptation Inbox direkt zur konkreten Activity-Feedback-Sektion im Plan-Namespace. Der Klick bleibt read-only; Planwirkung entsteht erst aus explizit gespeichertem Feedback/Fueling.
+- **Why:** Der Handoff soll nicht nur erklaeren, dass Fueling und Feedback Evidence sind, sondern den kleinsten naechsten Evidence-Ort oeffnen. So bleibt eine spontane Garmin-Aktivitaet geraetenahe und alltagstauglich in der Trainingslogik, ohne automatische Plan- oder Garmin-Schreibwirkung.
+- **Alternatives:** Weiter zur allgemeinen Aktivitaetenuebersicht fuehren (zu unspezifisch); eine neue Off-plan-Inbox bauen (mehr Oberflaeche); Feedback automatisch speichern oder Plan anpassen (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Plan erklaert Off-plan Activity Handoff
 
 - **Decision:** Plan > Training liest `source=offplan-activity` und zeigt in der bestehenden Everyday Adaptation Inbox einen read-only Kontext `Off-plan-Aktivität einordnen`. Der Kontext benennt die Garmin-Aktivitaet, Fueling/Feedback als Evidence und dass Plan/Garmin unveraendert bleiben, bis die Planwirkung bewusst geprueft wird.

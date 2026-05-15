@@ -1990,7 +1990,11 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await expect(planHandoff).toContainText('Fueling');
   await expect(planHandoff).toContainText('Plan und Garmin bleiben unverändert');
   await expect(planHandoff).toContainText('Anders erledigt');
-  await expect(page.getByTestId('everyday-adaptation-inbox')).toContainText('Anders erledigt');
+  const everydayInbox = page.getByTestId('everyday-adaptation-inbox');
+  await expect(everydayInbox).toContainText('Anders erledigt');
+  await everydayInbox.getByRole('button', { name: 'Feedback öffnen' }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-offplan-fueling#activity-feedback');
+  await expect(page.getByTestId('activity-feedback-card')).toContainText('RPE Feedback');
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
