@@ -703,7 +703,7 @@ function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null
     label: 'Lernen',
     detail,
     tone,
-    targetPath: '/data?tab=analyse#data-plan-trace',
+    targetPath: '/data?tab=analysis#data-plan-trace',
   };
 }
 
