@@ -159,8 +159,10 @@ function sentenceWithoutTrailingPeriod(text: string): string {
 
 function fuelingHydrationContext(baseline: PulseFuelingOutcomeBaseline | null | undefined): string {
   const gaps = baseline?.hydrationEvidenceGaps?.filter(Boolean) ?? [];
-  if (gaps.length === 0) return fuelingLearningContext;
-  return `Kontextlücken: ${gaps.join(' · ')} ${fuelingLearningContext}`;
+  const measuredContext = sentenceWithoutTrailingPeriod(baseline?.hydrationContextSummary?.trim() ?? '');
+  if (gaps.length === 0) return measuredContext ? `${measuredContext}.` : fuelingLearningContext;
+  const gapsText = `Kontextlücken: ${gaps.join(' · ')} ${fuelingLearningContext}`;
+  return measuredContext ? `${measuredContext}. ${gapsText}` : gapsText;
 }
 
 function fuelingProtectDetail(todayOptions: PulseTodayOptionsResponse | null | undefined): string | null {

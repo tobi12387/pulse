@@ -113,6 +113,28 @@ describe('summarizeFuelingOutcomeBaseline', () => {
     expect(baseline.evidence).toContain('Hydration-Kontext: 28°C, Schweißrate 0.9 l/h');
   });
 
+  it('summarizes measured hydration context for daily decisions', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 240,
+        carbsG: 242,
+        sodiumMg: 1300,
+        ambientTempC: 28,
+        sweatRateLPerHour: 0.9,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'ok',
+      }],
+    });
+
+    expect(baseline.hydrationContextSummary).toBe(
+      'Hydration-Kontext gemessen: Sodium ca. 325 mg/h, 28°C, Schweißrate 0.9 l/h',
+    );
+  });
+
   it('keeps a tolerated follow-up as the stable baseline for the next small step', () => {
     const baseline = summarizeFuelingOutcomeBaseline({
       logs: [
