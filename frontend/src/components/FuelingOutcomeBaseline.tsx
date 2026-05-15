@@ -13,6 +13,12 @@ function hydrationGapText(baseline: PulseFuelingOutcomeBaseline): string | null 
   return `Kontextlücken: ${gaps.join(' · ')}`;
 }
 
+function hydrationLearningContext(baseline: PulseFuelingOutcomeBaseline): string {
+  const measuredContext = baseline.hydrationContextSummary?.trim();
+  if (measuredContext) return measuredContext.replace(/[.\s]+$/u, '.');
+  return fuelingLearningContext;
+}
+
 function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | null {
   const readiness = baseline.learningReadiness ?? null;
   if (!readiness || readiness.readyForTrendSummary) return null;
@@ -21,7 +27,7 @@ function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | nu
     ? `${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen; `
     : '';
 
-  return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver mitschreiben; ${fuelingLearningContext}`;
+  return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver mitschreiben; ${hydrationLearningContext(baseline)}`;
 }
 
 export function FuelingOutcomeBaselineBlock({

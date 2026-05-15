@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Gemessener Hydration-Kontext spricht in der Tagesentscheidung
+
+- **Decision:** Die Fueling-Outcome-Baseline liefert einen strukturierten `hydrationContextSummary`, und Home/Plan duerfen diesen gemessenen Hydration-Kontext in Fueling-Lernen und sicherster Option benennen. Offene Hydration-Kontextluecken bleiben sichtbar, aber wenn Sodium, Hitze und Schweißrate gemessen sind, ersetzt die Entscheidung den generischen Messhinweis durch die konkrete Evidence.
+- **Why:** Die Performance-OS-Entscheidung soll nicht nur sagen, welche Daten fehlen, sondern auch erklaeren, welche gemessenen Umwelt-/Hydration-Daten heute die naechste Fueling-Lernhandlung absichern. So wird der neue Messpfad direkt handlungsnah, ohne Sodium oder Schweißrate zu schaetzen oder Nutrition-Trends vor ausreichender 3/3-Evidence freizuschalten.
+- **Alternatives:** Gemessenen Kontext nur im Activity-Log lassen (zu weit weg von der Tageshandlung); Hydration-Kontext aus Evidence-Freitext im Frontend parsen (zu fragil); Nutrition-Trends bei geschlossenem Hydration-Kontext freischalten (weiterhin zu wenig vergleichbare During-Logs).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Logs erfassen gemessenen Hydration-Kontext
 
 - **Decision:** Activity-Fueling-Logs duerfen gemessenen Hydration-Kontext strukturiert erfassen: Sodium in mg, Umgebungstemperatur in °C und Schweißrate in l/h. Diese Werte schliessen Hydration-Kontextluecken in der Fueling-Baseline, bleiben aber Messkontext und schalten Nutrition-Trends nicht ohne komplette vergleichbare During-Logs frei.

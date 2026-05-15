@@ -57,6 +57,7 @@ export interface PulseFuelingOutcomeBaseline {
   powderG: number | null;
   fluidMlPerHour: number | null;
   sodiumMgPerHour: number | null;
+  hydrationContextSummary?: string | null;
   hydrationEvidenceGaps?: string[];
   evidence: string[];
   learningReadiness?: PulseFuelingLearningReadiness;

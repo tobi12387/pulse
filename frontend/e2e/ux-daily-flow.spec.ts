@@ -732,6 +732,111 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
   await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast');
 });
 
+test('Home daily decision names measured hydration context for fueling learning', async ({ page }) => {
+  const outcomeBaseline = {
+    status: 'insufficient_data',
+    label: 'Fueling-Baseline offen',
+    summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
+    latestLogDate: null,
+    observedCarbsPerHour: null,
+    targetCarbsPerHour: { min: 50, max: 70 },
+    bottles750Ml: null,
+    powderG: null,
+    fluidMlPerHour: null,
+    sodiumMgPerHour: null,
+    hydrationContextSummary: 'Hydration-Kontext gemessen: Sodium ca. 325 mg/h, 28°C, Schweißrate 0.9 l/h',
+    hydrationEvidenceGaps: [],
+    evidence: ['Hydration-Kontext gemessen: Sodium ca. 325 mg/h, 28°C, Schweißrate 0.9 l/h'],
+    learningReadiness: {
+      comparableCompleteLogs: 1,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+      missingEvidence: ['Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.'],
+    },
+  };
+  const fuelingDebt = {
+    status: 'resolved',
+    hasOpenDebt: false,
+    label: 'Fueling frei',
+    summary: 'Kein offener GI-/Fueling-Blocker.',
+    closureCondition: 'Weiterhin lange oder harte Einheiten mit Fueling-Log schließen.',
+    evidence: ['Stand heute: kein offener GI-Hinweis'],
+    openIssueDate: null,
+    controlledWorkoutId: null,
+    followUpActivityId: null,
+    updatedAt: '2026-05-01T08:00:00.000Z',
+  };
+  const plannedWorkout = {
+    id: 'planned-measured-hydration',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 150,
+    distanceKm: null,
+    targetTss: 108,
+    archetypeId: 'long_endurance_fueling_practice',
+    difficultyLevel: 4.4,
+    difficultyEnergySystem: 'long_endurance',
+    capabilityFit: 'productive',
+    description: 'Langer Z2-Reiz mit bewusst frühem, gleichmäßigem Fueling als Lernziel.',
+    steps: null,
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'local_planned',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    fuelingDebt,
+    outcomeBaseline,
+    fuelingGuidance: (workoutId) => ({
+      shouldShow: workoutId === 'planned-measured-hydration',
+      preferenceStatus: 'ready',
+      fuelingDebt,
+      outcomeBaseline,
+      before: [],
+      during: [{ id: 'during-carbs', text: '50-70 g/h kontrolliert testen und danach GI-Komfort loggen.' }],
+      after: [],
+      recoveryCautions: [],
+      evidence: [],
+    }),
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Hydration-Kontext gemessen');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Sodium ca. 325 mg/h');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('28°C');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Schweißrate 0.9 l/h');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Hydration-Kontext gemessen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).not.toContainText('Kontextlücken');
+
+  await decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true }).click();
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Hydration-Kontext gemessen');
+  await expect(page.getByTestId('workout-fueling-baseline')).not.toContainText('Kontextlücken');
+});
+
 test('Home daily decision closes completed long workouts with fueling evidence capture', async ({ page }) => {
   const outcomeBaseline = {
     status: 'insufficient_data',

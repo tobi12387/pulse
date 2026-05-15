@@ -172,6 +172,15 @@ function hydrationContextText(log: FuelingOutcomeBaselineLogInput): string | nul
   return parts.length > 0 ? `Hydration-Kontext: ${parts.join(', ')}` : null;
 }
 
+function hydrationContextSummary(log: FuelingOutcomeBaselineLogInput, sodiumMgPerHour: number | null): string | null {
+  const parts = [
+    sodiumMgPerHour != null ? `Sodium ca. ${sodiumMgPerHour} mg/h` : null,
+    log.ambientTempC != null ? `${Math.round(log.ambientTempC)}°C` : null,
+    log.sweatRateLPerHour != null ? `Schweißrate ${log.sweatRateLPerHour.toFixed(1)} l/h` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? `Hydration-Kontext gemessen: ${parts.join(', ')}` : null;
+}
+
 export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaselineInput): PulseFuelingOutcomeBaseline {
   const logs = input.logs ?? [];
   const learningReadiness = summarizeLearningReadiness(logs);
@@ -189,6 +198,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       powderG: null,
       fluidMlPerHour: null,
       sodiumMgPerHour: null,
+      hydrationContextSummary: null,
       hydrationEvidenceGaps: hydrationGaps,
       evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
       learningReadiness,
@@ -199,6 +209,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
   const targetCarbsPerHour = targetRange(latest, observedCarbsPerHour);
   const fluidMlPerHour = perHour(fluidMl(latest), latest.durationMin);
   const sodiumMgPerHour = perHour(latest.sodiumMg, latest.durationMin);
+  const measuredHydrationContext = hydrationContextSummary(latest, sodiumMgPerHour);
   const observed = formatObserved(latest, observedCarbsPerHour);
   const target = rangeText(targetCarbsPerHour);
   const evidence = [
@@ -220,6 +231,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       powderG: latest.powderG ?? null,
       fluidMlPerHour,
       sodiumMgPerHour,
+      hydrationContextSummary: measuredHydrationContext,
       hydrationEvidenceGaps: hydrationGaps,
       evidence,
       learningReadiness,
@@ -238,6 +250,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       powderG: latest.powderG ?? null,
       fluidMlPerHour,
       sodiumMgPerHour,
+      hydrationContextSummary: measuredHydrationContext,
       hydrationEvidenceGaps: hydrationGaps,
       evidence,
       learningReadiness,
@@ -255,6 +268,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
     powderG: latest.powderG ?? null,
     fluidMlPerHour,
     sodiumMgPerHour,
+    hydrationContextSummary: measuredHydrationContext,
     hydrationEvidenceGaps: hydrationGaps,
     evidence,
     learningReadiness,
