@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Decision-Contract-Signale folgen Entscheidungsprioritaet
+
+- **Decision:** Die Signale in den aufgeklappten Home-Details des Daily-Decision-Contracts werden nach Entscheidungsrelevanz sortiert: kritisch/schuetzend vor vorsichtig, dann ausfuehrend/positiv, zuletzt stabile Basiswerte.
+- **Why:** Nach der Entkappung ist Vollstaendigkeit geloest, aber die Performance-OS-Antwort muss trotzdem ruhig bleiben. Wenn mehrere Dimensionen aktiv sind, soll Tobi zuerst sehen, welcher Faktor die heutige Handlung wirklich begrenzt oder absichert, statt Koerper-/Load-Basiswerte immer durch Bau-Reihenfolge vorne zu sehen.
+- **Alternatives:** Bau-Reihenfolge behalten (vollstaendig, aber weniger entscheidungsorientiert); neue UI-Gruppen oder Accordion-Logik bauen (mehr Oberflaeche); eine neue Backend-Synthese einfuehren (zu gross fuer diesen Priorisierungs-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Decision-Contract-Signale werden nicht hart gekappt
 
 - **Decision:** Die aufgeklappten Home-Details des Daily-Decision-Contracts zeigen alle aktiven kompakten Signale statt die Liste hart auf vier Eintraege zu kuerzen.
