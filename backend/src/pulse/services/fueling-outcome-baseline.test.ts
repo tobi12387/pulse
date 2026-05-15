@@ -40,6 +40,9 @@ describe('summarizeFuelingOutcomeBaseline', () => {
       readyForTrendSummary: true,
       missingEvidence: [],
     });
+    expect(baseline.trendSummary).toBe(
+      'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 50 g/h; 2x Magen ok, 1x unruhig.',
+    );
   });
 
   it('turns a low-intake GI long ride into a controlled next target with evidence gaps', () => {

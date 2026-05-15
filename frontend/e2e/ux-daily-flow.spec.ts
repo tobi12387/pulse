@@ -677,6 +677,13 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
       nextWorkout: null,
     },
     planWorkouts: [plannedWorkout],
+    goalProjection: {
+      generatedAt: '2026-05-01T06:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
     powerDuration: {
       bestEfforts: [],
       durability: null,
@@ -801,6 +808,13 @@ test('Home daily decision names measured hydration context for fueling learning'
       nextWorkout: null,
     },
     planWorkouts: [plannedWorkout],
+    goalProjection: {
+      generatedAt: '2026-05-01T06:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
     powerDuration: {
       bestEfforts: [],
       durability: null,
@@ -835,6 +849,116 @@ test('Home daily decision names measured hydration context for fueling learning'
   await decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true }).click();
   await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Hydration-Kontext gemessen');
   await expect(page.getByTestId('workout-fueling-baseline')).not.toContainText('Kontextlücken');
+});
+
+test('Home daily decision uses complete fueling trends as a leading signal for long workout practice', async ({ page }) => {
+  const outcomeBaseline = {
+    status: 'stable',
+    label: 'Fueling-Baseline vertraeglich',
+    summary: 'Letzter vertraeglicher Log: 58 g/h; naechste kleine Stufe 60-75 g/h.',
+    latestLogDate: '2026-05-13',
+    observedCarbsPerHour: 58,
+    targetCarbsPerHour: { min: 60, max: 75 },
+    bottles750Ml: 3,
+    powderG: 220,
+    fluidMlPerHour: 690,
+    sodiumMgPerHour: 380,
+    trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 50 g/h; 2x Magen ok, 1x unruhig.',
+    hydrationEvidenceGaps: [],
+    evidence: ['Fueling-Trend: 3/3 komplette During-Logs, Schnitt 50 g/h; 2x Magen ok, 1x unruhig.'],
+    learningReadiness: {
+      comparableCompleteLogs: 3,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: true,
+      missingEvidence: [],
+    },
+  };
+  const plannedWorkout = {
+    id: 'planned-fueling-trend',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 150,
+    distanceKm: null,
+    targetTss: 108,
+    archetypeId: 'long_endurance_fueling_practice',
+    difficultyLevel: 4.4,
+    difficultyEnergySystem: 'long_endurance',
+    capabilityFit: 'productive',
+    description: 'Langer Z2-Reiz mit stabiler Fueling-Baseline.',
+    steps: null,
+    garminWorkoutId: 'gw-fueling-trend',
+    garminScheduledId: 'sched-fueling-trend',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    goalProjection: {
+      generatedAt: '2026-05-01T06:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    outcomeBaseline,
+    fuelingGuidance: (workoutId) => ({
+      shouldShow: workoutId === 'planned-fueling-trend',
+      preferenceStatus: 'ready',
+      fuelingDebt: {
+        status: 'resolved',
+        hasOpenDebt: false,
+        label: 'Fueling frei',
+        summary: 'Kein offener GI-/Fueling-Blocker.',
+        closureCondition: 'Weiterhin lange oder harte Einheiten mit Fueling-Log schließen.',
+        evidence: [],
+        openIssueDate: null,
+        controlledWorkoutId: null,
+        followUpActivityId: null,
+        updatedAt: '2026-05-01T08:00:00.000Z',
+      },
+      outcomeBaseline,
+      before: [],
+      during: [{ id: 'carbs', text: '60-75 g/h als Ausgangspunkt nutzen und nur klein veraendern.' }],
+      after: [],
+      recoveryCautions: [],
+      evidence: [],
+    }),
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Fueling-Lernen');
+  await expect(leading).toContainText('Fueling-Trend');
+  await expect(leading).toContainText('Schnitt 50 g/h');
+  await expect(leading).toContainText('2x Magen ok');
+  await expect(leading).not.toContainText('Nächster Lernlog');
+
+  await decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true }).click();
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Trend');
+  await expect(page.getByTestId('workout-fueling-baseline')).not.toContainText('Nächster Lernlog');
 });
 
 test('Home daily decision closes completed long workouts with fueling evidence capture', async ({ page }) => {

@@ -58,6 +58,7 @@ export function FuelingOutcomeBaselineBlock({
     : null;
   const hydrationGap = hydrationGapText(baseline);
   const nextLearningLog = nextLearningLogText(baseline);
+  const trendSummary = baseline.trendSummary?.trim() || null;
 
   return (
     <div
@@ -121,6 +122,11 @@ export function FuelingOutcomeBaselineBlock({
       {hydrationGap && (
         <p style={{ margin: '6px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
           {hydrationGap}
+        </p>
+      )}
+      {trendSummary && (
+        <p style={{ margin: '6px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
+          {trendSummary}
         </p>
       )}
       {nextLearningLog && (
