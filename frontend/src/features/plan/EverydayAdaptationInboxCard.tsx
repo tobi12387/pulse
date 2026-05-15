@@ -9,6 +9,11 @@ type EverydayAdaptationIntent = {
 
 type Props = {
   onNavigate: (path: string) => void;
+  offPlanActivityContext?: {
+    activityName: string | null;
+    activityTypeLabel: string | null;
+    durationMin: number | null;
+  } | null;
 };
 
 function scenarioPath(params: Record<string, string>): string {
@@ -63,13 +68,53 @@ const intents: EverydayAdaptationIntent[] = [
   },
 ];
 
-export function EverydayAdaptationInboxCard({ onNavigate }: Props) {
+export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext = null }: Props) {
+  const offPlanActivityLabel = [
+    offPlanActivityContext?.activityName,
+    offPlanActivityContext?.durationMin != null ? `${offPlanActivityContext.durationMin} min` : null,
+    offPlanActivityContext?.activityTypeLabel,
+  ].filter(Boolean).join(' · ');
+
   return (
-    <section className="card" data-testid="everyday-adaptation-inbox" style={{ borderColor: 'rgba(94,230,207,0.22)' }}>
+    <section
+      id="everyday-adaptation-inbox"
+      className="card"
+      data-testid="everyday-adaptation-inbox"
+      tabIndex={-1}
+      style={{ borderColor: 'rgba(94,230,207,0.22)', scrollMarginTop: 12 }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Heute anders?</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>Preview-only</span>
       </div>
+      {offPlanActivityContext && (
+        <div
+          data-testid="plan-offplan-activity-context"
+          style={{
+            border: '1px solid rgba(94,230,207,0.28)',
+            borderRadius: 5,
+            background: 'rgba(94,230,207,0.055)',
+            padding: '10px 11px',
+            marginBottom: 11,
+            display: 'grid',
+            gap: 5,
+          }}
+        >
+          <div className="label-mono" style={{ color: 'var(--accent)', fontSize: 9 }}>
+            Off-plan-Aktivität einordnen
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
+            {offPlanActivityLabel || 'Garmin-Aktivität'} erst als Evidence schließen.
+          </div>
+          <p style={{ margin: 0, fontSize: 11.4, color: 'var(--text-2)', lineHeight: 1.45 }}>
+            Fueling und Feedback erklären jetzt, was wirklich passiert ist. Plan und Garmin bleiben unverändert,
+            bis du die Planwirkung bewusst prüfst.
+          </p>
+          <p style={{ margin: 0, fontSize: 11.4, color: 'var(--text-3)', lineHeight: 1.45 }}>
+            Nächster ruhiger Schritt: Anders erledigt öffnet die Aktivitäten- und Feedback-Spur, damit der Restplan aus gespeicherter Evidenz reagiert.
+          </p>
+        </div>
+      )}
       <h2 style={{ fontSize: 15, color: 'var(--text)', margin: '0 0 6px', fontWeight: 600 }}>
         Alltag erst prüfen, dann Plan schreiben
       </h2>

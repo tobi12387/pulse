@@ -2589,7 +2589,15 @@ function PlanAdaptationEventsCard({
 
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
-function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | null; workoutIdParam: string | null }) {
+function TrainingTab({
+  entrySource,
+  workoutIdParam,
+  activityIdParam,
+}: {
+  entrySource: string | null;
+  workoutIdParam: string | null;
+  activityIdParam: string | null;
+}) {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
   const goals     = usePulseGoals();
@@ -2620,6 +2628,16 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
   const traceQuery = usePlanTrace(selectedWeekStart);
   const workouts   = useMemo(() => plan.data?.workouts ?? EMPTY_WORKOUTS, [plan.data?.workouts]);
   const activities = acts.data?.activities ?? [];
+  const offPlanActivity = entrySource === 'offplan-activity' && activityIdParam
+    ? activities.find(activity => activity.id === activityIdParam) ?? null
+    : null;
+  const offPlanActivityContext = entrySource === 'offplan-activity'
+    ? {
+        activityName: offPlanActivity?.name ?? null,
+        activityTypeLabel: offPlanActivity ? ACTIVITY_LABEL[offPlanActivity.activityType] ?? offPlanActivity.activityType : null,
+        durationMin: offPlanActivity?.durationSec != null ? Math.round(offPlanActivity.durationSec / 60) : null,
+      }
+    : null;
   const generatedTrace = generate.data?.planTrace ?? null;
   const generatedTraceForSelectedWeek = generatedTrace?.weekStart === selectedWeekStart ? generatedTrace : null;
   const planTrace = generatedTraceForSelectedWeek ?? traceQuery.data?.trace ?? null;
@@ -2780,7 +2798,7 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
         }}
       />
 
-      <EverydayAdaptationInboxCard onNavigate={navigate} />
+      <EverydayAdaptationInboxCard onNavigate={navigate} offPlanActivityContext={offPlanActivityContext} />
 
       {planChangeInbox.items.length === 0 && (
         <PlanGarminSyncDebtCard workouts={workouts} today={today} onNavigate={navigate} />
@@ -3781,6 +3799,7 @@ const HASH_TAB: Record<string, Tab> = {
   'plan-scenario-preview': 'training',
   'plan-adaptation-review': 'training',
   'plan-change-inbox': 'training',
+  'everyday-adaptation-inbox': 'training',
 };
 
 function hashFromLocation(hash: string): string {
@@ -3800,6 +3819,7 @@ export default function Plan() {
   const tab = tabFromQuery(searchParams.get('tab'));
   const entrySource = searchParams.get('source');
   const workoutIdParam = searchParams.get('workoutId');
+  const activityIdParam = searchParams.get('activityId');
 
   function setTab(tabId: string) {
     const nextTab = tabId as Tab;
@@ -3841,7 +3861,11 @@ export default function Plan() {
         mobileTitle="Plan"
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
-      {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} workoutIdParam={workoutIdParam} /></TabPanel>}
+      {tab === 'training' && (
+        <TabPanel tab="training">
+          <TrainingTab entrySource={entrySource} workoutIdParam={workoutIdParam} activityIdParam={activityIdParam} />
+        </TabPanel>
+      )}
       {tab === 'ausfuehrung' && (
         <TabPanel tab="ausfuehrung">
           {entrySource?.startsWith('plan-apply') && (
