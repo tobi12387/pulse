@@ -492,6 +492,14 @@ export function DailyDecisionCard({
                   {label('Warum diese Aktion?', labelCase)}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>
+                      Heute entscheidet
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                      {decision.contract.leadingFactor}
+                    </div>
+                  </div>
                   {contractSignalItems({ signals: decision.contract.signals, onActivate })}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 6 }}>
                     {[

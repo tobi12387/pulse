@@ -662,6 +662,8 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Heute entscheidet');
+  await expect(contract).toContainText('Mental: Schutzmodus: Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
   await expect(contract).toContainText('Daten');
   await expect(contract).toContainText('Fueling');
   await expect(contract).toContainText('Mental');
