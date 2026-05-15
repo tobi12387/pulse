@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Niedrige Readiness begrenzt die sicherste Tagesoption
+
+- **Decision:** Wenn das bestehende `Koerper`-Signal durch niedrige Readiness die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Körper zuerst schützen`/`Körper zuerst dosieren` formulieren, harte Intensitaet und Zusatzumfang stoppen und zur bestehenden Data > Trends / Recovery-Evidence fuehren. Das bleibt read-only; Plan oder Garmin werden nicht automatisch geaendert.
+- **Why:** WHOOP-/Oura-aehnliche Tagesklarheit entsteht erst, wenn Pulse niedrige Readiness nicht nur als Wert zeigt, sondern in eine konkrete heutige Schutzhandlung uebersetzt. So wird aus Koerper-Evidence eine ruhige Grenze vor Intensitaet, Zusatzumfang oder Planvollzug.
+- **Alternatives:** Readiness nur in den Details lassen (zu wenig handlungsnah); automatisch Training reduzieren (zu versteckt); neue Koerper-Karte auf Home bauen (mehr Oberflaeche statt eine klarere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Akute Last begrenzt die sicherste Tagesoption
 
 - **Decision:** Wenn das bestehende `Belastung`-Signal durch deutlich negatives TSB die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Belastung zuerst senken` formulieren, Intensitaet klein halten, Zusatzumfang stoppen und zur bestehenden Data > Analyse / Plan-Trace-Evidence fuehren. Das bleibt read-only; Plan oder Garmin werden nicht automatisch geaendert.

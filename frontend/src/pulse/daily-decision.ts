@@ -337,6 +337,15 @@ function loadPressureAlternative(tsb: number): string | null {
   return `Belastung zuerst senken: TSB ${tsb.toFixed(1)} zeigt akute Last. Heute Intensität klein halten, keinen Zusatzumfang anhängen und morgen mit frischer Load-Evidenz neu entscheiden.`;
 }
 
+function readinessAlternative(score: number): string | null {
+  const tone = signalToneForReadiness(score);
+  if (tone !== 'rose' && tone !== 'amber') return null;
+  if (tone === 'rose') {
+    return `Körper zuerst schützen: Readiness ${score}/100 respektieren; heute keine harte Intensität, keinen Zusatzumfang und erst nach Warm-up entscheiden, ob locker bewegen reicht.`;
+  }
+  return `Körper zuerst dosieren: Readiness ${score}/100 ist nur bedingt stabil; harte Spitzen klein halten und die Einheit bewusst kürzer schließen, wenn der Warm-up nicht passt.`;
+}
+
 function garminExecutionAlternative(workout: HomeWorkout | null): string | null {
   const signal = garminExecutionSignal(workout, null);
   if (!signal) return null;
@@ -395,6 +404,7 @@ function alternativeFor(
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
   const responseAlternative = personalResponseAlternative(responseSignal);
   const loadAlternative = loadPressureAlternative(home.fitnessLoad.tsb);
+  const bodyAlternative = readinessAlternative(home.readiness.score);
   let alternative: string;
 
   if (action?.source === 'checkin') {
@@ -407,6 +417,8 @@ function alternativeFor(
     alternative = qualityAlternative;
   } else if (recoveryAlternative) {
     alternative = recoveryAlternative;
+  } else if (bodyAlternative && signalToneForReadiness(home.readiness.score) === 'rose') {
+    alternative = bodyAlternative;
   } else if (planAdaptationAlternative) {
     alternative = planAdaptationAlternative;
   } else if (durabilityAlternative) {
@@ -432,6 +444,8 @@ function alternativeFor(
     alternative = `Alltagsoption: ${adaptiveOption.title}: ${adaptiveOption.detail}`;
   } else if (responseAlternative) {
     alternative = responseAlternative;
+  } else if (bodyAlternative) {
+    alternative = bodyAlternative;
   } else if (todayWorkout && todayWorkout.zone >= 3) {
     alternative = 'Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.';
   } else if (todayWorkout) {
@@ -553,6 +567,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Reaktion') return 'Reaktion prüfen';
   if (signal.label === 'Ziel') return signal.actionLabel ?? 'Ziel prüfen';
   if (signal.label === 'Belastung') return 'Belastung prüfen';
+  if (signal.label === 'Koerper') return 'Readiness prüfen';
   return null;
 }
 
