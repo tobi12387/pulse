@@ -626,8 +626,15 @@ function prioritizeSignals(signals: DailyDecisionSignal[]): DailyDecisionSignal[
   ));
 }
 
-function leadingFactorSummary(signals: DailyDecisionSignal[]): string {
+function canFallbackLeadOverride(signal: DailyDecisionSignal | undefined): boolean {
+  if (!signal) return true;
+  if (signal.label === 'Ziel' && signal.tone !== 'rose') return true;
+  return signal.tone === 'green' || signal.tone === 'muted';
+}
+
+function leadingFactorSummary(signals: DailyDecisionSignal[], fallbackLead?: string): string {
   const leading = signals[0];
+  if (fallbackLead && canFallbackLeadOverride(leading)) return fallbackLead;
   if (!leading) return 'Keine harte Begrenzung: Entscheidung aus Zielwirkung, Garmin-Zustand und sicherster Option ableiten.';
   return `${leading.label}: ${leading.detail}`;
 }
@@ -1238,9 +1245,12 @@ function buildContract({
   personalResponse: PulsePersonalResponseResponse | null;
 }): DailyDecisionContract {
   const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent, trainingAnalytics, fuelingOutcomeBaseline, personalResponse);
+  const fallbackLead = !action && !workout && !completedActivity
+    ? 'Mental: Check-in offen · Erholungstag sauber schließen.'
+    : undefined;
 
   return {
-    leadingFactor: leadingFactorSummary(signals),
+    leadingFactor: leadingFactorSummary(signals, fallbackLead),
     goalImpact: goalImpactSummary(home, workout, completedActivity, goalProjection),
     garminExecution: executionSummary(workout, completedActivity),
     continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
