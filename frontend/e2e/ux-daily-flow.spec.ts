@@ -1755,10 +1755,10 @@ test('Home daily decision closes completed long workouts with fueling evidence c
     trainingEffectAerobic: 3.2,
     trainingEffectAnaerobic: 0.1,
     vo2maxEstimate: null,
-    rpe: 6,
-    rpeNote: 'Kontrolliert, kein Zusatztraining.',
+    rpe: null,
+    rpeNote: null,
     sorenessAreas: null,
-    feedbackLoggedAt: '2026-05-01T12:00:00.000Z',
+    feedbackLoggedAt: null,
     equipmentIds: [],
   };
   const completedWorkout = {
@@ -1780,7 +1780,7 @@ test('Home daily decision closes completed long workouts with fueling evidence c
     garminScheduledId: null,
     garminSyncContract: null,
     status: 'completed',
-    workoutFeedback: 'RPE bereits erfasst.',
+    workoutFeedback: null,
     complianceScore: 0.96,
     origin: 'generated',
     userLocked: false,
@@ -1835,12 +1835,19 @@ test('Home daily decision closes completed long workouts with fueling evidence c
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Fueling-Lernen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Fueling-Evidence zuerst schließen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).not.toContainText('Feedback kurz erfassen, dann');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('GI-Komfort ergänzen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('vorhandenen langen During-Log');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Fueling-Log prüfen');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Trend-Evidenz 1/3');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Nächste Evidence: GI-Komfort ergänzen');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('vorhandenen langen During-Log');
   const primaryCta = decision.getByRole('button', { name: 'GI-Komfort ergänzen', exact: true });
   await expect(primaryCta).toBeVisible();
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision).toContainText('Feedback erfassen');
 
   await primaryCta.click();
   await expect(page).toHaveURL('/plan/activity/activity-post-fueling#activity-fueling-log');

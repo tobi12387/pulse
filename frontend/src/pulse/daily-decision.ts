@@ -872,6 +872,34 @@ function fuelingClosureStep(
   };
 }
 
+function completedDayAlternative(steps: DailyDecisionStep[], fallback: string): string {
+  const feedbackStep = steps.find(step => step.status === 'open' && step.label === 'Feedback erfassen');
+  const fuelingStep = steps.find(step => step.status === 'open' && step.label === 'Fueling-Log prüfen');
+
+  if (fuelingStep) {
+    const fuelingDetail = sentenceWithoutTrailingPeriod(fuelingStep.detail);
+    const feedbackSuffix = feedbackStep
+      ? ' Feedback danach kurz erfassen, damit Belastung ebenfalls eingeordnet bleibt.'
+      : '';
+    return `Fueling-Evidence zuerst schließen: ${fuelingStep.cta ?? fuelingStep.label}; ${fuelingDetail}.${feedbackSuffix} Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.`;
+  }
+
+  const firstOpenStep = feedbackStep ?? steps.find(step => step.status === 'open');
+  if (!firstOpenStep) return fallback;
+
+  if (firstOpenStep.label === 'Feedback erfassen') {
+    const detail = sentenceWithoutTrailingPeriod(firstOpenStep.detail);
+    return `Feedback zuerst erfassen: ${detail}. Danach kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.`;
+  }
+
+  return fallback;
+}
+
+function completedClosureSteps(feedbackStep: DailyDecisionStep, fuelingStep: DailyDecisionStep | null): DailyDecisionStep[] {
+  if (fuelingStep && feedbackStep.status === 'open') return [fuelingStep, feedbackStep];
+  return [feedbackStep, ...(fuelingStep ? [fuelingStep] : [])];
+}
+
 function fuelingLearningSignal(
   baseline: PulseFuelingOutcomeBaseline | null | undefined,
   workout: HomeWorkout | null,
@@ -1284,18 +1312,18 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       ? activityDetailPath(completedWorkout.completedActivityId)
       : '/plan?tab=training';
     const fuelingStep = fuelingClosureStep(fuelingOutcomeBaseline, completedActivity, completedWorkout);
+    const feedbackStep: DailyDecisionStep = feedbackDone
+      ? { status: 'done', label: 'Feedback eingetragen', detail: 'RPE oder Feedback ist bereits gespeichert.' }
+      : {
+          status: 'open',
+          label: 'Feedback erfassen',
+          detail: 'Kurz RPE und relevante Notizen nachtragen, damit Pulse die Belastung für die nächsten Einheiten sauber einordnet.',
+          cta: 'Feedback erfassen',
+          targetPath: feedbackTargetPath,
+        };
     const steps: DailyDecisionStep[] = [
       { status: 'done', label: 'Training abgeschlossen', detail: completedLabel },
-      ...(feedbackDone
-        ? [{ status: 'done' as const, label: 'Feedback eingetragen', detail: 'RPE oder Feedback ist bereits gespeichert.' }]
-        : [{
-            status: 'open' as const,
-            label: 'Feedback erfassen',
-            detail: 'Kurz RPE und relevante Notizen nachtragen, damit Pulse die Belastung für die nächsten Einheiten sauber einordnet.',
-            cta: 'Feedback erfassen',
-            targetPath: feedbackTargetPath,
-          }]),
-      ...(fuelingStep ? [fuelingStep] : []),
+      ...completedClosureSteps(feedbackStep, fuelingStep),
       {
         status: 'note',
         label: 'Heute nicht nachlegen',
@@ -1313,7 +1341,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ];
     const reason = 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
-    const alternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
+    const baseAlternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
+    const alternative = completedDayAlternative(steps, baseAlternative);
     const completionCriterion = emptyState
       ?? firstOpenStep?.detail
       ?? 'Feedback erfassen, damit Pulse die Belastung und den nächsten Plan sauber einordnen kann.';
@@ -1366,18 +1395,18 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     const feedbackDone = offPlanActivity.feedbackLoggedAt != null || offPlanActivity.rpe != null;
     const feedbackTargetPath = activityDetailPath(offPlanActivity.id);
     const fuelingStep = fuelingClosureStep(fuelingOutcomeBaseline, offPlanActivity, null);
+    const feedbackStep: DailyDecisionStep = feedbackDone
+      ? { status: 'done', label: 'Feedback eingetragen', detail: 'RPE oder Feedback ist bereits gespeichert.' }
+      : {
+          status: 'open',
+          label: 'Feedback erfassen',
+          detail: 'Kurz RPE, Magen/Beine und Auffälligkeiten nachtragen, damit Pulse die ungeplante Belastung einordnet.',
+          cta: 'Feedback erfassen',
+          targetPath: feedbackTargetPath,
+        };
     const steps: DailyDecisionStep[] = [
       { status: 'done', label: 'Garmin-Aktivität abgeschlossen', detail: completedLabel },
-      ...(feedbackDone
-        ? [{ status: 'done' as const, label: 'Feedback eingetragen', detail: 'RPE oder Feedback ist bereits gespeichert.' }]
-        : [{
-            status: 'open' as const,
-            label: 'Feedback erfassen',
-            detail: 'Kurz RPE, Magen/Beine und Auffälligkeiten nachtragen, damit Pulse die ungeplante Belastung einordnet.',
-            cta: 'Feedback erfassen',
-            targetPath: feedbackTargetPath,
-          }]),
-      ...(fuelingStep ? [fuelingStep] : []),
+      ...completedClosureSteps(feedbackStep, fuelingStep),
       {
         status: 'note',
         label: 'Plan abgleichen',
@@ -1395,7 +1424,8 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
     ];
     const reason = 'Garmin hat heute bereits Training erfasst, obwohl kein Pulse-Workout geplant war. Für heute zählt jetzt Feedback, Versorgung und Regeneration statt eine weitere Einheit zu suchen.';
-    const alternative = 'Kein Zusatztraining nachschieben; wenn die Aktivität anders geplant war, danach den Plan neu abgleichen.';
+    const baseAlternative = 'Kein Zusatztraining nachschieben; wenn die Aktivität anders geplant war, danach den Plan neu abgleichen.';
+    const alternative = completedDayAlternative(steps, baseAlternative);
     const completionCriterion = emptyState
       ?? firstOpenStep?.detail
       ?? 'Feedback erfassen, damit Pulse die ungeplante Belastung in den nächsten Plan einbeziehen kann.';
