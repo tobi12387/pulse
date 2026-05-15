@@ -400,23 +400,33 @@ function executionSummary(workout: HomeWorkout | null, completedActivity: HomeAc
   return 'Garmin: Pulse plant lokal; kein automatischer Geraete-Write.';
 }
 
-function goalImpactSummary(home: PulseHomeScreenData, workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
+function goalImpactSummary(
+  home: PulseHomeScreenData,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+  goalProjection: PulseGoalProjectionResponse | null,
+): string {
+  const goal = topGoalProjection(goalProjection);
+  const goalContext = goal
+    ? ` ${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}.`
+    : '';
+
   if (workout?.status === 'completed' || workout?.completedActivityId) {
-    return 'Zielwirkung: Reiz als erledigt behandeln; Feedback macht die naechste Planung genauer.';
+    return `Zielwirkung: Reiz als erledigt behandeln; Feedback macht die naechste Planung genauer.${goalContext}`;
   }
   if (completedActivity) {
-    return 'Zielwirkung: ungeplante Belastung in die naechste Planentscheidung einrechnen.';
+    return `Zielwirkung: ungeplante Belastung in die naechste Planentscheidung einrechnen.${goalContext}`;
   }
   if (workout) {
-    if (workout.capabilityFit === 'too_hard_today') return 'Zielwirkung: Fortschritt schuetzen, aber heute keine zu harte Einheit erzwingen.';
-    if (workout.capabilityFit === 'stretch') return 'Zielwirkung: kontrollierter Reiz, solange Readiness und Grenze passen.';
-    if (workout.capabilityFit === 'productive') return 'Zielwirkung: produktiver Trainingsreiz im Wochenziel.';
-    return 'Zielwirkung: Wochenstruktur halten, ohne Zusatzumfang zu erzwingen.';
+    if (workout.capabilityFit === 'too_hard_today') return `Zielwirkung: Fortschritt schuetzen, aber heute keine zu harte Einheit erzwingen.${goalContext}`;
+    if (workout.capabilityFit === 'stretch') return `Zielwirkung: kontrollierter Reiz, solange Readiness und Grenze passen.${goalContext}`;
+    if (workout.capabilityFit === 'productive') return `Zielwirkung: produktiver Trainingsreiz im Wochenziel.${goalContext}`;
+    return `Zielwirkung: Wochenstruktur halten, ohne Zusatzumfang zu erzwingen.${goalContext}`;
   }
   if (home.nextWorkout) {
-    return 'Zielwirkung: Erholung heute verbessert die Qualitaet der naechsten Einheit.';
+    return `Zielwirkung: Erholung heute verbessert die Qualitaet der naechsten Einheit.${goalContext}`;
   }
-  return 'Zielwirkung: Erholung und mentaler Check-in halten die Routine stabil.';
+  return `Zielwirkung: Erholung und mentaler Check-in halten die Routine stabil.${goalContext}`;
 }
 
 function continuitySummary({
@@ -575,7 +585,7 @@ function buildContract({
 
   return {
     leadingFactor: leadingFactorSummary(signals),
-    goalImpact: goalImpactSummary(home, workout, completedActivity),
+    goalImpact: goalImpactSummary(home, workout, completedActivity, goalProjection),
     garminExecution: executionSummary(workout, completedActivity),
     continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
     safestAlternative: alternative,

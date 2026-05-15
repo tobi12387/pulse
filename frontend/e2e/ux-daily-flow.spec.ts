@@ -477,6 +477,16 @@ test('Home daily decision details expose goal pressure as a top decision signal'
   await expect(contract).toContainText('70.3 Kraichgau');
   await expect(contract).toContainText('64%');
   await expect(contract).toContainText('Fueling-Praxis absichern');
+
+  const contractText = await contract.textContent();
+  expect(contractText).toBeTruthy();
+  const goalImpactIndex = contractText!.indexOf('Zielwirkung');
+  const garminIndex = contractText!.indexOf('Garmin', goalImpactIndex);
+  expect(goalImpactIndex).toBeGreaterThanOrEqual(0);
+  expect(garminIndex).toBeGreaterThan(goalImpactIndex);
+  const goalImpactText = contractText!.slice(goalImpactIndex, garminIndex);
+  expect(goalImpactText).toContain('70.3 Kraichgau: 64%');
+  expect(goalImpactText).toContain('Fueling-Praxis absichern');
 });
 
 test('Home daily decision details expose saved mental boundary as a top decision signal', async ({ page }) => {
