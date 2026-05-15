@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Zu harte Trainingspassung begrenzt die sicherste Tagesoption
+
+- **Decision:** Wenn das bestehende `Training`-Signal durch `capabilityFit: too_hard_today` die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Training zuerst entschärfen` formulieren, Ausfuehrung stoppen und auf die bestehende leichtere Plan-Alternative fuehren. Das bleibt read-only; Plan oder Garmin werden erst nach einem bewussten Klick geaendert.
+- **Why:** TrainerRoad-/TrainingPeaks-aehnliche Trainingslogik wird erst tagesklar, wenn Pulse einen zu harten Athlete-Level-Fit nicht nur im Plan markiert, sondern vor Ausfuehrung in eine konkrete heutige Schutzhandlung uebersetzt.
+- **Alternatives:** Trainingsfit nur in der Zielwirkung/Plan-Karte lassen (zu wenig handlungsnah); automatisch die Einheit ersetzen (zu versteckt); neue Home-Trainingskarte bauen (mehr Oberflaeche statt eine klarere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Niedrige Readiness begrenzt die sicherste Tagesoption
 
 - **Decision:** Wenn das bestehende `Koerper`-Signal durch niedrige Readiness die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Körper zuerst schützen`/`Körper zuerst dosieren` formulieren, harte Intensitaet und Zusatzumfang stoppen und zur bestehenden Data > Trends / Recovery-Evidence fuehren. Das bleibt read-only; Plan oder Garmin werden nicht automatisch geaendert.
