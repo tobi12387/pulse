@@ -72,6 +72,25 @@ describe('summarizeFuelingOutcomeBaseline', () => {
     expect(baseline.evidence).toContain('Sodium nicht geloggt');
   });
 
+  it('keeps sodium, heat and sweat-rate as explicit hydration context gaps', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 240,
+        carbsG: 242,
+        bottles750Ml: 4,
+        powderG: 300,
+        giComfort: 'ok',
+      }],
+    });
+
+    const hydrationGaps = baseline.hydrationEvidenceGaps ?? [];
+    expect(hydrationGaps).toContain('Sodium nicht strukturiert geloggt.');
+    expect(hydrationGaps).toContain('Hitze und Schweißrate nicht gemessen.');
+  });
+
   it('keeps a tolerated follow-up as the stable baseline for the next small step', () => {
     const baseline = summarizeFuelingOutcomeBaseline({
       logs: [

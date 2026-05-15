@@ -136,6 +136,17 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
   };
 }
 
+function hydrationEvidenceGaps(logs: FuelingOutcomeBaselineLogInput[]): string[] {
+  const candidates = comparableLearningLogs(logs);
+  const relevant = candidates.length > 0 ? candidates : relevantLogs(logs);
+  const hasSodium = relevant.some(log => log.sodiumMg != null);
+
+  return [
+    hasSodium ? null : 'Sodium nicht strukturiert geloggt.',
+    'Hitze und Schweißrate nicht gemessen.',
+  ].filter((item): item is string => item != null);
+}
+
 function formatObserved(log: FuelingOutcomeBaselineLogInput, observedCarbsPerHour: number | null): string {
   const parts = [
     observedCarbsPerHour != null ? `${observedCarbsPerHour} g/h` : null,
@@ -152,6 +163,7 @@ function rangeText(range: PulseFuelingCarbRange | null): string | null {
 export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaselineInput): PulseFuelingOutcomeBaseline {
   const logs = input.logs ?? [];
   const learningReadiness = summarizeLearningReadiness(logs);
+  const hydrationGaps = hydrationEvidenceGaps(logs);
   const latest = relevantLogs(logs)[0] ?? null;
   if (!latest) {
     return {
@@ -165,6 +177,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       powderG: null,
       fluidMlPerHour: null,
       sodiumMgPerHour: null,
+      hydrationEvidenceGaps: hydrationGaps,
       evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
       learningReadiness,
     };
@@ -194,6 +207,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       powderG: latest.powderG ?? null,
       fluidMlPerHour,
       sodiumMgPerHour,
+      hydrationEvidenceGaps: hydrationGaps,
       evidence,
       learningReadiness,
     };
@@ -211,6 +225,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       powderG: latest.powderG ?? null,
       fluidMlPerHour,
       sodiumMgPerHour,
+      hydrationEvidenceGaps: hydrationGaps,
       evidence,
       learningReadiness,
     };
@@ -227,6 +242,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
     powderG: latest.powderG ?? null,
     fluidMlPerHour,
     sodiumMgPerHour,
+    hydrationEvidenceGaps: hydrationGaps,
     evidence,
     learningReadiness,
   };
