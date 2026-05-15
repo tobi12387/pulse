@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Decision-Contract-Signale werden nicht hart gekappt
+
+- **Decision:** Die aufgeklappten Home-Details des Daily-Decision-Contracts zeigen alle aktiven kompakten Signale statt die Liste hart auf vier Eintraege zu kuerzen.
+- **Why:** Der Performance-OS-Nordstern braucht eine integrierte Tagesentscheidung: Wenn Datenvertrauen, Fueling, Mental Boundary, Zieldruck und Training gleichzeitig relevant sind, darf Pulse keine dieser Dimensionen still verstecken. Die Hauptkarte bleibt ruhig, weil die Details optional sind; dort ist Vollstaendigkeit wichtiger als ein willkuerliches Limit.
+- **Alternatives:** Vier-Signal-Limit behalten (versteckt spaete aktive Faktoren wie Mental, Ziel oder Training); neue Home-Karten pro Signal bauen (mehr Dichte); Backend-Synthese/API einfuehren (zu gross fuer diesen Guard-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Datenvertrauen wird Top-Signal der Tagesentscheidung
 
 - **Decision:** Home darf nicht-bereite Datenlage (`userReady`, `profileReady` oder `dataStatus.garmin.status !== ready`) als kompaktes `Daten`-Signal im bestehenden Daily-Decision-Contract anzeigen.

@@ -444,7 +444,7 @@ function topSignals(
     });
   }
 
-  return signals.slice(0, 4);
+  return signals;
 }
 
 function buildContract({
