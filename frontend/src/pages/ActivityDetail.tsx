@@ -753,6 +753,20 @@ function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletio
   return completions;
 }
 
+function mergeFuelingEvidenceCompletionPatches(completions: FuelingEvidenceCompletion[]): NutritionLogPatch {
+  return completions.reduce<NutritionLogPatch>((merged, completion) => {
+    const { fuelingProducts, ...nextPatch } = completion.patch;
+    const mergedPatch: NutritionLogPatch = { ...merged, ...nextPatch };
+    if (fuelingProducts != null) {
+      mergedPatch.fuelingProducts = Array.from(new Set([
+        ...(merged.fuelingProducts ?? []),
+        ...fuelingProducts,
+      ]));
+    }
+    return mergedPatch;
+  }, {});
+}
+
 function fuelingEvidenceQuality({
   logs,
   activityType,
@@ -840,6 +854,9 @@ function FuelingSection({
   });
   const giComfortCompletionLogId = evidenceQuality?.giComfortCompletionLogId ?? null;
   const detailCompletionLogId = evidenceQuality?.detailCompletionLogId ?? null;
+  const detailCompletionPatch = evidenceQuality?.detailCompletions.length
+    ? mergeFuelingEvidenceCompletionPatches(evidenceQuality.detailCompletions)
+    : null;
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -1037,6 +1054,29 @@ function FuelingSection({
                   Praxisdetails strukturieren
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {detailCompletionPatch && evidenceQuality.detailCompletions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => updateNutrition.mutate({
+                        id: detailCompletionLogId,
+                        data: detailCompletionPatch,
+                      })}
+                      disabled={updateNutrition.isPending}
+                      style={{
+                        minHeight: 44,
+                        background: 'rgba(74,222,128,0.09)',
+                        border: '1px solid rgba(74,222,128,0.34)',
+                        borderRadius: 4,
+                        padding: '6px 9px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 10,
+                        color: 'var(--green)',
+                        cursor: updateNutrition.isPending ? 'wait' : 'pointer',
+                      }}
+                    >
+                      Alle erkannten Details übernehmen
+                    </button>
+                  )}
                   {evidenceQuality.detailCompletions.map(completion => (
                     <button
                       key={completion.label}

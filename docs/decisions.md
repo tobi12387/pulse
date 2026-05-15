@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Activity-Fueling buendelt erkannte Praxisdetails
+
+- **Decision:** Activity Detail darf mehrere klar erkannte alte Fueling-Details als einen expliziten Sammel-CTA per bestehendem Nutrition-PATCH uebernehmen, waehrend die Einzelaktionen sichtbar bleiben.
+- **Why:** Die MacroFactor-aehnliche Lernschleife wird ruhiger, wenn Tobi nicht fuer Flaschen, Pulver, Produkte und GI-Komfort mehrere identische Entscheidungen klicken muss. Die Uebernahme bleibt sichtbar und klickpflichtig; Pulse mutiert keine alten Logs beim Laden und schaltet Nutrition-Trends weiterhin erst nach ausreichender kompletter Evidence frei.
+- **Alternatives:** Nur Einzelbuttons behalten (mehr Reibung fuer dieselbe eindeutige Evidence); automatische Strukturierung beim Laden (zu versteckt); vollstaendigen Log-Editor bauen (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Activity-Fueling strukturiert Produkt- und GI-Notizen in-place
 
 - **Decision:** Activity Detail darf klare alte During-Log-Notizen wie `Marsriegel` oder `leichte Magenprobleme` als klickpflichtige Strukturierungsaktionen anbieten und per bestehendem Nutrition-PATCH in `fuelingProducts` bzw. `giComfort` uebernehmen.
