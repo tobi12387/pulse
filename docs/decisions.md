@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Recovery-Druck fuehrt die Home-Entscheidung mit
+
+- **Decision:** Home nutzt die vorhandenen `PulseRecoveryMetrics` als priorisiertes `Recovery`-Signal im Daily-Decision-Contract; schweres Schlafdefizit, sinkende HRV, erhoehte RHR oder ein niedriger Recovery-Score koennen `Heute entscheidet` fuehren.
+- **Why:** Die Performance-OS-Antwort muss WHOOP/Oura-aehnliche Tagesklarheit direkt in die heutige Handlung uebersetzen. Recovery-Druck darf nicht nur im Nebenpanel stehen, wenn er Training, Zielreiz oder Alltag heute begrenzt.
+- **Alternatives:** Recovery nur im bestehenden Grundlage-Panel lassen (zu weit weg von der Entscheidung); stabile Recovery immer als Top-Signal anzeigen (zu laut); neue Backend-Synthese/API einfuehren (zu breit fuer diesen Frontend-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Entscheidungsqualitaet fuehrt die Home-Entscheidung mit
 
 - **Decision:** Home uebergibt die bestehende `/decisions/quality`-Lernschleife an den Daily-Decision-Contract; stale, beobachtete oder strategisch kritische Entscheidungsqualitaet erscheint als priorisiertes `Lernen`-Signal und kann `Heute entscheidet` fuehren.
