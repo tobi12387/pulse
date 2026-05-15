@@ -644,6 +644,12 @@ const FUELING_PRODUCT_LABELS: Record<string, string> = {
   mars: 'Mars',
 };
 
+const GI_COMFORT_LABELS: Record<NonNullable<NutritionLog['giComfort']>, string> = {
+  ok: 'Magen ok',
+  mild_issue: 'Magen leicht unruhig',
+  issue: 'Magenprobleme',
+};
+
 type FuelingEvidenceCompletion = {
   label: string;
   patch: NutritionLogPatch;
@@ -693,6 +699,19 @@ function uniqueFuelingProducts(products: string[], productId: string): string[] 
   return products.includes(productId) ? products : [...products, productId];
 }
 
+function inferMarsProduct(log: NutritionLog): boolean {
+  return !log.fuelingProducts.includes('mars') && /\bmars(?:riegel)?\b/i.test(fuelingLogText(log));
+}
+
+function inferGiComfort(log: NutritionLog): NonNullable<NutritionLog['giComfort']> | null {
+  if (log.giComfort != null) return null;
+  const text = fuelingLogText(log).toLocaleLowerCase('de-DE');
+  if (/\bmagen\s*(?:ok|gut|ruhig)\b/.test(text)) return 'ok';
+  if (/leichte?\s+magenprobleme/.test(text) || /magen\s+leicht\s+unruhig/.test(text)) return 'mild_issue';
+  if (/\bmagenprobleme\b/.test(text) || /\bgi[-\s]?problem/.test(text)) return 'issue';
+  return null;
+}
+
 function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletion[] {
   const completions: FuelingEvidenceCompletion[] = [];
   const bottles750Ml = inferBottles750Ml(log);
@@ -713,6 +732,21 @@ function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletio
           ? uniqueFuelingProducts(log.fuelingProducts, POWER_CARB_ID)
           : undefined,
       },
+    });
+  }
+
+  if (inferMarsProduct(log)) {
+    completions.push({
+      label: 'Mars übernehmen',
+      patch: { fuelingProducts: uniqueFuelingProducts(log.fuelingProducts, 'mars') },
+    });
+  }
+
+  const giComfort = inferGiComfort(log);
+  if (giComfort != null) {
+    completions.push({
+      label: `${GI_COMFORT_LABELS[giComfort]} übernehmen`,
+      patch: { giComfort },
     });
   }
 
@@ -810,15 +844,10 @@ function FuelingSection({
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
     : 'other';
-  const giLabels: Record<string, string> = {
-    ok: 'Magen ok',
-    mild_issue: 'Magen leicht unruhig',
-    issue: 'Magenprobleme',
-  };
   const giComfortOptions: Array<{ value: NonNullable<NutritionLog['giComfort']>; label: string }> = [
-    { value: 'ok', label: giLabels.ok },
-    { value: 'mild_issue', label: giLabels.mild_issue },
-    { value: 'issue', label: giLabels.issue },
+    { value: 'ok', label: GI_COMFORT_LABELS.ok },
+    { value: 'mild_issue', label: GI_COMFORT_LABELS.mild_issue },
+    { value: 'issue', label: GI_COMFORT_LABELS.issue },
   ];
 
   return (
@@ -885,7 +914,7 @@ function FuelingSection({
                   )}
                   {log.giComfort && (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: log.giComfort === 'ok' ? 'var(--green)' : 'var(--amber)' }}>
-                      {giLabels[log.giComfort] ?? log.giComfort}
+                      {GI_COMFORT_LABELS[log.giComfort] ?? log.giComfort}
                     </span>
                   )}
                   {log.sodiumMg != null && (

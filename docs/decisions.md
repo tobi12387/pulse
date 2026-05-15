@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Activity-Fueling strukturiert Produkt- und GI-Notizen in-place
+
+- **Decision:** Activity Detail darf klare alte During-Log-Notizen wie `Marsriegel` oder `leichte Magenprobleme` als klickpflichtige Strukturierungsaktionen anbieten und per bestehendem Nutrition-PATCH in `fuelingProducts` bzw. `giComfort` uebernehmen.
+- **Why:** Die MacroFactor-aehnliche Lernschleife wird erst brauchbar, wenn reale Praxisdetails aus alten Logs nicht im Freitext liegen bleiben. Die Uebernahme bleibt sichtbar und explizit, damit Pulse keine versteckte medizinische oder automatische Interpretation vornimmt.
+- **Alternatives:** Notizen nur anzeigen (zu wenig lernbar); serverseitiges Auto-Parsing beim Laden (zu versteckt); einen vollstaendigen Log-Editor bauen (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Activity-Fueling strukturiert alte Praxisdetails in-place
 
 - **Decision:** Activity Detail darf bei bestehenden langen During-Logs offensichtliche Praxisdetails aus vorhandenen strukturierten/Text-Evidenzen in-place nachstrukturieren: z. B. `3000 ml` als `4 x 750 ml` oder Text wie `300 g POWER CARB Pulver` als strukturiertes Pulverfeld.
