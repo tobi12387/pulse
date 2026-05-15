@@ -427,7 +427,11 @@ function trainingExecutionAlternative(workout: HomeWorkout | null): string | nul
     return `Produktiven Trainingsreiz ausführen: ${trainingSignalDetail(workout)}. Warm-up als letzte Grenze nutzen, den geplanten Reiz sauber schließen und keinen Zusatzumfang anhängen; bei auffälliger Tagesform kürzer oder Z2 fertigfahren.`;
   }
 
-  if (workout.capabilityFit === 'maintenance' || workout.capabilityFit === 'recovery') {
+  if (workout.capabilityFit === 'recovery') {
+    return `Recovery-Einheit ruhig schließen: ${trainingSignalDetail(workout)}. Beine bewegen, Atmung und Lockerheit priorisieren, keine Reizsuche und keinen Zusatzumfang anhängen; wenn es nicht erholt, Einheit kürzen.`;
+  }
+
+  if (workout.capabilityFit === 'maintenance') {
     return `Machbare Einheit ruhig ausführen: ${trainingSignalDetail(workout)}. Wochenstruktur halten, aber bewusst ohne Zusatzumfang schließen und bei schlechter Tagesform locker kürzen.`;
   }
 

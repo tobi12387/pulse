@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Recovery-Trainingspassung bedeutet aktive Regeneration
+
+- **Decision:** Wenn ein offenes geplantes Workout mit `capabilityFit: recovery` die Home-Tagesentscheidung fuehrt und kein staerkeres Schutzsignal aktiv ist, darf die `Sicherste Option` als `Recovery-Einheit ruhig schließen` formulieren: Beine bewegen, Lockerheit priorisieren, keine Reizsuche und kein Zusatzumfang. Das bleibt read-only und fuehrt nur zur bestehenden Plan-/Workout-Pruefung.
+- **Why:** WHOOP-/Oura-aehnliche Tagesklarheit und TrainerRoad-aehnliche Fit-Logik brauchen auch fuer leichte Tage eine klare Handlung. Recovery ist kein versteckter Trainingsreiz und kein generischer machbarer Slot, sondern ein bewusst kleines Regenerationsfenster.
+- **Alternatives:** Recovery-Fit weiter als `Machbare Einheit` beschreiben (zu unscharf); Recovery automatisch als Ruhetag ersetzen (zu versteckt); eine neue Recovery-Karte bauen (mehr Oberflaeche statt bessere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Produktive Trainingspassung bleibt ausfuehrbar statt generisch entschaerft
 
 - **Decision:** Wenn ein offenes geplantes Workout mit `capabilityFit: productive` die Home-Tagesentscheidung fuehrt und kein staerkeres Schutzsignal aktiv ist, darf die `Sicherste Option` als `Produktiven Trainingsreiz ausführen` formulieren: Warm-up bleibt die letzte Grenze, der geplante Reiz wird sauber geschlossen und Zusatzumfang bleibt ausgeschlossen. Machbare Erhaltungs-/Recovery-Fits duerfen analog ruhig ausgefuehrt werden. Hoher Schutzdruck durch Daten, Recovery, Last, Analyse, Anpassung, Garmin, Fueling, Ziel, Alltag oder Mental bleibt vorrangig.
