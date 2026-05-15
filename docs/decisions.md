@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Mental Boundary wird Top-Signal der Tagesentscheidung
+
+- **Decision:** Home darf einen gespeicherten, nicht-stabilen Mental-Check-in als kompaktes `Mental`-Signal im bestehenden Daily-Decision-Contract nutzen: Schutz-/Sensibel-Label und Tagesgrenze werden neben Koerper, Load, Fueling und Ziel angezeigt.
+- **Why:** Der Performance-OS-Nordstern verlangt, dass Alltag und mentale Belastung die heutige Handlung sichtbar beeinflussen, auch wenn Training die Hauptaktion bleibt. Die vorhandene `mentalImpact`-Logik uebersetzt Check-in-Werte bereits safety-bounded; Home soll diese Grenze in die eine Tagesentscheidung einbeziehen, ohne neue Karte, Diagnose, Coach-LLM oder Plan-/Garmin-Mutation.
+- **Alternatives:** Mental nur als separate Home-Fokusflaeche lassen (zu leicht von der Entscheidung getrennt); neue Resilience-Karte auf Home bauen (mehr Dichte); Backend-Synthese oder neue Mental-Severity einfuehren (zu gross und sensibler fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Goal Projection wird Top-Signal der Tagesentscheidung
 
 - **Decision:** Home darf die vorhandene `goal-projection` als kompaktes `Ziel`-Signal im bestehenden Daily-Decision-Contract nutzen: Top-Ziel, Wahrscheinlichkeit/Evidence-Status und naechste Intervention werden als Kontext angezeigt.

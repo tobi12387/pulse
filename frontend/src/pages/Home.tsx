@@ -904,14 +904,6 @@ export default function Home() {
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
   const latestDelta = dailyDeltaQuery.data?.items[0] ?? null;
   const todaysDelta = latestDelta?.date === data.date ? latestDelta : null;
-  const dailyDecision = deriveDailyDecision(data, {
-    dailyDelta: todaysDelta,
-    goalProjection: goalProjection.data ?? null,
-    todayOptions: todaysOptions,
-  });
-  const primaryAdaptationEvent = primaryAdaptation(
-    (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
-  );
   const primaryAction = actionStates[0] ?? null;
   const hasMentalCheckin = homeCheckinSubmitted || checkinToday.data?.checkin != null;
   const todayCheckinDate = checkinToday.data?.checkin?.date ?? data.date;
@@ -919,6 +911,23 @@ export default function Home() {
     ? checkinHistory.data?.checkins.find(checkin => checkin.date === todayCheckinDate) ?? null
     : null;
   const mentalImpactSummary = todayMentalCheckin ? mentalImpact(todayMentalCheckin) : null;
+  const mentalBoundary = mentalImpactSummary && mentalImpactSummary.level !== 'stable'
+    ? {
+        level: mentalImpactSummary.level,
+        label: mentalImpactSummary.level === 'protect' ? 'Schutzmodus' : 'Sensibel',
+        detail: mentalImpactSummary.labels.dailyImpact,
+        targetPath: '/data?tab=today#data-mental',
+      }
+    : null;
+  const dailyDecision = deriveDailyDecision(data, {
+    dailyDelta: todaysDelta,
+    goalProjection: goalProjection.data ?? null,
+    mentalBoundary,
+    todayOptions: todaysOptions,
+  });
+  const primaryAdaptationEvent = primaryAdaptation(
+    (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
+  );
   const mentalDaySignal = mentalImpactSummary && mentalImpactSummary.level !== 'stable'
     ? `Mentale Tageslage: ${mentalImpactSummary.level === 'protect' ? 'Schutzmodus' : 'sensibel'}. ${mentalImpactSummary.labels.dailyImpact}`
     : null;
