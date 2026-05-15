@@ -236,6 +236,89 @@ test('Home daily decision details expose top signals goal impact Garmin state an
   await expect(contract).toContainText('Einheit locker halten');
 });
 
+test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-vo2',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 60,
+        distanceKm: null,
+        targetTss: 82,
+        archetypeId: 'threshold_over_under',
+        difficultyLevel: 4.2,
+        difficultyEnergySystem: 'threshold',
+        capabilityFit: 'stretch',
+        description: 'Harter Reiz nur mit sauberem Magen.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'recovery_protect',
+        summary: 'Fueling-Schutz ist heute wichtiger als Intensität.',
+        signature: 'home-fueling-protect',
+        fuelingDebt: {
+          status: 'open_gi_issue',
+          hasOpenDebt: true,
+          label: 'GI-Schutz offen',
+          summary: 'GI-/Magenhinweis ist noch offen.',
+          closureCondition: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+          evidence: ['GI-Hinweis: 2026-04-29'],
+          openIssueDate: '2026-04-29',
+          controlledWorkoutId: null,
+          followUpActivityId: null,
+          updatedAt: '2026-05-01T08:00:00.000Z',
+        },
+        options: [{
+          id: 'rest-fueling-protect',
+          kind: 'rest',
+          priority: 'primary',
+          title: 'Heute bewusst pausieren',
+          detail: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+          cta: 'Tagesentscheidung prüfen',
+          targetPath: '/',
+          evidence: ['Fueling: GI-Schutz offen'],
+          signalLabels: [{
+            kind: 'fueling_protect',
+            label: 'Fueling schützen',
+            detail: 'Magenhinweis begrenzt Intensität',
+            tone: 'amber',
+          }],
+        }],
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Fueling');
+  await expect(contract).toContainText('GI-Schutz offen');
+  await expect(contract).toContainText('75-120 min locker');
+  await expect(contract).toContainText('Magenhinweis begrenzt Intensität');
+});
+
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
   await mockPulseApi(page, {
     dailyDelta: [{
