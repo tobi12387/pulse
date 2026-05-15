@@ -565,6 +565,13 @@ function actionResultPreview(action: PulseNextBestAction | null, fallbackPath: s
     return 'Pulse öffnet Coach mit vorbereiteter Tagesfrage; Plan und Garmin bleiben unverändert.';
   }
   if (targetPath.startsWith('/data')) {
+    const mentalDataTarget = action?.source === 'checkin'
+      || action?.source === 'mental'
+      || targetPath.includes('#data-mental')
+      || targetPath.includes('tab=mental');
+    if (!mentalDataTarget) {
+      return 'Pulse öffnet die Evidenz; Plan und Garmin bleiben unverändert.';
+    }
     return 'Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.';
   }
   if (targetPath.startsWith('/plan')) {
