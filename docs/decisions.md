@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Performance OS Route Evidence Pass blockiert Breitrebuild
+
+- **Decision:** Pulse nutzt den Performance OS Route Evidence Pass auf `775c46a` als Gate gegen einen sofortigen breiten UI/UX-Umbau: Home, Data > Analyse, Plan und Insights zeigen keine horizontalen Overflow-, Overlap- oder First-Viewport-Rollenkonflikte, die einen neuen Runtime-Slice rechtfertigen.
+- **Why:** Der Performance-OS-Nordstern verlangt ruhige Tagesentscheidungen, aber nicht reflexhaft mehr Oberflaechenarbeit. Nach Daily Intelligent Action Contract v2, Everyday Adaptation Inbox v1 und Analysis Translation v1 bestaetigt die frische Desktop/Mobile-Evidence, dass der naechste Schritt wieder aus echter Daten- oder Feld-Evidenz kommen sollte.
+- **Alternatives:** Direkt Home/Plan/Data/Insights weiter verdichten (nur Politur ohne aktuelles Friktionssignal); Nutrition Trend Summaries trotz Datenluecke bauen (verletzt Evidence-Gate); Mobile Field Reliability ohne reales iPhone-Signal starten (zu spekulativ).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-14 — Analysis Translation v1 uebersetzt Tiefe in Tageswirkung
 
 - **Decision:** Pulse implementiert Analysis Translation v1 als read-only Karte in Data > Analyse, die aus Zielprojektion, Reaktionsmodell, Plan-Limiter, Entscheidungsqualitaet und Trainingsanalyse genau ein handlungsrelevantes Tiefensignal und eine interessante, aber noch nicht entscheidungsreife Evidenzluecke ableitet.
