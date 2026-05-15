@@ -4556,17 +4556,24 @@ test('Plan workout modal shows Fueling and Recovery guidance for long sessions',
       shouldShow: workoutId === 'workout-fuel',
       preferenceStatus: 'ready',
       outcomeBaseline: {
-        status: 'learning',
-        label: 'Fueling-Baseline lernen',
-        summary: 'Letzter langer Log: 42 g/h, 4 x 750 ml, 300 g Pulver; naechste Teststufe 50-70 g/h.',
-        latestLogDate: '2026-04-29',
-        observedCarbsPerHour: 42,
-        targetCarbsPerHour: { min: 50, max: 70 },
+        status: 'stable',
+        label: 'Fueling-Baseline vertraeglich',
+        summary: 'Letzter vertraeglicher Log: 55 g/h, 2 x 750 ml, 100 g Pulver; naechste kleine Stufe 55-70 g/h.',
+        latestLogDate: '2026-05-13',
+        observedCarbsPerHour: 55,
+        targetCarbsPerHour: { min: 55, max: 70 },
         bottles750Ml: 4,
         powderG: 300,
         fluidMlPerHour: 419,
         sodiumMgPerHour: null,
-        evidence: ['Letzter Log: 2026-04-29, 42 g/h, 4 x 750 ml, 300 g Pulver', 'Sodium nicht geloggt'],
+        trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 50 g/h; 2x Magen ok, 1x unruhig.',
+        evidence: ['Letzter Log: 2026-05-13, 55 g/h, 2 x 750 ml, 100 g Pulver', 'Sodium nicht geloggt'],
+        learningReadiness: {
+          comparableCompleteLogs: 3,
+          requiredComparableCompleteLogs: 3,
+          readyForTrendSummary: true,
+          missingEvidence: [],
+        },
       },
       before: [{ id: 'before', text: '2-3 h vorher ca. 80-160 g Kohlenhydrate.' }],
       during: [
@@ -4588,13 +4595,75 @@ test('Plan workout modal shows Fueling and Recovery guidance for long sessions',
   const card = page.getByTestId('fueling-recovery-guidance');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Fueling & Recovery');
-  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Baseline lernen');
-  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('42 g/h');
-  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('50-70 g/h');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Baseline vertraeglich');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('55 g/h');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('55-70 g/h');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Trend-Evidenz: 3/3');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Trend: 3/3 komplette During-Logs');
+  await expect(page.getByTestId('workout-fueling-baseline')).not.toContainText('Nächster Lernlog');
   await expect(card).toContainText('60-90 g Kohlenhydrate pro Stunde');
   await expect(card).toContainText('400-800 mg Sodium pro Liter');
   await expect(card).toContainText('Recovery innerhalb von 2 h');
   await expect(card).toContainText('Workout');
+});
+
+test('Plan workout modal shows nutrition trend summaries only after complete fueling evidence', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-fuel-trend',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 150,
+        status: 'planned',
+        description: 'Lange Ausfahrt mit bekannter Fueling-Baseline.',
+        garminWorkoutId: 'gw-fuel-trend',
+        garminScheduledId: 'sched-fuel-trend',
+        executionStatus: 'garmin_scheduled',
+      },
+    ],
+    fuelingGuidance: (workoutId) => ({
+      shouldShow: workoutId === 'workout-fuel-trend',
+      preferenceStatus: 'ready',
+      outcomeBaseline: {
+        status: 'stable',
+        label: 'Fueling-Baseline vertraeglich',
+        summary: 'Letzter vertraeglicher Log: 58 g/h; naechste kleine Stufe 60-75 g/h.',
+        latestLogDate: '2026-05-13',
+        observedCarbsPerHour: 58,
+        targetCarbsPerHour: { min: 60, max: 75 },
+        bottles750Ml: 3,
+        powderG: 220,
+        fluidMlPerHour: 690,
+        sodiumMgPerHour: 380,
+        trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 50 g/h; 2x Magen ok, 1x unruhig.',
+        hydrationEvidenceGaps: [],
+        evidence: ['Fueling-Trend: 3/3 komplette During-Logs, Schnitt 50 g/h; 2x Magen ok, 1x unruhig.'],
+        learningReadiness: {
+          comparableCompleteLogs: 3,
+          requiredComparableCompleteLogs: 3,
+          readyForTrendSummary: true,
+          missingEvidence: [],
+        },
+      },
+      before: [],
+      during: [{ id: 'carbs', text: '60-75 g/h als Ausgangspunkt nutzen und nur klein veraendern.' }],
+      after: [],
+      recoveryCautions: [],
+      evidence: [],
+    }),
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Lange Ausfahrt mit bekannter Fueling-Baseline.').click();
+
+  const baseline = page.getByTestId('workout-fueling-baseline');
+  await expect(baseline).toContainText('Trend-Evidenz: 3/3');
+  await expect(baseline).toContainText('Fueling-Trend');
+  await expect(baseline).toContainText('Schnitt 50 g/h');
+  await expect(baseline).toContainText('2x Magen ok');
+  await expect(baseline).not.toContainText('Nächster Lernlog');
 });
 
 test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ page }) => {

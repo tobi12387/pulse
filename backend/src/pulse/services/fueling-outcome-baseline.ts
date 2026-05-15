@@ -107,9 +107,13 @@ function isComparableCompleteLearningLog(log: FuelingOutcomeBaselineLogInput): b
   return log.carbsG != null && log.giComfort != null;
 }
 
+function comparableCompleteLearningLogs(logs: FuelingOutcomeBaselineLogInput[]): FuelingOutcomeBaselineLogInput[] {
+  return comparableLearningLogs(logs).filter(isComparableCompleteLearningLog);
+}
+
 function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningReadiness {
   const comparableLogs = comparableLearningLogs(logs);
-  const completeLogs = comparableLogs.filter(isComparableCompleteLearningLog);
+  const completeLogs = comparableCompleteLearningLogs(logs);
   const readyForTrendSummary = completeLogs.length >= REQUIRED_COMPARABLE_COMPLETE_LOGS;
   if (readyForTrendSummary) {
     return {
@@ -181,10 +185,33 @@ function hydrationContextSummary(log: FuelingOutcomeBaselineLogInput, sodiumMgPe
   return parts.length > 0 ? `Hydration-Kontext gemessen: ${parts.join(', ')}` : null;
 }
 
+function fuelingTrendSummary(logs: FuelingOutcomeBaselineLogInput[], readiness: PulseFuelingLearningReadiness): string | null {
+  if (!readiness.readyForTrendSummary) return null;
+  const completeLogs = comparableCompleteLearningLogs(logs);
+  const carbsPerHourValues = completeLogs
+    .map(carbsPerHour)
+    .filter((value): value is number => value != null);
+  if (carbsPerHourValues.length === 0) return null;
+
+  const averageCarbsPerHour = Math.round(
+    carbsPerHourValues.reduce((sum, value) => sum + value, 0) / carbsPerHourValues.length,
+  );
+  const okCount = completeLogs.filter(log => log.giComfort === 'ok').length;
+  const unsettledCount = completeLogs.filter(isGiIssue).length;
+  const giParts = [
+    okCount > 0 ? `${okCount}x Magen ok` : null,
+    unsettledCount > 0 ? `${unsettledCount}x unruhig` : null,
+  ].filter((part): part is string => part != null);
+  const giText = giParts.length > 0 ? `; ${giParts.join(', ')}` : '';
+
+  return `Fueling-Trend: ${completeLogs.length}/${REQUIRED_COMPARABLE_COMPLETE_LOGS} komplette During-Logs, Schnitt ${averageCarbsPerHour} g/h${giText}.`;
+}
+
 export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaselineInput): PulseFuelingOutcomeBaseline {
   const logs = input.logs ?? [];
   const learningReadiness = summarizeLearningReadiness(logs);
   const hydrationGaps = hydrationEvidenceGaps(logs);
+  const trendSummary = fuelingTrendSummary(logs, learningReadiness);
   const latest = relevantLogs(logs)[0] ?? null;
   if (!latest) {
     return {
@@ -200,6 +227,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       sodiumMgPerHour: null,
       hydrationContextSummary: null,
       hydrationEvidenceGaps: hydrationGaps,
+      trendSummary,
       evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
       learningReadiness,
     };
@@ -233,6 +261,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       sodiumMgPerHour,
       hydrationContextSummary: measuredHydrationContext,
       hydrationEvidenceGaps: hydrationGaps,
+      trendSummary,
       evidence,
       learningReadiness,
     };
@@ -252,6 +281,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
       sodiumMgPerHour,
       hydrationContextSummary: measuredHydrationContext,
       hydrationEvidenceGaps: hydrationGaps,
+      trendSummary,
       evidence,
       learningReadiness,
     };
@@ -270,6 +300,7 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
     sodiumMgPerHour,
     hydrationContextSummary: measuredHydrationContext,
     hydrationEvidenceGaps: hydrationGaps,
+    trendSummary,
     evidence,
     learningReadiness,
   };

@@ -534,6 +534,13 @@ function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | u
   return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${sentenceWithoutTrailingPeriod(missing)}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen. ${fuelingHydrationContext(baseline)}`;
 }
 
+function fuelingTrendDetail(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
+  const readiness = baseline?.learningReadiness ?? null;
+  const trendSummary = sentenceWithoutTrailingPeriod(baseline?.trendSummary?.trim() ?? '');
+  if (!readiness?.readyForTrendSummary || !trendSummary) return null;
+  return `${trendSummary}. Nächste Handlung: als Ausgangspunkt nutzen und nur klein verändern.`;
+}
+
 function fuelingEvidenceCompletionAction(
   baseline: PulseFuelingOutcomeBaseline | null | undefined,
 ): { detail: string; cta: string } {
@@ -590,11 +597,13 @@ function fuelingLearningSignal(
   if ((!openWorkoutDecision || !isFuelingLearningWorkout(workout)) && !completedFuelingDecision) return null;
 
   const readinessDetail = fuelingReadinessDetail(baseline);
-  if (!readinessDetail) return null;
+  const trendDetail = openWorkoutDecision ? fuelingTrendDetail(baseline) : null;
+  const detail = readinessDetail ?? trendDetail;
+  if (!detail) return null;
 
   return {
     label: 'Fueling-Lernen',
-    detail: readinessDetail,
+    detail,
     tone: 'amber',
     targetPath: completedActivity
       ? activityFuelingTargetPath(completedActivity)

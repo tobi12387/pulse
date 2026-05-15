@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Nutrition-Trend-Summary oeffnet erst nach kompletter During-Evidence
+
+- **Decision:** Die Fueling-Outcome-Baseline liefert ein optionales `trendSummary` nur, wenn mindestens drei vergleichbare komplette During-Logs mit Dauer, Carbs und GI-Komfort vorhanden sind. Plan/Activity-Baseline-Bloecke duerfen diesen Trend-Satz zeigen, und Home darf ihn bei offenen langen Workouts als `Fueling-Lernen`-Signal in die Tagesentscheidung heben; bis dahin bleibt der naechste Lernlog und die fehlende Evidence fuehrend.
+- **Why:** Die MacroFactor-aehnliche Lernschleife braucht einen klaren Moment, an dem aus Evidence-Sammeln ein vorsichtiger Trend wird. Der Summary-Satz macht 3/3 komplette Logs handlungsnah sichtbar, ohne Sodium/Hitze zu schaetzen oder automatische Ernaehrungsvorgaben zu setzen.
+- **Alternatives:** Trend weiter nur als `3/3`-Chip anzeigen (zu wenig interpretierbar); Trend schon bei 1-2 Logs zeigen (zu schwache Evidence); neue Nutrition-Analyseflaeche bauen (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Evidence benennt den kleinsten Abschluss-Schritt
 
 - **Decision:** Wenn Home nach einer abgeschlossenen langen Einheit offene Fueling-Lernevidenz sieht und die strukturierte Luecke konkret `GI-Komfort fehlt` lautet, nennt der Daily-Decision-CTA `GI-Komfort ergänzen` statt generisch `Fueling loggen`. Der Klick bleibt bewusst auf der bestehenden Activity-Fueling-Sektion; es gibt keine automatische Nutrition-Mutation.
