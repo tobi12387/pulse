@@ -644,7 +644,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Alltag') return 'Alternative prüfen';
   if (signal.label === 'Garmin') return 'Garmin prüfen';
   if (signal.label === 'Reaktion') return 'Reaktion prüfen';
-  if (signal.label === 'Ziel') return signal.actionLabel ?? 'Ziel prüfen';
+  if (signal.label === 'Ziel' && signal.tone === 'rose') return signal.actionLabel ?? 'Ziel prüfen';
   if (signal.label === 'Belastung') return 'Belastung prüfen';
   if (signal.label === 'Koerper') return 'Readiness prüfen';
   if (signal.label === 'Training' && signal.tone === 'rose') return 'Training anpassen';
