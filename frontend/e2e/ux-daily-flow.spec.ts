@@ -2098,12 +2098,25 @@ test('Home daily decision details expose saved mental boundary as a top decision
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Mental');
+  await expect(leading).toContainText('Schutzmodus');
+  await expect(decision.getByRole('button', { name: 'Mental prüfen', exact: true })).toBeVisible();
+  await expect(decision.getByRole('button', { name: 'Check-in öffnen', exact: true })).toHaveCount(0);
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Schutzmodus zuerst respektieren');
+  await expect(safestOption).toContainText('Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Mental');
   await expect(contract).toContainText('Schutzmodus');
   await expect(contract).toContainText('Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
+
+  await decision.getByRole('button', { name: 'Mental prüfen', exact: true }).click();
+  await expect(page).toHaveURL(/\/data\?tab=today#data-mental$/);
 });
 
 test('Home daily decision details expose stale Garmin data confidence as a top decision signal', async ({ page }) => {

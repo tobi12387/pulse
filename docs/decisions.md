@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Gespeicherte Mental Boundary wird geprüft statt neu erfasst
+
+- **Decision:** Wenn eine gespeicherte non-stable Mental Boundary die Home-Tagesentscheidung führt, nutzt der operative CTA `Mental prüfen` und führt zur bestehenden Mental-Evidence in Data, statt erneut `Check-in öffnen` zu sagen. Offene Mental-/Check-in-Aktionen ohne gespeicherten Check-in behalten weiter `Check-in öffnen`.
+- **Why:** Eine ruhige Performance-OS-Entscheidung muss zwischen "Evidence fehlt" und "Evidence begrenzt heute" unterscheiden. Nach gespeichertem Check-in ist die intelligente Handlung, die Grenze zu respektieren und sichtbar zu prüfen, nicht denselben Input erneut zu verlangen.
+- **Alternatives:** `Check-in öffnen` für alle Mental-Signale behalten (irreführend nach gespeichertem Check-in); Mental Boundary nur als Detail anzeigen (zu wenig handlungsnah); eine neue Mental-Karte bauen (mehr Oberfläche statt klarerer Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Recovery-Trainingspassung bedeutet aktive Regeneration
 
 - **Decision:** Wenn ein offenes geplantes Workout mit `capabilityFit: recovery` die Home-Tagesentscheidung fuehrt und kein staerkeres Schutzsignal aktiv ist, darf die `Sicherste Option` als `Recovery-Einheit ruhig schließen` formulieren: Beine bewegen, Lockerheit priorisieren, keine Reizsuche und kein Zusatzumfang. Das bleibt read-only und fuehrt nur zur bestehenden Plan-/Workout-Pruefung.
