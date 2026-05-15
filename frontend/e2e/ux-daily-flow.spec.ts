@@ -353,6 +353,85 @@ test('Home daily decision uses open plan adaptation as a leading signal', async 
   await expect(page).toHaveURL(/\/settings\?section=garmin/);
 });
 
+test('Home daily decision uses durability analysis as a leading signal for a planned workout', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-durability-limiter',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 90,
+        distanceKm: null,
+        targetTss: 78,
+        archetypeId: 'long_endurance_durability',
+        difficultyLevel: 4.1,
+        difficultyEnergySystem: 'long_endurance',
+        capabilityFit: 'productive',
+        description: 'Lange Ausdauer mit Durability-Fokus.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    powerDuration: {
+      bestEfforts: [{
+        durationSec: 1200,
+        avgPowerW: 215,
+        startSec: 3600,
+        activityId: 'activity-power-duration',
+        activityDate: '2026-05-01',
+        source: 'lap_approximation',
+        qualityStatus: 'usable_with_caution',
+      }],
+      durability: {
+        rating: 'limited',
+        powerDropPct: -21,
+        hrDriftBpm: 3,
+        evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+        activityId: 'activity-power-duration',
+        activityDate: '2026-05-01',
+        qualitySource: 'lap_approximation',
+        qualityStatus: 'usable_with_caution',
+      },
+      bestEffortLine: '20 min 215 W (Lap-Approximation)',
+      durabilityLine: 'Durability limited: Power -21% · HR +3 bpm · 240 min (Lap-Approximation)',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Analyse');
+  await expect(leading).toContainText('Durability limited');
+  await expect(leading).toContainText('Power -21%');
+  const primaryCta = decision.getByRole('button', { name: 'Analyse prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Analyse');
+  await expect(contract).toContainText('HR +3 bpm');
+  await expect(contract).toContainText('240 min');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+});
+
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
