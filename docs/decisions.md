@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Evidence fuehrt nach langen abgeschlossenen Einheiten
+
+- **Decision:** Wenn eine abgeschlossene lange oder fueling-relevante Einheit offene Fueling-Lernevidenz hat, fuehrt Home den naechsten Abschluss-Schritt zur Activity-Fueling-Sektion auch dann, wenn generisches RPE/Feedback noch offen ist. Feedback bleibt als Folgeabschluss sichtbar, aber die fluechtigere During-/GI-Evidence wird zuerst geschlossen.
+- **Why:** Die MacroFactor-aehnliche Lernschleife braucht den koerpernahen Fueling-Kontext direkt nach der Einheit, bevor GI-Komfort, Flaschen/Pulver und During-Details unschaerfer werden. Ein generischer Feedback-Schritt darf diesen Lernwert nicht verdecken, wenn Pulse bereits den kleinsten Fueling-Evidence-Schritt kennt.
+- **Alternatives:** Feedback immer vor Fueling lassen (verpasst die fluechtigere Nutrition-Evidence); Feedback aus solchen Tagen entfernen (verliert Belastungslernen); neue Nutrition-Inbox bauen (mehr Oberflaeche statt klarerer Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Trainingsfreie Check-in-Tage fuehren nicht mit Watch-Zielen
 
 - **Decision:** Wenn keine Trainingseinheit, keine Garmin-Aktivitaet und keine explizite Next-Best-Action offen ist, darf ein normales `watch`-Zielsignal die sichtbare `Heute entscheidet`-Zeile nicht vor dem fehlenden Mental Check-in fuehren. Harte Schutzsignale und `at_risk`-Ziele bleiben vorrangig; Goal Projection bleibt in den Details sichtbar.
