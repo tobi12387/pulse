@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Garmin-Ausfuehrung darf offene Workouts fuehren
+
+- **Decision:** Home darf bestehende Workout-Ausfuehrungsdaten als `Garmin`-Signal in den Daily-Decision-Contract aufnehmen; lokal geplante, nur als Vorlage vorhandene oder degradierte/blockierte Sync-Zustaende koennen bei offenen geplanten Workouts den Primaer-CTA zu Plan > Ausfuehrung fuehren.
+- **Why:** Garmin-Naehe ist Teil der Tagesentscheidung, nicht nur ein nachgelagerter Plan-Status. Wenn die Einheit heute noch nicht als Vorlage/Kalender/Readback belastbar ist, ist die intelligenteste naechste Handlung oft erst der Geraete-Check, bevor Tobi ueber Ausfuehrung oder Anpassung entscheidet.
+- **Alternatives:** Garmin-Zustand nur in der Detailzeile `Garmin-Ausfuehrung` anzeigen (zu passiv); automatisch synchronisieren (verletzt bewusste Garmin-Schreibgrenzen); neue Garmin-Home-Karte bauen (mehr Oberflaeche statt eine ruhigere Entscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Lernen darf lange Workouts fuehren
 
 - **Decision:** Home darf die bestehende Fueling-Outcome-Baseline-Readiness als `Fueling-Lernen`-Signal in den Daily-Decision-Contract aufnehmen; bei offenen langen/fueling-relevanten Workouts und fehlender Trend-Evidenz kann sie den Primaer-CTA zur bestehenden Workout-Fueling-Guidance im Plan fuehren.
