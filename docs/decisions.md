@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Produktive Trainingspassung bleibt ausfuehrbar statt generisch entschaerft
+
+- **Decision:** Wenn ein offenes geplantes Workout mit `capabilityFit: productive` die Home-Tagesentscheidung fuehrt und kein staerkeres Schutzsignal aktiv ist, darf die `Sicherste Option` als `Produktiven Trainingsreiz ausführen` formulieren: Warm-up bleibt die letzte Grenze, der geplante Reiz wird sauber geschlossen und Zusatzumfang bleibt ausgeschlossen. Machbare Erhaltungs-/Recovery-Fits duerfen analog ruhig ausgefuehrt werden. Hoher Schutzdruck durch Daten, Recovery, Last, Analyse, Anpassung, Garmin, Fueling, Ziel, Alltag oder Mental bleibt vorrangig.
+- **Why:** TrainerRoad-/TrainingPeaks-aehnliche Trainingslogik braucht nicht nur Schutz vor zu harten Einheiten, sondern auch Vertrauen, wenn ein Reiz heute wirklich sinnvoll ist. Sonst klingt die Tagesentscheidung selbst bei stabiler Readiness wie ein generischer Rueckzug statt wie eine ruhige, intelligente Handlung.
+- **Alternatives:** Z3+-Workouts weiter generisch auf Z2 senken (zu defensiv und unspezifisch); produktive Reize wie Stretch behandeln (zu vorsichtig); automatisch Garmin/Plan bestaetigen (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Stretch-Trainingspassung bekommt eine kontrollierte Ausfuehrungsgrenze
 
 - **Decision:** Wenn das bestehende `Training`-Signal durch `capabilityFit: stretch` die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Stretch kontrolliert ausführen` formulieren: Warm-up, Fueling und Tagesform begrenzen die Ausfuehrung; wenn der erste Block nicht passt, wird auf Z2 gesenkt, kuerzer geschlossen oder die Plan-Alternative bewusst geprueft. Das bleibt read-only und fuehrt nur zur bestehenden Plan-Pruefung.
