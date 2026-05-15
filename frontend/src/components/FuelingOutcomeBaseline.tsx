@@ -5,6 +5,17 @@ function chip(label: string, value: string | number | null | undefined): string 
   return `${label}: ${value}`;
 }
 
+function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | null {
+  const readiness = baseline.learningReadiness ?? null;
+  if (!readiness || readiness.readyForTrendSummary) return null;
+
+  const target = baseline.targetCarbsPerHour
+    ? `${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen; `
+    : '';
+
+  return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver und Sodium mitloggen, falls gemessen.`;
+}
+
 export function FuelingOutcomeBaselineBlock({
   baseline,
   testId = 'fueling-outcome-baseline',
@@ -31,6 +42,7 @@ export function FuelingOutcomeBaselineBlock({
   const readinessGap = readiness?.readyForTrendSummary === false
     ? readiness.missingEvidence[0] ?? null
     : null;
+  const nextLearningLog = nextLearningLogText(baseline);
 
   return (
     <div
@@ -89,6 +101,11 @@ export function FuelingOutcomeBaselineBlock({
       {readinessGap && (
         <p style={{ margin: '7px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
           {readinessGap}
+        </p>
+      )}
+      {nextLearningLog && (
+        <p style={{ margin: '6px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
+          {nextLearningLog}
         </p>
       )}
     </div>

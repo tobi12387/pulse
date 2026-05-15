@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Baseline benennt naechsten Lernlog
+
+- **Decision:** Die gemeinsame Fueling-Baseline zeigt bei noch gegateter Trend-Evidenz einen konkreten `Naechster Lernlog`-Hinweis mit Zielbereich, Dauer, Carbs, GI-Komfort sowie optionalen Flaschen/Pulver-/Sodium-Feldern.
+- **Why:** MacroFactor-aehnliches Lernen braucht nicht nur ein `x/3`-Gate, sondern eine ruhige Anweisung, welche Evidenz die naechste lange Einheit liefern soll. Trends bleiben geschlossen, bis genug vergleichbare komplette During-Logs existieren; der Hinweis sammelt Evidence statt medizinische oder automatische Schluesse zu ziehen.
+- **Alternatives:** Nur `missingEvidence` anzeigen (zu abstrakt); Trend-Summaries frueh freischalten (zu schwache Evidence); eine neue Nutrition-Seite bauen (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Activity-Fueling buendelt erkannte Praxisdetails
 
 - **Decision:** Activity Detail darf mehrere klar erkannte alte Fueling-Details als einen expliziten Sammel-CTA per bestehendem Nutrition-PATCH uebernehmen, waehrend die Einzelaktionen sichtbar bleiben.

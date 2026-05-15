@@ -943,6 +943,8 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Sodium: offen');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Trend-Evidenz: 1/3');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Noch 2 vergleichbare During-Logs');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Nächster Lernlog: 50-70 g/h kontrolliert testen');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Dauer, Carbs und GI-Komfort zusammen erfassen');
   await page.getByRole('button', { name: '+ Fueling-Log' }).click();
 
   const saveButton = page.getByRole('button', { name: 'SPEICHERN' });
