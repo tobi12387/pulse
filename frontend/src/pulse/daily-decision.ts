@@ -19,6 +19,13 @@ export interface DailyDecisionContract {
   signals: DailyDecisionSignal[];
 }
 
+export interface DailyDecisionMentalBoundary {
+  level: 'steady' | 'protect';
+  label: string;
+  detail: string;
+  targetPath?: string;
+}
+
 export type DailyDecisionStepStatus = 'done' | 'open' | 'note';
 
 export interface DailyDecisionStep {
@@ -51,6 +58,7 @@ export interface DailyDecision {
 export interface DailyDecisionContext {
   dailyDelta?: PulseDailyDeltaItem | null;
   goalProjection?: PulseGoalProjectionResponse | null;
+  mentalBoundary?: DailyDecisionMentalBoundary | null;
   todayOptions?: PulseTodayOptionsResponse | null;
 }
 
@@ -153,6 +161,10 @@ function goalSignalTone(goal: GoalProjection): DailyDecisionSignalTone {
 
 function goalProbabilityLabel(goal: GoalProjection): string {
   return goal.probabilityPct == null ? 'Evidenz offen' : `${goal.probabilityPct}%`;
+}
+
+function mentalSignalTone(boundary: DailyDecisionMentalBoundary): DailyDecisionSignalTone {
+  return boundary.level === 'protect' ? 'rose' : 'amber';
 }
 
 function alternativeFor(
@@ -309,6 +321,7 @@ function topSignals(
   completedActivity: HomeActivity | null,
   action: PulseNextBestAction | null,
   goalProjection: PulseGoalProjectionResponse | null,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
   todayOptions: PulseTodayOptionsResponse | null,
 ): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
@@ -328,15 +341,6 @@ function topSignals(
   const fuelingDebt = openFuelingDebt(todayOptions);
   const goal = topGoalProjection(goalProjection);
 
-  if (goal) {
-    signals.push({
-      label: 'Ziel',
-      detail: `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`,
-      tone: goalSignalTone(goal),
-      targetPath: goal.nextBestIntervention.targetPath,
-    });
-  }
-
   if (fuelingDebt) {
     const protectDetail = fuelingProtectDetail(todayOptions);
     signals.push({
@@ -344,6 +348,24 @@ function topSignals(
       detail: `${fuelingDebt.label}: ${protectDetail ?? fuelingDebt.summary}`,
       tone: 'amber',
       targetPath: fuelingDebt.followUpActivityId ? activityDetailPath(fuelingDebt.followUpActivityId) : '/data?tab=trends#data-recovery',
+    });
+  }
+
+  if (mentalBoundary) {
+    signals.push({
+      label: 'Mental',
+      detail: `${mentalBoundary.label}: ${mentalBoundary.detail}`,
+      tone: mentalSignalTone(mentalBoundary),
+      targetPath: mentalBoundary.targetPath ?? '/data?tab=today#data-mental',
+    });
+  }
+
+  if (goal) {
+    signals.push({
+      label: 'Ziel',
+      detail: `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`,
+      tone: goalSignalTone(goal),
+      targetPath: goal.nextBestIntervention.targetPath,
     });
   }
 
@@ -363,7 +385,7 @@ function topSignals(
     });
   }
 
-  if (action?.source === 'checkin' || action?.source === 'mental') {
+  if (!mentalBoundary && (action?.source === 'checkin' || action?.source === 'mental')) {
     signals.push({
       label: 'Mental',
       detail: action.source === 'checkin' ? 'Check-in offen' : action.title,
@@ -383,6 +405,7 @@ function buildContract({
   alternative,
   dailyDelta,
   goalProjection,
+  mentalBoundary,
   todayOptions,
 }: {
   home: PulseHomeScreenData;
@@ -392,6 +415,7 @@ function buildContract({
   alternative: string;
   dailyDelta: PulseDailyDeltaItem | null;
   goalProjection: PulseGoalProjectionResponse | null;
+  mentalBoundary: DailyDecisionMentalBoundary | null;
   todayOptions: PulseTodayOptionsResponse | null;
 }): DailyDecisionContract {
   return {
@@ -399,7 +423,7 @@ function buildContract({
     garminExecution: executionSummary(workout, completedActivity),
     continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
     safestAlternative: alternative,
-    signals: topSignals(home, workout, completedActivity, action, goalProjection, todayOptions),
+    signals: topSignals(home, workout, completedActivity, action, goalProjection, mentalBoundary, todayOptions),
   };
 }
 
@@ -409,6 +433,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const action = home.nextBestActions?.[0] ?? null;
   const dailyDelta = context.dailyDelta?.date === home.date ? context.dailyDelta : null;
   const goalProjection = context.goalProjection ?? null;
+  const mentalBoundary = context.mentalBoundary ?? null;
   const todayOptions = context.todayOptions?.date === home.date ? context.todayOptions : null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
@@ -455,6 +480,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       alternative,
       dailyDelta,
       goalProjection,
+      mentalBoundary,
       todayOptions,
     });
     const prompt = [
@@ -524,6 +550,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       alternative,
       dailyDelta,
       goalProjection,
+      mentalBoundary,
       todayOptions,
     });
     const prompt = [
@@ -588,6 +615,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     alternative,
     dailyDelta,
     goalProjection,
+    mentalBoundary,
     todayOptions,
   });
   const prompt = [

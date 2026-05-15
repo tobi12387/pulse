@@ -399,6 +399,69 @@ test('Home daily decision details expose goal pressure as a top decision signal'
   await expect(contract).toContainText('Fueling-Praxis absichern');
 });
 
+test('Home daily decision details expose saved mental boundary as a top decision signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-easy',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'run',
+        zone: 2,
+        durationMin: 45,
+        distanceKm: null,
+        targetTss: 38,
+        archetypeId: 'endurance_easy',
+        difficultyLevel: 2.8,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhiger Lauf mit klarer Grenze.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    checkinToday: { checkin: { id: 'mental-protect', date: '2026-05-01' } },
+    checkinHistory: {
+      checkins: [{
+        id: 'mental-protect',
+        userId: 'user-1',
+        date: '2026-05-01',
+        mood: 4,
+        energy: 3,
+        stress: 8,
+        motivation: 4,
+        notes: 'Alltag zieht heute stark.',
+        themes: ['Arbeit'],
+        source: 'manual',
+        coachQuestions: null,
+        createdAt: '2026-05-01T07:30:00.000Z',
+      }],
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Mental');
+  await expect(contract).toContainText('Schutzmodus');
+  await expect(contract).toContainText('Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
+});
+
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
   await mockPulseApi(page, {
     dailyDelta: [{
