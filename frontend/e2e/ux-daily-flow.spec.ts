@@ -659,6 +659,10 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
+  const leadingFactor = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leadingFactor).toContainText(/Heute entscheidet/i);
+  await expect(leadingFactor).toContainText('Mental: Schutzmodus: Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');
