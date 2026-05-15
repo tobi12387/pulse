@@ -305,7 +305,7 @@ function RpeFeedbackCard({
   const color = hasRpe ? rpeColor(activity.rpe!) : 'var(--accent)';
 
   return (
-    <div className="card" style={{ padding: '12px 14px' }}>
+    <div id="activity-feedback" className="card" data-testid="activity-feedback-card" style={{ padding: '12px 14px', scrollMarginTop: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 5 }}>
