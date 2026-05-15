@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fuehrende Garmin-Luecken formen die sicherste Tagesoption
+
+- **Decision:** Wenn ein Garmin-Ausfuehrungssignal die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die konkrete Geraeteluecke aus demselben Signal benennen und vor Ausfuehrung nach Plan > Ausfuehrung fuehren. Das bleibt read-only; Plan oder Garmin werden nicht automatisch geschrieben.
+- **Why:** Die Performance-OS-Entscheidung soll Geraete-Naehe nicht nur als Link zeigen, sondern als ruhige Handlung: erst Vorlage, Kalender oder Sync-Zustand klaeren, dann trainieren. So wird Garmin-Ausfuehrung Teil der einen Tagesentscheidung statt ein nachgelagerter Diagnosepunkt.
+- **Alternatives:** Nur den CTA auf `Garmin prüfen` setzen (zu wenig handlungsnah); neue Garmin-Karte auf Home bauen (mehr Oberflaeche); automatische Garmin-Reparatur beim Laden ausfuehren (zu versteckt und gegen bewusste Geraete-Schreibpfade).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fuehrende Zielsignale steuern die Tagesaktion
 
 - **Decision:** Wenn ein `at_risk` Goal Projection Signal die Home-Tagesentscheidung fuehrt, darf die Daily Decision den vorhandenen `nextBestIntervention`-CTA und Zielpfad als Primaeraktion verwenden und die `Sicherste Option` als konkrete Zielintervention formulieren. Das bleibt read-only und oeffnet nur bestehende Plan-/Data-Pfade; Plan, Garmin oder Ziele werden nicht automatisch geaendert.

@@ -432,6 +432,11 @@ test('Home daily decision uses Garmin execution gaps as a leading signal for pla
   const primaryCta = decision.getByRole('button', { name: 'Garmin prüfen', exact: true });
   await expect(primaryCta).toBeVisible();
 
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Garmin zuerst schließen');
+  await expect(safestOption).toContainText('noch keine Garmin-Vorlage oder Kalenderprüfung');
+  await expect(safestOption).toContainText('vor Ausführung');
+
   await primaryCta.click();
   await expect(page).toHaveURL(/\/plan\?tab=execution&source=daily-garmin&workoutId=planned-garmin-gap/);
   await expect(page.getByTestId('garmin-execution-trust-panel')).toContainText('Geräte-Check abschließen');

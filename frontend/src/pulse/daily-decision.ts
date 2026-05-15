@@ -320,6 +320,12 @@ function recoveryPressureAlternative(recovery: HomeRecovery): string | null {
   return null;
 }
 
+function garminExecutionAlternative(workout: HomeWorkout | null): string | null {
+  const signal = garminExecutionSignal(workout, null);
+  if (!signal) return null;
+  return `Garmin zuerst schließen: ${signal.detail} vor Ausführung Plan > Ausfuehrung prüfen; Plan oder Garmin ändern sich erst nach deinem Klick.`;
+}
+
 function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
@@ -335,6 +341,7 @@ function alternativeFor(
   const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const goalAlternative = goalPressureAlternative(goalProjection);
+  const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   let alternative: string;
 
   if (action?.source === 'checkin') {
@@ -352,6 +359,8 @@ function alternativeFor(
       ? `${fuelingOutcomeBaseline.targetCarbsPerHour.min}-${fuelingOutcomeBaseline.targetCarbsPerHour.max} g/h kontrolliert testen, `
       : '';
     alternative = `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; ${fuelingHydrationContext(fuelingOutcomeBaseline)} Bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
+  } else if (garminAlternative) {
+    alternative = garminAlternative;
   } else if (todayWorkout && adaptiveOption) {
     alternative = `Alltagsoption: ${adaptiveOption.title}: ${adaptiveOption.detail}`;
   } else if (todayWorkout && todayWorkout.zone >= 3) {
