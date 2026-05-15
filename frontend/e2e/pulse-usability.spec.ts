@@ -971,6 +971,92 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   expect(String((createdLog as { notes?: string }).notes)).toContain('Mars hat geholfen');
 });
 
+test('Activity fueling evidence quality names missing fields for incomplete long-session logs', async ({ page }) => {
+  await mockPulseApi(page, {
+    nutritionLogs: [{
+      id: 'nutrition-incomplete-gi',
+      userId: 'user-1',
+      date: '2026-05-01',
+      workoutId: null,
+      activityId: 'activity-fueling',
+      context: 'during',
+      mealType: null,
+      description: 'POWER CARB',
+      calories: null,
+      proteinG: null,
+      carbsG: 242,
+      fatG: null,
+      gelsCount: null,
+      drinksMl: 3000,
+      sodiumMg: null,
+      bottles750Ml: 4,
+      powderG: 300,
+      fuelingProducts: ['mnstry-power-carb-sour-cherry-1-0-8'],
+      giComfort: null,
+      notes: null,
+      createdAt: '2026-05-01T13:15:00.000Z',
+    }],
+    outcomeBaseline: {
+      status: 'insufficient_data',
+      label: 'Fueling-Baseline offen',
+      summary: 'Noch kein vergleichbarer During-Log mit Dauer, Carbs und GI-Komfort.',
+      latestLogDate: null,
+      observedCarbsPerHour: null,
+      targetCarbsPerHour: null,
+      bottles750Ml: null,
+      powderG: null,
+      fluidMlPerHour: null,
+      sodiumMgPerHour: null,
+      evidence: ['GI-Komfort fehlt im langen Log.'],
+      learningReadiness: {
+        comparableCompleteLogs: 0,
+        requiredComparableCompleteLogs: 3,
+        readyForTrendSummary: false,
+        missingEvidence: ['Noch drei vergleichbare During-Logs mit Carbs, Dauer und GI-Komfort fehlen.'],
+      },
+    },
+    activityDetail: {
+      activity: {
+        id: 'activity-fueling',
+        userId: 'user-1',
+        externalId: 'garmin-activity-fueling',
+        source: 'garmin',
+        startTime: '2026-05-01T08:00:00.000Z',
+        activityType: 'bike',
+        name: 'Rennrad Tour',
+        durationSec: 4 * 3600,
+        distanceM: 88000,
+        avgHr: 137,
+        maxHr: 165,
+        avgPowerW: 176,
+        normalizedPowerW: 188,
+        tss: 210,
+        calories: 2600,
+        elevationGainM: 900,
+        trainingEffectAerobic: 3.4,
+        trainingEffectAnaerobic: 0.2,
+        vo2maxEstimate: null,
+        rpe: 7,
+        rpeNote: null,
+        sorenessAreas: null,
+        feedbackLoggedAt: '2026-05-01T13:00:00.000Z',
+        equipmentIds: [],
+      },
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
+  });
+
+  await page.goto('/plan/activity/activity-fueling');
+
+  const quality = page.getByTestId('activity-fueling-evidence-quality');
+  await expect(quality).toContainText('Lernevidenz unvollständig');
+  await expect(quality).toContainText('Carbs erfasst');
+  await expect(quality).toContainText('GI-Komfort fehlt');
+  await expect(quality).toContainText('Trend-Evidenz 0/3');
+});
+
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {

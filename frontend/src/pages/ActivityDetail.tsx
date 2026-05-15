@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
-import type { ActivityAnalytics } from '@/pulse/api-client';
+import type { ActivityAnalytics, NutritionLog } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
 import {
   useActivityFeedback,
@@ -17,7 +17,7 @@ import { NutritionLogModal } from '@/components/NutritionLogModal';
 import { FuelingOutcomeBaselineBlock } from '@/components/FuelingOutcomeBaseline';
 import { RpeBar } from '@/components/RpeBar';
 import { rpeColor } from '@/lib/rpe';
-import { RPE_SORENESS_AREAS, type PulseActivityType, type RpeSorenessArea } from '@coaching-os/shared/pulse';
+import { RPE_SORENESS_AREAS, type PulseActivityType, type PulseFuelingOutcomeBaseline, type RpeSorenessArea } from '@coaching-os/shared/pulse';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -633,6 +633,67 @@ function WeatherCard({ weather }: { weather: NonNullable<ActivityAnalytics['weat
 
 // ─── Fueling Section ─────────────────────────────────────────────────────────
 
+function isLongFuelingActivity(activityType: string, durationMin: number): boolean {
+  return ['bike', 'run', 'hike'].includes(activityType) && durationMin >= 75;
+}
+
+function hasFuelingCarbEvidence(log: NutritionLog): boolean {
+  return log.carbsG != null;
+}
+
+function fuelingTrendEvidenceLabel(baseline: PulseFuelingOutcomeBaseline | null): string {
+  const learningReadiness = baseline?.learningReadiness ?? null;
+  if (!learningReadiness) return 'Trend-Evidenz offen';
+  return `Trend-Evidenz ${learningReadiness.comparableCompleteLogs}/${learningReadiness.requiredComparableCompleteLogs}`;
+}
+
+function fuelingEvidenceQuality({
+  logs,
+  activityType,
+  durationMin,
+  trendEvidence,
+}: {
+  logs: NutritionLog[];
+  activityType: string;
+  durationMin: number;
+  trendEvidence: string;
+}): { label: string; detail: string; items: string[]; tone: 'green' | 'amber' } | null {
+  if (!isLongFuelingActivity(activityType, durationMin)) return null;
+
+  const duringLogs = logs.filter(log => log.context === 'during' || log.context == null);
+  const latest = duringLogs[0] ?? null;
+  if (!latest) {
+    return {
+      label: 'Lernevidenz offen',
+      detail: 'Für diese lange Einheit fehlt noch ein During-Log mit Carbs und GI-Komfort.',
+      items: ['During-Log fehlt', trendEvidence],
+      tone: 'amber',
+    };
+  }
+
+  const hasCarbs = hasFuelingCarbEvidence(latest);
+  const hasGiComfort = latest.giComfort != null;
+  if (!hasCarbs || !hasGiComfort) {
+    return {
+      label: 'Lernevidenz unvollständig',
+      detail: 'Dieser lange Log hilft erst dann für Trends, wenn Carbs und GI-Komfort zusammen vorliegen.',
+      items: [
+        hasCarbs ? 'Carbs erfasst' : 'Carbs fehlen',
+        hasGiComfort ? 'GI-Komfort erfasst' : 'GI-Komfort fehlt',
+        trendEvidence,
+      ],
+      tone: 'amber',
+    };
+  }
+
+  return {
+    label: 'Lernevidenz vollständig',
+    detail: 'Dieser During-Log hat Carbs und GI-Komfort und kann in die Fueling-Baseline einfließen.',
+    items: ['Carbs erfasst', 'GI-Komfort erfasst', trendEvidence],
+    tone: 'green',
+  };
+}
+
 function FuelingSection({
   activityId, workoutId, durationMin, activityType,
 }: {
@@ -646,6 +707,12 @@ function FuelingSection({
   const logs = data?.logs ?? [];
   const fuelingDebt = fuelingDebtQuery.data?.fuelingDebt ?? null;
   const fuelingOutcomeBaseline = fuelingDebtQuery.data?.outcomeBaseline ?? null;
+  const evidenceQuality = fuelingEvidenceQuality({
+    logs,
+    activityType,
+    durationMin,
+    trendEvidence: fuelingTrendEvidenceLabel(fuelingOutcomeBaseline),
+  });
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -752,6 +819,51 @@ function FuelingSection({
                 >×</button>
               </div>
             ))}
+          </div>
+        )}
+
+        {evidenceQuality && (
+          <div
+            data-testid="activity-fueling-evidence-quality"
+            style={{
+              marginTop: 10,
+              padding: 10,
+              borderRadius: 'var(--radius)',
+              border: `1px solid ${evidenceQuality.tone === 'green' ? 'rgba(74,222,128,0.32)' : 'rgba(251,191,36,0.34)'}`,
+              background: evidenceQuality.tone === 'green' ? 'rgba(74,222,128,0.06)' : 'rgba(251,191,36,0.06)',
+            }}
+          >
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 700,
+              color: evidenceQuality.tone === 'green' ? 'var(--green)' : 'var(--amber)',
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+              marginBottom: 5,
+            }}>
+              {evidenceQuality.label}
+            </div>
+            <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
+              {evidenceQuality.detail}
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {evidenceQuality.items.map(item => (
+                <span
+                  key={item}
+                  style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    padding: '3px 6px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    color: item.includes('fehlt') || item.includes('offen') ? 'var(--amber)' : 'var(--text-2)',
+                  }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

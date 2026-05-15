@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Activity-Fueling zeigt Evidence-Qualitaet
+
+- **Decision:** Activity Detail zeigt fuer lange/fueling-relevante Einheiten im bestehenden Fueling-Block eine lokale Evidence-Qualitaet: offen, unvollstaendig oder vollstaendig; die Zeile benennt fehlende Felder wie strukturierte Carbs oder GI-Komfort und zeigt die aktuelle `Trend-Evidenz x/3`.
+- **Why:** Die Nutrition-Trend-Gate bleibt nur dann hilfreich, wenn Tobi direkt am Log sieht, warum ein vorhandener Eintrag noch nicht zaehlt. Das schliesst die MacroFactor-aehnliche Lernschleife, ohne Trends vor ausreichender Evidenz freizuschalten oder eine neue Nutrition-Flaeche zu bauen.
+- **Alternatives:** Nur die globale Fueling-Baseline-Missing-Evidence anzeigen (zu indirekt); Trends trotz unvollstaendiger Logs freischalten (zu frueh); eine eigene Nutrition-Seite fuer Log-Qualitaet einfuehren (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Evidenz schliesst erledigte lange Einheiten mit
 
 - **Decision:** Home behandelt erledigte lange/fueling-relevante Einheiten erst dann als voll geschlossen, wenn neben Feedback auch die offene Fueling-Lernevidenz sichtbar adressiert ist; bei fehlender `learningReadiness`-Evidence fuehrt der naechste offene Schritt zur bestehenden Activity-Fueling-Log-Sektion.
