@@ -604,7 +604,7 @@ function fuelingLearningSignal(
   return {
     label: 'Fueling-Lernen',
     detail,
-    tone: 'amber',
+    tone: readinessDetail ? 'amber' : 'accent',
     targetPath: completedActivity
       ? activityFuelingTargetPath(completedActivity)
       : `/plan?tab=training&source=fueling-learning&workoutId=${encodeURIComponent(workout!.id)}#workout-fueling-baseline`,
