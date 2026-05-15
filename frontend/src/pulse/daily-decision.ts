@@ -68,6 +68,7 @@ type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
 type HomeActivity = PulseHomeScreenData['recentActivities'][number];
 type GoalProjection = PulseGoalProjectionResponse['projections'][number];
 type HomeDataStatus = PulseHomeScreenData['dataStatus'];
+type HomeRecovery = PulseHomeScreenData['recovery'];
 
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
@@ -310,6 +311,7 @@ const signalTonePriority: Record<DailyDecisionSignalTone, number> = {
 const signalLabelPriority: Record<string, number> = {
   Mental: 0,
   Lernen: 0,
+  Recovery: 0,
   Daten: 1,
   Fueling: 2,
   Ziel: 3,
@@ -352,6 +354,38 @@ function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null
     detail,
     tone,
     targetPath: '/data?tab=analyse#data-plan-trace',
+  };
+}
+
+function recoverySignal(recovery: HomeRecovery): DailyDecisionSignal | null {
+  if (!recovery) return null;
+
+  const reasons: string[] = [];
+  if (recovery.sleepDebt7d.status === 'severe') {
+    reasons.push(`Schlafdefizit schwer: ${recovery.sleepDebt7d.hours.toFixed(1)} h offen`);
+  } else if (recovery.sleepDebt7d.status === 'mild') {
+    reasons.push(`Schlafdefizit: ${recovery.sleepDebt7d.hours.toFixed(1)} h`);
+  }
+  if (recovery.hrvDeviation7d.status === 'declining') {
+    reasons.push(`HRV ${recovery.hrvDeviation7d.pct.toFixed(1)}%`);
+  }
+  if (recovery.rhrDrift7d.status === 'elevated') {
+    reasons.push(`RHR +${recovery.rhrDrift7d.bpmAboveBaseline.toFixed(0)} bpm`);
+  }
+
+  const lowRecovery = recovery.recoveryScore < 45;
+  if (!lowRecovery && reasons.length === 0) return null;
+
+  const detail = [
+    reasons.length > 0 ? reasons.join(' · ') : `Recovery ${recovery.recoveryScore}/100`,
+    recovery.recommendation,
+  ].filter(Boolean).join('. ');
+
+  return {
+    label: 'Recovery',
+    detail,
+    tone: lowRecovery || recovery.sleepDebt7d.status === 'severe' ? 'rose' : 'amber',
+    targetPath: '/data?tab=trends#data-recovery',
   };
 }
 
@@ -444,9 +478,13 @@ function topSignals(
   ];
   const fuelingDebt = openFuelingDebt(todayOptions);
   const goal = topGoalProjection(goalProjection);
+  const recovery = recoverySignal(home.recovery);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const qualitySignal = decisionQualitySignal(decisionQuality);
 
+  if (recovery) {
+    signals.push(recovery);
+  }
   if (dataSignal) {
     signals.push(dataSignal);
   }

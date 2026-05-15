@@ -274,6 +274,48 @@ test('Home daily decision uses stale decision quality as a leading learning sign
   await expect(contract).toContainText('Mobilität 10 Minuten');
 });
 
+test('Home daily decision uses recovery pressure as a leading body signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      recovery: {
+        sleepDebt7d: {
+          hours: 5.8,
+          targetH: 7.5,
+          baselineSource: 'garmin_sleep_need',
+          status: 'severe',
+        },
+        hrvDeviation7d: {
+          pct: -9.4,
+          recentMs: 42,
+          baselineMs: 51,
+          status: 'declining',
+        },
+        rhrDrift7d: {
+          bpmAboveBaseline: 6,
+          recent: 55,
+          baseline: 49,
+          status: 'elevated',
+        },
+        recoveryScore: 38,
+        recommendation: 'Heute Belastung klein halten und Schlafdruck abbauen.',
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Recovery');
+  await expect(leading).toContainText('Schlafdefizit schwer: 5.8 h offen');
+  await expect(leading).toContainText('Heute Belastung klein halten');
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Recovery');
+  await expect(contract).toContainText('HRV -9.4%');
+  await expect(contract).toContainText('RHR +6 bpm');
+});
+
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
