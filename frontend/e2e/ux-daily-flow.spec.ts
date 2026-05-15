@@ -353,6 +353,85 @@ test('Home daily decision uses open plan adaptation as a leading signal', async 
   await expect(page).toHaveURL(/\/settings\?section=garmin/);
 });
 
+test('Home daily decision uses Garmin execution gaps as a leading signal for planned workouts', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-garmin-gap',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 60,
+    distanceKm: null,
+    targetTss: 48,
+    archetypeId: 'endurance_steady',
+    difficultyLevel: 2.8,
+    difficultyEnergySystem: 'endurance',
+    capabilityFit: 'productive',
+    description: 'Ruhige Grundlage, aber noch nicht auf Garmin vorbereitet.',
+    steps: null,
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'local_planned',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: 'Workout ist nur lokal in Pulse geplant.',
+  };
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion im Test.',
+      projections: [],
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    garminExecutionDiff: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      window: { from: '2026-05-01', to: '2026-05-15', days: 15 },
+      rows: [{
+        workoutId: 'planned-garmin-gap',
+        plannedDate: '2026-05-01',
+        title: 'Rad · Z2 · 60 min',
+        status: 'missing_template',
+        summary: 'In Pulse geplant, aber es gibt noch keine Garmin-Workout-Vorlage.',
+        local: { garminWorkoutId: null, garminScheduledId: null },
+        remote: { workoutId: null, scheduledId: null, lastSeenAt: null },
+        repairActions: ['upload_template'],
+      }],
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Garmin');
+  await expect(leading).toContainText('Nur lokal geplant');
+  const primaryCta = decision.getByRole('button', { name: 'Garmin prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  await primaryCta.click();
+  await expect(page).toHaveURL(/\/plan\?tab=execution&source=daily-garmin&workoutId=planned-garmin-gap/);
+  await expect(page.getByTestId('garmin-execution-trust-panel')).toContainText('Geräte-Check abschließen');
+  await expect(page.getByTestId('garmin-execution-trust-panel')).toContainText('In Pulse geplant');
+});
+
 test('Home daily decision uses durability analysis as a leading signal for a planned workout', async ({ page }) => {
   await mockPulseApi(page, {
     home: {

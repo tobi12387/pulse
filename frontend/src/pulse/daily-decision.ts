@@ -351,6 +351,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Lernen') return 'Lernen prüfen';
   if (signal.label === 'Analyse') return 'Analyse prüfen';
   if (signal.label === 'Fueling-Lernen') return 'Fueling vorbereiten';
+  if (signal.label === 'Garmin') return 'Garmin prüfen';
   return null;
 }
 
@@ -497,6 +498,52 @@ function fuelingLearningSignal(
   };
 }
 
+function garminExecutionSignal(
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+): DailyDecisionSignal | null {
+  const openWorkoutDecision = Boolean(workout && !completedActivity && workout.status !== 'completed' && !workout.completedActivityId);
+  if (!openWorkoutDecision || !workout) return null;
+
+  const targetPath = `/plan?tab=execution&source=daily-garmin&workoutId=${encodeURIComponent(workout.id)}`;
+  const syncContract = workout.garminSyncContract;
+  if (syncContract?.status === 'blocked') {
+    return {
+      label: 'Garmin',
+      detail: `Sync blockiert: ${syncContract.summary}`,
+      tone: 'rose',
+      targetPath,
+    };
+  }
+  if (syncContract?.status === 'degraded') {
+    return {
+      label: 'Garmin',
+      detail: `Sync eingeschränkt: ${syncContract.summary}`,
+      tone: 'amber',
+      targetPath,
+    };
+  }
+
+  if (workout.executionStatus === 'local_planned' || (!workout.garminWorkoutId && !workout.garminScheduledId)) {
+    return {
+      label: 'Garmin',
+      detail: 'Nur lokal geplant: noch keine Garmin-Vorlage oder Kalenderprüfung.',
+      tone: 'amber',
+      targetPath,
+    };
+  }
+  if (workout.executionStatus === 'garmin_template') {
+    return {
+      label: 'Garmin',
+      detail: 'Vorlage bereit, Kalenderstatus noch offen.',
+      tone: 'amber',
+      targetPath,
+    };
+  }
+
+  return null;
+}
+
 function recoverySignal(recovery: HomeRecovery): DailyDecisionSignal | null {
   if (!recovery) return null;
 
@@ -637,6 +684,7 @@ function topSignals(
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
   const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
+  const garminExecution = garminExecutionSignal(workout, completedActivity);
 
   if (adaptation) {
     signals.push(adaptation);
@@ -655,6 +703,9 @@ function topSignals(
   }
   if (fuelingLearning) {
     signals.push(fuelingLearning);
+  }
+  if (garminExecution) {
+    signals.push(garminExecution);
   }
 
   if (fuelingDebt) {
