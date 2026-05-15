@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fuehrendes Signal steuert die offene Tagesaktion
+
+- **Decision:** In normalen offenen Home-Tagesentscheidungen ohne explizite Next-Best-Action darf ein operatives fuehrendes Contract-Signal den Haupt-CTA, Zielpfad und Klick-Ausblick uebernehmen; abgeschlossene Trainings-, Feedback- und explizite Action-Flows behalten ihre Primaerschritte.
+- **Why:** Eine Performance-OS-Entscheidung soll nicht nur benennen, was heute fuehrt, sondern den naechsten Klick darauf ausrichten. Wenn `Anpassung`, `Recovery`, `Daten`, `Fueling`, `Mental` oder `Lernen` die Entscheidung fuehren und kein konkreter Backend-Schritt vorliegt, waere ein generischer Check-in- oder Workout-Button uneindeutig.
+- **Alternatives:** Fuehrendes Signal nur anzeigen und den alten CTA behalten (Widerspruch zwischen Erklaerung und Handlung); Signalchips nur in Details klickbar lassen (zu versteckt); alle abgeschlossenen Step-Flows ueberschreiben (riskant, weil Feedback/Closure dort bewusst priorisiert ist).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Plananpassungen fuehren die Home-Entscheidung mit
 
 - **Decision:** Home uebergibt die wichtigste offene Plananpassung an den Daily-Decision-Contract; sie erscheint als priorisiertes `Anpassung`-Signal und kann bei `action`-Schwere `Heute entscheidet` fuehren.
