@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Datenvertrauen wird Top-Signal der Tagesentscheidung
+
+- **Decision:** Home darf nicht-bereite Datenlage (`userReady`, `profileReady` oder `dataStatus.garmin.status !== ready`) als kompaktes `Daten`-Signal im bestehenden Daily-Decision-Contract anzeigen.
+- **Why:** Der Performance-OS-Nordstern verlangt Tagesklarheit wie WHOOP/Oura und Garmin-Naehe, aber eine Empfehlung ist nur vertrauenswuerdig, wenn Tobi sieht, ob die zugrunde liegenden Geraete-/Profil-Daten frisch genug sind. Die vorhandene Home-Warnung bleibt, aber der Entscheidungsvertrag muss stale/partial/empty Daten direkt als Vorsichtssignal tragen, ohne neue API, Migration oder Sync-Write.
+- **Alternatives:** Datenstatus nur als separate Home-Warnung belassen (zu leicht von der Entscheidung getrennt); automatische Garmin-Syncs beim Oeffnen starten (versteckter Schreib-/Seiteneffekt); Data/Settings neu bauen (zu breit fuer diesen Contract-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Mental Boundary wird Top-Signal der Tagesentscheidung
 
 - **Decision:** Home darf einen gespeicherten, nicht-stabilen Mental-Check-in als kompaktes `Mental`-Signal im bestehenden Daily-Decision-Contract nutzen: Schutz-/Sensibel-Label und Tagesgrenze werden neben Koerper, Load, Fueling und Ziel angezeigt.
