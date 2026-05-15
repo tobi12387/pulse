@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Plananpassungen fuehren die Home-Entscheidung mit
+
+- **Decision:** Home uebergibt die wichtigste offene Plananpassung an den Daily-Decision-Contract; sie erscheint als priorisiertes `Anpassung`-Signal und kann bei `action`-Schwere `Heute entscheidet` fuehren.
+- **Why:** Runna-/JOIN-aehnliche Alltagstauglichkeit darf nicht nur in einer optionalen Plan-Karte stehen, wenn ein Sync-Defizit, Recovery-Risiko oder Planfeedback heute die intelligenteste Handlung veraendert. Die ruhige Tagesentscheidung muss diese vorhandene Adaptionslogik direkt aufnehmen.
+- **Alternatives:** Plananpassungen nur als separate Home-Fokuskarte zeigen (zu weit weg von der einen Entscheidung); neue Backend-Synthese/API bauen (zu breit fuer diesen Slice); alle Adaptionsereignisse anzeigen (zu laut statt fuehrender Tagesfaktor).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Zielwirkung der Tagesentscheidung nutzt Goal Projection
 
 - **Decision:** Der Home Daily-Decision-Contract nutzt die vorhandene Goal Projection nicht nur als `Ziel`-Signal, sondern ergaenzt die `Zielwirkung`-Zeile mit Top-Ziel, Wahrscheinlichkeit/Evidenzstatus und naechster Intervention.
