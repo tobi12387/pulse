@@ -611,7 +611,7 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
     summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
     latestLogDate: null,
     observedCarbsPerHour: null,
-    targetCarbsPerHour: null,
+    targetCarbsPerHour: { min: 50, max: 70 },
     bottles750Ml: null,
     powderG: null,
     fluidMlPerHour: null,
@@ -699,6 +699,8 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
   await expect(leading).toContainText('Fueling-Lernen');
   await expect(leading).toContainText('Trend-Evidenz 0/3');
   await expect(leading).toContainText('Noch drei vergleichbare During-Logs');
+  await expect(leading).toContainText('Nächster Lernlog: 50-70 g/h kontrolliert testen');
+  await expect(leading).toContainText('Dauer, Carbs und GI-Komfort zusammen erfassen');
   const primaryCta = decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true });
   await expect(primaryCta).toBeVisible();
 
