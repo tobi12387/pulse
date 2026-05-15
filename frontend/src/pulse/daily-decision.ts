@@ -534,6 +534,28 @@ function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | u
   return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${sentenceWithoutTrailingPeriod(missing)}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen. ${fuelingHydrationContext(baseline)}`;
 }
 
+function fuelingEvidenceCompletionAction(
+  baseline: PulseFuelingOutcomeBaseline | null | undefined,
+): { detail: string; cta: string } {
+  const missingEvidence = baseline?.learningReadiness?.missingEvidence ?? [];
+  const hasStructuredGiGap = missingEvidence.some(item =>
+    item.toLocaleLowerCase('de-DE').includes('gi-komfort fehlt strukturiert'));
+  const hasStructuredCarbGap = missingEvidence.some(item =>
+    item.toLocaleLowerCase('de-DE').includes('carbs fehlen strukturiert'));
+
+  if (hasStructuredGiGap && !hasStructuredCarbGap) {
+    return {
+      detail: 'GI-Komfort am bestehenden During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
+      cta: 'GI-Komfort ergänzen',
+    };
+  }
+
+  return {
+    detail: 'Carbs, Flaschen/Pulver und GI-Komfort prüfen oder nachtragen, damit Pulse die Fueling-Baseline lernt.',
+    cta: 'Fueling loggen',
+  };
+}
+
 function activityFuelingTargetPath(activity: HomeActivity): string {
   return `${activityDetailPath(activity.id)}#activity-fueling-log`;
 }
@@ -547,12 +569,13 @@ function fuelingClosureStep(
 
   const readinessDetail = fuelingReadinessDetail(baseline);
   if (!readinessDetail) return null;
+  const completionAction = fuelingEvidenceCompletionAction(baseline);
 
   return {
     status: 'open',
     label: 'Fueling-Log prüfen',
-    detail: `${readinessDetail}. Carbs, Flaschen/Pulver und GI-Komfort prüfen oder nachtragen, damit Pulse die Fueling-Baseline lernt.`,
-    cta: 'Fueling loggen',
+    detail: `${sentenceWithoutTrailingPeriod(readinessDetail)}. ${completionAction.detail}`,
+    cta: completionAction.cta,
     targetPath: activityFuelingTargetPath(activity),
   };
 }
