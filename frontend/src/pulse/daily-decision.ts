@@ -75,6 +75,7 @@ type HomeActivity = PulseHomeScreenData['recentActivities'][number];
 type GoalProjection = PulseGoalProjectionResponse['projections'][number];
 type HomeDataStatus = PulseHomeScreenData['dataStatus'];
 type HomeRecovery = PulseHomeScreenData['recovery'];
+type TodayOption = PulseTodayOptionsResponse['options'][number];
 
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
@@ -172,6 +173,42 @@ function fuelingProtectDetail(todayOptions: PulseTodayOptionsResponse | null | u
   return label?.detail ?? null;
 }
 
+function todayOptionsAdaptiveOption(todayOptions: PulseTodayOptionsResponse | null | undefined): TodayOption | null {
+  if (!todayOptions || todayOptions.state !== 'planned_workout') return null;
+
+  return todayOptions.options.find(option => option.priority === 'secondary')
+    ?? todayOptions.options.find(option => option.kind === 'rest' || option.kind === 'recovery')
+    ?? null;
+}
+
+function todayOptionsAdaptiveDetail(todayOptions: PulseTodayOptionsResponse, option: TodayOption): string {
+  const signalDetail = option.signalLabels?.[0]?.detail ?? null;
+  return [
+    todayOptions.summary,
+    `${option.title}: ${option.detail}`,
+    signalDetail,
+  ].filter(Boolean).join(' · ');
+}
+
+function everydaySignal(
+  todayOptions: PulseTodayOptionsResponse | null | undefined,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+): DailyDecisionSignal | null {
+  if (completedActivity) return null;
+  const option = todayOptionsAdaptiveOption(todayOptions);
+  if (!todayOptions || !option) return null;
+  const openWorkoutDecision = Boolean(workout && workout.status !== 'completed' && !workout.completedActivityId);
+  if (!openWorkoutDecision) return null;
+
+  return {
+    label: 'Alltag',
+    detail: todayOptionsAdaptiveDetail(todayOptions, option),
+    tone: option.kind === 'rest' || option.kind === 'recovery' ? 'green' : 'accent',
+    targetPath: option.targetPath,
+  };
+}
+
 function withMentalBoundaryAlternative(
   alternative: string,
   mentalBoundary: DailyDecisionMentalBoundary | null,
@@ -257,6 +294,7 @@ function alternativeFor(
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
   const fuelingDebt = openFuelingDebt(todayOptions);
   const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
+  const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
   let alternative: string;
 
   if (action?.source === 'checkin') {
@@ -270,6 +308,8 @@ function alternativeFor(
       ? `${fuelingOutcomeBaseline.targetCarbsPerHour.min}-${fuelingOutcomeBaseline.targetCarbsPerHour.max} g/h kontrolliert testen, `
       : '';
     alternative = `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; ${fuelingHydrationContext(fuelingOutcomeBaseline)} Bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
+  } else if (todayWorkout && adaptiveOption) {
+    alternative = `Alltagsoption: ${adaptiveOption.title}: ${adaptiveOption.detail}`;
   } else if (todayWorkout && todayWorkout.zone >= 3) {
     alternative = 'Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.';
   } else if (todayWorkout) {
@@ -357,6 +397,7 @@ const signalLabelPriority: Record<string, number> = {
   'Fueling-Lernen': 2,
   Ziel: 3,
   Training: 4,
+  Alltag: 5,
   Garmin: 5,
   Reaktion: 6,
   Koerper: 6,
@@ -385,6 +426,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Lernen') return 'Lernen prüfen';
   if (signal.label === 'Analyse') return 'Analyse prüfen';
   if (signal.label === 'Fueling-Lernen') return 'Fueling vorbereiten';
+  if (signal.label === 'Alltag') return 'Alternative prüfen';
   if (signal.label === 'Garmin') return 'Garmin prüfen';
   if (signal.label === 'Reaktion') return 'Reaktion prüfen';
   return null;
@@ -856,6 +898,7 @@ function topSignals(
   const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
   const garminExecution = garminExecutionSignal(workout, completedActivity);
   const responsePattern = personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
+  const everyday = everydaySignal(todayOptions, workout, completedActivity);
 
   if (adaptation) {
     signals.push(adaptation);
@@ -880,6 +923,9 @@ function topSignals(
   }
   if (responsePattern) {
     signals.push(responsePattern);
+  }
+  if (everyday) {
+    signals.push(everyday);
   }
 
   if (fuelingDebt) {

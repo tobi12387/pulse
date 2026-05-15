@@ -1412,6 +1412,119 @@ test('Home daily decision details expose stale Garmin data confidence as a top d
   await expect(contract).toContainText('Heute fehlen frische Signale.');
 });
 
+test('Home daily decision carries everyday fallback options into the safest choice', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-alltag',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 3,
+    durationMin: 90,
+    distanceKm: null,
+    targetTss: 82,
+    archetypeId: 'tempo_sustained',
+    difficultyLevel: 4.2,
+    difficultyEnergySystem: 'tempo',
+    capabilityFit: 'productive',
+    description: 'Tempo-Reiz, wenn Alltag und Warm-up passen.',
+    steps: null,
+    garminWorkoutId: 'gw-alltag',
+    garminScheduledId: 'sched-alltag',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist Training geplant, aber der Tag hat wenig Zeitfenster.',
+        signature: 'planned-alltag-fallback',
+        options: [
+          {
+            id: 'planned-alltag-default',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Plan ausführen: Rad',
+            detail: '90 min Z3, wenn Tagesfenster und Warm-up passen.',
+            cta: 'Workout öffnen',
+            targetPath: '/plan?tab=training',
+            evidence: ['Planreiz Tempo'],
+            activityType: 'bike',
+            zone: 3,
+            durationMin: 90,
+            archetypeId: 'tempo_sustained',
+            capabilityFit: 'productive',
+            signalLabels: [{
+              kind: 'productive',
+              label: 'Produktiv',
+              detail: 'Capability erlaubt Fortschritt',
+              tone: 'accent',
+            }],
+          },
+          {
+            id: 'planned-alltag-shorter',
+            kind: 'workout',
+            priority: 'secondary',
+            title: 'Leichtere Alternative',
+            detail: '40 min Z1/Z2, falls heute nur ein kurzes Zeitfenster bleibt.',
+            cta: 'Plan anpassen',
+            targetPath: '/plan?tab=training&source=today-change&workoutId=planned-alltag&alternative=easier#workout-decision',
+            evidence: ['Alltag: kurzes Zeitfenster'],
+            activityType: 'bike',
+            zone: 1,
+            durationMin: 40,
+            archetypeId: 'recovery_spin',
+            capabilityFit: 'maintenance',
+            signalLabels: [{
+              kind: 'fit_maintenance',
+              label: 'Erhalten',
+              detail: 'Zielreiz kleiner halten, Routine bleibt',
+              tone: 'green',
+            }],
+          },
+        ],
+      },
+    },
+  });
+
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Alltagsoption');
+  await expect(safestOption).toContainText('Leichtere Alternative');
+  await expect(safestOption).toContainText('40 min Z1/Z2');
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Alltag');
+  await expect(contract).toContainText('kurzes Zeitfenster');
+  await expect(contract).toContainText('Routine bleibt');
+});
+
 test('Home daily decision details keep combined data fueling mental goal and training signals visible', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
