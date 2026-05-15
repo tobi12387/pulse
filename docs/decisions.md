@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Recovery-Druck benennt die sicherste Tageshandlung
+
+- **Decision:** Home darf aus bestehenden Recovery-Metriken eine konkrete `Sicherste Option` ableiten, wenn Schlafdefizit, niedriger Recovery-Score, HRV-Abfall oder erhoehter Ruhepuls den Tag begrenzen. Die Handlung bleibt read-only, fuehrt zur bestehenden Recovery-Evidenz in Data und veraendert Plan oder Garmin nicht automatisch.
+- **Why:** WHOOP-/Oura-aehnliche Tagesklarheit entsteht erst, wenn Pulse nicht nur `Recovery` als fuehrendes Signal zeigt, sondern auch sagt, wie der Tag dadurch kleiner und sicherer werden soll. So wird aus Koerper-Evidence eine ruhige Handlung fuer den heutigen Alltag.
+- **Alternatives:** Recovery nur als Detailzeile lassen (zu wenig handlungsnah); neue Recovery-Eingabe oder neue Seite bauen (zu breit); automatisch Trainingsplanung reduzieren (zu versteckt fuer koerperbezogene Entscheidungen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Today-Options duerfen als Alltagssignal in die Tagesentscheidung
 
 - **Decision:** Home darf aus bestehenden Today-Options ein vorsichtiges `Alltag`-Signal und eine konkretere `Sicherste Option` ableiten, wenn fuer einen geplanten Tag eine leichtere, kuerzere oder freie Alternative vorhanden ist. Dieses Signal bleibt read-only und fuehrt nur zu bestehenden Plan-Pruefpfaden; Plan oder Garmin werden dadurch nicht automatisch geaendert.
