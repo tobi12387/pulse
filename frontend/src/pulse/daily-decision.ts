@@ -210,6 +210,29 @@ function everydaySignal(
   };
 }
 
+function workoutFitLabel(workout: HomeWorkout): string | null {
+  if (workout.capabilityFit === 'too_hard_today') return 'Zu hart heute';
+  if (workout.capabilityFit === 'stretch') return 'Stretch';
+  return null;
+}
+
+function trainingSignalDetail(workout: HomeWorkout): string {
+  return [
+    `${activityLabel(workout.activityType)} Z${workout.zone} · ${workout.durationMin} min`,
+    workoutFitLabel(workout),
+  ].filter(Boolean).join(' · ');
+}
+
+function easierTodayOption(todayOptions: PulseTodayOptionsResponse | null | undefined): TodayOption | null {
+  if (!todayOptions || todayOptions.state !== 'planned_workout') return null;
+  return todayOptions.options.find(option => option.priority === 'secondary') ?? null;
+}
+
+function trainingSignalTarget(workout: HomeWorkout, todayOptions: PulseTodayOptionsResponse | null | undefined): string {
+  if (workout.capabilityFit !== 'too_hard_today') return '/plan?tab=training';
+  return easierTodayOption(todayOptions)?.targetPath ?? '/plan?tab=training';
+}
+
 function withMentalBoundaryAlternative(
   alternative: string,
   mentalBoundary: DailyDecisionMentalBoundary | null,
@@ -375,6 +398,20 @@ function analysisAlternative(
   return `Analyse zuerst prüfen: ${detail}. Heute keine Ausführung oder Anpassung bestätigen, bis der Durability-Limiter bewusst geprüft ist.`;
 }
 
+function trainingFitAlternative(
+  workout: HomeWorkout | null,
+  todayOptions: PulseTodayOptionsResponse | null | undefined,
+): string | null {
+  if (!workout || workout.capabilityFit !== 'too_hard_today') return null;
+
+  const easierOption = easierTodayOption(todayOptions);
+  const easierText = easierOption
+    ? `${easierOption.title}: ${easierOption.detail}`
+    : 'Plan öffnen und Reiz leichter, kürzer oder verschoben entscheiden';
+
+  return `Training zuerst entschärfen: ${trainingSignalDetail(workout)}. ${workoutFitLabel(workout)}. ${easierText}; heute keine Ausführung bestätigen, bis die Einheit bewusst leichter geplant ist.`;
+}
+
 function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
@@ -399,6 +436,7 @@ function alternativeFor(
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const planAdaptationAlternative = adaptationAlternative(adaptationEvent);
   const durabilityAlternative = analysisAlternative(trainingAnalytics, todayWorkout);
+  const trainingAlternative = trainingFitAlternative(todayWorkout, todayOptions);
   const goalAlternative = goalPressureAlternative(goalProjection);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
@@ -419,6 +457,8 @@ function alternativeFor(
     alternative = recoveryAlternative;
   } else if (bodyAlternative && signalToneForReadiness(home.readiness.score) === 'rose') {
     alternative = bodyAlternative;
+  } else if (trainingAlternative) {
+    alternative = trainingAlternative;
   } else if (planAdaptationAlternative) {
     alternative = planAdaptationAlternative;
   } else if (durabilityAlternative) {
@@ -568,6 +608,8 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Ziel') return signal.actionLabel ?? 'Ziel prüfen';
   if (signal.label === 'Belastung') return 'Belastung prüfen';
   if (signal.label === 'Koerper') return 'Readiness prüfen';
+  if (signal.label === 'Training' && signal.tone === 'rose') return 'Training anpassen';
+  if (signal.label === 'Training' && signal.tone === 'amber') return 'Training prüfen';
   return null;
 }
 
@@ -1099,9 +1141,9 @@ function topSignals(
   if (workout) {
     signals.push({
       label: 'Training',
-      detail: `${activityLabel(workout.activityType)} Z${workout.zone} · ${workout.durationMin} min`,
+      detail: trainingSignalDetail(workout),
       tone: workout.capabilityFit === 'too_hard_today' ? 'rose' : workout.capabilityFit === 'stretch' ? 'amber' : 'accent',
-      targetPath: '/plan?tab=training',
+      targetPath: trainingSignalTarget(workout, todayOptions),
     });
   } else if (completedActivity) {
     signals.push({

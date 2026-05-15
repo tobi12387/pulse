@@ -519,6 +519,145 @@ test('Home daily decision uses load pressure as the safest option for a planned 
   await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
 });
 
+test('Home daily decision uses too-hard training fit as the safest planned-workout option', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-fit-pressure',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 5,
+    durationMin: 75,
+    distanceKm: null,
+    targetTss: 112,
+    archetypeId: 'vo2_repeat',
+    difficultyLevel: 5.4,
+    difficultyEnergySystem: 'vo2',
+    capabilityFit: 'too_hard_today',
+    description: 'VO2-Reiz nur wenn der Athlete-Level wirklich passt.',
+    steps: null,
+    garminWorkoutId: 'garmin-fit-pressure',
+    garminScheduledId: 'scheduled-fit-pressure',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      fitnessLoad: {
+        ctl: 47,
+        atl: 46,
+        tsb: 1.2,
+      },
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist Training geplant; Pulse zeigt den Plan plus sinnvolle Ausweichoptionen.',
+        signature: 'planned-fit-pressure',
+        options: [
+          {
+            id: 'planned-fit-pressure',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Plan ausführen: Rad',
+            detail: '75 min Z5. Nur wenn der Athlete-Level wirklich passt.',
+            cta: 'Workout öffnen',
+            targetPath: '/plan?tab=training',
+            evidence: ['Level-Fit: Zu hart heute'],
+            activityType: 'bike',
+            zone: 5,
+            durationMin: 75,
+            archetypeId: 'vo2_repeat',
+            capabilityFit: 'too_hard_today',
+            signalLabels: [{
+              kind: 'fit_too_hard_today',
+              label: 'Zu hart heute',
+              detail: 'Athlete-Level begrenzt diesen Reiz',
+              tone: 'rose',
+            }],
+          },
+          {
+            id: 'planned-fit-pressure-easier',
+            kind: 'workout',
+            priority: 'secondary',
+            title: 'Leichtere Alternative',
+            detail: '60 min Z2, Intensität fällt in einen machbareren Bereich.',
+            cta: 'Plan anpassen',
+            targetPath: '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-fit-pressure#next-training-decision',
+            evidence: ['Athlete-Level: zu hart heute'],
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 60,
+            archetypeId: 'endurance_cadence',
+            capabilityFit: 'maintenance',
+            signalLabels: [{
+              kind: 'fit_maintenance',
+              label: 'Machbar',
+              detail: 'Intensität fällt in einen machbareren Bereich',
+              tone: 'green',
+            }],
+          },
+        ],
+      },
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'insufficient',
+        headline: 'Keine Response-Muster fuer diesen Test.',
+        signals: [],
+        missingEvidence: [],
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Training');
+  await expect(leading).toContainText('Radfahren Z5 · 75 min');
+  await expect(leading).toContainText('Zu hart heute');
+  const primaryCta = decision.getByRole('button', { name: 'Training anpassen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Training zuerst entschärfen');
+  await expect(safestOption).toContainText('Zu hart heute');
+  await expect(safestOption).toContainText('Leichtere Alternative');
+  await expect(safestOption).toContainText('60 min Z2');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/plan?tab=training&source=today-change&intent=easier&workoutId=planned-fit-pressure#next-training-decision');
+});
+
 test('Home daily decision uses open plan adaptation as a leading signal', async ({ page }) => {
   await mockPulseApi(page, {
     adaptationEvents: {
