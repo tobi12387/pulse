@@ -1,5 +1,6 @@
 import type {
   PulseFuelingCarbRange,
+  PulseFuelingLearningNextAction,
   PulseFuelingLearningReadiness,
   PulseFuelingOutcomeBaseline,
 } from '@coaching-os/shared/pulse';
@@ -111,6 +112,35 @@ function comparableCompleteLearningLogs(logs: FuelingOutcomeBaselineLogInput[]):
   return comparableLearningLogs(logs).filter(isComparableCompleteLearningLog);
 }
 
+function learningNextAction(comparableLogs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningNextAction {
+  const giGapLog = comparableLogs.find(log => log.carbsG != null && log.giComfort == null);
+  if (giGapLog) {
+    return {
+      kind: 'complete_gi_comfort',
+      label: 'GI-Komfort ergänzen',
+      detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
+      activityId: giGapLog.activityId ?? null,
+    };
+  }
+
+  const carbGapLog = comparableLogs.find(log => log.carbsG == null && log.giComfort != null);
+  if (carbGapLog) {
+    return {
+      kind: 'complete_carbs',
+      label: 'Carbs ergänzen',
+      detail: 'Carbs am vorhandenen langen During-Log ergänzen, damit Pulse die Fueling-Baseline aus Dauer, Carbs und GI-Komfort lernen kann.',
+      activityId: carbGapLog.activityId ?? null,
+    };
+  }
+
+  return {
+    kind: 'log_next_long_session',
+    label: 'Nächsten Lernlog vollständig erfassen',
+    detail: 'Nächste lange Einheit mit Dauer, Carbs und GI-Komfort zusammen erfassen.',
+    activityId: null,
+  };
+}
+
 function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningReadiness {
   const comparableLogs = comparableLearningLogs(logs);
   const completeLogs = comparableCompleteLearningLogs(logs);
@@ -121,6 +151,7 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
       requiredComparableCompleteLogs: REQUIRED_COMPARABLE_COMPLETE_LOGS,
       readyForTrendSummary,
       missingEvidence: [],
+      nextAction: null,
     };
   }
 
@@ -139,6 +170,7 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
     requiredComparableCompleteLogs: REQUIRED_COMPARABLE_COMPLETE_LOGS,
     readyForTrendSummary,
     missingEvidence,
+    nextAction: learningNextAction(comparableLogs),
   };
 }
 

@@ -23,6 +23,11 @@ function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | nu
   const readiness = baseline.learningReadiness ?? null;
   if (!readiness || readiness.readyForTrendSummary) return null;
 
+  const nextAction = readiness.nextAction ?? null;
+  if (nextAction && nextAction.kind !== 'log_next_long_session') {
+    return `Nächste Evidence: ${nextAction.label}. ${nextAction.detail}`;
+  }
+
   const target = baseline.targetCarbsPerHour
     ? `${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen; `
     : '';

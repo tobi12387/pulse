@@ -39,11 +39,24 @@ export interface PulseFuelingCarbRange {
   max: number;
 }
 
+export type PulseFuelingLearningNextActionKind =
+  | 'complete_gi_comfort'
+  | 'complete_carbs'
+  | 'log_next_long_session';
+
+export interface PulseFuelingLearningNextAction {
+  kind: PulseFuelingLearningNextActionKind;
+  label: string;
+  detail: string;
+  activityId?: string | null;
+}
+
 export interface PulseFuelingLearningReadiness {
   comparableCompleteLogs: number;
   requiredComparableCompleteLogs: number;
   readyForTrendSummary: boolean;
   missingEvidence: string[];
+  nextAction?: PulseFuelingLearningNextAction | null;
 }
 
 export interface PulseFuelingOutcomeBaseline {

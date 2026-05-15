@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Learning-Readiness liefert den naechsten Evidence-Schritt
+
+- **Decision:** `PulseFuelingLearningReadiness` darf einen optionalen `nextAction` liefern, der bei unvollstaendiger vergleichbarer During-Evidence den kleinsten naechsten Schritt benennt, z. B. `GI-Komfort ergänzen` am vorhandenen langen Carb-Log, statt nur eine generische Missing-Evidence-Liste zu zeigen. Plan/Home-Baseline-Texte duerfen diesen Schritt vor einem neuen Lernlog anzeigen.
+- **Why:** Die Nutrition-Lernschleife wird alltagstauglicher, wenn Pulse zwischen "neue lange Einheit loggen" und "bestehenden Log vervollstaendigen" unterscheiden kann. Das schuetzt vor doppelten Logs und macht die 3/3-Trend-Evidence mit einem kleinen, konkreten Schritt erreichbar.
+- **Alternatives:** Weiter Missing-Evidence-Copy im Frontend parsen (fragil); immer einen neuen Lernlog empfehlen (falscher Aufwand bei vorhandenen Carb-Logs); eine neue Nutrition-Inbox bauen (zu breit fuer diesen Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Nutrition-Trend-Summary oeffnet erst nach kompletter During-Evidence
 
 - **Decision:** Die Fueling-Outcome-Baseline liefert ein optionales `trendSummary` nur, wenn mindestens drei vergleichbare komplette During-Logs mit Dauer, Carbs und GI-Komfort vorhanden sind. Plan/Activity-Baseline-Bloecke duerfen diesen Trend-Satz zeigen, und Home darf ihn bei offenen langen Workouts als `Fueling-Lernen`-Signal in die Tagesentscheidung heben; bis dahin bleibt der naechste Lernlog und die fehlende Evidence fuehrend.
