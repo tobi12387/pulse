@@ -65,6 +65,7 @@ export interface DailyDecisionContext {
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
 type HomeActivity = PulseHomeScreenData['recentActivities'][number];
 type GoalProjection = PulseGoalProjectionResponse['projections'][number];
+type HomeDataStatus = PulseHomeScreenData['dataStatus'];
 
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
@@ -165,6 +166,50 @@ function goalProbabilityLabel(goal: GoalProjection): string {
 
 function mentalSignalTone(boundary: DailyDecisionMentalBoundary): DailyDecisionSignalTone {
   return boundary.level === 'protect' ? 'rose' : 'amber';
+}
+
+function dataConfidenceSignal(dataStatus: HomeDataStatus): DailyDecisionSignal | null {
+  if (!dataStatus.userReady) {
+    return {
+      label: 'Daten',
+      detail: 'Setup offen: Nutzerprofil fehlt, Empfehlungen bleiben vorsichtig.',
+      tone: 'rose',
+      targetPath: '/settings',
+    };
+  }
+  if (!dataStatus.profileReady) {
+    return {
+      label: 'Daten',
+      detail: 'Profil offen: Settings prüfen, bevor Planlogik voll vertraut wird.',
+      tone: 'amber',
+      targetPath: '/settings',
+    };
+  }
+  if (dataStatus.garmin.status === 'empty') {
+    return {
+      label: 'Daten',
+      detail: 'Garmin leer: Readiness und Plan arbeiten mit Basiswerten.',
+      tone: 'amber',
+      targetPath: '/data?tab=quality#data-garmin-quality',
+    };
+  }
+  if (dataStatus.garmin.status === 'stale') {
+    return {
+      label: 'Daten',
+      detail: `Garmin alt: Letzte Tagesdaten: ${dataStatus.garmin.lastMetricDate ?? 'unbekannt'}. Heute fehlen frische Signale.`,
+      tone: 'amber',
+      targetPath: '/data?tab=quality#data-garmin-quality',
+    };
+  }
+  if (dataStatus.garmin.status === 'partial') {
+    return {
+      label: 'Daten',
+      detail: 'Garmin teilweise: Einige Empfehlungen bleiben vorsichtig.',
+      tone: 'amber',
+      targetPath: '/data?tab=quality#data-garmin-quality',
+    };
+  }
+  return null;
 }
 
 function alternativeFor(
@@ -340,6 +385,11 @@ function topSignals(
   ];
   const fuelingDebt = openFuelingDebt(todayOptions);
   const goal = topGoalProjection(goalProjection);
+  const dataSignal = dataConfidenceSignal(home.dataStatus);
+
+  if (dataSignal) {
+    signals.push(dataSignal);
+  }
 
   if (fuelingDebt) {
     const protectDetail = fuelingProtectDetail(todayOptions);

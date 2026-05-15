@@ -462,6 +462,66 @@ test('Home daily decision details expose saved mental boundary as a top decision
   await expect(contract).toContainText('Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
 });
 
+test('Home daily decision details expose stale Garmin data confidence as a top decision signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      dataStatus: {
+        userReady: true,
+        profileReady: true,
+        garmin: {
+          status: 'stale',
+          lastMetricDate: '2026-04-30',
+          lastMetricSyncAt: '2026-04-30T05:00:00.000Z',
+          lastActivityAt: '2026-05-01T06:00:00.000Z',
+          metricsDays14: 10,
+          activitiesDays14: 5,
+          issues: ['today_metrics_missing'],
+        },
+      },
+      todayWorkout: {
+        id: 'planned-stale-data',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        distanceKm: null,
+        targetTss: 48,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3.2,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Ausdauer, wenn die Signale stimmen.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Daten');
+  await expect(contract).toContainText('Garmin alt');
+  await expect(contract).toContainText('Letzte Tagesdaten: 2026-04-30');
+  await expect(contract).toContainText('Heute fehlen frische Signale.');
+});
+
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
   await mockPulseApi(page, {
     dailyDelta: [{
