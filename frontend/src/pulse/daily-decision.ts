@@ -213,6 +213,9 @@ function everydaySignal(
 function workoutFitLabel(workout: HomeWorkout): string | null {
   if (workout.capabilityFit === 'too_hard_today') return 'Zu hart heute';
   if (workout.capabilityFit === 'stretch') return 'Stretch';
+  if (workout.capabilityFit === 'productive') return 'Produktiv';
+  if (workout.capabilityFit === 'maintenance') return 'Machbar';
+  if (workout.capabilityFit === 'recovery') return 'Recovery';
   return null;
 }
 
@@ -402,13 +405,7 @@ function trainingFitAlternative(
   workout: HomeWorkout | null,
   todayOptions: PulseTodayOptionsResponse | null | undefined,
 ): string | null {
-  if (!workout) return null;
-
-  if (workout.capabilityFit === 'stretch') {
-    return `Stretch kontrolliert ausführen: ${trainingSignalDetail(workout)}. Warm-up, Fueling und Tagesform als Grenze nutzen; wenn der erste Block nicht passt, sofort auf Z2 senken, kürzer schließen oder Plan-Alternative prüfen.`;
-  }
-
-  if (workout.capabilityFit !== 'too_hard_today') return null;
+  if (!workout || workout.capabilityFit !== 'too_hard_today') return null;
 
   const easierOption = easierTodayOption(todayOptions);
   const easierText = easierOption
@@ -416,6 +413,25 @@ function trainingFitAlternative(
     : 'Plan öffnen und Reiz leichter, kürzer oder verschoben entscheiden';
 
   return `Training zuerst entschärfen: ${trainingSignalDetail(workout)}. ${workoutFitLabel(workout)}. ${easierText}; heute keine Ausführung bestätigen, bis die Einheit bewusst leichter geplant ist.`;
+}
+
+function trainingStretchAlternative(workout: HomeWorkout | null): string | null {
+  if (!workout || workout.capabilityFit !== 'stretch') return null;
+  return `Stretch kontrolliert ausführen: ${trainingSignalDetail(workout)}. Warm-up, Fueling und Tagesform als Grenze nutzen; wenn der erste Block nicht passt, sofort auf Z2 senken, kürzer schließen oder Plan-Alternative prüfen.`;
+}
+
+function trainingExecutionAlternative(workout: HomeWorkout | null): string | null {
+  if (!workout) return null;
+
+  if (workout.capabilityFit === 'productive') {
+    return `Produktiven Trainingsreiz ausführen: ${trainingSignalDetail(workout)}. Warm-up als letzte Grenze nutzen, den geplanten Reiz sauber schließen und keinen Zusatzumfang anhängen; bei auffälliger Tagesform kürzer oder Z2 fertigfahren.`;
+  }
+
+  if (workout.capabilityFit === 'maintenance' || workout.capabilityFit === 'recovery') {
+    return `Machbare Einheit ruhig ausführen: ${trainingSignalDetail(workout)}. Wochenstruktur halten, aber bewusst ohne Zusatzumfang schließen und bei schlechter Tagesform locker kürzen.`;
+  }
+
+  return null;
 }
 
 function alternativeFor(
@@ -443,6 +459,8 @@ function alternativeFor(
   const planAdaptationAlternative = adaptationAlternative(adaptationEvent);
   const durabilityAlternative = analysisAlternative(trainingAnalytics, todayWorkout);
   const trainingAlternative = trainingFitAlternative(todayWorkout, todayOptions);
+  const stretchAlternative = trainingStretchAlternative(todayWorkout);
+  const executionAlternative = trainingExecutionAlternative(todayWorkout);
   const goalAlternative = goalPressureAlternative(goalProjection);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
@@ -492,6 +510,10 @@ function alternativeFor(
     alternative = responseAlternative;
   } else if (bodyAlternative) {
     alternative = bodyAlternative;
+  } else if (stretchAlternative) {
+    alternative = stretchAlternative;
+  } else if (executionAlternative) {
+    alternative = executionAlternative;
   } else if (todayWorkout && todayWorkout.zone >= 3) {
     alternative = 'Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.';
   } else if (todayWorkout) {

@@ -781,6 +781,129 @@ test('Home daily decision uses stretch training fit as a controlled execution bo
   await expect(page).toHaveURL('/plan?tab=training');
 });
 
+test('Home daily decision uses productive training fit as an executable safest option', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-productive-boundary',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 4,
+    durationMin: 64,
+    distanceKm: null,
+    targetTss: 76,
+    archetypeId: 'threshold_progression',
+    difficultyLevel: 4.1,
+    difficultyEnergySystem: 'threshold',
+    capabilityFit: 'productive',
+    description: 'Produktiver Threshold-Reiz im Wochenziel.',
+    steps: null,
+    garminWorkoutId: 'garmin-productive-boundary',
+    garminScheduledId: 'scheduled-productive-boundary',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      readiness: {
+        score: 84,
+        hrvStatus: 'stable',
+        restingHrStatus: 'baseline',
+        sleepDebt7d: { hours: 0.8, status: 'low' },
+        recommendation: 'Koerper stabil, produktiver Reiz ist heute vertretbar.',
+      },
+      fitnessLoad: {
+        ctl: 48,
+        atl: 47,
+        tsb: 1.4,
+      },
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist ein produktiver Trainingsreiz geplant.',
+        signature: 'planned-productive-boundary',
+        options: [{
+          id: 'planned-productive-boundary',
+          kind: 'workout',
+          priority: 'primary',
+          title: 'Plan ausführen: Rad',
+          detail: '64 min Z4. Capability erlaubt Fortschritt.',
+          cta: 'Workout öffnen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Level-Fit: Produktiv'],
+          activityType: 'bike',
+          zone: 4,
+          durationMin: 64,
+          archetypeId: 'threshold_progression',
+          capabilityFit: 'productive',
+          signalLabels: [{
+            kind: 'productive',
+            label: 'Produktiv',
+            detail: 'Capability erlaubt kleinen Fortschritt',
+            tone: 'accent',
+          }],
+        }],
+      },
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffaellig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'insufficient',
+        headline: 'Keine Response-Muster fuer diesen Test.',
+        signals: [],
+        missingEvidence: [],
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Training');
+  await expect(leading).toContainText('Radfahren Z4 · 64 min');
+  await expect(leading).toContainText('Produktiv');
+  const primaryCta = decision.getByRole('button', { name: 'Workout öffnen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Produktiven Trainingsreiz ausführen');
+  await expect(safestOption).toContainText('Zusatzumfang');
+  await expect(safestOption).toContainText('Warm-up');
+  await expect(safestOption).not.toContainText('Auf Z2 senken oder im Plan eine kürzere Alternative wählen');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/plan?tab=training');
+});
+
 test('Home daily decision uses open plan adaptation as a leading signal', async ({ page }) => {
   await mockPulseApi(page, {
     adaptationEvents: {
