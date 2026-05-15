@@ -2,6 +2,46 @@ import { describe, expect, it } from 'vitest';
 import { summarizeFuelingOutcomeBaseline } from './fueling-outcome-baseline.js';
 
 describe('summarizeFuelingOutcomeBaseline', () => {
+  it('counts comparable complete during logs before allowing trend summaries', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [{
+        date: '2026-05-09',
+        context: 'during',
+        activityType: 'bike',
+        durationMin: 398,
+        carbsG: 356,
+        sodiumMg: 1300,
+        notes: '4 x 750 ml getrunken; leichte Magenprobleme nach ca. 100 km.',
+      }],
+    });
+
+    const readiness = baseline.learningReadiness!;
+    expect(readiness).toMatchObject({
+      comparableCompleteLogs: 0,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+    });
+    expect(readiness.missingEvidence.join(' ')).toContain('GI-Komfort');
+    expect(readiness.missingEvidence.join(' ')).toContain('drei vergleichbare');
+  });
+
+  it('marks trend summaries ready after three comparable complete during logs', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [
+        { date: '2026-05-13', context: 'during', activityType: 'bike', durationMin: 130, carbsG: 125, giComfort: 'ok' },
+        { date: '2026-05-10', context: 'during', activityType: 'bike', durationMin: 115, carbsG: 105, giComfort: 'ok' },
+        { date: '2026-05-04', context: 'during', activityType: 'run', durationMin: 80, carbsG: 50, giComfort: 'mild_issue' },
+      ],
+    });
+
+    expect(baseline.learningReadiness!).toMatchObject({
+      comparableCompleteLogs: 3,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: true,
+      missingEvidence: [],
+    });
+  });
+
   it('turns a low-intake GI long ride into a controlled next target with evidence gaps', () => {
     const baseline = summarizeFuelingOutcomeBaseline({
       logs: [{

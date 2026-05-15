@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Nutrition Learning Readiness bleibt vor Trend-Summaries
+
+- **Decision:** Pulse fuehrt Nutrition Learning Readiness v1 im bestehenden Fueling-Baseline-Contract ein: Trend-Summaries bleiben gegated, aber die UI zeigt die vergleichbaren vollstaendigen During-Logs als `Trend-Evidenz x/3` und neue Activity-Fueling-Logs lassen sich erst mit strukturierten Carbs plus GI-Komfort speichern.
+- **Why:** Der Live-Datencheck am 2026-05-15 zeigt weiterhin 5 Nutrition-Logs, 4 davon `during`, aber 0 vergleichbare vollstaendige During-Logs mit Dauer, Carbs und strukturiertem GI-Komfort. Der Performance-OS-Nordstern braucht MacroFactor-aehnliches Lernen, darf aber aus unvollstaendigen Logs keine Scheinstabilitaet ableiten.
+- **Alternatives:** Nutrition-Trends trotz 0/3 Evidence bauen (zu fragil); nur im Docs-Gate bleiben (Tobi sieht beim Loggen nicht, was fehlt); eine neue Nutrition-Seite oder Migration bauen (zu breit fuer den aktuellen Datenqualitaets-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Performance OS Route Evidence Pass blockiert Breitrebuild
 
 - **Decision:** Pulse nutzt den Performance OS Route Evidence Pass auf `775c46a` als Gate gegen einen sofortigen breiten UI/UX-Umbau: Home, Data > Analyse, Plan und Insights zeigen keine horizontalen Overflow-, Overlap- oder First-Viewport-Rollenkonflikte, die einen neuen Runtime-Slice rechtfertigen.

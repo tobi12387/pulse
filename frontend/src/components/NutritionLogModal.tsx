@@ -102,6 +102,17 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
   const [hasTouchedCarbs, setHasTouchedCarbs] = useState(false);
 
   const suggestion = suggestedCarbs(activityType, durationMin);
+  const hasProductCarbs = fuelingProducts.some(id => {
+    const product = FUELING_PRODUCTS.find(item => item.id === id);
+    return (product?.carbsG ?? 0) > 0;
+  });
+  const hasCarbEvidence = hasTouchedCarbs || carbs > 0 || gels > 0 || powderG > 0 || hasProductCarbs;
+  const hasRequiredLearningEvidence = giComfort != null && hasCarbEvidence;
+  const saveHint = !giComfort
+    ? 'GI-Komfort auswaehlen, damit Pulse daraus lernen kann.'
+    : !hasCarbEvidence
+      ? 'Carbs, Pulver, Gel oder Snack erfassen.'
+      : null;
 
   // Auto-fill carbs from gels if user hasn't touched carbs
   function handleGelsChange(v: number) {
@@ -150,13 +161,14 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!hasRequiredLearningEvidence) return;
     await create.mutateAsync({
       activityId,
       workoutId: workoutId ?? undefined,
       context: 'during',
       gelsCount: gels || undefined,
       drinksMl: drinks || undefined,
-      carbsG: carbs || undefined,
+      carbsG: hasCarbEvidence ? carbs : undefined,
       bottles750Ml: bottles750Ml || undefined,
       powderG: powderG || undefined,
       fuelingProducts: fuelingProducts.length > 0 ? fuelingProducts : undefined,
@@ -380,18 +392,25 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
 
           <button
             type="submit"
-            disabled={create.isPending}
+            disabled={create.isPending || !hasRequiredLearningEvidence}
             style={{
               width: '100%', padding: '11px',
               background: 'var(--accent)', color: 'var(--bg)',
               border: 'none', borderRadius: 5,
               fontFamily: 'var(--font-mono)', fontSize: 11,
-              letterSpacing: '.16em', fontWeight: 600, cursor: 'pointer',
-              opacity: create.isPending ? 0.6 : 1,
+              letterSpacing: '.16em', fontWeight: 600,
+              cursor: create.isPending || !hasRequiredLearningEvidence ? 'not-allowed' : 'pointer',
+              opacity: create.isPending || !hasRequiredLearningEvidence ? 0.55 : 1,
             }}
           >
             {create.isPending ? 'Speichern…' : 'SPEICHERN'}
           </button>
+
+          {saveHint && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.45 }}>
+              {saveHint}
+            </div>
+          )}
 
           {create.isError && (
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--rose)', textAlign: 'center' }}>

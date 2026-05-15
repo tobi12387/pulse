@@ -39,6 +39,13 @@ export interface PulseFuelingCarbRange {
   max: number;
 }
 
+export interface PulseFuelingLearningReadiness {
+  comparableCompleteLogs: number;
+  requiredComparableCompleteLogs: number;
+  readyForTrendSummary: boolean;
+  missingEvidence: string[];
+}
+
 export interface PulseFuelingOutcomeBaseline {
   status: PulseFuelingOutcomeBaselineStatus;
   label: string;
@@ -51,6 +58,7 @@ export interface PulseFuelingOutcomeBaseline {
   fluidMlPerHour: number | null;
   sodiumMgPerHour: number | null;
   evidence: string[];
+  learningReadiness?: PulseFuelingLearningReadiness;
 }
 
 export interface PulseFuelingRecoveryGuidanceResponse {
