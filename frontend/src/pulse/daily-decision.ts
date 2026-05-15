@@ -402,7 +402,13 @@ function trainingFitAlternative(
   workout: HomeWorkout | null,
   todayOptions: PulseTodayOptionsResponse | null | undefined,
 ): string | null {
-  if (!workout || workout.capabilityFit !== 'too_hard_today') return null;
+  if (!workout) return null;
+
+  if (workout.capabilityFit === 'stretch') {
+    return `Stretch kontrolliert ausführen: ${trainingSignalDetail(workout)}. Warm-up, Fueling und Tagesform als Grenze nutzen; wenn der erste Block nicht passt, sofort auf Z2 senken, kürzer schließen oder Plan-Alternative prüfen.`;
+  }
+
+  if (workout.capabilityFit !== 'too_hard_today') return null;
 
   const easierOption = easierTodayOption(todayOptions);
   const easierText = easierOption

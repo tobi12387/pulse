@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Stretch-Trainingspassung bekommt eine kontrollierte Ausfuehrungsgrenze
+
+- **Decision:** Wenn das bestehende `Training`-Signal durch `capabilityFit: stretch` die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Stretch kontrolliert ausführen` formulieren: Warm-up, Fueling und Tagesform begrenzen die Ausfuehrung; wenn der erste Block nicht passt, wird auf Z2 gesenkt, kuerzer geschlossen oder die Plan-Alternative bewusst geprueft. Das bleibt read-only und fuehrt nur zur bestehenden Plan-Pruefung.
+- **Why:** TrainerRoad-aehnliche Athlete-Level-Logik braucht neben `Zu hart heute` auch eine ruhige Bedeutung fuer Grenzreize. Pulse soll Stretch nicht versteckt wie normale Ausfuehrung behandeln, aber auch nicht automatisch absagen: Die Tagesentscheidung nennt die sichere Kontrollgrenze.
+- **Alternatives:** Stretch nur als Detail im Leading Factor lassen (zu wenig handlungsnah); Stretch wie `too_hard_today` immer auf die leichtere Alternative routen (zu defensiv); Plan oder Garmin automatisch anpassen (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Zu harte Trainingspassung begrenzt die sicherste Tagesoption
 
 - **Decision:** Wenn das bestehende `Training`-Signal durch `capabilityFit: too_hard_today` die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Training zuerst entschärfen` formulieren, Ausfuehrung stoppen und auf die bestehende leichtere Plan-Alternative fuehren. Das bleibt read-only; Plan oder Garmin werden erst nach einem bewussten Klick geaendert.

@@ -658,6 +658,129 @@ test('Home daily decision uses too-hard training fit as the safest planned-worko
   await expect(page).toHaveURL('/plan?tab=training&source=today-change&intent=easier&workoutId=planned-fit-pressure#next-training-decision');
 });
 
+test('Home daily decision uses stretch training fit as a controlled execution boundary', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-stretch-boundary',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 4,
+    durationMin: 68,
+    distanceKm: null,
+    targetTss: 86,
+    archetypeId: 'threshold_over_under',
+    difficultyLevel: 4.7,
+    difficultyEnergySystem: 'threshold',
+    capabilityFit: 'stretch',
+    description: 'Threshold-Reiz nur kontrolliert ausfuehren.',
+    steps: null,
+    garminWorkoutId: 'garmin-stretch-boundary',
+    garminScheduledId: 'scheduled-stretch-boundary',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      readiness: {
+        score: 82,
+        hrvStatus: 'stable',
+        restingHrStatus: 'baseline',
+        sleepDebt7d: { hours: 1.2, status: 'low' },
+        recommendation: 'Koerper stabil, aber Reiz bewusst kontrollieren.',
+      },
+      fitnessLoad: {
+        ctl: 48,
+        atl: 47,
+        tsb: 1.1,
+      },
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist ein Stretch-Reiz geplant; Pulse prueft Ausfuehrung statt blindes Durchziehen.',
+        signature: 'planned-stretch-boundary',
+        options: [{
+          id: 'planned-stretch-boundary',
+          kind: 'workout',
+          priority: 'primary',
+          title: 'Plan ausführen: Rad',
+          detail: '68 min Z4. Nur mit gutem Warm-up und sauberer Tagesform.',
+          cta: 'Workout öffnen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Level-Fit: Stretch'],
+          activityType: 'bike',
+          zone: 4,
+          durationMin: 68,
+          archetypeId: 'threshold_over_under',
+          capabilityFit: 'stretch',
+          signalLabels: [{
+            kind: 'fit_stretch',
+            label: 'Stretch',
+            detail: 'Nur mit guter Tagesform und sauberem Warm-up',
+            tone: 'amber',
+          }],
+        }],
+      },
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffaellig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'insufficient',
+        headline: 'Keine Response-Muster fuer diesen Test.',
+        signals: [],
+        missingEvidence: [],
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Training');
+  await expect(leading).toContainText('Radfahren Z4 · 68 min');
+  await expect(leading).toContainText('Stretch');
+  const primaryCta = decision.getByRole('button', { name: 'Training prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Stretch kontrolliert ausführen');
+  await expect(safestOption).toContainText('Warm-up');
+  await expect(safestOption).toContainText('nicht passt');
+  await expect(safestOption).not.toContainText('Training zuerst entschärfen');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/plan?tab=training');
+});
+
 test('Home daily decision uses open plan adaptation as a leading signal', async ({ page }) => {
   await mockPulseApi(page, {
     adaptationEvents: {
