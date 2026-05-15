@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Decision Contract benennt den fuehrenden Tagesfaktor
+
+- **Decision:** Die aufgeklappten Home-Details des Daily-Decision-Contracts zeigen zusaetzlich `Heute entscheidet` als einen fuehrenden Faktor, abgeleitet aus dem ersten priorisierten Signal.
+- **Why:** Vollstaendige und sortierte Signale helfen, aber der Performance-OS-Nordstern verlangt eine einzige ruhige Uebersetzung. Tobi soll sofort sehen, welcher Faktor die heutige Handlung am staerksten begrenzt oder absichert, bevor er die uebrigen Signalchips liest.
+- **Alternatives:** Nur priorisierte Signalchips behalten (Tobi muss die fuehrende Bedeutung selbst ableiten); neue Home-Karte bauen (mehr Dichte); Backend-Synthese/API einfuehren (zu gross fuer diesen Frontend-Contract-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Decision-Contract-Signale folgen Entscheidungsprioritaet
 
 - **Decision:** Die Signale in den aufgeklappten Home-Details des Daily-Decision-Contracts werden nach Entscheidungsrelevanz sortiert: kritisch/schuetzend vor vorsichtig, dann ausfuehrend/positiv, zuletzt stabile Basiswerte.

@@ -12,6 +12,7 @@ export interface DailyDecisionSignal {
 }
 
 export interface DailyDecisionContract {
+  leadingFactor: string;
   goalImpact: string;
   garminExecution: string;
   continuity: string;
@@ -323,6 +324,12 @@ function prioritizeSignals(signals: DailyDecisionSignal[]): DailyDecisionSignal[
   ));
 }
 
+function leadingFactorSummary(signals: DailyDecisionSignal[]): string {
+  const leading = signals[0];
+  if (!leading) return 'Keine harte Begrenzung: Entscheidung aus Zielwirkung, Garmin-Zustand und sicherster Option ableiten.';
+  return `${leading.label}: ${leading.detail}`;
+}
+
 function executionSummary(workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
   if (completedActivity) return 'Garmin: Aktivitaet erledigt und bereit fuer Feedback/Planabgleich.';
   if (!workout) return 'Garmin: kein Schreibpfad fuer heute; Erholung und Check-in bleiben lokal.';
@@ -494,12 +501,15 @@ function buildContract({
   mentalBoundary: DailyDecisionMentalBoundary | null;
   todayOptions: PulseTodayOptionsResponse | null;
 }): DailyDecisionContract {
+  const signals = topSignals(home, workout, completedActivity, action, goalProjection, mentalBoundary, todayOptions);
+
   return {
+    leadingFactor: leadingFactorSummary(signals),
     goalImpact: goalImpactSummary(home, workout, completedActivity),
     garminExecution: executionSummary(workout, completedActivity),
     continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
     safestAlternative: alternative,
-    signals: topSignals(home, workout, completedActivity, action, goalProjection, mentalBoundary, todayOptions),
+    signals,
   };
 }
 
