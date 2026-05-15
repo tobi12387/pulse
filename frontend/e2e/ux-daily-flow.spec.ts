@@ -618,6 +618,10 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
     powderG: null,
     fluidMlPerHour: null,
     sodiumMgPerHour: null,
+    hydrationEvidenceGaps: [
+      'Sodium nicht strukturiert geloggt.',
+      'Hitze und Schweißrate nicht gemessen.',
+    ],
     evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
     learningReadiness: {
       comparableCompleteLogs: 0,
@@ -703,9 +707,17 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
   await expect(leading).toContainText('Noch drei vergleichbare During-Logs');
   await expect(leading).toContainText('Nächster Lernlog: 50-70 g/h kontrolliert testen');
   await expect(leading).toContainText('Dauer, Carbs und GI-Komfort zusammen erfassen');
+  await expect(leading).toContainText('Kontextlücken');
+  await expect(leading).toContainText('Sodium nicht strukturiert geloggt');
+  await expect(leading).toContainText('Hitze und Schweißrate nicht gemessen');
+  await expect(leading).toContainText('Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast');
   const safestOption = decision.getByTestId('daily-decision-safest-option');
   await expect(safestOption).toContainText('Fueling-Lernlog vollständig erfassen');
   await expect(safestOption).toContainText('50-70 g/h kontrolliert testen');
+  await expect(safestOption).toContainText('Kontextlücken');
+  await expect(safestOption).toContainText('Sodium nicht strukturiert geloggt');
+  await expect(safestOption).toContainText('Hitze und Schweißrate nicht gemessen');
+  await expect(safestOption).toContainText('Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast');
   await expect(safestOption).toContainText('locker kürzen statt Ziel-Carbs erzwingen');
   const primaryCta = decision.getByRole('button', { name: 'Fueling vorbereiten', exact: true });
   await expect(primaryCta).toBeVisible();
@@ -714,6 +726,10 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
   await expect(page).toHaveURL(/\/plan\?tab=training&source=fueling-learning&workoutId=planned-fueling-learning#workout-fueling-baseline/);
   await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Fueling-Baseline offen');
   await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Trend-Evidenz: 0/3');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Kontextlücken');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Sodium nicht strukturiert geloggt');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Hitze und Schweißrate nicht gemessen');
+  await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast');
 });
 
 test('Home daily decision closes completed long workouts with fueling evidence capture', async ({ page }) => {

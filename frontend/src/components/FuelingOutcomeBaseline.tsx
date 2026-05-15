@@ -5,6 +5,14 @@ function chip(label: string, value: string | number | null | undefined): string 
   return `${label}: ${value}`;
 }
 
+const fuelingLearningContext = 'Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast.';
+
+function hydrationGapText(baseline: PulseFuelingOutcomeBaseline): string | null {
+  const gaps = baseline.hydrationEvidenceGaps?.filter(Boolean) ?? [];
+  if (gaps.length === 0) return null;
+  return `Kontextlücken: ${gaps.join(' · ')}`;
+}
+
 function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | null {
   const readiness = baseline.learningReadiness ?? null;
   if (!readiness || readiness.readyForTrendSummary) return null;
@@ -13,7 +21,7 @@ function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | nu
     ? `${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen; `
     : '';
 
-  return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver und Sodium mitloggen, falls gemessen.`;
+  return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver mitschreiben; ${fuelingLearningContext}`;
 }
 
 export function FuelingOutcomeBaselineBlock({
@@ -42,6 +50,7 @@ export function FuelingOutcomeBaselineBlock({
   const readinessGap = readiness?.readyForTrendSummary === false
     ? readiness.missingEvidence[0] ?? null
     : null;
+  const hydrationGap = hydrationGapText(baseline);
   const nextLearningLog = nextLearningLogText(baseline);
 
   return (
@@ -101,6 +110,11 @@ export function FuelingOutcomeBaselineBlock({
       {readinessGap && (
         <p style={{ margin: '7px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
           {readinessGap}
+        </p>
+      )}
+      {hydrationGap && (
+        <p style={{ margin: '6px 0 0', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
+          {hydrationGap}
         </p>
       )}
       {nextLearningLog && (

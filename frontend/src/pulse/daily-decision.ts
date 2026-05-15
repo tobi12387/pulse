@@ -151,6 +151,18 @@ function openFuelingDebt(todayOptions: PulseTodayOptionsResponse | null | undefi
   return debt?.hasOpenDebt ? debt : null;
 }
 
+const fuelingLearningContext = 'Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast.';
+
+function sentenceWithoutTrailingPeriod(text: string): string {
+  return text.replace(/[.\s]+$/u, '');
+}
+
+function fuelingHydrationContext(baseline: PulseFuelingOutcomeBaseline | null | undefined): string {
+  const gaps = baseline?.hydrationEvidenceGaps?.filter(Boolean) ?? [];
+  if (gaps.length === 0) return fuelingLearningContext;
+  return `Kontextlücken: ${gaps.join(' · ')} ${fuelingLearningContext}`;
+}
+
 function fuelingProtectDetail(todayOptions: PulseTodayOptionsResponse | null | undefined): string | null {
   const label = todayOptions?.options
     .flatMap(option => option.signalLabels ?? [])
@@ -245,7 +257,7 @@ function alternativeFor(
     const target = fuelingOutcomeBaseline?.targetCarbsPerHour
       ? `${fuelingOutcomeBaseline.targetCarbsPerHour.min}-${fuelingOutcomeBaseline.targetCarbsPerHour.max} g/h kontrolliert testen, `
       : '';
-    return `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
+    return `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; ${fuelingHydrationContext(fuelingOutcomeBaseline)} Bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
   }
   if (todayWorkout && todayWorkout.zone >= 3) {
     return `Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.`;
@@ -507,7 +519,7 @@ function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | u
   const target = baseline?.targetCarbsPerHour
     ? ` Nächster Lernlog: ${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen;`
     : ' Nächster Lernlog:';
-  return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${missing}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen.`;
+  return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${sentenceWithoutTrailingPeriod(missing)}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen. ${fuelingHydrationContext(baseline)}`;
 }
 
 function activityFuelingTargetPath(activity: HomeActivity): string {

@@ -889,6 +889,10 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
       powderG: 300,
       fluidMlPerHour: 419,
       sodiumMgPerHour: null,
+      hydrationEvidenceGaps: [
+        'Sodium nicht strukturiert geloggt.',
+        'Hitze und Schweißrate nicht gemessen.',
+      ],
       evidence: ['Letzter Log: 2026-04-29, 42 g/h, 4 x 750 ml, 300 g Pulver', 'Sodium nicht geloggt'],
       learningReadiness: {
         comparableCompleteLogs: 1,
@@ -945,6 +949,10 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Noch 2 vergleichbare During-Logs');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Nächster Lernlog: 50-70 g/h kontrolliert testen');
   await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Dauer, Carbs und GI-Komfort zusammen erfassen');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Kontextlücken');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Sodium nicht strukturiert geloggt');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Hitze und Schweißrate nicht gemessen');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Sodium, Hitze und Schweißrate nur notieren, wenn du sie wirklich gemessen hast');
   await page.getByRole('button', { name: '+ Fueling-Log' }).click();
 
   const saveButton = page.getByRole('button', { name: 'SPEICHERN' });

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Baseline benennt Hydration-Kontextluecken
+
+- **Decision:** Die Fueling-Outcome-Baseline fuehrt offene Hydration-Kontextluecken als eigenen Contract mit: fehlendes strukturiertes Sodium sowie nicht gemessene Hitze und Schweissrate bleiben sichtbar in Home, Plan und Activity-Fueling, ohne Nutrition-Trends freizuschalten.
+- **Why:** MacroFactor-aehnliches Lernen braucht nicht nur Carbs und GI-Komfort, sondern auch klar erkennbare Grenzen der Hydration-/Sodium-Evidenz. Pulse soll Sodium konservativ behandeln und erst als Trend interpretieren, wenn Messkontext existiert; die Tagesentscheidung benennt deshalb, was nur notiert werden soll, wenn es wirklich gemessen wurde.
+- **Alternatives:** Die Luecken nur als generische Evidence im Freitext lassen (zu leicht zu uebersehen); Heat/Sweat-Rate-Felder ohne Messpfad erfinden (zu breit); Nutrition-Trends trotz fehlendem Kontext freischalten (zu schwache Evidence).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Analyse und Fueling-Lernen werden handlungsnäher auf Home
 
 - **Decision:** Home darf fuehrende Analyse-Signale um eine konkrete naechste Handlung ergaenzen (`Durability-Limiter pruefen, bevor Ausfuehrung oder Anpassung bestaetigt wird`) und bei offenem Fueling-Lernen die sicherste Option auf vollstaendige Evidence statt generische Readiness-Copy ausrichten.
