@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { pulseApi } from './api-client.js';
-import type { EquipmentInput, NutritionLogInput, PlanWorkoutInput, StrengthSessionInput } from './api-client.js';
+import type { EquipmentInput, NutritionLogInput, NutritionLogPatch, PlanWorkoutInput, StrengthSessionInput } from './api-client.js';
 import type { PulseActivityType } from '@coaching-os/shared/pulse';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -1068,6 +1068,23 @@ export function useDeleteNutritionLog() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => pulseApi.nutrition.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
+      qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
+      qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
+      qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
+      qc.invalidateQueries({ queryKey: pulseKeys.home });
+      qc.invalidateQueries({ queryKey: pulseKeys.plan });
+      qc.invalidateQueries({ queryKey: pulseKeys.adaptationEvents });
+    },
+  });
+}
+
+export function useUpdateNutritionLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: NutritionLogPatch }) => pulseApi.nutrition.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
       qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });

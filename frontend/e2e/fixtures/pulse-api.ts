@@ -69,6 +69,7 @@ type MockPulseApiOptions = {
   activityDetail?: unknown;
   nutritionLogs?: unknown[];
   onNutritionCreate?: (body: unknown) => void;
+  onNutritionPatch?: (id: string, body: unknown) => void;
   profile?: unknown | (() => unknown);
   onProfilePatch?: (body: unknown) => void;
   fuelingGuidance?: unknown | ((workoutId: string | null) => unknown);
@@ -1306,6 +1307,43 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
         notes: body.notes ?? null,
         createdAt: `${today}T13:15:00.000Z`,
       }, 201);
+    }
+    if (url.pathname.startsWith('/api/pulse/nutrition/') && request.method() === 'PATCH') {
+      const id = url.pathname.split('/').at(-1) ?? '';
+      const body = request.postDataJSON();
+      options.onNutritionPatch?.(id, body);
+      const existingLog = options.nutritionLogs?.find(log =>
+        typeof log === 'object'
+        && log != null
+        && (log as { id?: string }).id === id,
+      ) as Record<string, unknown> | undefined;
+
+      return json(route, {
+        ...(existingLog ?? {
+          id,
+          userId: 'user-1',
+          date: today,
+          workoutId: null,
+          activityId: null,
+          context: 'during',
+          mealType: null,
+          description: null,
+          calories: null,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+          gelsCount: null,
+          drinksMl: null,
+          sodiumMg: null,
+          bottles750Ml: null,
+          powderG: null,
+          fuelingProducts: [],
+          giComfort: null,
+          notes: null,
+          createdAt: `${today}T13:15:00.000Z`,
+        }),
+        ...body,
+      });
     }
     if (url.pathname === '/api/pulse/profile' && request.method() === 'GET' && 'profile' in options) {
       const profile = typeof options.profile === 'function' ? options.profile() : options.profile;

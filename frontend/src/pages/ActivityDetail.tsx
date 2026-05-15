@@ -11,6 +11,7 @@ import {
   useEquipment,
   useFuelingDebt,
   useNutritionLogs,
+  useUpdateNutritionLog,
   pulseKeys,
 } from '@/pulse/hooks';
 import { NutritionLogModal } from '@/components/NutritionLogModal';
@@ -657,7 +658,13 @@ function fuelingEvidenceQuality({
   activityType: string;
   durationMin: number;
   trendEvidence: string;
-}): { label: string; detail: string; items: string[]; tone: 'green' | 'amber' } | null {
+}): {
+  label: string;
+  detail: string;
+  items: string[];
+  tone: 'green' | 'amber';
+  giComfortCompletionLogId: string | null;
+} | null {
   if (!isLongFuelingActivity(activityType, durationMin)) return null;
 
   const duringLogs = logs.filter(log => log.context === 'during' || log.context == null);
@@ -668,6 +675,7 @@ function fuelingEvidenceQuality({
       detail: 'Für diese lange Einheit fehlt noch ein During-Log mit Carbs und GI-Komfort.',
       items: ['During-Log fehlt', trendEvidence],
       tone: 'amber',
+      giComfortCompletionLogId: null,
     };
   }
 
@@ -683,6 +691,7 @@ function fuelingEvidenceQuality({
         trendEvidence,
       ],
       tone: 'amber',
+      giComfortCompletionLogId: hasCarbs && !hasGiComfort ? latest.id : null,
     };
   }
 
@@ -691,6 +700,7 @@ function fuelingEvidenceQuality({
     detail: 'Dieser During-Log hat Carbs und GI-Komfort und kann in die Fueling-Baseline einfließen.',
     items: ['Carbs erfasst', 'GI-Komfort erfasst', trendEvidence],
     tone: 'green',
+    giComfortCompletionLogId: null,
   };
 }
 
@@ -704,6 +714,7 @@ function FuelingSection({
   const { data } = useNutritionLogs(null, activityId);
   const fuelingDebtQuery = useFuelingDebt();
   const deleteMut = useDeleteNutritionLog();
+  const updateNutrition = useUpdateNutritionLog();
   const logs = data?.logs ?? [];
   const fuelingDebt = fuelingDebtQuery.data?.fuelingDebt ?? null;
   const fuelingOutcomeBaseline = fuelingDebtQuery.data?.outcomeBaseline ?? null;
@@ -713,6 +724,7 @@ function FuelingSection({
     durationMin,
     trendEvidence: fuelingTrendEvidenceLabel(fuelingOutcomeBaseline),
   });
+  const giComfortCompletionLogId = evidenceQuality?.giComfortCompletionLogId ?? null;
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -729,6 +741,11 @@ function FuelingSection({
     mild_issue: 'Magen leicht unruhig',
     issue: 'Magenprobleme',
   };
+  const giComfortOptions: Array<{ value: NonNullable<NutritionLog['giComfort']>; label: string }> = [
+    { value: 'ok', label: giLabels.ok },
+    { value: 'mild_issue', label: giLabels.mild_issue },
+    { value: 'issue', label: giLabels.issue },
+  ];
 
   return (
     <>
@@ -864,6 +881,46 @@ function FuelingSection({
                 </span>
               ))}
             </div>
+            {giComfortCompletionLogId && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  color: 'var(--text-3)',
+                  letterSpacing: 0,
+                  textTransform: 'uppercase',
+                  marginBottom: 6,
+                }}>
+                  GI-Komfort ergänzen
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {giComfortOptions.map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => updateNutrition.mutate({
+                        id: giComfortCompletionLogId,
+                        data: { giComfort: option.value },
+                      })}
+                      disabled={updateNutrition.isPending}
+                      style={{
+                        minHeight: 44,
+                        background: 'rgba(0,0,0,0.18)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 4,
+                        padding: '6px 9px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 10,
+                        color: 'var(--text-2)',
+                        cursor: updateNutrition.isPending ? 'wait' : 'pointer',
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
