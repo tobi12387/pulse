@@ -2588,7 +2588,7 @@ function PlanAdaptationEventsCard({
 
 // ─── Training Tab ─────────────────────────────────────────────────────────────
 
-function TrainingTab({ entrySource }: { entrySource: string | null }) {
+function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | null; workoutIdParam: string | null }) {
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
   const goals     = usePulseGoals();
@@ -2713,6 +2713,14 @@ function TrainingTab({ entrySource }: { entrySource: string | null }) {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [entrySource, nextDecisionWorkout?.id, todayOptions.data?.todayOptions.state]);
+
+  useEffect(() => {
+    if (entrySource !== 'fueling-learning' || !workoutIdParam) return;
+    const workout = workouts.find(candidate => candidate.id === workoutIdParam) ?? null;
+    if (!workout) return;
+    setPlanNotice(null);
+    setSelectedWorkout(current => current?.id === workout.id ? current : workout);
+  }, [entrySource, workoutIdParam, workouts]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -3786,6 +3794,7 @@ export default function Plan() {
   const searchKey = searchParams.toString();
   const tab = tabFromQuery(searchParams.get('tab'));
   const entrySource = searchParams.get('source');
+  const workoutIdParam = searchParams.get('workoutId');
 
   function setTab(tabId: string) {
     const nextTab = tabId as Tab;
@@ -3827,7 +3836,7 @@ export default function Plan() {
         mobileTitle="Plan"
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
-      {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} /></TabPanel>}
+      {tab === 'training' && <TabPanel tab="training"><TrainingTab entrySource={entrySource} workoutIdParam={workoutIdParam} /></TabPanel>}
       {tab === 'ausfuehrung' && (
         <TabPanel tab="ausfuehrung">
           {entrySource?.startsWith('plan-apply') && (
