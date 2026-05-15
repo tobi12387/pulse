@@ -332,6 +332,11 @@ function recoveryPressureAlternative(recovery: HomeRecovery): string | null {
   return null;
 }
 
+function loadPressureAlternative(tsb: number): string | null {
+  if (signalToneForTsb(tsb) !== 'amber') return null;
+  return `Belastung zuerst senken: TSB ${tsb.toFixed(1)} zeigt akute Last. Heute Intensität klein halten, keinen Zusatzumfang anhängen und morgen mit frischer Load-Evidenz neu entscheiden.`;
+}
+
 function garminExecutionAlternative(workout: HomeWorkout | null): string | null {
   const signal = garminExecutionSignal(workout, null);
   if (!signal) return null;
@@ -389,6 +394,7 @@ function alternativeFor(
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
   const responseAlternative = personalResponseAlternative(responseSignal);
+  const loadAlternative = loadPressureAlternative(home.fitnessLoad.tsb);
   let alternative: string;
 
   if (action?.source === 'checkin') {
@@ -420,6 +426,8 @@ function alternativeFor(
     alternative = `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; ${fuelingHydrationContext(fuelingOutcomeBaseline)} Bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
   } else if (garminAlternative) {
     alternative = garminAlternative;
+  } else if (loadAlternative) {
+    alternative = loadAlternative;
   } else if (todayWorkout && adaptiveOption) {
     alternative = `Alltagsoption: ${adaptiveOption.title}: ${adaptiveOption.detail}`;
   } else if (responseAlternative) {
@@ -544,6 +552,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Garmin') return 'Garmin prüfen';
   if (signal.label === 'Reaktion') return 'Reaktion prüfen';
   if (signal.label === 'Ziel') return signal.actionLabel ?? 'Ziel prüfen';
+  if (signal.label === 'Belastung') return 'Belastung prüfen';
   return null;
 }
 

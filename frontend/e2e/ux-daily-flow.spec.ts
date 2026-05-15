@@ -328,6 +328,93 @@ test('Home daily decision uses recovery pressure as a leading body signal', asyn
   await expect(contract).toContainText('RHR +6 bpm');
 });
 
+test('Home daily decision uses load pressure as the safest option for a planned workout', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-load-pressure',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 3,
+    durationMin: 60,
+    distanceKm: null,
+    targetTss: 70,
+    archetypeId: 'tempo_sustained',
+    difficultyLevel: 4,
+    difficultyEnergySystem: 'tempo',
+    capabilityFit: 'productive',
+    description: 'Tempo-Reiz nur wenn die akute Last passt.',
+    steps: null,
+    garminWorkoutId: 'garmin-load-pressure',
+    garminScheduledId: 'scheduled-load-pressure',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      fitnessLoad: {
+        date: '2026-05-01',
+        ctl: 42.4,
+        atl: 58.8,
+        tsb: -16.4,
+        cached: false,
+      },
+      todayWorkout: plannedWorkout,
+      nextWorkout: null,
+    },
+    planWorkouts: [plannedWorkout],
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion fuer diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'insufficient',
+        headline: 'Keine Response-Muster fuer diesen Test.',
+        signals: [],
+        missingEvidence: [],
+      },
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Belastung');
+  await expect(leading).toContainText('TSB -16.4');
+  const primaryCta = decision.getByRole('button', { name: 'Belastung prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Belastung zuerst senken');
+  await expect(safestOption).toContainText('TSB -16.4');
+  await expect(safestOption).toContainText('keinen Zusatzumfang');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+});
+
 test('Home daily decision uses open plan adaptation as a leading signal', async ({ page }) => {
   await mockPulseApi(page, {
     adaptationEvents: {
