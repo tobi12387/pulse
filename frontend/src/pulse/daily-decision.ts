@@ -351,6 +351,16 @@ function adaptationAlternative(event: PulseAdaptationEvent | null | undefined): 
   return `Plananpassung zuerst prüfen: ${detail}. Heute keine Ausführung bestätigen, bis diese offene Anpassung bewusst geprüft ist.`;
 }
 
+function analysisAlternative(
+  trainingAnalytics: PulseTrainingAnalyticsResponse | null | undefined,
+  workout: HomeWorkout | null,
+): string | null {
+  const signal = analysisSignal(trainingAnalytics, workout, null);
+  if (!signal) return null;
+  const detail = sentenceWithoutTrailingPeriod(signal.detail);
+  return `Analyse zuerst prüfen: ${detail}. Heute keine Ausführung oder Anpassung bestätigen, bis der Durability-Limiter bewusst geprüft ist.`;
+}
+
 function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
@@ -358,6 +368,7 @@ function alternativeFor(
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null,
   decisionQuality: PulseDailyDecisionQualityResponse | null,
   adaptationEvent: PulseAdaptationEvent | null,
+  trainingAnalytics: PulseTrainingAnalyticsResponse | null,
   goalProjection: PulseGoalProjectionResponse | null,
   mentalBoundary: DailyDecisionMentalBoundary | null,
   personalResponse: PulsePersonalResponseResponse | null,
@@ -373,6 +384,7 @@ function alternativeFor(
   const qualityAlternative = decisionQualityAlternative(qualitySignal);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const planAdaptationAlternative = adaptationAlternative(adaptationEvent);
+  const durabilityAlternative = analysisAlternative(trainingAnalytics, todayWorkout);
   const goalAlternative = goalPressureAlternative(goalProjection);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
@@ -391,6 +403,8 @@ function alternativeFor(
     alternative = recoveryAlternative;
   } else if (planAdaptationAlternative) {
     alternative = planAdaptationAlternative;
+  } else if (durabilityAlternative) {
+    alternative = durabilityAlternative;
   } else if (qualityAlternative) {
     alternative = qualityAlternative;
   } else if (dataAlternative) {
@@ -1325,7 +1339,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, decisionQuality, adaptationEvent, goalProjection, mentalBoundary, personalResponse);
+  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, decisionQuality, adaptationEvent, trainingAnalytics, goalProjection, mentalBoundary, personalResponse);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;

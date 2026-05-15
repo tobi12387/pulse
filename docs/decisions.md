@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Durability-Analyse begrenzt die sicherste Tagesoption
+
+- **Decision:** Wenn ein `Analyse`-Signal aus bestehender Training-Analytics-Durability die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Analyse zuerst prüfen` formulieren und Ausfuehrung oder Anpassung stoppen, bis der Durability-Limiter bewusst geprueft ist. Das bleibt read-only und fuehrt nur zu Data > Analyse / Plan Trace; Plan oder Garmin werden nicht automatisch geaendert.
+- **Why:** Intervals.icu-/WKO-aehnliche Analyse-Tiefe wird erst alltagstauglich, wenn Pulse einen Limiter nicht nur zeigt, sondern daraus eine ruhige Schutzhandlung fuer heute macht. Ein harter Durability-Befund soll vor Geraete- oder Plan-Ausfuehrung sichtbar begrenzen.
+- **Alternatives:** Analyse nur als fuehrendes Signal/CTA lassen (zu wenig handlungsnah); automatisch Plan oder Garmin anpassen (zu versteckt); neue Analyse-Karte auf Home bauen (mehr Oberflaeche statt eine klarere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Offene Plananpassungen begrenzen die sicherste Tagesoption
 
 - **Decision:** Wenn ein `Anpassung`-Signal aus bestehenden Plan-Adaptation-Events die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die offene Anpassung als `Plananpassung zuerst prüfen` formulieren und Ausfuehrung bewusst stoppen, bis Garmin-, Feedback-, Recovery- oder Plan-Schulden geprueft sind. Das bleibt read-only und fuehrt nur zu bestehenden Settings-/Plan-/Activity-Pfaden; Plan oder Garmin werden nicht automatisch geaendert.

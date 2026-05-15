@@ -623,6 +623,11 @@ test('Home daily decision uses durability analysis as a leading signal for a pla
   const primaryCta = decision.getByRole('button', { name: 'Analyse prüfen', exact: true });
   await expect(primaryCta).toBeVisible();
 
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Analyse zuerst prüfen');
+  await expect(safestOption).toContainText('Durability limited');
+  await expect(safestOption).toContainText('keine Ausführung oder Anpassung bestätigen');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Analyse');
@@ -1517,6 +1522,13 @@ test('Home daily decision carries everyday fallback options into the safest choi
       headline: 'Keine Zielprojektion fuer diesen Test.',
       projections: [],
       missingEvidence: [],
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
     },
     todayOptions: {
       todayOptions: {
