@@ -1925,6 +1925,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
       nextWorkout: null,
     },
     planWorkouts: [],
+    activities: [completedActivity],
     activityDetail: {
       activity: completedActivity,
       laps: [],
@@ -1983,6 +1984,12 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await expect(planFollowUp).toContainText('erst Carbs/GI-Komfort');
   await planFollowUp.getByRole('button', { name: 'Plan abgleichen' }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=offplan-activity&activityId=activity-offplan-fueling#everyday-adaptation-inbox');
+  const planHandoff = page.getByTestId('plan-offplan-activity-context');
+  await expect(planHandoff).toContainText('Off-plan-Aktivität einordnen');
+  await expect(planHandoff).toContainText('Spontane lange Ausfahrt');
+  await expect(planHandoff).toContainText('Fueling');
+  await expect(planHandoff).toContainText('Plan und Garmin bleiben unverändert');
+  await expect(planHandoff).toContainText('Anders erledigt');
   await expect(page.getByTestId('everyday-adaptation-inbox')).toContainText('Anders erledigt');
 });
 

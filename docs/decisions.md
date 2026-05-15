@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Plan erklaert Off-plan Activity Handoff
+
+- **Decision:** Plan > Training liest `source=offplan-activity` und zeigt in der bestehenden Everyday Adaptation Inbox einen read-only Kontext `Off-plan-Aktivität einordnen`. Der Kontext benennt die Garmin-Aktivitaet, Fueling/Feedback als Evidence und dass Plan/Garmin unveraendert bleiben, bis die Planwirkung bewusst geprueft wird.
+- **Why:** Der Off-plan-Fueling-Abschluss darf nach dem Activity-Log nicht in einem generischen Plan-Zielort enden. JOIN-/Runna-aehnliche Alltagstauglichkeit braucht eine sichtbare Bruecke von spontaner Garmin-Belastung ueber Nutrition-/Feedback-Evidence zur bewussten Restplan-Pruefung.
+- **Alternatives:** Nur auf Activity Detail verlinken (Kontext geht nach Navigation verloren); eine neue Off-plan-Inbox bauen (mehr Oberflaeche statt bestehende Spur staerken); automatisch Plan oder Garmin anpassen (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Off-plan Activity Detail behaelt Plan-Follow-up sichtbar
 
 - **Decision:** Activity Detail zeigt bei einer langen Activity-Fueling-Lernevidenz ohne verknuepftes Planned Workout einen read-only Follow-up `Planabgleich nach Fueling`. Der Button fuehrt zu Plan > Training / Everyday Adaptation Inbox mit `source=offplan-activity`, ohne Plan oder Garmin automatisch zu schreiben.
