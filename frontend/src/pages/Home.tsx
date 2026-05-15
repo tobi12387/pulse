@@ -895,13 +895,14 @@ export default function Home() {
   const readiness = readinessQuery.data ?? data.readiness;
   const fl = loadQuery.data ?? data.fitnessLoad;
   const nw = data.nextWorkout;
-  const dailyDecision = deriveDailyDecision(data);
   const dailyCommand = resolveDailyCommand(data, todayOptionsQuery.data?.todayOptions ?? null);
   const actionStates = actionsQuery.data?.actions ?? [];
   const suppressedActions = actionsQuery.data?.suppressed ?? [];
   const recentDecisions = actionsQuery.data?.recentDecisions ?? [];
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
   const latestDelta = dailyDeltaQuery.data?.items[0] ?? null;
+  const todaysDelta = latestDelta?.date === data.date ? latestDelta : null;
+  const dailyDecision = deriveDailyDecision(data, { dailyDelta: todaysDelta });
   const primaryAdaptationEvent = primaryAdaptation(
     (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
   );

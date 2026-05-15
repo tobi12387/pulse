@@ -1,4 +1,4 @@
-import type { PulseHomeScreenData, PulseNextBestAction } from '@coaching-os/shared/pulse';
+import type { PulseDailyDeltaItem, PulseHomeScreenData, PulseNextBestAction } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -14,6 +14,7 @@ export interface DailyDecisionSignal {
 export interface DailyDecisionContract {
   goalImpact: string;
   garminExecution: string;
+  continuity: string;
   safestAlternative: string;
   signals: DailyDecisionSignal[];
 }
@@ -45,6 +46,10 @@ export interface DailyDecision {
   emptyState?: string;
   supportCta?: string;
   supportPath?: string;
+}
+
+export interface DailyDecisionContext {
+  dailyDelta?: PulseDailyDeltaItem | null;
 }
 
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
@@ -227,6 +232,39 @@ function goalImpactSummary(home: PulseHomeScreenData, workout: HomeWorkout | nul
   return 'Zielwirkung: Erholung und mentaler Check-in halten die Routine stabil.';
 }
 
+function continuitySummary({
+  home,
+  action,
+  workout,
+  completedActivity,
+  dailyDelta,
+}: {
+  home: PulseHomeScreenData;
+  action: PulseNextBestAction | null;
+  workout: HomeWorkout | null;
+  completedActivity: HomeActivity | null;
+  dailyDelta: PulseDailyDeltaItem | null;
+}): string {
+  if (dailyDelta?.date === home.date) {
+    const prefix = dailyDelta.status === 'matched' ? 'Bleibt gültig' : 'Geändert';
+    return `${prefix}: ${dailyDelta.title}. ${dailyDelta.nextPlanEffect}`;
+  }
+
+  if (workout?.status === 'completed' || workout?.completedActivityId) {
+    return 'Geändert: Die Einheit ist erledigt; die Entscheidung wechselt von Ausführung zu Feedback, Versorgung und Regeneration.';
+  }
+  if (completedActivity) {
+    return 'Geändert: Garmin hat reale Belastung geliefert; Feedback und Planabgleich sind heute wichtiger als zusätzliches Training.';
+  }
+  if (workout) {
+    return 'Bleibt gültig: Readiness, TSB und Workout-Profil bestimmen weiter Ausführen oder bewusstes Anpassen, nicht Zusatzumfang.';
+  }
+  if (action) {
+    return 'Bleibt gültig: Der offene nächste Schritt ist noch nicht geschlossen; Pulse hält die Entscheidung auf diesem Hebel.';
+  }
+  return 'Bleibt gültig: Ohne geplantes Training schließen Check-in und Erholung den Tag ruhiger als eine neue Einheit.';
+}
+
 function topSignals(home: PulseHomeScreenData, workout: HomeWorkout | null, completedActivity: HomeActivity | null, action: PulseNextBestAction | null): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
     {
@@ -277,25 +315,29 @@ function buildContract({
   workout,
   completedActivity,
   alternative,
+  dailyDelta,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
   workout: HomeWorkout | null;
   completedActivity: HomeActivity | null;
   alternative: string;
+  dailyDelta: PulseDailyDeltaItem | null;
 }): DailyDecisionContract {
   return {
     goalImpact: goalImpactSummary(home, workout, completedActivity),
     garminExecution: executionSummary(workout, completedActivity),
+    continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
     safestAlternative: alternative,
     signals: topSignals(home, workout, completedActivity, action),
   };
 }
 
-export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined): DailyDecision | null {
+export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined, context: DailyDecisionContext = {}): DailyDecision | null {
   if (!home) return null;
 
   const action = home.nextBestActions?.[0] ?? null;
+  const dailyDelta = context.dailyDelta?.date === home.date ? context.dailyDelta : null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
   const todayWorkout = workoutLabel(home);
@@ -339,6 +381,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       workout: completedWorkout,
       completedActivity: completedActivityFor(home, completedWorkout),
       alternative,
+      dailyDelta,
     });
     const prompt = [
       'Tagesentscheidung: Training heute erledigt.',
@@ -405,6 +448,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       workout: null,
       completedActivity: offPlanActivity,
       alternative,
+      dailyDelta,
     });
     const prompt = [
       'Tagesentscheidung: Garmin-Training heute erledigt.',
@@ -466,6 +510,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     workout: decisionWorkout,
     completedActivity: null,
     alternative,
+    dailyDelta,
   });
   const prompt = [
     `Tagesentscheidung: ${title}.`,
