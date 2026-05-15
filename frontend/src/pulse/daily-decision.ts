@@ -1,4 +1,4 @@
-import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -65,6 +65,7 @@ export interface DailyDecisionContext {
   mentalBoundary?: DailyDecisionMentalBoundary | null;
   todayOptions?: PulseTodayOptionsResponse | null;
   adaptationEvent?: PulseAdaptationEvent | null;
+  trainingAnalytics?: PulseTrainingAnalyticsResponse | null;
 }
 
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
@@ -317,6 +318,7 @@ const signalLabelPriority: Record<string, number> = {
   Recovery: 0,
   Anpassung: 0,
   Daten: 1,
+  Analyse: 1,
   Fueling: 2,
   Ziel: 3,
   Training: 4,
@@ -345,6 +347,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Mental') return 'Check-in öffnen';
   if (signal.label === 'Recovery') return 'Recovery ansehen';
   if (signal.label === 'Lernen') return 'Lernen prüfen';
+  if (signal.label === 'Analyse') return 'Analyse prüfen';
   return null;
 }
 
@@ -439,6 +442,26 @@ function adaptationSignal(event: PulseAdaptationEvent | null | undefined): Daily
     ].filter(Boolean).join(' · '),
     tone: event.severity === 'action' ? 'amber' : 'accent',
     targetPath: adaptationSignalTarget(event),
+  };
+}
+
+function analysisSignal(
+  trainingAnalytics: PulseTrainingAnalyticsResponse | null | undefined,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+): DailyDecisionSignal | null {
+  const openWorkoutDecision = Boolean(workout && !completedActivity && workout.status !== 'completed' && !workout.completedActivityId);
+  if (!openWorkoutDecision) return null;
+
+  const durability = trainingAnalytics?.powerDuration?.durability ?? null;
+  if (!durability || durability.rating === 'strong') return null;
+
+  return {
+    label: 'Analyse',
+    detail: trainingAnalytics?.powerDuration?.durabilityLine
+      ?? `Durability ${durability.rating}: ${durability.evidence.join(' · ')}`,
+    tone: durability.rating === 'limited' ? 'rose' : 'amber',
+    targetPath: '/data?tab=analysis#data-plan-trace',
   };
 }
 
@@ -557,6 +580,7 @@ function topSignals(
   mentalBoundary: DailyDecisionMentalBoundary | null,
   todayOptions: PulseTodayOptionsResponse | null,
   adaptationEvent: PulseAdaptationEvent | null,
+  trainingAnalytics: PulseTrainingAnalyticsResponse | null,
 ): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
     {
@@ -578,6 +602,7 @@ function topSignals(
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const qualitySignal = decisionQualitySignal(decisionQuality);
   const adaptation = adaptationSignal(adaptationEvent);
+  const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
 
   if (adaptation) {
     signals.push(adaptation);
@@ -590,6 +615,9 @@ function topSignals(
   }
   if (qualitySignal) {
     signals.push(qualitySignal);
+  }
+  if (analysis) {
+    signals.push(analysis);
   }
 
   if (fuelingDebt) {
@@ -660,6 +688,7 @@ function buildContract({
   mentalBoundary,
   todayOptions,
   adaptationEvent,
+  trainingAnalytics,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
@@ -672,8 +701,9 @@ function buildContract({
   mentalBoundary: DailyDecisionMentalBoundary | null;
   todayOptions: PulseTodayOptionsResponse | null;
   adaptationEvent: PulseAdaptationEvent | null;
+  trainingAnalytics: PulseTrainingAnalyticsResponse | null;
 }): DailyDecisionContract {
-  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent);
+  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent, trainingAnalytics);
 
   return {
     leadingFactor: leadingFactorSummary(signals),
@@ -695,6 +725,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const mentalBoundary = context.mentalBoundary ?? null;
   const todayOptions = context.todayOptions?.date === home.date ? context.todayOptions : null;
   const adaptationEvent = context.adaptationEvent ?? null;
+  const trainingAnalytics = context.trainingAnalytics ?? null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
   const todayWorkout = workoutLabel(home);
@@ -744,6 +775,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       mentalBoundary,
       todayOptions,
       adaptationEvent,
+      trainingAnalytics,
     });
     const prompt = [
       'Tagesentscheidung: Training heute erledigt.',
@@ -816,6 +848,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       mentalBoundary,
       todayOptions,
       adaptationEvent,
+      trainingAnalytics,
     });
     const prompt = [
       'Tagesentscheidung: Garmin-Training heute erledigt.',
@@ -883,6 +916,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     mentalBoundary,
     todayOptions,
     adaptationEvent,
+    trainingAnalytics,
   });
   const primaryAction = primaryActionForLeadingSignal(contract.signals, { cta, targetPath, resultPreview }, { canOverride: action == null });
   const prompt = [

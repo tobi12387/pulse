@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Tiefe Analyse darf offene Trainingsentscheidungen fuehren
+
+- **Decision:** Home uebergibt bestehende Training-Analytics-Durability an den Daily-Decision-Contract; `limited`/`watch` Durability wird als priorisiertes `Analyse`-Signal sichtbar und kann bei offenen geplanten Workouts den Primaer-CTA zu Data > Analyse fuehren.
+- **Why:** Intervals.icu-/WKO-aehnliche Tiefe darf nicht nur in Data > Analyse liegen, wenn sie die heutige Ausfuehrung eines geplanten Trainings veraendert. Gleichzeitig bleibt das Signal absichtlich auf offene Trainingsentscheidungen begrenzt, damit ein altes Analyseergebnis nicht freie Tage oder abgeschlossene Feedback-Flows uebernimmt.
+- **Alternatives:** Durability nur in Data/Insights anzeigen (zu weit weg von der Tageshandlung); eine neue Home-Analysekarte bauen (mehr Oberflaeche statt eine Entscheidung); alle Tage mit Analyse-CTA fuehren lassen (zu laut und weniger alltagstauglich).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fuehrendes Signal steuert die offene Tagesaktion
 
 - **Decision:** In normalen offenen Home-Tagesentscheidungen ohne explizite Next-Best-Action darf ein operatives fuehrendes Contract-Signal den Haupt-CTA, Zielpfad und Klick-Ausblick uebernehmen; abgeschlossene Trainings-, Feedback- und explizite Action-Flows behalten ihre Primaerschritte.
