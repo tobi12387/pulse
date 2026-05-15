@@ -629,7 +629,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Anpassung') return signal.detail.split(':')[0]?.trim() || 'Anpassung prüfen';
   if (signal.label === 'Daten') return 'Daten prüfen';
   if (signal.label === 'Fueling') return 'Fueling schließen';
-  if (signal.label === 'Mental') return 'Check-in öffnen';
+  if (signal.label === 'Mental') return signal.actionLabel ?? 'Check-in öffnen';
   if (signal.label === 'Recovery') return 'Recovery ansehen';
   if (signal.label === 'Lernen') return 'Lernen prüfen';
   if (signal.label === 'Analyse') return 'Analyse prüfen';
@@ -1157,6 +1157,7 @@ function topSignals(
       detail: `${mentalBoundary.label}: ${mentalBoundary.detail}`,
       tone: mentalSignalTone(mentalBoundary),
       targetPath: mentalBoundary.targetPath ?? '/data?tab=today#data-mental',
+      actionLabel: 'Mental prüfen',
     });
   }
 
