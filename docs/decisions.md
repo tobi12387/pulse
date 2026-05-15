@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Akute Last begrenzt die sicherste Tagesoption
+
+- **Decision:** Wenn das bestehende `Belastung`-Signal durch deutlich negatives TSB die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Belastung zuerst senken` formulieren, Intensitaet klein halten, Zusatzumfang stoppen und zur bestehenden Data > Analyse / Plan-Trace-Evidence fuehren. Das bleibt read-only; Plan oder Garmin werden nicht automatisch geaendert.
+- **Why:** TrainingPeaks-/TrainerRoad-aehnliche Trainingslogik ist erst tagesklar, wenn Pulse akute Last nicht nur als TSB-Wert zeigt, sondern in eine vorsichtige heutige Handlung uebersetzt. So wird aus Last-Evidence eine ruhige Grenze vor Ausfuehrung, Anpassung oder Zusatzumfang.
+- **Alternatives:** TSB nur in den Details lassen (zu wenig handlungsnah); automatisch Umfang/Intensitaet im Plan reduzieren (zu versteckt); neue Load-Karte auf Home bauen (mehr Oberflaeche statt eine klarere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Durability-Analyse begrenzt die sicherste Tagesoption
 
 - **Decision:** Wenn ein `Analyse`-Signal aus bestehender Training-Analytics-Durability die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` als `Analyse zuerst prüfen` formulieren und Ausfuehrung oder Anpassung stoppen, bis der Durability-Limiter bewusst geprueft ist. Das bleibt read-only und fuehrt nur zu Data > Analyse / Plan Trace; Plan oder Garmin werden nicht automatisch geaendert.
