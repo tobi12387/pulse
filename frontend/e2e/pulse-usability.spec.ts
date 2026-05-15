@@ -4666,6 +4666,72 @@ test('Plan workout modal shows nutrition trend summaries only after complete fue
   await expect(baseline).not.toContainText('Nächster Lernlog');
 });
 
+test('Plan workout modal names existing fueling evidence completion before the next learning log', async ({ page }) => {
+  await mockPulseApi(page, {
+    planWorkouts: [
+      {
+        id: 'workout-fuel-evidence',
+        plannedDate: '2026-05-02',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 150,
+        status: 'planned',
+        description: 'Lange Ausfahrt mit offenem Fueling-Lernschritt.',
+        garminWorkoutId: 'gw-fuel-evidence',
+        garminScheduledId: 'sched-fuel-evidence',
+        executionStatus: 'garmin_scheduled',
+      },
+    ],
+    fuelingGuidance: (workoutId) => ({
+      shouldShow: workoutId === 'workout-fuel-evidence',
+      preferenceStatus: 'ready',
+      outcomeBaseline: {
+        status: 'caution',
+        label: 'Fueling-Baseline unvollstaendig',
+        summary: 'Letzter langer Log: 60 g/h; Verträglichkeit fehlt, deshalb nur vorsichtig veraendern.',
+        latestLogDate: '2026-05-13',
+        observedCarbsPerHour: 60,
+        targetCarbsPerHour: { min: 60, max: 75 },
+        bottles750Ml: 3,
+        powderG: 220,
+        fluidMlPerHour: 690,
+        sodiumMgPerHour: null,
+        hydrationEvidenceGaps: ['Sodium nicht strukturiert geloggt.'],
+        evidence: ['GI-Komfort fehlt im langen Log.'],
+        learningReadiness: {
+          comparableCompleteLogs: 0,
+          requiredComparableCompleteLogs: 3,
+          readyForTrendSummary: false,
+          missingEvidence: [
+            'Noch drei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.',
+            'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.',
+          ],
+          nextAction: {
+            kind: 'complete_gi_comfort',
+            label: 'GI-Komfort ergänzen',
+            detail: 'GI-Komfort am bestehenden langen During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
+            activityId: 'activity-long-carb-log',
+          },
+        },
+      },
+      before: [],
+      during: [{ id: 'carbs', text: '60-75 g/h erst wieder testen, wenn der vorhandene Log geschlossen ist.' }],
+      after: [],
+      recoveryCautions: [],
+      evidence: [],
+    }),
+  });
+
+  await page.goto('/plan');
+  await page.getByText('Lange Ausfahrt mit offenem Fueling-Lernschritt.').click();
+
+  const baseline = page.getByTestId('workout-fueling-baseline');
+  await expect(baseline).toContainText('Trend-Evidenz: 0/3');
+  await expect(baseline).toContainText('Nächste Evidence: GI-Komfort ergänzen');
+  await expect(baseline).toContainText('vorhandene Carb-Log');
+  await expect(baseline).not.toContainText('Nächster Lernlog');
+});
+
 test('Plan keeps Garmin confidence visible when sync-garmin fails', async ({ page }) => {
   await mockPulseApi(page, {
     planWorkouts: [

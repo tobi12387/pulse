@@ -994,6 +994,12 @@ test('Home daily decision closes completed long workouts with fueling evidence c
         'Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.',
         'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.',
       ],
+      nextAction: {
+        kind: 'complete_gi_comfort',
+        label: 'GI-Komfort ergänzen',
+        detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
+        activityId: 'activity-post-fueling',
+      },
     },
   };
   const completedActivity = {
@@ -1098,7 +1104,8 @@ test('Home daily decision closes completed long workouts with fueling evidence c
   const decision = page.getByTestId('daily-decision-card');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Fueling-Log prüfen');
   await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Trend-Evidenz 1/3');
-  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('GI-Komfort am bestehenden During-Log ergänzen');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Nächste Evidence: GI-Komfort ergänzen');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('vorhandenen langen During-Log');
   const primaryCta = decision.getByRole('button', { name: 'GI-Komfort ergänzen', exact: true });
   await expect(primaryCta).toBeVisible();
 

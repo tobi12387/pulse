@@ -7,6 +7,7 @@ describe('summarizeFuelingOutcomeBaseline', () => {
       logs: [{
         date: '2026-05-09',
         context: 'during',
+        activityId: 'activity-long-carb-log',
         activityType: 'bike',
         durationMin: 398,
         carbsG: 356,
@@ -23,6 +24,12 @@ describe('summarizeFuelingOutcomeBaseline', () => {
     });
     expect(readiness.missingEvidence.join(' ')).toContain('GI-Komfort');
     expect(readiness.missingEvidence.join(' ')).toContain('drei vergleichbare');
+    expect(readiness.nextAction).toMatchObject({
+      kind: 'complete_gi_comfort',
+      label: 'GI-Komfort ergänzen',
+      activityId: 'activity-long-carb-log',
+    });
+    expect(readiness.nextAction?.detail).toContain('vorhandenen langen During-Log');
   });
 
   it('marks trend summaries ready after three comparable complete during logs', () => {

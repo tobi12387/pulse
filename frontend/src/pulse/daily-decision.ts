@@ -528,6 +528,11 @@ function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | u
   if (!readiness || readiness.readyForTrendSummary) return null;
 
   const missing = readiness.missingEvidence[0] ?? 'Vergleichbare During-Logs fehlen noch.';
+  const nextAction = readiness.nextAction ?? null;
+  if (nextAction && nextAction.kind !== 'log_next_long_session') {
+    return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${sentenceWithoutTrailingPeriod(missing)}. Nächste Evidence: ${nextAction.label}; ${sentenceWithoutTrailingPeriod(nextAction.detail)}.`;
+  }
+
   const target = baseline?.targetCarbsPerHour
     ? ` Nächster Lernlog: ${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen;`
     : ' Nächster Lernlog:';
@@ -544,6 +549,14 @@ function fuelingTrendDetail(baseline: PulseFuelingOutcomeBaseline | null | undef
 function fuelingEvidenceCompletionAction(
   baseline: PulseFuelingOutcomeBaseline | null | undefined,
 ): { detail: string; cta: string } {
+  const nextAction = baseline?.learningReadiness?.nextAction ?? null;
+  if (nextAction && nextAction.kind !== 'log_next_long_session') {
+    return {
+      detail: '',
+      cta: nextAction.label,
+    };
+  }
+
   const missingEvidence = baseline?.learningReadiness?.missingEvidence ?? [];
   const hasStructuredGiGap = missingEvidence.some(item =>
     item.toLocaleLowerCase('de-DE').includes('gi-komfort fehlt strukturiert'));
@@ -581,7 +594,10 @@ function fuelingClosureStep(
   return {
     status: 'open',
     label: 'Fueling-Log prüfen',
-    detail: `${sentenceWithoutTrailingPeriod(readinessDetail)}. ${completionAction.detail}`,
+    detail: [
+      `${sentenceWithoutTrailingPeriod(readinessDetail)}.`,
+      completionAction.detail,
+    ].filter(Boolean).join(' '),
     cta: completionAction.cta,
     targetPath: activityFuelingTargetPath(activity),
   };
