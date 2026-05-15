@@ -319,6 +319,86 @@ test('Home daily decision details expose fueling debt as a top decision signal',
   await expect(contract).toContainText('Magenhinweis begrenzt Intensität');
 });
 
+test('Home daily decision details expose goal pressure as a top decision signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-threshold',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 3,
+        durationMin: 70,
+        distanceKm: null,
+        targetTss: 74,
+        archetypeId: 'tempo_sweet_spot',
+        difficultyLevel: 4.0,
+        difficultyEnergySystem: 'threshold',
+        capabilityFit: 'productive',
+        description: 'Kontrollierter Zielreiz.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Top-Ziel braucht Aufmerksamkeit: 70.3 Kraichgau.',
+      projections: [{
+        goalId: 'race-1',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-07-11',
+        daysUntil: 71,
+        probabilityPct: 64,
+        status: 'watch',
+        confidence: 'medium',
+        summary: '70.3 Kraichgau: beobachten bei ca. 64% mit mittel-Konfidenz.',
+        limiterRisk: {
+          status: 'watch',
+          label: 'Long Endurance + Fueling',
+          summary: 'lange Ausdauer kontrolliert aufbauen und Fueling-Vertraeglichkeit absichern',
+          evidence: ['Long-Endurance-Level 3.1', 'Fueling-Vertraeglichkeit lernt'],
+        },
+        nextBestIntervention: {
+          kind: 'fueling_practice',
+          title: 'Fueling-Praxis absichern',
+          summary: 'Die naechste lange Einheit sollte kontrolliert Fueling und GI-Vertraeglichkeit schliessen.',
+          actionLabel: 'Plan pruefen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Long-Endurance-Level 3.1', '1 kontrollierter During-Log'],
+        },
+        evidence: ['Ziel in 71 Tagen'],
+        missingEvidence: [],
+      }],
+      missingEvidence: [],
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Ziel');
+  await expect(contract).toContainText('70.3 Kraichgau');
+  await expect(contract).toContainText('64%');
+  await expect(contract).toContainText('Fueling-Praxis absichern');
+});
+
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
   await mockPulseApi(page, {
     dailyDelta: [{

@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
+import { useAdaptationEvents, useCheckinHistory, useCheckinToday, useDailyDelta, useDailyOutcomeLearning, useFitnessLoad, useGoalProjection, usePulseActions, usePulseCheckin, usePulseHome, useGarminSync, useReadiness, useTodayOptions, useUpdatePulseAction } from '@/pulse/hooks';
 import { useNavigate } from 'react-router-dom';
 import { HealthStateBanner } from '@/components/HealthStateBanner';
 import { RiskWatchBanner } from '@/components/RiskWatchBanner';
@@ -860,6 +860,7 @@ export default function Home() {
   const checkin = usePulseCheckin();
   const readinessQuery = useReadiness();
   const loadQuery = useFitnessLoad();
+  const goalProjection = useGoalProjection(180);
   const adaptationEvents = useAdaptationEvents();
   const garminSync = useGarminSync();
   const todayOptionsQuery = useTodayOptions();
@@ -903,7 +904,11 @@ export default function Home() {
   const latestOutcome = outcomesQuery.data?.items[0] ?? null;
   const latestDelta = dailyDeltaQuery.data?.items[0] ?? null;
   const todaysDelta = latestDelta?.date === data.date ? latestDelta : null;
-  const dailyDecision = deriveDailyDecision(data, { dailyDelta: todaysDelta, todayOptions: todaysOptions });
+  const dailyDecision = deriveDailyDecision(data, {
+    dailyDelta: todaysDelta,
+    goalProjection: goalProjection.data ?? null,
+    todayOptions: todaysOptions,
+  });
   const primaryAdaptationEvent = primaryAdaptation(
     (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
   );

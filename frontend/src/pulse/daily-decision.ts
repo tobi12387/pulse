@@ -1,4 +1,4 @@
-import type { PulseDailyDeltaItem, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -50,11 +50,13 @@ export interface DailyDecision {
 
 export interface DailyDecisionContext {
   dailyDelta?: PulseDailyDeltaItem | null;
+  goalProjection?: PulseGoalProjectionResponse | null;
   todayOptions?: PulseTodayOptionsResponse | null;
 }
 
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
 type HomeActivity = PulseHomeScreenData['recentActivities'][number];
+type GoalProjection = PulseGoalProjectionResponse['projections'][number];
 
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
@@ -136,6 +138,21 @@ function fuelingProtectDetail(todayOptions: PulseTodayOptionsResponse | null | u
     .flatMap(option => option.signalLabels ?? [])
     .find(signal => signal.kind === 'fueling_protect');
   return label?.detail ?? null;
+}
+
+function topGoalProjection(goalProjection: PulseGoalProjectionResponse | null | undefined): GoalProjection | null {
+  return goalProjection?.projections[0] ?? null;
+}
+
+function goalSignalTone(goal: GoalProjection): DailyDecisionSignalTone {
+  if (goal.status === 'at_risk') return 'rose';
+  if (goal.status === 'watch') return 'amber';
+  if (goal.status === 'on_track') return 'green';
+  return 'muted';
+}
+
+function goalProbabilityLabel(goal: GoalProjection): string {
+  return goal.probabilityPct == null ? 'Evidenz offen' : `${goal.probabilityPct}%`;
 }
 
 function alternativeFor(
@@ -291,6 +308,7 @@ function topSignals(
   workout: HomeWorkout | null,
   completedActivity: HomeActivity | null,
   action: PulseNextBestAction | null,
+  goalProjection: PulseGoalProjectionResponse | null,
   todayOptions: PulseTodayOptionsResponse | null,
 ): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
@@ -308,6 +326,16 @@ function topSignals(
     },
   ];
   const fuelingDebt = openFuelingDebt(todayOptions);
+  const goal = topGoalProjection(goalProjection);
+
+  if (goal) {
+    signals.push({
+      label: 'Ziel',
+      detail: `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`,
+      tone: goalSignalTone(goal),
+      targetPath: goal.nextBestIntervention.targetPath,
+    });
+  }
 
   if (fuelingDebt) {
     const protectDetail = fuelingProtectDetail(todayOptions);
@@ -354,6 +382,7 @@ function buildContract({
   completedActivity,
   alternative,
   dailyDelta,
+  goalProjection,
   todayOptions,
 }: {
   home: PulseHomeScreenData;
@@ -362,6 +391,7 @@ function buildContract({
   completedActivity: HomeActivity | null;
   alternative: string;
   dailyDelta: PulseDailyDeltaItem | null;
+  goalProjection: PulseGoalProjectionResponse | null;
   todayOptions: PulseTodayOptionsResponse | null;
 }): DailyDecisionContract {
   return {
@@ -369,7 +399,7 @@ function buildContract({
     garminExecution: executionSummary(workout, completedActivity),
     continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
     safestAlternative: alternative,
-    signals: topSignals(home, workout, completedActivity, action, todayOptions),
+    signals: topSignals(home, workout, completedActivity, action, goalProjection, todayOptions),
   };
 }
 
@@ -378,6 +408,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
 
   const action = home.nextBestActions?.[0] ?? null;
   const dailyDelta = context.dailyDelta?.date === home.date ? context.dailyDelta : null;
+  const goalProjection = context.goalProjection ?? null;
   const todayOptions = context.todayOptions?.date === home.date ? context.todayOptions : null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
@@ -423,6 +454,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       completedActivity: completedActivityFor(home, completedWorkout),
       alternative,
       dailyDelta,
+      goalProjection,
       todayOptions,
     });
     const prompt = [
@@ -491,6 +523,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       completedActivity: offPlanActivity,
       alternative,
       dailyDelta,
+      goalProjection,
       todayOptions,
     });
     const prompt = [
@@ -554,6 +587,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     completedActivity: null,
     alternative,
     dailyDelta,
+    goalProjection,
     todayOptions,
   });
   const prompt = [
