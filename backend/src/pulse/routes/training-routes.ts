@@ -2750,6 +2750,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       gelsCount:   z.number().int().min(0).max(50).optional(),
       drinksMl:    z.number().int().min(0).max(20000).optional(),
       sodiumMg:    z.number().int().min(0).max(50000).optional(),
+      ambientTempC: z.number().min(0).max(60).optional(),
+      sweatRateLPerHour: z.number().min(0).max(5).optional(),
       bottles750Ml: z.number().min(0).max(40).optional(),
       powderG:     z.number().min(0).max(3000).optional(),
       fuelingProducts: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
@@ -2781,6 +2783,8 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       gelsCount:   parsed.data.gelsCount   ?? null,
       drinksMl:    parsed.data.drinksMl    ?? null,
       sodiumMg:    parsed.data.sodiumMg    ?? null,
+      ambientTempC: parsed.data.ambientTempC ?? null,
+      sweatRateLPerHour: parsed.data.sweatRateLPerHour ?? null,
       bottles750Ml: parsed.data.bottles750Ml ?? null,
       powderG:     parsed.data.powderG     ?? null,
       fuelingProducts: parsed.data.fuelingProducts ?? [],
@@ -2797,6 +2801,9 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const schema = z.object({
       carbsG: z.number().min(0).max(2000).optional(),
       drinksMl: z.number().int().min(0).max(20000).optional(),
+      sodiumMg: z.number().int().min(0).max(50000).optional(),
+      ambientTempC: z.number().min(0).max(60).optional(),
+      sweatRateLPerHour: z.number().min(0).max(5).optional(),
       bottles750Ml: z.number().min(0).max(40).optional(),
       powderG: z.number().min(0).max(3000).optional(),
       fuelingProducts: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
@@ -2811,6 +2818,9 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     const updateValues: {
       carbsG?: number | null;
       drinksMl?: number | null;
+      sodiumMg?: number | null;
+      ambientTempC?: number | null;
+      sweatRateLPerHour?: number | null;
       bottles750Ml?: number | null;
       powderG?: number | null;
       fuelingProducts?: string[];
@@ -2819,6 +2829,9 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
     } = {};
     if (parsed.data.carbsG !== undefined) updateValues.carbsG = parsed.data.carbsG;
     if (parsed.data.drinksMl !== undefined) updateValues.drinksMl = parsed.data.drinksMl;
+    if (parsed.data.sodiumMg !== undefined) updateValues.sodiumMg = parsed.data.sodiumMg;
+    if (parsed.data.ambientTempC !== undefined) updateValues.ambientTempC = parsed.data.ambientTempC;
+    if (parsed.data.sweatRateLPerHour !== undefined) updateValues.sweatRateLPerHour = parsed.data.sweatRateLPerHour;
     if (parsed.data.bottles750Ml !== undefined) updateValues.bottles750Ml = parsed.data.bottles750Ml;
     if (parsed.data.powderG !== undefined) updateValues.powderG = parsed.data.powderG;
     if (parsed.data.fuelingProducts !== undefined) updateValues.fuelingProducts = parsed.data.fuelingProducts;

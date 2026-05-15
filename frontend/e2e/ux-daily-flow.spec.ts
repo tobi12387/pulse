@@ -1277,6 +1277,8 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   await expect(leadingFactor).toContainText('Mental: Schutzmodus: Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
   const safestOption = decision.getByTestId('daily-decision-safest-option');
   await expect(safestOption).toContainText(/Sicherste Option/i);
+  await expect(safestOption).toContainText('Schutzmodus zuerst respektieren');
+  await expect(safestOption).toContainText('Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
   await expect(safestOption).toContainText('Fueling-Schutz zuerst schließen');
   await expect(safestOption).toContainText('75-120 min locker');
 

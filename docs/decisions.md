@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-15 — Fueling-Logs erfassen gemessenen Hydration-Kontext
+
+- **Decision:** Activity-Fueling-Logs duerfen gemessenen Hydration-Kontext strukturiert erfassen: Sodium in mg, Umgebungstemperatur in °C und Schweißrate in l/h. Diese Werte schliessen Hydration-Kontextluecken in der Fueling-Baseline, bleiben aber Messkontext und schalten Nutrition-Trends nicht ohne komplette vergleichbare During-Logs frei.
+- **Why:** Die zuvor sichtbaren Sodium-/Hitze-/Schweißrate-Luecken muessen einen echten, ruhigen Messpfad haben, sonst bleiben sie nur Copy. Pulse soll daraus konservativ lernen koennen, ohne Sodium oder Schweißrate zu schaetzen oder medizinische/automatische Schluesse zu ziehen.
+- **Alternatives:** Luecken weiter nur anzeigen (kein Lernpfad); Heat/Sweat aus Wetter oder Annahmen schaetzen (zu unzuverlaessig und breit); neue Nutrition-Flaeche bauen (mehr Oberflaeche statt den bestehenden Log zu vervollstaendigen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+## 2026-05-15 — Mental Boundary rahmt die sicherste Tagesoption
+
+- **Decision:** Wenn Home eine aktive Mental Boundary im Daily-Decision-Contract hat, rahmt diese Grenze auch die `Sicherste Option`; Fueling-, Plan- oder Workout-Sicherheitsdetails bleiben erhalten, werden aber unter `Schutzmodus zuerst respektieren` eingeordnet.
+- **Why:** Die Performance-OS-Entscheidung darf mentale Tagesgrenzen nicht nur als Evidenz oder fuehrendes Signal zeigen, waehrend die konkrete Alternative rein koerperlich klingt. Die sicherste Handlung muss Koerper, Ziel und Alltag zusammenfuehren: heute kleiner bleiben, klare Grenze halten und erst danach Fueling/Plan sauber schliessen.
+- **Alternatives:** Mental Boundary nur im Leading Factor lassen (zu wenig handlungsnah); Fueling/Workout-Sicherheitsoption ersetzen (verliert wichtige Koerper-Evidence); neue Mental-Karte auf Home bauen (mehr Oberflaeche statt eine ruhigere Entscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Baseline benennt Hydration-Kontextluecken
 
 - **Decision:** Die Fueling-Outcome-Baseline fuehrt offene Hydration-Kontextluecken als eigenen Contract mit: fehlendes strukturiertes Sodium sowie nicht gemessene Hitze und Schweissrate bleiben sichtbar in Home, Plan und Activity-Fueling, ohne Nutrition-Trends freizuschalten.

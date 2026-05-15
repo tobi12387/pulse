@@ -960,6 +960,9 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   await expect(page.getByText('750-ml-Flaschen')).toBeVisible();
   await page.getByLabel('750-ml-Flaschen').fill('4');
   await page.getByLabel('POWER CARB Pulver (g)').fill('300');
+  await page.getByLabel('Sodium (mg)').fill('1300');
+  await page.getByLabel('Temperatur (°C)').fill('28');
+  await page.getByLabel('Schweißrate (l/h)').fill('0.9');
   await expect(saveButton).toBeDisabled();
   await page.getByRole('button', { name: 'POWER CARB Sour Cherry' }).click();
   await page.getByRole('button', { name: 'Mars' }).click();
@@ -974,6 +977,9 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
     context: 'during',
     bottles750Ml: 4,
     drinksMl: 3000,
+    sodiumMg: 1300,
+    ambientTempC: 28,
+    sweatRateLPerHour: 0.9,
     powderG: 300,
     fuelingProducts: expect.arrayContaining(['mnstry-power-carb-sour-cherry-1-0-8', 'mars']),
     giComfort: 'mild_issue',

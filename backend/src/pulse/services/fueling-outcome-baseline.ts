@@ -21,6 +21,8 @@ export interface FuelingOutcomeBaselineLogInput {
   bottles750Ml?: number | null;
   powderG?: number | null;
   sodiumMg?: number | null;
+  ambientTempC?: number | null;
+  sweatRateLPerHour?: number | null;
   giComfort?: 'ok' | 'mild_issue' | 'issue' | string | null;
   notes?: string | null;
 }
@@ -140,10 +142,11 @@ function hydrationEvidenceGaps(logs: FuelingOutcomeBaselineLogInput[]): string[]
   const candidates = comparableLearningLogs(logs);
   const relevant = candidates.length > 0 ? candidates : relevantLogs(logs);
   const hasSodium = relevant.some(log => log.sodiumMg != null);
+  const hasMeasuredHeatAndSweat = relevant.some(log => log.ambientTempC != null && log.sweatRateLPerHour != null);
 
   return [
     hasSodium ? null : 'Sodium nicht strukturiert geloggt.',
-    'Hitze und Schweißrate nicht gemessen.',
+    hasMeasuredHeatAndSweat ? null : 'Hitze und Schweißrate nicht gemessen.',
   ].filter((item): item is string => item != null);
 }
 
@@ -158,6 +161,15 @@ function formatObserved(log: FuelingOutcomeBaselineLogInput, observedCarbsPerHou
 
 function rangeText(range: PulseFuelingCarbRange | null): string | null {
   return range ? `${range.min}-${range.max} g/h` : null;
+}
+
+function hydrationContextText(log: FuelingOutcomeBaselineLogInput): string | null {
+  if (log.ambientTempC == null && log.sweatRateLPerHour == null) return null;
+  const parts = [
+    log.ambientTempC != null ? `${Math.round(log.ambientTempC)}°C` : null,
+    log.sweatRateLPerHour != null ? `Schweißrate ${log.sweatRateLPerHour.toFixed(1)} l/h` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? `Hydration-Kontext: ${parts.join(', ')}` : null;
 }
 
 export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaselineInput): PulseFuelingOutcomeBaseline {
@@ -193,7 +205,8 @@ export function summarizeFuelingOutcomeBaseline(input: BuildFuelingOutcomeBaseli
     `Letzter Log: ${latest.date}, ${observed}`,
     fluidMlPerHour != null ? `Fluid ca. ${fluidMlPerHour} ml/h` : 'Fluid nicht geloggt',
     sodiumMgPerHour != null ? `Sodium ca. ${sodiumMgPerHour} mg/h` : 'Sodium nicht geloggt',
-  ];
+    hydrationContextText(latest),
+  ].filter((item): item is string => item != null);
 
   if (isGiIssue(latest)) {
     return {
@@ -259,6 +272,8 @@ export async function loadFuelingOutcomeBaseline(userId: string, today: string):
     bottles750Ml: pulseNutritionLogs.bottles750Ml,
     powderG: pulseNutritionLogs.powderG,
     sodiumMg: pulseNutritionLogs.sodiumMg,
+    ambientTempC: pulseNutritionLogs.ambientTempC,
+    sweatRateLPerHour: pulseNutritionLogs.sweatRateLPerHour,
     giComfort: pulseNutritionLogs.giComfort,
     notes: pulseNutritionLogs.notes,
   }).from(pulseNutritionLogs)
@@ -297,6 +312,8 @@ export async function loadFuelingOutcomeBaseline(userId: string, today: string):
         bottles750Ml: log.bottles750Ml,
         powderG: log.powderG,
         sodiumMg: log.sodiumMg,
+        ambientTempC: log.ambientTempC,
+        sweatRateLPerHour: log.sweatRateLPerHour,
         giComfort: log.giComfort,
         notes: log.notes,
       };
