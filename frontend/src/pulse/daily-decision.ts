@@ -338,6 +338,12 @@ function garminExecutionAlternative(workout: HomeWorkout | null): string | null 
   return `Garmin zuerst schließen: ${signal.detail} vor Ausführung Plan > Ausfuehrung prüfen; Plan oder Garmin ändern sich erst nach deinem Klick.`;
 }
 
+function personalResponseAlternative(signal: DailyDecisionSignal | null): string | null {
+  if (!signal) return null;
+  const detail = sentenceWithoutTrailingPeriod(signal.detail);
+  return `Persönliche Reaktion zuerst einplanen: ${detail}. Heute Boundary, Warm-up und Umfang bewusst klein halten; Plan oder Garmin bleiben unverändert, bis du die Reaktion geprüft hast.`;
+}
+
 function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
@@ -346,6 +352,7 @@ function alternativeFor(
   decisionQuality: PulseDailyDecisionQualityResponse | null,
   goalProjection: PulseGoalProjectionResponse | null,
   mentalBoundary: DailyDecisionMentalBoundary | null,
+  personalResponse: PulsePersonalResponseResponse | null,
 ): string {
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
@@ -359,6 +366,8 @@ function alternativeFor(
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const goalAlternative = goalPressureAlternative(goalProjection);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
+  const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
+  const responseAlternative = personalResponseAlternative(responseSignal);
   let alternative: string;
 
   if (action?.source === 'checkin') {
@@ -388,6 +397,8 @@ function alternativeFor(
     alternative = garminAlternative;
   } else if (todayWorkout && adaptiveOption) {
     alternative = `Alltagsoption: ${adaptiveOption.title}: ${adaptiveOption.detail}`;
+  } else if (responseAlternative) {
+    alternative = responseAlternative;
   } else if (todayWorkout && todayWorkout.zone >= 3) {
     alternative = 'Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.';
   } else if (todayWorkout) {
@@ -1303,7 +1314,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, decisionQuality, goalProjection, mentalBoundary);
+  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, decisionQuality, goalProjection, mentalBoundary, personalResponse);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;

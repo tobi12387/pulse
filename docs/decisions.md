@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fuehrende Reaktionsmuster formen die sicherste Tagesoption
+
+- **Decision:** Wenn ein `Reaktion`-Signal aus bestehender Personal-Response-Evidence die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die konkrete naechste Anpassung als persoenliche Reaktion einplanen und Boundary, Warm-up oder Umfang vorsichtig kleiner rahmen. Das bleibt read-only und fuehrt nur zu Data > Analyse / Reaktionsmuster; Plan oder Garmin werden nicht automatisch geaendert.
+- **Why:** Persoenliche Muster sind erst alltagstauglich, wenn Pulse sie nicht nur als Analysebefund zeigt, sondern in eine ruhige heutige Handlung uebersetzt. Gleichzeitig muessen aktuelle harte Tagesgrenzen wie Mental, Recovery, Datenvertrauen, Goal, Garmin und Fueling Vorrang behalten.
+- **Alternatives:** Reaktionsmuster nur im Detail/CTA lassen (zu wenig handlungsnah); automatisch den Plan anpassen (zu versteckt und zu breit); neue Home-Karte bauen (mehr Oberflaeche statt eine bessere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Entscheidungslernen begrenzt wiederholte Tagesaktionen
 
 - **Decision:** Wenn ein `Lernen`-Signal aus `/decisions/quality` die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die Wiederholungs-/Strategieluecke als `Lernschleife zuerst schließen` formulieren und die heutige Handlung kleiner, anders getaktet oder bewusst pausiert rahmen. Das bleibt read-only und fuehrt nur zu bestehender Evidence; Plan, Garmin oder Coach werden nicht automatisch geaendert.

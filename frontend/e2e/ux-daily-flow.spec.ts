@@ -532,6 +532,11 @@ test('Home daily decision uses personal response patterns as a leading signal fo
   const primaryCta = decision.getByRole('button', { name: 'Reaktion prüfen', exact: true });
   await expect(primaryCta).toBeVisible();
 
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Persönliche Reaktion zuerst einplanen');
+  await expect(safestOption).toContainText('Heute zuerst Boundary setzen');
+  await expect(safestOption).toContainText('bewusst klein halten');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Reaktion');
