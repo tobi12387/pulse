@@ -213,6 +213,13 @@ test('Home daily decision details expose top signals goal impact Garmin state an
       evidence: ['Geplant: Rad Z2 75 min', 'Garmin: Rad 77 min'],
       targetPath: '/plan/activity/activity-1',
     }],
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
   });
   await page.goto('/');
 
@@ -238,7 +245,8 @@ test('Home daily decision details expose top signals goal impact Garmin state an
   await expect(contract).toContainText('Plan und Ausführung passen zusammen');
   await expect(contract).toContainText('Plan kann diesen Reiz als erledigt behandeln');
   await expect(contract).toContainText('Sicherste Option');
-  await expect(contract).toContainText('Einheit locker halten');
+  await expect(contract).toContainText('Garmin zuerst schließen');
+  await expect(contract).toContainText('Nur lokal geplant');
 });
 
 test('Home daily decision uses stale decision quality as a leading learning signal', async ({ page }) => {
@@ -1826,6 +1834,13 @@ test('Home daily decision details keep combined data fueling mental goal and tra
       }],
       missingEvidence: [],
     },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
   });
   await page.goto('/');
 
@@ -1837,8 +1852,8 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   await expect(safestOption).toContainText(/Sicherste Option/i);
   await expect(safestOption).toContainText('Schutzmodus zuerst respektieren');
   await expect(safestOption).toContainText('Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
-  await expect(safestOption).toContainText('Fueling-Schutz zuerst schließen');
-  await expect(safestOption).toContainText('75-120 min locker');
+  await expect(safestOption).toContainText('Datenvertrauen zuerst schließen');
+  await expect(safestOption).toContainText('Garmin alt');
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
