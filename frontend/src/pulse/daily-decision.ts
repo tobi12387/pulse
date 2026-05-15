@@ -170,6 +170,17 @@ function fuelingProtectDetail(todayOptions: PulseTodayOptionsResponse | null | u
   return label?.detail ?? null;
 }
 
+function withMentalBoundaryAlternative(
+  alternative: string,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
+): string {
+  if (!mentalBoundary) return alternative;
+  const label = mentalBoundary.level === 'protect'
+    ? 'Schutzmodus zuerst respektieren'
+    : 'Mentale Grenze zuerst respektieren';
+  return `${label}: ${mentalBoundary.detail} ${alternative}`;
+}
+
 function topGoalProjection(goalProjection: PulseGoalProjectionResponse | null | undefined): GoalProjection | null {
   return goalProjection?.projections[0] ?? null;
 }
@@ -238,37 +249,36 @@ function alternativeFor(
   action: PulseNextBestAction | null,
   todayOptions: PulseTodayOptionsResponse | null,
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
 ): string {
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
   const fuelingDebt = openFuelingDebt(todayOptions);
   const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
+  let alternative: string;
 
   if (action?.source === 'checkin') {
-    return 'Kurz in Coach oder Data einchecken; wenn wenig Zeit ist, nur Kopf, Energie und Stress notieren.';
-  }
-  if (action?.source === 'risk') {
-    return 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
-  }
-  if (fuelingDebt) {
-    return `Fueling-Schutz zuerst schließen: ${fuelingDebt.closureCondition}`;
-  }
-  if (todayWorkout && fuelingLearningOpen && isFuelingLearningWorkout(todayWorkout)) {
+    alternative = 'Kurz in Coach oder Data einchecken; wenn wenig Zeit ist, nur Kopf, Energie und Stress notieren.';
+  } else if (action?.source === 'risk') {
+    alternative = 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
+  } else if (fuelingDebt) {
+    alternative = `Fueling-Schutz zuerst schließen: ${fuelingDebt.closureCondition}`;
+  } else if (todayWorkout && fuelingLearningOpen && isFuelingLearningWorkout(todayWorkout)) {
     const target = fuelingOutcomeBaseline?.targetCarbsPerHour
       ? `${fuelingOutcomeBaseline.targetCarbsPerHour.min}-${fuelingOutcomeBaseline.targetCarbsPerHour.max} g/h kontrolliert testen, `
       : '';
-    return `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; ${fuelingHydrationContext(fuelingOutcomeBaseline)} Bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
+    alternative = `Fueling-Lernlog vollständig erfassen: ${target}Dauer/Carbs/GI-Komfort notieren; ${fuelingHydrationContext(fuelingOutcomeBaseline)} Bei Magen- oder Readiness-Problemen locker kürzen statt Ziel-Carbs erzwingen.`;
+  } else if (todayWorkout && todayWorkout.zone >= 3) {
+    alternative = 'Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.';
+  } else if (todayWorkout) {
+    alternative = 'Einheit locker halten oder bewusst verschieben, wenn Check-in oder Readiness dagegen sprechen.';
+  } else if (workout) {
+    alternative = 'Freien Tag als Vorbereitung nutzen: Schlaf, Mobility, mentale Entlastung und kurze Planprüfung.';
+  } else {
+    alternative = 'Erholungstag bewusst schließen oder im Plan neue Verfügbarkeit setzen, falls Training doch geplant werden soll.';
   }
-  if (todayWorkout && todayWorkout.zone >= 3) {
-    return `Auf Z2 senken oder im Plan eine kürzere Alternative wählen, falls die Grenze nicht passt.`;
-  }
-  if (todayWorkout) {
-    return 'Einheit locker halten oder bewusst verschieben, wenn Check-in oder Readiness dagegen sprechen.';
-  }
-  if (workout) {
-    return 'Freien Tag als Vorbereitung nutzen: Schlaf, Mobility, mentale Entlastung und kurze Planprüfung.';
-  }
-  return 'Erholungstag bewusst schließen oder im Plan neue Verfügbarkeit setzen, falls Training doch geplant werden soll.';
+
+  return withMentalBoundaryAlternative(alternative, mentalBoundary);
 }
 
 function mapEvidence(item: string): DailyDecisionEvidence {
@@ -1117,7 +1127,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline);
+  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, mentalBoundary);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;

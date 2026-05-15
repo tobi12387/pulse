@@ -939,6 +939,16 @@ function FuelingSection({
                       {log.sodiumMg}mg Na
                     </span>
                   )}
+                  {log.ambientTempC != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                      {Math.round(log.ambientTempC)}°C
+                    </span>
+                  )}
+                  {log.sweatRateLPerHour != null && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                      Schweißrate {log.sweatRateLPerHour.toFixed(1)} l/h
+                    </span>
+                  )}
                   {log.notes && (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', fontStyle: 'italic' }}>
                       {log.notes}
