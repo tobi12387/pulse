@@ -2547,6 +2547,9 @@ test('Home no-training daily decision opens the missing check-in before Coach su
   await expect(decision).toContainText('Heute ist kein Training geplant.');
   await expect(decision).toContainText(/Warum jetzt/i);
   await expect(decision).toContainText('Kurz Stimmung, Energie, Stress und Motivation eintragen');
+  const leadingFactor = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leadingFactor).toContainText('Mental: Check-in offen');
+  await expect(leadingFactor).not.toContainText('Ziel: 70.3 Kraichgau');
   await expect(decision).not.toContainText(/Nach dem Klick/i);
   await expect(decision).not.toContainText('Nach dem Speichern nutzen Home, Plan und Coach dasselbe mentale Tagessignal.');
   await expect(decision.getByText('Readiness 78/100')).not.toBeVisible();

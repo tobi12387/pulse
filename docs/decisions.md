@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Trainingsfreie Check-in-Tage fuehren nicht mit Watch-Zielen
+
+- **Decision:** Wenn keine Trainingseinheit, keine Garmin-Aktivitaet und keine explizite Next-Best-Action offen ist, darf ein normales `watch`-Zielsignal die sichtbare `Heute entscheidet`-Zeile nicht vor dem fehlenden Mental Check-in fuehren. Harte Schutzsignale und `at_risk`-Ziele bleiben vorrangig; Goal Projection bleibt in den Details sichtbar.
+- **Why:** Die Hauptkarte soll eine ruhige Handlung nennen, nicht eine Analysefährte, die zum falschen naechsten Schritt klingt. An trainingsfreien Tagen ist der fehlende Check-in die kleinste intelligente Handlung, solange kein echter Schutzdruck oder Zielrisiko aktiver ist.
+- **Alternatives:** Ziel-Watch weiter als Hauptfaktor anzeigen (widerspricht dem Check-in-CTA); Goal Projection komplett aus trainingsfreien Tagen entfernen (verliert relevante Evidenz); eine neue Check-in-Karte bauen (mehr Oberflaeche statt klarerer Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Gespeicherte Mental Boundary wird geprüft statt neu erfasst
 
 - **Decision:** Wenn eine gespeicherte non-stable Mental Boundary die Home-Tagesentscheidung führt, nutzt der operative CTA `Mental prüfen` und führt zur bestehenden Mental-Evidence in Data, statt erneut `Check-in öffnen` zu sagen. Offene Mental-/Check-in-Aktionen ohne gespeicherten Check-in behalten weiter `Check-in öffnen`.
