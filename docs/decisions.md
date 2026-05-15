@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Goal Projection wird Top-Signal der Tagesentscheidung
+
+- **Decision:** Home darf die vorhandene `goal-projection` als kompaktes `Ziel`-Signal im bestehenden Daily-Decision-Contract nutzen: Top-Ziel, Wahrscheinlichkeit/Evidence-Status und naechste Intervention werden als Kontext angezeigt.
+- **Why:** Der Performance-OS-Nordstern verlangt, dass nicht nur Koerper, Garmin, Training und Fueling, sondern auch Zielkontext die heutige Handlung sichtbar beeinflusst. Die Goal Projection existiert bereits als read-only Evidenz; Home soll sie uebersetzen, ohne eine weitere Karte oder automatische Plan-/Garmin-Mutation einzufuehren.
+- **Alternatives:** Zielprojektion nur in Data/Plan/Insights lassen (zu weit weg von der Tagesentscheidung); neue Home-Zielkarte bauen (mehr Dichte statt ruhigere Entscheidung); Backend-Synthese-API einfuehren (zu gross fuer diesen Contract-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Fueling Debt wird Top-Signal der Tagesentscheidung
 
 - **Decision:** Home darf offenen `todayOptions.fuelingDebt` als `Fueling`-Signal im bestehenden Daily-Decision-Contract anzeigen und die sicherste Option auf die vorhandene Closure-Bedingung legen.
