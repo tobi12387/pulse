@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useCheckinHistory, useCheckinToday,
@@ -74,6 +74,7 @@ function Loading({ rows = 3 }: { rows?: number }) {
 type PlannedWorkout = PulsePlannedWorkout;
 type SourceChip = { label: string; targetPath?: string };
 const CUSTOM_ACTIVITY_TYPES: PulseActivityType[] = ['bike', 'run', 'hike', 'swim', 'strength', 'other'];
+const EMPTY_WORKOUTS: PlannedWorkout[] = [];
 type ScenarioPreviewMode = 'tour' | 'move' | 'reduce' | 'availability';
 type AdaptationScenarioMode = Extract<ScenarioPreviewMode, 'move' | 'reduce'>;
 
@@ -2610,13 +2611,14 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
   const [planNotice, setPlanNotice] = useState<PlanMutationNotice | null>(null);
   const [adaptationDismissed, setAdaptationDismissed] = useState(false);
   const [dismissedAdaptationEventIds, setDismissedAdaptationEventIds] = useState<Set<string>>(() => new Set());
+  const [dismissedUrlWorkoutId, setDismissedUrlWorkoutId] = useState<string | null>(null);
   const [scenarioReviewRequest, setScenarioReviewRequest] = useState<{ seq: number; mode: AdaptationScenarioMode }>({ seq: 0, mode: 'reduce' });
 
   const selectedWeekDate = getMonday(new Date());
   selectedWeekDate.setDate(selectedWeekDate.getDate() + weekOffset * 7);
   const selectedWeekStart = isoDate(selectedWeekDate);
   const traceQuery = usePlanTrace(selectedWeekStart);
-  const workouts   = plan.data?.workouts ?? [];
+  const workouts   = useMemo(() => plan.data?.workouts ?? EMPTY_WORKOUTS, [plan.data?.workouts]);
   const activities = acts.data?.activities ?? [];
   const generatedTrace = generate.data?.planTrace ?? null;
   const generatedTraceForSelectedWeek = generatedTrace?.weekStart === selectedWeekStart ? generatedTrace : null;
@@ -2681,11 +2683,15 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
   }
 
   function openWorkout(workout: PlannedWorkout) {
+    setDismissedUrlWorkoutId(null);
     setPlanNotice(null);
     setSelectedWorkout(workout);
   }
 
   function closeWorkout() {
+    if (!selectedWorkout && urlSelectedWorkout) {
+      setDismissedUrlWorkoutId(urlSelectedWorkout.id);
+    }
     setSelectedWorkout(null);
     setPlanNotice(null);
   }
@@ -2714,13 +2720,12 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
     return () => window.cancelAnimationFrame(frame);
   }, [entrySource, nextDecisionWorkout?.id, todayOptions.data?.todayOptions.state]);
 
-  useEffect(() => {
-    if (entrySource !== 'fueling-learning' || !workoutIdParam) return;
-    const workout = workouts.find(candidate => candidate.id === workoutIdParam) ?? null;
-    if (!workout) return;
-    setPlanNotice(null);
-    setSelectedWorkout(current => current?.id === workout.id ? current : workout);
-  }, [entrySource, workoutIdParam, workouts]);
+  const urlSelectedWorkout = entrySource === 'fueling-learning'
+    && workoutIdParam
+    && dismissedUrlWorkoutId !== workoutIdParam
+    ? workouts.find(candidate => candidate.id === workoutIdParam) ?? null
+    : null;
+  const visibleWorkout = selectedWorkout ?? urlSelectedWorkout;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -2823,7 +2828,7 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
         }}
       />
 
-      {planNotice && !selectedWorkout && (
+      {planNotice && !visibleWorkout && (
         <InlineFeedback title={planNotice.title} message={planNotice.message} tone={planNotice.tone} />
       )}
 
@@ -3001,10 +3006,10 @@ function TrainingTab({ entrySource, workoutIdParam }: { entrySource: string | nu
         </div>
       )}
 
-      {selectedWorkout && (
+      {visibleWorkout && (
         <WorkoutDetailModal
-          workout={selectedWorkout}
-          notice={planNotice ?? undefined}
+          workout={visibleWorkout}
+          notice={selectedWorkout ? planNotice ?? undefined : undefined}
           onClose={closeWorkout}
           onUpdate={updated => setSelectedWorkout(updated)}
         />
