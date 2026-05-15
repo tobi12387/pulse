@@ -522,6 +522,156 @@ test('Home daily decision details expose stale Garmin data confidence as a top d
   await expect(contract).toContainText('Heute fehlen frische Signale.');
 });
 
+test('Home daily decision details keep combined data fueling mental goal and training signals visible', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      dataStatus: {
+        userReady: true,
+        profileReady: true,
+        garmin: {
+          status: 'stale',
+          lastMetricDate: '2026-04-30',
+          lastMetricSyncAt: '2026-04-30T05:00:00.000Z',
+          lastActivityAt: '2026-05-01T06:00:00.000Z',
+          metricsDays14: 10,
+          activitiesDays14: 5,
+          issues: ['today_metrics_missing'],
+        },
+      },
+      todayWorkout: {
+        id: 'planned-saturated-signals',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        distanceKm: null,
+        targetTss: 48,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3.2,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Ausdauer mit sauberem Fueling.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'recovery_protect',
+        summary: 'Fueling-Schutz ist heute wichtiger als Intensität.',
+        signature: 'home-saturated-signals',
+        fuelingDebt: {
+          status: 'open_gi_issue',
+          hasOpenDebt: true,
+          label: 'GI-Schutz offen',
+          summary: 'GI-/Magenhinweis ist noch offen.',
+          closureCondition: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+          evidence: ['GI-Hinweis: 2026-04-29'],
+          openIssueDate: '2026-04-29',
+          controlledWorkoutId: null,
+          followUpActivityId: null,
+          updatedAt: '2026-05-01T08:00:00.000Z',
+        },
+        options: [{
+          id: 'rest-fueling-protect',
+          kind: 'rest',
+          priority: 'primary',
+          title: 'Heute bewusst pausieren',
+          detail: 'Schließen: 75-120 min locker mit frühem Fueling und danach Magen ok loggen.',
+          cta: 'Tagesentscheidung prüfen',
+          targetPath: '/',
+          evidence: ['Fueling: GI-Schutz offen'],
+          signalLabels: [{
+            kind: 'fueling_protect',
+            label: 'Fueling schützen',
+            detail: 'Magenhinweis begrenzt Intensität',
+            tone: 'amber',
+          }],
+        }],
+      },
+    },
+    checkinToday: { checkin: { id: 'mental-protect', date: '2026-05-01' } },
+    checkinHistory: {
+      checkins: [{
+        id: 'mental-protect',
+        userId: 'user-1',
+        date: '2026-05-01',
+        mood: 4,
+        energy: 3,
+        stress: 8,
+        motivation: 4,
+        notes: 'Alltag zieht heute stark.',
+        themes: ['Arbeit'],
+        source: 'manual',
+        coachQuestions: null,
+        createdAt: '2026-05-01T07:30:00.000Z',
+      }],
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Top-Ziel braucht Aufmerksamkeit: 70.3 Kraichgau.',
+      projections: [{
+        goalId: 'race-1',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-07-11',
+        daysUntil: 71,
+        probabilityPct: 64,
+        status: 'watch',
+        confidence: 'medium',
+        summary: '70.3 Kraichgau: beobachten bei ca. 64% mit mittel-Konfidenz.',
+        limiterRisk: {
+          status: 'watch',
+          label: 'Long Endurance + Fueling',
+          summary: 'lange Ausdauer kontrolliert aufbauen und Fueling-Vertraeglichkeit absichern',
+          evidence: ['Long-Endurance-Level 3.1', 'Fueling-Vertraeglichkeit lernt'],
+        },
+        nextBestIntervention: {
+          kind: 'fueling_practice',
+          title: 'Fueling-Praxis absichern',
+          summary: 'Die naechste lange Einheit sollte kontrolliert Fueling und GI-Vertraeglichkeit schliessen.',
+          actionLabel: 'Plan pruefen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Long-Endurance-Level 3.1', '1 kontrollierter During-Log'],
+        },
+        evidence: ['Ziel in 71 Tagen'],
+        missingEvidence: [],
+      }],
+      missingEvidence: [],
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Daten');
+  await expect(contract).toContainText('Fueling');
+  await expect(contract).toContainText('Mental');
+  await expect(contract).toContainText('Schutzmodus');
+  await expect(contract).toContainText('Ziel');
+  await expect(contract).toContainText('70.3 Kraichgau');
+  await expect(contract).toContainText('Training');
+  await expect(contract).toContainText('Radfahren Z2 · 60 min');
+});
+
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
   await mockPulseApi(page, {
     dailyDelta: [{
