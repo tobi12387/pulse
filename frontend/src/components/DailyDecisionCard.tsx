@@ -465,6 +465,14 @@ export function DailyDecisionCard({
                 {primarySummary.detail}
               </div>
             </div>
+            <div data-testid="daily-decision-safest-option" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
+                {label('Sicherste Option', labelCase)}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+                {decision.contract.safestAlternative}
+              </div>
+            </div>
             {showInlineResultPreview && (
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>

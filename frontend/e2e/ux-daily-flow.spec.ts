@@ -662,6 +662,10 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   const leadingFactor = decision.getByTestId('daily-decision-leading-factor');
   await expect(leadingFactor).toContainText(/Heute entscheidet/i);
   await expect(leadingFactor).toContainText('Mental: Schutzmodus: Heute kleinere Schritte, klare Grenze und kein Zusatzdruck.');
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText(/Sicherste Option/i);
+  await expect(safestOption).toContainText('Fueling-Schutz zuerst schließen');
+  await expect(safestOption).toContainText('75-120 min locker');
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 

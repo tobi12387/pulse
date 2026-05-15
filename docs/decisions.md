@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Sicherste Option steht auf der Hauptentscheidung
+
+- **Decision:** Die Home-Hauptkarte der Daily Decision zeigt `Sicherste Option` aus dem bestehenden Contract bereits vor dem Aufklappen der Details.
+- **Why:** Die Performance-OS-Antwort muss nicht nur den fuehrenden Faktor benennen, sondern auch sofort die alltagstaugliche Schutz- oder Ausweichhandlung zeigen. Besonders bei Fueling-/GI-, Mental- oder Datenvertrauensgrenzen braucht Tobi die sichere Alternative ohne Analyse-Klick.
+- **Alternatives:** Sicherste Option nur in Details lassen (zu spaet fuer Alltagssituationen); eigene Adaptionskarte auf Home bauen (mehr Dichte); neue Backend-Synthese/API einfuehren (zu breit fuer diesen Frontend-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fuehrender Tagesfaktor steht auf der Hauptentscheidung
 
 - **Decision:** Die Home-Hauptkarte der Daily Decision zeigt `Heute entscheidet` mit dem fuehrenden Contract-Faktor bereits vor dem Aufklappen der Details.
