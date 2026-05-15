@@ -1218,6 +1218,13 @@ test('Home daily decision details expose fueling debt as a top decision signal',
         }],
       },
     },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
   });
   await page.goto('/');
 
