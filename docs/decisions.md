@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Zielwirkung der Tagesentscheidung nutzt Goal Projection
+
+- **Decision:** Der Home Daily-Decision-Contract nutzt die vorhandene Goal Projection nicht nur als `Ziel`-Signal, sondern ergaenzt die `Zielwirkung`-Zeile mit Top-Ziel, Wahrscheinlichkeit/Evidenzstatus und naechster Intervention.
+- **Why:** Die Performance-OS-Antwort soll nicht generisch behaupten, dass Training dem Wochenziel hilft, wenn konkrete Zielprognose-Evidenz vorhanden ist. Tobi soll in der Tagesentscheidung sehen, wie die heutige Handlung auf das wichtigste Ziel einzahlt oder es schuetzt.
+- **Alternatives:** Goal Projection nur als Signalchip lassen (zu leicht von der `Zielwirkung` getrennt); eine neue Zielkarte auf Home bauen (mehr Oberflaeche); Backend-Synthese/API erweitern (zu breit fuer diesen Contract-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Recovery-Druck fuehrt die Home-Entscheidung mit
 
 - **Decision:** Home nutzt die vorhandenen `PulseRecoveryMetrics` als priorisiertes `Recovery`-Signal im Daily-Decision-Contract; schweres Schlafdefizit, sinkende HRV, erhoehte RHR oder ein niedriger Recovery-Score koennen `Heute entscheidet` fuehren.
