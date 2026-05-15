@@ -920,16 +920,17 @@ export default function Home() {
         targetPath: '/data?tab=today#data-mental',
       }
     : null;
+  const primaryAdaptationEvent = primaryAdaptation(
+    (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
+  );
   const dailyDecision = deriveDailyDecision(data, {
     dailyDelta: todaysDelta,
     decisionQuality: decisionQualityQuery.data ?? null,
     goalProjection: goalProjection.data ?? null,
     mentalBoundary,
     todayOptions: todaysOptions,
+    adaptationEvent: primaryAdaptationEvent,
   });
-  const primaryAdaptationEvent = primaryAdaptation(
-    (adaptationEvents.data?.events ?? []).filter(event => event.severity !== 'info'),
-  );
   const mentalDaySignal = mentalImpactSummary && mentalImpactSummary.level !== 'stable'
     ? `Mentale Tageslage: ${mentalImpactSummary.level === 'protect' ? 'Schutzmodus' : 'sensibel'}. ${mentalImpactSummary.labels.dailyImpact}`
     : null;

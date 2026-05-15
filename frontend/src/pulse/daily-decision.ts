@@ -1,4 +1,4 @@
-import type { PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
+import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulseTodayOptionsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from '@/pulse/activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
@@ -62,6 +62,7 @@ export interface DailyDecisionContext {
   goalProjection?: PulseGoalProjectionResponse | null;
   mentalBoundary?: DailyDecisionMentalBoundary | null;
   todayOptions?: PulseTodayOptionsResponse | null;
+  adaptationEvent?: PulseAdaptationEvent | null;
 }
 
 type HomeWorkout = NonNullable<PulseHomeScreenData['todayWorkout']>;
@@ -312,6 +313,7 @@ const signalLabelPriority: Record<string, number> = {
   Mental: 0,
   Lernen: 0,
   Recovery: 0,
+  Anpassung: 0,
   Daten: 1,
   Fueling: 2,
   Ziel: 3,
@@ -354,6 +356,38 @@ function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null
     detail,
     tone,
     targetPath: '/data?tab=analyse#data-plan-trace',
+  };
+}
+
+function adaptationSignalTarget(event: PulseAdaptationEvent): string {
+  if (event.recommendation === 'sync_garmin') return '/settings?section=garmin';
+  if (event.recommendation === 'log_feedback') return event.sourceId ? activityDetailPath(event.sourceId) : '/data?tab=analysis';
+  if (event.recommendation === 'keep_plan') return '/plan';
+  return '/plan#plan-adaptation-review';
+}
+
+function adaptationSignalLabel(event: PulseAdaptationEvent): string {
+  if (event.recommendation === 'sync_garmin') return 'Garmin prüfen';
+  if (event.recommendation === 'log_feedback') return 'Feedback öffnen';
+  if (event.recommendation === 'protect_recovery') return 'Recovery schützen';
+  if (event.recommendation === 'move_workout') return 'Einheit verschieben';
+  if (event.recommendation === 'reduce_intensity') return 'Intensität reduzieren';
+  if (event.recommendation === 'reduce_volume') return 'Umfang reduzieren';
+  if (event.recommendation === 'regenerate_week') return 'Woche neu prüfen';
+  return 'Plan beibehalten';
+}
+
+function adaptationSignal(event: PulseAdaptationEvent | null | undefined): DailyDecisionSignal | null {
+  if (!event || event.resolvedAt || event.severity === 'info') return null;
+
+  return {
+    label: 'Anpassung',
+    detail: [
+      `${adaptationSignalLabel(event)}: ${event.summary}`,
+      event.evidence[0] ?? null,
+    ].filter(Boolean).join(' · '),
+    tone: event.severity === 'action' ? 'amber' : 'accent',
+    targetPath: adaptationSignalTarget(event),
   };
 }
 
@@ -471,6 +505,7 @@ function topSignals(
   goalProjection: PulseGoalProjectionResponse | null,
   mentalBoundary: DailyDecisionMentalBoundary | null,
   todayOptions: PulseTodayOptionsResponse | null,
+  adaptationEvent: PulseAdaptationEvent | null,
 ): DailyDecisionSignal[] {
   const signals: DailyDecisionSignal[] = [
     {
@@ -491,7 +526,11 @@ function topSignals(
   const recovery = recoverySignal(home.recovery);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const qualitySignal = decisionQualitySignal(decisionQuality);
+  const adaptation = adaptationSignal(adaptationEvent);
 
+  if (adaptation) {
+    signals.push(adaptation);
+  }
   if (recovery) {
     signals.push(recovery);
   }
@@ -569,6 +608,7 @@ function buildContract({
   goalProjection,
   mentalBoundary,
   todayOptions,
+  adaptationEvent,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
@@ -580,8 +620,9 @@ function buildContract({
   goalProjection: PulseGoalProjectionResponse | null;
   mentalBoundary: DailyDecisionMentalBoundary | null;
   todayOptions: PulseTodayOptionsResponse | null;
+  adaptationEvent: PulseAdaptationEvent | null;
 }): DailyDecisionContract {
-  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions);
+  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent);
 
   return {
     leadingFactor: leadingFactorSummary(signals),
@@ -602,6 +643,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const goalProjection = context.goalProjection ?? null;
   const mentalBoundary = context.mentalBoundary ?? null;
   const todayOptions = context.todayOptions?.date === home.date ? context.todayOptions : null;
+  const adaptationEvent = context.adaptationEvent ?? null;
   const completedWorkout = completedTodayWorkout(home);
   const offPlanActivity = completedOffPlanActivity(home);
   const todayWorkout = workoutLabel(home);
@@ -650,6 +692,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       goalProjection,
       mentalBoundary,
       todayOptions,
+      adaptationEvent,
     });
     const prompt = [
       'Tagesentscheidung: Training heute erledigt.',
@@ -721,6 +764,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       goalProjection,
       mentalBoundary,
       todayOptions,
+      adaptationEvent,
     });
     const prompt = [
       'Tagesentscheidung: Garmin-Training heute erledigt.',
@@ -787,6 +831,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     goalProjection,
     mentalBoundary,
     todayOptions,
+    adaptationEvent,
   });
   const prompt = [
     `Tagesentscheidung: ${title}.`,

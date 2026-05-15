@@ -316,6 +316,38 @@ test('Home daily decision uses recovery pressure as a leading body signal', asyn
   await expect(contract).toContainText('RHR +6 bpm');
 });
 
+test('Home daily decision uses open plan adaptation as a leading signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    adaptationEvents: {
+      events: [{
+        id: 'adapt-sync-debt',
+        userId: 'user-1',
+        eventDate: '2026-05-01',
+        kind: 'sync_debt',
+        sourceId: 'planned-sync-debt',
+        severity: 'action',
+        recommendation: 'sync_garmin',
+        summary: 'Garmin-Sync-Schulden muessen vor Ausfuehrung geschlossen werden.',
+        evidence: ['1 offene Einheit'],
+        resolvedAt: null,
+        createdAt: '2026-05-01T07:50:00.000Z',
+      }],
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Anpassung');
+  await expect(leading).toContainText('Garmin-Sync-Schulden');
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Anpassung');
+  await expect(contract).toContainText('1 offene Einheit');
+  await expect(contract).toContainText('Garmin prüfen');
+});
+
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
