@@ -267,6 +267,12 @@ test('Home daily decision uses stale decision quality as a leading learning sign
   await expect(leading).toContainText('Lernen');
   await expect(leading).toContainText('Wiederholung prüfen');
   await expect(leading).toContainText('Wiederkehrende Empfehlung kleiner');
+  await expect(decision.getByRole('button', { name: 'Lernen prüfen', exact: true })).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Lernschleife zuerst schließen');
+  await expect(safestOption).toContainText('Mobilität 10 Minuten');
+  await expect(safestOption).toContainText('kleiner, anders getaktet');
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');

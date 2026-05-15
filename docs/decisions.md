@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Entscheidungslernen begrenzt wiederholte Tagesaktionen
+
+- **Decision:** Wenn ein `Lernen`-Signal aus `/decisions/quality` die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die Wiederholungs-/Strategieluecke als `Lernschleife zuerst schließen` formulieren und die heutige Handlung kleiner, anders getaktet oder bewusst pausiert rahmen. Das bleibt read-only und fuehrt nur zu bestehender Evidence; Plan, Garmin oder Coach werden nicht automatisch geaendert.
+- **Why:** Wiederholte generische Empfehlungen sind ein Produktfehler, wenn Pulse nicht erklaert, warum die Wiederholung heute noch sinnvoll ist oder wie sie kleiner werden soll. Die Tagesentscheidung braucht deshalb nicht nur das `Lernen`-Signal, sondern eine konkrete, ruhige Korrekturhandlung.
+- **Alternatives:** Decision Quality nur als Detail/CTA lassen (zu wenig handlungsnah); Empfehlung automatisch unterdruecken oder umplanen (zu versteckt); neue Learning-Inbox bauen (mehr Oberflaeche statt bessere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Datenvertrauen begrenzt die sicherste Tagesoption
 
 - **Decision:** Wenn ein `Daten`-Trust-Signal die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die bestehende Datenluecke als `Datenvertrauen zuerst schließen` formulieren und Intensitaets- oder Planaenderungslogik konservativ halten. Das bleibt read-only und fuehrt nur zu bestehenden Settings/Data-Pruefpfaden; Garmin-Sync, Plan und Profil werden nicht automatisch geaendert.
