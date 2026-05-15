@@ -1982,6 +1982,12 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await expect(planFollowUp).toContainText('Planabgleich nach Fueling');
   await expect(planFollowUp).toContainText('keinem geplanten Workout zugeordnet');
   await expect(planFollowUp).toContainText('erst Carbs/GI-Komfort');
+  await expect(planFollowUp.getByTestId('activity-offplan-feedback-readiness')).toContainText('Feedback fehlt');
+  await planFollowUp.getByRole('button', { name: 'Feedback öffnen' }).click();
+  const feedbackDialog = page.getByRole('dialog', { name: /Wie hat sich/i });
+  await expect(feedbackDialog).toBeVisible();
+  await feedbackDialog.getByRole('button', { name: '×' }).click();
+  await expect(feedbackDialog).toHaveCount(0);
   await planFollowUp.getByRole('button', { name: 'Plan abgleichen' }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=offplan-activity&activityId=activity-offplan-fueling#everyday-adaptation-inbox');
   const planHandoff = page.getByTestId('plan-offplan-activity-context');

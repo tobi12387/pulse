@@ -172,6 +172,7 @@ function RpeFeedbackSheet({
       <div
         role="dialog"
         aria-modal="true"
+        aria-labelledby="activity-rpe-feedback-title"
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%',
@@ -192,7 +193,7 @@ function RpeFeedbackSheet({
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 4 }}>
               Post-Workout
             </div>
-            <h2 style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
+            <h2 id="activity-rpe-feedback-title" style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
               Wie hat sich's angefühlt?
             </h2>
           </div>
@@ -855,10 +856,12 @@ function shouldShowOffPlanFuelingPlanFollowUp(
 }
 
 function FuelingSection({
-  activityId, workoutId, durationMin, activityType,
+  activityId, workoutId, durationMin, activityType, feedbackCaptured, onOpenFeedback,
 }: {
   activityId: string; workoutId: string | null;
   durationMin: number; activityType: string;
+  feedbackCaptured: boolean;
+  onOpenFeedback: () => void;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -1170,27 +1173,59 @@ function FuelingSection({
               Planabgleich nach Fueling
             </div>
             <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: 'var(--text-2)' }}>
-              Diese Aktivität ist keinem geplanten Workout zugeordnet; schließe erst Carbs/GI-Komfort,
-              dann prüfe den Restplan bewusst.
+              {feedbackCaptured
+                ? 'Diese Aktivität ist keinem geplanten Workout zugeordnet; Carbs/GI-Komfort und Feedback sind als Evidence sichtbar, dann prüfe den Restplan bewusst.'
+                : 'Diese Aktivität ist keinem geplanten Workout zugeordnet; schließe erst Carbs/GI-Komfort und Feedback, dann prüfe den Restplan bewusst.'}
             </p>
-            <button
-              type="button"
-              onClick={() => navigate(offPlanFuelingPlanFollowUpTarget(activityId))}
+            <div
+              data-testid="activity-offplan-feedback-readiness"
               style={{
-                marginTop: 9,
-                minHeight: 44,
-                border: '1px solid rgba(94,230,207,0.46)',
-                borderRadius: 4,
-                padding: '7px 10px',
-                background: 'rgba(94,230,207,0.08)',
-                color: 'var(--accent)',
+                marginTop: 8,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                cursor: 'pointer',
+                color: feedbackCaptured ? 'var(--green)' : 'var(--amber)',
               }}
             >
-              Plan abgleichen
-            </button>
+              {feedbackCaptured ? 'Feedback erfasst' : 'Feedback fehlt'}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
+              {!feedbackCaptured && (
+                <button
+                  type="button"
+                  onClick={onOpenFeedback}
+                  style={{
+                    minHeight: 44,
+                    border: '1px solid rgba(251,191,36,0.46)',
+                    borderRadius: 4,
+                    padding: '7px 10px',
+                    background: 'rgba(251,191,36,0.08)',
+                    color: 'var(--amber)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Feedback öffnen
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate(offPlanFuelingPlanFollowUpTarget(activityId))}
+                style={{
+                  minHeight: 44,
+                  border: '1px solid rgba(94,230,207,0.46)',
+                  borderRadius: 4,
+                  padding: '7px 10px',
+                  background: 'rgba(94,230,207,0.08)',
+                  color: 'var(--accent)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  cursor: 'pointer',
+                }}
+              >
+                Plan abgleichen
+              </button>
+            </div>
           </div>
         )}
 
@@ -1481,6 +1516,8 @@ export default function ActivityDetail() {
         workoutId={a.plannedWorkoutId ?? null}
         durationMin={a.durationSec ? Math.round(a.durationSec / 60) : 60}
         activityType={a.activityType}
+        feedbackCaptured={a.rpe != null || a.feedbackLoggedAt != null}
+        onOpenFeedback={() => setRpeOpen(true)}
       />
 
       {/* Analytics Cards */}
