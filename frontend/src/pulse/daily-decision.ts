@@ -292,6 +292,12 @@ function dataConfidenceSignal(dataStatus: HomeDataStatus): DailyDecisionSignal |
   return null;
 }
 
+function dataConfidenceAlternative(signal: DailyDecisionSignal | null): string | null {
+  if (!signal) return null;
+  const detail = sentenceWithoutTrailingPeriod(signal.detail);
+  return `Datenvertrauen zuerst schließen: ${detail}. Empfehlung konservativ halten; frische Garmin-/Profil-Daten prüfen, bevor du Intensität oder Planänderung ableitest.`;
+}
+
 function recoveryPressureAlternative(recovery: HomeRecovery): string | null {
   if (!recovery) return null;
 
@@ -339,6 +345,8 @@ function alternativeFor(
   const fuelingDebt = openFuelingDebt(todayOptions);
   const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
   const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
+  const dataSignal = dataConfidenceSignal(home.dataStatus);
+  const dataAlternative = dataConfidenceAlternative(dataSignal);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const goalAlternative = goalPressureAlternative(goalProjection);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
@@ -348,8 +356,12 @@ function alternativeFor(
     alternative = 'Kurz in Coach oder Data einchecken; wenn wenig Zeit ist, nur Kopf, Energie und Stress notieren.';
   } else if (action?.source === 'risk') {
     alternative = 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
+  } else if (dataAlternative && dataSignal?.tone === 'rose') {
+    alternative = dataAlternative;
   } else if (recoveryAlternative) {
     alternative = recoveryAlternative;
+  } else if (dataAlternative) {
+    alternative = dataAlternative;
   } else if (goalAlternative) {
     alternative = goalAlternative;
   } else if (fuelingDebt) {

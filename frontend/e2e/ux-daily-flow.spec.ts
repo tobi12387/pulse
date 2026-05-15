@@ -1412,8 +1412,8 @@ test('Home daily decision details expose stale Garmin data confidence as a top d
         capabilityFit: 'productive',
         description: 'Ruhige Ausdauer, wenn die Signale stimmen.',
         steps: null,
-        garminWorkoutId: null,
-        garminScheduledId: null,
+        garminWorkoutId: 'garmin-planned-stale-data',
+        garminScheduledId: 'schedule-planned-stale-data',
         garminSyncContract: null,
         status: 'planned',
         workoutFeedback: null,
@@ -1421,17 +1421,34 @@ test('Home daily decision details expose stale Garmin data confidence as a top d
         origin: 'generated',
         userLocked: false,
         completedActivityId: null,
-        executionStatus: 'local_planned',
+        executionStatus: 'garmin_scheduled',
         executionMatchedAt: null,
         executionMatchConfidence: null,
         executionNotes: null,
       },
       nextWorkout: null,
     },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Best Efforts offen',
+      durabilityLine: 'Durability noch nicht belastbar',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
   });
   await page.goto('/');
 
   const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Daten');
+  await expect(leading).toContainText('Garmin alt');
+  await expect(decision.getByRole('button', { name: 'Daten prüfen', exact: true })).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Datenvertrauen zuerst schließen');
+  await expect(safestOption).toContainText('Letzte Tagesdaten: 2026-04-30');
+  await expect(safestOption).toContainText('konservativ halten');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
 
   const contract = page.getByTestId('daily-decision-contract');

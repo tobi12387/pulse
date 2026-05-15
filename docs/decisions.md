@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Datenvertrauen begrenzt die sicherste Tagesoption
+
+- **Decision:** Wenn ein `Daten`-Trust-Signal die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die bestehende Datenluecke als `Datenvertrauen zuerst schließen` formulieren und Intensitaets- oder Planaenderungslogik konservativ halten. Das bleibt read-only und fuehrt nur zu bestehenden Settings/Data-Pruefpfaden; Garmin-Sync, Plan und Profil werden nicht automatisch geaendert.
+- **Why:** Eine Performance-OS-Entscheidung ist nur ruhig und vertrauenswuerdig, wenn sie stale, partial oder fehlende Garmin-/Profil-Daten nicht nur als Warnung zeigt, sondern in die sicherste heutige Handlung uebersetzt. So bleibt WHOOP-/Oura-aehnliche Tagesklarheit ehrlich, wenn die Messbasis unsicher ist.
+- **Alternatives:** Datenvertrauen nur in den Details lassen (zu wenig handlungsnah); automatisch Sync/Profile-Fixes starten (zu versteckt fuer Daten- und Geraetepfade); neue Datenkarte auf Home bauen (mehr Oberflaeche statt eine klarere Entscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fuehrende Garmin-Luecken formen die sicherste Tagesoption
 
 - **Decision:** Wenn ein Garmin-Ausfuehrungssignal die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die konkrete Geraeteluecke aus demselben Signal benennen und vor Ausfuehrung nach Plan > Ausfuehrung fuehren. Das bleibt read-only; Plan oder Garmin werden nicht automatisch geschrieben.
