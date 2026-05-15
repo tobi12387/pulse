@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Lernen benennt den naechsten Lernlog auf Home
+
+- **Decision:** Das Home-`Fueling-Lernen`-Signal darf bei gegateter Trend-Evidenz den konkreten naechsten Lernlog direkt in der Tagesentscheidung benennen: Zielbereich, Dauer, Carbs und GI-Komfort zusammen erfassen.
+- **Why:** Die Performance-OS-Antwort soll nicht erst nach einem Klick erklaeren, welche Evidence Pulse fuer die MacroFactor-aehnliche Lernschleife braucht. Die Tagesentscheidung bleibt damit eine ruhige Handlung statt nur ein Verweis auf eine Detailkarte; Trends bleiben trotzdem bis ausreichender kompletter During-Evidence geschlossen.
+- **Alternatives:** Den Lernlog nur in Activity/Plan-Baselines zeigen (zu spaet fuer die Tagesentscheidung); Home mit einer neuen Nutrition-Karte erweitern (mehr Oberflaeche statt eine Entscheidung); Trends ohne Evidence-Gate freischalten (zu frueh).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Baseline benennt naechsten Lernlog
 
 - **Decision:** Die gemeinsame Fueling-Baseline zeigt bei noch gegateter Trend-Evidenz einen konkreten `Naechster Lernlog`-Hinweis mit Zielbereich, Dauer, Carbs, GI-Komfort sowie optionalen Flaschen/Pulver-/Sodium-Feldern.

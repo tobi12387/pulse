@@ -494,7 +494,10 @@ function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | u
   if (!readiness || readiness.readyForTrendSummary) return null;
 
   const missing = readiness.missingEvidence[0] ?? 'Vergleichbare During-Logs fehlen noch.';
-  return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${missing}`;
+  const target = baseline?.targetCarbsPerHour
+    ? ` Nächster Lernlog: ${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen;`
+    : ' Nächster Lernlog:';
+  return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${missing}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen.`;
 }
 
 function activityFuelingTargetPath(activity: HomeActivity): string {
