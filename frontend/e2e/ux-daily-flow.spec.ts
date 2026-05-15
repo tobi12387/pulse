@@ -873,6 +873,18 @@ test('Home daily decision uses complete fueling trends as a leading signal for l
       missingEvidence: [],
     },
   };
+  const fuelingDebt = {
+    status: 'resolved',
+    hasOpenDebt: false,
+    label: 'Fueling frei',
+    summary: 'Kein offener GI-/Fueling-Blocker.',
+    closureCondition: 'Weiterhin lange oder harte Einheiten mit Fueling-Log schließen.',
+    evidence: [],
+    openIssueDate: null,
+    controlledWorkoutId: null,
+    followUpActivityId: null,
+    updatedAt: '2026-05-01T08:00:00.000Z',
+  };
   const plannedWorkout = {
     id: 'planned-fueling-trend',
     userId: 'user-1',
@@ -923,21 +935,21 @@ test('Home daily decision uses complete fueling trends as a leading signal for l
       updatedAt: '2026-05-01T06:00:00.000Z',
     },
     outcomeBaseline,
+    fuelingDebt,
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T06:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'insufficient',
+        headline: 'Keine Response-Muster fuer diesen Test.',
+        signals: [],
+        missingEvidence: [],
+      },
+    },
     fuelingGuidance: (workoutId) => ({
       shouldShow: workoutId === 'planned-fueling-trend',
       preferenceStatus: 'ready',
-      fuelingDebt: {
-        status: 'resolved',
-        hasOpenDebt: false,
-        label: 'Fueling frei',
-        summary: 'Kein offener GI-/Fueling-Blocker.',
-        closureCondition: 'Weiterhin lange oder harte Einheiten mit Fueling-Log schließen.',
-        evidence: [],
-        openIssueDate: null,
-        controlledWorkoutId: null,
-        followUpActivityId: null,
-        updatedAt: '2026-05-01T08:00:00.000Z',
-      },
+      fuelingDebt,
       outcomeBaseline,
       before: [],
       during: [{ id: 'carbs', text: '60-75 g/h als Ausgangspunkt nutzen und nur klein veraendern.' }],
