@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Fueling-Evidenz schliesst erledigte lange Einheiten mit
+
+- **Decision:** Home behandelt erledigte lange/fueling-relevante Einheiten erst dann als voll geschlossen, wenn neben Feedback auch die offene Fueling-Lernevidenz sichtbar adressiert ist; bei fehlender `learningReadiness`-Evidence fuehrt der naechste offene Schritt zur bestehenden Activity-Fueling-Log-Sektion.
+- **Why:** Die Nutrition-Trend-Gate bleibt korrekt geschlossen, solange nicht genug vergleichbare During-Logs vorliegen. Damit Pulse trotzdem MacroFactor-aehnlich lernt, muss die Tagesentscheidung direkt nach der realen Einheit Carbs, Flaschen/Pulver und GI-Komfort als Abschluss der Einheit einfordern.
+- **Alternatives:** Nach Feedback weiter "alles erledigt" anzeigen (verliert die beste Logging-Gelegenheit); Nutrition-Trends ohne 3/3 Evidence freischalten (zu frueh und unzuverlaessig); eine neue Nutrition-Home-Karte bauen (mehr Oberflaeche statt eine ruhigere Entscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Reaktionsmuster duerfen offene Workouts fuehren
 
 - **Decision:** Home darf bestehende Personal-Response-Signale als vorsichtiges `Reaktion`-Signal in den Daily-Decision-Contract aufnehmen; bei offenen geplanten Workouts kann dieses Signal den Primaer-CTA zu Data > Analyse / Reaktionsmuster fuehren.

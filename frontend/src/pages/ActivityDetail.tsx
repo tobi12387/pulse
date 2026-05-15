@@ -665,7 +665,7 @@ function FuelingSection({
 
   return (
     <>
-      <div className="card" style={{ padding: '12px 14px' }}>
+      <div id="activity-fueling-log" className="card" style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase' }}>
             Fueling

@@ -708,6 +708,113 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
   await expect(page.getByTestId('workout-fueling-baseline')).toContainText('Trend-Evidenz: 0/3');
 });
 
+test('Home daily decision closes completed long workouts with fueling evidence capture', async ({ page }) => {
+  const outcomeBaseline = {
+    status: 'insufficient_data',
+    label: 'Fueling-Baseline offen',
+    summary: 'Noch kein langer Fueling-Log mit Dauer, Carbs und Verträglichkeit als Baseline.',
+    latestLogDate: null,
+    observedCarbsPerHour: null,
+    targetCarbsPerHour: null,
+    bottles750Ml: null,
+    powderG: null,
+    fluidMlPerHour: null,
+    sodiumMgPerHour: null,
+    evidence: ['Lange Einheiten nachtraeglich mit Carbs, Flaschen, Pulver und GI-Komfort loggen.'],
+    learningReadiness: {
+      comparableCompleteLogs: 1,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+      missingEvidence: ['Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.'],
+    },
+  };
+  const completedActivity = {
+    id: 'activity-post-fueling',
+    userId: 'user-1',
+    externalId: 'garmin-activity-post-fueling',
+    source: 'garmin',
+    startTime: '2026-05-01T08:00:00.000Z',
+    activityType: 'bike',
+    name: 'Lange Z2-Ausfahrt',
+    durationSec: 3 * 3600,
+    distanceM: 78000,
+    avgHr: 136,
+    maxHr: 162,
+    avgPowerW: 172,
+    normalizedPowerW: 184,
+    tss: 168,
+    calories: 2100,
+    elevationGainM: 620,
+    trainingEffectAerobic: 3.2,
+    trainingEffectAnaerobic: 0.1,
+    vo2maxEstimate: null,
+    rpe: 6,
+    rpeNote: 'Kontrolliert, kein Zusatztraining.',
+    sorenessAreas: null,
+    feedbackLoggedAt: '2026-05-01T12:00:00.000Z',
+    equipmentIds: [],
+  };
+  const completedWorkout = {
+    id: 'planned-post-fueling',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 180,
+    distanceKm: null,
+    targetTss: 155,
+    archetypeId: 'long_endurance_fueling_practice',
+    difficultyLevel: 4.2,
+    difficultyEnergySystem: 'long_endurance',
+    capabilityFit: 'productive',
+    description: 'Lange Ausfahrt mit bewusstem Fueling als Lernziel.',
+    steps: null,
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: null,
+    status: 'completed',
+    workoutFeedback: 'RPE bereits erfasst.',
+    complianceScore: 0.96,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: completedActivity.id,
+    executionStatus: 'completed_matched',
+    executionMatchedAt: '2026-05-01T12:05:00.000Z',
+    executionMatchConfidence: 0.94,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: completedWorkout,
+      todayActivities: [completedActivity],
+      recentActivities: [completedActivity],
+      nextWorkout: null,
+    },
+    planWorkouts: [completedWorkout],
+    activityDetail: {
+      activity: completedActivity,
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
+    nutritionLogs: [],
+    outcomeBaseline,
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Fueling-Log prüfen');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Trend-Evidenz 1/3');
+  const primaryCta = decision.getByRole('button', { name: 'Fueling loggen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/plan/activity/activity-post-fueling#activity-fueling-log');
+  await expect(page.getByTestId('activity-fueling-baseline')).toContainText('Fueling-Baseline offen');
+  await expect(page.getByRole('button', { name: '+ Fueling-Log' })).toBeVisible();
+});
+
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
