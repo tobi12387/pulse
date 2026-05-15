@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Entscheidungs-Kontinuitaet steht auf der Hauptentscheidung
+
+- **Decision:** Die Home-Hauptkarte der Daily Decision zeigt `Seit letzter Entscheidung` aus dem bestehenden Contract bereits vor dem Aufklappen der Details.
+- **Why:** Eine ruhige Performance-OS-Entscheidung muss erklaeren, ob die Empfehlung noch gilt oder sich durch Plan-vs-Garmin, erledigte Einheiten oder offene Schritte geaendert hat. Sonst wirkt eine wiederholte Empfehlung generisch, obwohl die Daten sie tragen.
+- **Alternatives:** Kontinuitaet nur in Details lassen (zu versteckt fuer Tagesklarheit); Daily-Delta als eigene Home-Flaeche hoeherziehen (mehr Oberflaeche); Backend-Synthese/API einfuehren (zu gross fuer diesen Frontend-Slice).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Sicherste Option steht auf der Hauptentscheidung
 
 - **Decision:** Die Home-Hauptkarte der Daily Decision zeigt `Sicherste Option` aus dem bestehenden Contract bereits vor dem Aufklappen der Details.
