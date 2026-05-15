@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Off-plan Planabgleich zeigt Feedback-Readiness
+
+- **Decision:** Activity Detail zeigt im Off-plan-Fueling-Planabgleich, ob RPE/Feedback bereits als Evidence vorliegt. Fehlt Feedback, oeffnet die Karte direkt das bestehende RPE-Sheet; der Planabgleich bleibt als bewusster separater Klick ohne automatische Plan- oder Garmin-Schreibwirkung.
+- **Why:** Eine spontane Garmin-Belastung soll nicht nur Nutrition-Evidence, sondern auch subjektive Belastung in die Restplan-Pruefung mitnehmen. So wird der JOIN-/Runna-artige Alltagsabgleich ruhiger: erst koerpernahe Evidence schliessen, dann den Plan bewusst pruefen.
+- **Alternatives:** Feedback nur ueber den Plan-Handoff erreichbar lassen (zu indirekt); Planabgleich trotz fehlendem Feedback gleich behandeln (verliert Belastungslernen); Feedback automatisch speichern oder Plan sperren (zu versteckt bzw. zu hart).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Off-plan Plan-Handoff oeffnet den konkreten Feedback-Log
 
 - **Decision:** Wenn Plan > Training ueber `source=offplan-activity` und `activityId` geoeffnet wird, fuehrt `Anders erledigt` in der Everyday Adaptation Inbox direkt zur konkreten Activity-Feedback-Sektion im Plan-Namespace. Der Klick bleibt read-only; Planwirkung entsteht erst aus explizit gespeichertem Feedback/Fueling.
