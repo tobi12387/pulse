@@ -1359,6 +1359,109 @@ test('Activity fueling evidence quality structures product and GI notes on the e
   await expect(page.getByText('Magen leicht unruhig', { exact: true })).toBeVisible();
 });
 
+test('Activity fueling evidence quality applies all detected old-log details in one action', async ({ page }) => {
+  const textOnlyLog = {
+    id: 'nutrition-bulk-details',
+    userId: 'user-1',
+    date: '2026-05-09',
+    workoutId: null,
+    activityId: 'activity-fueling',
+    context: 'during',
+    mealType: null,
+    description: '159,5-km-Tour: 300 g POWER CARB Pulver plus 2 Marsriegel',
+    calories: null,
+    proteinG: null,
+    carbsG: 356,
+    fatG: null,
+    gelsCount: null,
+    drinksMl: 3000,
+    sodiumMg: null,
+    bottles750Ml: null,
+    powderG: null,
+    fuelingProducts: [],
+    giComfort: null,
+    notes: '4 x 750 ml getrunken; leichte Magenprobleme nach ca. 100 km; Mars half nach wenigen Minuten. Lernpunkt: Snacks früher planen und ggf. 85 g Pulver pro 750 ml testen.',
+    createdAt: '2026-05-09T15:21:14.000Z',
+  };
+  const nutritionLogs = [textOnlyLog];
+  let patchedLog: unknown = null;
+
+  await mockPulseApi(page, {
+    nutritionLogs,
+    onNutritionPatch: (id, body) => {
+      patchedLog = { id, ...body };
+      Object.assign(textOnlyLog, body);
+    },
+    outcomeBaseline: {
+      status: 'caution',
+      label: 'Fueling-Baseline unvollstaendig',
+      summary: 'Letzter langer Log: 42 g/h; Praxisdetails fehlen noch strukturiert.',
+      latestLogDate: '2026-05-09',
+      observedCarbsPerHour: 42,
+      targetCarbsPerHour: { min: 50, max: 70 },
+      bottles750Ml: null,
+      powderG: null,
+      fluidMlPerHour: 357,
+      sodiumMgPerHour: null,
+      evidence: ['GI-Komfort fehlt strukturiert.', 'Sodium nicht geloggt'],
+      learningReadiness: {
+        comparableCompleteLogs: 0,
+        requiredComparableCompleteLogs: 3,
+        readyForTrendSummary: false,
+        missingEvidence: ['Noch drei vergleichbare During-Logs mit Carbs, Dauer und GI-Komfort fehlen.'],
+      },
+    },
+    activityDetail: {
+      activity: {
+        id: 'activity-fueling',
+        userId: 'user-1',
+        externalId: 'garmin-activity-fueling',
+        source: 'garmin',
+        startTime: '2026-05-09T08:00:00.000Z',
+        activityType: 'bike',
+        name: '159,5-km-Tour',
+        durationSec: 8.4 * 3600,
+        distanceM: 159500,
+        avgHr: 137,
+        maxHr: 165,
+        avgPowerW: 176,
+        normalizedPowerW: 188,
+        tss: 260,
+        calories: 4200,
+        elevationGainM: 1200,
+        trainingEffectAerobic: 3.8,
+        trainingEffectAnaerobic: 0.2,
+        vo2maxEstimate: null,
+        rpe: 8,
+        rpeNote: null,
+        sorenessAreas: null,
+        feedbackLoggedAt: '2026-05-09T15:00:00.000Z',
+        equipmentIds: [],
+      },
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
+  });
+
+  await page.goto('/plan/activity/activity-fueling');
+
+  const quality = page.getByTestId('activity-fueling-evidence-quality');
+  await quality.getByRole('button', { name: 'Alle erkannten Details übernehmen' }).click();
+
+  await expect.poll(() => patchedLog).toMatchObject({
+    id: 'nutrition-bulk-details',
+    bottles750Ml: 4,
+    powderG: 300,
+    giComfort: 'mild_issue',
+    fuelingProducts: expect.arrayContaining(['mnstry-power-carb-sour-cherry-1-0-8', 'mars']),
+  });
+  await expect(page.getByText('4 x 750 ml', { exact: true })).toBeVisible();
+  await expect(page.getByText('300g Pulver', { exact: true })).toBeVisible();
+  await expect(page.getByText('POWER CARB, Mars', { exact: true })).toBeVisible();
+  await expect(page.getByText('Magen leicht unruhig', { exact: true })).toBeVisible();
+});
+
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
   let coachSends = 0;
   await mockPulseApi(page, {
