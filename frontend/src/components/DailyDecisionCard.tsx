@@ -497,6 +497,7 @@ export function DailyDecisionCard({
                     {[
                       ['Zielwirkung', decision.contract.goalImpact],
                       ['Garmin', decision.contract.garminExecution],
+                      ['Seit letzter Entscheidung', decision.contract.continuity],
                       ['Sicherste Option', decision.contract.safestAlternative],
                     ].map(([title, detail]) => (
                       <div key={title} style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '8px 9px', background: 'var(--surface-2)' }}>

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-15 — Daily Decision Continuity gehoert in den Entscheidungsvertrag
+
+- **Decision:** Home zeigt Kontinuitaet der Tagesentscheidung in den bestehenden Details: `Seit letzter Entscheidung` erklaert aus dem heutigen `daily-delta`, was gleich bleibt oder sich geaendert hat; ohne heutiges Delta nutzt Pulse einen deterministischen Fallback aus Workout-, Garmin-, Action- und Recovery-Kontext.
+- **Why:** Der Performance-OS-Nordstern verlangt eine ruhige Antwort darauf, warum eine wiederholte Empfehlung heute noch gilt oder warum sie umspringt. Eine weitere Home-Karte wuerde die Entscheidung aufsplitten; die bestehende Contract-Zeile haelt Top-Signale, Zielwirkung, Garmin-Zustand, Kontinuitaet und sicherste Option an einem Ort.
+- **Alternatives:** Neue Daily-Delta-Karte hoeher priorisieren (mehr Oberflaeche statt weniger Reibung); Backend-Synthese-API bauen (zu gross fuer v1); nur die separate Plan-vs-Ausfuehrung-Karte behalten (erklaert die Hauptentscheidung nicht direkt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
+---
+
 ## 2026-05-15 — Nutrition Learning Readiness bleibt vor Trend-Summaries
 
 - **Decision:** Pulse fuehrt Nutrition Learning Readiness v1 im bestehenden Fueling-Baseline-Contract ein: Trend-Summaries bleiben gegated, aber die UI zeigt die vergleichbaren vollstaendigen During-Logs als `Trend-Evidenz x/3` und neue Activity-Fueling-Logs lassen sich erst mit strukturierten Carbs plus GI-Komfort speichern.

@@ -201,6 +201,18 @@ test('Home daily decision details expose top signals goal impact Garmin state an
       },
       nextWorkout: null,
     },
+    dailyDelta: [{
+      date: '2026-05-01',
+      status: 'matched',
+      title: 'Plan und Ausführung passen zusammen',
+      summary: 'Die echte Belastung lag +7 TSS zum Plan.',
+      score: 88,
+      loadDeltaTss: 7,
+      recoveryDelta: null,
+      nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln und die nächste Empfehlung darauf aufbauen.',
+      evidence: ['Geplant: Rad Z2 75 min', 'Garmin: Rad 77 min'],
+      targetPath: '/plan/activity/activity-1',
+    }],
   });
   await page.goto('/');
 
@@ -217,6 +229,9 @@ test('Home daily decision details expose top signals goal impact Garmin state an
   await expect(contract).toContainText('produktiver Trainingsreiz');
   await expect(contract).toContainText('Garmin');
   await expect(contract).toContainText('Pulse plant lokal');
+  await expect(contract).toContainText('Seit letzter Entscheidung');
+  await expect(contract).toContainText('Plan und Ausführung passen zusammen');
+  await expect(contract).toContainText('Plan kann diesen Reiz als erledigt behandeln');
   await expect(contract).toContainText('Sicherste Option');
   await expect(contract).toContainText('Einheit locker halten');
 });
