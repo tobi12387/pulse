@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Offene Plananpassungen begrenzen die sicherste Tagesoption
+
+- **Decision:** Wenn ein `Anpassung`-Signal aus bestehenden Plan-Adaptation-Events die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die offene Anpassung als `Plananpassung zuerst prüfen` formulieren und Ausfuehrung bewusst stoppen, bis Garmin-, Feedback-, Recovery- oder Plan-Schulden geprueft sind. Das bleibt read-only und fuehrt nur zu bestehenden Settings-/Plan-/Activity-Pfaden; Plan oder Garmin werden nicht automatisch geaendert.
+- **Why:** TrainingPeaks-/JOIN-aehnliche Alltagstauglichkeit entsteht erst, wenn Pulse nicht nur auf eine offene Planentscheidung verlinkt, sondern sagt, dass heute keine Ausfuehrung bestaetigt werden sollte, bevor diese Entscheidung geschlossen ist.
+- **Alternatives:** Anpassung nur als CTA/Detail lassen (zu wenig handlungsnah); automatisch umplanen oder Garmin reparieren (zu versteckt); neue Anpassungs-Inbox auf Home bauen (mehr Oberflaeche statt eine klarere Tagesentscheidung).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fuehrende Reaktionsmuster formen die sicherste Tagesoption
 
 - **Decision:** Wenn ein `Reaktion`-Signal aus bestehender Personal-Response-Evidence die Home-Tagesentscheidung fuehrt, darf die `Sicherste Option` die konkrete naechste Anpassung als persoenliche Reaktion einplanen und Boundary, Warm-up oder Umfang vorsichtig kleiner rahmen. Das bleibt read-only und fuehrt nur zu Data > Analyse / Reaktionsmuster; Plan oder Garmin werden nicht automatisch geaendert.

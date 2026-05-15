@@ -355,6 +355,11 @@ test('Home daily decision uses open plan adaptation as a leading signal', async 
   const primaryCta = decision.getByRole('button', { name: 'Garmin prüfen', exact: true });
   await expect(primaryCta).toBeVisible();
 
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Plananpassung zuerst prüfen');
+  await expect(safestOption).toContainText('Garmin-Sync-Schulden');
+  await expect(safestOption).toContainText('keine Ausführung bestätigen');
+
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Anpassung');
