@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-15 — Off-plan Fueling-Abschluss fuehrt zurueck in den Planabgleich
+
+- **Decision:** Wenn eine ungeplante Garmin-Aktivitaet die Home-Tagesentscheidung schliesst und offene Fueling-Lernevidenz hat, fuehrt die sicherste Option zuerst zur Activity-Fueling-Sektion und nennt danach den Planabgleich. Der Klick-Ausblick muss klar sagen, dass nur Aktivitaet/Fueling geoeffnet wird und Plan/Garmin unveraendert bleiben.
+- **Why:** Garmin-nahe Alltagstauglichkeit bedeutet, echte spontane Belastung nicht als isolierten Log zu behandeln. Pulse soll zuerst die fluechtige During-/GI-Evidence sichern und danach die ungeplante Belastung wieder in die Trainingslogik einsortieren.
+- **Alternatives:** Off-plan Fueling wie geplante Einheiten nur mit Regeneration abschliessen (verliert Adaptionsbezug); Planabgleich vor Fueling setzen (verpasst fluechtige Nutrition-Evidence); automatische Plananpassung nach Off-plan-Fueling (zu versteckt und zu breit).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-15 — Fueling-Evidence fuehrt nach langen abgeschlossenen Einheiten
 
 - **Decision:** Wenn eine abgeschlossene lange oder fueling-relevante Einheit offene Fueling-Lernevidenz hat, fuehrt Home den naechsten Abschluss-Schritt zur Activity-Fueling-Sektion auch dann, wenn generisches RPE/Feedback noch offen ist. Feedback bleibt als Folgeabschluss sichtbar, aber die fluechtigere During-/GI-Evidence wird zuerst geschlossen.
