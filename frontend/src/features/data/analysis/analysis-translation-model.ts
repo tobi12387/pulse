@@ -29,6 +29,8 @@ export type AnalysisTranslation = {
 
 const PLAN_LOAD_PREVIEW_PATH = '/plan?tab=training&source=data-load#plan-scenario-preview';
 const GOAL_PROJECTION_PATH = '/data?tab=analysis#data-goal-projection';
+const DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
+const PERSONAL_RESPONSE_PATH = '/data?tab=analysis#data-personal-response';
 const POWER_QUALITY_PATH = '/data?tab=analysis#data-power-quality';
 const POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
 
@@ -86,6 +88,12 @@ function resultPreviewForTargetPath(targetPath: string): string {
   if (targetPath.includes('#data-goal-projection')) {
     return 'Öffnet die Zielprojektion und ihre fehlende Evidenz. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
   }
+  if (targetPath.includes('#data-decision-quality')) {
+    return 'Öffnet die Entscheidungsqualität und ihre Lernschleife. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
+  }
+  if (targetPath.includes('#data-personal-response')) {
+    return 'Öffnet die Reaktionsmuster und ihre Evidenz. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
+  }
   if (targetPath.includes('#data-power-quality')) {
     return 'Öffnet die Power-Datenqualität mit Quelle, Coverage und Limitierung. Plan und Garmin bleiben unverändert; du prüfst dort nur die Messgrundlage.';
   }
@@ -140,6 +148,9 @@ function primaryFromDecisionQuality(decisionQuality: PulseDailyDecisionQualityRe
     summary: decisionQuality.suggestedAdjustment,
     evidence: unique(decisionQuality.bestEvidence, 4),
     tone: qualityTone(decisionQuality.status),
+    actionLabel: 'Lernschleife prüfen',
+    targetPath: DECISION_QUALITY_PATH,
+    resultPreview: resultPreviewForTargetPath(DECISION_QUALITY_PATH),
   };
 }
 
@@ -154,6 +165,9 @@ function primaryFromPersonalResponse(personalResponse: PulsePersonalResponseResp
     summary: signal.nextAdjustment,
     evidence: unique(signal.evidence, 4),
     tone: signalTone(signal),
+    actionLabel: 'Reaktionsmuster prüfen',
+    targetPath: PERSONAL_RESPONSE_PATH,
+    resultPreview: resultPreviewForTargetPath(PERSONAL_RESPONSE_PATH),
   };
 }
 
@@ -212,6 +226,9 @@ function watchFromPersonalResponse(personalResponse: PulsePersonalResponseRespon
       summary: missing,
       evidence: [],
       tone: 'muted',
+      actionLabel: 'Reaktionsmuster prüfen',
+      targetPath: PERSONAL_RESPONSE_PATH,
+      resultPreview: resultPreviewForTargetPath(PERSONAL_RESPONSE_PATH),
     };
   }
   const insufficient = personalResponse?.summary.signals.find(signal => signal.strength === 'insufficient') ?? null;
@@ -222,6 +239,9 @@ function watchFromPersonalResponse(personalResponse: PulsePersonalResponseRespon
     summary: insufficient.summary,
     evidence: unique(insufficient.evidence, 3),
     tone: 'muted',
+    actionLabel: 'Reaktionsmuster prüfen',
+    targetPath: PERSONAL_RESPONSE_PATH,
+    resultPreview: resultPreviewForTargetPath(PERSONAL_RESPONSE_PATH),
   };
 }
 

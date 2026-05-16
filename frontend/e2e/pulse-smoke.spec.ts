@@ -309,6 +309,130 @@ test('Data analysis opens durability evidence from the watch signal', async ({ p
   await expect(page.locator('#data-power-duration')).toBeVisible();
 });
 
+test('Data analysis opens decision-quality evidence from the primary learning signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Entscheidungsqualität');
+  await expect(card).toContainText('Hilfreich');
+  await expect(card).toContainText('Nach dem Klick');
+  await expect(card).toContainText('Öffnet die Entscheidungsqualität');
+  await card.getByRole('button', { name: 'Lernschleife prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-decision-quality');
+  await expect(page.locator('#data-decision-quality')).toBeVisible();
+});
+
+test('Data analysis opens personal response evidence from the primary response signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    decisionQuality: null,
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T00:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'useful',
+        headline: 'Pulse erkennt persönliche Reaktionsmuster.',
+        signals: [{
+          kind: 'mental_response',
+          label: 'Mentale Last begrenzt Ausführung',
+          strength: 'useful',
+          summary: 'Harte Tage kippen schneller, wenn Stress hoch und Energie niedrig ist.',
+          evidence: ['2 harte Tage nach Stress', '4 Check-ins im Zeitraum'],
+          nextAdjustment: 'Boundary, Warm-up und Umfang zuerst begrenzen, bevor Pulse harte Arbeit bestätigt.',
+        }],
+        missingEvidence: [],
+      },
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Reaktionsmodell');
+  await expect(card).toContainText('Mentale Last begrenzt Ausführung');
+  await expect(card).toContainText('Nach dem Klick');
+  await expect(card).toContainText('Öffnet die Reaktionsmuster');
+  await card.getByRole('button', { name: 'Reaktionsmuster prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-personal-response');
+  await expect(page.locator('#data-personal-response')).toBeVisible();
+});
+
+test('Data analysis opens personal response evidence from the watch response signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    powerDataQuality: {
+      source: 'stream',
+      status: 'trusted',
+      coveragePct: 98,
+      spikeCount: 0,
+      limitations: [],
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: {
+        rating: 'strong',
+        powerDropPct: -4,
+        hrDriftBpm: 1,
+        evidence: ['Power stabil', 'HR +1 bpm'],
+        activityId: 'activity-power-duration',
+        activityDate: '2026-05-01',
+        qualitySource: 'stream',
+        qualityStatus: 'trusted',
+      },
+      bestEffortLine: 'Power-Evidenz stabil',
+      durabilityLine: 'Durability stabil genug.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T00:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'learning',
+        headline: 'Pulse sammelt Reaktionsmuster.',
+        signals: [],
+        missingEvidence: ['Noch zwei vergleichbare harte Tage mit Check-in und RPE fehlen.'],
+      },
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Entscheidungsqualität');
+  await expect(card).toContainText('Lernsignal offen');
+  await expect(card).toContainText('Noch zwei vergleichbare harte Tage');
+  await expect(card).toContainText('Öffnet die Reaktionsmuster');
+  await card.getByRole('button', { name: 'Reaktionsmuster prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-personal-response');
+  await expect(page.locator('#data-personal-response')).toBeVisible();
+});
+
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await page.goto('/plan?tab=goals');
   const seasonLine = page.getByTestId('plan-season-strategy-card');

@@ -81,6 +81,10 @@ type MockPulseApiOptions = {
   onRequest?: (pathname: string, method: string) => void;
 };
 
+function hasOption(options: MockPulseApiOptions, key: keyof MockPulseApiOptions): boolean {
+  return Object.prototype.hasOwnProperty.call(options, key);
+}
+
 const dataStatus = {
   userReady: true,
   profileReady: true,
@@ -1177,13 +1181,13 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/daily-delta') {
       return json(route, { items: options.dailyDelta ?? [] });
     }
-    if (url.pathname === '/api/pulse/decisions/quality' && options.decisionQuality) {
+    if (url.pathname === '/api/pulse/decisions/quality' && hasOption(options, 'decisionQuality')) {
       return json(route, options.decisionQuality);
     }
-    if (url.pathname === '/api/pulse/personal-response' && options.personalResponse) {
+    if (url.pathname === '/api/pulse/personal-response' && hasOption(options, 'personalResponse')) {
       return json(route, options.personalResponse);
     }
-    if (url.pathname === '/api/pulse/goal-projection' && options.goalProjection) {
+    if (url.pathname === '/api/pulse/goal-projection' && hasOption(options, 'goalProjection')) {
       return json(route, options.goalProjection);
     }
     if (url.pathname.startsWith('/api/pulse/actions/') && request.method() === 'PATCH') {
