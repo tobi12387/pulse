@@ -286,10 +286,11 @@ test('Home daily decision uses stale decision quality as a leading learning sign
   const contract = page.getByTestId('daily-decision-contract');
   await expect(contract).toContainText('Lernen');
   await expect(contract).toContainText('Mobilität 10 Minuten');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('öffnet die Entscheidungsqualität');
 
   await decision.getByRole('button', { name: 'Lernen prüfen', exact: true }).click();
-  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
-  await expect(page.locator('#data-plan-trace')).toBeVisible();
+  await expect(page).toHaveURL('/data?tab=analysis#data-decision-quality');
+  await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
 test('Home daily decision uses recovery pressure as a leading body signal', async ({ page }) => {
@@ -520,7 +521,8 @@ test('Home daily decision uses load pressure as the safest option for a planned 
   await expect(safestOption).toContainText('keinen Zusatzumfang');
 
   await primaryCta.click();
-  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+  await expect(page).toHaveURL('/data?tab=analysis#data-power-duration');
+  await expect(page.getByTestId('power-duration-summary')).toContainText('Durability unauffällig');
 });
 
 test('Home daily decision uses too-hard training fit as the safest planned-workout option', async ({ page }) => {
@@ -1334,9 +1336,11 @@ test('Home daily decision uses durability analysis as a leading signal for a pla
   await expect(contract).toContainText('Analyse');
   await expect(contract).toContainText('HR +3 bpm');
   await expect(contract).toContainText('240 min');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('öffnet die Durability-Evidenz');
 
   await primaryCta.click();
-  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
+  await expect(page).toHaveURL('/data?tab=analysis#data-power-duration');
+  await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
 });
 
 test('Home daily decision uses fueling learning readiness as a leading signal for long workout practice', async ({ page }) => {

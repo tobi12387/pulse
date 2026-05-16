@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Home-Analyse-CTAs öffnen konkrete Evidenzanker
+
+- **Decision:** Home-Daily-Decision-CTAs für `Lernen`, `Analyse` und führende `Belastung` öffnen konkrete Data-Analyse-Anker statt den generischen Plan-Trace-Anker. `Lernen prüfen` öffnet `#data-decision-quality`; Durability-/Belastungsprüfung öffnet `#data-power-duration`; Plan, Garmin und Coach bleiben unverändert.
+- **Why:** Home soll die ruhige Tagesentscheidung nicht nur erklären, sondern direkt zur belastbaren Evidenz führen. Nach den Data-Analyse-Action-Contracts sind Entscheidungsqualität und Durability eigene Prüfstellen; ein generischer Plan-Trace-Zielpfad verschleiert, welche Evidenz Tobi gerade prüfen soll.
+- **Alternatives:** Alle Home-Analyse-CTAs weiter auf `#data-plan-trace` routen (zu ungenau); neue Home-Modals bauen (mehr Oberfläche statt vorhandene Evidenzanker zu nutzen); automatische Plananpassung aus Home auslösen (zu versteckt und gegen den no-write Contract).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Analyse-Lernsignale öffnen ihre Evidenz
 
 - **Decision:** Wenn Data > Analyse Entscheidungsqualität oder persönliche Reaktionsmuster als primäres oder offenes Lernsignal zeigt, bekommt das Signal einen read-only Action Contract. `Lernschleife prüfen` öffnet die bestehende Entscheidungsqualitäts-Evidenz, `Reaktionsmuster prüfen` öffnet das bestehende persönliche Reaktionsmodell; Plan, Garmin und Coach bleiben unverändert.
