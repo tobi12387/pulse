@@ -67,6 +67,7 @@ type MockPulseApiOptions = {
   sleepSessions?: unknown[];
   activities?: unknown[];
   activityDetail?: unknown;
+  onActivityFeedbackPatch?: (activityId: string, body: unknown) => void;
   nutritionLogs?: unknown[];
   onNutritionCreate?: (body: unknown) => void;
   onNutritionPatch?: (id: string, body: unknown) => void;
@@ -1271,6 +1272,42 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/load' && 'load' in options) return json(route, options.load);
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
+    if (url.pathname.startsWith('/api/pulse/activities/') && url.pathname.endsWith('/feedback') && request.method() === 'PATCH') {
+      const activityId = url.pathname.split('/').at(-2) ?? '';
+      const body = request.postDataJSON();
+      options.onActivityFeedbackPatch?.(activityId, body);
+      const existingActivity = (options.activityDetail as { activity?: Record<string, unknown> } | undefined)?.activity;
+
+      return json(route, {
+        activity: {
+          ...(existingActivity ?? {
+            id: activityId,
+            userId: 'user-1',
+            externalId: null,
+            source: 'garmin',
+            startTime: `${today}T08:00:00.000Z`,
+            activityType: 'bike',
+            name: 'Aktivität',
+            durationSec: null,
+            distanceM: null,
+            avgHr: null,
+            maxHr: null,
+            avgPowerW: null,
+            normalizedPowerW: null,
+            tss: null,
+            calories: null,
+            elevationGainM: null,
+            trainingEffectAerobic: null,
+            trainingEffectAnaerobic: null,
+            vo2maxEstimate: null,
+            equipmentIds: [],
+            plannedWorkoutId: null,
+          }),
+          ...body,
+          feedbackLoggedAt: `${today}T13:30:00.000Z`,
+        },
+      });
+    }
     if (url.pathname.startsWith('/api/pulse/activities/') && options.activityDetail) return json(route, options.activityDetail);
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
       return json(route, { logs: options.nutritionLogs });

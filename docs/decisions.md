@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Gespeichertes Off-plan Feedback schliesst Readiness sichtbar
+
+- **Decision:** Wenn das RPE-Sheet aus dem Off-plan-Fueling-Follow-up gespeichert wird, muss die bestehende Activity-Detail-Ansicht ohne Reload auf `Feedback erfasst` wechseln; der Readiness-Status ist als polite Live-Region markiert. Der E2E-Mock behandelt `PATCH /api/pulse/activities/:id/feedback` vor dem generischen Activity-Detail-Stub und gibt die aktualisierte Activity zurueck.
+- **Why:** Die Restplan-Pruefung soll direkt nach geschlossener Evidence vertrauenswuerdig bleiben. Ein Nutzer soll nicht navigieren oder neu laden muessen, um zu sehen, dass subjektive Belastung jetzt in die Planabgleich-Evidence einfliesst.
+- **Alternatives:** Nur das Sheet schliessen und den alten Status bis zum Reload zeigen (zu verwirrend); nach Speichern automatisch zum Plan springen (zu versteckt); den Mock weiter als statisches Detail-GET behandeln (Regressionen am Feedback-Loop bleiben unsichtbar).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Off-plan Planabgleich zeigt Feedback-Readiness
 
 - **Decision:** Activity Detail zeigt im Off-plan-Fueling-Planabgleich, ob RPE/Feedback bereits als Evidence vorliegt. Fehlt Feedback, oeffnet die Karte direkt das bestehende RPE-Sheet; der Planabgleich bleibt als bewusster separater Klick ohne automatische Plan- oder Garmin-Schreibwirkung.
