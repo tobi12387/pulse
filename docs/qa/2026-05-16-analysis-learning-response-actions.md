@@ -13,6 +13,7 @@
 - Static gates: `git diff --check`, `npm run lint -w frontend`, and `npm run build` passed.
 - Route evidence: `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-analysis-learning-response-actions npm run qa:ux-evidence` passed, 2 tests.
 - Route summary: `npm run qa:ux-summary -- /tmp/pulse-analysis-learning-response-actions` reported 0 horizontal overflow for desktop and mobile.
+- Browser smoke: `http://127.0.0.1:5174/data?tab=analysis` loaded with title `Pulse`, no framework overlay and no browser console warnings/errors. The local backend was not running, so API-backed cards showed their recoverable fallback states; action-click behavior is covered by the mocked Playwright tests above.
 
 ## Evidence Files
 
