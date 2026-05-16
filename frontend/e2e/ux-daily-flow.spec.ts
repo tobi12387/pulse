@@ -2003,6 +2003,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   const planHandoff = page.getByTestId('plan-offplan-activity-context');
   await expect(planHandoff).toContainText('Off-plan-Aktivität einordnen');
   await expect(planHandoff).toContainText('Spontane lange Ausfahrt');
+  await expect(planHandoff.getByTestId('plan-offplan-feedback-readiness')).toContainText('Feedback erfasst');
   await expect(planHandoff).toContainText('Fueling');
   await expect(planHandoff).toContainText('Plan und Garmin bleiben unverändert');
   await expect(planHandoff).toContainText('Anders erledigt');

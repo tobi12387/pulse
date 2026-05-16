@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Plan-Handoff zeigt Off-plan Feedback-Readiness
+
+- **Decision:** Der Plan-Handoff fuer `source=offplan-activity` zeigt aus der Activity-Liste, ob subjektives Feedback bereits erfasst ist. Nach gespeichertem RPE muss Plan > Training `Feedback erfasst` anzeigen; fehlt es, bleibt die fehlende subjektive Evidence sichtbar. Der E2E-Mock haelt Activity-Liste und Detail-Response nach Feedback-PATCH konsistent.
+- **Why:** Der Weg von spontaner Garmin-Belastung ueber Activity-Evidence in den Restplan darf den Evidence-Status nicht verlieren. Pulse soll an der Planentscheidung ruhig zeigen, ob Fueling und subjektive Belastung schon belastbar sind, bevor Plan oder Garmin bewusst veraendert werden.
+- **Alternatives:** Im Plan nur generisch `Fueling und Feedback` nennen (verliert die geschlossene Evidence); den Status nur in Activity Detail zeigen (Handoff wird unscharf); Plan automatisch anpassen, sobald Feedback gespeichert ist (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Gespeichertes Off-plan Feedback schliesst Readiness sichtbar
 
 - **Decision:** Wenn das RPE-Sheet aus dem Off-plan-Fueling-Follow-up gespeichert wird, muss die bestehende Activity-Detail-Ansicht ohne Reload auf `Feedback erfasst` wechseln; der Readiness-Status ist als polite Live-Region markiert. Der E2E-Mock behandelt `PATCH /api/pulse/activities/:id/feedback` vor dem generischen Activity-Detail-Stub und gibt die aktualisierte Activity zurueck.

@@ -14,6 +14,7 @@ type Props = {
     activityName: string | null;
     activityTypeLabel: string | null;
     durationMin: number | null;
+    feedbackCaptured: boolean | null;
   } | null;
 };
 
@@ -75,6 +76,16 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
     offPlanActivityContext?.durationMin != null ? `${offPlanActivityContext.durationMin} min` : null,
     offPlanActivityContext?.activityTypeLabel,
   ].filter(Boolean).join(' · ');
+  const offPlanFeedbackLabel = offPlanActivityContext?.feedbackCaptured == null
+    ? null
+    : offPlanActivityContext.feedbackCaptured
+      ? 'Feedback erfasst'
+      : 'Feedback fehlt';
+  const offPlanEvidenceCopy = offPlanActivityContext?.feedbackCaptured === true
+    ? 'Fueling und Feedback sind als Evidence sichtbar. Plan und Garmin bleiben unverändert, bis du die Planwirkung bewusst prüfst.'
+    : offPlanActivityContext?.feedbackCaptured === false
+      ? 'Fueling ist sichtbar; Feedback fehlt noch als subjektive Belastungs-Evidence. Plan und Garmin bleiben unverändert, bis du die Planwirkung bewusst prüfst.'
+      : 'Fueling und Feedback erklären jetzt, was wirklich passiert ist. Plan und Garmin bleiben unverändert, bis du die Planwirkung bewusst prüfst.';
   const visibleIntents = offPlanActivityContext
     ? intents.map(intent => intent.id === 'done-differently'
         ? {
@@ -116,9 +127,21 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
           <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.35 }}>
             {offPlanActivityLabel || 'Garmin-Aktivität'} erst als Evidence schließen.
           </div>
+          {offPlanFeedbackLabel && (
+            <div
+              data-testid="plan-offplan-feedback-readiness"
+              aria-live="polite"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: offPlanActivityContext.feedbackCaptured ? 'var(--green)' : 'var(--amber)',
+              }}
+            >
+              {offPlanFeedbackLabel}
+            </div>
+          )}
           <p style={{ margin: 0, fontSize: 11.4, color: 'var(--text-2)', lineHeight: 1.45 }}>
-            Fueling und Feedback erklären jetzt, was wirklich passiert ist. Plan und Garmin bleiben unverändert,
-            bis du die Planwirkung bewusst prüfst.
+            {offPlanEvidenceCopy}
           </p>
           <p style={{ margin: 0, fontSize: 11.4, color: 'var(--text-3)', lineHeight: 1.45 }}>
             Nächster ruhiger Schritt: Anders erledigt öffnet die Aktivitäten- und Feedback-Spur, damit der Restplan aus gespeicherter Evidenz reagiert.
