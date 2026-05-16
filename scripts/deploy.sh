@@ -150,6 +150,8 @@ ensure_frontend_tls_certs
 
 echo "==> install workspace dependencies"
 cd "$REPO_DIR"
+echo "==> removing generated workspace dependencies"
+rm -rf node_modules backend/node_modules frontend/node_modules shared/node_modules
 npm ci --no-audit --no-fund
 
 echo "==> shared build"

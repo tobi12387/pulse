@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Server-Deploy nutzt sauberen Workspace-Install
+
+- **Decision:** `scripts/deploy.sh` entfernt vor `npm ci` die generierten Workspace-Dependency-Verzeichnisse `node_modules`, `backend/node_modules`, `frontend/node_modules` und `shared/node_modules`. Der Server bleibt Code-mirror-only; geloescht wird nur installierbarer Build-/Dependency-State.
+- **Why:** Zwei Deploys am 2026-05-16 zeigten, dass ein In-place-`npm ci` auf dem Server Workspace-Symlink- und Tar-ENOENT-Fehler erzeugen kann, bis `tsc` fehlt. Ein sauberer Install ist langsamer, aber deterministischer und verhindert manuelles SSH-Aufraeumen nach gemergten Runtime-PRs.
+- **Alternatives:** Weiter manuell `rm -rf node_modules` ausfuehren (fehleranfaellig); nur `node_modules/frontend` entfernen (behebt nicht den folgenden Tar-/`tsc`-Zustand); npm mit `--force` laufen lassen (kaschiert statt sauber zu regenerieren).
+- **Decided by:** Codex, nach Deploy-Fehlern bei PR #446/#447.
+- **Status:** active.
+
 ## 2026-05-16 — Plan-Handoff zeigt Off-plan Feedback-Readiness
 
 - **Decision:** Der Plan-Handoff fuer `source=offplan-activity` zeigt aus der Activity-Liste, ob subjektives Feedback bereits erfasst ist. Nach gespeichertem RPE muss Plan > Training `Feedback erfasst` anzeigen; fehlt es, bleibt die fehlende subjektive Evidence sichtbar. Der E2E-Mock haelt Activity-Liste und Detail-Response nach Feedback-PATCH konsistent.
