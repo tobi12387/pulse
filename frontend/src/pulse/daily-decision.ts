@@ -80,6 +80,7 @@ type TodayOption = PulseTodayOptionsResponse['options'][number];
 
 const DATA_DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
 const DATA_PLAN_TRACE_PATH = '/data?tab=analysis#data-plan-trace';
+const DATA_POWER_QUALITY_PATH = '/data?tab=analysis#data-power-quality';
 const DATA_POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
 
 function activityDetailPath(activityId: string): string {
@@ -402,6 +403,9 @@ function analysisAlternative(
   const signal = analysisSignal(trainingAnalytics, workout, null);
   if (!signal) return null;
   const detail = sentenceWithoutTrailingPeriod(signal.detail);
+  if (signal.targetPath?.includes('#data-power-quality')) {
+    return `Analysequalität zuerst prüfen: ${detail}. Heute keine Power- oder Durability-Schlüsse zur Ausführung nutzen, bis die Messgrundlage bewusst geprüft ist.`;
+  }
   return `Analyse zuerst prüfen: ${detail}. Heute keine Ausführung oder Anpassung bestätigen, bis der Durability-Limiter bewusst geprüft ist.`;
 }
 
@@ -650,7 +654,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Mental') return signal.actionLabel ?? 'Check-in öffnen';
   if (signal.label === 'Recovery') return 'Recovery ansehen';
   if (signal.label === 'Lernen') return 'Lernen prüfen';
-  if (signal.label === 'Analyse') return 'Analyse prüfen';
+  if (signal.label === 'Analyse') return signal.actionLabel ?? 'Analyse prüfen';
   if (signal.label === 'Fueling-Lernen') return 'Fueling vorbereiten';
   if (signal.label === 'Alltag') return 'Alternative prüfen';
   if (signal.label === 'Garmin') return 'Garmin prüfen';
@@ -675,6 +679,9 @@ function signalActionResultPreview(targetPath: string): string {
   }
   if (targetPath.includes('#data-decision-quality')) {
     return 'Pulse öffnet die Entscheidungsqualität und ihre Lernschleife; Plan und Garmin bleiben unverändert.';
+  }
+  if (targetPath.includes('#data-power-quality')) {
+    return 'Pulse öffnet die Power-Datenqualität mit Quelle, Coverage und Limitierung; Plan und Garmin bleiben unverändert.';
   }
   if (targetPath.includes('#data-power-duration')) {
     return 'Pulse öffnet die Durability-Evidenz mit Best Effort und Drift; Plan und Garmin bleiben unverändert.';
@@ -770,6 +777,18 @@ function analysisSignal(
 ): DailyDecisionSignal | null {
   const openWorkoutDecision = Boolean(workout && !completedActivity && workout.status !== 'completed' && !workout.completedActivityId);
   if (!openWorkoutDecision) return null;
+
+  const quality = trainingAnalytics?.powerDataQuality ?? null;
+  if (quality?.status === 'blocked') {
+    const limitation = sentenceWithoutTrailingPeriod(quality.limitations[0] ?? 'Power-Analyse bleibt blockiert, bis belastbare Stream-Daten vorhanden sind.');
+    return {
+      label: 'Analyse',
+      detail: `Power blockiert: ${limitation}. ${quality.coveragePct}% Coverage · ${quality.spikeCount} Spikes. Nächste Handlung: Power-Datenqualität prüfen, bevor du Power- oder Durability-Schlüsse zur Ausführung nutzt.`,
+      tone: 'rose',
+      targetPath: DATA_POWER_QUALITY_PATH,
+      actionLabel: 'Power-Daten prüfen',
+    };
+  }
 
   const durability = trainingAnalytics?.powerDuration?.durability ?? null;
   if (!durability || durability.rating === 'strong') return null;

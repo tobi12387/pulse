@@ -1343,6 +1343,90 @@ test('Home daily decision uses durability analysis as a leading signal for a pla
   await expect(page.getByTestId('power-duration-summary')).toContainText('Durability limited');
 });
 
+test('Home daily decision uses blocked power quality as the analysis gate for a planned workout', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-power-quality-gate',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 70,
+        distanceKm: null,
+        targetTss: 92,
+        archetypeId: 'threshold_over_under',
+        difficultyLevel: 4.0,
+        difficultyEnergySystem: 'threshold',
+        capabilityFit: 'productive',
+        description: 'Schwellenreiz nur mit belastbarer Messgrundlage.',
+        steps: null,
+        garminWorkoutId: null,
+        garminScheduledId: null,
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'local_planned',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    powerDataQuality: {
+      source: 'unavailable',
+      status: 'blocked',
+      coveragePct: 0,
+      spikeCount: 0,
+      limitations: ['Keine verwertbaren Power-Streams für diese Analyse.'],
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine belastbaren Best Efforts.',
+      durabilityLine: 'Durability nicht belastbar.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Keine Zielprojektion führt diesen Test.',
+      projections: [],
+      missingEvidence: [],
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  const leading = decision.getByTestId('daily-decision-leading-factor');
+  await expect(leading).toContainText('Analyse');
+  await expect(leading).toContainText('Power blockiert');
+  await expect(leading).toContainText('Keine verwertbaren Power-Streams');
+  await expect(leading).toContainText('Power-Datenqualität prüfen');
+  const primaryCta = decision.getByRole('button', { name: 'Power-Daten prüfen', exact: true });
+  await expect(primaryCta).toBeVisible();
+
+  const safestOption = decision.getByTestId('daily-decision-safest-option');
+  await expect(safestOption).toContainText('Analysequalität zuerst prüfen');
+  await expect(safestOption).toContainText('Power blockiert');
+  await expect(safestOption).toContainText('keine Power- oder Durability-Schlüsse');
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  const contract = page.getByTestId('daily-decision-contract');
+  await expect(contract).toContainText('Analyse');
+  await expect(contract).toContainText('0% Coverage');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('öffnet die Power-Datenqualität');
+
+  await primaryCta.click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-power-quality');
+  await expect(page.locator('#data-power-quality')).toBeVisible();
+});
+
 test('Home daily decision uses fueling learning readiness as a leading signal for long workout practice', async ({ page }) => {
   const outcomeBaseline = {
     status: 'insufficient_data',

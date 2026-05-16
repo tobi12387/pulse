@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Home prüft blockierte Power-Analysequalität
+
+- **Decision:** Wenn ein offenes Home-Workout geplant ist und die Training-Analytics-Power-Datenqualität `blocked` ist, führt Home mit `Analyse` und dem CTA `Power-Daten prüfen` direkt zu `Data > Analyse #data-power-quality`. Durability-Limiter bleiben weiter auf `#data-power-duration`; akute TSB-/Belastungsprüfung bleibt auf `#data-plan-trace`; Plan, Garmin und Coach bleiben unverändert.
+- **Why:** Eine WKO-/Intervals-artige Analyse ist nur entscheidungsfähig, wenn die Messgrundlage tragfähig ist. Home soll deshalb nicht nur den tiefen Limiter zeigen, sondern auch ruhig verhindern, dass Tobi aus blockierter Power-Evidenz harte Power- oder Durability-Schlüsse zieht.
+- **Alternatives:** Blockierte Power-Daten nur in Data anzeigen (zu versteckt für die Tagesentscheidung); immer Durability öffnen (falsch, wenn Durability wegen Datenqualität gar nicht belastbar ist); automatisch Plan/Garmin anpassen (zu versteckt und gegen den read-only Evidence Contract).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Home-Analyse-CTAs öffnen konkrete Evidenzanker
 
 - **Decision:** Home-Daily-Decision-CTAs für `Lernen` und Durability-geführte `Analyse` öffnen konkrete Data-Analyse-Anker statt den generischen Plan-Trace-Anker. `Lernen prüfen` öffnet `#data-decision-quality`; Durability-`Analyse prüfen` öffnet `#data-power-duration`; führende `Belastung` bleibt auf `#data-plan-trace`; Plan, Garmin und Coach bleiben unverändert.
