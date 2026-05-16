@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Off-plan Preview-Contract bleibt lastbewusst
+
+- **Decision:** Wenn der Off-plan-Handoff nach geschlossener Evidence eine `reduce_volume`-Vorschau öffnet, muss der `Sicherste Entscheidung`-Contract der Vorschau die Off-plan-Zusatzlast und den Restplan-Kontext nennen. Die Vorschau bleibt read-only; Plan und Garmin ändern sich weiterhin erst durch bewusstes Anwenden.
+- **Why:** Der Handoff darf die konkrete Garmin-Last nicht auf dem Weg in die Szenario-Vorschau verlieren. Die intelligenteste Handlung ist nicht eine generische Warm-up-Regel, sondern die bewusste Prüfung, ob echte Zusatzlast die nächsten Reize ruhiger machen sollte.
+- **Alternatives:** Den Kontext nur im gelben Review-Hinweis lassen (zu leicht zu überlesen); jede `reduce_volume`-Vorschau global umformulieren (zu breit); direkt Plan reduzieren (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Off-plan Restplanabgleich nennt Zusatzlast und Preview
 
 - **Decision:** Nach geschlossener Off-plan-Fueling-/Feedback-Evidence zeigt Plan > Training im Handoff die echte Zusatzlast der Garmin-Aktivitaet (Dauer/TSS) als `Restplan-Wirkung`. Der `Anders erledigt`-Schritt wechselt dann von Feedback-Oeffnung auf `Planwirkung prüfen` und startet nur eine read-only `reduce_volume`-Vorschau; Plan und Garmin werden erst nach bewusstem Apply veraendert.
