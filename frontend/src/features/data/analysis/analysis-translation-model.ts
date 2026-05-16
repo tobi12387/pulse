@@ -28,6 +28,7 @@ export type AnalysisTranslation = {
 };
 
 const PLAN_LOAD_PREVIEW_PATH = '/plan?tab=training&source=data-load#plan-scenario-preview';
+const GOAL_PROJECTION_PATH = '/data?tab=analysis#data-goal-projection';
 
 type Input = {
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined;
@@ -79,6 +80,9 @@ function unique(items: Array<string | null | undefined>, limit: number): string[
 function resultPreviewForTargetPath(targetPath: string): string {
   if (targetPath.startsWith('/plan')) {
     return 'Öffnet die nächste explizite Planentscheidung aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst anwendest.';
+  }
+  if (targetPath.includes('#data-goal-projection')) {
+    return 'Öffnet die Zielprojektion und ihre fehlende Evidenz. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
   }
   if (targetPath.startsWith('/data')) {
     return 'Öffnet die passende Datenevidenz aus der Analyse. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
@@ -155,6 +159,9 @@ function watchFromGoal(goalProjection: PulseGoalProjectionResponse | null | unde
     summary: gap,
     evidence: unique([top?.limiterRisk.label, top?.limiterRisk.summary], 3),
     tone: 'amber',
+    actionLabel: 'Zielevidenz prüfen',
+    targetPath: GOAL_PROJECTION_PATH,
+    resultPreview: resultPreviewForTargetPath(GOAL_PROJECTION_PATH),
   };
 }
 

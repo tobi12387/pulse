@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Analyse-Watchsignal öffnet Ziel-Evidenz
+
+- **Decision:** Wenn Data > Analyse eine Goal-Projection-Evidenzlücke als `Interessant, aber noch nicht entscheidend` zeigt, bekommt dieses Watchsignal einen sekundären Action Contract. Der CTA `Zielevidenz prüfen` öffnet nur die bestehende Zielprojektion in Data > Analyse; Plan, Garmin und Coach bleiben unverändert.
+- **Why:** Analyse-Tiefe darf nicht als Sackgasse enden, auch wenn ein Signal noch nicht die Hauptentscheidung führt. Eine fehlende Fueling-/GI- oder Ziel-Evidenz soll direkt an der belastbaren Detailstelle prüfbar sein, ohne mit der primären Tageshandlung zu konkurrieren.
+- **Alternatives:** Watchsignal weiter nur als Text zeigen (zu passiv); es zur primären Handlung hochstufen (zu laut); eine neue Analyse-Inbox bauen (mehr Oberfläche statt vorhandene Evidenzanker zu nutzen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Plan-Limiter aus Analyse führt zur Planwirkung
 
 - **Decision:** Wenn Data > Analyse nicht durch Goal Projection, sondern durch den Plan-Trace-Limiter geführt wird, zeigt die Analysekarte ebenfalls einen klickbaren Action Contract. Der CTA `Planwirkung prüfen` öffnet die bestehende read-only Plan-Szenariofläche mit `source=data-load`; Plan und Garmin bleiben unverändert, bis dort bewusst angewendet wird.
