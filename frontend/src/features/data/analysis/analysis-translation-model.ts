@@ -27,6 +27,8 @@ export type AnalysisTranslation = {
   supportEvidence: string[];
 };
 
+const PLAN_LOAD_PREVIEW_PATH = '/plan?tab=training&source=data-load#plan-scenario-preview';
+
 type Input = {
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined;
   goalProjection: PulseGoalProjectionResponse | null | undefined;
@@ -112,6 +114,9 @@ function primaryFromPlanTrace(planTrace: PulsePlanTrace | null | undefined): Ana
     summary: limiter.planBias,
     evidence: unique(limiter.evidence, 4),
     tone: 'amber',
+    actionLabel: 'Planwirkung prüfen',
+    targetPath: PLAN_LOAD_PREVIEW_PATH,
+    resultPreview: resultPreviewForTargetPath(PLAN_LOAD_PREVIEW_PATH),
   };
 }
 

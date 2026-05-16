@@ -159,6 +159,77 @@ test('Data analysis action contract follows non-plan goal interventions', async 
   await expect(page).toHaveURL('/data?tab=quality#data-garmin-quality');
 });
 
+test('Data analysis opens secondary goal evidence from the watch signal', async ({ page }) => {
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Interessant, aber noch nicht entscheidend');
+  await expect(card).toContainText('Wiederholte stabile Fueling');
+  await expect(card).toContainText('Öffnet die Zielprojektion');
+  await card.getByRole('button', { name: 'Zielevidenz prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-goal-projection');
+  await expect(page.locator('#data-goal-projection')).toBeVisible();
+});
+
+test('Data analysis opens plan impact from plan limiter evidence', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Noch kein Zielsignal führt.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: {
+      id: 'trace-limiter',
+      userId: 'user-1',
+      weekStart: '2026-04-27',
+      createdAt: '2026-05-01T08:00:00.000Z',
+      inputSnapshot: {
+        phase: 'build',
+        mesocycleWeek: 2,
+        weeklyHoursTarget: 8,
+        availableDays: [1, 2, 4, 6],
+        load: { ctl: 48, atl: 55, tsb: -7 },
+        profile: { ftpWatts: 240, maxHrBpm: 190, lthrBpm: 172 },
+        goals: [],
+        riskSignals: [],
+        healthStates: [],
+        recentRpe: [],
+        rpeReasons: [],
+        dataWarnings: [],
+        recentSportMix: {},
+        goalLimiter: {
+          kind: 'long_endurance_fueling',
+          label: 'Long Endurance + Fueling',
+          confidence: 'medium',
+          evidence: ['Long-Endurance-Level 3.1', 'Fueling-Verträglichkeit lernt'],
+          planBias: 'Die Woche sollte den nächsten langen Fueling-Reiz kontrolliert prüfen.',
+          workoutFocus: ['long_endurance', 'endurance'],
+        },
+      },
+      planDecision: {
+        summary: 'Limiter bestimmt die Woche.',
+        reasons: [],
+        riskFlags: [],
+        adaptations: [],
+      },
+      sportMix: {},
+      hardDays: [],
+      generatedSummary: [],
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Plan-Limiter');
+  await expect(card).toContainText('Long Endurance + Fueling');
+  await expect(card).toContainText('Nach dem Klick');
+  await card.getByRole('button', { name: 'Planwirkung prüfen' }).click();
+  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-scenario-preview');
+});
+
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await page.goto('/plan?tab=goals');
   const seasonLine = page.getByTestId('plan-season-strategy-card');
