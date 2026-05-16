@@ -77,6 +77,12 @@ test('deploy preserves HTTPS by provisioning frontend certs after git pull', () 
   assert.match(deployScript, /ensure_frontend_tls_certs/);
 });
 
+test('deploy resets generated workspace dependencies before npm ci', () => {
+  assert.match(deployScript, /removing generated workspace dependencies/);
+  assert.match(deployScript, /rm -rf node_modules/);
+  assert.match(deployScript, /npm ci --no-audit --no-fund/);
+});
+
 test('pulse ops checks the active LAN frontend and Pulse health endpoint', () => {
   assert.match(pulseOpsScript, /https:\/\/192\.168\.178\.46:5175/);
   assert.match(pulseOpsScript, /HEALTH_PATH="\$\{PULSE_HEALTH_PATH:-\/api\/pulse\/health\}"/);
