@@ -12,4 +12,4 @@
 - Red: focused Home routing tests failed while `Lernen pruefen` and Durability-led `Analyse pruefen` still opened `#data-plan-trace`.
 - Guard red: the combined focus run exposed an over-broad route change where the load-pressure CTA opened `#data-power-duration` instead of `#data-plan-trace`.
 - Green focus: `npx playwright test frontend/e2e/ux-daily-flow.spec.ts --project=desktop-chromium --project=mobile-chromium --grep "Home daily decision uses (stale decision quality|load pressure|durability analysis)" --workers=1` passed, 6 tests.
-- Static gates: `git diff --check`, `npm run lint -w frontend`, and `npm run build` passed.
+- Logic/static gates: `npm run test:frontend-logic`, `git diff --check`, `npm run lint -w frontend`, and `npm run build` passed.
