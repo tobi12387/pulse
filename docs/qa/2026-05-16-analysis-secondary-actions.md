@@ -16,6 +16,7 @@
 - Green: `git diff --check`.
 - Green: `npm run lint -w frontend`.
 - Green: `npm run build`.
+- Green: `npm run test:e2e -- frontend/e2e/pulse-smoke.spec.ts --workers=1` with 65 passed / 13 skipped.
 - `git diff --check` passed.
 - `npm run lint -w frontend` passed.
 - `npm run build` passed.
