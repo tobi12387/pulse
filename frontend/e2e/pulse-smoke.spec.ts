@@ -102,10 +102,61 @@ test('Data analysis translates deep evidence into daily impact without AI cards'
   await expect(card).toContainText('Handlungsrelevant');
   await expect(card).toContainText('Fueling-Praxis absichern');
   await expect(card).toContainText('70.3 Kraichgau');
+  await expect(card).toContainText('Nach dem Klick');
+  await expect(card.getByRole('button', { name: 'Plan pruefen' })).toBeVisible();
   await expect(card).toContainText('Interessant, aber noch nicht entscheidend');
   await expect(card).toContainText('Wiederholte stabile Fueling');
   await expect(card).toContainText('Read-only');
+  await card.getByRole('button', { name: 'Plan pruefen' }).click();
+  await expect(page).toHaveURL('/plan?tab=training');
   expect(insightRequests).toBe(0);
+});
+
+test('Data analysis action contract follows non-plan goal interventions', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion wartet auf Datenqualität.',
+      projections: [{
+        goalId: 'goal-data',
+        title: 'Datenvertrauen',
+        category: 'race',
+        targetDate: null,
+        daysUntil: null,
+        probabilityPct: null,
+        status: 'insufficient_evidence',
+        confidence: 'low',
+        summary: 'Noch nicht belastbar, weil Garmin-Evidenz fehlt.',
+        limiterRisk: {
+          status: 'unknown',
+          label: 'Datenqualität',
+          summary: 'Garmin-Abdeckung fehlt für die Projektion.',
+          evidence: ['Garmin-Daten unvollständig'],
+        },
+        nextBestIntervention: {
+          kind: 'data_quality',
+          title: 'Evidenz vervollständigen',
+          summary: 'Garmin-Abdeckung prüfen, bevor Pulse die Zielwirkung schärfer bewertet.',
+          actionLabel: 'Daten prüfen',
+          targetPath: '/data?tab=quality#data-garmin-quality',
+          evidence: ['Garmin-Daten unvollständig'],
+        },
+        evidence: ['Keine vollständige Garmin-Abdeckung'],
+        missingEvidence: ['Garmin-Daten unvollständig'],
+      }],
+      missingEvidence: ['Garmin-Daten unvollständig'],
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Evidenz vervollständigen');
+  await expect(card).toContainText('Nach dem Klick');
+  await expect(card).toContainText('Öffnet die passende Datenevidenz');
+  await card.getByRole('button', { name: 'Daten prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=quality#data-garmin-quality');
 });
 
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {

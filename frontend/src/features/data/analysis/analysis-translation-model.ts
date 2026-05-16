@@ -17,6 +17,8 @@ export type AnalysisTranslationSignal = {
   evidence: string[];
   tone: AnalysisTranslationTone;
   actionLabel?: string;
+  targetPath?: string;
+  resultPreview?: string;
 };
 
 export type AnalysisTranslation = {
@@ -72,6 +74,19 @@ function unique(items: Array<string | null | undefined>, limit: number): string[
   return result;
 }
 
+function resultPreviewForTargetPath(targetPath: string): string {
+  if (targetPath.startsWith('/plan')) {
+    return 'Öffnet die nächste explizite Planentscheidung aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst anwendest.';
+  }
+  if (targetPath.startsWith('/data')) {
+    return 'Öffnet die passende Datenevidenz aus der Analyse. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
+  }
+  if (targetPath === '/' || targetPath.startsWith('/?')) {
+    return 'Öffnet die heutige Entscheidung mit diesem Schutzsignal. Plan und Garmin bleiben unverändert, bis du dort bewusst weitergehst.';
+  }
+  return 'Öffnet den nächsten expliziten Schritt aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst weitergehst.';
+}
+
 function primaryFromGoal(goalProjection: PulseGoalProjectionResponse | null | undefined): AnalysisTranslationSignal | null {
   const top = goalProjection?.projections[0] ?? null;
   if (!top) return null;
@@ -83,6 +98,8 @@ function primaryFromGoal(goalProjection: PulseGoalProjectionResponse | null | un
     evidence: unique([...intervention.evidence, ...top.evidence, top.limiterRisk.summary], 4),
     tone: goalTone(top.status),
     actionLabel: intervention.actionLabel,
+    targetPath: intervention.targetPath,
+    resultPreview: resultPreviewForTargetPath(intervention.targetPath),
   };
 }
 

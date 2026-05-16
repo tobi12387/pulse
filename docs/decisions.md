@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Analyse-Tageswirkung bekommt klickbaren Action Contract
+
+- **Decision:** Data > Analyse rendert die `nextBestIntervention` aus Goal Projection nicht mehr nur als Text `Nächste explizite Aktion`, sondern als klickbaren Action Contract mit `Nach dem Klick`-Preview und `targetPath`. Die Analysekarte bleibt read-only; sie öffnet nur die bestehende Ziel-/Planentscheidung und schreibt weder Plan, Garmin noch Coach automatisch.
+- **Why:** Intervals-/WKO-artige Analyse-Tiefe wird erst Performance-OS-tauglich, wenn sie in eine konkrete ruhige Handlung übersetzt wird. Wenn die Analyse bereits weiß, welcher Plan- oder Zielschritt als nächstes zählt, soll Tobi nicht erneut interpretieren müssen, wo dieser Schritt lebt.
+- **Alternatives:** Aktion weiter nur als Text zeigen (zu passiv); Analysekarte direkt Plan anwenden lassen (zu versteckt); alle Analyse-Signale mit generischen CTAs versehen (zu breit ohne Zielpfad).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Off-plan Restplan hat eigenen Preview-Einstieg
 
 - **Decision:** Der Off-plan-Restplanabgleich nutzt `source=offplan-restplan` statt den generischen `everyday-adaptation`-Einstieg. Die Scenario Preview zeigt dafür eigene Entry-Copy mit echter Zusatzlast, Zielwirkung, Recovery und Garmin-Auswirkung; sie bleibt read-only bis zum bewussten Apply.

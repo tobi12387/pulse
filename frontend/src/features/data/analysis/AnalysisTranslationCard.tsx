@@ -5,6 +5,7 @@ import type {
   PulsePlanTrace,
   PulseTrainingAnalyticsResponse,
 } from '@coaching-os/shared/pulse';
+import { useNavigate } from 'react-router-dom';
 import { buildAnalysisTranslation, type AnalysisTranslationSignal, type AnalysisTranslationTone } from './analysis-translation-model';
 
 type Props = {
@@ -26,11 +27,14 @@ function toneColor(tone: AnalysisTranslationTone): string {
 function SignalBlock({
   signal,
   label,
+  onNavigate,
 }: {
   signal: AnalysisTranslationSignal;
   label: string;
+  onNavigate: (path: string) => void;
 }) {
   const color = toneColor(signal.tone);
+  const targetPath = signal.actionLabel ? signal.targetPath : undefined;
   return (
     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 9, minWidth: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
@@ -47,11 +51,52 @@ function SignalBlock({
       <p style={{ margin: '5px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.55 }}>
         {signal.summary}
       </p>
-      {signal.actionLabel && (
+      {targetPath ? (
+        <div
+          style={{
+            marginTop: 8,
+            border: '1px solid rgba(94,230,207,0.22)',
+            borderRadius: 5,
+            padding: '8px 9px',
+            background: 'rgba(94,230,207,0.05)',
+            display: 'grid',
+            gap: 7,
+          }}
+        >
+          <div>
+            <div className="label-mono" style={{ color: 'var(--accent)', fontSize: 8 }}>Nach dem Klick</div>
+            <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-2)', lineHeight: 1.45 }}>
+              {signal.resultPreview ?? 'Öffnet die nächste explizite Entscheidung; diese Analyse schreibt nichts automatisch.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate(targetPath)}
+            style={{
+              minHeight: 44,
+              minWidth: 44,
+              justifySelf: 'start',
+              padding: '8px 12px',
+              background: 'var(--accent)',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              color: 'var(--bg)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 650,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {signal.actionLabel}
+          </button>
+        </div>
+      ) : signal.actionLabel ? (
         <p style={{ margin: '6px 0 0', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Nächste explizite Aktion: {signal.actionLabel}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -64,6 +109,7 @@ export function AnalysisTranslationCard({
   trainingAnalytics,
   loading = false,
 }: Props) {
+  const navigate = useNavigate();
   const translation = buildAnalysisTranslation({
     decisionQuality,
     goalProjection,
@@ -91,8 +137,8 @@ export function AnalysisTranslationCard({
         Pulse übersetzt die tiefen Analyseblöcke zuerst in Entscheidungswirkung. Details bleiben darunter, aber diese Karte sagt, welcher Befund heute handeln sollte und welcher nur beobachtet wird.
       </p>
 
-      <SignalBlock signal={translation.primary} label="Handlungsrelevant" />
-      <SignalBlock signal={translation.watch} label="Interessant, aber noch nicht entscheidend" />
+      <SignalBlock signal={translation.primary} label="Handlungsrelevant" onNavigate={navigate} />
+      <SignalBlock signal={translation.watch} label="Interessant, aber noch nicht entscheidend" onNavigate={navigate} />
 
       {translation.supportEvidence.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
