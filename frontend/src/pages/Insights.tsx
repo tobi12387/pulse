@@ -269,9 +269,11 @@ function PowerDataQualityCard({
 
   return (
     <section
+      id="data-power-quality"
       className="card"
       data-testid="power-data-quality"
       aria-label="Power-Datenqualität"
+      tabIndex={-1}
       style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(245,158,11,0.22)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
@@ -321,9 +323,11 @@ function PowerDurationSummaryCard({ summary }: { summary: PulsePowerDurationSumm
 
   return (
     <section
+      id="data-power-duration"
       className="card"
       data-testid="power-duration-summary"
       aria-label="Power und Durability"
+      tabIndex={-1}
       style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>

@@ -230,6 +230,85 @@ test('Data analysis opens plan impact from plan limiter evidence', async ({ page
   await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-scenario-preview');
 });
 
+test('Data analysis opens power quality evidence from the watch signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [{
+        goalId: 'race-1',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-07-11',
+        daysUntil: 71,
+        probabilityPct: 72,
+        status: 'on_track',
+        confidence: 'medium',
+        summary: '70.3 Kraichgau ist stabil genug, um die Datenqualität separat zu prüfen.',
+        limiterRisk: {
+          status: 'clear',
+          label: 'Limiter stabil',
+          summary: 'Kein Ziel-Limiter führt gerade.',
+          evidence: ['Zielsignal stabil'],
+        },
+        nextBestIntervention: {
+          kind: 'maintenance',
+          title: 'Zielrhythmus halten',
+          summary: 'Die nächste Planentscheidung bleibt bewusst klein.',
+          actionLabel: 'Plan prüfen',
+          targetPath: '/plan?tab=training',
+          evidence: ['Zielsignal stabil'],
+        },
+        evidence: ['Zielsignal stabil'],
+        missingEvidence: [],
+      }],
+      missingEvidence: [],
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Power nur Hinweis');
+  await expect(card).toContainText('Nach dem Klick');
+  await expect(card).toContainText('Öffnet die Power-Datenqualität');
+  await card.getByRole('button', { name: 'Power-Daten prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-power-quality');
+  await expect(page.locator('#data-power-quality')).toBeVisible();
+});
+
+test('Data analysis opens durability evidence from the watch signal', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    powerDataQuality: {
+      source: 'stream',
+      status: 'trusted',
+      coveragePct: 96,
+      spikeCount: 0,
+      limitations: [],
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Durability beobachten');
+  await expect(card).toContainText('Nach dem Klick');
+  await expect(card).toContainText('Öffnet die Durability-Evidenz');
+  await card.getByRole('button', { name: 'Durability prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-power-duration');
+  await expect(page.locator('#data-power-duration')).toBeVisible();
+});
+
 test('Plan season lane shows compact ATP guardrails', async ({ page }) => {
   await page.goto('/plan?tab=goals');
   const seasonLine = page.getByTestId('plan-season-strategy-card');
