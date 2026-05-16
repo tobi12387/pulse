@@ -83,6 +83,15 @@ test('deploy resets generated workspace dependencies before npm ci', () => {
   assert.match(deployScript, /npm ci --no-audit --no-fund/);
 });
 
+test('deploy retries an incomplete workspace dependency install before builds', () => {
+  assert.match(deployScript, /verify_workspace_dependencies/);
+  assert.match(deployScript, /node_modules\/\.bin\/tsc/);
+  assert.match(deployScript, /node_modules\/\.bin\/vite/);
+  assert.match(deployScript, /node_modules\/\.bin\/drizzle-kit/);
+  assert.match(deployScript, /workspace dependency install incomplete; retrying once/);
+  assert.match(deployScript, /missing required build tools/);
+});
+
 test('pulse ops checks the active LAN frontend and Pulse health endpoint', () => {
   assert.match(pulseOpsScript, /https:\/\/192\.168\.178\.46:5175/);
   assert.match(pulseOpsScript, /HEALTH_PATH="\$\{PULSE_HEALTH_PATH:-\/api\/pulse\/health\}"/);

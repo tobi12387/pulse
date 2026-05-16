@@ -15,6 +15,11 @@ FRONTEND_CERT="$FRONTEND_CERT_DIR/192.168.178.46+2.pem"
 FRONTEND_ROOT_CA="$FRONTEND_CERT_DIR/rootCA.pem"
 FRONTEND_ROOT_CA_KEY="$FRONTEND_CERT_DIR/rootCA-key.pem"
 CERT_BACKUP_DIR=""
+WORKSPACE_DEPENDENCIES=(
+  "node_modules/.bin/tsc"
+  "node_modules/.bin/vite"
+  "node_modules/.bin/drizzle-kit"
+)
 
 cleanup_cert_backup() {
   if [[ -n "$CERT_BACKUP_DIR" && -d "$CERT_BACKUP_DIR" ]]; then
@@ -125,6 +130,27 @@ ensure_frontend_tls_certs() {
   generate_frontend_leaf_cert
 }
 
+install_workspace_dependencies() {
+  echo "==> removing generated workspace dependencies"
+  rm -rf node_modules backend/node_modules frontend/node_modules shared/node_modules
+  npm ci --no-audit --no-fund
+}
+
+verify_workspace_dependencies() {
+  local missing=()
+
+  for dependency in "${WORKSPACE_DEPENDENCIES[@]}"; do
+    if [[ ! -x "$REPO_DIR/$dependency" ]]; then
+      missing+=("$dependency")
+    fi
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    printf 'ERROR: workspace dependency install missing required build tools: %s\n' "${missing[*]}" >&2
+    return 1
+  fi
+}
+
 cd "$REPO_DIR"
 
 echo "==> fetching"
@@ -150,9 +176,12 @@ ensure_frontend_tls_certs
 
 echo "==> install workspace dependencies"
 cd "$REPO_DIR"
-echo "==> removing generated workspace dependencies"
-rm -rf node_modules backend/node_modules frontend/node_modules shared/node_modules
-npm ci --no-audit --no-fund
+install_workspace_dependencies
+if ! verify_workspace_dependencies; then
+  echo "==> workspace dependency install incomplete; retrying once"
+  install_workspace_dependencies
+  verify_workspace_dependencies
+fi
 
 echo "==> shared build"
 npm run build -w shared
