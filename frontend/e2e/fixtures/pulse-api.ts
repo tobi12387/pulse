@@ -548,6 +548,14 @@ function json(route: Route, body: unknown, status = 200) {
   });
 }
 
+function withActivityPatch(activity: unknown, patches: Map<string, Record<string, unknown>>) {
+  if (typeof activity !== 'object' || activity == null) return activity;
+  const activityId = (activity as { id?: unknown }).id;
+  if (typeof activityId !== 'string') return activity;
+  const patch = patches.get(activityId);
+  return patch ? { ...activity, ...patch } : activity;
+}
+
 function defaultProfileResponse() {
   return {
     userId: 'user-1',
@@ -1101,6 +1109,7 @@ function pulseResponse(pathname: string, searchParams: URLSearchParams, options:
 
 export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}) {
   const failureCounts = new Map<string, number>();
+  const activityPatches = new Map<string, Record<string, unknown>>();
 
   await page.route('**/*', async (route) => {
     const request = route.request();
@@ -1272,11 +1281,21 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
     if (url.pathname === '/api/pulse/metrics' && options.metrics) return json(route, { metrics: options.metrics });
     if (url.pathname === '/api/pulse/load' && 'load' in options) return json(route, options.load);
     if (url.pathname === '/api/pulse/sleep' && options.sleepSessions) return json(route, { sessions: options.sleepSessions });
+    if (url.pathname === '/api/pulse/activities' && options.activities) {
+      return json(route, {
+        activities: options.activities.map(activity => withActivityPatch(activity, activityPatches)),
+      });
+    }
     if (url.pathname.startsWith('/api/pulse/activities/') && url.pathname.endsWith('/feedback') && request.method() === 'PATCH') {
       const activityId = url.pathname.split('/').at(-2) ?? '';
       const body = request.postDataJSON();
       options.onActivityFeedbackPatch?.(activityId, body);
       const existingActivity = (options.activityDetail as { activity?: Record<string, unknown> } | undefined)?.activity;
+      const activityPatch = {
+        ...body,
+        feedbackLoggedAt: `${today}T13:30:00.000Z`,
+      };
+      activityPatches.set(activityId, activityPatch);
 
       return json(route, {
         activity: {
@@ -1303,12 +1322,21 @@ export async function mockPulseApi(page: Page, options: MockPulseApiOptions = {}
             equipmentIds: [],
             plannedWorkoutId: null,
           }),
-          ...body,
-          feedbackLoggedAt: `${today}T13:30:00.000Z`,
+          ...activityPatch,
         },
       });
     }
-    if (url.pathname.startsWith('/api/pulse/activities/') && options.activityDetail) return json(route, options.activityDetail);
+    if (url.pathname.startsWith('/api/pulse/activities/') && options.activityDetail) {
+      const activityId = url.pathname.split('/').at(-1) ?? '';
+      const detail = options.activityDetail as Record<string, unknown>;
+      const activity = detail.activity as Record<string, unknown> | undefined;
+      const patchedActivity = detail?.activity && activityPatches.has(activityId)
+        ? withActivityPatch(activity, activityPatches)
+        : null;
+      return json(route, patchedActivity
+        ? { ...detail, activity: patchedActivity }
+        : options.activityDetail);
+    }
     if (url.pathname === '/api/pulse/nutrition' && request.method() === 'GET' && options.nutritionLogs) {
       return json(route, { logs: options.nutritionLogs });
     }

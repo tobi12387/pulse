@@ -2637,6 +2637,7 @@ function TrainingTab({
         activityName: offPlanActivity?.name ?? null,
         activityTypeLabel: offPlanActivity ? ACTIVITY_LABEL[offPlanActivity.activityType] ?? offPlanActivity.activityType : null,
         durationMin: offPlanActivity?.durationSec != null ? Math.round(offPlanActivity.durationSec / 60) : null,
+        feedbackCaptured: offPlanActivity ? offPlanActivity.rpe != null || offPlanActivity.feedbackLoggedAt != null : null,
       }
     : null;
   const generatedTrace = generate.data?.planTrace ?? null;
