@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Analyse-Aktionsvertrag folgt dem Zielpfad
+
+- **Decision:** Data > Analyse leitet die `Nach dem Klick`-Preview für Goal-Interventionen aus dem tatsächlichen `targetPath` ab. Plan-Ziele nennen Planentscheidung, Datenziele nennen Datenevidenz, Home-Ziele nennen Tagesentscheidung; Plan und Garmin bleiben bis zum bewussten Folgeschritt unverändert.
+- **Why:** Die Analyse-Übersetzung darf tiefe Evidenz nicht nur erklären, sondern muss den nächsten ruhigen Handlungspfad korrekt benennen. Ein Datenqualitätsziel darf nicht wie eine Plananpassung klingen, sonst verliert Pulse Genauigkeit auf dem Weg von Analyse zu Alltagshandlung.
+- **Alternatives:** Den neu eingeführten Action Contract pauschal als Planentscheidung formulieren (falsch für Daten/Home-Ziele); nur den Button ohne Result-Preview testen (zu schwach); eine neue Analyse-Inbox bauen (mehr Oberfläche statt besserer Contract im bestehenden Block).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Analyse-Tageswirkung bekommt klickbaren Action Contract
 
 - **Decision:** Data > Analyse rendert die `nextBestIntervention` aus Goal Projection nicht mehr nur als Text `Nächste explizite Aktion`, sondern als klickbaren Action Contract mit `Nach dem Klick`-Preview und `targetPath`. Die Analysekarte bleibt read-only; sie öffnet nur die bestehende Ziel-/Planentscheidung und schreibt weder Plan, Garmin noch Coach automatisch.
