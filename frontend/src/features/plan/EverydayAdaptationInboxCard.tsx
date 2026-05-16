@@ -19,8 +19,8 @@ type Props = {
   } | null;
 };
 
-function scenarioPath(params: Record<string, string>): string {
-  const search = new URLSearchParams({ tab: 'training', source: 'everyday-adaptation', ...params });
+function scenarioPath(params: Record<string, string>, source = 'everyday-adaptation'): string {
+  const search = new URLSearchParams({ tab: 'training', source, ...params });
   return `/plan?${search.toString()}#plan-scenario-preview`;
 }
 
@@ -96,7 +96,7 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
     ? scenarioPath({
         scenario: 'reduce_volume',
         description: `${offPlanActivityContext.activityName ?? 'Off-plan-Aktivität'} als Evidence geschlossen: Restplan nach echter Zusatzlast bewusst prüfen, ohne Plan oder Garmin automatisch zu schreiben.`,
-      })
+      }, 'offplan-restplan')
     : null;
   const visibleIntents = offPlanActivityContext
     ? intents.map(intent => intent.id === 'done-differently'

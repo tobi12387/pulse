@@ -2018,10 +2018,11 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   const everydayInbox = page.getByTestId('everyday-adaptation-inbox');
   await expect(everydayInbox).toContainText('Anders erledigt');
   await everydayInbox.getByRole('button', { name: 'Planwirkung prüfen' }).click();
-  await expect(page).toHaveURL(/source=everyday-adaptation/);
+  await expect(page).toHaveURL(/source=offplan-restplan/);
   await expect(page).toHaveURL(/scenario=reduce_volume/);
   await expect(page).toHaveURL(/#plan-scenario-preview$/);
-  await expect(page.getByTestId('plan-scenario-entry-context')).toContainText('Alltagsanpassung');
+  await expect(page.getByTestId('plan-scenario-entry-context')).toContainText('Off-plan-Restplan');
+  await expect(page.getByTestId('plan-scenario-entry-context')).toContainText('echte Zusatzlast');
   await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Spontane lange Ausfahrt');
   await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Restplan');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();

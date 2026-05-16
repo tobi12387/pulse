@@ -1677,7 +1677,9 @@ function PlanScenarioPreviewCard({
   const activeFutureWorkouts = workouts.filter(workout => workout.status === 'planned' && workout.plannedDate >= today);
   const affectedWorkouts = preview ? scenarioAffectedWorkouts(workouts, preview) : [];
   const isEverydayAdaptationEntry = entrySource === 'everyday-adaptation';
-  const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent' || isEverydayAdaptationEntry;
+  const isOffPlanRestplanEntry = entrySource === 'offplan-restplan';
+  const isAdaptationScenarioEntry = isEverydayAdaptationEntry || isOffPlanRestplanEntry;
+  const isQuickScenarioEntry = entrySource === 'today-options' || entrySource === 'mobile-intent' || isAdaptationScenarioEntry;
   const hashTargetsScenario = hashFromLocation(location.hash) === 'plan-scenario-preview';
   const scenarioToolsOpen = isQuickScenarioEntry
     || entrySource === 'data-load'
@@ -1698,7 +1700,7 @@ function PlanScenarioPreviewCard({
       }
     }
 
-    if (scenarioParam === 'reduce_volume' && (entrySource === 'mobile-intent' || isEverydayAdaptationEntry)) {
+    if (scenarioParam === 'reduce_volume' && (entrySource === 'mobile-intent' || isAdaptationScenarioEntry)) {
       const request: PulsePlanScenarioRequest = { type: 'reduce_volume', factor: 0.7 };
       queueMicrotask(() => {
         setMode('reduce');
@@ -1707,9 +1709,11 @@ function PlanScenarioPreviewCard({
         setPreview(null);
         setError(null);
         setApplyError(null);
-        setReviewHint(descriptionParam || (isEverydayAdaptationEntry
-          ? 'Alltagsanpassung vorbereitet: Pulse prüft reduzierte Planlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
-          : 'Heute bewusst frei halten.'));
+        setReviewHint(descriptionParam || (isOffPlanRestplanEntry
+          ? 'Off-plan-Restplan vorbereitet: Pulse prüft echte Zusatzlast, Recovery und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+          : isEverydayAdaptationEntry
+            ? 'Alltagsanpassung vorbereitet: Pulse prüft reduzierte Planlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+            : 'Heute bewusst frei halten.'));
         setQuickEditorOpen(false);
       });
       void runAutoPreview(request);
@@ -1721,6 +1725,8 @@ function PlanScenarioPreviewCard({
     const durationMin = numberFromParam(durationParam, 45, 5, 900);
     const quickSourceLabel = entrySource === 'mobile-intent'
       ? 'Mobile Quick Decision'
+      : isOffPlanRestplanEntry
+        ? 'Off-plan-Restplan'
       : isEverydayAdaptationEntry
         ? 'Alltagsanpassung'
         : 'TrainNow';
@@ -1755,13 +1761,15 @@ function PlanScenarioPreviewCard({
       setApplyError(null);
       setReviewHint(entrySource === 'mobile-intent'
         ? 'Mobile Quick Decision vorbereitet: Pulse prueft erst Wochenlast und Garmin-Auswirkung, bevor etwas gespeichert wird.'
-        : isEverydayAdaptationEntry
-          ? 'Alltagsanpassung vorbereitet: Pulse prüft erst Zielwirkung, Recovery und Garmin-Auswirkung, bevor etwas gespeichert wird.'
-        : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
+        : isOffPlanRestplanEntry
+          ? 'Off-plan-Restplan vorbereitet: Pulse prüft erst echte Zusatzlast, Zielwirkung, Recovery und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+          : isEverydayAdaptationEntry
+            ? 'Alltagsanpassung vorbereitet: Pulse prüft erst Zielwirkung, Recovery und Garmin-Auswirkung, bevor etwas gespeichert wird.'
+            : 'TrainNow vorbereitet: Prüfe erst die Auswirkungen auf Plan und Garmin, bevor Pulse die Einheit speichert.');
       setQuickEditorOpen(false);
     });
     void runAutoPreview(request);
-  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isEverydayAdaptationEntry, isQuickScenarioEntry, previewScenarioMutateAsync, scenarioParam, searchKey, today, zoneParam]);
+  }, [activityTypeParam, archetypeParam, descriptionParam, durationParam, entrySource, isAdaptationScenarioEntry, isEverydayAdaptationEntry, isOffPlanRestplanEntry, isQuickScenarioEntry, previewScenarioMutateAsync, scenarioParam, searchKey, today, zoneParam]);
 
   useEffect(() => {
     if (reviewRequest.seq <= 0) return;
@@ -1936,7 +1944,7 @@ function PlanScenarioPreviewCard({
   const previewReasons = preview
     ? preview.reasons.filter(reason => !(isQuickScenarioEntry && isQuickScenarioNoWriteReminder(reason)))
     : [];
-  const isOffPlanRestplanScenario = isEverydayAdaptationEntry
+  const isOffPlanRestplanScenario = isOffPlanRestplanEntry
     && scenarioParam === 'reduce_volume'
     && /Restplan nach echter Zusatzlast/i.test(descriptionParam ?? '');
   const safeDecisionCopy = isOffPlanRestplanScenario
@@ -2201,6 +2209,23 @@ function PlanScenarioPreviewCard({
           }}
         >
           Alltagsanpassung: Prüfe hier zuerst Zielwirkung, Recovery und Garmin-Auswirkung. Pulse schreibt erst nach dem Anwenden.
+        </p>
+      )}
+      {entrySource === 'offplan-restplan' && (
+        <p
+          data-testid="plan-scenario-entry-context"
+          style={{
+            margin: '0 0 10px',
+            padding: '8px 10px',
+            border: '1px solid rgba(94,230,207,0.24)',
+            borderRadius: 5,
+            background: 'rgba(94,230,207,0.07)',
+            color: 'var(--text-2)',
+            fontSize: 11.5,
+            lineHeight: 1.45,
+          }}
+        >
+          Off-plan-Restplan: Prüfe hier zuerst echte Zusatzlast, Zielwirkung, Recovery und Garmin-Auswirkung. Pulse schreibt erst nach dem Anwenden.
         </p>
       )}
 

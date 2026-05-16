@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Off-plan Restplan hat eigenen Preview-Einstieg
+
+- **Decision:** Der Off-plan-Restplanabgleich nutzt `source=offplan-restplan` statt den generischen `everyday-adaptation`-Einstieg. Die Scenario Preview zeigt dafür eigene Entry-Copy mit echter Zusatzlast, Zielwirkung, Recovery und Garmin-Auswirkung; sie bleibt read-only bis zum bewussten Apply.
+- **Why:** Eine spontane Garmin-Belastung ist kein allgemeiner Alltagsfall, sondern ein bereits passiertes Training mit echter Last. Der Preview-Einstieg soll diese Semantik behalten, damit die folgende Entscheidung nicht wie eine beliebige Plananpassung wirkt.
+- **Alternatives:** Beim generischen Everyday-Adaptation-Source bleiben (zu unscharf); neue Route bauen (mehr Oberfläche); direkte Planreduktion nach Evidence (zu versteckt).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Off-plan Preview-Contract bleibt lastbewusst
 
 - **Decision:** Wenn der Off-plan-Handoff nach geschlossener Evidence eine `reduce_volume`-Vorschau öffnet, muss der `Sicherste Entscheidung`-Contract der Vorschau die Off-plan-Zusatzlast und den Restplan-Kontext nennen. Die Vorschau bleibt read-only; Plan und Garmin ändern sich weiterhin erst durch bewusstes Anwenden.
