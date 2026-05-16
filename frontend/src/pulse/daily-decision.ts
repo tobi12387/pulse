@@ -78,6 +78,10 @@ type HomeDataStatus = PulseHomeScreenData['dataStatus'];
 type HomeRecovery = PulseHomeScreenData['recovery'];
 type TodayOption = PulseTodayOptionsResponse['options'][number];
 
+const DATA_DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
+const DATA_PLAN_TRACE_PATH = '/data?tab=analysis#data-plan-trace';
+const DATA_POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
+
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
 }
@@ -554,7 +558,7 @@ function mapEvidence(item: string): DailyDecisionEvidence {
     normalized.includes('risiko') ||
     normalized.includes('risk')
   ) {
-    return { label: item, targetPath: '/data?tab=analysis#data-plan-trace' };
+    return { label: item, targetPath: DATA_PLAN_TRACE_PATH };
   }
   return item;
 }
@@ -669,6 +673,12 @@ function signalActionResultPreview(targetPath: string): string {
   if (targetPath.startsWith('/plan')) {
     return 'Pulse öffnet die passende Planprüfung; Plan oder Garmin ändern sich erst nach einem bewussten Klick.';
   }
+  if (targetPath.includes('#data-decision-quality')) {
+    return 'Pulse öffnet die Entscheidungsqualität und ihre Lernschleife; Plan und Garmin bleiben unverändert.';
+  }
+  if (targetPath.includes('#data-power-duration')) {
+    return 'Pulse öffnet die Durability-Evidenz mit Best Effort und Drift; Plan und Garmin bleiben unverändert.';
+  }
   if (targetPath.startsWith('/data')) {
     return 'Pulse öffnet die Evidenz; Plan und Garmin bleiben unverändert.';
   }
@@ -717,7 +727,7 @@ function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null
     label: 'Lernen',
     detail,
     tone,
-    targetPath: '/data?tab=analysis#data-plan-trace',
+    targetPath: DATA_DECISION_QUALITY_PATH,
   };
 }
 
@@ -771,7 +781,7 @@ function analysisSignal(
     label: 'Analyse',
     detail: `${detail}. Nächste Handlung: Durability-Limiter prüfen, bevor du Ausführung oder Anpassung bestätigst.`,
     tone: durability.rating === 'limited' ? 'rose' : 'amber',
-    targetPath: '/data?tab=analysis#data-plan-trace',
+    targetPath: DATA_POWER_DURATION_PATH,
   };
 }
 
@@ -1151,7 +1161,7 @@ function topSignals(
       label: 'Belastung',
       detail: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,
       tone: signalToneForTsb(home.fitnessLoad.tsb),
-      targetPath: '/data?tab=analysis#data-plan-trace',
+      targetPath: DATA_POWER_DURATION_PATH,
     },
   ];
   const fuelingDebt = openFuelingDebt(todayOptions);
@@ -1349,7 +1359,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
         : []),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
-      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
+      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ];
     const reason = 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
     const baseAlternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
@@ -1433,7 +1443,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
         : []),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
-      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
+      { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ];
     const reason = 'Garmin hat heute bereits Training erfasst, obwohl kein Pulse-Workout geplant war. Für heute zählt jetzt Feedback, Versorgung und Regeneration statt eine weitere Einheit zu suchen.';
     const baseAlternative = 'Kein Zusatztraining nachschieben; wenn die Aktivität anders geplant war, danach den Plan neu abgleichen.';
@@ -1507,7 +1517,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
   const supportPath = !action && !todayWorkout ? '/coach?focus=daily' : undefined;
   const evidence: DailyDecisionEvidence[] = [
     { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
-    { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: '/data?tab=analysis#data-plan-trace' },
+    { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
     ...(action?.evidence?.map(mapEvidence) ?? []),
   ];
