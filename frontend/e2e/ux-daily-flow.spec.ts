@@ -2025,6 +2025,9 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Spontane lange Ausfahrt');
   await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Restplan');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Off-plan-Zusatzlast');
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('Restplan');
+  await expect(page.getByTestId('scenario-result-contract')).toContainText('bewusst anwenden');
   expect(scenarioPreviewBody).toMatchObject({ type: 'reduce_volume', factor: 0.7 });
 });
 

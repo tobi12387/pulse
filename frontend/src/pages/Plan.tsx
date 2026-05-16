@@ -1936,6 +1936,14 @@ function PlanScenarioPreviewCard({
   const previewReasons = preview
     ? preview.reasons.filter(reason => !(isQuickScenarioEntry && isQuickScenarioNoWriteReminder(reason)))
     : [];
+  const isOffPlanRestplanScenario = isEverydayAdaptationEntry
+    && scenarioParam === 'reduce_volume'
+    && /Restplan nach echter Zusatzlast/i.test(descriptionParam ?? '');
+  const safeDecisionCopy = isOffPlanRestplanScenario
+    ? 'Off-plan-Zusatzlast ist bereits passiert; Restplan nur bewusst anwenden, wenn die Reduktion die nächsten Reize nach Fueling und Feedback ruhiger macht.'
+    : preview?.warnings.length
+      ? 'Warnungen zuerst lesen; nur anwenden, wenn die Einheit heute noch zu Körpergefühl, Zeit und Fueling passt.'
+      : 'Anwenden nur, wenn sich die Option nach Warm-up, Tagesgefühl und Zeitfenster weiterhin passend anfühlt.';
 
   const previewResult = preview ? (
     <div style={{ marginTop: 12, display: 'grid', gap: 10 }} data-testid="plan-scenario-preview-result">
@@ -1962,9 +1970,7 @@ function PlanScenarioPreviewCard({
         <div style={{ display: 'grid', gap: 2 }}>
           <span className="label-mono" style={{ fontSize: 8, color: 'var(--accent)' }}>Sicherste Entscheidung</span>
           <span style={{ fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
-            {preview.warnings.length > 0
-              ? 'Warnungen zuerst lesen; nur anwenden, wenn die Einheit heute noch zu Körpergefühl, Zeit und Fueling passt.'
-              : 'Anwenden nur, wenn sich die Option nach Warm-up, Tagesgefühl und Zeitfenster weiterhin passend anfühlt.'}
+            {safeDecisionCopy}
           </span>
         </div>
       </div>
