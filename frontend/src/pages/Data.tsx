@@ -56,6 +56,7 @@ const HASH_TAB: Record<string, Tab> = {
   'data-plan-trace': 'analyse',
   'data-personal-response': 'analyse',
   'data-goal-projection': 'analyse',
+  'data-decision-quality': 'analyse',
   'data-power-quality': 'analyse',
   'data-power-duration': 'analyse',
 };

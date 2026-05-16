@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Analyse-Lernsignale öffnen ihre Evidenz
+
+- **Decision:** Wenn Data > Analyse Entscheidungsqualität oder persönliche Reaktionsmuster als primäres oder offenes Lernsignal zeigt, bekommt das Signal einen read-only Action Contract. `Lernschleife prüfen` öffnet die bestehende Entscheidungsqualitäts-Evidenz, `Reaktionsmuster prüfen` öffnet das bestehende persönliche Reaktionsmodell; Plan, Garmin und Coach bleiben unverändert.
+- **Why:** MacroFactor-ähnliche Lernschleifen und persönliche Response-Muster sind nur hilfreich, wenn Pulse den nächsten ruhigen Prüfpunkt zeigt statt Tobi mit Analyse-Text stehen zu lassen. Die Route nutzt vorhandene Evidenzkarten, damit Data > Analyse weiter ein Übersetzer bleibt und keine neue Inbox oder versteckte Planlogik wird.
+- **Alternatives:** Lern-/Reaktionssignale weiter nur als Text zeigen (zu passiv); sie zur Planänderung routen (zu aggressiv); neue Detailseiten bauen (mehr Oberfläche statt vorhandene Evidenzanker zu nutzen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Deploy prüft Workspace-Build-Binaries nach npm ci
 
 - **Decision:** `scripts/deploy.sh` prüft nach dem sauberen `npm ci`, ob die Root-Workspace-Binaries `tsc`, `vite` und `drizzle-kit` ausführbar vorhanden sind. Fehlt eines davon trotz erfolgreichem Install, entfernt der Deploy die generierten Dependency-Verzeichnisse erneut, installiert genau einmal neu und bricht erst danach mit klarer Fehlermeldung ab, falls die Tools weiter fehlen.

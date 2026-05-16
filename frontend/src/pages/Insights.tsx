@@ -192,9 +192,11 @@ function DecisionQualityEvidenceCard({
 
   return (
     <section
+      id="data-decision-quality"
       className="card"
       data-testid={testId}
       aria-label="Entscheidungsqualität"
+      tabIndex={-1}
       style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
