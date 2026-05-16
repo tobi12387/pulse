@@ -1161,7 +1161,7 @@ function topSignals(
       label: 'Belastung',
       detail: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,
       tone: signalToneForTsb(home.fitnessLoad.tsb),
-      targetPath: DATA_POWER_DURATION_PATH,
+      targetPath: DATA_PLAN_TRACE_PATH,
     },
   ];
   const fuelingDebt = openFuelingDebt(todayOptions);

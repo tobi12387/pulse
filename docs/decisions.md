@@ -20,8 +20,8 @@
 
 ## 2026-05-16 — Home-Analyse-CTAs öffnen konkrete Evidenzanker
 
-- **Decision:** Home-Daily-Decision-CTAs für `Lernen`, `Analyse` und führende `Belastung` öffnen konkrete Data-Analyse-Anker statt den generischen Plan-Trace-Anker. `Lernen prüfen` öffnet `#data-decision-quality`; Durability-/Belastungsprüfung öffnet `#data-power-duration`; Plan, Garmin und Coach bleiben unverändert.
-- **Why:** Home soll die ruhige Tagesentscheidung nicht nur erklären, sondern direkt zur belastbaren Evidenz führen. Nach den Data-Analyse-Action-Contracts sind Entscheidungsqualität und Durability eigene Prüfstellen; ein generischer Plan-Trace-Zielpfad verschleiert, welche Evidenz Tobi gerade prüfen soll.
+- **Decision:** Home-Daily-Decision-CTAs für `Lernen` und Durability-geführte `Analyse` öffnen konkrete Data-Analyse-Anker statt den generischen Plan-Trace-Anker. `Lernen prüfen` öffnet `#data-decision-quality`; Durability-`Analyse prüfen` öffnet `#data-power-duration`; führende `Belastung` bleibt auf `#data-plan-trace`; Plan, Garmin und Coach bleiben unverändert.
+- **Why:** Home soll die ruhige Tagesentscheidung nicht nur erklären, sondern direkt zur belastbaren Evidenz führen. Nach den Data-Analyse-Action-Contracts sind Entscheidungsqualität und Durability eigene Prüfstellen; gleichzeitig bleibt akute Load-/TSB-Prüfung im Plan Trace, weil diese Evidenz die Belastungswirkung und nicht Durability-Drift erklärt.
 - **Alternatives:** Alle Home-Analyse-CTAs weiter auf `#data-plan-trace` routen (zu ungenau); neue Home-Modals bauen (mehr Oberfläche statt vorhandene Evidenzanker zu nutzen); automatische Plananpassung aus Home auslösen (zu versteckt und gegen den no-write Contract).
 - **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
 - **Status:** active.
