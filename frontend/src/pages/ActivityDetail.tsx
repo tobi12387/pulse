@@ -1179,6 +1179,7 @@ function FuelingSection({
             </p>
             <div
               data-testid="activity-offplan-feedback-readiness"
+              aria-live="polite"
               style={{
                 marginTop: 8,
                 fontFamily: 'var(--font-mono)',

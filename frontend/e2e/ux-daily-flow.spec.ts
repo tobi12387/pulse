@@ -1916,6 +1916,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
     equipmentIds: [],
     plannedWorkoutId: null,
   };
+  let feedbackPatch: { activityId: string; body: unknown } | null = null;
 
   await mockPulseApi(page, {
     home: {
@@ -1958,6 +1959,9 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
       createdAt: '2026-05-01T11:00:00.000Z',
     }],
     outcomeBaseline,
+    onActivityFeedbackPatch: (activityId, body) => {
+      feedbackPatch = { activityId, body };
+    },
   });
   await page.goto('/');
 
@@ -1986,8 +1990,14 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await planFollowUp.getByRole('button', { name: 'Feedback öffnen' }).click();
   const feedbackDialog = page.getByRole('dialog', { name: /Wie hat sich/i });
   await expect(feedbackDialog).toBeVisible();
-  await feedbackDialog.getByRole('button', { name: '×' }).click();
+  await feedbackDialog.getByRole('button', { name: 'SPEICHERN' }).click();
   await expect(feedbackDialog).toHaveCount(0);
+  expect(feedbackPatch).toEqual({
+    activityId: completedActivity.id,
+    body: { rpe: 5, rpeNote: null, sorenessAreas: null },
+  });
+  await expect(planFollowUp.getByTestId('activity-offplan-feedback-readiness')).toContainText('Feedback erfasst');
+  await expect(planFollowUp.getByRole('button', { name: 'Feedback öffnen' })).toHaveCount(0);
   await planFollowUp.getByRole('button', { name: 'Plan abgleichen' }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=offplan-activity&activityId=activity-offplan-fueling#everyday-adaptation-inbox');
   const planHandoff = page.getByTestId('plan-offplan-activity-context');
