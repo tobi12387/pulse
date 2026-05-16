@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Deploy prüft Workspace-Build-Binaries nach npm ci
+
+- **Decision:** `scripts/deploy.sh` prüft nach dem sauberen `npm ci`, ob die Root-Workspace-Binaries `tsc`, `vite` und `drizzle-kit` ausführbar vorhanden sind. Fehlt eines davon trotz erfolgreichem Install, entfernt der Deploy die generierten Dependency-Verzeichnisse erneut, installiert genau einmal neu und bricht erst danach mit klarer Fehlermeldung ab, falls die Tools weiter fehlen.
+- **Why:** Mehrere Server-Deploys am 2026-05-16 zeigten transient `tsc: not found` direkt nach `npm ci`, obwohl ein anschliessender manueller Build oder Deploy-Rerun erfolgreich war. Der Deploy soll unvollständigen Workspace-Bin-State vor Shared/Backend/Frontend-Builds erkennen und selbst eine kontrollierte zweite Installation versuchen, ohne den Server direkt zu editieren.
+- **Alternatives:** Deploy manuell rerunnen (zu operativ und fehleranfaellig); nur den fehlschlagenden Build-Step wiederholen (laesst unvollstaendigen Dependency-State bestehen); Build-Tools global auf dem Server installieren (bricht den Mirror- und Workspace-Contract).
+- **Decided by:** Codex, nach wiederholten transienten Server-Deploy-Fehlern.
+- **Status:** active.
+
 ## 2026-05-16 — Analysequalität öffnet Power-Evidenz
 
 - **Decision:** Wenn Data > Analyse Power-Datenqualität oder Durability als Watchsignal zeigt, bekommt dieses Signal einen sekundären Action Contract. `Power-Daten prüfen` öffnet die bestehende Power-Datenqualitätskarte, `Durability prüfen` öffnet die bestehende Power-/Durability-Evidenz; Plan, Garmin und Coach bleiben unverändert.
