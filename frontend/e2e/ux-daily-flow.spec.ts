@@ -1917,6 +1917,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
     plannedWorkoutId: null,
   };
   let feedbackPatch: { activityId: string; body: unknown } | null = null;
+  let scenarioPreviewBody: unknown = null;
 
   await mockPulseApi(page, {
     home: {
@@ -1962,6 +1963,9 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
     onActivityFeedbackPatch: (activityId, body) => {
       feedbackPatch = { activityId, body };
     },
+    onPlanScenarioPreview: (body) => {
+      scenarioPreviewBody = body;
+    },
   });
   await page.goto('/');
 
@@ -2004,14 +2008,24 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   await expect(planHandoff).toContainText('Off-plan-Aktivität einordnen');
   await expect(planHandoff).toContainText('Spontane lange Ausfahrt');
   await expect(planHandoff.getByTestId('plan-offplan-feedback-readiness')).toContainText('Feedback erfasst');
+  await expect(planHandoff.getByTestId('plan-offplan-restplan-impact')).toContainText('Restplan-Wirkung');
+  await expect(planHandoff.getByTestId('plan-offplan-restplan-impact')).toContainText('TSS 132');
+  await expect(planHandoff.getByTestId('plan-offplan-restplan-impact')).toContainText('150 min');
+  await expect(planHandoff.getByTestId('plan-offplan-restplan-impact')).toContainText('nächsten geplanten Reize bewusst prüfen');
   await expect(planHandoff).toContainText('Fueling');
   await expect(planHandoff).toContainText('Plan und Garmin bleiben unverändert');
-  await expect(planHandoff).toContainText('Anders erledigt');
+  await expect(planHandoff).toContainText('Planwirkung prüfen');
   const everydayInbox = page.getByTestId('everyday-adaptation-inbox');
   await expect(everydayInbox).toContainText('Anders erledigt');
-  await everydayInbox.getByRole('button', { name: 'Feedback öffnen' }).click();
-  await expect(page).toHaveURL('/plan/activity/activity-offplan-fueling#activity-feedback');
-  await expect(page.getByTestId('activity-feedback-card')).toContainText('RPE Feedback');
+  await everydayInbox.getByRole('button', { name: 'Planwirkung prüfen' }).click();
+  await expect(page).toHaveURL(/source=everyday-adaptation/);
+  await expect(page).toHaveURL(/scenario=reduce_volume/);
+  await expect(page).toHaveURL(/#plan-scenario-preview$/);
+  await expect(page.getByTestId('plan-scenario-entry-context')).toContainText('Alltagsanpassung');
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Spontane lange Ausfahrt');
+  await expect(page.getByTestId('plan-scenario-review-hint')).toContainText('Restplan');
+  await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
+  expect(scenarioPreviewBody).toMatchObject({ type: 'reduce_volume', factor: 0.7 });
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {

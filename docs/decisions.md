@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Off-plan Restplanabgleich nennt Zusatzlast und Preview
+
+- **Decision:** Nach geschlossener Off-plan-Fueling-/Feedback-Evidence zeigt Plan > Training im Handoff die echte Zusatzlast der Garmin-Aktivitaet (Dauer/TSS) als `Restplan-Wirkung`. Der `Anders erledigt`-Schritt wechselt dann von Feedback-Oeffnung auf `Planwirkung prüfen` und startet nur eine read-only `reduce_volume`-Vorschau; Plan und Garmin werden erst nach bewusstem Apply veraendert.
+- **Why:** Der Off-plan-Fluss soll nicht bei erfasster Evidence stehen bleiben, sondern die intelligente naechste Handlung fuer den Restplan nennen. Tobi soll sehen, welche Last bereits passiert ist, und die Folgereize ruhig pruefen koennen, ohne dass Pulse versteckt Plan oder Garmin schreibt.
+- **Alternatives:** Weiter nur Feedback oeffnen (abgeschlossenes Feedback wird wiederholt); direkt Plan anpassen (zu versteckt); nur TSS/Dauer als Text zeigen ohne Preview-Pfad (zu passiv fuer den Restplanabgleich).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Server-Deploy nutzt sauberen Workspace-Install
 
 - **Decision:** `scripts/deploy.sh` entfernt vor `npm ci` die generierten Workspace-Dependency-Verzeichnisse `node_modules`, `backend/node_modules`, `frontend/node_modules` und `shared/node_modules`. Der Server bleibt Code-mirror-only; geloescht wird nur installierbarer Build-/Dependency-State.
