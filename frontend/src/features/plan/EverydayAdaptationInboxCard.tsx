@@ -14,6 +14,7 @@ type Props = {
     activityName: string | null;
     activityTypeLabel: string | null;
     durationMin: number | null;
+    tss: number | null;
     feedbackCaptured: boolean | null;
   } | null;
 };
@@ -86,12 +87,28 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
     : offPlanActivityContext?.feedbackCaptured === false
       ? 'Fueling ist sichtbar; Feedback fehlt noch als subjektive Belastungs-Evidence. Plan und Garmin bleiben unverändert, bis du die Planwirkung bewusst prüfst.'
       : 'Fueling und Feedback erklären jetzt, was wirklich passiert ist. Plan und Garmin bleiben unverändert, bis du die Planwirkung bewusst prüfst.';
+  const offPlanLoadEvidence = [
+    offPlanActivityContext?.tss != null ? `TSS ${Math.round(offPlanActivityContext.tss)}` : null,
+    offPlanActivityContext?.durationMin != null ? `${offPlanActivityContext.durationMin} min` : null,
+  ].filter(Boolean).join(' · ');
+  const showOffPlanRestplanImpact = offPlanActivityContext?.feedbackCaptured === true && Boolean(offPlanLoadEvidence);
+  const offPlanRestplanTarget = offPlanActivityContext
+    ? scenarioPath({
+        scenario: 'reduce_volume',
+        description: `${offPlanActivityContext.activityName ?? 'Off-plan-Aktivität'} als Evidence geschlossen: Restplan nach echter Zusatzlast bewusst prüfen, ohne Plan oder Garmin automatisch zu schreiben.`,
+      })
+    : null;
   const visibleIntents = offPlanActivityContext
     ? intents.map(intent => intent.id === 'done-differently'
         ? {
             ...intent,
-            resultPreview: 'Pulse öffnet diese Aktivität und RPE Feedback; Planwirkung entsteht erst aus gespeicherter Evidenz.',
-            targetPath: `/plan/activity/${encodeURIComponent(offPlanActivityContext.activityId)}#activity-feedback`,
+            resultPreview: offPlanActivityContext.feedbackCaptured
+              ? 'Pulse öffnet eine reduzierte Restplan-Vorschau; Planwirkung entsteht erst nach bewusstem Anwenden.'
+              : 'Pulse öffnet diese Aktivität und RPE Feedback; Planwirkung entsteht erst aus gespeicherter Evidenz.',
+            cta: offPlanActivityContext.feedbackCaptured ? 'Planwirkung prüfen' : 'Feedback öffnen',
+            targetPath: offPlanActivityContext.feedbackCaptured && offPlanRestplanTarget
+              ? offPlanRestplanTarget
+              : `/plan/activity/${encodeURIComponent(offPlanActivityContext.activityId)}#activity-feedback`,
           }
         : intent)
     : intents;
@@ -143,8 +160,30 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
           <p style={{ margin: 0, fontSize: 11.4, color: 'var(--text-2)', lineHeight: 1.45 }}>
             {offPlanEvidenceCopy}
           </p>
+          {showOffPlanRestplanImpact && (
+            <div
+              data-testid="plan-offplan-restplan-impact"
+              style={{
+                border: '1px solid rgba(251,191,36,0.28)',
+                borderRadius: 5,
+                background: 'rgba(251,191,36,0.055)',
+                padding: '8px 9px',
+                display: 'grid',
+                gap: 3,
+              }}
+            >
+              <div className="label-mono" style={{ color: 'var(--amber)', fontSize: 8 }}>
+                Restplan-Wirkung
+              </div>
+              <div style={{ fontSize: 11.2, color: 'var(--text-2)', lineHeight: 1.45 }}>
+                Echte Zusatzlast: {offPlanLoadEvidence}. Die nächsten geplanten Reize bewusst prüfen; kein Plan- oder Garmin-Schreibzugriff passiert hier automatisch.
+              </div>
+            </div>
+          )}
           <p style={{ margin: 0, fontSize: 11.4, color: 'var(--text-3)', lineHeight: 1.45 }}>
-            Nächster ruhiger Schritt: Anders erledigt öffnet die Aktivitäten- und Feedback-Spur, damit der Restplan aus gespeicherter Evidenz reagiert.
+            {offPlanActivityContext.feedbackCaptured
+              ? 'Nächster ruhiger Schritt: Planwirkung prüfen öffnet eine Restplan-Vorschau, damit echte Zusatzlast erst bewusst in Woche, Recovery und Garmin eingeordnet wird.'
+              : 'Nächster ruhiger Schritt: Anders erledigt öffnet die Aktivitäten- und Feedback-Spur, damit der Restplan aus gespeicherter Evidenz reagiert.'}
           </p>
         </div>
       )}
