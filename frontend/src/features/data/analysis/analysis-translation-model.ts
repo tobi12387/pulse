@@ -29,6 +29,8 @@ export type AnalysisTranslation = {
 
 const PLAN_LOAD_PREVIEW_PATH = '/plan?tab=training&source=data-load#plan-scenario-preview';
 const GOAL_PROJECTION_PATH = '/data?tab=analysis#data-goal-projection';
+const POWER_QUALITY_PATH = '/data?tab=analysis#data-power-quality';
+const POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
 
 type Input = {
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined;
@@ -83,6 +85,12 @@ function resultPreviewForTargetPath(targetPath: string): string {
   }
   if (targetPath.includes('#data-goal-projection')) {
     return 'Öffnet die Zielprojektion und ihre fehlende Evidenz. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
+  }
+  if (targetPath.includes('#data-power-quality')) {
+    return 'Öffnet die Power-Datenqualität mit Quelle, Coverage und Limitierung. Plan und Garmin bleiben unverändert; du prüfst dort nur die Messgrundlage.';
+  }
+  if (targetPath.includes('#data-power-duration')) {
+    return 'Öffnet die Durability-Evidenz mit Best Effort und Drift. Plan und Garmin bleiben unverändert; du prüfst dort nur die Analysegrundlage.';
   }
   if (targetPath.startsWith('/data')) {
     return 'Öffnet die passende Datenevidenz aus der Analyse. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
@@ -174,6 +182,9 @@ function watchFromTrainingAnalytics(trainingAnalytics: PulseTrainingAnalyticsRes
       summary: quality.limitations[0] ?? 'Power-Analyse bleibt begrenzt, bis belastbare Stream-Daten vorhanden sind.',
       evidence: unique([`${quality.coveragePct}% Coverage`, `${quality.spikeCount} Spikes`], 3),
       tone: quality.status === 'blocked' ? 'rose' : 'amber',
+      actionLabel: 'Power-Daten prüfen',
+      targetPath: POWER_QUALITY_PATH,
+      resultPreview: resultPreviewForTargetPath(POWER_QUALITY_PATH),
     };
   }
   const durability = trainingAnalytics?.powerDuration?.durability ?? null;
@@ -184,6 +195,9 @@ function watchFromTrainingAnalytics(trainingAnalytics: PulseTrainingAnalyticsRes
       summary: trainingAnalytics?.powerDuration?.durabilityLine ?? 'Durability ist interessant, aber noch kein primärer Tageshebel.',
       evidence: unique(durability.evidence, 3),
       tone: durability.rating === 'limited' ? 'rose' : 'amber',
+      actionLabel: 'Durability prüfen',
+      targetPath: POWER_DURATION_PATH,
+      resultPreview: resultPreviewForTargetPath(POWER_DURATION_PATH),
     };
   }
   return null;

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-16 — Analysequalität öffnet Power-Evidenz
+
+- **Decision:** Wenn Data > Analyse Power-Datenqualität oder Durability als Watchsignal zeigt, bekommt dieses Signal einen sekundären Action Contract. `Power-Daten prüfen` öffnet die bestehende Power-Datenqualitätskarte, `Durability prüfen` öffnet die bestehende Power-/Durability-Evidenz; Plan, Garmin und Coach bleiben unverändert.
+- **Why:** Intervals-/WKO-artige Analyse-Tiefe muss zur konkreten Mess- oder Durability-Grundlage führen, statt als erklärender Text zu enden. So kann Tobi erkennen, ob ein Limiter wirklich trainierbar ist oder erst bessere Power-/Durability-Evidenz braucht.
+- **Alternatives:** Power-/Durability-Watchsignale weiter nur als Text zeigen (zu passiv); sie immer zur Planänderung routen (zu aggressiv); neue Analyse-Detailseiten bauen (mehr Oberfläche statt vorhandene Karten zu nutzen).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Analyse-Watchsignal öffnet Ziel-Evidenz
 
 - **Decision:** Wenn Data > Analyse eine Goal-Projection-Evidenzlücke als `Interessant, aber noch nicht entscheidend` zeigt, bekommt dieses Watchsignal einen sekundären Action Contract. Der CTA `Zielevidenz prüfen` öffnet nur die bestehende Zielprojektion in Data > Analyse; Plan, Garmin und Coach bleiben unverändert.
