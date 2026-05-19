@@ -9,14 +9,15 @@ Use this skill as a Pulse-specific adaptation of the Karpathy-inspired coding-ag
 
 ## Core Loop
 
-1. Name assumptions before editing. If the request has multiple plausible meanings, ask or state the chosen interpretation and why it is the smallest safe one.
-2. Choose the simplest change that satisfies the request. Do not add speculative configuration, abstractions, providers, routes, product scope, or recovery paths.
-3. Keep the diff surgical. Touch only files needed for the request, match local style, and clean up only unused code created by your own change.
+1. Name assumptions before editing. If the request has multiple plausible meanings, ask or state the chosen interpretation and why it is the smallest safe coherent package or justified micro-slice.
+2. Choose the simplest coherent package that satisfies the request. For product work, prefer the active Performance-OS backlog package over repeated one-signal micro-slices when the evidence and verification surface are shared. Do not add speculative configuration, abstractions, providers, routes, product scope, or recovery paths.
+3. Keep the diff surgical within that package. Touch only files needed for the request, match local style, and clean up only unused code created by your own change.
 4. Turn the task into verifiable success criteria. For behavior changes, prefer a failing test or reproduction first; for docs/workflow changes, verify the affected instructions are discoverable and consistent.
 
 ## Pulse-Specific Guardrails
 
 - Let `AGENTS.md`, `docs/ai/*`, `docs/decisions.md`, and the relevant `.codex/skills/*` files constrain the work before broad exploration.
+- Product work must name a `docs/ai/next-product-packages.md` track (`Tagesentscheidung`, `Trainingsanpassung`, or `Lernschleifen`) unless it is an urgent fix, regression, CI/deploy repair, or docs-only workflow update.
 - Do not widen product scope past current decisions: no Telegram integration, no Data Export, no server-side code edits, no direct provider SDK calls outside `backend/src/lib/llm.ts`.
 - Do not use a large refactor to "make room" for a small product or workflow change.
 - Do not repair unrelated old code, comments, formatting, or generated artifacts unless the user asked for that exact cleanup.
@@ -28,5 +29,7 @@ Before calling work complete, check:
 
 - Can every changed line be traced back to the user's request or required cleanup from that change?
 - Did the change avoid new abstractions unless there are at least two real call sites or an established Pulse pattern?
+- If it touched Daily Decision contract logic, did it add or update fast unit/golden coverage before Playwright?
+- If it touched multiple Home signals, did it move toward a data-driven signal registry/priority table instead of adding bespoke branches?
 - Did verification match the touched surface: focused test/build for runtime code, migration guard for DB changes, frontend QA for UI, and static consistency checks for docs/skills?
 - Did any non-trivial architecture, scope, priority, or workflow decision get recorded in `docs/decisions.md`?

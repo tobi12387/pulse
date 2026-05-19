@@ -37,6 +37,8 @@ Before pushing or opening a PR:
 - use commit format `type: short description`
 - push immediately after commit
 - include tests run and any skipped checks in the PR body
+- state whether the PR is a package PR or a justified micro-slice
+- if local checks are green and CI has no special review risk, prefer GitHub auto-merge instead of waiting in chat; still inspect and fix failed checks
 
 ## Server Deploy
 

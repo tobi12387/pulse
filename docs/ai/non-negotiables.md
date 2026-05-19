@@ -26,6 +26,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - No Telegram integration. Web Push is the planned notification channel.
 - No Data Export unless Tobi explicitly reverses this decision.
 - Completed plans are historical references only. Do not rebuild them.
+- New product work must serve the hard Performance-OS backlog order in `docs/ai/next-product-packages.md`: `Tagesentscheidung`, `Trainingsanpassung`, then `Lernschleifen`.
 
 ## Product Quality Bar
 
@@ -38,6 +39,10 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - Error states should be local, recoverable and action-oriented instead of collapsing whole routes.
 - UI/UX work starts from evidence: route screenshots, Playwright checks, real-device notes or explicit user friction.
 - For current model, dependency, security or API recommendations, verify the latest official/current source before proposing changes.
+- Prefer weekly package-shaped PRs with 3-5 related changes over repeated one-signal micro-slices when the evidence and verification surface is shared.
+- Daily Decision contract logic should get fast unit/golden coverage for signal priority, CTA, safest option and goal impact before Playwright smokes.
+- Home signal contracts should become more data-driven over time; avoid adding more bespoke branches when a local signal registry/priority table is the simpler durable path.
+- When local checks are green and CI has no special review risk, prefer GitHub auto-merge; deploy runtime changes only after merge to `main`.
 
 ## Current Product Gates
 

@@ -159,7 +159,9 @@ These build on the calmer daily UI.
 
 ## Active Plan Surface
 
-Use this roadmap as the product orientation. Before implementation, open or create the smallest PR-sized plan for the next slice.
+Use this roadmap as the product orientation. Before implementation, open or create the smallest coherent package-sized plan, or a justified micro-slice plan for urgent fixes, regressions, CI/deploy repair or docs-only work.
+
+Autonomous product execution now follows the hard Performance-OS backlog in `docs/ai/next-product-packages.md`. Product PRs should serve one of three tracks in order: `Tagesentscheidung`, `Trainingsanpassung`, then `Lernschleifen`. Prefer weekly product packages with 3-5 related changes over repeated one-signal micro-slices when they share the same outcome and verification surface. Use fast Daily Decision unit/golden tests before Playwright for contract logic, move Home signal work toward data-driven signal registries, and prefer GitHub auto-merge when local checks are green and CI has no special review risk.
 
 The active plan folder is intentionally small:
 

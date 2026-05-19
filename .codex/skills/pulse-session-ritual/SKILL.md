@@ -13,6 +13,7 @@ Use this skill before substantial Pulse work.
    - `AGENTS.md`
    - `docs/ai/session-brief.md`
    - `docs/ai/current-focus.md`
+   - `docs/ai/next-product-packages.md`
    - `docs/ai/non-negotiables.md`
    - `docs/ai/context-map.md`
 2. Run:
@@ -23,8 +24,12 @@ Use this skill before substantial Pulse work.
 
 ## During Work
 
-- Keep the PR narrow: one migration, route contract, frontend slice, or docs/tooling change.
+- Keep the PR package-shaped by default: one Performance-OS backlog track with 3-5 related changes that share one outcome and verification surface.
+- Use a smaller micro-slice only for urgent fixes, regressions, CI/deploy repair, docs-only updates, or clearly separate ownership boundaries.
+- Product PRs must name their track from `docs/ai/next-product-packages.md`: `Tagesentscheidung`, `Trainingsanpassung` or `Lernschleifen`.
 - Prefer `rg` and small excerpts before reading large files.
+- For Daily Decision contract logic, prefer fast unit/golden tests before Playwright and use Playwright for 1-2 rendered package smokes.
+- When changing multiple Home signals, prefer a local data-driven signal registry/priority table over adding more one-off branches.
 - Do not edit server files directly. The server mirrors GitHub `main`.
 - Never commit `.env` or secrets.
 - Never use `git add .`; stage explicit paths only.
@@ -37,3 +42,4 @@ Before finishing a substantial session:
 2. Update `docs/decisions.md` for non-trivial architecture, scope, priority, or workflow decisions.
 3. Update `docs/ai/current-focus.md` only if the durable work queue, manual gates, or next recommended work changed. Put branch-specific PR detail in the PR body instead.
 4. Check `git status --short --branch` and call out any unrelated dirty files.
+5. If local checks are green and CI has no special review risk, prefer GitHub auto-merge; deploy runtime changes only after merge to `main`.
