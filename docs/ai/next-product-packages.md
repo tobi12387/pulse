@@ -164,6 +164,7 @@ Done evidence:
 These improvements are mandatory support for the three tracks, not a fourth product track:
 
 - Keep `docs/ai/current-focus.md` below roughly 80 short lines and link detailed status to this file, the canonical roadmap and decisions.
+- Use the track-specific gates instead of re-deriving local checks per PR: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` and `npm run verify:lernschleifen`.
 - Extract Daily Decision contract fixtures from Playwright into fast unit/golden tests.
 - Introduce data-driven signal registry/priority tables when package work touches multiple signal contracts.
 - Prefer package PRs with 3-5 related changes over repeated one-signal PRs when the evidence surface is shared.

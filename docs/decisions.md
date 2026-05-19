@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Track-Verify-Kommandos werden lokaler Paket-Gate
+
+- **Decision:** Pulse bekommt die lokalen Gates `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` und `npm run verify:lernschleifen`. Jedes Gate buendelt relevante schnelle Contract-/Golden-Tests, den Frontend-Build und genau ein fokussiertes Desktop/Mobile-Smoke-Set fuer den jeweiligen Performance-OS-Track.
+- **Why:** Time-to-Market leidet, wenn jede Session lokale Checks aus PR-Historie und Chatverlauf neu zusammensucht. Track-Gates machen Paket-PRs schneller startklar, ohne die Regel "fast tests before Playwright, 1-2 rendered smokes per package" aufzuweichen.
+- **Alternatives:** Weiter manuell einzelne Testbefehle pro PR sammeln (zu langsam und fehleranfaellig); immer die volle Playwright-Suite lokal laufen lassen (zu teuer fuer paketfoermige Iteration); nur CI vertrauen (zu spaetes Feedback).
+- **Decided by:** Tobi fragte nach weiterer Time-to-Market-Optimierung; Codex setzte den ersten Build-Speed-Hebel um.
+- **Status:** active.
+
 ## 2026-05-19 — Data-Lernkalibrierung respektiert Evidenzgates
 
 - **Decision:** Data > Analyse bekommt eine read-only `Lernkalibrierung`, die Decision Quality, Personal Response und Fueling-Baseline zusammenfasst. Sie markiert nur belastbare Lernsignale als `Tageshandlung`; unfertige oder zu schwache Fueling-/Decision-Evidenz bleibt `Watch-Kontext`. Fueling-Trendtexte werden ueber einen gemeinsamen Gate erst ab mindestens drei vergleichbaren kompletten During-Logs angezeigt.

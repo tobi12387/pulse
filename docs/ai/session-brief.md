@@ -21,6 +21,7 @@ Do not read `docs/superpowers/plans/completed/` unless the task is explicitly ab
 - Search before reading whole files. Prefer `rg` anchors and small excerpts.
 - Keep PRs package-shaped by default: one Performance-OS backlog track, usually 3-5 related changes that share one outcome and verification surface. Use micro-slices for urgent fixes, regressions, CI/deploy repair, docs-only updates, or clearly separate ownership boundaries.
 - Every product PR should name its track from `docs/ai/next-product-packages.md`: `Tagesentscheidung`, `Trainingsanpassung` or `Lernschleifen`.
+- Use the matching local gate before PR when possible: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` or `npm run verify:lernschleifen`. For quick iteration, append `-- --no-e2e`; PR bodies should say when the full rendered smoke was skipped.
 - For Daily Decision contract logic, prefer fast unit/golden tests before Playwright; use Playwright for 1-2 rendered package smokes.
 - When several Home signals change together, prefer a small data-driven signal registry/priority table over more one-off branches.
 - GitHub PR CI is path-filtered: PRs run focused build/backend/browser jobs only for touched runtime areas; browser PR coverage is the smoke suite. Full Playwright regression runs on `main` and `workflow_dispatch`.

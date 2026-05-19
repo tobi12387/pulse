@@ -53,6 +53,14 @@ Every new product slice must name which track it serves. Work that does not serv
 
 For `frontend/src/pulse/daily-decision.ts` and other Daily Decision contract logic, prefer fast unit/golden tests for signal priority, CTA target, safest option and goal impact before adding Playwright. Use Playwright for 1-2 rendered route/click-path smokes per package, not as the default proof for every signal branch.
 
+Use the track-specific verification shortcuts as the default local gate for product packages:
+
+- `npm run verify:tagesentscheidung`
+- `npm run verify:trainingsanpassung`
+- `npm run verify:lernschleifen`
+
+They run the relevant fast contract/golden tests, the frontend build and one focused desktop/mobile smoke set. Use `-- --no-e2e` only for quick local iteration; PR readiness should either run the full matching command or explain why the rendered smoke was intentionally skipped.
+
 When adding or changing multiple Home decision signals, move toward a small data-driven signal registry/priority table instead of adding more one-off conditionals. Keep the implementation incremental, but do not knowingly deepen the bespoke signal maze when a local registry would make the next package safer.
 
 When local checks are green and CI has no special review risk, prefer GitHub auto-merge instead of actively waiting in chat. Inspect and fix failed checks. Deploy runtime changes only after the PR is merged to `main`; docs-only/planning-only PRs normally do not need server deploy.
