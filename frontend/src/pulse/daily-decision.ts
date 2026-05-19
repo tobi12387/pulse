@@ -10,6 +10,7 @@ export interface DailyDecisionSignal {
   tone: DailyDecisionSignalTone;
   targetPath?: string;
   actionLabel?: string;
+  resultPreview?: string;
 }
 
 export interface DailyDecisionContract {
@@ -394,6 +395,11 @@ function personalResponseAlternative(signal: DailyDecisionSignal | null): string
   return `Persönliche Reaktion zuerst einplanen: ${detail}. Heute Boundary, Warm-up und Umfang bewusst klein halten; Plan oder Garmin bleiben unverändert, bis du die Reaktion geprüft hast.`;
 }
 
+function dailyDeltaAlternative(delta: PulseDailyDeltaItem | null | undefined): string | null {
+  if (!delta || delta.status === 'matched') return null;
+  return `Planfolge zuerst prüfen: ${delta.title}. ${delta.nextPlanEffect} Heute erst den kleinsten Abgleich öffnen, bevor du neuen Zusatzumfang oder Ausführung bestätigst.`;
+}
+
 function adaptationAlternative(event: PulseAdaptationEvent | null | undefined): string | null {
   const signal = adaptationSignal(event);
   if (!signal) return null;
@@ -458,6 +464,7 @@ function trainingExecutionAlternative(workout: HomeWorkout | null): string | nul
 function alternativeFor(
   home: PulseHomeScreenData,
   action: PulseNextBestAction | null,
+  dailyDelta: PulseDailyDeltaItem | null,
   todayOptions: PulseTodayOptionsResponse | null,
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null,
   decisionQuality: PulseDailyDecisionQualityResponse | null,
@@ -472,6 +479,7 @@ function alternativeFor(
   const fuelingDebt = openFuelingDebt(todayOptions);
   const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
   const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
+  const deltaAlternative = dailyDeltaAlternative(dailyDelta);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const dataAlternative = dataConfidenceAlternative(dataSignal);
   const qualitySignal = decisionQualitySignal(decisionQuality);
@@ -509,6 +517,8 @@ function alternativeFor(
     alternative = planAdaptationAlternative;
   } else if (blockingAnalysisAlternative) {
     alternative = blockingAnalysisAlternative;
+  } else if (deltaAlternative) {
+    alternative = deltaAlternative;
   } else if (qualityAlternative) {
     alternative = qualityAlternative;
   } else if (dataAlternative) {
@@ -639,6 +649,7 @@ export const dailyDecisionSignalRegistry = {
   Analyse: { priority: 1, defaultActionLabel: 'Analyse prüfen', preferSignalActionLabel: true },
   Fueling: { priority: 2, defaultActionLabel: 'Fueling schließen' },
   'Fueling-Lernen': { priority: 2, defaultActionLabel: 'Fueling vorbereiten' },
+  Folge: { priority: 3, defaultActionLabel: 'Planfolge prüfen', preferSignalActionLabel: true },
   Feedback: { priority: 3, defaultActionLabel: 'Feedback erfassen', preferSignalActionLabel: true },
   Ziel: { priority: 4, defaultActionLabel: 'Ziel prüfen', preferSignalActionLabel: true, requiredTone: 'rose' },
   Training: { priority: 5, actionLabelByTone: { rose: 'Training anpassen', amber: 'Training prüfen' } },
@@ -727,7 +738,30 @@ function primaryActionForLeadingSignal(
   return {
     cta,
     targetPath: leading.targetPath,
-    resultPreview: signalActionResultPreview(leading.targetPath),
+    resultPreview: leading.resultPreview ?? signalActionResultPreview(leading.targetPath),
+  };
+}
+
+function dailyDeltaTone(delta: PulseDailyDeltaItem): DailyDecisionSignalTone {
+  if (delta.status === 'missed') return 'rose';
+  if (delta.status === 'matched') return 'green';
+  return 'amber';
+}
+
+function dailyDeltaPrefix(delta: PulseDailyDeltaItem): string {
+  return delta.status === 'matched' ? 'Bestätigt seit letzter Entscheidung' : 'Geändert seit letzter Entscheidung';
+}
+
+function dailyDeltaSignal(delta: PulseDailyDeltaItem | null | undefined): DailyDecisionSignal | null {
+  if (!delta) return null;
+
+  return {
+    label: 'Folge',
+    detail: `${dailyDeltaPrefix(delta)}: ${delta.title}. ${delta.nextPlanEffect}`,
+    tone: dailyDeltaTone(delta),
+    targetPath: delta.targetPath,
+    actionLabel: delta.status === 'matched' ? 'Delta ansehen' : 'Planfolge prüfen',
+    resultPreview: 'Pulse öffnet den letzten Plan-vs-Ausführung-Abgleich; Plan und Garmin bleiben unverändert.',
   };
 }
 
@@ -751,6 +785,7 @@ function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null
     detail,
     tone,
     targetPath: DATA_DECISION_QUALITY_PATH,
+    resultPreview: `Pulse öffnet die Entscheidungsqualität; ${quality.suggestedAdjustment} Plan und Garmin bleiben unverändert.`,
   };
 }
 
@@ -956,6 +991,21 @@ function completedStepResultPreview(step: DailyDecisionStep | undefined): string
   return undefined;
 }
 
+function dailyDeltaFollowUpSteps(
+  delta: PulseDailyDeltaItem | null,
+  primaryAction: DailyDecisionPrimaryAction,
+): DailyDecisionStep[] | undefined {
+  if (!delta || delta.status === 'matched' || primaryAction.targetPath !== delta.targetPath) return undefined;
+
+  return [{
+    status: 'open',
+    label: 'Planfolge prüfen',
+    detail: `Seit letzter Entscheidung: ${delta.title}. ${delta.nextPlanEffect}`,
+    cta: 'Planfolge prüfen',
+    targetPath: delta.targetPath,
+  }];
+}
+
 function fuelingLearningSignal(
   baseline: PulseFuelingOutcomeBaseline | null | undefined,
   workout: HomeWorkout | null,
@@ -1086,6 +1136,7 @@ function personalResponseSignal(
     ].filter(Boolean).join(' · '),
     tone: 'amber',
     targetPath: '/data?tab=analysis#data-personal-response',
+    resultPreview: `Pulse öffnet die Reaktionsmuster; ${signal.nextAdjustment} Plan und Garmin bleiben unverändert.`,
   };
 }
 
@@ -1200,6 +1251,7 @@ function topSignals(
   workout: HomeWorkout | null,
   completedActivity: HomeActivity | null,
   action: PulseNextBestAction | null,
+  dailyDelta: PulseDailyDeltaItem | null,
   decisionQuality: PulseDailyDecisionQualityResponse | null,
   goalProjection: PulseGoalProjectionResponse | null,
   mentalBoundary: DailyDecisionMentalBoundary | null,
@@ -1228,6 +1280,7 @@ function topSignals(
   const recovery = recoverySignal(home.recovery);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const qualitySignal = decisionQualitySignal(decisionQuality);
+  const deltaSignal = dailyDeltaSignal(dailyDelta);
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
   const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
@@ -1247,6 +1300,9 @@ function topSignals(
   }
   if (qualitySignal) {
     signals.push(qualitySignal);
+  }
+  if (deltaSignal) {
+    signals.push(deltaSignal);
   }
   if (analysis) {
     signals.push(analysis);
@@ -1356,7 +1412,7 @@ function buildContract({
   fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null;
   personalResponse: PulsePersonalResponseResponse | null;
 }): DailyDecisionContract {
-  const signals = topSignals(home, workout, completedActivity, action, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent, trainingAnalytics, fuelingOutcomeBaseline, personalResponse);
+  const signals = topSignals(home, workout, completedActivity, action, dailyDelta, decisionQuality, goalProjection, mentalBoundary, todayOptions, adaptationEvent, trainingAnalytics, fuelingOutcomeBaseline, personalResponse);
   const fallbackLead = !action && !workout && !completedActivity
     ? 'Mental: Check-in offen · Erholungstag sauber schließen.'
     : undefined;
@@ -1571,7 +1627,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     ?? (todayWorkout
       ? 'Entscheiden, ob du die Einheit ausführst, anpasst oder bewusst verschiebst.'
       : 'Kurz Stimmung, Energie, Stress und Motivation eintragen; danach bleibt Erholung der Default.');
-  const alternative = alternativeFor(home, action, todayOptions, fuelingOutcomeBaseline, decisionQuality, adaptationEvent, trainingAnalytics, goalProjection, mentalBoundary, personalResponse);
+  const alternative = alternativeFor(home, action, dailyDelta, todayOptions, fuelingOutcomeBaseline, decisionQuality, adaptationEvent, trainingAnalytics, goalProjection, mentalBoundary, personalResponse);
   const fallbackPath = todayWorkout ? '/plan?tab=training' : '/data?tab=today#data-mental';
   const cta = action?.cta ?? (todayWorkout ? 'Workout öffnen' : 'Check-in öffnen');
   const targetPath = action?.targetPath ?? fallbackPath;
@@ -1582,6 +1638,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
     { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
+    ...(dailyDelta ? [{ label: `Folge: ${dailyDelta.title}`, targetPath: dailyDelta.targetPath }] : []),
     ...(action?.evidence?.map(mapEvidence) ?? []),
   ];
   const decisionWorkout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : null;
@@ -1602,6 +1659,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     personalResponse,
   });
   const primaryAction = primaryActionForLeadingSignal(contract.signals, { cta, targetPath, resultPreview }, { canOverride: action == null });
+  const steps = dailyDeltaFollowUpSteps(dailyDelta, primaryAction);
   const prompt = [
     `Tagesentscheidung: ${title}.`,
     `Warum: ${reason}`,
@@ -1624,6 +1682,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     priority: action?.priority ?? 'normal',
     evidence,
     contract,
+    steps,
     supportCta,
     supportPath,
   };

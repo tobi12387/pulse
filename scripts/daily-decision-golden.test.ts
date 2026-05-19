@@ -3,9 +3,11 @@ import test from 'node:test';
 
 import type {
   PulseActivity,
+  PulseDailyDeltaItem,
   PulseFuelingOutcomeBaseline,
   PulseGoalProjectionResponse,
   PulseHomeScreenData,
+  PulsePersonalResponseResponse,
   PulsePlannedWorkout,
   PulseTrainingAnalyticsResponse,
 } from '../shared/types/pulse/index.ts';
@@ -213,6 +215,45 @@ function goalProjection(): PulseGoalProjectionResponse {
   };
 }
 
+function decisionQuality() {
+  return {
+    range: { from: '2026-04-18', to: TODAY, days: 14 },
+    qualityScore: 42,
+    status: 'stale' as const,
+    statusLabel: 'Wiederholung prüfen',
+    repeatedThemes: [{
+      theme: 'Mobilität 10 Minuten',
+      count: 3,
+      lastSeen: TODAY,
+      status: 'stale' as const,
+      evidence: ['3x wiederholt ohne Abschluss-/Outcome-Evidenz'],
+    }],
+    bestEvidence: ['Mobilität 10 Minuten: 3x wiederholt ohne Abschluss-/Outcome-Evidenz'],
+    evidence: [],
+    suggestedAdjustment: 'Wiederkehrende Empfehlung kleiner, anders getaktet oder vorerst unterdrückt anbieten.',
+  };
+}
+
+function personalResponse(): PulsePersonalResponseResponse {
+  return {
+    summary: {
+      generatedAt: `${TODAY}T00:00:00.000Z`,
+      range: { from: '2026-03-20', to: TODAY, days: 42 },
+      strength: 'useful',
+      headline: 'Mentale Belastung veraendert deine Trainingsantwort sichtbar.',
+      signals: [{
+        kind: 'mental_response',
+        label: 'Mentale Last begrenzt Ausführung',
+        strength: 'useful',
+        summary: 'Niedrige Energie oder hoher Stress kippen geplante Einheiten haeufig in kleinere Ausfuehrung.',
+        evidence: ['5 Check-ins mit Energie <=4 oder Stress >=7', '3 bestaetigte kleinere Ausfuehrungen'],
+        nextAdjustment: 'Heute zuerst Boundary setzen und die Einheit bewusst klein halten.',
+      }],
+      missingEvidence: [],
+    },
+  };
+}
+
 function trainingAnalyticsWithDurability(): PulseTrainingAnalyticsResponse {
   return {
     weeks: 6,
@@ -258,6 +299,22 @@ function trainingAnalyticsWithDurability(): PulseTrainingAnalyticsResponse {
       durabilityLine: 'Durability limited: Power -21% · HR +3 bpm · 240 min',
       updatedAt: `${TODAY}T06:00:00.000Z`,
     },
+  };
+}
+
+function dailyDelta(overrides: Partial<PulseDailyDeltaItem> = {}): PulseDailyDeltaItem {
+  return {
+    date: TODAY,
+    status: 'matched',
+    title: 'Plan und Ausführung passen zusammen',
+    summary: 'Die echte Belastung lag nah am Plan.',
+    score: 88,
+    loadDeltaTss: 4,
+    recoveryDelta: null,
+    nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln und die nächste Empfehlung darauf aufbauen.',
+    evidence: ['Geplant: Rad Z2 60 min', 'Garmin: Rad 62 min'],
+    targetPath: '/plan/activity/activity-1',
+    ...overrides,
   };
 }
 
@@ -467,4 +524,83 @@ test('blocked Garmin execution beats normal training without creating a hidden w
   assert.match(decision.contract.safestAlternative, /Garmin zuerst schließen/);
   assert.match(decision.contract.garminExecution, /kein automatischer Geraete-Write/);
   assertSignalBefore(decision, 'Garmin', 'Training');
+});
+
+test('changed daily delta becomes the next Home follow-up before normal training', () => {
+  const planned = workout({ id: 'planned-after-replaced-delta' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    dailyDelta: dailyDelta({
+      status: 'replaced',
+      title: 'Langer Lauf wurde durch lockere Ausfahrt ersetzt',
+      summary: 'Der geplante Laufreiz fehlt, echte Belastung war niedriger.',
+      score: 41,
+      loadDeltaTss: -34,
+      nextPlanEffect: 'Restwoche braucht einen kleineren Planabgleich, bevor neue Intensität bestätigt wird.',
+      evidence: ['Geplant: Lauf Z3 70 min', 'Garmin: Rad Z1 45 min'],
+      targetPath: '/plan/activity/activity-replaced-delta',
+    }),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Folge: Geändert seit letzter Entscheidung: Langer Lauf wurde durch lockere Ausfahrt ersetzt/);
+  assert.equal(decision.cta, 'Planfolge prüfen');
+  assert.equal(decision.targetPath, '/plan/activity/activity-replaced-delta');
+  assert.match(decision.resultPreview ?? '', /Plan-vs-Ausführung-Abgleich/);
+  assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
+  assert.match(decision.contract.continuity, /Geändert: Langer Lauf wurde durch lockere Ausfahrt ersetzt/);
+  assert.match(decision.contract.safestAlternative, /Planfolge zuerst prüfen/);
+  assert.match(decision.contract.safestAlternative, /Restwoche braucht einen kleineren Planabgleich/);
+  assert.match(decision.contract.safestAlternative, /bevor du neuen Zusatzumfang oder Ausführung bestätigst/);
+  assert.equal(decision.steps?.find(step => step.status === 'open')?.label, 'Planfolge prüfen');
+  assert.equal(decision.steps?.find(step => step.status === 'open')?.targetPath, '/plan/activity/activity-replaced-delta');
+  assertSignalBefore(decision, 'Folge', 'Training');
+});
+
+test('decision quality result preview explains how the next check changes', () => {
+  const decision = decisionFor(home(), {
+    decisionQuality: decisionQuality(),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Lernen: Wiederholung prüfen/);
+  assert.equal(decision.cta, 'Lernen prüfen');
+  assert.equal(decision.targetPath, '/data?tab=analysis#data-decision-quality');
+  assert.match(decision.resultPreview ?? '', /Entscheidungsqualität/);
+  assert.match(decision.resultPreview ?? '', /Wiederkehrende Empfehlung kleiner, anders getaktet/);
+  assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
+});
+
+test('personal response result preview names the changed daily boundary without hidden writes', () => {
+  const planned = workout({ id: 'planned-personal-response-preview' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    personalResponse: personalResponse(),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Reaktion: Mentale Last begrenzt Ausführung/);
+  assert.equal(decision.cta, 'Reaktion prüfen');
+  assert.equal(decision.targetPath, '/data?tab=analysis#data-personal-response');
+  assert.match(decision.resultPreview ?? '', /Reaktionsmuster/);
+  assert.match(decision.resultPreview ?? '', /Heute zuerst Boundary setzen/);
+  assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
+});
+
+test('matched daily delta stays continuity context without stealing the training action', () => {
+  const planned = workout({ id: 'planned-after-matched-delta' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    dailyDelta: dailyDelta({
+      status: 'matched',
+      title: 'Plan und Ausführung passen zusammen',
+      nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln und die nächste Empfehlung darauf aufbauen.',
+      targetPath: '/plan/activity/activity-matched-delta',
+    }),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.equal(decision.cta, 'Workout öffnen');
+  assert.equal(decision.targetPath, '/plan?tab=training');
+  assert.match(decision.contract.continuity, /Bleibt gültig: Plan und Ausführung passen zusammen/);
+  assert.match(decision.contract.continuity, /Plan kann diesen Reiz als erledigt behandeln/);
+  const followUpSignal = decision.contract.signals.find(signal => signal.label === 'Folge');
+  assert.equal(followUpSignal?.tone, 'green');
+  assert.equal(followUpSignal?.targetPath, '/plan/activity/activity-matched-delta');
+  assert.equal(decision.steps, undefined);
+  assertSignalBefore(decision, 'Training', 'Folge');
 });

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Home nutzt letzte Entscheidungen als Folge-Signal
+
+- **Decision:** Home/Daily Decision bekommt ein datengetriebenes `Folge`-Signal aus Daily Delta. Geaenderte, verpasste oder off-plan Folgen koennen vor normalem Training fuehren, setzen `Planfolge pruefen` als CTA, zeigen einen offenen Tagescheck-Schritt und routen zum vorhandenen Plan-/Activity-Abgleich; bestaetigte Matches bleiben gruener Kontinuitaetskontext. Decision Quality und Personal Response liefern eigene Result-Previews, die die naechste Anpassung nennen und Plan/Garmin unveraendert lassen.
+- **Why:** Track `Tagesentscheidung` soll nicht nur den aktuellen Reiz bewerten, sondern sichtbar machen, was Pulse aus der letzten Entscheidung gelernt hat und wie das die heutige kleinste Handlung veraendert. Das schliesst die WHOOP/Oura-artige Tagesklarheit mit einer MacroFactor-artigen "was hat sich seit dem letzten Check geaendert?"-Schleife.
+- **Alternatives:** Daily Delta nur als separate Home-Karte belassen (zu leicht zu uebersehen); eine neue Feedback-Form bauen (doppelt bestehende Activity/Data/Plan-Oberflaechen); alle Deltas fuehren lassen (bestaetigte Matches waeren zu laut); Plan/Garmin automatisch anpassen (hidden write).
+- **Decided by:** Codex, im zweiten `Tagesentscheidung`-Pass nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Performance-OS-Backlog startet den zweiten Pass bei Tagesentscheidung
 
 - **Decision:** Nachdem die ersten Baselines fuer `Tagesentscheidung`, `Trainingsanpassung` und `Lernschleifen` geliefert sind, startet die naechste autonome Produktreihenfolge wieder bei Track 1. Die naechsten empfohlenen Pakete sind: Home macht die Folge der letzten Entscheidung sichtbar, Plan macht Wochenentscheidungen bestaetigbar, Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.

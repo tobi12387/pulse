@@ -31,23 +31,23 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 The first pass through all three Performance-OS tracks is shipped: `Tagesentscheidung` delivered Home closure/registry work, `Trainingsanpassung` delivered the weekly decision contract and handoffs, and `Lernschleifen` delivered Data action contracts plus the training-risk contract.
 
-Next autonomous product work starts the second pass in the same hard order unless Tobi explicitly reverses it:
+Track 1 of the second pass is shipped. Next autonomous product work continues the second pass in the same hard order unless Tobi explicitly reverses it:
 
-1. `Tagesentscheidung`: Home macht die Folge der letzten Entscheidung als naechsten Tagescheck sichtbar.
-2. `Trainingsanpassung`: Plan macht Wochenentscheidungen bestaetigbar und spaeter wiederauffindbar, ohne hidden writes.
-3. `Lernschleifen`: Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
+1. `Trainingsanpassung`: Plan macht Wochenentscheidungen bestaetigbar und spaeter wiederauffindbar, ohne hidden writes.
+2. `Lernschleifen`: Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
+3. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
 
 ## Track 1: Tagesentscheidung
 
-Status: **next active package (second Performance-OS pass)**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry.
+Status: **shipped second-pass baseline**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass adds a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write.
 
-Next package: **Home macht die Folge der letzten Entscheidung sichtbar.**
+Package: **Home macht die Folge der letzten Entscheidung sichtbar.**
 
 Outcome: Home should show what Pulse learned from the last planned or off-plan decision, how that changed today's safest option or CTA, and where the smallest confirmation step lives. The surface stays one daily decision, not a new dashboard.
 
 Why it matters: this closes the WHOOP/Oura-style daily command loop with MacroFactor-style "what changed since last check-in" feedback, using existing Activity, Data and Plan evidence.
 
-Best next package PR:
+Shipped package PRs:
 
 - Extend Daily Decision golden scenarios for last-decision outcome, signal priority, CTA target, safest option and goal effect.
 - Connect existing Activity feedback, Decision Quality and Personal Response evidence into the Home result preview without adding hidden Plan/Garmin writes.
@@ -75,7 +75,7 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **queued after Track 1 for the second Performance-OS pass**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, and receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`.
+Status: **next active package (second Performance-OS pass)**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, and receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`.
 
 Next package: **Plan macht Wochenentscheidungen bestaetigbar.**
 
