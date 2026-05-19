@@ -229,10 +229,14 @@ test('Data analysis opens plan impact from plan limiter evidence', async ({ page
   await page.goto('/data?tab=analysis');
   const card = page.getByTestId('analysis-translation-card');
 
+  const risk = card.getByTestId('analysis-training-risk-contract');
+  await expect(risk).toContainText('Trainingsrisiko prüfen');
+  await expect(risk).toContainText('Long Endurance + Fueling');
+  await expect(risk).toContainText('Wirkung: Planentscheidung');
   await expect(card).toContainText('Plan-Limiter');
   await expect(card).toContainText('Long Endurance + Fueling');
   await expect(card).toContainText('Nach dem Klick');
-  await card.getByRole('button', { name: 'Wochenentscheidung prüfen' }).click();
+  await risk.getByRole('button', { name: 'Risiko einordnen' }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-weekly-decision');
   await expect(page.getByTestId('plan-weekly-decision-contract')).toBeVisible();
 });

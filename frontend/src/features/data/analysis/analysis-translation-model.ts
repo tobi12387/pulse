@@ -26,6 +26,7 @@ export type AnalysisTranslationSignal = {
 };
 
 export type AnalysisTranslation = {
+  trainingRisk: AnalysisTranslationSignal;
   primary: AnalysisTranslationSignal;
   watch: AnalysisTranslationSignal;
   supportEvidence: string[];
@@ -123,6 +124,121 @@ function effectForTargetPath(targetPath: string): AnalysisDecisionEffect {
     return 'today_action';
   }
   return 'watch_context';
+}
+
+function strongestTone(tones: AnalysisTranslationTone[]): AnalysisTranslationTone {
+  if (tones.includes('rose')) return 'rose';
+  if (tones.includes('amber')) return 'amber';
+  if (tones.includes('green')) return 'green';
+  return 'muted';
+}
+
+function riskSignalTone(severity: string): AnalysisTranslationTone {
+  if (['critical', 'severe', 'high', 'action'].includes(severity)) return 'rose';
+  if (['warn', 'warning', 'watch', 'moderate'].includes(severity)) return 'amber';
+  return 'muted';
+}
+
+function buildTrainingRiskContract(
+  planTrace: PulsePlanTrace | null | undefined,
+  trainingAnalytics: PulseTrainingAnalyticsResponse | null | undefined,
+): AnalysisTranslationSignal {
+  const riskSignals = planTrace?.inputSnapshot.riskSignals ?? [];
+  const load = planTrace?.inputSnapshot.load ?? null;
+  const limiter = planTrace?.inputSnapshot.goalLimiter ?? null;
+  const dataWarnings = planTrace?.inputSnapshot.dataWarnings ?? [];
+  const quality = trainingAnalytics?.powerDataQuality ?? null;
+  const durability = trainingAnalytics?.powerDuration?.durability ?? null;
+  const tones: AnalysisTranslationTone[] = [];
+  const planDrivers: string[] = [];
+  const dataDrivers: string[] = [];
+  const watchDrivers: string[] = [];
+
+  for (const signal of riskSignals.slice(0, 2)) {
+    const tone = riskSignalTone(signal.severity);
+    tones.push(tone);
+    planDrivers.push(signal.title);
+  }
+
+  if (load && load.tsb <= -12) {
+    tones.push(load.tsb <= -22 ? 'rose' : 'amber');
+    planDrivers.push(`TSB ${load.tsb.toFixed(1)}`);
+  }
+
+  if (limiter) {
+    tones.push(limiter.confidence === 'high' ? 'rose' : 'amber');
+    planDrivers.push(`Limiter: ${limiter.label}`);
+  }
+
+  if (dataWarnings.length > 0) {
+    tones.push('amber');
+    planDrivers.push(dataWarnings[0]!);
+  }
+
+  if (quality?.status === 'blocked') {
+    tones.push('rose');
+    dataDrivers.push(`Power-Daten blockieren Trainingsrisiko: ${quality.limitations[0] ?? 'Messgrundlage fehlt'}`);
+  } else if (quality?.status === 'usable_with_caution') {
+    tones.push('amber');
+    watchDrivers.push(`Power nur mit Vorsicht: ${quality.coveragePct}% Coverage`);
+  }
+
+  if (durability && durability.rating !== 'strong') {
+    tones.push(durability.rating === 'limited' ? 'amber' : 'muted');
+    watchDrivers.push(`Durability ${durability.rating}: ${durability.evidence[0] ?? 'Evidenz beobachten'}`);
+  }
+
+  const tone = strongestTone(tones);
+  const allDrivers = unique([...planDrivers, ...dataDrivers, ...watchDrivers], 4);
+  if (tone === 'green' || allDrivers.length === 0) {
+    const hasEvidence = Boolean(planTrace || trainingAnalytics);
+    return withEffect({
+      label: 'Trainingsrisiko',
+      title: hasEvidence ? 'Trainingsrisiko stabil' : 'Trainingsrisiko offen',
+      summary: hasEvidence
+        ? 'Aktuell zeigt die Analyse keinen harten Trainingsrisiko-Hebel; die Evidenz bleibt Watch-Kontext.'
+        : 'Trainingsrisiko wird geladen; bis belastbare Evidenz vorliegt, bleibt die Analyse Watch-Kontext.',
+      evidence: load ? [`TSB ${load.tsb.toFixed(1)}`] : [],
+      tone: hasEvidence ? 'green' : 'muted',
+    }, 'watch_context');
+  }
+
+  if (planDrivers.length > 0) {
+    return withEffect({
+      label: 'Trainingsrisiko',
+      title: tone === 'rose' ? 'Trainingsrisiko hoch' : 'Trainingsrisiko prüfen',
+      summary: `Plan- und Load-Risiko zuerst einordnen: ${allDrivers.join(' · ')}.`,
+      evidence: allDrivers,
+      tone,
+      actionLabel: 'Wochenentscheidung prüfen',
+      targetPath: PLAN_WEEKLY_DECISION_PATH,
+      resultPreview: resultPreviewForTargetPath(PLAN_WEEKLY_DECISION_PATH, 'plan_decision'),
+    }, 'plan_decision');
+  }
+
+  if (dataDrivers.length > 0) {
+    return withEffect({
+      label: 'Trainingsrisiko',
+      title: 'Trainingsrisiko blockiert',
+      summary: dataDrivers.join(' · '),
+      evidence: allDrivers,
+      tone: 'rose',
+      actionLabel: 'Power-Daten prüfen',
+      targetPath: POWER_QUALITY_PATH,
+      resultPreview: resultPreviewForTargetPath(POWER_QUALITY_PATH, 'today_action'),
+    }, 'today_action');
+  }
+
+  return withEffect({
+    label: 'Trainingsrisiko',
+    title: 'Trainingsrisiko beobachten',
+    summary: `Noch kein Planentscheid, aber Watch-Kontext bleibt sichtbar: ${allDrivers.join(' · ')}.`,
+    evidence: allDrivers,
+    tone,
+    actionLabel: 'Durability prüfen',
+    targetPath: POWER_DURATION_PATH,
+    resultPreview: resultPreviewForTargetPath(POWER_DURATION_PATH, 'watch_context'),
+  }, 'watch_context');
 }
 
 function resultPreviewForTargetPath(targetPath: string, effect: AnalysisDecisionEffect = effectForTargetPath(targetPath)): string {
@@ -328,11 +444,14 @@ export function buildAnalysisTranslation({
       evidence: [],
       tone: 'muted' as const,
     }, 'watch_context');
+  const trainingRisk = buildTrainingRiskContract(planTrace, trainingAnalytics);
 
   return {
+    trainingRisk,
     primary,
     watch,
     supportEvidence: unique([
+      ...trainingRisk.evidence,
       ...primary.evidence,
       ...watch.evidence,
       decisionQuality?.bestEvidence[0],
