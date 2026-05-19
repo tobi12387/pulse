@@ -29,13 +29,14 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages.
 
-Next autonomous product work continues the third pass in the same hard order unless Tobi explicitly reverses it:
+No new product package is selected after the current Track-2 learning-calibration package. Before deriving another product slice, finish the supporting build-speed package below unless Tobi explicitly reprioritizes:
 
-1. `Trainingsanpassung`: Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
+1. `Build-Speed support`: PR delivery manifest plus changed-files gate mapping.
 2. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
-3. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
+3. `Trainingsanpassung`: reopen only for regressions or a new explicit Plan package.
+4. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
 
 ## Track 1: Tagesentscheidung
 
@@ -88,15 +89,15 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **next active package (third Performance-OS pass)**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, and can store a local decision receipt without Plan/Garmin writes.
+Status: **shipped third-pass package**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, and uses gated learning calibration as explicit weekly decision evidence.
 
-Next package: **Plan nutzt kalibrierte Lernsignale explizit.**
+Shipped package: **Plan nutzt kalibrierte Lernsignale explizit.**
 
 Outcome: Plan should let strong Home/Data learning calibration inform the weekly decision language, while weak Decision Quality, response or fueling evidence remains watch context and never mutates Plan or Garmin before an explicit weekly decision.
 
 Why it matters: this carries the MacroFactor-style learning gate into the TrainerRoad/TrainingPeaks/JOIN weekly control loop without making learning evidence a hidden plan write.
 
-Best next package PR:
+Shipped package PRs:
 
 - Add Plan weekly decision scenarios for `today_action` learning calibration versus watch-only learning evidence.
 - Surface strong calibration as decision evidence in Plan Review and Change Inbox without changing the current week automatically.
@@ -176,6 +177,7 @@ Done evidence:
 
 These improvements are mandatory support for the three tracks, not a fourth product track:
 
+- Next support package: **Delivery manifest + gate mapping.** Add a compact PR/package manifest and a changed-files-to-track-gate map so Codex can choose local checks and automerge eligibility without rediscovering scope each session.
 - Keep `docs/ai/current-focus.md` below roughly 80 short lines and link detailed status to this file, the canonical roadmap and decisions.
 - Use the track-specific gates instead of re-deriving local checks per PR: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` and `npm run verify:lernschleifen`.
 - Extract Daily Decision contract fixtures from Playwright into fast unit/golden tests.

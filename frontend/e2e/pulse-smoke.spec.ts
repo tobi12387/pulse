@@ -627,6 +627,83 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(progression).toContainText('Ändern wenn');
 });
 
+test('Plan weekly decision surfaces learning calibration without applying plan or Garmin', async ({ page }) => {
+  const writeRequests: string[] = [];
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-learning-calibration',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+    }],
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 31,
+      status: 'needs_strategy_change',
+      statusLabel: 'Strategie ändern',
+      repeatedThemes: [{
+        theme: 'Zu spät intensive Optionen gewählt',
+        count: 3,
+        lastSeen: '2026-05-01',
+        status: 'stale',
+        evidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+      }],
+      bestEvidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+      evidence: [],
+      suggestedAdjustment: 'Diese Woche zuerst kleinere Option festlegen und Intensität erst nach Warm-up freigeben.',
+    },
+    outcomeBaseline: {
+      status: 'learning',
+      label: 'Fueling-Baseline lernt',
+      summary: 'Fueling-Reaktionen werden gesammelt.',
+      latestLogDate: '2026-04-30',
+      observedCarbsPerHour: 58,
+      targetCarbsPerHour: { min: 60, max: 75 },
+      bottles750Ml: null,
+      powderG: null,
+      fluidMlPerHour: null,
+      sodiumMgPerHour: null,
+      trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
+      evidence: ['Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.'],
+      learningReadiness: {
+        comparableCompleteLogs: 3,
+        requiredComparableCompleteLogs: 3,
+        readyForTrendSummary: true,
+        missingEvidence: [],
+      },
+    },
+    onRequest: (path, method) => {
+      if (method !== 'GET' && method !== 'OPTIONS') {
+        writeRequests.push(`${method} ${path}`);
+      }
+    },
+  });
+
+  await page.goto('/plan');
+
+  const weeklyDecision = page.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toBeVisible();
+  await expect(weeklyDecision).toContainText('Wochenentscheidung offen');
+  await expect(weeklyDecision).toContainText('Lernkalibrierung entscheidet mit');
+  await expect(weeklyDecision).toContainText('Empfehlung darf lernen');
+  await expect(weeklyDecision).toContainText('Diese Woche zuerst kleinere Option');
+  await expect(weeklyDecision).toContainText('Plan und Garmin bleiben unverändert');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-active-preview')).toContainText('erst ein explizites Anwenden');
+
+  writeRequests.length = 0;
+  await weeklyDecision.getByRole('button', { name: 'Entscheidung merken', exact: true }).click();
+  expect(writeRequests).toEqual([]);
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-receipt')).toContainText('Keine Plan- oder Garmin-Aenderung gespeichert');
+});
+
 test('Plan weekly decision stores a local receipt without applying plan or Garmin', async ({ page }) => {
   const writeRequests: string[] = [];
   await mockPulseApi(page, {

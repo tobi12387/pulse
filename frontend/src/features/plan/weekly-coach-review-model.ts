@@ -1,6 +1,8 @@
 import type {
   PulseAdaptationEvent,
+  PulseDailyDecisionQualityResponse,
   PulseFitnessLoad,
+  PulseFuelingOutcomeBaseline,
   PulseGoalProjectionResponse,
   PulsePersonalResponseResponse,
   PulsePlanRefreshPreview,
@@ -68,6 +70,8 @@ export function buildWeeklyCoachReview(input: {
   review: PulseWeeklyReview | null;
   adaptationEvents: PulseAdaptationEvent[];
   personalResponse: PulsePersonalResponseResponse | null;
+  decisionQuality?: PulseDailyDecisionQualityResponse | null;
+  fuelingOutcomeBaseline?: PulseFuelingOutcomeBaseline | null;
   goalProjection: PulseGoalProjectionResponse | null;
   seasonStrategy: PulseSeasonStrategyResponse | null;
   today?: string;
@@ -88,6 +92,8 @@ export function buildWeeklyCoachReview(input: {
     currentLoad: input.currentLoad ?? null,
     goalProjection: input.goalProjection,
     personalResponse: input.personalResponse,
+    decisionQuality: input.decisionQuality ?? null,
+    fuelingOutcomeBaseline: input.fuelingOutcomeBaseline ?? null,
     review: input.review,
   });
   const learnedLane = weeklyDecision.sections.find(section => section.id === 'learned');
