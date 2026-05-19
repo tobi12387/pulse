@@ -20,8 +20,10 @@ import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
 import { EverydayAdaptationInboxCard } from '@/features/plan/EverydayAdaptationInboxCard';
 import { PlanChangeInboxCard } from '@/features/plan/PlanChangeInboxCard';
+import { PlanWeeklyDecisionContractPanel } from '@/features/plan/PlanWeeklyDecisionContractPanel';
 import { buildWeeklyCoachReview, type WeeklyCoachReviewSummary, type WeeklyCoachReviewTone } from '@/features/plan/weekly-coach-review-model';
 import { buildPlanChangeInbox } from '@/features/plan/change-inbox-model';
+import { buildPlanWeeklyDecisionContract } from '@/features/plan/weekly-decision-contract';
 import { buildWorkoutProgressionInsight, type WorkoutProgressionInsight } from '@/features/plan/workout-progression-model';
 import {
   buildPlanAlternative,
@@ -2632,6 +2634,8 @@ function TrainingTab({
   const acts      = usePulseActivities(14);
   const plan      = usePulsePlan();
   const goals     = usePulseGoals();
+  const goalProjection = useGoalProjection(180);
+  const personalResponse = usePersonalResponse(42);
   const checkinToday = useCheckinToday();
   const checkinHistory = useCheckinHistory(7);
   const raceCommand = useRaceCommand();
@@ -2721,6 +2725,16 @@ function TrainingTab({
     adaptationEvents: openAdaptationEvents,
     refreshPreview,
   });
+  const weeklyDecision = buildPlanWeeklyDecisionContract({
+    today,
+    workouts,
+    adaptationEvents: openAdaptationEvents,
+    refreshPreview,
+    currentLoad: fitnessLoad.data ?? null,
+    goalProjection: goalProjection.data ?? null,
+    personalResponse: personalResponse.data ?? null,
+    review: null,
+  });
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -2789,6 +2803,32 @@ function TrainingTab({
         onSelectWorkout={openWorkout}
       />
 
+      <PlanChangeInboxCard
+        today={today}
+        workouts={workouts}
+        adaptationEvents={openAdaptationEvents}
+        refreshPreview={refreshPreview}
+        weeklyDecision={weeklyDecision}
+        onOpenRefreshPreview={openRefreshPreview}
+        onReviewScenario={reviewAdaptations}
+        onNavigate={navigate}
+        onKeep={(itemId) => {
+          if (itemId.startsWith('adaptation-')) {
+            const eventId = itemId.slice('adaptation-'.length);
+            setDismissedAdaptationEventIds(previous => {
+              const next = new Set(previous);
+              next.add(eventId);
+              return next;
+            });
+          }
+          setAdaptationDismissed(true);
+        }}
+      />
+
+      {planChangeInbox.items.length === 0 && (
+        <PlanWeeklyDecisionContractPanel contract={weeklyDecision} variant="card" />
+      )}
+
       <NextTrainingDecisionCard
         nextWorkout={nextDecisionWorkout}
         workouts={workouts}
@@ -2809,27 +2849,6 @@ function TrainingTab({
         variant="full"
         onNavigate={navigate}
         showPlanActionContract={!nextDecisionWorkout && todayOptions.data?.todayOptions.state === 'planned_workout'}
-      />
-
-      <PlanChangeInboxCard
-        today={today}
-        workouts={workouts}
-        adaptationEvents={openAdaptationEvents}
-        refreshPreview={refreshPreview}
-        onOpenRefreshPreview={openRefreshPreview}
-        onReviewScenario={reviewAdaptations}
-        onNavigate={navigate}
-        onKeep={(itemId) => {
-          if (itemId.startsWith('adaptation-')) {
-            const eventId = itemId.slice('adaptation-'.length);
-            setDismissedAdaptationEventIds(previous => {
-              const next = new Set(previous);
-              next.add(eventId);
-              return next;
-            });
-          }
-          setAdaptationDismissed(true);
-        }}
       />
 
       <EverydayAdaptationInboxCard onNavigate={navigate} offPlanActivityContext={offPlanActivityContext} />
@@ -3186,6 +3205,10 @@ function WeeklyCoachReviewCard({
         </div>
       </div>
 
+      <div style={{ marginTop: 14 }}>
+        <PlanWeeklyDecisionContractPanel contract={summary.weeklyDecision} />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8, marginTop: 14 }}>
         {summary.lanes.map(lane => {
           const laneTone = weeklyReviewToneColor(lane.tone);
@@ -3245,14 +3268,23 @@ function ReviewTab() {
   const personalResponse = usePersonalResponse(42);
   const goalProjection = useGoalProjection(180);
   const seasonStrategy = useSeasonStrategy();
+  const plan = usePulsePlan();
+  const fitnessLoad = useFitnessLoad();
   const navigate = useNavigate();
   const [narrativeOpen, setNarrativeOpen] = useState(false);
+  const today = isoDateLocal(new Date());
+  const reviewWeekStart = weekStartForDate(today);
+  const refreshPreview = usePlanRefreshPreview(reviewWeekStart);
   const weeklyReview = buildWeeklyCoachReview({
     review: data ?? null,
     adaptationEvents: adaptationEvents.data?.events ?? [],
     personalResponse: personalResponse.data ?? null,
     goalProjection: goalProjection.data ?? null,
     seasonStrategy: seasonStrategy.data ?? null,
+    today,
+    workouts: plan.data?.workouts ?? EMPTY_WORKOUTS,
+    refreshPreview: refreshPreview.data?.preview ?? null,
+    currentLoad: fitnessLoad.data ?? null,
   });
 
   function handleWeeklyPrimaryAction() {

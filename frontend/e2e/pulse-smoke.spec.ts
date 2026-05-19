@@ -462,6 +462,12 @@ test('Plan starts with the current action contract', async ({ page }) => {
     todayOptionsState: 'unplanned_trainable',
   });
   await page.goto('/plan');
+  const weeklyDecision = page.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toBeVisible();
+  await expect(weeklyDecision).toContainText('Wochenentscheidung offen');
+  await expect(weeklyDecision).toContainText('Garmin');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('Aktuelle Woche bewusst akzeptieren');
+
   const action = page.getByTestId('plan-primary-action');
 
   await expect(action).toBeVisible();
@@ -686,6 +692,12 @@ test('Plan exposes open change signals in one inbox before detailed evidence', a
   await expect(inbox).toContainText('Wochenplan prüfen');
   await expect(inbox).toContainText('Planabweichung bewerten');
   await expect(inbox).toContainText('Garmin absichern');
+  const weeklyDecision = inbox.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toContainText('Wochenentscheidung');
+  await expect(weeklyDecision).toContainText('Was die Woche veraendert');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('Beibehalten');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).toContainText('TSS -40');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-defer_decision')).toContainText('keine Plan- oder Garmin-Aenderung');
 
   await inbox.getByRole('button', { name: 'Vorschau prüfen' }).click();
   await expect(page.getByTestId('plan-refresh-preview-card')).toBeInViewport();

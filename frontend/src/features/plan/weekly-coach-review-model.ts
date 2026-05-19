@@ -1,10 +1,14 @@
 import type {
   PulseAdaptationEvent,
+  PulseFitnessLoad,
   PulseGoalProjectionResponse,
   PulsePersonalResponseResponse,
+  PulsePlanRefreshPreview,
+  PulsePlannedWorkout,
   PulseSeasonStrategyResponse,
   PulseWeeklyReview,
 } from '@coaching-os/shared/pulse';
+import { buildPlanWeeklyDecisionContract, type PlanWeeklyDecisionContract } from './weekly-decision-contract';
 
 export type WeeklyCoachReviewTone = 'attention' | 'ok' | 'info';
 export type WeeklyCoachReviewActionKind = 'open_plan_inbox' | 'read_review' | 'generate_review';
@@ -32,6 +36,7 @@ export interface WeeklyCoachReviewSummary {
   primaryAction: WeeklyCoachReviewAction;
   lanes: WeeklyCoachReviewLane[];
   evidence: string[];
+  weeklyDecision: PlanWeeklyDecisionContract;
 }
 
 function firstUsefulSignal(response: PulsePersonalResponseResponse | null): string | null {
@@ -65,12 +70,29 @@ export function buildWeeklyCoachReview(input: {
   personalResponse: PulsePersonalResponseResponse | null;
   goalProjection: PulseGoalProjectionResponse | null;
   seasonStrategy: PulseSeasonStrategyResponse | null;
+  today?: string;
+  workouts?: PulsePlannedWorkout[];
+  refreshPreview?: PulsePlanRefreshPreview | null;
+  currentLoad?: PulseFitnessLoad | null;
 }): WeeklyCoachReviewSummary {
   const openAction = actionEvent(input.adaptationEvents);
   const learned = firstUsefulSignal(input.personalResponse);
   const goal = topGoalSummary(input.goalProjection);
   const seasonFocus = input.seasonStrategy?.strategy?.currentBlock?.focus ?? null;
   const recommendation = cleanRecommendation(input.review);
+  const weeklyDecision = buildPlanWeeklyDecisionContract({
+    today: input.today ?? input.review?.weekStart ?? new Date().toISOString().slice(0, 10),
+    workouts: input.workouts ?? [],
+    adaptationEvents: input.adaptationEvents,
+    refreshPreview: input.refreshPreview ?? null,
+    currentLoad: input.currentLoad ?? null,
+    goalProjection: input.goalProjection,
+    personalResponse: input.personalResponse,
+    review: input.review,
+  });
+  const learnedLane = weeklyDecision.sections.find(section => section.id === 'learned');
+  const changedLane = weeklyDecision.sections.find(section => section.id === 'changed');
+  const nextActionLane = weeklyDecision.sections.find(section => section.id === 'next_action');
 
   if (openAction) {
     return {
@@ -87,22 +109,22 @@ export function buildWeeklyCoachReview(input: {
         {
           id: 'learned',
           label: 'Gelernt',
-          title: 'Was Pulse mitnimmt',
-          body: learned ?? 'Noch nicht genug Wochenmuster. Pulse bewertet zuerst Ausführung, Check-in und Ziel-Evidenz.',
+          title: learnedLane?.title ?? 'Was Pulse mitnimmt',
+          body: learnedLane?.body ?? learned ?? 'Noch nicht genug Wochenmuster. Pulse bewertet zuerst Ausführung, Check-in und Ziel-Evidenz.',
           tone: 'info',
         },
         {
           id: 'plan_change',
           label: 'Planänderung',
-          title: 'Was geprüft werden soll',
-          body: openAction.summary,
+          title: changedLane?.title ?? 'Was geprüft werden soll',
+          body: changedLane?.body ?? openAction.summary,
           tone: 'attention',
         },
         {
           id: 'decision',
           label: 'Entscheidung',
-          title: 'Was du tun solltest',
-          body: 'Prüfen, ob der Wochenplan angepasst, bewusst beibehalten oder auf später verschoben wird.',
+          title: nextActionLane?.title ?? 'Was du tun solltest',
+          body: nextActionLane?.body ?? 'Prüfen, ob der Wochenplan angepasst, bewusst beibehalten oder auf später verschoben wird.',
           tone: 'attention',
         },
       ],
@@ -110,6 +132,7 @@ export function buildWeeklyCoachReview(input: {
         ...openAction.evidence.slice(0, 2),
         seasonFocus ? `Saison: ${seasonFocus}` : null,
       ].filter((item): item is string => item != null),
+      weeklyDecision,
     };
   }
 
@@ -128,26 +151,27 @@ export function buildWeeklyCoachReview(input: {
         {
           id: 'learned',
           label: 'Gelernt',
-          title: 'Noch offen',
-          body: learned ?? 'Noch nicht genug verdichtete Wochen-Evidenz für eine Review-Zusammenfassung.',
+          title: learnedLane?.title ?? 'Noch offen',
+          body: learnedLane?.body ?? learned ?? 'Noch nicht genug verdichtete Wochen-Evidenz für eine Review-Zusammenfassung.',
           tone: 'info',
         },
         {
           id: 'plan_change',
           label: 'Planänderung',
-          title: 'Keine offene Aktion',
-          body: 'Ohne gespeichertes Review zeigt Pulse nur aktuelle Plan- und Evidenzsignale.',
+          title: changedLane?.title ?? 'Keine offene Aktion',
+          body: changedLane?.body ?? 'Ohne gespeichertes Review zeigt Pulse nur aktuelle Plan- und Evidenzsignale.',
           tone: 'info',
         },
         {
           id: 'decision',
           label: 'Entscheidung',
-          title: 'Review bewusst starten',
-          body: 'Erst Review erstellen, dann akzeptieren, ablehnen oder auf später verschieben.',
+          title: nextActionLane?.title ?? 'Review bewusst starten',
+          body: nextActionLane?.body ?? 'Erst Review erstellen, dann akzeptieren, ablehnen oder auf später verschieben.',
           tone: 'info',
         },
       ],
       evidence: input.personalResponse?.summary.missingEvidence.slice(0, 2) ?? [],
+      weeklyDecision,
     };
   }
 
@@ -165,22 +189,22 @@ export function buildWeeklyCoachReview(input: {
       {
         id: 'learned',
         label: 'Gelernt',
-        title: 'Was Pulse mitnimmt',
-        body: learned ?? input.review.narrative,
+        title: learnedLane?.title ?? 'Was Pulse mitnimmt',
+        body: learnedLane?.body ?? learned ?? input.review.narrative,
         tone: 'ok',
       },
       {
         id: 'plan_change',
         label: 'Planänderung',
-        title: 'Was sich ableitet',
-        body: recommendation ?? seasonFocus ?? 'Keine offene Änderung; aktuelle Woche weiter beobachten.',
+        title: changedLane?.title ?? 'Was sich ableitet',
+        body: changedLane?.body ?? recommendation ?? seasonFocus ?? 'Keine offene Änderung; aktuelle Woche weiter beobachten.',
         tone: 'ok',
       },
       {
         id: 'decision',
         label: 'Entscheidung',
-        title: 'Was du tun solltest',
-        body: 'Beibehalten, solange Check-in, Warm-up und Garmin-Ausführung keine neuen Gegenzeichen liefern.',
+        title: nextActionLane?.title ?? 'Was du tun solltest',
+        body: nextActionLane?.body ?? 'Beibehalten, solange Check-in, Warm-up und Garmin-Ausführung keine neuen Gegenzeichen liefern.',
         tone: 'ok',
       },
     ],
@@ -189,5 +213,6 @@ export function buildWeeklyCoachReview(input: {
       seasonFocus ? `Saison: ${seasonFocus}` : null,
       input.personalResponse?.summary.strength ? `Response: ${input.personalResponse.summary.strength}` : null,
     ].filter((item): item is string => item != null),
+    weeklyDecision,
   };
 }

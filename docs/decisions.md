@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Plan nutzt einen gemeinsamen Wochenentscheidungs-Contract
+
+- **Decision:** Plan Review und Plan Change Inbox nutzen einen gemeinsamen `PlanWeeklyDecisionContract`, der `Gelernt`, `Geaendert`, `Risiko`, `Naechster Schritt` sowie die read-only Optionen `Beibehalten`, `Anpassen` und `Spaeter` beschreibt. Der Contract fuehrt Zielprojektion, Recovery-Druck und Garmin-Sync-Debt zusammen, ohne Plan- oder Garmin-Schreibzugriffe aus dem ersten Klick abzuleiten.
+- **Why:** Track `Trainingsanpassung` soll Plan von einer Liste plus Diagnostik zu einer Wochenentscheidungsflaeche machen. Ein gemeinsamer Contract verhindert unterschiedliche Review-/Inbox-Sprachen und macht Accept/Adapt/Defer testbar, bevor echte Apply- oder Garmin-Aktionen stattfinden.
+- **Alternatives:** Review und Inbox getrennt weiterformulieren (driftet auseinander); sofort neue Backend-Mutationsendpunkte fuer Akzeptieren/Vertagen bauen (zu frueh und riskant); alles nur in Playwright pruefen (zu langsam fuer Entscheidungslogik).
+- **Decided by:** Codex, im Track `Trainingsanpassung` nach Tobis autonom freigegebener Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Nach Track-1-Abschluss startet autonome Arbeit bei Trainingsanpassung
 
 - **Decision:** Das Paket `Tagesentscheidung: Home lernt abgeschlossene Tage vollstaendig` gilt nach PRs #464-#466 als ausgelieferte Baseline. Die harte autonome Performance-OS-Reihenfolge startet nun bei `Trainingsanpassung: Plan macht Wochenentscheidung aktiver`, danach `Lernschleifen`.

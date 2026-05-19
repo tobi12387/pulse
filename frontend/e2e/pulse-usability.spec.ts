@@ -4371,6 +4371,11 @@ test('Plan Review surfaces the weekly coach review with a clear next action', as
   await expect(review).toContainText('Planänderung');
   await expect(review).toContainText('Entscheidung');
   await expect(review).toContainText('Planpunkte prüfen');
+  const weeklyDecision = review.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toContainText('Wochenentscheidung');
+  await expect(weeklyDecision).toContainText('Anpassen');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('keine Plan- oder Garmin-Aenderung');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-defer_decision')).toContainText('Preview-only');
 
   await review.getByRole('button', { name: 'Planpunkte prüfen' }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=weekly-review#plan-change-inbox');
