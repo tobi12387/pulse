@@ -154,8 +154,9 @@ test('Data analysis action contract follows non-plan goal interventions', async 
   const card = page.getByTestId('analysis-translation-card');
 
   await expect(card).toContainText('Evidenz vervollständigen');
+  await expect(card).toContainText('Wirkung: Tageshandlung');
   await expect(card).toContainText('Nach dem Klick');
-  await expect(card).toContainText('Öffnet die passende Datenevidenz');
+  await expect(card).toContainText('Öffnet die Datengrundlage als Tageshandlung');
   await card.getByRole('button', { name: 'Daten prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=quality#data-garmin-quality');
 });
