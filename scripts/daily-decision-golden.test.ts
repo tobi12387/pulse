@@ -7,6 +7,7 @@ import type {
   PulseGoalProjectionResponse,
   PulseHomeScreenData,
   PulsePlannedWorkout,
+  PulseTrainingAnalyticsResponse,
 } from '../shared/types/pulse/index.ts';
 import { deriveDailyDecision, type DailyDecision } from '../frontend/src/pulse/daily-decision.ts';
 
@@ -212,6 +213,54 @@ function goalProjection(): PulseGoalProjectionResponse {
   };
 }
 
+function trainingAnalyticsWithDurability(): PulseTrainingAnalyticsResponse {
+  return {
+    weeks: 6,
+    tssHeatmap: [],
+    zoneDistribution: [],
+    vo2maxTrend: [],
+    rpeByZone: { totalRated: 0, zones: [] },
+    capabilitySummary: {
+      generatedAt: `${TODAY}T06:00:00.000Z`,
+      lookbackDays: 42,
+      levels: [],
+      signals: [],
+      recommendations: [],
+      fitLegend: {
+        recovery: 'Recovery',
+        maintenance: 'Maintenance',
+        productive: 'Productive',
+        stretch: 'Stretch',
+        too_hard_today: 'Too hard today',
+      },
+    },
+    powerDataQuality: {
+      source: 'stream',
+      status: 'trusted',
+      coveragePct: 98,
+      spikeCount: 0,
+      limitations: [],
+      updatedAt: `${TODAY}T06:00:00.000Z`,
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: {
+        rating: 'limited',
+        powerDropPct: -21,
+        hrDriftBpm: 3,
+        evidence: ['Power -21%', 'HR +3 bpm', '240 min'],
+        activityId: 'activity-durability',
+        activityDate: TODAY,
+        qualitySource: 'stream',
+        qualityStatus: 'trusted',
+      },
+      bestEffortLine: '20 min 215 W',
+      durabilityLine: 'Durability limited: Power -21% · HR +3 bpm · 240 min',
+      updatedAt: `${TODAY}T06:00:00.000Z`,
+    },
+  };
+}
+
 function decisionFor(data: PulseHomeScreenData, context: Parameters<typeof deriveDailyDecision>[1] = {}): DailyDecision {
   const decision = deriveDailyDecision(data, context);
   assert.ok(decision);
@@ -291,6 +340,45 @@ test('completed long workouts close fueling learning before generic feedback', (
   assert.match(decision.contract.safestAlternative, /Fueling-Evidence zuerst schließen: GI-Komfort ergänzen/);
   assert.match(decision.contract.safestAlternative, /Feedback danach kurz erfassen/);
   assertSignalBefore(decision, 'Fueling-Lernen', 'Feedback');
+});
+
+test('durability watch context does not steal the leading factor from fueling learning', () => {
+  const planned = workout({
+    id: 'planned-fueling-before-analysis',
+    durationMin: 150,
+    archetypeId: 'long_endurance_fueling_practice',
+    difficultyEnergySystem: 'long_endurance',
+    description: 'Lange Ausfahrt mit bewusstem Fueling als Lernziel.',
+  });
+
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    fuelingOutcomeBaseline: fuelingBaseline('activity-fueling-before-analysis'),
+    trainingAnalytics: trainingAnalyticsWithDurability(),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Fueling-Lernen:/);
+  assert.equal(decision.cta, 'Fueling vorbereiten');
+  assert.match(decision.contract.safestAlternative, /Fueling-Lernlog vollständig erfassen/);
+  assertSignalBefore(decision, 'Fueling-Lernen', 'Analyse');
+});
+
+test('durability watch context does not steal the leading factor from Garmin execution debt', () => {
+  const planned = workout({
+    id: 'planned-garmin-before-analysis',
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    executionStatus: 'local_planned',
+  });
+
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    trainingAnalytics: trainingAnalyticsWithDurability(),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Garmin: Nur lokal geplant/);
+  assert.equal(decision.cta, 'Garmin prüfen');
+  assert.equal(decision.targetPath, '/plan?tab=execution&source=daily-garmin&workoutId=planned-garmin-before-analysis');
+  assert.match(decision.contract.safestAlternative, /Garmin zuerst schließen/);
+  assertSignalBefore(decision, 'Garmin', 'Analyse');
 });
 
 test('recovery pressure outranks a normal productive workout and owns the safe option', () => {

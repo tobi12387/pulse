@@ -102,6 +102,7 @@ test('Data analysis translates deep evidence into daily impact without AI cards'
   await expect(card).toContainText('Handlungsrelevant');
   await expect(card).toContainText('Fueling-Praxis absichern');
   await expect(card).toContainText('70.3 Kraichgau');
+  await expect(card).toContainText('Wirkung: Planentscheidung');
   await expect(card).toContainText('Nach dem Klick');
   await expect(card.getByRole('button', { name: 'Plan pruefen' })).toBeVisible();
   await expect(card).toContainText('Interessant, aber noch nicht entscheidend');
@@ -276,6 +277,7 @@ test('Data analysis opens power quality evidence from the watch signal', async (
   const card = page.getByTestId('analysis-translation-card');
 
   await expect(card).toContainText('Power nur Hinweis');
+  await expect(card).toContainText('Wirkung: Watch-Kontext');
   await expect(card).toContainText('Nach dem Klick');
   await expect(card).toContainText('Öffnet die Power-Datenqualität');
   await card.getByRole('button', { name: 'Power-Daten prüfen' }).click();
@@ -331,6 +333,7 @@ test('Data analysis opens decision-quality evidence from the primary learning si
 
   await expect(card).toContainText('Entscheidungsqualität');
   await expect(card).toContainText('Hilfreich');
+  await expect(card).toContainText('Wirkung: Tageshandlung');
   await expect(card).toContainText('Nach dem Klick');
   await expect(card).toContainText('Öffnet die Entscheidungsqualität');
   await card.getByRole('button', { name: 'Lernschleife prüfen' }).click();
@@ -376,6 +379,48 @@ test('Data analysis opens personal response evidence from the primary response s
   await expect(card).toContainText('Nach dem Klick');
   await expect(card).toContainText('Öffnet die Reaktionsmuster');
   await card.getByRole('button', { name: 'Reaktionsmuster prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-personal-response');
+  await expect(page.locator('#data-personal-response')).toBeVisible();
+});
+
+test('Data analysis exposes fueling evidence as a concrete learning loop', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    decisionQuality: null,
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T00:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'learning',
+        headline: 'Pulse lernt Fueling-Reaktionen.',
+        signals: [{
+          kind: 'fueling_response',
+          label: 'Fueling-Baseline offen',
+          strength: 'learning',
+          summary: 'Lange Einheiten brauchen vollständige During-Logs.',
+          evidence: ['Noch zwei komplette During-Logs fehlen.'],
+          nextAdjustment: 'Nächste lange Einheit mit Carbs, Dauer und GI-Komfort loggen.',
+        }],
+        missingEvidence: [],
+      },
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Fueling-Lernschleife');
+  await expect(card).toContainText('Fueling-Baseline offen');
+  await expect(card).toContainText('Wirkung: Tageshandlung');
+  await expect(card).toContainText('Öffnet die Reaktionsmuster und Fueling-Evidenz');
+  await card.getByRole('button', { name: 'Fueling-Evidenz prüfen' }).click();
   await expect(page).toHaveURL('/data?tab=analysis#data-personal-response');
   await expect(page.locator('#data-personal-response')).toBeVisible();
 });

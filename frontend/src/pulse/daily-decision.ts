@@ -404,9 +404,13 @@ function adaptationAlternative(event: PulseAdaptationEvent | null | undefined): 
 function analysisAlternative(
   trainingAnalytics: PulseTrainingAnalyticsResponse | null | undefined,
   workout: HomeWorkout | null,
+  mode: 'any' | 'blocking' | 'watch' = 'any',
 ): string | null {
   const signal = analysisSignal(trainingAnalytics, workout, null);
   if (!signal) return null;
+  const isBlocking = signal.tone === 'rose';
+  if (mode === 'blocking' && !isBlocking) return null;
+  if (mode === 'watch' && isBlocking) return null;
   const detail = sentenceWithoutTrailingPeriod(signal.detail);
   if (signal.targetPath?.includes('#data-power-quality')) {
     return `Analysequalität zuerst prüfen: ${detail}. Heute keine Power- oder Durability-Schlüsse zur Ausführung nutzen, bis die Messgrundlage bewusst geprüft ist.`;
@@ -474,7 +478,8 @@ function alternativeFor(
   const qualityAlternative = decisionQualityAlternative(qualitySignal);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const planAdaptationAlternative = adaptationAlternative(adaptationEvent);
-  const durabilityAlternative = analysisAlternative(trainingAnalytics, todayWorkout);
+  const blockingAnalysisAlternative = analysisAlternative(trainingAnalytics, todayWorkout, 'blocking');
+  const watchAnalysisAlternative = analysisAlternative(trainingAnalytics, todayWorkout, 'watch');
   const trainingAlternative = trainingFitAlternative(todayWorkout, todayOptions);
   const stretchAlternative = trainingStretchAlternative(todayWorkout);
   const executionAlternative = trainingExecutionAlternative(todayWorkout);
@@ -502,8 +507,8 @@ function alternativeFor(
     alternative = trainingAlternative;
   } else if (planAdaptationAlternative) {
     alternative = planAdaptationAlternative;
-  } else if (durabilityAlternative) {
-    alternative = durabilityAlternative;
+  } else if (blockingAnalysisAlternative) {
+    alternative = blockingAnalysisAlternative;
   } else if (qualityAlternative) {
     alternative = qualityAlternative;
   } else if (dataAlternative) {
@@ -527,6 +532,8 @@ function alternativeFor(
     alternative = responseAlternative;
   } else if (bodyAlternative) {
     alternative = bodyAlternative;
+  } else if (watchAnalysisAlternative) {
+    alternative = watchAnalysisAlternative;
   } else if (stretchAlternative) {
     alternative = stretchAlternative;
   } else if (executionAlternative) {
@@ -808,7 +815,7 @@ function analysisSignal(
   return {
     label: 'Analyse',
     detail: `${detail}. Nächste Handlung: Durability-Limiter prüfen, bevor du Ausführung oder Anpassung bestätigst.`,
-    tone: durability.rating === 'limited' ? 'rose' : 'amber',
+    tone: durability.rating === 'limited' ? 'accent' : 'muted',
     targetPath: DATA_POWER_DURATION_PATH,
   };
 }
