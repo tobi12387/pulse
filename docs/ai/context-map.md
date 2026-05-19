@@ -8,6 +8,7 @@ Use this map to load the smallest useful context for a task.
 |---|---|
 | Hard rules | `AGENTS.md`, `docs/ai/non-negotiables.md` |
 | Current work | `docs/ai/current-focus.md` |
+| Next product packages | `docs/ai/next-product-packages.md` |
 | File selection | this file, then `rg` |
 | Roadmap / active plans | `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`, then concrete plan |
 | Decisions | `docs/decisions.md` newest entries only when needed |
