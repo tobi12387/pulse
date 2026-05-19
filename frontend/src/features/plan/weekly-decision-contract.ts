@@ -1,6 +1,8 @@
 import type {
   PulseAdaptationEvent,
+  PulseDailyDecisionQualityResponse,
   PulseFitnessLoad,
+  PulseFuelingOutcomeBaseline,
   PulseGoalProjection,
   PulseGoalProjectionResponse,
   PulsePersonalResponseResponse,
@@ -8,6 +10,7 @@ import type {
   PulsePlannedWorkout,
   PulseWeeklyReview,
 } from '@coaching-os/shared/pulse';
+import { buildLearningCalibration, type LearningCalibrationSignal } from '../../pulse/learning-calibration';
 import { buildPlanChangeInbox } from './change-inbox-model';
 
 export type PlanWeeklyDecisionTone = 'attention' | 'watch' | 'ok';
@@ -63,6 +66,8 @@ export interface PlanWeeklyDecisionContractInput {
   currentLoad: PulseFitnessLoad | null;
   goalProjection: PulseGoalProjectionResponse | null;
   personalResponse: PulsePersonalResponseResponse | null;
+  decisionQuality?: PulseDailyDecisionQualityResponse | null;
+  fuelingOutcomeBaseline?: PulseFuelingOutcomeBaseline | null;
   review: PulseWeeklyReview | null;
 }
 
@@ -79,6 +84,45 @@ function firstUsefulSignal(response: PulsePersonalResponseResponse | null): stri
   if (!summary) return null;
   const useful = summary.signals.find(signal => signal.strength !== 'insufficient') ?? summary.signals[0] ?? null;
   return useful ? `${useful.label}: ${useful.nextAdjustment}` : summary.headline;
+}
+
+function learningCalibrationContext(input: PlanWeeklyDecisionContractInput): {
+  calibration: LearningCalibrationSignal;
+  hasDecision: boolean;
+  hasWatch: boolean;
+  title: string;
+  body: string;
+  evidence: string[];
+} | null {
+  const calibration = buildLearningCalibration(
+    input.decisionQuality ?? null,
+    input.personalResponse,
+    input.fuelingOutcomeBaseline ?? null,
+  );
+
+  if (calibration.effect === 'watch_context' && calibration.evidence.length === 0) return null;
+
+  const evidence = calibration.evidence.slice(0, 3);
+  const personalWatchLine = input.personalResponse?.summary.signals.find(signal => signal.strength !== 'insufficient');
+  if (calibration.effect === 'today_action') {
+    return {
+      calibration,
+      hasDecision: true,
+      hasWatch: false,
+      title: 'Lernkalibrierung entscheidet mit',
+      body: `${calibration.summary} Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
+      evidence,
+    };
+  }
+
+  return {
+    calibration,
+    hasDecision: false,
+    hasWatch: true,
+    title: 'Lernkalibrierung bleibt Watch-Kontext',
+    body: `${personalWatchLine ? `${personalWatchLine.label}: ${personalWatchLine.nextAdjustment}. ` : ''}${calibration.summary} Daraus keine Wochenaenderung ableiten, bis das Evidenzgate geschlossen ist.`,
+    evidence,
+  };
 }
 
 function reviewRecommendation(review: PulseWeeklyReview | null): string | null {
@@ -252,28 +296,36 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     adaptationEvents: input.adaptationEvents,
     refreshPreview: input.refreshPreview,
   });
-  const learned = firstUsefulSignal(input.personalResponse)
+  const learningContext = learningCalibrationContext(input);
+  const learned = learningContext?.body
+    ?? firstUsefulSignal(input.personalResponse)
     ?? reviewRecommendation(input.review)
     ?? 'Noch nicht genug verdichtete Wochen-Evidenz. Pulse sammelt weiter Ausfuehrung, Feedback und Check-ins, bevor daraus eine harte Planregel wird.';
   const changed = changedBody(input);
   const risk = riskBody(input);
-  const hasOpenChange = inbox.items.length > 0 || hasRefreshSignal(input.refreshPreview);
-  const tone: PlanWeeklyDecisionTone = inbox.hasAction || risk.hasAttention
+  const hasPlanChange = inbox.items.length > 0 || hasRefreshSignal(input.refreshPreview);
+  const hasLearningDecision = Boolean(learningContext?.hasDecision);
+  const hasOpenChange = hasPlanChange || hasLearningDecision;
+  const tone: PlanWeeklyDecisionTone = inbox.hasAction
+    || risk.hasAttention
+    || (learningContext?.hasDecision && learningContext.calibration.tone === 'rose')
     ? 'attention'
     : hasOpenChange || risk.hasWatch
       ? 'watch'
       : 'ok';
-  const nextBody = hasOpenChange
+  const nextBody = hasPlanChange
     ? 'Prüfen, ob du diese Woche anpassen, beibehalten oder verschieben solltest; erst die Vorschau macht daraus eine Aenderung.'
+    : hasLearningDecision
+      ? 'Lernkalibrierung explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
     : 'Aktuelle Woche beibehalten und nur reagieren, wenn Check-in, Ausfuehrung oder Zielrisiko ein neues Signal liefern.';
 
   const sections: PlanWeeklyDecisionSection[] = [
     {
       id: 'learned',
       label: 'Gelernt',
-      title: 'Was Pulse mitnimmt',
+      title: learningContext?.title ?? 'Was Pulse mitnimmt',
       body: learned,
-      evidence: input.personalResponse?.summary.signals[0]?.evidence.slice(0, 2) ?? [],
+      evidence: learningContext?.evidence ?? input.personalResponse?.summary.signals[0]?.evidence.slice(0, 2) ?? [],
     },
     {
       id: 'changed',
@@ -312,7 +364,9 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     primaryOption,
     evidence: [
       `${inbox.items.length} offene Planpunkte`,
+      learningContext?.hasDecision ? `Lernkalibrierung: ${learningContext.calibration.title}` : null,
+      learningContext?.hasWatch ? 'Lernkalibrierung Watch-Kontext' : null,
       ...risk.evidence.slice(0, 3),
-    ],
+    ].filter((item): item is string => item != null && item.length > 0),
   };
 }

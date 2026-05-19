@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Plan nutzt Lernkalibrierung nur als explizite Wochenentscheidung
+
+- **Decision:** Plan Review und Change Inbox fuehren die gemeinsame `Lernkalibrierung` aus Decision Quality, Personal Response und Fueling-Baseline in den `PlanWeeklyDecisionContract`. Starke `today_action`-Kalibrierung oeffnet eine explizite Wochenentscheidung, schwache oder unvollstaendige Evidenz bleibt `Watch-Kontext`; weder Contract, Option noch lokaler Receipt schreiben Plan oder Garmin.
+- **Why:** Track `Trainingsanpassung` soll MacroFactor-artige Lernsignale in den TrainerRoad/TrainingPeaks/JOIN-Wochenloop bringen, ohne aus Lern-Evidenz eine versteckte Planmutation zu machen. Plan bleibt die bewusste Wochenentscheidung, Data/Home liefern die Kalibrierung.
+- **Alternatives:** Lernkalibrierung nur in Data/Home zeigen (Plan entscheidet ohne Lernsignal); schwache Fueling-/Response-Evidenz als Planwechsel behandeln (zu selbstsicher); Plan/Garmin direkt aus der Kalibrierung anpassen (hidden write); Review und Inbox separat formulieren (Drift).
+- **Decided by:** Codex, im dritten `Trainingsanpassung`-Pass nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Home nutzt Data-Lernkalibrierung nur nach Gates
 
 - **Decision:** Home/Daily Decision nutzt die gemeinsame `Lernkalibrierung` aus Data fuer Decision Quality, Personal Response und Fueling-Evidenz. Nur `today_action`-Kalibrierung darf die Tagesentscheidung fuehren; schwache oder unvollstaendige Fueling-/Response-/Decision-Evidenz bleibt als `Watch-Kontext` sichtbar und fuehrt nicht vor Training, Recovery, Datenvertrauen, Garmin oder Plan.

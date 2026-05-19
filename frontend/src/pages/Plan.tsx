@@ -6,7 +6,7 @@ import {
   useUpdateWorkout, usePulseReview, useGenerateReview, useGeneratePlan,
   usePlanRefreshPreview, usePlanScenarioPreview, usePlanTrace, useStrengthSessions, useTrainingAnalytics, useWeekAvailability, useSaveAvailability, useRaceCommand, useSeasonStrategy, useCreateWorkout,
   useGoalProjection,
-  useTodayOptions, useFitnessLoad, useAdaptationEvents, usePersonalResponse,
+  useTodayOptions, useFitnessLoad, useAdaptationEvents, usePersonalResponse, useDailyDecisionQuality, useFuelingDebt,
 } from '@/pulse/hooks';
 import { LineChart } from '@/components/SparkChart';
 import { Skeleton } from '@/components/Skeleton';
@@ -2636,6 +2636,8 @@ function TrainingTab({
   const goals     = usePulseGoals();
   const goalProjection = useGoalProjection(180);
   const personalResponse = usePersonalResponse(42);
+  const decisionQuality = useDailyDecisionQuality(14);
+  const fuelingDebt = useFuelingDebt();
   const checkinToday = useCheckinToday();
   const checkinHistory = useCheckinHistory(7);
   const raceCommand = useRaceCommand();
@@ -2733,6 +2735,8 @@ function TrainingTab({
     currentLoad: fitnessLoad.data ?? null,
     goalProjection: goalProjection.data ?? null,
     personalResponse: personalResponse.data ?? null,
+    decisionQuality: decisionQuality.data ?? null,
+    fuelingOutcomeBaseline: fuelingDebt.data?.outcomeBaseline ?? null,
     review: null,
   });
 
@@ -3266,6 +3270,8 @@ function ReviewTab() {
   const generate = useGenerateReview();
   const adaptationEvents = useAdaptationEvents();
   const personalResponse = usePersonalResponse(42);
+  const decisionQuality = useDailyDecisionQuality(14);
+  const fuelingDebt = useFuelingDebt();
   const goalProjection = useGoalProjection(180);
   const seasonStrategy = useSeasonStrategy();
   const plan = usePulsePlan();
@@ -3279,6 +3285,8 @@ function ReviewTab() {
     review: data ?? null,
     adaptationEvents: adaptationEvents.data?.events ?? [],
     personalResponse: personalResponse.data ?? null,
+    decisionQuality: decisionQuality.data ?? null,
+    fuelingOutcomeBaseline: fuelingDebt.data?.outcomeBaseline ?? null,
     goalProjection: goalProjection.data ?? null,
     seasonStrategy: seasonStrategy.data ?? null,
     today,
