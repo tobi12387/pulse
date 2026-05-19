@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
-import type { ActivityAnalytics, NutritionLog, NutritionLogPatch } from '@/pulse/api-client';
+import type { ActivityAnalytics, NutritionLog } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
 import {
   useActivityFeedback,
@@ -18,7 +18,15 @@ import { NutritionLogModal } from '@/components/NutritionLogModal';
 import { FuelingOutcomeBaselineBlock } from '@/components/FuelingOutcomeBaseline';
 import { RpeBar } from '@/components/RpeBar';
 import { rpeColor } from '@/lib/rpe';
-import { RPE_SORENESS_AREAS, type PulseActivityType, type PulseFuelingOutcomeBaseline, type RpeSorenessArea } from '@coaching-os/shared/pulse';
+import {
+  buildFuelingEvidenceQuality,
+  FUELING_PRODUCT_LABELS,
+  fuelingTrendEvidenceLabel,
+  GI_COMFORT_LABELS,
+  mergeFuelingEvidenceCompletionPatches,
+  type FuelingEvidenceQuality,
+} from '@/features/activity/activity-closure-evidence';
+import { RPE_SORENESS_AREAS, type PulseActivityType, type RpeSorenessArea } from '@coaching-os/shared/pulse';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
   return v == null ? '–' : `${v.toFixed(decimals)}${suffix}`;
@@ -635,204 +643,6 @@ function WeatherCard({ weather }: { weather: NonNullable<ActivityAnalytics['weat
 
 // ─── Fueling Section ─────────────────────────────────────────────────────────
 
-const POWER_CARB_ID = 'mnstry-power-carb-sour-cherry-1-0-8';
-
-const FUELING_PRODUCT_LABELS: Record<string, string> = {
-  [POWER_CARB_ID]: 'POWER CARB',
-  'mnstry-bicarb-gel-40-lemon-1-0-8': 'BICARB GEL',
-  'mnstry-porridge-bar-sour-cherry': 'PORRIDGE BAR',
-  'mnstry-protein-bar-8-peanut-cranberry': 'PROTEIN BAR 8',
-  mars: 'Mars',
-};
-
-const GI_COMFORT_LABELS: Record<NonNullable<NutritionLog['giComfort']>, string> = {
-  ok: 'Magen ok',
-  mild_issue: 'Magen leicht unruhig',
-  issue: 'Magenprobleme',
-};
-
-type FuelingEvidenceCompletion = {
-  label: string;
-  patch: NutritionLogPatch;
-};
-
-function isLongFuelingActivity(activityType: string, durationMin: number): boolean {
-  return ['bike', 'run', 'hike'].includes(activityType) && durationMin >= 75;
-}
-
-function hasFuelingCarbEvidence(log: NutritionLog): boolean {
-  return log.carbsG != null;
-}
-
-function fuelingTrendEvidenceLabel(baseline: PulseFuelingOutcomeBaseline | null): string {
-  const learningReadiness = baseline?.learningReadiness ?? null;
-  if (!learningReadiness) return 'Trend-Evidenz offen';
-  return `Trend-Evidenz ${learningReadiness.comparableCompleteLogs}/${learningReadiness.requiredComparableCompleteLogs}`;
-}
-
-function parseGermanNumber(value: string): number | null {
-  const parsed = Number(value.replace(',', '.'));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function fuelingLogText(log: NutritionLog): string {
-  return [log.description, log.notes].filter((item): item is string => Boolean(item)).join(' ');
-}
-
-function inferBottles750Ml(log: NutritionLog): number | null {
-  if (log.bottles750Ml != null || log.drinksMl == null || log.drinksMl <= 0) return null;
-  const bottles = log.drinksMl / 750;
-  return Number.isInteger(bottles) && bottles > 0 && bottles <= 40 ? bottles : null;
-}
-
-function inferPowerCarbPowderG(log: NutritionLog): number | null {
-  if (log.powderG != null) return null;
-  const text = fuelingLogText(log);
-  const match = text.match(/(\d+(?:[,.]\d+)?)\s*g\s+power\s*carb\s+pulver/i)
-    ?? text.match(/power\s*carb\s+(\d+(?:[,.]\d+)?)\s*g\s+pulver/i)
-    ?? text.match(/(\d+(?:[,.]\d+)?)\s*g\s+power\s*carb/i);
-  if (!match?.[1]) return null;
-  const powderG = parseGermanNumber(match[1]);
-  return powderG != null && powderG > 0 && powderG <= 3000 ? Math.round(powderG) : null;
-}
-
-function uniqueFuelingProducts(products: string[], productId: string): string[] {
-  return products.includes(productId) ? products : [...products, productId];
-}
-
-function inferMarsProduct(log: NutritionLog): boolean {
-  return !log.fuelingProducts.includes('mars') && /\bmars(?:riegel)?\b/i.test(fuelingLogText(log));
-}
-
-function inferGiComfort(log: NutritionLog): NonNullable<NutritionLog['giComfort']> | null {
-  if (log.giComfort != null) return null;
-  const text = fuelingLogText(log).toLocaleLowerCase('de-DE');
-  if (/\bmagen\s*(?:ok|gut|ruhig)\b/.test(text)) return 'ok';
-  if (/leichte?\s+magenprobleme/.test(text) || /magen\s+leicht\s+unruhig/.test(text)) return 'mild_issue';
-  if (/\bmagenprobleme\b/.test(text) || /\bgi[-\s]?problem/.test(text)) return 'issue';
-  return null;
-}
-
-function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletion[] {
-  const completions: FuelingEvidenceCompletion[] = [];
-  const bottles750Ml = inferBottles750Ml(log);
-  if (bottles750Ml != null) {
-    completions.push({
-      label: `${bottles750Ml} x 750 ml übernehmen`,
-      patch: { bottles750Ml },
-    });
-  }
-
-  const powderG = inferPowerCarbPowderG(log);
-  if (powderG != null) {
-    completions.push({
-      label: `${powderG} g Pulver übernehmen`,
-      patch: {
-        powderG,
-        fuelingProducts: fuelingLogText(log).toLocaleLowerCase('de-DE').includes('power carb')
-          ? uniqueFuelingProducts(log.fuelingProducts, POWER_CARB_ID)
-          : undefined,
-      },
-    });
-  }
-
-  if (inferMarsProduct(log)) {
-    completions.push({
-      label: 'Mars übernehmen',
-      patch: { fuelingProducts: uniqueFuelingProducts(log.fuelingProducts, 'mars') },
-    });
-  }
-
-  const giComfort = inferGiComfort(log);
-  if (giComfort != null) {
-    completions.push({
-      label: `${GI_COMFORT_LABELS[giComfort]} übernehmen`,
-      patch: { giComfort },
-    });
-  }
-
-  return completions;
-}
-
-function mergeFuelingEvidenceCompletionPatches(completions: FuelingEvidenceCompletion[]): NutritionLogPatch {
-  return completions.reduce<NutritionLogPatch>((merged, completion) => {
-    const { fuelingProducts, ...nextPatch } = completion.patch;
-    const mergedPatch: NutritionLogPatch = { ...merged, ...nextPatch };
-    if (fuelingProducts != null) {
-      mergedPatch.fuelingProducts = Array.from(new Set([
-        ...(merged.fuelingProducts ?? []),
-        ...fuelingProducts,
-      ]));
-    }
-    return mergedPatch;
-  }, {});
-}
-
-function fuelingEvidenceQuality({
-  logs,
-  activityType,
-  durationMin,
-  trendEvidence,
-}: {
-  logs: NutritionLog[];
-  activityType: string;
-  durationMin: number;
-  trendEvidence: string;
-}): {
-  label: string;
-  detail: string;
-  items: string[];
-  tone: 'green' | 'amber';
-  giComfortCompletionLogId: string | null;
-  detailCompletionLogId: string | null;
-  detailCompletions: FuelingEvidenceCompletion[];
-} | null {
-  if (!isLongFuelingActivity(activityType, durationMin)) return null;
-
-  const duringLogs = logs.filter(log => log.context === 'during' || log.context == null);
-  const latest = duringLogs[0] ?? null;
-  if (!latest) {
-    return {
-      label: 'Lernevidenz offen',
-      detail: 'Für diese lange Einheit fehlt noch ein During-Log mit Carbs und GI-Komfort.',
-      items: ['During-Log fehlt', trendEvidence],
-      tone: 'amber',
-      giComfortCompletionLogId: null,
-      detailCompletionLogId: null,
-      detailCompletions: [],
-    };
-  }
-
-  const hasCarbs = hasFuelingCarbEvidence(latest);
-  const hasGiComfort = latest.giComfort != null;
-  const detailCompletions = fuelingEvidenceCompletions(latest);
-  if (!hasCarbs || !hasGiComfort) {
-    return {
-      label: 'Lernevidenz unvollständig',
-      detail: 'Dieser lange Log hilft erst dann für Trends, wenn Carbs und GI-Komfort zusammen vorliegen.',
-      items: [
-        hasCarbs ? 'Carbs erfasst' : 'Carbs fehlen',
-        hasGiComfort ? 'GI-Komfort erfasst' : 'GI-Komfort fehlt',
-        trendEvidence,
-      ],
-      tone: 'amber',
-      giComfortCompletionLogId: hasCarbs && !hasGiComfort ? latest.id : null,
-      detailCompletionLogId: detailCompletions.length > 0 ? latest.id : null,
-      detailCompletions,
-    };
-  }
-
-  return {
-    label: 'Lernevidenz vollständig',
-    detail: 'Dieser During-Log hat Carbs und GI-Komfort und kann in die Fueling-Baseline einfließen.',
-    items: ['Carbs erfasst', 'GI-Komfort erfasst', trendEvidence],
-    tone: 'green',
-    giComfortCompletionLogId: null,
-    detailCompletionLogId: detailCompletions.length > 0 ? latest.id : null,
-    detailCompletions,
-  };
-}
-
 function offPlanFuelingPlanFollowUpTarget(activityId: string): string {
   const params = new URLSearchParams({
     tab: 'training',
@@ -846,7 +656,7 @@ function shouldShowOffPlanFuelingPlanFollowUp(
   logs: NutritionLog[],
   activityId: string,
   plannedWorkoutId: string | null | undefined,
-  evidenceQuality: ReturnType<typeof fuelingEvidenceQuality>,
+  evidenceQuality: FuelingEvidenceQuality | null,
 ): boolean {
   if (plannedWorkoutId) return false;
   if (!evidenceQuality) return false;
@@ -872,10 +682,11 @@ function FuelingSection({
   const logs = data?.logs ?? [];
   const fuelingDebt = fuelingDebtQuery.data?.fuelingDebt ?? null;
   const fuelingOutcomeBaseline = fuelingDebtQuery.data?.outcomeBaseline ?? null;
-  const evidenceQuality = fuelingEvidenceQuality({
+  const evidenceQuality = buildFuelingEvidenceQuality({
     logs,
     activityType,
     durationMin,
+    feedbackCaptured,
     trendEvidence: fuelingTrendEvidenceLabel(fuelingOutcomeBaseline),
   });
   const giComfortCompletionLogId = evidenceQuality?.giComfortCompletionLogId ?? null;

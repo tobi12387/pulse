@@ -1067,9 +1067,14 @@ test('Activity fueling evidence quality names missing fields for incomplete long
   await page.goto('/plan/activity/activity-fueling');
 
   const quality = page.getByTestId('activity-fueling-evidence-quality');
-  await expect(quality).toContainText('Lernevidenz unvollständig');
-  await expect(quality).toContainText('Carbs erfasst');
+  await expect(quality).toContainText('Fueling-Evidence zuerst schließen');
+  await expect(quality).toContainText('Dauer, Carbs und GI-Komfort zusammen');
+  await expect(quality).toContainText('RPE erfasst');
+  await expect(quality).toContainText('Dauer 240 min');
+  await expect(quality).toContainText('Carbs erfasst · 61 g/h');
   await expect(quality).toContainText('GI-Komfort fehlt');
+  await expect(quality).toContainText('Hydration-Kontext offen');
+  await expect(quality).toContainText('Sodium, Hitze und Schweißrate nur ergänzen, wenn du sie wirklich gemessen hast');
   await expect(quality).toContainText('Trend-Evidenz 0/3');
 });
 
