@@ -182,10 +182,10 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
       id: 'plan-load',
       tab: 'analyse',
       hash: 'data-plan-trace',
-      targetPath: '/plan?tab=training&source=data-load#plan-scenario-preview',
+      targetPath: '/plan?tab=training&source=data-load#plan-weekly-decision',
       label: 'Plan-/Load',
       value: `CTL ${fmtMetric(home?.fitnessLoad.ctl, 1)} · ATL ${fmtMetric(home?.fitnessLoad.atl, 1)}`,
-      detail: 'Zur Szenario-Vorschau wechseln und Planwirkung prüfen.',
+      detail: 'Zur Wochenentscheidung wechseln und Planwirkung bewusst prüfen.',
       tone: 'var(--accent)',
     },
   ];
@@ -277,11 +277,11 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         run: () => onOpen('qualitaet', 'data-garmin-quality'),
       }
       : {
-        title: 'Planwirkung prüfen',
+        title: 'Wochenentscheidung prüfen',
         reason: 'Deine heutigen Kernsignale sind nutzbar. Der sinnvollste nächste Blick ist, wie Readiness, TSB und Planlast die nächste Entscheidung verändern.',
-        result: 'Öffnet die Plan-Szenariofläche mit Data-Kontext, ohne Plan oder Garmin automatisch zu verändern.',
-        cta: 'Planwirkung öffnen',
-        run: () => navigate('/plan?tab=training&source=data-load#plan-scenario-preview'),
+        result: 'Öffnet die gemeinsame Wochenentscheidung mit Data-Kontext, ohne Plan oder Garmin automatisch zu verändern.',
+        cta: 'Wochenentscheidung öffnen',
+        run: () => navigate('/plan?tab=training&source=data-load#plan-weekly-decision'),
       };
   const evidence = [
     { label: 'Readiness', value: `${fmtMetric(home?.readiness.score)}/100`, tone: readinessTone(home?.readiness.color) },

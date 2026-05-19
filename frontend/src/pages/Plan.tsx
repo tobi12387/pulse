@@ -3862,6 +3862,7 @@ function tabFromQuery(value: string | null): Tab {
 }
 
 const HASH_TAB: Record<string, Tab> = {
+  'plan-weekly-decision': 'training',
   'plan-scenario-preview': 'training',
   'plan-adaptation-review': 'training',
   'plan-change-inbox': 'training',

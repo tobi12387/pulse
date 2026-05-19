@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Data-Plan-Handoffs landen zuerst auf der Wochenentscheidung
+
+- **Decision:** Data Plan-/Load-Analyse und Triage oeffnen `/plan?tab=training&source=data-load#plan-weekly-decision` statt direkt `#plan-scenario-preview`. Der `PlanWeeklyDecisionContract` besitzt den stabilen, fokussierbaren Hash-Anker; Szenario-Vorschau und Apply bleiben der zweite bewusste Schritt.
+- **Why:** Track `Trainingsanpassung` soll Home/Data-Deep-Links auf dieselbe Wochenentscheidung bringen, ohne doppelte Data-Kopie oder versteckte Plan-/Garmin-Schreibwirkung. Data liefert den Kontext, Plan besitzt die Entscheidung.
+- **Alternatives:** Data weiter direkt auf die Szenario-Vorschau routen (zu eng und ueberspringt Accept/Adapt/Defer); Data eigene Wochenentscheidungs-Kopie bauen (driftet); aus Data automatisch Plan/Garmin anwenden (versteckter Write).
+- **Decided by:** Codex, im Track `Trainingsanpassung` nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Plan nutzt einen gemeinsamen Wochenentscheidungs-Contract
 
 - **Decision:** Plan Review und Plan Change Inbox nutzen einen gemeinsamen `PlanWeeklyDecisionContract`, der `Gelernt`, `Geaendert`, `Risiko`, `Naechster Schritt` sowie die read-only Optionen `Beibehalten`, `Anpassen` und `Spaeter` beschreibt. Der Contract fuehrt Zielprojektion, Recovery-Druck und Garmin-Sync-Debt zusammen, ohne Plan- oder Garmin-Schreibzugriffe aus dem ersten Klick abzuleiten.

@@ -2629,7 +2629,7 @@ test('Data starts with one daily action before secondary areas', async ({ page }
   await expect(action).toContainText('Daten-Aktion');
   await expect(action).toContainText('Warum jetzt');
   await expect(action).toContainText('Nach dem Klick');
-  await expect(action).toContainText('Planwirkung prüfen');
+  await expect(action).toContainText('Wochenentscheidung prüfen');
   if (testInfo.project.name === 'mobile-chromium') {
     const actionBox = await action.boundingBox();
     expect(actionBox).not.toBeNull();
@@ -2664,21 +2664,21 @@ test('Data mobile keeps the missing-check-in action before optional detail copy'
   await expect(action.getByTestId('data-primary-action-mobile-contract')).toContainText('Nach dem Klick');
 });
 
-test('Data Plan Load triage hands off to the actionable Plan scenario surface', async ({ page }) => {
+test('Data Plan Load triage hands off to the shared Plan weekly decision', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data');
   await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   await page.getByTestId('data-triage-plan-load').click();
 
-  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-scenario-preview');
-  const scenarioCard = page.getByTestId('plan-scenario-preview-card');
-  await expect(scenarioCard).toBeVisible();
-  await expect(scenarioCard).toBeInViewport();
-  await expect(scenarioCard).toBeFocused();
-  await expect(scenarioCard).toContainText('Szenario-Vorschau');
-  await expect(scenarioCard).toContainText('Aus Data geöffnet');
-  await expect(scenarioCard).toContainText('Readiness, TSB und Plan-/Load-Evidenz');
+  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-weekly-decision');
+  const weeklyDecision = page.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toBeVisible();
+  await expect(weeklyDecision).toBeInViewport();
+  await expect(weeklyDecision).toBeFocused();
+  await expect(weeklyDecision).toContainText('Wochenentscheidung');
+  await expect(weeklyDecision).toContainText('Anpassen');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).toContainText('Preview-only');
 });
 
 test('Data ignores malformed hashes and stays usable', async ({ page }) => {
