@@ -1,5 +1,7 @@
 import type { PulseAdaptationEvent, PulsePlanRefreshPreview, PulsePlannedWorkout } from '@coaching-os/shared/pulse';
 import { buildPlanChangeInbox, type PlanChangeInboxAction, type PlanChangeInboxItem } from './change-inbox-model';
+import { PlanWeeklyDecisionContractPanel } from './PlanWeeklyDecisionContractPanel';
+import type { PlanWeeklyDecisionContract } from './weekly-decision-contract';
 
 type ScenarioMode = 'move' | 'reduce';
 
@@ -8,6 +10,7 @@ type Props = {
   workouts: PulsePlannedWorkout[];
   adaptationEvents: PulseAdaptationEvent[];
   refreshPreview: PulsePlanRefreshPreview | null;
+  weeklyDecision?: PlanWeeklyDecisionContract | null;
   onOpenRefreshPreview: () => void;
   onReviewScenario: (mode?: ScenarioMode) => void;
   onNavigate: (path: string) => void;
@@ -33,6 +36,7 @@ export function PlanChangeInboxCard({
   workouts,
   adaptationEvents,
   refreshPreview,
+  weeklyDecision,
   onOpenRefreshPreview,
   onReviewScenario,
   onNavigate,
@@ -91,6 +95,12 @@ export function PlanChangeInboxCard({
       <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
         {inbox.summary}
       </p>
+
+      {weeklyDecision && (
+        <div style={{ marginTop: 12 }}>
+          <PlanWeeklyDecisionContractPanel contract={weeklyDecision} />
+        </div>
+      )}
 
       <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
         {inbox.items.slice(0, 4).map(item => {
