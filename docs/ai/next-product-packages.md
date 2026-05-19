@@ -29,17 +29,30 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first pass through all three Performance-OS tracks is shipped: `Tagesentscheidung` delivered Home closure/registry work, `Trainingsanpassung` delivered the weekly decision contract and handoffs, and `Lernschleifen` delivered Data action contracts plus the training-risk contract.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates.
 
-Track 1 and Track 2 of the second pass are shipped. Next autonomous product work continues the second pass in the same hard order unless Tobi explicitly reverses it:
+Next autonomous product work starts the third pass in the same hard order unless Tobi explicitly reverses it:
 
-1. `Lernschleifen`: Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
-2. `Trainingsanpassung`: reopen only for regressions or a new explicit Plan package.
-3. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
+1. `Tagesentscheidung`: Home nutzt kalibrierte Data-Lernsignale nur dann als Tages-/Folgeentscheidung, wenn Evidenzgates reichen.
+2. `Trainingsanpassung`: Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
+3. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
 
 ## Track 1: Tagesentscheidung
 
-Status: **shipped second-pass baseline**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass adds a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write.
+Status: **next active package (third Performance-OS pass)**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write.
+
+Next package: **Home nutzt kalibrierte Data-Lernsignale.**
+
+Outcome: Home should use the new Data learning calibration only when it is strong enough to change today or the follow-up decision; incomplete fueling or response evidence stays visible as watch context and should not steal the leading factor.
+
+Why it matters: this brings the MacroFactor-like learning gate back into the Oura/WHOOP-style daily command surface without making weak trends feel certain.
+
+Best next package PR:
+
+- Extend Daily Decision golden scenarios for Data learning calibration as `today_action` versus `watch_context`.
+- Route strong calibration to the smallest existing Data/Activity confirmation surface.
+- Keep incomplete Fueling/Decision Quality evidence as context below stronger Recovery, Mental, Data trust, Garmin and Plan signals.
+- Add one rendered Home smoke for the learning handoff.
 
 Package: **Home macht die Folge der letzten Entscheidung sichtbar.**
 
@@ -111,20 +124,20 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **next active package (second Performance-OS pass)**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract.
+Status: **shipped second-pass baseline**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates.
 
-Next package: **Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.**
+Package: **Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.**
 
 Outcome: Data should explain when repeated decisions or fueling logs are strong enough to change the next recommendation, and when they are still only watch context. Nutrition trend summaries stay gated until comparable complete evidence exists.
 
 Why it matters: this is the MacroFactor/Intervals/WKO layer: Pulse should learn visibly from repeated outcomes without turning weak evidence into confident coaching.
 
-Best next package PR:
+Shipped package PRs:
 
 - Gate trend summaries behind comparable complete logs and explicit quality thresholds.
 - Connect Decision Quality, Personal Response and Fueling evidence into one "what changed / not enough evidence yet" learning note.
 - Keep action contracts explicit: `today_action`, `plan_decision` or `watch_context`.
-- Add fast tests for threshold boundaries and one Data/Home smoke for the rendered learning handoff.
+- Add fast tests for threshold boundaries and one Data smoke for the rendered learning handoff.
 
 Baseline package (shipped): **Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.**
 

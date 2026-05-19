@@ -20,15 +20,15 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Product north star: Pulse is a personal resilience and performance coach that connects physical training, nutrition, recovery and mental wellbeing into one understandable daily next action.
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
-- First-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; Track 1 and Track 2 of the second pass are shipped.
+- First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped.
 - Current hard Performance-OS backlog order:
-  1. **Lernschleifen:** Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
-  2. **Trainingsanpassung:** Naechster Pass nur bei Regression oder neuer expliziter Plan-Frage.
-  3. **Tagesentscheidung:** Naechster Pass nur bei Regression oder neuer expliziter Home-Frage.
+  1. **Tagesentscheidung:** Home nutzt kalibrierte Data-Lernsignale nur dann als Tages-/Folgeentscheidung, wenn Evidenzgates reichen.
+  2. **Trainingsanpassung:** Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
+  3. **Lernschleifen:** Naechster Pass nur bei Regression oder neuer expliziter Data-Frage.
 - Shipped baselines:
   - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry and the last-decision follow-up signal; reopen only for regressions or a new explicit Track-1 package.
   - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls, Home/Data handoffs and local weekly decision receipts; reopen only for regressions or a new explicit Track-2 package.
-  - **Lernschleifen** delivered Data action contracts, Fueling learning-loop copy, Home watch-context gating and the Data training-risk contract; reopen only for regressions or the next explicit Track-3 package.
+  - **Lernschleifen** delivered Data action contracts, Fueling learning-loop copy, Home watch-context gating, the Data training-risk contract and the Data learning-calibration gate for Decision Quality, Personal Response and Fueling trends; reopen only for regressions or a new explicit Track-3 package.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.
 - Focus navigation baseline is Heute (`/`), Data, Plan, Insights and Settings. Coach remains a compatibility/deep-link route and prepared-prompt mode unless a recurring flow proves it needs primary navigation again.
 - Completed implementation plans live in `docs/superpowers/plans/completed/`; do not reopen them as backlog without a new regression or explicit reversal.

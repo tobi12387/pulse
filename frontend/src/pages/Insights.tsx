@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Activity, Brain, ChevronDown, ChevronUp, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useDailyDecisionQuality, useDeepInsight, useGoalProjection, usePersonalResponse, usePlanTrace, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
+import { useDailyDecisionQuality, useDeepInsight, useFuelingDebt, useGoalProjection, usePersonalResponse, usePlanTrace, useRefreshInsight, useTrainingAnalytics, useTrainingCapabilities } from '@/pulse/hooks';
 import { MentalLoadOverlay } from '@/components/MentalLoadOverlay';
 import { IconBadge, PageHeader, RangeControl } from '@/components/PulseChrome';
 import { PulseApiError } from '@/pulse/api-client';
@@ -566,6 +566,7 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
   const [days, setDays] = useState(30);
   const decisionQualityQuery = useDailyDecisionQuality(14);
   const personalResponse = usePersonalResponse(42);
+  const fuelingDebt = useFuelingDebt();
   const goalProjection = useGoalProjection(180);
   const capability = useTrainingCapabilities(90);
   const trainingAnalytics = useTrainingAnalytics(12);
@@ -574,6 +575,7 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
   const decisionQuality = decisionQualityQuery.data;
   const translationLoading = decisionQualityQuery.isLoading
     || personalResponse.isLoading
+    || fuelingDebt.isLoading
     || goalProjection.isLoading
     || trainingAnalytics.isLoading
     || planTrace.isLoading;
@@ -591,6 +593,7 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
 
       <AnalysisTranslationCard
         decisionQuality={decisionQuality}
+        fuelingOutcomeBaseline={fuelingDebt.data?.outcomeBaseline}
         goalProjection={goalProjection.data}
         personalResponse={personalResponse.data}
         planTrace={planTrace.data?.trace}
