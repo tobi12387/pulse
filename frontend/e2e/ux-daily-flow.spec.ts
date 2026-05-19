@@ -1794,6 +1794,95 @@ test('Home daily decision uses complete fueling trends as a leading signal for l
   await expect(page.getByTestId('workout-fueling-baseline')).not.toContainText('Nächster Lernlog');
 });
 
+test('Home daily decision uses missing post-workout feedback as the completed-day learning gate', async ({ page }) => {
+  const completedActivity = {
+    id: 'activity-feedback-open',
+    userId: 'user-1',
+    externalId: 'garmin-activity-feedback-open',
+    source: 'garmin',
+    startTime: '2026-05-01T08:00:00.000Z',
+    activityType: 'bike',
+    name: 'Kontrollierte Z2-Runde',
+    durationSec: 60 * 60,
+    distanceM: 28000,
+    avgHr: 132,
+    maxHr: 154,
+    avgPowerW: 168,
+    normalizedPowerW: 176,
+    tss: 58,
+    calories: 820,
+    elevationGainM: 210,
+    trainingEffectAerobic: 2.1,
+    trainingEffectAnaerobic: 0,
+    vo2maxEstimate: null,
+    rpe: null,
+    rpeNote: null,
+    sorenessAreas: null,
+    feedbackLoggedAt: null,
+    equipmentIds: [],
+    plannedWorkoutId: 'planned-feedback-open',
+  };
+  const completedWorkout = {
+    id: 'planned-feedback-open',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 60,
+    distanceKm: null,
+    targetTss: 55,
+    archetypeId: 'endurance_easy',
+    difficultyLevel: 3.1,
+    difficultyEnergySystem: 'endurance',
+    capabilityFit: 'productive',
+    description: 'Ruhige Ausdauer ohne Fueling-Lernziel.',
+    steps: null,
+    garminWorkoutId: null,
+    garminScheduledId: null,
+    garminSyncContract: null,
+    status: 'completed',
+    workoutFeedback: null,
+    complianceScore: 0.94,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: completedActivity.id,
+    executionStatus: 'completed_matched',
+    executionMatchedAt: '2026-05-01T09:05:00.000Z',
+    executionMatchConfidence: 0.95,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: completedWorkout,
+      todayActivities: [completedActivity],
+      recentActivities: [completedActivity],
+      nextWorkout: null,
+    },
+    planWorkouts: [completedWorkout],
+    activityDetail: {
+      activity: completedActivity,
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Feedback');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('RPE fehlt');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Feedback zuerst erfassen');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Feedback erfassen');
+  await expect(decision.getByRole('button', { name: 'Feedback erfassen', exact: true })).toBeVisible();
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision).toContainText('Feedback verbessert die nächste Planentscheidung');
+
+  await decision.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-feedback-open');
+  await expect(page.getByTestId('activity-feedback-card')).toContainText('Noch kein subjektives Feedback');
+});
+
 test('Home daily decision closes completed long workouts with fueling evidence capture', async ({ page }) => {
   const outcomeBaseline = {
     status: 'insufficient_data',

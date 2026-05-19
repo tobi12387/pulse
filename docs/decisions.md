@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Home führt fehlendes Post-Workout-Feedback als Lernsignal
+
+- **Decision:** Wenn eine geplante oder ungeplante Aktivität heute abgeschlossen ist und noch RPE/subjektives Feedback fehlt, ergänzt Home das `Feedback`-Signal und darf damit vor Ziel- und Trainingssignalen führen. Stärkere Schutz-, Daten-, Analyse- oder Fueling-Signale bleiben vorrangig; der CTA öffnet die bestehende Activity-Detail-Seite, Plan und Garmin bleiben unverändert.
+- **Why:** Die tägliche Entscheidung soll abgeschlossene Einheiten nicht weiter wie offene Ausführung behandeln, sondern die Lernschleife schließen. RPE und kurze subjektive Notizen sind die minimale Evidenz, damit Pulse spätere Planentscheidungen TrainerRoad-/TrainingPeaks-artig persönlicher machen kann.
+- **Alternatives:** Feedback nur in den nächsten Schritten verstecken (zu passiv für den abgeschlossenen Tag); Feedback direkt auf Home erfassen (neue Oberfläche statt vorhandener Detailseite); automatisch Plan/Garmin anpassen (zu versteckt und gegen den read-only Evidence Contract).
+- **Decided by:** Codex, auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-16 — Home prüft blockierte Power-Analysequalität
 
 - **Decision:** Wenn ein offenes Home-Workout geplant ist und die Training-Analytics-Power-Datenqualität `blocked` ist, führt Home mit `Analyse` und dem CTA `Power-Daten prüfen` direkt zu `Data > Analyse #data-power-quality`. Durability-Limiter bleiben weiter auf `#data-power-duration`; akute TSB-/Belastungsprüfung bleibt auf `#data-plan-trace`; Plan, Garmin und Coach bleiben unverändert.
