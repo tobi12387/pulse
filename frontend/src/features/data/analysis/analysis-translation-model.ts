@@ -1,5 +1,6 @@
 import type {
   PulseDailyDecisionQualityResponse,
+  PulseFuelingOutcomeBaseline,
   PulseGoalProjection,
   PulseGoalProjectionResponse,
   PulsePersonalResponseResponse,
@@ -7,6 +8,13 @@ import type {
   PulsePlanTrace,
   PulseTrainingAnalyticsResponse,
 } from '@coaching-os/shared/pulse';
+import {
+  fuelingLearningActionTargetPath,
+  fuelingLearningGapSummary,
+  fuelingTrendEvidenceLabel,
+  fuelingTrendSummaryForDisplay,
+  isFuelingTrendReady,
+} from '../../../pulse/fueling-learning';
 
 export type AnalysisTranslationTone = 'green' | 'amber' | 'rose' | 'muted';
 export type AnalysisDecisionEffect = 'today_action' | 'plan_decision' | 'watch_context';
@@ -27,6 +35,7 @@ export type AnalysisTranslationSignal = {
 
 export type AnalysisTranslation = {
   trainingRisk: AnalysisTranslationSignal;
+  learning: AnalysisTranslationSignal;
   primary: AnalysisTranslationSignal;
   watch: AnalysisTranslationSignal;
   supportEvidence: string[];
@@ -73,6 +82,7 @@ type Input = {
   personalResponse: PulsePersonalResponseResponse | null | undefined;
   planTrace: PulsePlanTrace | null | undefined;
   trainingAnalytics: PulseTrainingAnalyticsResponse | null | undefined;
+  fuelingOutcomeBaseline?: PulseFuelingOutcomeBaseline | null | undefined;
 };
 
 function goalTone(status: PulseGoalProjection['status']): AnalysisTranslationTone {
@@ -242,6 +252,11 @@ function buildTrainingRiskContract(
 }
 
 function resultPreviewForTargetPath(targetPath: string, effect: AnalysisDecisionEffect = effectForTargetPath(targetPath)): string {
+  if (targetPath.includes('#activity-fueling-log')) {
+    return effect === 'watch_context'
+      ? 'Öffnet die Aktivität und den Fueling-Log als Watch-Kontext. Plan und Garmin bleiben unverändert; du schließt nur die Evidenzlücke.'
+      : 'Öffnet die Aktivität und den Fueling-Log. Plan und Garmin bleiben unverändert; du prüfst dort nur die Lern-Evidenz.';
+  }
   if (targetPath.startsWith('/plan')) {
     return 'Öffnet die Planentscheidung in der Wochenentscheidung aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst eine Vorschau anwendest.';
   }
@@ -323,9 +338,7 @@ function primaryFromDecisionQuality(decisionQuality: PulseDailyDecisionQualityRe
 }
 
 function primaryFromPersonalResponse(personalResponse: PulsePersonalResponseResponse | null | undefined): AnalysisTranslationSignal | null {
-  const signal = personalResponse?.summary.signals
-    .filter(item => item.strength !== 'insufficient')
-    .sort((a, b) => signalRank(b) - signalRank(a))[0] ?? null;
+  const signal = strongestPersonalResponseSignal(personalResponse);
   if (!signal) return null;
   const isFueling = signal.kind === 'fueling_response';
   return withEffect({
@@ -338,6 +351,100 @@ function primaryFromPersonalResponse(personalResponse: PulsePersonalResponseResp
     targetPath: PERSONAL_RESPONSE_PATH,
     resultPreview: resultPreviewForTargetPath(PERSONAL_RESPONSE_PATH, 'today_action'),
   }, 'today_action');
+}
+
+function strongestPersonalResponseSignal(personalResponse: PulsePersonalResponseResponse | null | undefined): PulsePersonalResponseSignal | null {
+  return personalResponse?.summary.signals
+    .filter(item => item.strength !== 'insufficient')
+    .sort((a, b) => signalRank(b) - signalRank(a))[0] ?? null;
+}
+
+function decisionQualityCanCalibrate(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): boolean {
+  if (!decisionQuality) return false;
+  const hasRepeatedTheme = decisionQuality.repeatedThemes.some(theme => theme.count >= 2);
+  const hasEvidence = decisionQuality.bestEvidence.length > 0 || hasRepeatedTheme;
+  return hasEvidence && (decisionQuality.status === 'helpful' || decisionQuality.status === 'needs_strategy_change');
+}
+
+function buildLearningCalibration(
+  decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
+  personalResponse: PulsePersonalResponseResponse | null | undefined,
+  fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null | undefined,
+): AnalysisTranslationSignal {
+  const responseSignal = strongestPersonalResponseSignal(personalResponse);
+  const fuelingTrend = fuelingTrendSummaryForDisplay(fuelingOutcomeBaseline);
+  const fuelingGap = fuelingLearningGapSummary(fuelingOutcomeBaseline);
+  const fuelingReady = isFuelingTrendReady(fuelingOutcomeBaseline);
+  const readyNotes: string[] = [];
+  const watchNotes: string[] = [];
+  const evidence: string[] = [];
+
+  if (decisionQualityCanCalibrate(decisionQuality)) {
+    readyNotes.push(`Decision Quality: ${decisionQuality!.statusLabel}; ${decisionQuality!.suggestedAdjustment}`);
+    evidence.push(...decisionQuality!.bestEvidence);
+  } else if (decisionQuality && decisionQuality.status !== 'insufficient_evidence') {
+    watchNotes.push(`Decision Quality: ${decisionQuality.statusLabel}; ${decisionQuality.suggestedAdjustment}`);
+    evidence.push(...decisionQuality.bestEvidence);
+  }
+
+  if (responseSignal?.strength === 'useful') {
+    readyNotes.push(`Reaktionsmodell: ${responseSignal.nextAdjustment}`);
+    evidence.push(...responseSignal.evidence);
+  } else if (responseSignal?.strength === 'learning') {
+    watchNotes.push(`${responseSignal.kind === 'fueling_response' ? 'Fueling-Reaktion' : 'Reaktionsmodell'}: ${responseSignal.nextAdjustment}`);
+    evidence.push(...responseSignal.evidence);
+  }
+
+  if (fuelingReady) {
+    readyNotes.push(fuelingTrend ? `Fueling: ${fuelingTrend}` : `Fueling: ${fuelingTrendEvidenceLabel(fuelingOutcomeBaseline)} vollstaendig`);
+    evidence.push(...(fuelingOutcomeBaseline?.evidence ?? []));
+  } else if (fuelingGap) {
+    watchNotes.push(`Fueling: ${fuelingGap}`);
+    evidence.push(...(fuelingOutcomeBaseline?.evidence ?? []));
+  }
+
+  if (readyNotes.length > 0) {
+    const hasWatchRemainder = watchNotes.length > 0;
+    const targetPath = decisionQualityCanCalibrate(decisionQuality) ? DECISION_QUALITY_PATH : PERSONAL_RESPONSE_PATH;
+    return withEffect({
+      label: 'Lernkalibrierung',
+      title: hasWatchRemainder ? 'Empfehlung darf teilweise lernen' : 'Empfehlung darf lernen',
+      summary: hasWatchRemainder
+        ? `Empfehlung darf lernen: ${readyNotes.join(' · ')}. Watch-Kontext bleibt: ${watchNotes.join(' · ')}.`
+        : `Empfehlung darf lernen: ${readyNotes.join(' · ')}.`,
+      evidence: unique(evidence, 4),
+      tone: decisionQuality?.status === 'needs_strategy_change' ? 'rose' : 'green',
+      actionLabel: 'Kalibrierung prüfen',
+      targetPath,
+      resultPreview: 'Öffnet die Lern-Evidenz als Tageshandlung. Plan und Garmin bleiben unverändert; Pulse schreibt keine neue Empfehlung ohne deinen nächsten expliziten Schritt.',
+    }, 'today_action');
+  }
+
+  if (watchNotes.length === 0) {
+    return withEffect({
+      label: 'Lernkalibrierung',
+      title: 'Lernevidenz offen',
+      summary: 'Noch nicht genug wiederholte Decision-Quality-, Reaktions- oder Fueling-Evidenz, um die nächste Empfehlung zu verändern.',
+      evidence: [],
+      tone: 'muted',
+    }, 'watch_context');
+  }
+
+  const targetPath = fuelingLearningActionTargetPath(fuelingOutcomeBaseline)
+    ?? (responseSignal ? PERSONAL_RESPONSE_PATH : DECISION_QUALITY_PATH);
+  const actionLabel = fuelingOutcomeBaseline?.learningReadiness?.nextAction?.label
+    ?? (responseSignal ? 'Lernevidenz prüfen' : 'Entscheidungsqualität prüfen');
+
+  return withEffect({
+    label: 'Lernkalibrierung',
+    title: 'Noch nicht kalibrieren',
+    summary: `Noch Watch-Kontext: ${watchNotes.join(' · ')}.`,
+    evidence: unique(evidence, 4),
+    tone: 'amber',
+    actionLabel,
+    targetPath,
+    resultPreview: resultPreviewForTargetPath(targetPath, 'watch_context'),
+  }, 'watch_context');
 }
 
 function watchFromGoal(goalProjection: PulseGoalProjectionResponse | null | undefined): AnalysisTranslationSignal | null {
@@ -417,6 +524,7 @@ function watchFromPersonalResponse(personalResponse: PulsePersonalResponseRespon
 
 export function buildAnalysisTranslation({
   decisionQuality,
+  fuelingOutcomeBaseline,
   goalProjection,
   personalResponse,
   planTrace,
@@ -445,13 +553,16 @@ export function buildAnalysisTranslation({
       tone: 'muted' as const,
     }, 'watch_context');
   const trainingRisk = buildTrainingRiskContract(planTrace, trainingAnalytics);
+  const learning = buildLearningCalibration(decisionQuality, personalResponse, fuelingOutcomeBaseline);
 
   return {
     trainingRisk,
+    learning,
     primary,
     watch,
     supportEvidence: unique([
       ...trainingRisk.evidence,
+      ...learning.evidence,
       ...primary.evidence,
       ...watch.evidence,
       decisionQuality?.bestEvidence[0],

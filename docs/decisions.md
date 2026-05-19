@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Data-Lernkalibrierung respektiert Evidenzgates
+
+- **Decision:** Data > Analyse bekommt eine read-only `Lernkalibrierung`, die Decision Quality, Personal Response und Fueling-Baseline zusammenfasst. Sie markiert nur belastbare Lernsignale als `Tageshandlung`; unfertige oder zu schwache Fueling-/Decision-Evidenz bleibt `Watch-Kontext`. Fueling-Trendtexte werden ueber einen gemeinsamen Gate erst ab mindestens drei vergleichbaren kompletten During-Logs angezeigt.
+- **Why:** Track `Lernschleifen` soll sichtbar lernen, aber schwache Evidenz nicht als Coaching-Sicherheit ausgeben. Die Data-Flaeche sagt damit, was die naechste Empfehlung wirklich veraendern darf und welche Evidenz zuerst geschlossen werden muss.
+- **Alternatives:** Fueling-Trendtexte anzeigen, sobald irgendein `trendSummary` geliefert wird (zu selbstsicher); Decision Quality, Personal Response und Fueling weiter getrennt bewerten (mehr Interpretationsarbeit); Lernkalibrierung direkt in Home oder Plan mutieren lassen (hidden write); Fueling-Gates nur im Backend vermuten (UI waere nicht robust gegen fehlerhafte Payloads).
+- **Decided by:** Codex, im zweiten `Lernschleifen`-Pass nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Plan-Wochenentscheidungen bekommen lokale Receipts
 
 - **Decision:** Der `PlanWeeklyDecisionContract` kann fuer `Beibehalten`, `Anpassen` und `Spaeter` explizite lokale Decision Receipts erzeugen. Das Panel speichert den Receipt nur nach dem Klick `Entscheidung merken`, zeigt ihn bei gleicher Contract-Signatur wieder an und macht ihn auch nach Data/Home-Deep-Links zu `#plan-weekly-decision` sichtbar. Receipts speichern keine Plan- oder Garmin-Aenderung.

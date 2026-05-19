@@ -1,4 +1,5 @@
 import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
+import { fuelingLearningActionTargetPath, fuelingTrendSummaryForDisplay } from '../pulse/fueling-learning';
 
 function chip(label: string, value: string | number | null | undefined): string | null {
   if (value == null || value === '') return null;
@@ -35,12 +36,6 @@ function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | nu
   return `Nächster Lernlog: ${target}Dauer, Carbs und GI-Komfort zusammen erfassen. Flaschen/Pulver mitschreiben; ${hydrationLearningContext(baseline)}`;
 }
 
-function learningActionTargetPath(baseline: PulseFuelingOutcomeBaseline): string | null {
-  const nextAction = baseline.learningReadiness?.nextAction ?? null;
-  if (!nextAction || nextAction.kind === 'log_next_long_session' || !nextAction.activityId) return null;
-  return `/plan/activity/${nextAction.activityId}#activity-fueling-log`;
-}
-
 export function FuelingOutcomeBaselineBlock({
   baseline,
   onOpenNextAction,
@@ -72,8 +67,8 @@ export function FuelingOutcomeBaselineBlock({
   const hydrationGap = hydrationGapText(baseline);
   const nextLearningLog = nextLearningLogText(baseline);
   const nextLearningAction = baseline.learningReadiness?.nextAction ?? null;
-  const nextLearningActionTargetPath = learningActionTargetPath(baseline);
-  const trendSummary = baseline.trendSummary?.trim() || null;
+  const nextLearningActionTargetPath = fuelingLearningActionTargetPath(baseline);
+  const trendSummary = fuelingTrendSummaryForDisplay(baseline);
 
   return (
     <div

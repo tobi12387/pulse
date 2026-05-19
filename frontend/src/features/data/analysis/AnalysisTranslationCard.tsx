@@ -1,5 +1,6 @@
 import type {
   PulseDailyDecisionQualityResponse,
+  PulseFuelingOutcomeBaseline,
   PulseGoalProjectionResponse,
   PulsePersonalResponseResponse,
   PulsePlanTrace,
@@ -10,6 +11,7 @@ import { buildAnalysisTranslation, type AnalysisTranslationSignal, type Analysis
 
 type Props = {
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined;
+  fuelingOutcomeBaseline?: PulseFuelingOutcomeBaseline | null | undefined;
   goalProjection: PulseGoalProjectionResponse | null | undefined;
   personalResponse: PulsePersonalResponseResponse | null | undefined;
   planTrace: PulsePlanTrace | null | undefined;
@@ -221,6 +223,7 @@ function TrainingRiskBlock({
 
 export function AnalysisTranslationCard({
   decisionQuality,
+  fuelingOutcomeBaseline,
   goalProjection,
   personalResponse,
   planTrace,
@@ -230,6 +233,7 @@ export function AnalysisTranslationCard({
   const navigate = useNavigate();
   const translation = buildAnalysisTranslation({
     decisionQuality,
+    fuelingOutcomeBaseline,
     goalProjection,
     personalResponse,
     planTrace,
@@ -256,6 +260,7 @@ export function AnalysisTranslationCard({
       </p>
 
       <TrainingRiskBlock signal={translation.trainingRisk} onNavigate={navigate} />
+      <SignalBlock signal={translation.learning} label="Lernkalibrierung" onNavigate={navigate} />
       <SignalBlock signal={translation.primary} label="Handlungsrelevant" onNavigate={navigate} />
       <SignalBlock signal={translation.watch} label="Interessant, aber noch nicht entscheidend" onNavigate={navigate} />
 

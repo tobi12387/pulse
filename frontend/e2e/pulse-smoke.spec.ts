@@ -430,6 +430,87 @@ test('Data analysis exposes fueling evidence as a concrete learning loop', async
   await expect(page.locator('#data-personal-response')).toBeVisible();
 });
 
+test('Data analysis keeps learning calibration gated until comparable fueling evidence is complete', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 58,
+      status: 'watch',
+      statusLabel: 'Beobachten',
+      repeatedThemes: [{ theme: 'Fueling nach langen Einheiten', count: 2, lastSeen: '2026-04-30', status: 'watch', evidence: ['2x ohne kompletten During-Log'] }],
+      bestEvidence: ['Fueling-Entscheidungen wiederholen sich, aber Outcome-Evidenz ist noch offen.'],
+      evidence: [],
+      suggestedAdjustment: 'Noch nicht hochregeln; erst komplette Fueling-Logs schließen.',
+    },
+    personalResponse: {
+      summary: {
+        generatedAt: '2026-05-01T00:00:00.000Z',
+        range: { from: '2026-03-20', to: '2026-05-01', days: 42 },
+        strength: 'learning',
+        headline: 'Pulse lernt Fueling-Reaktionen.',
+        signals: [{
+          kind: 'fueling_response',
+          label: 'Fueling-Baseline offen',
+          strength: 'learning',
+          summary: 'Lange Einheiten brauchen vollständige During-Logs.',
+          evidence: ['Noch ein kompletter During-Log fehlt.'],
+          nextAdjustment: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+        }],
+        missingEvidence: [],
+      },
+    },
+    outcomeBaseline: {
+      status: 'learning',
+      label: 'Fueling-Baseline lernt',
+      summary: 'Lange Einheiten brauchen vergleichbare During-Logs.',
+      latestLogDate: '2026-04-30',
+      observedCarbsPerHour: 48,
+      targetCarbsPerHour: { min: 55, max: 65 },
+      bottles750Ml: 3,
+      powderG: 210,
+      fluidMlPerHour: 680,
+      sodiumMgPerHour: null,
+      hydrationContextSummary: null,
+      hydrationEvidenceGaps: ['Hitze nicht gemessen'],
+      trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
+      evidence: ['2 lange During-Logs vollständig'],
+      learningReadiness: {
+        comparableCompleteLogs: 2,
+        requiredComparableCompleteLogs: 3,
+        readyForTrendSummary: false,
+        missingEvidence: ['GI-Komfort fehlt strukturiert beim vorhandenen Carb-Log.'],
+        nextAction: {
+          kind: 'complete_gi_comfort',
+          label: 'GI-Komfort ergänzen',
+          detail: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+          activityId: 'activity-fueling-gap',
+        },
+      },
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Lernkalibrierung');
+  await expect(card).toContainText('Noch nicht kalibrieren');
+  await expect(card).toContainText('Wirkung: Watch-Kontext');
+  await expect(card).toContainText('Trend-Evidenz 2/3');
+  await expect(card).toContainText('GI-Komfort ergänzen');
+  await expect(card).not.toContainText('Fueling-Trend:');
+
+  await card.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-fueling-gap#activity-fueling-log');
+});
+
 test('Data analysis opens personal response evidence from the watch response signal', async ({ page }) => {
   await mockPulseApi(page, {
     goalProjection: {
