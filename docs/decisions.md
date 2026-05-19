@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Performance-OS-Backlog startet den zweiten Pass bei Tagesentscheidung
+
+- **Decision:** Nachdem die ersten Baselines fuer `Tagesentscheidung`, `Trainingsanpassung` und `Lernschleifen` geliefert sind, startet die naechste autonome Produktreihenfolge wieder bei Track 1. Die naechsten empfohlenen Pakete sind: Home macht die Folge der letzten Entscheidung sichtbar, Plan macht Wochenentscheidungen bestaetigbar, Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.
+- **Why:** Die drei von Tobi gesetzten Performance-OS-Spuren sollen weiter die harte Reihenfolge bilden, statt nach dem Trainingsrisiko-Contract erneut frei zu planen. Der zweite Pass baut auf den gelieferten v1-Flaechen auf und bleibt beim Ziel: weniger Interpretation, mehr ruhige naechste Entscheidung.
+- **Alternatives:** Track 3 weiter als "next active" stehen lassen (wuerde denselben Slice erneut auswaehlen); eine neue vierte Spur erfinden (bricht die Vorgabe); direkt Fueling-Trends bauen, bevor die Evidenzgates erfuellt sind (zu selbstsicher).
+- **Decided by:** Codex, nach Merge und Deploy des Data-Trainingsrisiko-Contracts.
+- **Status:** active.
+
 ## 2026-05-19 — Data-Analyse besitzt einen Trainingsrisiko-Contract
 
 - **Decision:** Data > Analyse zeigt einen kompakten read-only `Trainingsrisiko`-Contract, der Plan-Risikosignale, TSB/Load, Goal-Limiter, Power-Qualitaet und Durability in eine naechste Einordnung uebersetzt. Plan-/Load-Risiko routet zur Wochenentscheidung, blockierte Messgrundlage zur Power-Evidenz, stabile Evidenz bleibt Watch-Kontext.

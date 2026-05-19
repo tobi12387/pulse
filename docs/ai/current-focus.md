@@ -11,7 +11,7 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Performance Operating System spec is merged and Tobi has granted autonomous follow-up execution.
 - Home/Heute is the primary daily translator. It now combines readiness, load, recovery, mental boundary, data trust, Garmin execution, goal pressure, adaptation, personal response, fueling, analysis, feedback and continuity evidence into `Heute entscheidet`, `Seit letzter Entscheidung`, `Sicherste Option` and a routed CTA.
 - Plan is the adaptation and execution surface: weekly review, change inbox, scenario preview/apply, Garmin execution chain, goal/season evidence and explicit no-hidden-write contracts.
-- Data is the evidence workbench: `Heute relevant`, `Trends`, `Datenqualitaet`, `Analyse`, recovery/mental evidence, personal response, goal projection, decision quality, fueling readiness and power/durability quality.
+- Data is the evidence workbench: `Heute relevant`, `Trends`, `Datenqualitaet`, `Analyse`, recovery/mental evidence, personal response, goal projection, decision quality, fueling readiness, power/durability quality and the read-only training-risk contract.
 - Settings is readiness/diagnostics: Garmin, Push/PWA, profile, support preferences and local ops state.
 - Web Push VAPID is configured on the server; Push activation remains per browser/device.
 
@@ -20,11 +20,15 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Product north star: Pulse is a personal resilience and performance coach that connects physical training, nutrition, recovery and mental wellbeing into one understandable daily next action.
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
+- First-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; the next autonomous pass starts again at Track 1 unless Tobi reverses the order.
 - Current hard Performance-OS backlog order:
-  1. **Lernschleifen:** Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.
+  1. **Tagesentscheidung:** Home macht die Folge der letzten Entscheidung als naechsten Tagescheck sichtbar.
+  2. **Trainingsanpassung:** Plan macht Wochenentscheidungen bestaetigbar und spaeter wiederauffindbar, ohne hidden writes.
+  3. **Lernschleifen:** Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
 - Shipped baselines:
   - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence and the local Daily Decision signal registry; reopen only for regressions or a new explicit Track-1 package.
   - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls and Home/Data handoffs to the same weekly decision surface; reopen only for regressions or a new explicit Track-2 package.
+  - **Lernschleifen** delivered Data action contracts, Fueling learning-loop copy, Home watch-context gating and the Data training-risk contract; reopen only for regressions or the next explicit Track-3 package.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.
 - Focus navigation baseline is Heute (`/`), Data, Plan, Insights and Settings. Coach remains a compatibility/deep-link route and prepared-prompt mode unless a recurring flow proves it needs primary navigation again.
 - Completed implementation plans live in `docs/superpowers/plans/completed/`; do not reopen them as backlog without a new regression or explicit reversal.

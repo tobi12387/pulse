@@ -27,11 +27,34 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 - Runtime changes still deploy only after the PR is merged to `main`.
 - Docs-only and planning-only PRs normally do not require server deploy.
 
+## Current Package Order
+
+The first pass through all three Performance-OS tracks is shipped: `Tagesentscheidung` delivered Home closure/registry work, `Trainingsanpassung` delivered the weekly decision contract and handoffs, and `Lernschleifen` delivered Data action contracts plus the training-risk contract.
+
+Next autonomous product work starts the second pass in the same hard order unless Tobi explicitly reverses it:
+
+1. `Tagesentscheidung`: Home macht die Folge der letzten Entscheidung als naechsten Tagescheck sichtbar.
+2. `Trainingsanpassung`: Plan macht Wochenentscheidungen bestaetigbar und spaeter wiederauffindbar, ohne hidden writes.
+3. `Lernschleifen`: Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
+
 ## Track 1: Tagesentscheidung
 
-Status: **shipped baseline**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. Reopen Track 1 only for regressions or a new explicit package.
+Status: **next active package (second Performance-OS pass)**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry.
 
-Package: **Home lernt abgeschlossene Tage vollstaendig.**
+Next package: **Home macht die Folge der letzten Entscheidung sichtbar.**
+
+Outcome: Home should show what Pulse learned from the last planned or off-plan decision, how that changed today's safest option or CTA, and where the smallest confirmation step lives. The surface stays one daily decision, not a new dashboard.
+
+Why it matters: this closes the WHOOP/Oura-style daily command loop with MacroFactor-style "what changed since last check-in" feedback, using existing Activity, Data and Plan evidence.
+
+Best next package PR:
+
+- Extend Daily Decision golden scenarios for last-decision outcome, signal priority, CTA target, safest option and goal effect.
+- Connect existing Activity feedback, Decision Quality and Personal Response evidence into the Home result preview without adding hidden Plan/Garmin writes.
+- Keep closure capture on the existing Activity/Data/Plan surfaces instead of creating a second feedback form.
+- Use one rendered Home smoke for the click path; keep the rest in fast contract tests.
+
+Baseline package (shipped): **Home lernt abgeschlossene Tage vollstaendig.**
 
 Outcome: completed days become learning evidence, not loose ends. After planned or off-plan training, Pulse names the smallest closure step, explains why it matters and routes to the exact existing surface that captures the evidence.
 
@@ -52,9 +75,22 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped baseline**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, and receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`. Reopen Track 2 only for regressions or a new explicit package.
+Status: **queued after Track 1 for the second Performance-OS pass**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, and receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`.
 
-Package: **Plan macht Wochenentscheidung aktiver.**
+Next package: **Plan macht Wochenentscheidungen bestaetigbar.**
+
+Outcome: after previewing `Beibehalten`, `Anpassen` or `Spaeter`, Plan should leave an explicit decision receipt that Tobi can revisit from Plan and incoming Home/Data handoffs. The receipt explains intent and next consequence; actual plan/Garmin writes still require explicit existing apply/sync actions.
+
+Why it matters: this turns the TrainerRoad/TrainingPeaks/JOIN weekly control loop from preview-only into a traceable decision ritual without making the first click destructive.
+
+Best next package PR:
+
+- Add a read-only decision receipt state for the weekly decision contract.
+- Route Plan Review, Change Inbox and Home/Data handoffs to the same receipt or open decision state.
+- Show what remains pending before Garmin/calendar execution.
+- Add fast tests proving receipts do not mutate plan or Garmin before explicit apply/sync.
+
+Baseline package (shipped): **Plan macht Wochenentscheidung aktiver.**
 
 Outcome: Plan feels like a weekly command surface, not a list plus diagnostics. It tells Tobi what changed, what decision is open, and what accepting/changing/deferring does to the week.
 
@@ -75,19 +111,33 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **next active package**.
+Status: **queued after Track 2 for the second Performance-OS pass**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract.
 
-Package: **Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.**
+Next package: **Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.**
+
+Outcome: Data should explain when repeated decisions or fueling logs are strong enough to change the next recommendation, and when they are still only watch context. Nutrition trend summaries stay gated until comparable complete evidence exists.
+
+Why it matters: this is the MacroFactor/Intervals/WKO layer: Pulse should learn visibly from repeated outcomes without turning weak evidence into confident coaching.
+
+Best next package PR:
+
+- Gate trend summaries behind comparable complete logs and explicit quality thresholds.
+- Connect Decision Quality, Personal Response and Fueling evidence into one "what changed / not enough evidence yet" learning note.
+- Keep action contracts explicit: `today_action`, `plan_decision` or `watch_context`.
+- Add fast tests for threshold boundaries and one Data/Home smoke for the rendered learning handoff.
+
+Baseline package (shipped): **Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.**
 
 Outcome: deep evidence ends in a concrete next action only when it is actionable. Data > Analyse explains whether the evidence changes today's action, changes a plan decision, or stays as watch context.
 
 Why it matters: this is Intervals.icu/WKO depth translated into Oura/WHOOP-style daily clarity and MacroFactor-like coaching updates. It prevents more analytics from becoming more interpretation work.
 
-Best next package PR:
+Shipped package PRs:
 
 - Standardize Data > Analyse action contracts across Personal Response, Durability, Power quality, Goal Projection, Decision Quality and Fueling evidence.
 - Add fast tests for mapping analysis signal type to CTA label, target path and result preview.
 - Only escalate analysis evidence into Home when it beats current-day Recovery, Mental, Data trust, Fueling or Garmin execution needs.
+- Add a compact `Trainingsrisiko` contract that routes Plan/load risk to the weekly decision, blocked Power quality to Data evidence and stable states to Watch-Kontext.
 - Keep nutrition trend summaries gated until comparable complete evidence exists.
 
 Done evidence:
