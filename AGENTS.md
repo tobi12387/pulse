@@ -27,15 +27,35 @@ Before broad code exploration, read the compact AI working set and then expand o
 
 1. [`docs/ai/session-brief.md`](docs/ai/session-brief.md)
 2. [`docs/ai/current-focus.md`](docs/ai/current-focus.md)
-3. [`docs/ai/non-negotiables.md`](docs/ai/non-negotiables.md)
-4. [`docs/ai/context-map.md`](docs/ai/context-map.md)
+3. [`docs/ai/next-product-packages.md`](docs/ai/next-product-packages.md)
+4. [`docs/ai/non-negotiables.md`](docs/ai/non-negotiables.md)
+5. [`docs/ai/context-map.md`](docs/ai/context-map.md)
 
 Do not re-read long histories by default. Use:
 
 - `docs/ai/current-focus.md` for the current snapshot, not a PR archive.
+- `docs/ai/next-product-packages.md` for the hard Performance-OS backlog order.
 - `docs/ai/non-negotiables.md` for active constraints and product-quality rules.
 - `docs/ai/context-map.md` to pick the smallest relevant files.
 - `docs/decisions.md` only for recent, disputed, reversed or architectural context.
+
+## Performance-OS build discipline
+
+Default to weekly, package-shaped product work instead of isolated micro-slices. A good runtime PR should normally advance one package with 3-5 tightly related changes that share the same evidence and verification surface, for example Home completion learning, Plan weekly decision control, or Data analysis-to-action translation. Use a smaller micro-slice only for urgent fixes, regressions, CI/deploy repair, docs-only workflow updates, or when the package would otherwise mix unrelated ownership boundaries.
+
+The hard Performance-OS backlog order lives in [`docs/ai/next-product-packages.md`](docs/ai/next-product-packages.md):
+
+1. **Tagesentscheidung:** Home learns completed days fully and keeps the daily answer concrete.
+2. **Trainingsanpassung:** Plan makes the weekly decision active and explicit.
+3. **Lernschleifen:** Data turns analysis, feedback and fueling evidence into the next useful action.
+
+Every new product slice must name which track it serves. Work that does not serve one of these tracks is deferred unless Tobi explicitly reprioritizes it.
+
+For `frontend/src/pulse/daily-decision.ts` and other Daily Decision contract logic, prefer fast unit/golden tests for signal priority, CTA target, safest option and goal impact before adding Playwright. Use Playwright for 1-2 rendered route/click-path smokes per package, not as the default proof for every signal branch.
+
+When adding or changing multiple Home decision signals, move toward a small data-driven signal registry/priority table instead of adding more one-off conditionals. Keep the implementation incremental, but do not knowingly deepen the bespoke signal maze when a local registry would make the next package safer.
+
+When local checks are green and CI has no special review risk, prefer GitHub auto-merge instead of actively waiting in chat. Inspect and fix failed checks. Deploy runtime changes only after the PR is merged to `main`; docs-only/planning-only PRs normally do not need server deploy.
 
 ## Project-level Codex skills
 
@@ -55,8 +75,8 @@ Use these skills when their descriptions match the task before falling back to g
 For non-trivial coding, review, refactor, planning, or AI-workflow changes, apply the repo-local `pulse-coding-discipline` skill. The intended adaptation of the Karpathy-inspired agent guidelines is:
 
 - **Think before editing:** surface assumptions, ambiguity, and tradeoffs before choosing an implementation path.
-- **Simplicity first:** solve the requested problem with the smallest local change; do not add speculative scope, configurability, integrations, or abstractions.
-- **Surgical changes:** touch only files needed for the task, match existing style, and clean up only unused code created by your own change.
+- **Simplicity within the package:** solve the selected Performance-OS package with the simplest coherent set of changes. Do not shrink shared-evidence work into repeated one-signal micro-slices, but also do not add speculative scope, configurability, integrations, or abstractions.
+- **Surgical package changes:** touch only files needed for the chosen package, match existing style, and clean up only unused code created by your own change.
 - **Goal-driven execution:** define concrete success criteria and verify them with the narrowest relevant checks before claiming completion.
 
 These rules complement, but do not replace, the Pulse hard rules above. When they conflict, the hard rules and explicit user instructions win.
@@ -85,7 +105,7 @@ gh pr create --base main --head codex/<topic> --title "..." --body "..."
 
 Commit-message format: `type: short description` where type ∈ `feat | fix | refactor | chore | docs | test`.
 
-Update `docs/ai/current-focus.md` only when the durable work queue, manual gates or next recommendation changes. Do not append long PR history; PR details belong in GitHub and completed plan docs.
+Update `docs/ai/current-focus.md` only when the durable work queue, manual gates or next recommendation changes. Keep completed detail out of this file; use decisions, GitHub PRs, completed plans and `docs/ai/next-product-packages.md` instead.
 
 ---
 

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Performance-OS-Arbeit folgt drei harten Produktspuren
+
+- **Decision:** Pulse verankert Tobis sechs Baugeschwindigkeits-Verbesserungen als Projektvorgabe: Produktarbeit folgt den drei harten Spuren `Tagesentscheidung`, `Trainingsanpassung` und `Lernschleifen`; PRs sollen als woechentliche Produktpakete mit 3-5 zusammenhaengenden Aenderungen geplant werden, Daily-Decision-Logik bekommt schnelle Unit-/Golden-Tests vor Playwright, Home-Signalvertraege sollen datengetriebener werden, `current-focus.md` bleibt kurz, und bei gruenen lokalen Checks soll Auto-Merge bevorzugt werden.
+- **Why:** Der Engpass ist nicht fehlende Aktivitaet, sondern wiederholtes Re-Planning, zu viele Mikro-Slices, Playwright-Kosten fuer reine Contract-Logik und wachsender Einmal-Code in Home-Signalen. Die drei Spuren halten Arbeit direkt am Performance-OS-Nordstern und machen Fortschritt pro PR groesser, ohne die bestehenden Sicherheits- und Deploy-Gates aufzugeben.
+- **Alternatives:** Die Verbesserungen nur im Chat stehen lassen (nicht verbindlich); weiter jeden Signalzweig einzeln ausliefern (hoher PR-/CI-/Deploy-Overhead); eine vierte Build-Speed-Produktspur einfuehren (vermischt Produktprioritaet mit Werkzeughygiene).
+- **Decided by:** Tobi, umgesetzt von Codex.
+- **Status:** active.
+
 ## 2026-05-19 — AI-Fokus folgt Produktpaketen statt PR-Historie
 
 - **Decision:** `docs/ai/current-focus.md` bleibt wieder ein kurzer Session-Snapshot; die nächsten autonomen Performance-OS-Arbeiten werden in `docs/ai/next-product-packages.md` als Produktpakete geführt. Agents sollen neue Slices aus diesen Paketen wählen und für reine Decision-Contract-Logik zuerst schnelle Contract-/Golden-Tests bevorzugen, bevor Playwright als Route-Beweis läuft.

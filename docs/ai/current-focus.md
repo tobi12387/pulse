@@ -20,11 +20,10 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Product north star: Pulse is a personal resilience and performance coach that connects physical training, nutrition, recovery and mental wellbeing into one understandable daily next action.
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
-- Current package order:
-  1. Daily Closure And Learning Loop.
-  2. Adaptive Week Control Loop.
-  3. Analysis-To-Action Bridge.
-  4. Build-Speed Foundations.
+- Current hard Performance-OS backlog order:
+  1. **Tagesentscheidung:** Home lernt abgeschlossene Tage vollstaendig.
+  2. **Trainingsanpassung:** Plan macht Wochenentscheidung aktiver.
+  3. **Lernschleifen:** Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.
 - Focus navigation baseline is Heute (`/`), Data, Plan, Insights and Settings. Coach remains a compatibility/deep-link route and prepared-prompt mode unless a recurring flow proves it needs primary navigation again.
 - Completed implementation plans live in `docs/superpowers/plans/completed/`; do not reopen them as backlog without a new regression or explicit reversal.
@@ -42,8 +41,9 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 ## Working Notes For Agents
 
 - Start every substantial coding session from `AGENTS.md`, this file, `docs/ai/non-negotiables.md`, `docs/ai/context-map.md` and the smallest relevant package/roadmap excerpt.
-- Prefer fast contract/unit tests for decision logic before Playwright. Use Playwright for rendered route behavior, responsive checks and click-path proof.
-- Keep PRs package-shaped when possible: 2-4 tightly related contract changes are better than repeated one-signal PRs when they share the same evidence and verification surface.
+- Prefer fast contract/unit/golden tests for Daily Decision logic before Playwright. Use Playwright for 1-2 package-level rendered route/click-path smokes.
+- Keep PRs package-shaped when possible: 3-5 tightly related changes are better than repeated one-signal PRs when they share the same evidence and verification surface.
+- When a package touches multiple Home signals, move toward a data-driven signal registry/priority table instead of adding more one-off signal branches.
 - Record non-trivial priority, architecture or workflow decisions in `docs/decisions.md`.
 - Keep completed plan archives closed unless the user asks for history or regression comparison.
 
