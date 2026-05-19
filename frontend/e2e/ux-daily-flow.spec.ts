@@ -293,6 +293,72 @@ test('Home daily decision uses stale decision quality as a leading learning sign
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toContainText('Mobilität 10 Minuten');
 });
 
+test('Home daily decision opens changed last-decision follow-up before normal training', async ({ page }) => {
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: {
+        id: 'planned-after-replaced-delta',
+        userId: 'user-1',
+        plannedDate: '2026-05-01',
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 60,
+        distanceKm: null,
+        targetTss: 55,
+        archetypeId: 'endurance_steady',
+        difficultyLevel: 3.1,
+        difficultyEnergySystem: 'endurance',
+        capabilityFit: 'productive',
+        description: 'Ruhige Ausdauer.',
+        steps: null,
+        garminWorkoutId: 'garmin-workout-delta',
+        garminScheduledId: 'garmin-scheduled-delta',
+        garminSyncContract: null,
+        status: 'planned',
+        workoutFeedback: null,
+        complianceScore: null,
+        origin: 'generated',
+        userLocked: false,
+        completedActivityId: null,
+        executionStatus: 'garmin_scheduled',
+        executionMatchedAt: null,
+        executionMatchConfidence: null,
+        executionNotes: null,
+      },
+      nextWorkout: null,
+    },
+    dailyDelta: [{
+      date: '2026-05-01',
+      status: 'replaced',
+      title: 'Langer Lauf wurde durch lockere Ausfahrt ersetzt',
+      summary: 'Der geplante Laufreiz fehlt, echte Belastung war niedriger.',
+      score: 41,
+      loadDeltaTss: -34,
+      recoveryDelta: null,
+      nextPlanEffect: 'Restwoche braucht einen kleineren Planabgleich, bevor neue Intensität bestätigt wird.',
+      evidence: ['Geplant: Lauf Z3 70 min', 'Garmin: Rad Z1 45 min'],
+      targetPath: '/plan/activity/activity-replaced-delta',
+    }],
+    powerDuration: {
+      bestEfforts: [],
+      durability: null,
+      bestEffortLine: 'Keine Power-Durability-Begrenzung in diesem Test.',
+      durabilityLine: 'Durability unauffällig.',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+  });
+  await page.goto('/');
+
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Folge');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Geändert seit letzter Entscheidung');
+  await expect(decision.getByTestId('daily-decision-next-steps')).toContainText('Planfolge prüfen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Restwoche braucht einen kleineren Planabgleich');
+
+  await decision.getByRole('button', { name: 'Planfolge prüfen', exact: true }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-replaced-delta');
+});
+
 test('Home daily decision uses recovery pressure as a leading body signal', async ({ page }) => {
   await mockPulseApi(page, {
     home: {
