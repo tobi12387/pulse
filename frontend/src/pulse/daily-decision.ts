@@ -613,29 +613,42 @@ const signalTonePriority: Record<DailyDecisionSignalTone, number> = {
   muted: 4,
 };
 
-const signalLabelPriority: Record<string, number> = {
-  Mental: 0,
-  Lernen: 0,
-  Recovery: 0,
-  Anpassung: 0,
-  Daten: 1,
-  Analyse: 1,
-  Fueling: 2,
-  'Fueling-Lernen': 2,
-  Feedback: 3,
-  Ziel: 4,
-  Training: 5,
-  Alltag: 6,
-  Garmin: 6,
-  Reaktion: 7,
-  Koerper: 7,
-  Belastung: 8,
-};
+export interface DailyDecisionSignalRegistryEntry {
+  priority: number;
+  defaultActionLabel?: string;
+  preferSignalActionLabel?: boolean;
+  requiredTone?: DailyDecisionSignalTone;
+  actionLabelByTone?: Partial<Record<DailyDecisionSignalTone, string>>;
+  actionFromDetailPrefix?: boolean;
+}
+
+export const dailyDecisionSignalRegistry = {
+  Mental: { priority: 0, defaultActionLabel: 'Check-in öffnen', preferSignalActionLabel: true },
+  Lernen: { priority: 0, defaultActionLabel: 'Lernen prüfen' },
+  Recovery: { priority: 0, defaultActionLabel: 'Recovery ansehen' },
+  Anpassung: { priority: 0, defaultActionLabel: 'Anpassung prüfen', actionFromDetailPrefix: true },
+  Daten: { priority: 1, defaultActionLabel: 'Daten prüfen' },
+  Analyse: { priority: 1, defaultActionLabel: 'Analyse prüfen', preferSignalActionLabel: true },
+  Fueling: { priority: 2, defaultActionLabel: 'Fueling schließen' },
+  'Fueling-Lernen': { priority: 2, defaultActionLabel: 'Fueling vorbereiten' },
+  Feedback: { priority: 3, defaultActionLabel: 'Feedback erfassen', preferSignalActionLabel: true },
+  Ziel: { priority: 4, defaultActionLabel: 'Ziel prüfen', preferSignalActionLabel: true, requiredTone: 'rose' },
+  Training: { priority: 5, actionLabelByTone: { rose: 'Training anpassen', amber: 'Training prüfen' } },
+  Alltag: { priority: 6, defaultActionLabel: 'Alternative prüfen' },
+  Garmin: { priority: 6, defaultActionLabel: 'Garmin prüfen' },
+  Reaktion: { priority: 7, defaultActionLabel: 'Reaktion prüfen' },
+  Koerper: { priority: 7, defaultActionLabel: 'Readiness prüfen' },
+  Belastung: { priority: 8, defaultActionLabel: 'Belastung prüfen' },
+} satisfies Record<string, DailyDecisionSignalRegistryEntry>;
+
+function signalRegistryEntry(label: string): DailyDecisionSignalRegistryEntry | undefined {
+  return dailyDecisionSignalRegistry[label as keyof typeof dailyDecisionSignalRegistry];
+}
 
 function prioritizeSignals(signals: DailyDecisionSignal[]): DailyDecisionSignal[] {
   return [...signals].sort((a, b) => (
     signalTonePriority[a.tone] - signalTonePriority[b.tone]
-    || (signalLabelPriority[a.label] ?? 99) - (signalLabelPriority[b.label] ?? 99)
+    || (signalRegistryEntry(a.label)?.priority ?? 99) - (signalRegistryEntry(b.label)?.priority ?? 99)
   ));
 }
 
@@ -653,24 +666,13 @@ function leadingFactorSummary(signals: DailyDecisionSignal[], fallbackLead?: str
 }
 
 function signalActionCta(signal: DailyDecisionSignal): string | null {
-  if (signal.label === 'Anpassung') return signal.detail.split(':')[0]?.trim() || 'Anpassung prüfen';
-  if (signal.label === 'Daten') return 'Daten prüfen';
-  if (signal.label === 'Fueling') return 'Fueling schließen';
-  if (signal.label === 'Mental') return signal.actionLabel ?? 'Check-in öffnen';
-  if (signal.label === 'Recovery') return 'Recovery ansehen';
-  if (signal.label === 'Lernen') return 'Lernen prüfen';
-  if (signal.label === 'Analyse') return signal.actionLabel ?? 'Analyse prüfen';
-  if (signal.label === 'Fueling-Lernen') return 'Fueling vorbereiten';
-  if (signal.label === 'Feedback') return signal.actionLabel ?? 'Feedback erfassen';
-  if (signal.label === 'Alltag') return 'Alternative prüfen';
-  if (signal.label === 'Garmin') return 'Garmin prüfen';
-  if (signal.label === 'Reaktion') return 'Reaktion prüfen';
-  if (signal.label === 'Ziel' && signal.tone === 'rose') return signal.actionLabel ?? 'Ziel prüfen';
-  if (signal.label === 'Belastung') return 'Belastung prüfen';
-  if (signal.label === 'Koerper') return 'Readiness prüfen';
-  if (signal.label === 'Training' && signal.tone === 'rose') return 'Training anpassen';
-  if (signal.label === 'Training' && signal.tone === 'amber') return 'Training prüfen';
-  return null;
+  const entry = signalRegistryEntry(signal.label);
+  if (!entry) return null;
+  if (entry.requiredTone && signal.tone !== entry.requiredTone) return null;
+  if (entry.actionLabelByTone) return entry.actionLabelByTone[signal.tone] ?? null;
+  if (entry.actionFromDetailPrefix) return signal.detail.split(':')[0]?.trim() || (entry.defaultActionLabel ?? null);
+  if (entry.preferSignalActionLabel && signal.actionLabel) return signal.actionLabel;
+  return entry.defaultActionLabel ?? null;
 }
 
 function signalActionResultPreview(targetPath: string): string {

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Daily-Decision-Signale nutzen eine lokale Registry
+
+- **Decision:** `frontend/src/pulse/daily-decision.ts` hält Signalpriorität und Standard-CTA-Copy in einer lokalen `dailyDecisionSignalRegistry`. Spezielle Fälle wie `Training` nach Tone, `Ziel` nur bei rotem Risiko, signal-eigene Actionlabels und Anpassungs-Detailpräfixe bleiben explizit in dieser Registry beschrieben.
+- **Why:** Home hat inzwischen viele ähnliche Signalpfade für Recovery, Daten, Analyse, Fueling, Feedback, Garmin, Ziel und Training. Eine zentrale Registry macht Prioritäts- und CTA-Änderungen schneller testbar und verhindert, dass neue Performance-OS-Slices weitere lose If-Zweige im Daily-Decision-Vertrag anhäufen.
+- **Alternatives:** Die bestehende Priority-Map plus lange CTA-If-Kette beibehalten (zu fehleranfällig bei neuen Signalpaketen); eine globale Signal-Engine einführen (zu groß für den aktuellen Track-1-Schritt); Priorität nur über Playwright absichern (zu langsam für Contract-Logik).
+- **Decided by:** Codex, im Track `Tagesentscheidung` nach Tobis Vorgabe, Signalverträge datengetriebener zu machen.
+- **Status:** active.
+
 ## 2026-05-19 — Performance-OS-Arbeit folgt drei harten Produktspuren
 
 - **Decision:** Pulse verankert Tobis sechs Baugeschwindigkeits-Verbesserungen als Projektvorgabe: Produktarbeit folgt den drei harten Spuren `Tagesentscheidung`, `Trainingsanpassung` und `Lernschleifen`; PRs sollen als woechentliche Produktpakete mit 3-5 zusammenhaengenden Aenderungen geplant werden, Daily-Decision-Logik bekommt schnelle Unit-/Golden-Tests vor Playwright, Home-Signalvertraege sollen datengetriebener werden, `current-focus.md` bleibt kurz, und bei gruenen lokalen Checks soll Auto-Merge bevorzugt werden.
