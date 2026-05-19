@@ -16,6 +16,7 @@ test('delivery manifest maps Home decision changes to the Tagesentscheidung gate
   assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung'));
   assert.equal(manifest.deployRequired, true);
   assert.equal(manifest.autoMergeEligible, true);
+  assert.equal(manifest.deliveryLane, 'fast_lane');
 });
 
 test('delivery manifest maps Plan contract changes to the Trainingsanpassung gate', () => {
@@ -53,6 +54,7 @@ test('delivery manifest keeps docs-only changes out of deploy and product gates'
   assert.deepEqual(manifest.localChecks, ['git diff --check']);
   assert.equal(manifest.deployRequired, false);
   assert.equal(manifest.autoMergeEligible, true);
+  assert.equal(manifest.deliveryLane, 'fast_lane');
 });
 
 test('delivery manifest marks workflow, migration and dependency changes as attention risks', () => {
@@ -63,6 +65,7 @@ test('delivery manifest marks workflow, migration and dependency changes as atte
   ]);
 
   assert.equal(manifest.autoMergeEligible, false);
+  assert.equal(manifest.deliveryLane, 'full_lane');
   assert.ok(manifest.localChecks.includes('npm run test:scripts'));
   assert.ok(manifest.localChecks.includes('npm run check:migrations'));
   assert.ok(manifest.autoMergeNotes.some(note => /workflow/i.test(note)));
@@ -79,6 +82,7 @@ test('delivery manifest treats package script support as CI attention without ru
 
   assert.equal(manifest.scope, 'build_speed_support');
   assert.equal(manifest.deployRequired, false);
+  assert.equal(manifest.deliveryLane, 'full_lane');
   assert.ok(manifest.localChecks.includes('npm run test:scripts'));
   assert.ok(manifest.ciJobs.includes('build'));
   assert.ok(manifest.autoMergeNotes.some(note => /package manifest/i.test(note)));
@@ -93,8 +97,20 @@ test('delivery manifest holds mixed product tracks for explicit review', () => {
   assert.equal(manifest.scope, 'mixed_product');
   assert.deepEqual(manifest.productTracks, ['tagesentscheidung', 'trainingsanpassung']);
   assert.equal(manifest.autoMergeEligible, false);
+  assert.equal(manifest.deliveryLane, 'full_lane');
   assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung'));
   assert.ok(manifest.localChecks.includes('npm run verify:trainingsanpassung'));
+});
+
+test('delivery manifest sends backend runtime changes through the full lane', () => {
+  const manifest = buildDeliveryManifest([
+    'backend/src/pulse/plugin.ts',
+    'frontend/src/pages/Data.tsx',
+  ]);
+
+  assert.equal(manifest.deliveryLane, 'full_lane');
+  assert.equal(manifest.autoMergeEligible, false);
+  assert.ok(manifest.autoMergeNotes.some(note => /backend runtime/i.test(note)));
 });
 
 test('delivery manifest renders PR-ready markdown fields', () => {
@@ -103,6 +119,7 @@ test('delivery manifest renders PR-ready markdown fields', () => {
 
   assert.match(markdown, /# Delivery Manifest/);
   assert.match(markdown, /Track: Trainingsanpassung/);
+  assert.match(markdown, /Delivery lane: Fast Lane/);
   assert.match(markdown, /npm run verify:trainingsanpassung/);
   assert.match(markdown, /Auto-merge/);
   assert.match(markdown, /Deploy/);
