@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Home nutzt Data-Lernkalibrierung nur nach Gates
+
+- **Decision:** Home/Daily Decision nutzt die gemeinsame `Lernkalibrierung` aus Data fuer Decision Quality, Personal Response und Fueling-Evidenz. Nur `today_action`-Kalibrierung darf die Tagesentscheidung fuehren; schwache oder unvollstaendige Fueling-/Response-/Decision-Evidenz bleibt als `Watch-Kontext` sichtbar und fuehrt nicht vor Training, Recovery, Datenvertrauen, Garmin oder Plan.
+- **Why:** Track `Tagesentscheidung` soll Data-Lernen in die ruhige Home-Entscheidung bringen, ohne schwache MacroFactor-artige Trends als sichere Handlung auszugeben. Ein gemeinsamer Kalibrierungsvertrag verhindert, dass Home und Data unterschiedliche Gate-Regeln entwickeln.
+- **Alternatives:** Weiter einzelne `Lernen`, `Reaktion` und Fueling-Zweige in Home pflegen (driftet von Data ab); jede Lernevidenz fuehren lassen (zu selbstsicher); Lernkalibrierung nur in Data zeigen (Home lernt nicht sichtbar); Plan/Garmin aus Kalibrierung automatisch mutieren (hidden write).
+- **Decided by:** Codex, im dritten `Tagesentscheidung`-Pass nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Track-Verify-Kommandos werden lokaler Paket-Gate
 
 - **Decision:** Pulse bekommt die lokalen Gates `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` und `npm run verify:lernschleifen`. Jedes Gate buendelt relevante schnelle Contract-/Golden-Tests, den Frontend-Build und genau ein fokussiertes Desktop/Mobile-Smoke-Set fuer den jeweiligen Performance-OS-Track.

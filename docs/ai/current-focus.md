@@ -22,11 +22,11 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
 - First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped.
 - Current hard Performance-OS backlog order:
-  1. **Tagesentscheidung:** Home nutzt kalibrierte Data-Lernsignale nur dann als Tages-/Folgeentscheidung, wenn Evidenzgates reichen.
-  2. **Trainingsanpassung:** Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
-  3. **Lernschleifen:** Naechster Pass nur bei Regression oder neuer expliziter Data-Frage.
+  1. **Trainingsanpassung:** Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
+  2. **Tagesentscheidung:** reopen only for regressions or a new explicit Home package.
+  3. **Lernschleifen:** reopen only for regressions or a new explicit Data package.
 - Shipped baselines:
-  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry and the last-decision follow-up signal; reopen only for regressions or a new explicit Track-1 package.
+  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry, the last-decision follow-up signal and gated Data learning calibration in Home; reopen only for regressions or a new explicit Track-1 package.
   - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls, Home/Data handoffs and local weekly decision receipts; reopen only for regressions or a new explicit Track-2 package.
   - **Lernschleifen** delivered Data action contracts, Fueling learning-loop copy, Home watch-context gating, the Data training-risk contract and the Data learning-calibration gate for Decision Quality, Personal Response and Fueling trends; reopen only for regressions or a new explicit Track-3 package.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.
