@@ -27,7 +27,7 @@ export type AnalysisTranslation = {
   supportEvidence: string[];
 };
 
-const PLAN_LOAD_PREVIEW_PATH = '/plan?tab=training&source=data-load#plan-scenario-preview';
+const PLAN_WEEKLY_DECISION_PATH = '/plan?tab=training&source=data-load#plan-weekly-decision';
 const GOAL_PROJECTION_PATH = '/data?tab=analysis#data-goal-projection';
 const DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
 const PERSONAL_RESPONSE_PATH = '/data?tab=analysis#data-personal-response';
@@ -83,7 +83,7 @@ function unique(items: Array<string | null | undefined>, limit: number): string[
 
 function resultPreviewForTargetPath(targetPath: string): string {
   if (targetPath.startsWith('/plan')) {
-    return 'Öffnet die nächste explizite Planentscheidung aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst anwendest.';
+    return 'Öffnet die Wochenentscheidung aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst eine Vorschau anwendest.';
   }
   if (targetPath.includes('#data-goal-projection')) {
     return 'Öffnet die Zielprojektion und ihre fehlende Evidenz. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
@@ -134,9 +134,9 @@ function primaryFromPlanTrace(planTrace: PulsePlanTrace | null | undefined): Ana
     summary: limiter.planBias,
     evidence: unique(limiter.evidence, 4),
     tone: 'amber',
-    actionLabel: 'Planwirkung prüfen',
-    targetPath: PLAN_LOAD_PREVIEW_PATH,
-    resultPreview: resultPreviewForTargetPath(PLAN_LOAD_PREVIEW_PATH),
+    actionLabel: 'Wochenentscheidung prüfen',
+    targetPath: PLAN_WEEKLY_DECISION_PATH,
+    resultPreview: resultPreviewForTargetPath(PLAN_WEEKLY_DECISION_PATH),
   };
 }
 

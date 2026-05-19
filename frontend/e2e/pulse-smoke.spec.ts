@@ -210,6 +210,10 @@ test('Data analysis opens plan impact from plan limiter evidence', async ({ page
       },
       planDecision: {
         summary: 'Limiter bestimmt die Woche.',
+        selectedDays: [1, 4],
+        skippedAvailableDays: [2, 6],
+        targetSessionCount: 2,
+        primaryGoal: '70.3 Kraichgau',
         reasons: [],
         riskFlags: [],
         adaptations: [],
@@ -226,8 +230,9 @@ test('Data analysis opens plan impact from plan limiter evidence', async ({ page
   await expect(card).toContainText('Plan-Limiter');
   await expect(card).toContainText('Long Endurance + Fueling');
   await expect(card).toContainText('Nach dem Klick');
-  await card.getByRole('button', { name: 'Planwirkung prüfen' }).click();
-  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-scenario-preview');
+  await card.getByRole('button', { name: 'Wochenentscheidung prüfen' }).click();
+  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-weekly-decision');
+  await expect(page.getByTestId('plan-weekly-decision-contract')).toBeVisible();
 });
 
 test('Data analysis opens power quality evidence from the watch signal', async ({ page }) => {

@@ -17,8 +17,10 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
 
   return (
     <Wrapper
+      id="plan-weekly-decision"
       className={variant === 'card' ? 'card' : undefined}
       data-testid="plan-weekly-decision-contract"
+      tabIndex={-1}
       style={{
         borderColor: variant === 'card' ? `color-mix(in srgb, ${tone} 26%, var(--border))` : undefined,
         background: variant === 'card' && contract.tone === 'attention' ? 'rgba(251,191,36,0.045)' : undefined,
