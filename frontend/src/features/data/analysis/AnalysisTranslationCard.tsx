@@ -120,6 +120,105 @@ function SignalBlock({
   );
 }
 
+function TrainingRiskBlock({
+  signal,
+  onNavigate,
+}: {
+  signal: AnalysisTranslationSignal;
+  onNavigate: (path: string) => void;
+}) {
+  const color = toneColor(signal.tone);
+  const targetPath = signal.actionLabel ? signal.targetPath : undefined;
+  const ctaLabel = targetPath?.startsWith('/plan')
+    ? 'Risiko einordnen'
+    : targetPath?.includes('#data-power-quality')
+      ? 'Messgrundlage prüfen'
+      : targetPath
+        ? 'Watch-Evidenz prüfen'
+        : signal.actionLabel;
+
+  return (
+    <div
+      data-testid="analysis-training-risk-contract"
+      style={{
+        border: '1px solid var(--border)',
+        borderLeft: `3px solid ${color}`,
+        borderRadius: 5,
+        background: 'var(--surface-2)',
+        padding: '8px 9px',
+        display: 'grid',
+        gap: 7,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <span className="label-mono" style={{ color }}>
+          Trainingsrisiko
+        </span>
+        <span className="label-mono" style={{ color: 'var(--text-3)' }}>
+          Wirkung: {signal.effectLabel}
+        </span>
+      </div>
+      <div>
+        <h3 style={{ margin: 0, fontSize: 13, color: 'var(--text)', fontWeight: 650, lineHeight: 1.35 }}>
+          {signal.title}
+        </h3>
+        <p style={{ margin: '4px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          {signal.summary}
+        </p>
+      </div>
+      {signal.evidence.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+          {signal.evidence.map(item => (
+            <span
+              key={item}
+              data-testid="analysis-training-risk-driver"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--text-3)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '3px 6px',
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+      {targetPath ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <p style={{ flex: '1 1 260px', margin: 0, fontSize: 10.8, color: 'var(--text-3)', lineHeight: 1.4 }}>
+            {signal.resultPreview}
+          </p>
+          <button
+            type="button"
+            onClick={() => onNavigate(targetPath)}
+            style={{
+              minHeight: 40,
+              minWidth: 44,
+              padding: '7px 10px',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              color,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 650,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {ctaLabel}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AnalysisTranslationCard({
   decisionQuality,
   goalProjection,
@@ -156,6 +255,7 @@ export function AnalysisTranslationCard({
         Pulse übersetzt die tiefen Analyseblöcke zuerst in Entscheidungswirkung. Details bleiben darunter, aber diese Karte sagt, welcher Befund heute handeln sollte und welcher nur beobachtet wird.
       </p>
 
+      <TrainingRiskBlock signal={translation.trainingRisk} onNavigate={navigate} />
       <SignalBlock signal={translation.primary} label="Handlungsrelevant" onNavigate={navigate} />
       <SignalBlock signal={translation.watch} label="Interessant, aber noch nicht entscheidend" onNavigate={navigate} />
 

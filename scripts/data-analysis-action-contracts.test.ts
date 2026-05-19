@@ -5,6 +5,7 @@ import type {
   PulseDailyDecisionQualityResponse,
   PulseGoalProjectionResponse,
   PulsePersonalResponseResponse,
+  PulsePlanTrace,
   PulseTrainingAnalyticsResponse,
 } from '../shared/types/pulse/index.ts';
 import { buildAnalysisTranslation } from '../frontend/src/features/data/analysis/analysis-translation-model.ts';
@@ -168,6 +169,42 @@ function powerAnalytics(status: 'usable_with_caution' | 'blocked', durability: '
   };
 }
 
+function planTrace(overrides: Partial<PulsePlanTrace['inputSnapshot']> = {}): PulsePlanTrace {
+  return {
+    id: 'trace-risk',
+    userId: 'u1',
+    weekStart: '2026-05-18',
+    createdAt: '2026-05-18T06:00:00.000Z',
+    inputSnapshot: {
+      phase: 'build',
+      mesocycleWeek: 2,
+      weeklyHoursTarget: 8,
+      availableDays: [1, 3, 5],
+      load: { ctl: 52, atl: 70, tsb: -18, date: '2026-05-18' },
+      profile: { ftpWatts: 245, maxHrBpm: 190, lthrBpm: 172 },
+      goals: [],
+      riskSignals: [{ ruleId: 'sleep_debt_5d', severity: 'warn', title: 'Schlafschuld' }],
+      healthStates: [],
+      recentRpe: [],
+      rpeReasons: [],
+      dataWarnings: [],
+      recentSportMix: {},
+      goalLimiter: null,
+      ...overrides,
+    },
+    planDecision: {
+      selectedDays: [1, 5],
+      skippedAvailableDays: [3],
+      targetSessionCount: 2,
+      primaryGoal: null,
+      reasons: [],
+    },
+    sportMix: {},
+    hardDays: [],
+    generatedSummary: [],
+  };
+}
+
 test('plan goal interventions are classified as plan decisions', () => {
   const translation = buildAnalysisTranslation({
     decisionQuality: null,
@@ -232,6 +269,60 @@ test('fueling response becomes an explicit fueling learning loop', () => {
   assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-personal-response');
   assert.equal(translation.primary.effect, 'today_action');
   assert.match(translation.primary.resultPreview ?? '', /Fueling/);
+});
+
+test('training risk contract routes plan and load risk to the weekly decision', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: null,
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: planTrace(),
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.trainingRisk.tone, 'amber');
+  assert.equal(translation.trainingRisk.actionLabel, 'Wochenentscheidung prüfen');
+  assert.equal(translation.trainingRisk.targetPath, '/plan?tab=training&source=data-load#plan-weekly-decision');
+  assert.match(translation.trainingRisk.summary, /Schlafschuld/);
+  assert.match(translation.trainingRisk.summary, /TSB -18\.0/);
+  assert.match(translation.trainingRisk.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
+});
+
+test('training risk contract routes blocked power quality to data evidence', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: null,
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: planTrace({
+      load: { ctl: 52, atl: 55, tsb: -3, date: '2026-05-18' },
+      riskSignals: [],
+    }),
+    trainingAnalytics: powerAnalytics('blocked', 'strong'),
+  });
+
+  assert.equal(translation.trainingRisk.tone, 'rose');
+  assert.equal(translation.trainingRisk.actionLabel, 'Power-Daten prüfen');
+  assert.equal(translation.trainingRisk.targetPath, '/data?tab=analysis#data-power-quality');
+  assert.match(translation.trainingRisk.summary, /Power-Daten blockieren/);
+  assert.match(translation.trainingRisk.resultPreview ?? '', /Tageshandlung/);
+});
+
+test('training risk contract stays watch context when risk evidence is stable', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: null,
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: planTrace({
+      load: { ctl: 52, atl: 48, tsb: 4, date: '2026-05-18' },
+      riskSignals: [],
+    }),
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.trainingRisk.tone, 'green');
+  assert.equal(translation.trainingRisk.effect, 'watch_context');
+  assert.equal(translation.trainingRisk.actionLabel, undefined);
+  assert.match(translation.trainingRisk.summary, /keinen harten Trainingsrisiko-Hebel/);
 });
 
 test('power quality and durability stay watch context unless they block the day', () => {

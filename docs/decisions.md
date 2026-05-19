@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Data-Analyse besitzt einen Trainingsrisiko-Contract
+
+- **Decision:** Data > Analyse zeigt einen kompakten read-only `Trainingsrisiko`-Contract, der Plan-Risikosignale, TSB/Load, Goal-Limiter, Power-Qualitaet und Durability in eine naechste Einordnung uebersetzt. Plan-/Load-Risiko routet zur Wochenentscheidung, blockierte Messgrundlage zur Power-Evidenz, stabile Evidenz bleibt Watch-Kontext.
+- **Why:** Track `Lernschleifen` braucht Analyse-Tiefe als klare Antwort auf "warum ist Trainingsrisiko heute relevant?", ohne jede Detailspur zu einer Tagesanweisung oder versteckten Plan-/Garmin-Schreibwirkung zu machen.
+- **Alternatives:** Risikotreiber weiter auf mehrere Karten verteilen (zu langsam zu lesen); Home-Entscheidung duplizieren (driftet); jedes Risiko pauschal nach Plan oder pauschal nach Data routen (verliert Kontext); den Contract direkt mutierend machen (zu frueh).
+- **Decided by:** Codex, im Track `Lernschleifen` nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Data-Analyse trennt Tageshandlung, Planentscheidung und Watch-Kontext
 
 - **Decision:** Data > Analyse-Signale tragen einen expliziten Wirkungstyp (`today_action`, `plan_decision`, `watch_context`) mit sichtbarer `Wirkung`-Kopie. Fueling-Response wird als `Fueling-Lernschleife` mit eigenem CTA gezeigt. Home eskaliert blockierte Power-Daten weiter als Analyse-Gate, behandelt Durability-Watch-Kontext aber nur dann als fuehrend, wenn keine staerkere aktuelle Recovery-/Mental-/Data-/Fueling-/Garmin-/Reaktions- oder Planentscheidung offen ist.
