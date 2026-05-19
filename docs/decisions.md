@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Nach Track-1-Abschluss startet autonome Arbeit bei Trainingsanpassung
+
+- **Decision:** Das Paket `Tagesentscheidung: Home lernt abgeschlossene Tage vollstaendig` gilt nach PRs #464-#466 als ausgelieferte Baseline. Die harte autonome Performance-OS-Reihenfolge startet nun bei `Trainingsanpassung: Plan macht Wochenentscheidung aktiver`, danach `Lernschleifen`.
+- **Why:** Die Track-1-Bausteine aus Tobis Baugeschwindigkeits-Vorgaben sind jetzt verankert: schnelle Daily-Decision-Golden-Tests, Home-to-Activity-Closure, Activity-Detail-Evidenzsprache und lokale Signal-Registry. Die Arbeitssteuerung muss deshalb weiterwandern, statt weitere Home-Mikro-Slices aus der alten Next-Liste zu ziehen.
+- **Alternatives:** Track 1 weiter als naechsten aktiven Block stehen lassen (fuehrt zu erneuter Mikro-Slice-Schleife); die Reihenfolge im Chat merken (nicht belastbar fuer neue Sessions); direkt zu Data springen (bricht die harte Backlog-Reihenfolge ohne neue Evidenz).
+- **Decided by:** Codex, nach erfolgreichem Merge und Deploy des Track-1-Signal-Registry-PRs.
+- **Status:** active.
+
 ## 2026-05-19 — Daily-Decision-Signale nutzen eine lokale Registry
 
 - **Decision:** `frontend/src/pulse/daily-decision.ts` hält Signalpriorität und Standard-CTA-Copy in einer lokalen `dailyDecisionSignalRegistry`. Spezielle Fälle wie `Training` nach Tone, `Ziel` nur bei rotem Risiko, signal-eigene Actionlabels und Anpassungs-Detailpräfixe bleiben explizit in dieser Registry beschrieben.

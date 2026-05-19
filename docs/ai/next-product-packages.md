@@ -29,13 +29,15 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Track 1: Tagesentscheidung
 
+Status: **shipped baseline**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. Reopen Track 1 only for regressions or a new explicit package.
+
 Package: **Home lernt abgeschlossene Tage vollstaendig.**
 
 Outcome: completed days become learning evidence, not loose ends. After planned or off-plan training, Pulse names the smallest closure step, explains why it matters and routes to the exact existing surface that captures the evidence.
 
 Why it matters: this is the WHOOP/Oura daily clarity plus MacroFactor-style learning loop joined to Garmin/device reality and TrainingPeaks-style plan feedback.
 
-Best next package PR:
+Shipped package PRs:
 
 - Add Daily Decision golden scenarios for completed-day feedback, fueling, recovery, goal and Garmin precedence.
 - Keep the existing Home-to-Activity click path as one desktop/mobile smoke.
@@ -49,6 +51,8 @@ Done evidence:
 - No Plan/Garmin write happens until an explicit apply/sync action on the destination surface.
 
 ## Track 2: Trainingsanpassung
+
+Status: **next active package**.
 
 Package: **Plan macht Wochenentscheidung aktiver.**
 
