@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Plan-Wochenentscheidungen bekommen lokale Receipts
+
+- **Decision:** Der `PlanWeeklyDecisionContract` kann fuer `Beibehalten`, `Anpassen` und `Spaeter` explizite lokale Decision Receipts erzeugen. Das Panel speichert den Receipt nur nach dem Klick `Entscheidung merken`, zeigt ihn bei gleicher Contract-Signatur wieder an und macht ihn auch nach Data/Home-Deep-Links zu `#plan-weekly-decision` sichtbar. Receipts speichern keine Plan- oder Garmin-Aenderung.
+- **Why:** Track `Trainingsanpassung` braucht eine wiederauffindbare Wochenentscheidung, ohne den preview-only Sicherheitsvertrag zu brechen. Tobi kann so intent und naechste Konsequenz festhalten, waehrend Apply, Plan-Write und Garmin-Sync weiterhin nur auf den bestehenden expliziten Oberflaechen passieren.
+- **Alternatives:** Option-Klicks direkt als Entscheidung speichern (zu implizit); Receipts serverseitig persistieren (zu frueh fuer die aktuelle UI-Schleife); Plan/Garmin sofort bei `Beibehalten` oder `Anpassen` mutieren (hidden write); Receipt nur als fluechtige React-State-Vorschau halten (nach Handoff/Reload nicht wiederauffindbar).
+- **Decided by:** Codex, im zweiten `Trainingsanpassung`-Pass nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Home nutzt letzte Entscheidungen als Folge-Signal
 
 - **Decision:** Home/Daily Decision bekommt ein datengetriebenes `Folge`-Signal aus Daily Delta. Geaenderte, verpasste oder off-plan Folgen koennen vor normalem Training fuehren, setzen `Planfolge pruefen` als CTA, zeigen einen offenen Tagescheck-Schritt und routen zum vorhandenen Plan-/Activity-Abgleich; bestaetigte Matches bleiben gruener Kontinuitaetskontext. Decision Quality und Personal Response liefern eigene Result-Previews, die die naechste Anpassung nennen und Plan/Garmin unveraendert lassen.

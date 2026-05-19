@@ -31,10 +31,10 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 The first pass through all three Performance-OS tracks is shipped: `Tagesentscheidung` delivered Home closure/registry work, `Trainingsanpassung` delivered the weekly decision contract and handoffs, and `Lernschleifen` delivered Data action contracts plus the training-risk contract.
 
-Track 1 of the second pass is shipped. Next autonomous product work continues the second pass in the same hard order unless Tobi explicitly reverses it:
+Track 1 and Track 2 of the second pass are shipped. Next autonomous product work continues the second pass in the same hard order unless Tobi explicitly reverses it:
 
-1. `Trainingsanpassung`: Plan macht Wochenentscheidungen bestaetigbar und spaeter wiederauffindbar, ohne hidden writes.
-2. `Lernschleifen`: Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
+1. `Lernschleifen`: Data kalibriert Decision Quality und Fueling-Trends erst nach Evidenzgates.
+2. `Trainingsanpassung`: reopen only for regressions or a new explicit Plan package.
 3. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
 
 ## Track 1: Tagesentscheidung
@@ -75,15 +75,15 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **next active package (second Performance-OS pass)**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, and receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`.
+Status: **shipped second-pass baseline**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, and can store a local decision receipt without Plan/Garmin writes.
 
-Next package: **Plan macht Wochenentscheidungen bestaetigbar.**
+Package: **Plan macht Wochenentscheidungen bestaetigbar.**
 
 Outcome: after previewing `Beibehalten`, `Anpassen` or `Spaeter`, Plan should leave an explicit decision receipt that Tobi can revisit from Plan and incoming Home/Data handoffs. The receipt explains intent and next consequence; actual plan/Garmin writes still require explicit existing apply/sync actions.
 
 Why it matters: this turns the TrainerRoad/TrainingPeaks/JOIN weekly control loop from preview-only into a traceable decision ritual without making the first click destructive.
 
-Best next package PR:
+Shipped package PRs:
 
 - Add a read-only decision receipt state for the weekly decision contract.
 - Route Plan Review, Change Inbox and Home/Data handoffs to the same receipt or open decision state.
@@ -111,7 +111,7 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **queued after Track 2 for the second Performance-OS pass**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract.
+Status: **next active package (second Performance-OS pass)**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract.
 
 Next package: **Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.**
 

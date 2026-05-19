@@ -546,6 +546,56 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(progression).toContainText('Ändern wenn');
 });
 
+test('Plan weekly decision stores a local receipt without applying plan or Garmin', async ({ page }) => {
+  const writeRequests: string[] = [];
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-receipt-contract',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+    }],
+    todayOptionsState: 'unplanned_trainable',
+    onRequest: (path, method) => {
+      if (method !== 'GET' && method !== 'OPTIONS') {
+        writeRequests.push(`${method} ${path}`);
+      }
+    },
+  });
+  await page.goto('/plan');
+
+  const weeklyDecision = page.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toBeVisible();
+  writeRequests.length = 0;
+
+  await weeklyDecision.getByRole('button', { name: /Aktuelle Woche bewusst akzeptieren/ }).click();
+  await weeklyDecision.getByRole('button', { name: 'Entscheidung merken', exact: true }).click();
+
+  expect(writeRequests).toEqual([]);
+  const receipt = weeklyDecision.getByTestId('plan-weekly-decision-receipt');
+  await expect(receipt).toContainText('Beibehalten gemerkt');
+  await expect(receipt).toContainText('Woche bleibt wie gewaehlt');
+  await expect(receipt).toContainText('Keine Plan- oder Garmin-Aenderung gespeichert');
+
+  await page.reload();
+  const reloadedWeeklyDecision = page.getByTestId('plan-weekly-decision-contract');
+  await expect(reloadedWeeklyDecision.getByTestId('plan-weekly-decision-receipt')).toContainText('Beibehalten gemerkt');
+
+  await page.goto('/data');
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
+  await page.getByTestId('data-triage-plan-load').click();
+  await expect(page).toHaveURL('/plan?tab=training&source=data-load#plan-weekly-decision');
+  await expect(page.getByTestId('plan-weekly-decision-receipt')).toContainText('Beibehalten gemerkt');
+});
+
 test('Plan desktop keeps daily reasoning behind an explicit disclosure', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop-specific density contract');
   await mockPulseApi(page, {

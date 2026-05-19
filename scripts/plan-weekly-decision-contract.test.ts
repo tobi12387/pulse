@@ -11,7 +11,7 @@ import type {
   PulseWeeklyReview,
 } from '../shared/types/pulse/index.ts';
 import { buildWeeklyCoachReview } from '../frontend/src/features/plan/weekly-coach-review-model.ts';
-import { buildPlanWeeklyDecisionContract } from '../frontend/src/features/plan/weekly-decision-contract.ts';
+import { buildPlanWeeklyDecisionContract, buildPlanWeeklyDecisionReceipt } from '../frontend/src/features/plan/weekly-decision-contract.ts';
 
 function workout(overrides: Partial<PulsePlannedWorkout>): PulsePlannedWorkout {
   return {
@@ -221,6 +221,42 @@ test('previews accept, adapt and defer without implying hidden Plan or Garmin wr
   assert.match(contract.options.find(option => option.kind === 'adapt_week')?.resultPreview ?? '', /erst ein explizites Anwenden/);
   assert.match(contract.options.find(option => option.kind === 'accept_current')?.resultPreview ?? '', /keine Plan- oder Garmin-Aenderung/);
   assert.match(contract.options.find(option => option.kind === 'defer_decision')?.resultPreview ?? '', /keine Plan- oder Garmin-Aenderung/);
+});
+
+test('builds explicit weekly decision receipts without plan or Garmin writes', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'local', executionStatus: 'local_planned' })],
+    adaptationEvents: [event({ recommendation: 'reduce_volume' })],
+    refreshPreview: refreshPreview({}),
+    currentLoad,
+    goalProjection,
+    personalResponse,
+    review,
+  });
+
+  const adapt = buildPlanWeeklyDecisionReceipt(contract, 'adapt_week', '2026-05-12T07:00:00.000Z');
+  const accept = buildPlanWeeklyDecisionReceipt(contract, 'accept_current', '2026-05-12T07:05:00.000Z');
+  const defer = buildPlanWeeklyDecisionReceipt(contract, 'defer_decision', '2026-05-12T07:10:00.000Z');
+
+  assert.equal(adapt.optionKind, 'adapt_week');
+  assert.equal(adapt.optionLabel, 'Anpassen');
+  assert.match(adapt.title, /Anpassen gemerkt/);
+  assert.match(adapt.weekImpact, /TSS -45/);
+  assert.match(adapt.nextConsequence, /Vorschau/);
+  assert.match(adapt.nextConsequence, /erst dort nach explizitem Klick/);
+  assert.equal(adapt.targetPath, '#plan-refresh-preview-card');
+  assert.match(adapt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
+  assert.equal(adapt.createdAt, '2026-05-12T07:00:00.000Z');
+  assert.equal(typeof adapt.contractSignature, 'string');
+  assert.ok(adapt.contractSignature.length > 20);
+
+  assert.match(accept.nextConsequence, /Woche bleibt wie gewaehlt/);
+  assert.match(accept.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
+  assert.equal(accept.targetPath, null);
+
+  assert.match(defer.nextConsequence, /Watch-Kontext/);
+  assert.match(defer.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
 
 test('weekly review exposes the same weekly decision contract used by the inbox', () => {
