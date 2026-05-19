@@ -155,12 +155,23 @@ export function buildDeliveryManifest(files, options = {}) {
 
   const riskReasons = [];
   if (productTracks.length > 1) riskReasons.push('Touches multiple product tracks; split or explain package coupling.');
+  if (areas.backend) riskReasons.push('Touches backend runtime code; wait for backend build/tests and CI before merge.');
+  if (areas.shared) riskReasons.push('Touches shared contracts; wait for build/browser/backend CI before merge.');
   if (areas.workflow) riskReasons.push('Changes GitHub workflow behavior.');
   if (areas.packageManifest) riskReasons.push('Changes package manifest scripts or dependency declarations.');
   if (areas.dependencies) riskReasons.push('Changes dependency lockfile.');
   if (areas.migrations) riskReasons.push('Touches database migrations; apply migration guard.');
   if (areas.deployOps) riskReasons.push('Touches deploy/server ops scripts.');
   if (areas.llm) riskReasons.push('Touches LLM routing; confirm all provider calls stay behind backend/src/lib/llm.ts.');
+
+  const fastLaneEligible = changedFiles.length > 0 && riskReasons.length === 0;
+  const deliveryLane = fastLaneEligible ? 'fast_lane' : 'full_lane';
+  const deliveryLaneLabel = fastLaneEligible ? 'Fast Lane' : 'Full Lane';
+  const deliveryLaneNotes = fastLaneEligible
+    ? ['Single-track/docs/support change with no migration, backend, shared-contract, dependency, workflow, deploy or LLM attention risk.']
+    : riskReasons.length > 0
+      ? riskReasons
+      : ['No changed files detected; choose a lane after the diff exists.'];
 
   const deployRequired = changedFiles.some(file =>
     /^backend\//.test(file)
@@ -176,10 +187,15 @@ export function buildDeliveryManifest(files, options = {}) {
     productTracks,
     trackEvidence: Object.fromEntries(trackHits),
     areas: Object.fromEntries(Object.entries(areas).filter(([, value]) => value)),
+    deliveryLane,
+    deliveryLaneLabel,
+    deliveryLaneNotes,
     localChecks: Array.from(checks),
     ciJobs: unique(ciJobs),
-    autoMergeEligible: riskReasons.length === 0,
-    autoMergeNotes: riskReasons.length > 0 ? riskReasons : ['Local checks green and CI has no special attention risk.'],
+    autoMergeEligible: fastLaneEligible,
+    autoMergeNotes: fastLaneEligible
+      ? ['Fast Lane: run listed local checks, open the PR, enable auto-merge, and only intervene on red CI.']
+      : deliveryLaneNotes,
     deployRequired,
     deployNote: deployRequired
       ? 'Deploy after merge because runtime app code or dependencies changed.'
@@ -201,6 +217,7 @@ export function renderDeliveryManifest(manifest) {
     '',
     `- Scope: ${manifest.scope}`,
     `- Track: ${trackLine}`,
+    `- Delivery lane: ${manifest.deliveryLaneLabel} (${manifest.deliveryLane})`,
     `- Auto-merge: ${manifest.autoMergeEligible ? 'eligible when listed local checks and CI are green' : 'hold for review'}`,
     `- Deploy: ${manifest.deployRequired ? 'required after merge' : 'not required'}`,
     '',
@@ -218,6 +235,7 @@ export function renderDeliveryManifest(manifest) {
     '',
     '## PR Body Fields',
     `- Track: ${trackLine}`,
+    `- Delivery lane: ${manifest.deliveryLaneLabel} (${manifest.deliveryLane})`,
     '- Package outcome: <one user-facing outcome or support outcome>',
     `- Local checks: ${manifest.localChecks.map(check => `\`${check}\``).join(', ') || 'none'}`,
     `- Auto-merge: ${manifest.autoMergeEligible ? 'yes, if CI is green' : 'no, see attention notes'}`,

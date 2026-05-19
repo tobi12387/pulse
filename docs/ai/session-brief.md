@@ -22,11 +22,11 @@ Do not read `docs/superpowers/plans/completed/` unless the task is explicitly ab
 - Keep PRs package-shaped by default: one Performance-OS backlog track, usually 3-5 related changes that share one outcome and verification surface. Use micro-slices for urgent fixes, regressions, CI/deploy repair, docs-only updates, or clearly separate ownership boundaries.
 - Every product PR should name its track from `docs/ai/next-product-packages.md`: `Tagesentscheidung`, `Trainingsanpassung` or `Lernschleifen`.
 - Use the matching local gate before PR when possible: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` or `npm run verify:lernschleifen`. For quick iteration, append `-- --no-e2e`; PR bodies should say when the full rendered smoke was skipped.
-- Run `npm run delivery:manifest` before opening a PR so track, local gates, expected CI jobs, auto-merge and deploy are based on changed files instead of rediscovery.
+- Run `npm run delivery:manifest` before opening a PR so track, delivery lane, local gates, expected CI jobs, auto-merge and deploy are based on changed files instead of rediscovery.
 - For Daily Decision contract logic, prefer fast unit/golden tests before Playwright; use Playwright for 1-2 rendered package smokes.
 - When several Home signals change together, prefer a small data-driven signal registry/priority table over more one-off branches.
 - GitHub PR CI is path-filtered: PRs run focused build/backend/browser jobs only for touched runtime areas; browser PR coverage is the smoke suite. Full Playwright regression runs on `main` and `workflow_dispatch`.
-- When local checks are green and CI has no special review risk, prefer GitHub auto-merge over actively waiting in chat. Still inspect and fix failed checks.
+- When the manifest says `Fast Lane`, local checks are green and CI has no special review risk, prefer GitHub auto-merge over actively waiting in chat. `Full Lane` PRs keep explicit CI/review attention. Still inspect and fix failed checks.
 - Update `docs/ai/current-focus.md` only when the durable work queue, manual gates or next recommendation changes. Do not append a long PR register.
 - Add a `docs/decisions.md` entry for non-trivial architecture, scope, or priority decisions unless the user explicitly limited the edit scope to AI context docs.
 

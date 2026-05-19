@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Delivery Manifest trennt Fast Lane und Full Lane
+
+- **Decision:** `npm run delivery:manifest` klassifiziert PRs zusaetzlich als `Fast Lane` oder `Full Lane`. Fast Lane gilt fuer einspurige Frontend-/Docs-/Support-Aenderungen ohne Backend-, Shared-Contract-, Dependency-, Migration-, Workflow-, Deploy- oder LLM-Risiko; nur diese PRs sind automatisch auto-merge-faehig. Full Lane verlangt explizite CI-/Review-Aufmerksamkeit.
+- **Why:** Time-to-Market leidet, wenn kleine sichere Slices und riskantere Infrastruktur-/Backend-Aenderungen denselben mentalen Merge-Prozess brauchen. Die Lane macht die Standardentscheidung sichtbar: schnelle PRs durchlaufen lokale Gates und Auto-Merge, risikoreichere PRs werden bewusst gehalten.
+- **Alternatives:** Auto-Merge weiter nur aus einzelnen Risikohinweisen ableiten (zu implizit); alle Runtime-Aenderungen in Full Lane halten (verlangsamt mobile/UI-Slices); Backend/Shared-Aenderungen ebenfalls als normal auto-merge-faehig behandeln (zu wenig Aufmerksamkeit fuer breitere Vertrage).
+- **Decided by:** Codex, als Time-to-Market-Support nach Tobis erneuter Geschwindigkeitsvorgabe.
+- **Status:** active.
+
 ## 2026-05-19 — Data Mental Resilience Radar stapelt Mobile-Aktion
 
 - **Decision:** `Data > Heute > Mental` stapelt die `Resilienz-Radar`-Aktion auf schmalen Viewports unter Headline und Entscheidungskopie, statt CTA und Text zweispaltig in dieselbe mobile Zeile zu pressen. Die Aktion, Zielroute und der read-only Lernvertrag bleiben unveraendert.
