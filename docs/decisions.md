@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Data Mental Resilience Radar stapelt Mobile-Aktion
+
+- **Decision:** `Data > Heute > Mental` stapelt die `Resilienz-Radar`-Aktion auf schmalen Viewports unter Headline und Entscheidungskopie, statt CTA und Text zweispaltig in dieselbe mobile Zeile zu pressen. Die Aktion, Zielroute und der read-only Lernvertrag bleiben unveraendert.
+- **Why:** Die Route-Evidence zeigte keinen horizontalen Overflow, aber eine echte mobile Lesbarkeitsreibung: Der CTA draengte die Resilienz-Kopie zusammen und erhoehte Interpretationslast nach dem Mental-Check-in. Track `Lernschleifen` soll Data-Evidenz in eine ruhige naechste Handlung uebersetzen.
+- **Alternatives:** Die zweispaltige Karte beibehalten (schneller, aber weiter gedrungen); eine neue separate Zusammenfassungskarte bauen (mehr UI statt weniger Last); nur Text kuerzen (kaschiert das Layoutproblem und verliert Erklaerung).
+- **Decided by:** Codex, aus frischer Route-Evidence fuer den naechsten Performance-OS-Slice.
+- **Status:** active.
+
 ## 2026-05-19 — Delivery Manifest entscheidet PR-Gates aus geaenderten Dateien
 
 - **Decision:** Pulse nutzt `npm run delivery:manifest`, um aus den tatsaechlich geaenderten Dateien Scope, Performance-OS-Track, lokale Gates, erwartete CI-Jobs, Auto-Merge-Eignung und Deploy-Bedarf fuer einen PR vorzuschlagen. Die PR-Ready-Checklist und der Session-Kontext verweisen darauf, damit diese Entscheidungen nicht pro Session neu aus Chat- oder PR-Historie rekonstruiert werden.

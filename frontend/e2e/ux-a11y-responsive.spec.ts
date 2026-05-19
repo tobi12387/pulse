@@ -160,6 +160,29 @@ test('mobile Data overview skips duplicate intro copy before the daily action', 
   await expect(page.getByTestId('data-primary-action')).toBeInViewport();
 });
 
+test('mobile Data mental resilience radar stacks its action below the decision copy', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile resilience radar density check');
+  await mockPulseApi(page, { checkinToday: { checkin: null } });
+
+  await page.goto('/data?tab=today#data-mental');
+
+  const radar = page.getByTestId('resilience-radar-card');
+  await expect(radar).toContainText('Resilienz wirkt stabil');
+  await radar.scrollIntoViewIfNeeded();
+
+  const copy = radar.getByText('Die letzten Check-ins und Recovery-Signale zeigen keinen akuten Anpassungsbedarf.');
+  const action = radar.getByRole('button', { name: 'Routine beibehalten' });
+  const [copyBox, actionBox] = await Promise.all([
+    copy.boundingBox(),
+    action.boundingBox(),
+  ]);
+
+  expect(copyBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(actionBox!.y).toBeGreaterThanOrEqual(copyBox!.y + copyBox!.height + 6);
+  expect(actionBox!.x).toBeGreaterThanOrEqual(copyBox!.x - 1);
+});
+
 test('desktop Focus operational routes share the wide shell', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop shell width check');
 
