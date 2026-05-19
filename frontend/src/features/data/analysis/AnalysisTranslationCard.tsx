@@ -51,6 +51,25 @@ function SignalBlock({
       <p style={{ margin: '5px 0 0', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.55 }}>
         {signal.summary}
       </p>
+      <div
+        data-testid={`analysis-translation-effect-${signal.effect}`}
+        style={{
+          marginTop: 7,
+          border: '1px solid var(--border)',
+          borderRadius: 5,
+          background: 'var(--surface-2)',
+          padding: '6px 8px',
+          display: 'grid',
+          gap: 3,
+        }}
+      >
+        <div className="label-mono" style={{ color, fontSize: 8 }}>
+          Wirkung: {signal.effectLabel}
+        </div>
+        <p style={{ margin: 0, fontSize: 10.8, color: 'var(--text-3)', lineHeight: 1.4 }}>
+          {signal.effectSummary}
+        </p>
+      </div>
       {targetPath ? (
         <div
           style={{

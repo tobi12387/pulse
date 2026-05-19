@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Data-Analyse trennt Tageshandlung, Planentscheidung und Watch-Kontext
+
+- **Decision:** Data > Analyse-Signale tragen einen expliziten Wirkungstyp (`today_action`, `plan_decision`, `watch_context`) mit sichtbarer `Wirkung`-Kopie. Fueling-Response wird als `Fueling-Lernschleife` mit eigenem CTA gezeigt. Home eskaliert blockierte Power-Daten weiter als Analyse-Gate, behandelt Durability-Watch-Kontext aber nur dann als fuehrend, wenn keine staerkere aktuelle Recovery-/Mental-/Data-/Fueling-/Garmin-/Reaktions- oder Planentscheidung offen ist.
+- **Why:** Track `Lernschleifen` soll Analyse-Tiefe in klare Handlung uebersetzen, ohne dass jedes interessante Signal automatisch die Tagesentscheidung kommandiert. Fueling muss als Lernschleife sichtbar sein, waehrend Durability und Power-Qualitaet zwischen echter Tageshandlung und Beobachtung unterscheiden.
+- **Alternatives:** Result-Preview weiter nur aus Zielpfaden ableiten (zu implizit); Fueling unter generischem Reaktionsmodell verstecken (verliert MacroFactor-artige Lernschleife); jede Durability-Auffaelligkeit Home fuehren lassen (macht Watch-Kontext zu laut).
+- **Decided by:** Codex, im Track `Lernschleifen` nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Home-Load-Handoffs nutzen die Plan-Wochenentscheidung
 
 - **Decision:** Wenn Home mit `Belastung` fuehrt, oeffnet der CTA `/plan?tab=training&source=home-load#plan-weekly-decision` statt Data `#data-plan-trace`. Roh-Evidenz-Links fuer TSB/CTL/ATL koennen weiter Data oeffnen; der handlungsleitende Klick landet bei Plan.
