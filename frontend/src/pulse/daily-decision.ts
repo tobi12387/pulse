@@ -153,6 +153,10 @@ function hasCompletedWorkoutFeedback(home: PulseHomeScreenData, workout: HomeWor
     || activity?.rpe != null;
 }
 
+function hasCompletedActivityFeedback(activity: HomeActivity | null): boolean {
+  return Boolean(activity?.feedbackLoggedAt != null || activity?.rpe != null);
+}
+
 function openFuelingDebt(todayOptions: PulseTodayOptionsResponse | null | undefined) {
   const debt = todayOptions?.fuelingDebt;
   return debt?.hasOpenDebt ? debt : null;
@@ -618,13 +622,14 @@ const signalLabelPriority: Record<string, number> = {
   Analyse: 1,
   Fueling: 2,
   'Fueling-Lernen': 2,
-  Ziel: 3,
-  Training: 4,
-  Alltag: 5,
-  Garmin: 5,
-  Reaktion: 6,
-  Koerper: 6,
-  Belastung: 7,
+  Feedback: 3,
+  Ziel: 4,
+  Training: 5,
+  Alltag: 6,
+  Garmin: 6,
+  Reaktion: 7,
+  Koerper: 7,
+  Belastung: 8,
 };
 
 function prioritizeSignals(signals: DailyDecisionSignal[]): DailyDecisionSignal[] {
@@ -656,6 +661,7 @@ function signalActionCta(signal: DailyDecisionSignal): string | null {
   if (signal.label === 'Lernen') return 'Lernen prüfen';
   if (signal.label === 'Analyse') return signal.actionLabel ?? 'Analyse prüfen';
   if (signal.label === 'Fueling-Lernen') return 'Fueling vorbereiten';
+  if (signal.label === 'Feedback') return signal.actionLabel ?? 'Feedback erfassen';
   if (signal.label === 'Alltag') return 'Alternative prüfen';
   if (signal.label === 'Garmin') return 'Garmin prüfen';
   if (signal.label === 'Reaktion') return 'Reaktion prüfen';
@@ -964,6 +970,29 @@ function fuelingLearningSignal(
   };
 }
 
+function completedFeedbackSignal(
+  home: PulseHomeScreenData,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+): DailyDecisionSignal | null {
+  if (!completedActivity) return null;
+
+  const feedbackDone = workout
+    ? hasCompletedWorkoutFeedback(home, workout)
+    : hasCompletedActivityFeedback(completedActivity);
+  if (feedbackDone) return null;
+
+  return {
+    label: 'Feedback',
+    detail: workout
+      ? 'RPE fehlt: Feedback nachtragen, damit Pulse die nächste Planentscheidung sauber lernt.'
+      : 'RPE fehlt: Feedback zur Garmin-Aktivität nachtragen, damit Pulse die ungeplante Belastung einordnet.',
+    tone: 'amber',
+    targetPath: activityDetailPath(completedActivity.id),
+    actionLabel: 'Feedback erfassen',
+  };
+}
+
 function garminExecutionSignal(
   workout: HomeWorkout | null,
   completedActivity: HomeActivity | null,
@@ -1191,6 +1220,7 @@ function topSignals(
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
   const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
+  const feedback = completedFeedbackSignal(home, workout, completedActivity);
   const garminExecution = garminExecutionSignal(workout, completedActivity);
   const responsePattern = personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
   const everyday = everydaySignal(todayOptions, workout, completedActivity);
@@ -1212,6 +1242,9 @@ function topSignals(
   }
   if (fuelingLearning) {
     signals.push(fuelingLearning);
+  }
+  if (feedback) {
+    signals.push(feedback);
   }
   if (garminExecution) {
     signals.push(garminExecution);
