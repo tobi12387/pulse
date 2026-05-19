@@ -21,11 +21,11 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
 - First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; Track 1 and Track 2 also have their third-pass learning-calibration packages.
+- Delivery-speed support is active in the workflow: use `npm run delivery:manifest` before PRs to choose track, gates, CI attention, auto-merge and deploy from changed files.
 - Current hard Performance-OS backlog order:
-  1. **Build-Speed support:** add a PR delivery manifest and changed-files gate mapping before deriving another product slice.
-  2. **Tagesentscheidung:** reopen only for regressions or a new explicit Home package.
-  3. **Trainingsanpassung:** reopen only for regressions or a new explicit Plan package.
-  4. **Lernschleifen:** reopen only for regressions or a new explicit Data package.
+  1. **Tagesentscheidung:** reopen only for regressions or a new explicit Home package.
+  2. **Trainingsanpassung:** reopen only for regressions or a new explicit Plan package.
+  3. **Lernschleifen:** reopen only for regressions or a new explicit Data package.
 - Shipped baselines:
   - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry, the last-decision follow-up signal and gated Data learning calibration in Home; reopen only for regressions or a new explicit Track-1 package.
   - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls, Home/Data handoffs, local weekly decision receipts and gated learning calibration in explicit weekly decisions; reopen only for regressions or a new explicit Track-2 package.
@@ -49,7 +49,7 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Start every substantial coding session from `AGENTS.md`, this file, `docs/ai/non-negotiables.md`, `docs/ai/context-map.md` and the smallest relevant package/roadmap excerpt.
 - Prefer fast contract/unit/golden tests for Daily Decision logic before Playwright. Use Playwright for 1-2 package-level rendered route/click-path smokes.
 - Keep PRs package-shaped when possible: 3-5 tightly related changes are better than repeated one-signal PRs when they share the same evidence and verification surface.
-- For faster delivery, prefer a small delivery manifest plus changed-files gate mapping over rediscovering PR scope and local checks each session.
+- For faster delivery, run `npm run delivery:manifest` and copy its PR-body fields instead of rediscovering scope, checks, auto-merge and deploy manually.
 - When a package touches multiple Home signals, move toward a data-driven signal registry/priority table instead of adding more one-off signal branches.
 - Record non-trivial priority, architecture or workflow decisions in `docs/decisions.md`.
 - Keep completed plan archives closed unless the user asks for history or regression comparison.

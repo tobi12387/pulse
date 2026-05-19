@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — Delivery Manifest entscheidet PR-Gates aus geaenderten Dateien
+
+- **Decision:** Pulse nutzt `npm run delivery:manifest`, um aus den tatsaechlich geaenderten Dateien Scope, Performance-OS-Track, lokale Gates, erwartete CI-Jobs, Auto-Merge-Eignung und Deploy-Bedarf fuer einen PR vorzuschlagen. Die PR-Ready-Checklist und der Session-Kontext verweisen darauf, damit diese Entscheidungen nicht pro Session neu aus Chat- oder PR-Historie rekonstruiert werden.
+- **Why:** Time-to-Market war weiterhin zu langsam, weil Scope, Checks und Merge-/Deploy-Entscheidungen trotz Track-Gates wiederholt manuell abgeleitet wurden. Ein kleines, testbares Manifest macht den naechsten PR schneller startklar, ohne Qualitaetsgates zu lockern.
+- **Alternatives:** Weiter nur die Track-Gates dokumentieren (zu wenig fuer mixed/docs/tooling PRs); immer volle lokale Builds/Smokes laufen lassen (zu teuer); Auto-Merge pauschal erlauben (uebersieht Migrationen, Dependencies, Workflows, Deploy und LLM-Risiken).
+- **Decided by:** Codex, als Build-Speed-Supportpaket nach Tobis Time-to-Market-Vorgabe.
+- **Status:** active.
+
 ## 2026-05-19 — Plan nutzt Lernkalibrierung nur als explizite Wochenentscheidung
 
 - **Decision:** Plan Review und Change Inbox fuehren die gemeinsame `Lernkalibrierung` aus Decision Quality, Personal Response und Fueling-Baseline in den `PlanWeeklyDecisionContract`. Starke `today_action`-Kalibrierung oeffnet eine explizite Wochenentscheidung, schwache oder unvollstaendige Evidenz bleibt `Watch-Kontext`; weder Contract, Option noch lokaler Receipt schreiben Plan oder Garmin.

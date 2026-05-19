@@ -5,6 +5,7 @@
 - Scope matches one Performance-OS backlog track or one justified micro-slice.
 - Product PRs name their track: `Tagesentscheidung`, `Trainingsanpassung` or `Lernschleifen`.
 - Package PRs contain 3-5 related changes when the outcome and verification surface are shared; smaller slices explain why package scope was not appropriate.
+- `npm run delivery:manifest` was used to choose track, local gates, auto-merge eligibility and deploy requirement.
 - No direct server edits.
 - No secrets or `.env` changes.
 - Explicit files staged; never `git add .`.
