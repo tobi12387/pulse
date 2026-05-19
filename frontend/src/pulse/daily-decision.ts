@@ -1,5 +1,5 @@
 import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulsePersonalResponseResponse, PulsePersonalResponseSignal, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
-import { activityLabel } from '@/pulse/activity-labels';
+import { activityLabel } from './activity-labels';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
 export type DailyDecisionSignalTone = 'green' | 'amber' | 'rose' | 'accent' | 'muted';
@@ -1112,9 +1112,10 @@ function recoverySignal(recovery: HomeRecovery): DailyDecisionSignal | null {
 }
 
 function executionSummary(workout: HomeWorkout | null, completedActivity: HomeActivity | null): string {
+  if (workout?.executionStatus === 'completed_matched') return 'Garmin: geplante Einheit erledigt und zugeordnet.';
+  if (workout?.status === 'completed' || workout?.completedActivityId) return 'Garmin: geplante Einheit erledigt und bereit fuer Feedback/Planabgleich.';
   if (completedActivity) return 'Garmin: Aktivitaet erledigt und bereit fuer Feedback/Planabgleich.';
   if (!workout) return 'Garmin: kein Schreibpfad fuer heute; Erholung und Check-in bleiben lokal.';
-  if (workout.executionStatus === 'completed_matched') return 'Garmin: geplante Einheit erledigt und zugeordnet.';
   if (workout.executionStatus === 'garmin_scheduled') return 'Garmin: Kalender bereit; Ausfuehrung auf dem Geraet pruefbar.';
   if (workout.executionStatus === 'garmin_template') return 'Garmin: Workout-Template bereit, Kalenderstatus noch pruefen.';
   if (workout.executionStatus === 'missed') return 'Garmin: geplante Einheit wirkt verpasst; Planabgleich vor Nachholen.';
