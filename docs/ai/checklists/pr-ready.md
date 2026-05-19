@@ -9,6 +9,7 @@
 - No secrets or `.env` changes.
 - Explicit files staged; never `git add .`.
 - Relevant tests or build commands were run, or skipped with a clear reason.
+- For product package PRs, prefer the matching track gate: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` or `npm run verify:lernschleifen`.
 - Daily Decision contract changes include fast unit/golden coverage before Playwright unless the PR explains why only rendered route proof is meaningful.
 - PR body states whether auto-merge is appropriate and whether server deploy is required after merge.
 - Non-trivial decisions are added to `docs/decisions.md`, or the PR explains an explicitly approved narrower docs-only scope.
