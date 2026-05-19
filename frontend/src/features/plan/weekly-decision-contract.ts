@@ -42,6 +42,19 @@ export interface PlanWeeklyDecisionContract {
   evidence: string[];
 }
 
+export interface PlanWeeklyDecisionReceipt {
+  contractSignature: string;
+  optionKind: PlanWeeklyDecisionOptionKind;
+  optionLabel: string;
+  title: string;
+  decision: string;
+  weekImpact: string;
+  nextConsequence: string;
+  mutationBoundary: string;
+  targetPath: string | null;
+  createdAt: string;
+}
+
 export interface PlanWeeklyDecisionContractInput {
   today: string;
   workouts: PulsePlannedWorkout[];
@@ -184,6 +197,52 @@ function buildOptions(input: PlanWeeklyDecisionContractInput, hasOpenChange: boo
       targetPath: null,
     },
   ];
+}
+
+export function planWeeklyDecisionContractSignature(contract: PlanWeeklyDecisionContract): string {
+  return [
+    contract.title,
+    contract.summary,
+    contract.primaryOption,
+    contract.evidence.join('|'),
+    contract.sections.map(section => `${section.id}:${section.title}:${section.body}`).join('|'),
+    contract.options.map(option => `${option.kind}:${option.title}:${option.weekImpact}`).join('|'),
+  ].join('::');
+}
+
+function receiptNextConsequence(option: PlanWeeklyDecisionOption): string {
+  if (option.kind === 'adapt_week') {
+    return option.targetPath
+      ? 'Vorschau als naechsten Schritt oeffnen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.'
+      : 'Szenario-Vorschau als naechsten Schritt oeffnen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.';
+  }
+  if (option.kind === 'defer_decision') {
+    return 'Entscheidung bleibt Watch-Kontext; bei neuer Recovery-, Ziel- oder Garmin-Evidenz wieder pruefen.';
+  }
+  return 'Woche bleibt wie gewaehlt; Apply, Plan- oder Garmin-Schritte passieren nur auf ihren bestehenden expliziten Oberflaechen.';
+}
+
+export function buildPlanWeeklyDecisionReceipt(
+  contract: PlanWeeklyDecisionContract,
+  optionKind: PlanWeeklyDecisionOptionKind,
+  createdAt: string,
+): PlanWeeklyDecisionReceipt {
+  const option = contract.options.find(item => item.kind === optionKind)
+    ?? contract.options.find(item => item.kind === contract.primaryOption)
+    ?? contract.options[0];
+
+  return {
+    contractSignature: planWeeklyDecisionContractSignature(contract),
+    optionKind: option.kind,
+    optionLabel: option.label,
+    title: `${option.label} gemerkt`,
+    decision: option.title,
+    weekImpact: option.weekImpact,
+    nextConsequence: receiptNextConsequence(option),
+    mutationBoundary: 'Keine Plan- oder Garmin-Aenderung gespeichert; dies ist ein lokaler Entscheidungsbeleg.',
+    targetPath: option.targetPath,
+    createdAt,
+  };
 }
 
 export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContractInput): PlanWeeklyDecisionContract {
