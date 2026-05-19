@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-19 — AI-Fokus folgt Produktpaketen statt PR-Historie
+
+- **Decision:** `docs/ai/current-focus.md` bleibt wieder ein kurzer Session-Snapshot; die nächsten autonomen Performance-OS-Arbeiten werden in `docs/ai/next-product-packages.md` als Produktpakete geführt. Agents sollen neue Slices aus diesen Paketen wählen und für reine Decision-Contract-Logik zuerst schnelle Contract-/Golden-Tests bevorzugen, bevor Playwright als Route-Beweis läuft.
+- **Why:** Die App-Entwicklung war nicht durch zu wenig Aktivität langsam, sondern durch zu viel Orientierungs- und Verifikationskosten pro Mikro-Slice. Ein kurzer Fokus plus explizite Pakete reduziert Kontextstart, verhindert erneutes Re-Planning und macht zusammenhängende Fortschrittsblöcke wahrscheinlicher.
+- **Alternatives:** `current-focus.md` weiter als lange Feature-Inventarliste nutzen (zu langsam für Sessions); jedes Signal einzeln weiterpolieren (zu hoher PR-/CI-/Deploy-Overhead); einen komplett neuen Roadmap-Prozess starten (zu breit, vorhandene Roadmap bleibt kanonisch).
+- **Decided by:** Codex, nach Tobis Frage zu Baugeschwindigkeit und auf Tobis autonom freigegebenen Performance-OS-Nordstern.
+- **Status:** active.
+
 ## 2026-05-19 — Home führt fehlendes Post-Workout-Feedback als Lernsignal
 
 - **Decision:** Wenn eine geplante oder ungeplante Aktivität heute abgeschlossen ist und noch RPE/subjektives Feedback fehlt, ergänzt Home das `Feedback`-Signal und darf damit vor Ziel- und Trainingssignalen führen. Stärkere Schutz-, Daten-, Analyse- oder Fueling-Signale bleiben vorrangig; der CTA öffnet die bestehende Activity-Detail-Seite, Plan und Garmin bleiben unverändert.
