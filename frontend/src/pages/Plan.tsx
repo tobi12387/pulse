@@ -1501,7 +1501,7 @@ function PlanRefreshPreviewCard({ weekStart }: { weekStart: string }) {
   if (!preview) return null;
 
   return (
-    <section className="card evidence-section" data-testid="plan-refresh-preview-card" style={{ borderColor: 'rgba(94,230,207,0.26)' }}>
+    <section id="plan-refresh-preview-card" tabIndex={-1} className="card evidence-section" data-testid="plan-refresh-preview-card" style={{ borderColor: 'rgba(94,230,207,0.26)' }}>
       <div style={{ display: 'grid', gap: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start', flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0, flex: '1 1 240px' }}>
@@ -3863,6 +3863,7 @@ function tabFromQuery(value: string | null): Tab {
 
 const HASH_TAB: Record<string, Tab> = {
   'plan-weekly-decision': 'training',
+  'plan-refresh-preview-card': 'training',
   'plan-scenario-preview': 'training',
   'plan-adaptation-review': 'training',
   'plan-change-inbox': 'training',

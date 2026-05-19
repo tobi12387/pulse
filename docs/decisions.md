@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-19 — Home-Load-Handoffs nutzen die Plan-Wochenentscheidung
+
+- **Decision:** Wenn Home mit `Belastung` fuehrt, oeffnet der CTA `/plan?tab=training&source=home-load#plan-weekly-decision` statt Data `#data-plan-trace`. Roh-Evidenz-Links fuer TSB/CTL/ATL koennen weiter Data oeffnen; der handlungsleitende Klick landet bei Plan.
+- **Why:** Home soll die Tagesklarheit liefern, aber die Wochenlast-Entscheidung gehoert in den Plan-Command-Surface. Damit landen Home- und Data-Handoffs auf derselben Wochenentscheidung, waehrend Data weiterhin das Evidence Workbench fuer Detailspuren bleibt.
+- **Alternatives:** Home weiter zuerst auf Data-Roh-Evidenz routen (mehr Interpretation statt Entscheidung); alle TSB-Links nach Plan ziehen (Data als Evidence Workbench verliert Zweck); direkt zur Szenario-Vorschau springen (ueberspringt Accept/Adapt/Defer).
+- **Decided by:** Codex, im Track `Trainingsanpassung` nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
+## 2026-05-19 — Wochenentscheidungsoptionen sind lokale Controls
+
+- **Decision:** Die Optionen `Beibehalten`, `Anpassen` und `Spaeter` im `PlanWeeklyDecisionContract` sind bedienbare, lokale Controls. Sie wechseln die aktive Vorschau in der Wochenentscheidung; `Anpassen` fokussiert die passende bestehende Vorschaufläche (`#plan-refresh-preview-card` oder `#plan-scenario-preview`). Keine Option schreibt direkt in Plan oder Garmin.
+- **Why:** Track `Trainingsanpassung` braucht eine aktive Wochen-Kommandofläche statt statischer Diagnosekarten. Tobi soll die Konsequenz einer Wochenentscheidung vor dem Apply sehen und die vorhandene Vorschaufläche erreichen, ohne dass ein erster Klick versteckte Mutationen auslöst.
+- **Alternatives:** Optionen als reine Textkarten belassen (zu passiv); sofort Accept/Defer serverseitig persistieren (zu früh, neue Mutationssemantik); `Anpassen` in Data/Plan doppelt erklären statt zur bestehenden Vorschau zu führen (driftet).
+- **Decided by:** Codex, im Track `Trainingsanpassung` nach Tobis Performance-OS-Reihenfolge.
+- **Status:** active.
+
 ## 2026-05-19 — Data-Plan-Handoffs landen zuerst auf der Wochenentscheidung
 
 - **Decision:** Data Plan-/Load-Analyse und Triage oeffnen `/plan?tab=training&source=data-load#plan-weekly-decision` statt direkt `#plan-scenario-preview`. Der `PlanWeeklyDecisionContract` besitzt den stabilen, fokussierbaren Hash-Anker; Szenario-Vorschau und Apply bleiben der zweite bewusste Schritt.

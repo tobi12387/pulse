@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import type { PlanWeeklyDecisionContract, PlanWeeklyDecisionTone } from './weekly-decision-contract';
 
 type Props = {
@@ -11,9 +12,40 @@ function toneColor(tone: PlanWeeklyDecisionTone): string {
   return 'var(--green)';
 }
 
+function hashFromTargetPath(targetPath: string | null): string | null {
+  if (!targetPath) return null;
+  const hashIndex = targetPath.indexOf('#');
+  const hash = hashIndex >= 0 ? targetPath.slice(hashIndex + 1) : targetPath.replace(/^#/, '');
+  return hash.length > 0 ? hash : null;
+}
+
 export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded' }: Props) {
   const tone = toneColor(contract.tone);
   const Wrapper = variant === 'card' ? 'section' : 'div';
+  const [selectedKind, setSelectedKind] = useState(contract.primaryOption);
+  const selectedOption = useMemo(
+    () => contract.options.find(option => option.kind === selectedKind)
+      ?? contract.options.find(option => option.kind === contract.primaryOption)
+      ?? contract.options[0],
+    [contract.options, contract.primaryOption, selectedKind],
+  );
+
+  useEffect(() => {
+    setSelectedKind(contract.primaryOption);
+  }, [contract.primaryOption, contract.summary, contract.title]);
+
+  function chooseOption(option: PlanWeeklyDecisionContract['options'][number]) {
+    setSelectedKind(option.kind);
+    const hash = hashFromTargetPath(option.targetPath);
+    if (!hash) return;
+
+    window.location.hash = hash;
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(hash);
+      target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      target?.focus({ preventScroll: true });
+    });
+  }
 
   return (
     <Wrapper
@@ -67,17 +99,23 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8, marginTop: 10 }}>
         {contract.options.map(option => {
-          const active = option.kind === contract.primaryOption;
+          const active = option.kind === selectedKind;
           return (
-            <div
+            <button
+              type="button"
               key={option.kind}
               data-testid={`plan-weekly-decision-option-${option.kind}`}
+              aria-pressed={active}
+              onClick={() => chooseOption(option)}
               style={{
                 border: `1px solid ${active ? tone : 'var(--border)'}`,
                 borderRadius: 5,
                 background: active ? `color-mix(in srgb, ${tone} 7%, transparent)` : 'transparent',
                 padding: '9px 10px',
                 minWidth: 0,
+                color: 'inherit',
+                cursor: 'pointer',
+                textAlign: 'left',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', marginBottom: 5 }}>
@@ -97,10 +135,36 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
               <p style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
                 Nach dem Klick: {option.resultPreview}
               </p>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {selectedOption && (
+        <div
+          data-testid="plan-weekly-decision-active-preview"
+          style={{
+            marginTop: 10,
+            border: `1px solid color-mix(in srgb, ${tone} 22%, var(--border))`,
+            borderRadius: 5,
+            background: 'var(--surface-2)',
+            padding: '9px 10px',
+          }}
+        >
+          <div className="label-mono" style={{ color: tone, fontSize: 8.5, marginBottom: 5 }}>
+            Aktive Vorschau
+          </div>
+          <div style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
+            {selectedOption.title}
+          </div>
+          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
+            {selectedOption.weekImpact}
+          </p>
+          <p style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
+            Nach dem Klick: {selectedOption.resultPreview}
+          </p>
+        </div>
+      )}
     </Wrapper>
   );
 }

@@ -82,6 +82,7 @@ const DATA_DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
 const DATA_PLAN_TRACE_PATH = '/data?tab=analysis#data-plan-trace';
 const DATA_POWER_QUALITY_PATH = '/data?tab=analysis#data-power-quality';
 const DATA_POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
+const PLAN_WEEKLY_DECISION_PATH = '/plan?tab=training&source=home-load#plan-weekly-decision';
 
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
@@ -1212,7 +1213,7 @@ function topSignals(
       label: 'Belastung',
       detail: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`,
       tone: signalToneForTsb(home.fitnessLoad.tsb),
-      targetPath: DATA_PLAN_TRACE_PATH,
+      targetPath: PLAN_WEEKLY_DECISION_PATH,
     },
   ];
   const fuelingDebt = openFuelingDebt(todayOptions);

@@ -521,8 +521,8 @@ test('Home daily decision uses load pressure as the safest option for a planned 
   await expect(safestOption).toContainText('keinen Zusatzumfang');
 
   await primaryCta.click();
-  await expect(page).toHaveURL('/data?tab=analysis#data-plan-trace');
-  await expect(page.locator('#data-plan-trace')).toBeVisible();
+  await expect(page).toHaveURL('/plan?tab=training&source=home-load#plan-weekly-decision');
+  await expect(page.getByTestId('plan-weekly-decision-contract')).toBeVisible();
 });
 
 test('Home daily decision uses too-hard training fit as the safest planned-workout option', async ({ page }) => {
