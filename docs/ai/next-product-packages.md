@@ -31,23 +31,23 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates.
 
-Next autonomous product work starts the third pass in the same hard order unless Tobi explicitly reverses it:
+Next autonomous product work continues the third pass in the same hard order unless Tobi explicitly reverses it:
 
-1. `Tagesentscheidung`: Home nutzt kalibrierte Data-Lernsignale nur dann als Tages-/Folgeentscheidung, wenn Evidenzgates reichen.
-2. `Trainingsanpassung`: Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
+1. `Trainingsanpassung`: Plan nutzt kalibrierte Lernsignale erst in expliziten Wochenentscheidungen, ohne hidden writes.
+2. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
 3. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
 
 ## Track 1: Tagesentscheidung
 
-Status: **next active package (third Performance-OS pass)**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write.
+Status: **shipped third-pass package**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context.
 
-Next package: **Home nutzt kalibrierte Data-Lernsignale.**
+Shipped package: **Home nutzt kalibrierte Data-Lernsignale.**
 
 Outcome: Home should use the new Data learning calibration only when it is strong enough to change today or the follow-up decision; incomplete fueling or response evidence stays visible as watch context and should not steal the leading factor.
 
 Why it matters: this brings the MacroFactor-like learning gate back into the Oura/WHOOP-style daily command surface without making weak trends feel certain.
 
-Best next package PR:
+Shipped package PRs:
 
 - Extend Daily Decision golden scenarios for Data learning calibration as `today_action` versus `watch_context`.
 - Route strong calibration to the smallest existing Data/Activity confirmation surface.
@@ -88,7 +88,20 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped second-pass baseline**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, and can store a local decision receipt without Plan/Garmin writes.
+Status: **next active package (third Performance-OS pass)**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, and can store a local decision receipt without Plan/Garmin writes.
+
+Next package: **Plan nutzt kalibrierte Lernsignale explizit.**
+
+Outcome: Plan should let strong Home/Data learning calibration inform the weekly decision language, while weak Decision Quality, response or fueling evidence remains watch context and never mutates Plan or Garmin before an explicit weekly decision.
+
+Why it matters: this carries the MacroFactor-style learning gate into the TrainerRoad/TrainingPeaks/JOIN weekly control loop without making learning evidence a hidden plan write.
+
+Best next package PR:
+
+- Add Plan weekly decision scenarios for `today_action` learning calibration versus watch-only learning evidence.
+- Surface strong calibration as decision evidence in Plan Review and Change Inbox without changing the current week automatically.
+- Keep weak fueling/response evidence as watch context attached to the decision receipt or open decision state.
+- Add fast tests proving no Plan/Garmin writes happen before explicit weekly controls.
 
 Package: **Plan macht Wochenentscheidungen bestaetigbar.**
 

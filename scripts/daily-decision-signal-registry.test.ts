@@ -10,6 +10,7 @@ test('daily decision signal registry owns signal priority order in one table', (
 
   assert.deepEqual(priorities, {
     Mental: 0,
+    Lernkalibrierung: 0,
     Lernen: 0,
     Recovery: 0,
     Anpassung: 0,
@@ -31,6 +32,7 @@ test('daily decision signal registry owns signal priority order in one table', (
 
 test('daily decision signal registry owns default CTA copy', () => {
   assert.equal(dailyDecisionSignalRegistry.Daten.defaultActionLabel, 'Daten prüfen');
+  assert.equal(dailyDecisionSignalRegistry.Lernkalibrierung.defaultActionLabel, 'Kalibrierung prüfen');
   assert.equal(dailyDecisionSignalRegistry.Recovery.defaultActionLabel, 'Recovery ansehen');
   assert.equal(dailyDecisionSignalRegistry.Feedback.defaultActionLabel, 'Feedback erfassen');
   assert.equal(dailyDecisionSignalRegistry.Folge.defaultActionLabel, 'Planfolge prüfen');

@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import type {
   PulseActivity,
+  PulseDailyDecisionQualityResponse,
   PulseDailyDeltaItem,
   PulseFuelingOutcomeBaseline,
   PulseGoalProjectionResponse,
@@ -231,6 +232,26 @@ function decisionQuality() {
     bestEvidence: ['Mobilität 10 Minuten: 3x wiederholt ohne Abschluss-/Outcome-Evidenz'],
     evidence: [],
     suggestedAdjustment: 'Wiederkehrende Empfehlung kleiner, anders getaktet oder vorerst unterdrückt anbieten.',
+  };
+}
+
+function strongDecisionQuality(overrides: Partial<PulseDailyDecisionQualityResponse> = {}): PulseDailyDecisionQualityResponse {
+  return {
+    range: { from: '2026-04-18', to: TODAY, days: 14 },
+    qualityScore: 34,
+    status: 'needs_strategy_change',
+    statusLabel: 'Strategie ändern',
+    repeatedThemes: [{
+      theme: 'Zu spaet intensive Optionen gewählt',
+      count: 3,
+      lastSeen: TODAY,
+      status: 'stale',
+      evidence: ['3x harte Alternative nach schlechtem Warm-up gewaehlt'],
+    }],
+    bestEvidence: ['3x harte Alternative nach schlechtem Warm-up gewaehlt'],
+    evidence: [],
+    suggestedAdjustment: 'Heute zuerst kleinere Option festlegen und Intensität erst nach Warm-up freigeben.',
+    ...overrides,
   };
 }
 
@@ -557,25 +578,45 @@ test('changed daily delta becomes the next Home follow-up before normal training
 
 test('decision quality result preview explains how the next check changes', () => {
   const decision = decisionFor(home(), {
-    decisionQuality: decisionQuality(),
+    decisionQuality: strongDecisionQuality(),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Lernen: Wiederholung prüfen/);
-  assert.equal(decision.cta, 'Lernen prüfen');
+  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Empfehlung darf lernen/);
+  assert.equal(decision.cta, 'Kalibrierung prüfen');
   assert.equal(decision.targetPath, '/data?tab=analysis#data-decision-quality');
-  assert.match(decision.resultPreview ?? '', /Entscheidungsqualität/);
-  assert.match(decision.resultPreview ?? '', /Wiederkehrende Empfehlung kleiner, anders getaktet/);
+  assert.match(decision.resultPreview ?? '', /Lern-Evidenz als Tageshandlung/);
+  assert.match(decision.resultPreview ?? '', /keine neue Empfehlung ohne deinen nächsten expliziten Schritt/);
   assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
 });
 
-test('personal response result preview names the changed daily boundary without hidden writes', () => {
+test('weak learning calibration stays watch context below a productive training decision', () => {
+  const planned = workout({ id: 'planned-learning-watch' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: decisionQuality(),
+    fuelingOutcomeBaseline: fuelingBaseline('activity-learning-watch'),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.equal(decision.cta, 'Workout öffnen');
+  assert.equal(decision.targetPath, '/plan?tab=training');
+  const calibration = decision.contract.signals.find(signal => signal.label === 'Lernkalibrierung');
+  assert.ok(calibration);
+  assert.equal(calibration.tone, 'muted');
+  assert.match(calibration.detail, /Noch Watch-Kontext/);
+  assert.match(calibration.detail, /Decision Quality: Wiederholung prüfen/);
+  assert.match(calibration.detail, /Fueling: Trend-Evidenz 1\/3/);
+  assertSignalBefore(decision, 'Training', 'Lernkalibrierung');
+});
+
+test('personal response calibration names the changed daily boundary without hidden writes', () => {
   const planned = workout({ id: 'planned-personal-response-preview' });
   const decision = decisionFor(home({ todayWorkout: planned }), {
     personalResponse: personalResponse(),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Reaktion: Mentale Last begrenzt Ausführung/);
-  assert.equal(decision.cta, 'Reaktion prüfen');
+  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Empfehlung darf lernen/);
+  assert.match(decision.contract.leadingFactor, /Heute zuerst Boundary setzen/);
+  assert.equal(decision.cta, 'Kalibrierung prüfen');
   assert.equal(decision.targetPath, '/data?tab=analysis#data-personal-response');
   assert.match(decision.resultPreview ?? '', /Reaktionsmuster/);
   assert.match(decision.resultPreview ?? '', /Heute zuerst Boundary setzen/);

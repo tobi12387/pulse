@@ -1172,6 +1172,41 @@ test('daily training surfaces use localized activity labels', async ({ page }) =
   await expect(page.getByText('run', { exact: true })).toHaveCount(0);
 });
 
+test('Home daily decision opens strong learning calibration from Data evidence', async ({ page }) => {
+  await mockPulseApi(page, {
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 34,
+      status: 'needs_strategy_change',
+      statusLabel: 'Strategie ändern',
+      repeatedThemes: [{
+        theme: 'Zu spaet intensive Optionen gewählt',
+        count: 3,
+        lastSeen: '2026-05-01',
+        status: 'stale',
+        evidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+      }],
+      bestEvidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+      evidence: [],
+      suggestedAdjustment: 'Heute zuerst kleinere Option festlegen und Intensität erst nach Warm-up freigeben.',
+    },
+  });
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Lernkalibrierung');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Empfehlung darf lernen');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Heute zuerst kleinere Option');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Lernkalibrierung zuerst prüfen');
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision.getByTestId('daily-decision-contract')).toContainText('Lernkalibrierung');
+  await expect(decision).toContainText('Lern-Evidenz als Tageshandlung');
+
+  await decision.getByRole('button', { name: 'Kalibrierung prüfen', exact: true }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-decision-quality');
+  await expect(page.locator('#data-decision-quality')).toBeVisible();
+});
+
 test('mobile Home availability intent opens a workout scenario preview', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
   let previewBody: unknown = null;

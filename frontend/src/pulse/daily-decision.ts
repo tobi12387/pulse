@@ -1,5 +1,6 @@
 import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulsePersonalResponseResponse, PulsePersonalResponseSignal, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from './activity-labels';
+import { buildLearningCalibration, decisionQualityCanCalibrate } from './learning-calibration';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
 export type DailyDecisionSignalTone = 'green' | 'amber' | 'rose' | 'accent' | 'muted';
@@ -341,6 +342,12 @@ function decisionQualityAlternative(signal: DailyDecisionSignal | null): string 
   return `Lernschleife zuerst schließen: ${detail}. Heute kleiner, anders getaktet oder bewusst pausiert entscheiden, statt denselben offenen Schritt zu wiederholen.`;
 }
 
+function learningCalibrationAlternative(signal: DailyDecisionSignal | null): string | null {
+  if (!signal || signal.tone === 'green' || signal.tone === 'muted') return null;
+  const detail = sentenceWithoutTrailingPeriod(signal.detail);
+  return `Lernkalibrierung zuerst prüfen: ${detail}. Heute die Empfehlung nur auf belastbare Lernevidenz stützen; Plan und Garmin bleiben unverändert, bis du die Evidenz öffnest.`;
+}
+
 function recoveryPressureAlternative(recovery: HomeRecovery): string | null {
   if (!recovery) return null;
 
@@ -482,6 +489,8 @@ function alternativeFor(
   const deltaAlternative = dailyDeltaAlternative(dailyDelta);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const dataAlternative = dataConfidenceAlternative(dataSignal);
+  const calibrationSignal = learningCalibrationSignal(decisionQuality, personalResponse, fuelingOutcomeBaseline);
+  const calibrationAlternative = learningCalibrationAlternative(calibrationSignal);
   const qualitySignal = decisionQualitySignal(decisionQuality);
   const qualityAlternative = decisionQualityAlternative(qualitySignal);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
@@ -505,6 +514,8 @@ function alternativeFor(
     alternative = 'Training heute aktiv entschärfen oder pausieren, bis das Risk-Signal geprüft ist.';
   } else if (dataAlternative && dataSignal?.tone === 'rose') {
     alternative = dataAlternative;
+  } else if (calibrationAlternative && calibrationSignal?.tone === 'rose') {
+    alternative = calibrationAlternative;
   } else if (qualityAlternative && qualitySignal?.tone === 'rose') {
     alternative = qualityAlternative;
   } else if (recoveryAlternative) {
@@ -519,6 +530,8 @@ function alternativeFor(
     alternative = blockingAnalysisAlternative;
   } else if (deltaAlternative) {
     alternative = deltaAlternative;
+  } else if (calibrationAlternative) {
+    alternative = calibrationAlternative;
   } else if (qualityAlternative) {
     alternative = qualityAlternative;
   } else if (dataAlternative) {
@@ -642,6 +655,7 @@ export interface DailyDecisionSignalRegistryEntry {
 
 export const dailyDecisionSignalRegistry = {
   Mental: { priority: 0, defaultActionLabel: 'Check-in öffnen', preferSignalActionLabel: true },
+  Lernkalibrierung: { priority: 0, defaultActionLabel: 'Kalibrierung prüfen', preferSignalActionLabel: true },
   Lernen: { priority: 0, defaultActionLabel: 'Lernen prüfen' },
   Recovery: { priority: 0, defaultActionLabel: 'Recovery ansehen' },
   Anpassung: { priority: 0, defaultActionLabel: 'Anpassung prüfen', actionFromDetailPrefix: true },
@@ -766,7 +780,7 @@ function dailyDeltaSignal(delta: PulseDailyDeltaItem | null | undefined): DailyD
 }
 
 function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null | undefined): DailyDecisionSignal | null {
-  if (!quality) return null;
+  if (!quality || !decisionQualityCanCalibrate(quality)) return null;
 
   const primaryEvidence = quality.bestEvidence[0];
   const detail = quality.status === 'helpful' && primaryEvidence
@@ -786,6 +800,29 @@ function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null
     tone,
     targetPath: DATA_DECISION_QUALITY_PATH,
     resultPreview: `Pulse öffnet die Entscheidungsqualität; ${quality.suggestedAdjustment} Plan und Garmin bleiben unverändert.`,
+  };
+}
+
+function learningCalibrationSignal(
+  decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
+  personalResponse: PulsePersonalResponseResponse | null | undefined,
+  fuelingOutcomeBaseline: PulseFuelingOutcomeBaseline | null | undefined,
+): DailyDecisionSignal | null {
+  const calibration = buildLearningCalibration(decisionQuality, personalResponse, fuelingOutcomeBaseline);
+  if (calibration.effect === 'watch_context' && calibration.evidence.length === 0) return null;
+  const detail = calibration.title.startsWith('Empfehlung darf')
+    ? calibration.summary
+    : `${calibration.title}: ${calibration.summary}`;
+
+  return {
+    label: 'Lernkalibrierung',
+    detail,
+    tone: calibration.effect === 'today_action'
+      ? calibration.tone === 'rose' ? 'rose' : 'amber'
+      : 'muted',
+    targetPath: calibration.targetPath,
+    actionLabel: calibration.actionLabel,
+    resultPreview: calibration.resultPreview,
   };
 }
 
@@ -1280,13 +1317,16 @@ function topSignals(
   const recovery = recoverySignal(home.recovery);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const qualitySignal = decisionQualitySignal(decisionQuality);
+  const learningCalibration = learningCalibrationSignal(decisionQuality, personalResponse, fuelingOutcomeBaseline);
   const deltaSignal = dailyDeltaSignal(dailyDelta);
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
   const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
   const feedback = completedFeedbackSignal(home, workout, completedActivity);
   const garminExecution = garminExecutionSignal(workout, completedActivity);
-  const responsePattern = personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
+  const responsePattern = learningCalibration && learningCalibration.tone !== 'muted'
+    ? null
+    : personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
   const everyday = everydaySignal(todayOptions, workout, completedActivity);
 
   if (adaptation) {
@@ -1298,7 +1338,10 @@ function topSignals(
   if (dataSignal) {
     signals.push(dataSignal);
   }
-  if (qualitySignal) {
+  if (learningCalibration) {
+    signals.push(learningCalibration);
+  }
+  if (qualitySignal && (!learningCalibration || learningCalibration.tone === 'muted')) {
     signals.push(qualitySignal);
   }
   if (deltaSignal) {
