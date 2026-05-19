@@ -57,7 +57,7 @@ export function ResilienceRadarCard({
       aria-label="Resilienz-Radar"
       style={{ borderColor: `color-mix(in srgb, ${tone} 24%, var(--border))` }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(176px, auto)', gap: 14, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 14, alignItems: 'start' }}>
         <div style={{ minWidth: 0 }}>
           <div className="label-mono" style={{ color: tone, marginBottom: 6 }}>
             Resilienz-Radar
@@ -69,11 +69,12 @@ export function ResilienceRadarCard({
             {radar.summary}
           </p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, minWidth: 0 }}>
           <button
             type="button"
             onClick={() => navigate(radar.primaryAction.targetPath)}
             style={{
+              width: '100%',
               minWidth: 44,
               minHeight: 42,
               border: `1px solid ${tone}`,
