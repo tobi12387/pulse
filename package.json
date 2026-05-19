@@ -33,6 +33,7 @@
     "verify:trainingsanpassung": "node scripts/verify-track.mjs trainingsanpassung",
     "verify:lernschleifen": "node scripts/verify-track.mjs lernschleifen",
     "verify:track": "node scripts/verify-track.mjs",
+    "delivery:manifest": "node scripts/delivery-manifest.mjs",
     "verify:server": "bash scripts/verify-server.sh",
     "pulse:status": "bash scripts/pulse-status.sh",
     "dev:backend": "npm run dev -w backend",

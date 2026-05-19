@@ -19,6 +19,7 @@ Use this map to load the smallest useful context for a task.
 | Prompt template | `docs/codex-system-prompt.md` |
 | Repo-local Codex skills | `.codex/skills/` |
 | Docs/rule CI | `.github/workflows/docs-sync.yml` |
+| PR delivery gates | `npm run delivery:manifest`, `docs/ai/checklists/delivery-manifest.md` |
 
 Do not read historical archives by default. Use `docs/superpowers/plans/completed/` only for regression comparison or when the user asks about history.
 
@@ -54,6 +55,7 @@ Do not read historical archives by default. Use `docs/superpowers/plans/complete
 | Need | Start With |
 |---|---|
 | PR readiness | `docs/ai/checklists/pr-ready.md` |
+| PR delivery manifest | `docs/ai/checklists/delivery-manifest.md` |
 | Backend change guard | `docs/ai/checklists/backend-change.md` |
 | Frontend/mobile guard | `docs/ai/checklists/frontend-change.md` |
 | iPhone/PWA QA | `docs/ai/checklists/iphone-pwa-qa.md` |

@@ -31,12 +31,11 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages.
 
-No new product package is selected after the current Track-2 learning-calibration package. Before deriving another product slice, finish the supporting build-speed package below unless Tobi explicitly reprioritizes:
+No new product package is selected after the current Track-2 learning-calibration package. Use the shipped delivery manifest before opening any new PR, then derive the next product package only from an explicit user ask, a regression, or fresh route/product evidence.
 
-1. `Build-Speed support`: PR delivery manifest plus changed-files gate mapping.
-2. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
-3. `Trainingsanpassung`: reopen only for regressions or a new explicit Plan package.
-4. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
+1. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
+2. `Trainingsanpassung`: reopen only for regressions or a new explicit Plan package.
+3. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
 
 ## Track 1: Tagesentscheidung
 
@@ -177,7 +176,7 @@ Done evidence:
 
 These improvements are mandatory support for the three tracks, not a fourth product track:
 
-- Next support package: **Delivery manifest + gate mapping.** Add a compact PR/package manifest and a changed-files-to-track-gate map so Codex can choose local checks and automerge eligibility without rediscovering scope each session.
+- Shipped support package: **Delivery manifest + gate mapping.** `npm run delivery:manifest` prints a compact PR/package manifest and changed-files-to-track-gate map so Codex can choose local checks, expected CI jobs, auto-merge eligibility and deploy requirement without rediscovering scope each session.
 - Keep `docs/ai/current-focus.md` below roughly 80 short lines and link detailed status to this file, the canonical roadmap and decisions.
 - Use the track-specific gates instead of re-deriving local checks per PR: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` and `npm run verify:lernschleifen`.
 - Extract Daily Decision contract fixtures from Playwright into fast unit/golden tests.
