@@ -21,9 +21,10 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
 - Current hard Performance-OS backlog order:
-  1. **Trainingsanpassung:** Plan macht Wochenentscheidung aktiver.
-  2. **Lernschleifen:** Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.
-- Shipped baseline: **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence and the local Daily Decision signal registry; reopen only for regressions or a new explicit Track-1 package.
+  1. **Lernschleifen:** Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.
+- Shipped baselines:
+  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence and the local Daily Decision signal registry; reopen only for regressions or a new explicit Track-1 package.
+  - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls and Home/Data handoffs to the same weekly decision surface; reopen only for regressions or a new explicit Track-2 package.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.
 - Focus navigation baseline is Heute (`/`), Data, Plan, Insights and Settings. Coach remains a compatibility/deep-link route and prepared-prompt mode unless a recurring flow proves it needs primary navigation again.
 - Completed implementation plans live in `docs/superpowers/plans/completed/`; do not reopen them as backlog without a new regression or explicit reversal.

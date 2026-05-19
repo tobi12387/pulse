@@ -52,7 +52,7 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **next active package**.
+Status: **shipped baseline**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, and receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`. Reopen Track 2 only for regressions or a new explicit package.
 
 Package: **Plan macht Wochenentscheidung aktiver.**
 
@@ -74,6 +74,8 @@ Done evidence:
 - Home and Data deep links land on the same weekly decision evidence without duplicate copy.
 
 ## Track 3: Lernschleifen
+
+Status: **next active package**.
 
 Package: **Data erklaert Trainingsrisiko und Analyse naechste Handlung besser.**
 

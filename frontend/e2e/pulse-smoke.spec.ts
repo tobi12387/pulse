@@ -472,6 +472,13 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(weeklyDecision).toContainText('Wochenentscheidung offen');
   await expect(weeklyDecision).toContainText('Garmin');
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('Aktuelle Woche bewusst akzeptieren');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-active-preview')).toContainText('Wochenvorschau pruefen');
+  await weeklyDecision.getByRole('button', { name: /Aktuelle Woche bewusst akzeptieren/ }).click();
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toHaveAttribute('aria-pressed', 'true');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-active-preview')).toContainText('keine Plan- oder Garmin-Aenderung');
+  await weeklyDecision.getByRole('button', { name: /Wochenvorschau pruefen/ }).click();
+  await expect(page).toHaveURL(/#plan-scenario-preview$/);
+  await expect(page.getByTestId('plan-scenario-preview-card')).toBeInViewport();
 
   const action = page.getByTestId('plan-primary-action');
 
@@ -703,6 +710,10 @@ test('Plan exposes open change signals in one inbox before detailed evidence', a
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('Beibehalten');
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).toContainText('TSS -40');
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-defer_decision')).toContainText('keine Plan- oder Garmin-Aenderung');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-active-preview')).toContainText('TSS -40');
+  await weeklyDecision.getByRole('button', { name: /Wochenvorschau pruefen/ }).click();
+  await expect(page).toHaveURL(/#plan-refresh-preview-card$/);
+  await expect(page.getByTestId('plan-refresh-preview-card')).toBeInViewport();
 
   await inbox.getByRole('button', { name: 'Vorschau prüfen' }).click();
   await expect(page.getByTestId('plan-refresh-preview-card')).toBeInViewport();

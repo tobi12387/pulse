@@ -315,6 +315,26 @@ test('recovery pressure outranks a normal productive workout and owns the safe o
   assertSignalBefore(decision, 'Recovery', 'Training');
 });
 
+test('load pressure opens the shared Plan weekly decision before raw data trace', () => {
+  const decision = decisionFor(home({
+    fitnessLoad: {
+      date: TODAY,
+      ctl: 42.4,
+      atl: 58.8,
+      tsb: -16.4,
+    },
+  }));
+
+  assert.match(decision.contract.leadingFactor, /^Belastung: TSB -16\.4/);
+  assert.equal(decision.cta, 'Belastung prüfen');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=home-load#plan-weekly-decision');
+  assert.match(decision.resultPreview ?? '', /Planprüfung/);
+  assert.equal(
+    decision.contract.signals.find(signal => signal.label === 'Belastung')?.targetPath,
+    '/plan?tab=training&source=home-load#plan-weekly-decision',
+  );
+});
+
 test('at-risk goals can become the primary intervention when no stronger blocker exists', () => {
   const planned = workout({ id: 'planned-goal-risk' });
   const decision = decisionFor(home({ todayWorkout: planned }), {
