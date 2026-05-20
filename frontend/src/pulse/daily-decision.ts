@@ -1,5 +1,6 @@
 import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulsePersonalResponseResponse, PulsePersonalResponseSignal, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from './activity-labels';
+import { fuelingTrendEvidenceLabel, isFuelingTrendReady } from './fueling-learning';
 import { buildLearningCalibration, decisionQualityCanCalibrate, strongestPersonalResponseSignal } from './learning-calibration';
 import { classifyTradeoffPattern } from './tradeoff-patterns';
 import type { TradeoffReopenSourceTrend } from './tradeoff-patterns';
@@ -777,7 +778,7 @@ function alternativeFor(
   const workout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : home.nextWorkout;
   const todayWorkout = workout?.plannedDate === home.date ? workout : null;
   const fuelingDebt = openFuelingDebt(todayOptions);
-  const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !fuelingOutcomeBaseline.learningReadiness.readyForTrendSummary);
+  const fuelingLearningOpen = Boolean(fuelingOutcomeBaseline?.learningReadiness && !isFuelingTrendReady(fuelingOutcomeBaseline));
   const adaptiveOption = todayOptionsAdaptiveOption(todayOptions);
   const deltaAlternative = dailyDeltaAlternative(dailyDelta);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
@@ -1336,24 +1337,24 @@ function isFuelingLearningActivity(activity: HomeActivity | null): boolean {
 
 function fuelingReadinessDetail(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
   const readiness = baseline?.learningReadiness ?? null;
-  if (!readiness || readiness.readyForTrendSummary) return null;
+  if (!readiness || isFuelingTrendReady(baseline)) return null;
 
+  const evidenceLabel = fuelingTrendEvidenceLabel(baseline);
   const missing = readiness.missingEvidence[0] ?? 'Vergleichbare During-Logs fehlen noch.';
   const nextAction = readiness.nextAction ?? null;
   if (nextAction && nextAction.kind !== 'log_next_long_session') {
-    return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${sentenceWithoutTrailingPeriod(missing)}. Nächste Evidence: ${nextAction.label}; ${sentenceWithoutTrailingPeriod(nextAction.detail)}.`;
+    return `${evidenceLabel}: ${sentenceWithoutTrailingPeriod(missing)}. Nächste Evidence: ${nextAction.label}; ${sentenceWithoutTrailingPeriod(nextAction.detail)}.`;
   }
 
   const target = baseline?.targetCarbsPerHour
     ? ` Nächster Lernlog: ${baseline.targetCarbsPerHour.min}-${baseline.targetCarbsPerHour.max} g/h kontrolliert testen;`
     : ' Nächster Lernlog:';
-  return `Trend-Evidenz ${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}: ${sentenceWithoutTrailingPeriod(missing)}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen. ${fuelingHydrationContext(baseline)}`;
+  return `${evidenceLabel}: ${sentenceWithoutTrailingPeriod(missing)}.${target} Dauer, Carbs und GI-Komfort zusammen erfassen. ${fuelingHydrationContext(baseline)}`;
 }
 
 function fuelingTrendDetail(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
-  const readiness = baseline?.learningReadiness ?? null;
   const trendSummary = sentenceWithoutTrailingPeriod(baseline?.trendSummary?.trim() ?? '');
-  if (!readiness?.readyForTrendSummary || !trendSummary) return null;
+  if (!isFuelingTrendReady(baseline) || !trendSummary) return null;
   return `${trendSummary}. Nächste Handlung: als Ausgangspunkt nutzen und nur klein verändern.`;
 }
 

@@ -526,6 +526,54 @@ test('durability watch context does not steal the leading factor from fueling le
   assertSignalBefore(decision, 'Fueling-Lernen', 'Analyse');
 });
 
+test('fueling trend stays gated in Home when readiness claims only two comparable logs', () => {
+  const planned = workout({
+    id: 'planned-fueling-two-logs',
+    durationMin: 150,
+    archetypeId: 'long_endurance_fueling_practice',
+    difficultyEnergySystem: 'long_endurance',
+    description: 'Lange Ausfahrt mit bewusstem Fueling als Lernziel.',
+  });
+  const prematureBaseline: PulseFuelingOutcomeBaseline = {
+    ...fuelingBaseline('activity-fueling-two-logs'),
+    trendSummary: 'Fueling-Trend: 2/2 sollte Home noch nicht fuehren.',
+    learningReadiness: {
+      comparableCompleteLogs: 2,
+      requiredComparableCompleteLogs: 2,
+      readyForTrendSummary: true,
+      missingEvidence: ['Noch ein vergleichbarer During-Log mit Dauer, Carbs und GI-Komfort fehlt.'],
+      nextAction: {
+        kind: 'log_next_long_session',
+        label: 'Naechsten Lernlog vollstaendig erfassen',
+        detail: 'Naechste lange Einheit mit Dauer, Carbs und GI-Komfort zusammen erfassen.',
+        activityId: null,
+      },
+    },
+  };
+
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    fuelingOutcomeBaseline: prematureBaseline,
+  });
+
+  const fuelingSignal = decision.contract.signals.find(signal => signal.label === 'Fueling-Lernen');
+  const decisionText = [
+    decision.contract.leadingFactor,
+    decision.contract.safestAlternative,
+    decision.prompt,
+    decision.evidence.map(item => typeof item === 'string' ? item : item.label).join(' '),
+    decision.contract.signals.map(signal => signal.detail).join(' '),
+  ].join(' ');
+
+  assert.ok(fuelingSignal);
+  assert.equal(fuelingSignal.tone, 'amber');
+  assert.match(decision.contract.leadingFactor, /^Fueling-Lernen:/);
+  assert.match(decision.contract.leadingFactor, /Trend-Evidenz 2\/3/);
+  assert.doesNotMatch(decisionText, /Fueling-Trend/);
+  assert.doesNotMatch(decisionText, /Trend-Evidenz 2\/2/);
+  assert.equal(decision.cta, 'Fueling vorbereiten');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=fueling-learning&workoutId=planned-fueling-two-logs#workout-fueling-baseline');
+});
+
 test('durability watch context does not steal the leading factor from Garmin execution debt', () => {
   const planned = workout({
     id: 'planned-garmin-before-analysis',
