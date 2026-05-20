@@ -11,8 +11,10 @@ export const TRACKS = {
       {
         label: 'Contract/golden tests',
         stage: 'fast',
-        command: './node_modules/.bin/tsx',
+        command: 'node',
         args: [
+          '--import',
+          'tsx',
           '--test',
           'scripts/daily-decision-golden.test.ts',
           'scripts/daily-decision-signal-registry.test.ts',
@@ -35,7 +37,7 @@ export const TRACKS = {
           '--',
           'frontend/e2e/pulse-smoke.spec.ts',
           '-g',
-          'daily training surfaces use localized activity labels|Home daily decision opens strong learning calibration from Data evidence|Home daily decision opens the body goal everyday tradeoff as one safe option|mobile Home availability intent opens a workout scenario preview|mobile Home planned workout state shows the concrete plan option without availability intents',
+          'daily training surfaces use localized activity labels|Home daily decision opens strong learning calibration from Data evidence|Home daily decision opens the body goal everyday tradeoff as one safe option|Home daily decision closes completed body goal everyday tradeoffs as learning evidence|mobile Home availability intent opens a workout scenario preview|mobile Home planned workout state shows the concrete plan option without availability intents',
           ...E2E_PROJECTS,
         ],
       },
@@ -47,8 +49,10 @@ export const TRACKS = {
       {
         label: 'Contract/golden tests',
         stage: 'fast',
-        command: './node_modules/.bin/tsx',
+        command: 'node',
         args: [
+          '--import',
+          'tsx',
           '--test',
           'scripts/plan-weekly-decision-contract.test.ts',
           'scripts/data-analysis-weekly-decision.test.ts',
@@ -85,8 +89,10 @@ export const TRACKS = {
       {
         label: 'Contract/golden tests',
         stage: 'fast',
-        command: './node_modules/.bin/tsx',
+        command: 'node',
         args: [
+          '--import',
+          'tsx',
           '--test',
           'scripts/data-analysis-action-contracts.test.ts',
           'scripts/daily-decision-golden.test.ts',

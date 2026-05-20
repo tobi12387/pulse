@@ -1426,6 +1426,178 @@ test('Home daily decision opens the body goal everyday tradeoff as one safe opti
   await expect(page).toHaveURL(/source=today-change.*#next-training-decision$/);
 });
 
+test('Home daily decision closes completed body goal everyday tradeoffs as learning evidence', async ({ page }) => {
+  const completedActivity = {
+    id: 'activity-home-tradeoff-closure',
+    userId: 'user-1',
+    externalId: 'garmin-activity-home-tradeoff-closure',
+    source: 'garmin',
+    startTime: '2026-05-01T08:00:00.000Z',
+    activityType: 'bike',
+    name: '45 min Z2 statt Schwelle',
+    durationSec: 45 * 60,
+    distanceM: 21000,
+    avgHr: 132,
+    maxHr: 151,
+    avgPowerW: 148,
+    normalizedPowerW: 156,
+    tss: 38,
+    calories: 520,
+    elevationGainM: 120,
+    trainingEffectAerobic: 2.2,
+    trainingEffectAnaerobic: 0,
+    vo2maxEstimate: null,
+    rpe: null,
+    rpeNote: null,
+    sorenessAreas: null,
+    feedbackLoggedAt: null,
+    plannedWorkoutId: 'home-tradeoff-closure-workout',
+  };
+  const plannedWorkout = {
+    id: 'home-tradeoff-closure-workout',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 4,
+    durationMin: 75,
+    distanceKm: null,
+    targetTss: 96,
+    archetypeId: 'threshold_build',
+    difficultyLevel: 4.4,
+    difficultyEnergySystem: 'threshold',
+    capabilityFit: 'too_hard_today',
+    description: 'Schwellenreiz fuer das Ziel.',
+    steps: null,
+    garminWorkoutId: 'garmin-home-tradeoff-closure',
+    garminScheduledId: 'schedule-home-tradeoff-closure',
+    garminSyncContract: null,
+    status: 'completed',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: completedActivity.id,
+    executionStatus: 'completed_matched',
+    executionMatchedAt: '2026-05-01T08:55:00.000Z',
+    executionMatchConfidence: 0.92,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      todayActivities: [completedActivity],
+      recentActivities: [completedActivity],
+      recovery: {
+        sleepDebt7d: { hours: 2.4, targetH: 7.5, baselineSource: 'garmin_sleep_need', status: 'mild' },
+        hrvDeviation7d: { pct: 2, recentMs: 51, baselineMs: 50, status: 'stable' },
+        rhrDrift7d: { bpmAboveBaseline: 1, recent: 49, baseline: 48, status: 'normal' },
+        recoveryScore: 62,
+        recommendation: 'Heute Grenze klein halten.',
+      },
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: '70.3 Kraichgau braucht Fueling-Praxis.',
+      projections: [{
+        goalId: 'goal-703',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-06-14',
+        daysUntil: 44,
+        probabilityPct: 48,
+        status: 'at_risk',
+        confidence: 'medium',
+        summary: 'Long-Endurance und Fueling sind noch nicht belastbar genug.',
+        limiterRisk: { status: 'blocked', label: 'Fueling-Limiter', summary: 'GI- und During-Logs fehlen fuer lange Einheiten.', evidence: ['1/3 vergleichbare Logs'] },
+        nextBestIntervention: {
+          kind: 'fueling_practice',
+          title: 'Fueling-Praxis absichern',
+          summary: 'Die naechste lange Einheit sollte kontrolliert Fueling und GI-Vertraeglichkeit schliessen.',
+          actionLabel: 'Plan prüfen',
+          targetPath: '/plan?tab=training#goal-projection',
+          evidence: ['Long-Endurance-Level 3.1', '1 kontrollierter During-Log'],
+        },
+        evidence: ['Ziel in 44 Tagen'],
+        missingEvidence: ['Fueling-Vertraeglichkeit offen'],
+      }],
+      missingEvidence: [],
+    },
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist Training geplant; Pulse zeigt Plan und alltagstaugliche Ausweichoption.',
+        signature: 'home-tradeoff-closure-options',
+        options: [
+          {
+            id: 'home-tradeoff-closure-primary',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Plan ausführen',
+            detail: '75 min Z4. Nur sinnvoll, wenn Warm-up und Tagesfenster passen.',
+            cta: 'Workout öffnen',
+            targetPath: '/plan?tab=training',
+            evidence: ['Zielreiz geplant'],
+            activityType: 'bike',
+            zone: 4,
+            durationMin: 75,
+            archetypeId: 'threshold_build',
+            capabilityFit: 'too_hard_today',
+            signalLabels: [{ kind: 'fit_too_hard_today', label: 'Zu hart heute', detail: 'Warm-up und Recovery muessen die Freigabe liefern', tone: 'rose' }],
+          },
+          {
+            id: 'home-tradeoff-closure-easier',
+            kind: 'workout',
+            priority: 'secondary',
+            title: '45 min Z2 statt Schwelle',
+            detail: 'Erhaelt Routine und Zielkontakt, ohne den Tag zu ueberziehen.',
+            cta: 'Alternative prüfen',
+            targetPath: '/plan?tab=training&source=today-change&intent=easier&workoutId=home-tradeoff-closure-workout#next-training-decision',
+            evidence: ['Schlafdefizit', 'Alltagsfenster kleiner'],
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 45,
+            archetypeId: 'recovery_spin',
+            capabilityFit: 'maintenance',
+            signalLabels: [{ kind: 'fit_maintenance', label: 'Machbar', detail: 'Erhaltung statt Progression', tone: 'green' }],
+          },
+        ],
+      },
+    },
+    dailyDelta: [{
+      date: '2026-05-01',
+      status: 'replaced',
+      title: 'Schwelle wurde als 45 min Z2 geschlossen',
+      summary: 'Die alltagstaugliche Alternative wurde statt des harten Reizes erledigt.',
+      score: 72,
+      loadDeltaTss: -58,
+      recoveryDelta: null,
+      nextPlanEffect: 'Plan kann den Zielkontakt halten, muss aber die naechste Intensitaet bewusst bestaetigen.',
+      evidence: ['Geplant: Rad Z4 75 min', 'Garmin: Rad Z2 45 min'],
+      targetPath: '/plan/activity/activity-home-tradeoff-closure',
+    }],
+    activityDetail: {
+      activity: completedActivity,
+      fueling: null,
+      weather: null,
+      plannedWorkout,
+    },
+  });
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Tageskonflikt');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Abschluss lernbar');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Schwelle wurde als 45 min Z2 geschlossen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Tageskonflikt-Abschluss zuerst schließen');
+  await expect(decision).toContainText('wird jetzt zur Lernschleife');
+
+  await decision.getByRole('button', { name: 'Feedback erfassen', exact: true }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-home-tradeoff-closure');
+});
+
 test('mobile Home availability intent opens a workout scenario preview', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
   let previewBody: unknown = null;

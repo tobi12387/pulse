@@ -20,14 +20,14 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Product north star: Pulse is a personal resilience and performance coach that connects physical training, nutrition, recovery and mental wellbeing into one understandable daily next action.
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
-- First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; Track 1 and Track 2 also have their third-pass learning-calibration packages. Track 1 now has a fourth-pass package for the Home body/goal/everyday tradeoff.
+- First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; Track 1 and Track 2 also have their third-pass learning-calibration packages. Track 1 now has fourth- and fifth-pass packages for the Home body/goal/everyday tradeoff and its completed-day learning closure.
 - Delivery-speed support is active in the workflow: use `npm run delivery:intake -- --track <track> --outcome "..."` to start known packages, `npm run verify:<track>:fast` during implementation, `npm run verify:<track>:pr` for Fast Lane PR readiness, and `npm run delivery:manifest` before PRs to choose lane, gates, CI attention, auto-merge and deploy from changed files.
 - Current hard Performance-OS backlog order is kept as ready package cards in `docs/ai/next-product-packages.md` so agents do not re-plan from scratch:
-  1. **Tagesentscheidung:** make completed body/goal/everyday tradeoffs learnable.
-  2. **Trainingsanpassung:** carry repeated tradeoffs into the weekly decision receipt.
-  3. **Lernschleifen:** explain tradeoff patterns as action, plan decision or watch context.
+  1. **Trainingsanpassung:** carry repeated tradeoffs into the weekly decision receipt.
+  2. **Lernschleifen:** explain tradeoff patterns as action, plan decision or watch context.
+  3. **Tagesentscheidung:** use repeated tradeoff learning only when it changes the daily answer.
 - Shipped baselines:
-  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry, the last-decision follow-up signal and gated Data learning calibration in Home; the fourth-pass package makes Home lead with one `Tageskonflikt` when body, goal and everyday option disagree.
+  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry, the last-decision follow-up signal and gated Data learning calibration in Home; the fourth-pass package makes Home lead with one `Tageskonflikt` when body, goal and everyday option disagree, and the fifth pass makes completed Tageskonflikt days learnable through existing Activity feedback.
   - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls, Home/Data handoffs, local weekly decision receipts and gated learning calibration in explicit weekly decisions; the next ready Plan package carries repeated daily tradeoffs into the weekly decision receipt.
   - **Lernschleifen** delivered Data action contracts, Fueling learning-loop copy, Home watch-context gating, the Data training-risk contract and the Data learning-calibration gate for Decision Quality, Personal Response and Fueling trends; the next ready Data package classifies tradeoff patterns as action, plan decision or watch context.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.

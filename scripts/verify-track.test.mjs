@@ -47,7 +47,8 @@ test('track verify configs expose contract-only fast gates for development loops
     const fastSteps = config.steps.filter(step => step.stage === 'fast');
     assert.equal(fastSteps.length, 1, `${track} should have exactly one fast step`);
     assert.match(fastSteps[0].label, /contract|golden/i);
-    assert.equal(fastSteps[0].command, './node_modules/.bin/tsx');
+    assert.equal(fastSteps[0].command, 'node');
+    assert.deepEqual(fastSteps[0].args.slice(0, 3), ['--import', 'tsx', '--test']);
   }
 });
 
@@ -64,6 +65,8 @@ test('track verify configs expose contract-plus-build PR gates before CI smokes'
     const prSteps = config.steps.filter(step => step.stage === 'fast' || step.stage === 'pr');
     assert.equal(prSteps.length, 2, `${track} PR gate should stay to contracts plus frontend build`);
     assert.match(prSteps[0].label, /contract|golden/i);
+    assert.equal(prSteps[0].command, 'node');
+    assert.deepEqual(prSteps[0].args.slice(0, 3), ['--import', 'tsx', '--test']);
     assert.match(prSteps[1].label, /frontend build/i);
     assert.equal(prSteps[1].command, 'npm');
     assert.deepEqual(prSteps[1].args, ['run', 'build', '-w', 'frontend']);

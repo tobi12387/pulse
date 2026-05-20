@@ -273,6 +273,44 @@ function dailyTradeoffSignal(
   };
 }
 
+function completedTradeoffSignal(
+  home: PulseHomeScreenData,
+  todayOptions: PulseTodayOptionsResponse | null | undefined,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+  goalProjection: PulseGoalProjectionResponse | null | undefined,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
+  dailyDelta: PulseDailyDeltaItem | null,
+): DailyDecisionSignal | null {
+  if (!completedActivity || mentalBoundary?.level === 'protect') return null;
+  if (!workout || (workout.status !== 'completed' && !workout.completedActivityId)) return null;
+
+  const option = todayOptionsAdaptiveOption(todayOptions);
+  const goal = topGoalProjection(goalProjection);
+  if (!todayOptions || !option || !goal || goal.status === 'on_track') return null;
+
+  const bodyDetail = bodyTradeoffDetail(home, workout);
+  if (!bodyDetail) return null;
+
+  const goalDetail = `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`;
+  const everydayDetail = `${option.title}: ${sentenceWithoutTrailingPeriod(option.detail)}`;
+  const outcomeDetail = dailyDelta && dailyDelta.status !== 'matched'
+    ? `Abschluss: ${dailyDelta.title}`
+    : 'Abschluss: gewählte oder geänderte Tagesoption erledigt';
+  const tone: DailyDecisionSignalTone = goal.status === 'at_risk' || workout.capabilityFit === 'too_hard_today'
+    ? 'rose'
+    : 'amber';
+
+  return {
+    label: 'Tageskonflikt',
+    detail: `Abschluss lernbar: ${outcomeDetail} · Koerper: ${bodyDetail} · Ziel: ${goalDetail} · Alltag: ${everydayDetail}`,
+    tone,
+    targetPath: activityDetailPath(completedActivity.id),
+    actionLabel: 'Abschluss lernen',
+    resultPreview: 'Pulse öffnet die Aktivität; Feedback macht den Tageskonflikt für die nächste Empfehlung lernbar. Plan und Garmin bleiben unverändert.',
+  };
+}
+
 function workoutFitLabel(workout: HomeWorkout): string | null {
   if (workout.capabilityFit === 'too_hard_today') return 'Zu hart heute';
   if (workout.capabilityFit === 'stretch') return 'Stretch';
@@ -1085,7 +1123,11 @@ function fuelingClosureStep(
   };
 }
 
-function completedDayAlternative(steps: DailyDecisionStep[], fallback: string): string {
+function completedDayAlternative(
+  steps: DailyDecisionStep[],
+  fallback: string,
+  tradeoffClosure: DailyDecisionSignal | null = null,
+): string {
   const feedbackStep = steps.find(step => step.status === 'open' && step.label === 'Feedback erfassen');
   const fuelingStep = steps.find(step => step.status === 'open' && step.label === 'Fueling-Log prüfen');
 
@@ -1102,7 +1144,10 @@ function completedDayAlternative(steps: DailyDecisionStep[], fallback: string): 
 
   if (firstOpenStep.label === 'Feedback erfassen') {
     const detail = sentenceWithoutTrailingPeriod(firstOpenStep.detail);
-    return `Feedback zuerst erfassen: ${detail}. Danach kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.`;
+    const tradeoffPrefix = tradeoffClosure
+      ? `Tageskonflikt-Abschluss zuerst schließen: ${tradeoffClosure.detail}. `
+      : '';
+    return `${tradeoffPrefix}Feedback zuerst erfassen: ${detail}. Danach kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.`;
   }
 
   return fallback;
@@ -1425,9 +1470,13 @@ function topSignals(
     : personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
   const everyday = everydaySignal(todayOptions, workout, completedActivity);
   const tradeoff = dailyTradeoffSignal(home, todayOptions, workout, completedActivity, goalProjection, mentalBoundary);
+  const completedTradeoff = completedTradeoffSignal(home, todayOptions, workout, completedActivity, goalProjection, mentalBoundary, dailyDelta);
 
   if (tradeoff) {
     signals.push(tradeoff);
+  }
+  if (completedTradeoff) {
+    signals.push(completedTradeoff);
   }
   if (adaptation) {
     signals.push(adaptation);
@@ -1614,8 +1663,12 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       },
     ];
     const firstOpenStep = steps.find(step => step.status === 'open');
+    const tradeoffClosure = completedTradeoffSignal(home, todayOptions, completedWorkout, completedActivity, goalProjection, mentalBoundary, dailyDelta);
     const emptyState = feedbackDone && !firstOpenStep ? 'Für heute ist nichts mehr offen. Training und Feedback sind erledigt.' : undefined;
     const evidence: DailyDecisionEvidence[] = [
+      ...(tradeoffClosure
+        ? [{ label: `Tageskonflikt lernbar: ${sentenceWithoutTrailingPeriod(tradeoffClosure.detail)}`, targetPath: tradeoffClosure.targetPath ?? feedbackTargetPath }]
+        : []),
       { label: `Erledigt: ${completedLabel}`, targetPath: '/plan?tab=training' },
       ...(fuelingStep?.targetPath
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
@@ -1623,10 +1676,17 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ];
-    const reason = 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
-    const baseAlternative = 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
-    const alternative = completedDayAlternative(steps, baseAlternative);
+    const reason = tradeoffClosure
+      ? 'Die geplante Einheit ist abgeschlossen, und der Körper-Ziel-Alltag-Konflikt wird jetzt zur Lernschleife. Entscheidend ist das kurze Feedback, nicht neues Training.'
+      : 'Die geplante Einheit ist abgeschlossen. Jetzt zählen Feedback, Versorgung und Regeneration stärker als eine weitere Trainingsentscheidung.';
+    const baseAlternative = tradeoffClosure
+      ? 'Kein Zusatztraining nachschieben; den Tageskonflikt mit Feedback schließen, damit Pulse die gewählte oder geänderte Option für die nächste Empfehlung lernt.'
+      : 'Kein Zusatztraining nachschieben; Regeneration, Essen/Trinken und Schlaf schützen.';
+    const alternative = completedDayAlternative(steps, baseAlternative, tradeoffClosure);
     const completionCriterion = emptyState
+      ?? (tradeoffClosure && firstOpenStep?.label === 'Feedback erfassen'
+        ? 'Tageskonflikt-Abschluss: RPE und Notiz erfassen, damit Pulse die gewählte oder geänderte Option für die nächste Empfehlung lernt.'
+        : null)
       ?? firstOpenStep?.detail
       ?? 'Feedback erfassen, damit Pulse die Belastung und den nächsten Plan sauber einordnen kann.';
     const contract = buildContract({
@@ -1660,7 +1720,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       boundary,
       alternative,
       completionCriterion,
-      resultPreview: completedStepResultPreview(firstOpenStep),
+      resultPreview: tradeoffClosure && firstOpenStep ? tradeoffClosure.resultPreview : completedStepResultPreview(firstOpenStep),
       cta: firstOpenStep?.cta ?? (feedbackDone ? 'Plan ansehen' : 'Feedback erfassen'),
       targetPath: firstOpenStep?.targetPath ?? (feedbackDone ? '/plan?tab=training' : feedbackTargetPath),
       prompt,

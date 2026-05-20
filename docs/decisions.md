@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home macht Tageskonflikt-Abschluss lernbar
+
+- **Decision:** Abgeschlossene Tage, die aus einem Koerper-Ziel-Alltag-Tradeoff entstanden sind, fuehren in Home als lernbarer `Tageskonflikt`-Abschluss. Home routet weiter auf das vorhandene Activity-Feedback, macht den Abschluss fuer die naechste Empfehlung lernbar und schreibt weder Plan noch Garmin automatisch.
+- **Why:** Der neue Tageskonflikt ist erst dann ein Performance-OS-Lernsignal, wenn der erledigte oder geaenderte Tagesausgang wieder in die naechste Entscheidung zurueckfliesst. Feedback bleibt der kleinste vorhandene Closure-Schritt; eine neue Form oder ein versteckter Plan-Write wuerde die ruhige Tagesentscheidung breiter statt nuetzlicher machen.
+- **Alternatives:** Abgeschlossene Tradeoff-Tage nur als generisches Feedback behandeln (verliert den Koerper-Ziel-Alltag-Kontext); eine neue Tradeoff-Form bauen (mehr UI und Doppelpflege); Plan/Garmin direkt aus dem Abschluss anpassen (hidden write).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Fast Lane nutzt lokale PR-Gates ohne Playwright-Doppelung
 
 - **Decision:** Pulse ergaenzt fuer jede Performance-OS-Spur ein lokales `npm run verify:<track>:pr` Gate. `:fast` bleibt Contract-only fuer die Implementierung, `:pr` laeuft Contracts plus Frontend-Build fuer Fast-Lane-PRs, und das volle `npm run verify:<track>` Gate bleibt fuer Full Lane, high-risk UI oder bewusst lokale Browser-Beweise. Fast-Lane-Manifeste fuegen `npm run test:scripts` nicht zusaetzlich hinzu, wenn die geaenderten Script-Testdateien bereits vom Track-Gate abgedeckt sind.
