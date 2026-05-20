@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Deploy-Auth-Recovery bleibt Repo-Runbook statt Chatwissen
+
+- **Decision:** Der SSH-/Deploy-Auth-Blocker wird in `docs/ai/checklists/deploy-auth-recovery.md` als sicheres Recovery-Runbook dokumentiert: Preflight, Grenzen, Auth-Reparatur ausserhalb des Repos, danach Deploy und `verify:server`.
+- **Why:** Runtime-PRs sind gemergt, aber Server-Deploys scheitern an SSH-Zugang. Die Reparatur braucht Tobi/Operator-Zugriff und darf keine Secrets in Code oder Chat bewegen; ein Repo-Runbook macht den naechsten sicheren Schritt dauerhaft auffindbar.
+- **Alternatives:** Die Schritte nur im Chat lassen (geht verloren); private Schluessel oder Passwoerter in Tools/Repo behandeln (verletzt Secret-Regeln); Server direkt patchen, um den Deploy zu umgehen (bricht GitHub-main als Source of Truth).
+- **Decided by:** Codex, als Deploy-/Ops-Dokumentationsslice im Branch `codex/deploy-auth-runbook`.
+- **Status:** active.
+
 ## 2026-05-21 — Verify-Server prueft SSH-Zugang vor Serverchecks
 
 - **Decision:** `scripts/verify-server.sh` fuehrt vor Git-, PM2-, Log- und HTTP-Checks einen nicht-interaktiven SSH-Preflight mit Timeout aus und bricht bei fehlendem Zugriff mit einer klaren Deploy-Verifikationsmeldung ab.
