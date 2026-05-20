@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home haelt Wochenreceipt-Erneuerungschecks als Data-Kontinuitaet ruhig
+
+- **Decision:** Home nutzt Wochenreceipt-Erneuerungschecks nur in Kontinuitaet und Data-Evidenz. Bestaetigte oder unaufgefrischte Checks bleiben aus `Heute entscheidet`, CTA und `Sicherste Option`; frische Heute-Wiederkehr blendet den Check aus und fuehrt weiter den Tages-Review.
+- **Why:** Der Erneuerungscheck ist Lernpflege, keine Tagesforderung. Home soll Data-Vertrauen erben, ohne daraus Action-Laerm zu machen.
+- **Alternatives:** Checks nur in Data lassen (Home wirkt blind); den Check als Leitentscheidung oder CTA fuehren (zu laut); Check in frische Wiederkehr mischen (unklarer Action-Kontext).
+- **Decided by:** Codex, als Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data zeigt den naechsten Wochenreceipt-Erneuerungscheck
 
 - **Decision:** Data nennt fuer Wochenreceipt-Vertrauen jetzt den naechsten Erneuerungscheck als Data-only Evidenz. Bestaetigte oder unaufgefrischte Receipts zeigen, welche weitere Heute- oder Wochen-Evidenz das Vertrauen neu bestaetigt; frische Wiederkehr blendet den Erneuerungscheck aus und nutzt weiter die bestehenden Home-/Plan-Aktionspfade mit altem Receipt nur als Kontext.
