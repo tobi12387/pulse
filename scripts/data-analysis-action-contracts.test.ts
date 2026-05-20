@@ -424,6 +424,87 @@ test('tradeoff pattern classification keeps resolved tradeoff history quiet', ()
   assert.doesNotMatch(translation.learning.summary, /Empfehlung darf lernen/);
 });
 
+test('tradeoff reopen explains fresh Home evidence while older resolved history stays context', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 80,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt mit neuer heutiger Evidenz',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-19',
+        status: 'useful_repetition',
+        evidence: [
+          'Tageskonflikt bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Tagesentscheidung: Recovery niedrig und Alltag nur 45 Minuten frei',
+        ],
+      }],
+      bestEvidence: [
+        'Neue Evidenz seit gemerkter Tagesentscheidung: leichtere Option senkt Folgetag-RPE bei niedriger Recovery',
+      ],
+      suggestedAdjustment: 'Heute erneut leichtere Option bestaetigen und alte Plan-Entscheidung nur als Kontext behalten.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'today_action');
+  assert.equal(translation.primary.actionLabel, 'Heute einordnen');
+  assert.equal(translation.primary.targetPath, '/?source=data-tradeoff');
+  assert.match(translation.primary.title, /Neue Evidenz|Heute/);
+  assert.match(translation.primary.summary, /Frische Heute-Evidenz/);
+  assert.match(translation.primary.summary, /Recovery niedrig/);
+  assert.match(translation.primary.summary, /Alltag nur 45 Minuten/);
+  assert.match(translation.primary.summary, /bereits in Plan eingeordnet/);
+  assert.match(translation.primary.summary, /alter Kontext|bleibt Kontext/i);
+  assert.match(translation.primary.resultPreview ?? '', /heutige Entscheidung/);
+});
+
+test('tradeoff reopen explains fresh Plan evidence while older resolved history stays context', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 30,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt mit neuer Wochenwirkung',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 4,
+        lastSeen: '2026-05-19',
+        status: 'stale',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten trotz Tageskonflikt',
+          'Neue Evidenz seit gemerkter Wochenentscheidung: Planlast kollidiert erneut mit Recovery und Garmin-Ausfuehrung',
+        ],
+      }],
+      bestEvidence: [
+        'Neue Evidenz seit gemerkter Wochenentscheidung: 2x Garmin-Ausfuehrung abgebrochen bei hoher Planlast',
+      ],
+      suggestedAdjustment: 'Jetzt wieder Wochenentscheidung oeffnen: Planlast reduzieren oder leichtere Wochenoption vorab festlegen.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'plan_decision');
+  assert.equal(translation.primary.actionLabel, 'Wochenentscheidung prüfen');
+  assert.equal(translation.primary.targetPath, '/plan?tab=training&source=data-tradeoff#plan-weekly-decision');
+  assert.match(translation.primary.title, /Neue Evidenz|Wochenentscheidung/);
+  assert.match(translation.primary.summary, /Frische Wochen-Evidenz/);
+  assert.match(translation.primary.summary, /Planlast/);
+  assert.match(translation.primary.summary, /Recovery/);
+  assert.match(translation.primary.summary, /Garmin-Ausfuehrung/);
+  assert.match(translation.primary.summary, /Beibehalten trotz Tageskonflikt/);
+  assert.match(translation.primary.summary, /alter Kontext|bleibt Kontext/i);
+  assert.match(translation.primary.resultPreview ?? '', /Planentscheidung/);
+});
+
 test('tradeoff pattern classification routes useful repeated evidence to Home', () => {
   const translation = buildAnalysisTranslation({
     decisionQuality: tradeoffDecisionQuality({
