@@ -30,11 +30,11 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness, the eighth-pass fresh Home reopen explanation, the ninth-pass reopen-source trend context and the tenth-pass closed source-trend continuity, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears, names source-specific fresh Plan reopens and uses repeated reopen-source trends as weekly decision context, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet, names source-specific fresh reopen evidence, groups repeated reopen sources into learning trends and closes handled source trends after weekly decisions.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness, the eighth-pass fresh Home reopen explanation, the ninth-pass reopen-source trend context and the tenth-pass closed source-trend continuity, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears, names source-specific fresh Plan reopens, uses repeated reopen-source trends as weekly decision context and keeps closed source trends as quiet weekly receipts, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet, names source-specific fresh reopen evidence, groups repeated reopen sources into learning trends and closes handled source trends after weekly decisions.
 
 Keep the next package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Trainingsanpassung`: **Plan haelt geschlossene Reopen-Quellentrends als Wochenreceipt ruhig.**
+1. `Lernschleifen`: **Data macht Wochenreceipt-Quellentrends als Lernvertrauen sichtbar.**
 
 ## Track 1: Tagesentscheidung
 
@@ -178,9 +178,9 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped eighth-pass package plus later ready card**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt, consumes the shared tradeoff classifier only for true weekly decisions, keeps handled tradeoff receipts quiet until fresh weekly evidence appears, explains fresh reopens by source and now uses repeated reopen-source trends as weekly decision context.
+Status: **shipped ninth-pass package**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt, consumes the shared tradeoff classifier only for true weekly decisions, keeps handled tradeoff receipts quiet until fresh weekly evidence appears, explains fresh reopens by source, uses repeated reopen-source trends as weekly decision context and keeps closed source trends as quiet weekly receipts.
 
-Later ready package: **Plan haelt geschlossene Reopen-Quellentrends als Wochenreceipt ruhig.**
+Shipped package: **Plan haelt geschlossene Reopen-Quellentrends als Wochenreceipt ruhig.**
 
 Outcome: after Data and Home can mark handled source trends as quiet continuity, Plan should keep the weekly receipt stable, show closed source trends only as confidence/continuity evidence, and reopen `Anpassen` only when fresh weekly source evidence appears.
 
@@ -305,7 +305,20 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **shipped seventh-pass package**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears, the fifth pass explains source-specific fresh reopen evidence while older handled evidence stays context, the sixth pass groups repeated reopen sources into trend-level learning, and the seventh pass closes handled source trends after weekly decisions.
+Status: **shipped seventh-pass package plus later ready card**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears, the fifth pass explains source-specific fresh reopen evidence while older handled evidence stays context, the sixth pass groups repeated reopen sources into trend-level learning, and the seventh pass closes handled source trends after weekly decisions.
+
+Later ready package: **Data macht Wochenreceipt-Quellentrends als Lernvertrauen sichtbar.**
+
+Outcome: after Plan can keep closed source trends as weekly receipts, Data should show which weekly receipt closed the trend, use it as learning confidence, and still route only fresh recurrence back to Home or Plan.
+
+Why it matters: the evidence workbench should make calm learning visible. A closed Planlast-, Recovery-, Garmin-, Alltag- or Zielrisiko trend is not just absence of action; it is proof that Pulse learned and that Home/Plan are staying quiet for a reason.
+
+Package PRs:
+
+- Add Data action-contract scenarios for weekly receipt confidence versus fresh source-trend recurrence after a receipt.
+- Show handled source trends as receipt confidence/evidence, not as a new Home or Plan action.
+- Keep fresh recurrence routing explicit with old receipt confidence as context.
+- Use the Fast Lane `verify:lernschleifen:pr` gate plus one CI/Data smoke unless local rendered behavior is changed.
 
 Shipped package: **Data schliesst Reopen-Quellentrends nach Wochenentscheidungen.**
 
