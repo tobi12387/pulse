@@ -30,13 +30,13 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness and the eighth-pass fresh Home reopen explanation, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions and keeps handled receipts quiet until fresh weekly evidence appears, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet and names source-specific fresh reopen evidence.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness and the eighth-pass fresh Home reopen explanation, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears and names source-specific fresh Plan reopens, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet and names source-specific fresh reopen evidence.
 
 Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Trainingsanpassung`: **Plan erklaert frische Tradeoff-Reopens nach Evidenzquelle.**
-2. `Lernschleifen`: **Data buendelt wiederkehrende Reopen-Quellen zu Lerntrends.**
-3. `Tagesentscheidung`: **Home zeigt Reopen-Quellen als Tageskontext statt alte Konflikte neu zu starten.**
+1. `Lernschleifen`: **Data buendelt wiederkehrende Reopen-Quellen zu Lerntrends.**
+2. `Tagesentscheidung`: **Home zeigt Reopen-Quellen als Tageskontext statt alte Konflikte neu zu starten.**
+3. `Trainingsanpassung`: **Plan nutzt Reopen-Quellentrends als Wochenentscheidungs-Kontext.**
 
 ## Track 1: Tagesentscheidung
 
@@ -167,11 +167,24 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped sixth-pass package plus later ready card**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt, consumes the shared tradeoff classifier only for true weekly decisions and keeps handled tradeoff receipts quiet until fresh weekly evidence appears.
+Status: **shipped seventh-pass package plus later ready card**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt, consumes the shared tradeoff classifier only for true weekly decisions, keeps handled tradeoff receipts quiet until fresh weekly evidence appears and explains fresh reopens by source.
 
-Later ready package: **Plan erklaert frische Tradeoff-Reopens nach Evidenzquelle.**
+Later ready package: **Plan nutzt Reopen-Quellentrends als Wochenentscheidungs-Kontext.**
 
-Outcome: after Data/Home can name why a resolved tradeoff reopened, Plan should explain whether the fresh weekly evidence comes from plan load, recovery, Garmin execution or goal pressure, and map `Anpassen` to the smallest preview-only weekly action.
+Outcome: after Data groups repeated reopen sources and Home shows the daily trend hint, Plan should decide whether a repeated source trend changes the weekly choice or stays watch context.
+
+Why it matters: source-specific reopen copy is useful once; repeated source trends are what should change the week. Plan should not re-explain every source instance if Data has already grouped the pattern.
+
+Package PRs:
+
+- Add Plan weekly decision scenarios for repeated reopen-source trend versus isolated fresh source.
+- Keep source trends in learned/changed context and open `Anpassen` only when they create weekly action.
+- Preserve preview-only `Beibehalten`, `Anpassen` and `Spaeter` contracts plus handled receipt continuity.
+- Use the Fast Lane `verify:trainingsanpassung:pr` gate plus one CI/Plan smoke unless local rendered behavior is changed.
+
+Shipped package: **Plan erklaert frische Tradeoff-Reopens nach Evidenzquelle.**
+
+Outcome: after Data/Home can name why a resolved tradeoff reopened, Plan explains whether the fresh weekly evidence comes from plan load, recovery, Garmin execution or goal pressure, and maps `Anpassen` to the smallest preview-only weekly action.
 
 Why it matters: once handled receipts can reopen, the weekly command surface should not say only "old Tageskonflikt again". It should say what changed in the week and which explicit Plan/Garmin-safe decision is now worth previewing.
 
