@@ -27,6 +27,7 @@ export interface TradeoffPatternClassification {
   state: TradeoffPatternState;
   hasFreshEvidence: boolean;
   reopenSourceTrends: TradeoffReopenSourceTrend[];
+  resolvedReopenSourceTrends: TradeoffReopenSourceTrend[];
 }
 
 function unique(items: Array<string | null | undefined>, limit: number): string[] {
@@ -47,7 +48,8 @@ function withoutTrailingPeriod(value: string): string {
 }
 
 const RESOLVED_TRADEOFF_PATTERN = /bereits|eingeordnet|gemerkt|beibehalten gemerkt|gehandhabt|handled|resolved|geloest|gelöst|erledigt|abgehakt/i;
-const FRESH_TRADEOFF_PATTERN = /frisch|fresh|neu|neue evidenz|erneut|seit gemerkter|seit der|seit dem|wieder wochenentscheidung|jetzt wieder|reopen|re-open|quellentrend/i;
+const FRESH_TRADEOFF_PATTERN = /frisch|fresh|neu|neue evidenz|erneut|seit gemerkter|seit der|seit dem|wieder wochenentscheidung|jetzt wieder|reopen-grund|reopen-source/i;
+const GENERIC_REOPEN_PATTERN = /reopen|re-open/i;
 const REOPEN_SOURCE_REPEAT_PATTERN = /\b([2-9]\d*)x\b|wiederholte?r?|mehrfach|mehrere|quellentrend|reopen-grund|reopen-source|trend/i;
 
 const REOPEN_SOURCE_DEFINITIONS: Array<{
@@ -120,6 +122,15 @@ function buildReopenSourceTrends(freshEvidence: string[]): TradeoffReopenSourceT
     });
 }
 
+function isFreshTradeoffEvidence(value: string): boolean {
+  if (FRESH_TRADEOFF_PATTERN.test(value)) return true;
+  return GENERIC_REOPEN_PATTERN.test(value) && !RESOLVED_TRADEOFF_PATTERN.test(value);
+}
+
+function isResolvedTradeoffEvidence(value: string): boolean {
+  return RESOLVED_TRADEOFF_PATTERN.test(value) && !isFreshTradeoffEvidence(value);
+}
+
 export function classifyTradeoffPattern(
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
 ): TradeoffPatternClassification | null {
@@ -138,22 +149,22 @@ export function classifyTradeoffPattern(
     ...tradeoffTheme.evidence,
     ...decisionQuality.bestEvidence,
   ].join(' ');
-  const freshEvidenceCorpus = [
+  const hasFreshEvidence = [
     decisionQuality.statusLabel,
     tradeoffTheme.theme,
     ...tradeoffTheme.evidence,
     ...decisionQuality.bestEvidence,
-  ].join(' ');
-  const hasFreshEvidence = FRESH_TRADEOFF_PATTERN.test(freshEvidenceCorpus);
+  ].some(isFreshTradeoffEvidence);
   const freshEvidence = unique([
     decisionQuality.statusLabel,
     ...tradeoffTheme.evidence,
     ...decisionQuality.bestEvidence,
-  ].filter(item => FRESH_TRADEOFF_PATTERN.test(item)), 3);
+  ].filter(isFreshTradeoffEvidence), 3);
   const resolvedEvidence = unique([
+    decisionQuality.statusLabel,
     ...tradeoffTheme.evidence,
     ...decisionQuality.bestEvidence,
-  ].filter(item => RESOLVED_TRADEOFF_PATTERN.test(item) && !FRESH_TRADEOFF_PATTERN.test(item)), 3);
+  ].filter(isResolvedTradeoffEvidence), 3);
   const isResolved = RESOLVED_TRADEOFF_PATTERN.test(resolutionCorpus) && !hasFreshEvidence;
   const repeated = tradeoffTheme.count >= 2;
   const becomesWeeklyDecision = repeated
@@ -172,6 +183,7 @@ export function classifyTradeoffPattern(
       ? 'evidence_gap'
       : 'active';
   const reopenSourceTrends = buildReopenSourceTrends(freshEvidence);
+  const resolvedReopenSourceTrends = buildReopenSourceTrends(resolvedEvidence);
 
   return {
     count: tradeoffTheme.count,
@@ -188,5 +200,6 @@ export function classifyTradeoffPattern(
     state,
     hasFreshEvidence,
     reopenSourceTrends,
+    resolvedReopenSourceTrends,
   };
 }

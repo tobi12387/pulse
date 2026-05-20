@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data schliesst Reopen-Quellentrends nach Wochenentscheidungen
+
+- **Decision:** Der gemeinsame `Tageskonflikt`-Classifier trennt jetzt frische Reopen-Quellen von bereits entschiedenen `Reopen-Quellentrends`. Data zeigt handled Quellentrends als ruhige Kontinuitaet und routet nur frische Wiederkehr erneut zu Home oder zur Wochenentscheidung.
+- **Why:** Nach einer bewussten Plan-Entscheidung muss der Lernloop leiser werden, sonst wirkt jedes Trendwort wie ein neuer Konflikt. Data soll erklaeren, ob Planlast, Recovery, Garmin-Ausfuehrung, Alltag oder Zielrisiko bereits eingeordnet ist oder ob wirklich neue Evidenz den Loop wieder oeffnet.
+- **Alternatives:** `Reopen-Quellentrend` weiter immer als frisch interpretieren (reopened alte Entscheidungen staendig); handled Trends komplett ausblenden (verliert Vertrauen in die Lernspur); Data-only Heuristik ohne gemeinsamen Classifier bauen (Drift zu Home/Plan).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan nutzt Reopen-Quellentrends als Wochenkontext
 
 - **Decision:** Plan behandelt wiederholte `Tageskonflikt`-Reopen-Quellen jetzt als `Reopen-Quellentrend`. Ein Quellentrend oeffnet `Anpassen` nur, wenn der gemeinsame Classifier echte Wochenwirkung sieht; sonst bleibt er Watch-Kontext mit `Beibehalten`. Isolierte frische Quellen bleiben source-spezifische Wochen-Evidenz ohne Trend-Sprache.

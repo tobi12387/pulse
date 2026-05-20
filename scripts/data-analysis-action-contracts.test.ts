@@ -585,6 +585,89 @@ test('tradeoff reopen source trend groups Planlast and Garmin for the weekly dec
   assert.ok(translation.primary.evidence.includes('Reopen-Trend Garmin-Ausfuehrung 2x'));
 });
 
+test('handled reopen-source trends stay quiet after the weekly decision', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 74,
+      status: 'helpful',
+      statusLabel: 'Reopen-Quellentrend bereits in Wochenentscheidung eingeordnet',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 5,
+        lastSeen: '2026-05-19',
+        status: 'useful_repetition',
+        evidence: [
+          'Wochenentscheidung gemerkt: Anpassen wegen Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x',
+          'Reopen-Quellentrend Planlast 2x bereits in Plan eingeordnet',
+          'Reopen-Quellentrend Garmin-Ausfuehrung 2x bereits in Plan eingeordnet',
+        ],
+      }],
+      bestEvidence: [
+        'Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled',
+      ],
+      suggestedAdjustment: 'Bereits gehandhabt: Quellentrend als Kontinuitaet behalten, bis frische Heute- oder Wochen-Evidenz erneut wirkt.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'watch_context');
+  assert.equal(translation.primary.actionLabel, 'Muster prüfen');
+  assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-decision-quality');
+  assert.match(translation.primary.title, /Reopen-Quellentrend.*geschlossen|entschieden/i);
+  assert.match(translation.primary.summary, /Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.match(translation.primary.summary, /Wochenentscheidung.*bereits eingeordnet|bereits.*Wochenentscheidung/i);
+  assert.match(translation.primary.summary, /Kontinuitaet|ruhig/i);
+  assert.doesNotMatch(translation.primary.summary, /Data buendelt frische Reopen-Gruende/);
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Planlast 2x'));
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Garmin-Ausfuehrung 2x'));
+  assert.doesNotMatch(translation.primary.targetPath ?? '', /data-tradeoff|source=data-tradeoff/);
+  assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
+});
+
+test('fresh recurrence reopens a handled reopen-source trend for Plan', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 25,
+      status: 'needs_strategy_change',
+      statusLabel: 'Reopen-Quellentrend mit neuer Wochenwirkung',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 6,
+        lastSeen: '2026-05-19',
+        status: 'stale',
+        evidence: [
+          'Wochenentscheidung gemerkt: Anpassen wegen Reopen-Quellentrend Planlast 2x',
+          'Reopen-Quellentrend Planlast 2x bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Wochenentscheidung: 2x Planlast erneut zu hoch nach verschobener Einheit',
+        ],
+      }],
+      bestEvidence: [
+        'Wiederholter Reopen-Grund: Planlast 2x erneut zu hoch',
+      ],
+      suggestedAdjustment: 'Wochenentscheidung erneut aus Quellentrend oeffnen: Planlast kleiner vorschauen, bevor Garmin synchronisiert wird.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'plan_decision');
+  assert.equal(translation.primary.actionLabel, 'Wochenentscheidung prüfen');
+  assert.equal(translation.primary.targetPath, '/plan?tab=training&source=data-tradeoff#plan-weekly-decision');
+  assert.match(translation.primary.title, /Reopen-Quellen.*erneut|Lerntrend/);
+  assert.match(translation.primary.summary, /Reopen-Quellentrend erneut aktiv: Planlast 2x/);
+  assert.match(translation.primary.summary, /Aeltere eingeordnete Evidenz bleibt Kontext/);
+  assert.match(translation.primary.summary, /Wochenentscheidung erneut aus Quellentrend/);
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend Planlast 2x'));
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Planlast 2x'));
+});
+
 test('tradeoff pattern classification routes useful repeated evidence to Home', () => {
   const translation = buildAnalysisTranslation({
     decisionQuality: tradeoffDecisionQuality({
