@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan behandelt Ziel-Fortschritt als Wochenvertrauen
+
+- **Decision:** Plan zeigt `on_track` und Watch-Zielprojektionen als Beibehalten-Vertrauen/Evidenz; nur `at_risk` oder geblockte Ziel-Limiter oeffnen die bestehende explizite Wochenentscheidung mit `Anpassen`.
+- **Why:** Der Wochenplan soll Data- und Home-Zielruhe erben: stabile Zielnaehe motiviert und erklaert, waehrend nur echte Limiter-Gefahr Plan-/Garmin-Vorschau braucht. So bleibt `Anpassen` eine bewusste Entscheidung und kein Nebenprodukt von normalem Fortschritt.
+- **Alternatives:** Watch-Ziele weiter als Risiko zeigen (zu laut); stabile Ziele aus Plan entfernen (zu blind); Ziel-Limiter direkt in Plan/Garmin schreiben (verletzt die explizite Vorschaugrenze).
+- **Decided by:** Codex, als Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Naechstes Paket haelt Ziel-Fortschritt in Plan ruhig
 
 - **Decision:** Nach Home-Ziel-Fortschritt ist das naechste autonome Paket `Trainingsanpassung`: Plan soll stabile und Watch-Zielprojektionen nur als Wochenvertrauen/Evidenz zeigen und nur echte `at_risk` oder geblockte Ziel-Limiter in bestehende Wochenentscheidungen fuehren.

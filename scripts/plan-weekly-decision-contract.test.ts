@@ -160,6 +160,40 @@ const goalProjection: PulseGoalProjectionResponse = {
   missingEvidence: [],
 };
 
+function goalProjectionWith(overrides: {
+  status?: PulseGoalProjectionResponse['projections'][number]['status'];
+  limiterStatus?: PulseGoalProjectionResponse['projections'][number]['limiterRisk']['status'];
+  probabilityPct?: number | null;
+  summary?: string;
+  limiterLabel?: string;
+  limiterSummary?: string;
+} = {}): PulseGoalProjectionResponse {
+  const status = overrides.status ?? 'watch';
+  const limiterStatus = overrides.limiterStatus ?? (status === 'at_risk' ? 'blocked' : status === 'on_track' ? 'clear' : 'watch');
+  const base = goalProjection.projections[0];
+  assert.ok(base);
+
+  return {
+    ...goalProjection,
+    projections: [{
+      ...base,
+      probabilityPct: overrides.probabilityPct ?? (status === 'on_track' ? 78 : status === 'at_risk' ? 31 : 64),
+      status,
+      summary: overrides.summary ?? (status === 'on_track'
+        ? 'Ziel ist auf Kurs; die aktuelle Woche haelt den Aufbau stabil.'
+        : base.summary),
+      limiterRisk: {
+        ...base.limiterRisk,
+        status: limiterStatus,
+        label: overrides.limiterLabel ?? (limiterStatus === 'clear' ? 'Kein dominanter Limiter' : base.limiterRisk.label),
+        summary: overrides.limiterSummary ?? (limiterStatus === 'clear'
+          ? 'Kein dominanter Ziel-Limiter begrenzt die Projektion.'
+          : base.limiterRisk.summary),
+      },
+    }],
+  };
+}
+
 const currentLoad: PulseFitnessLoad = {
   ctl: 55,
   atl: 83,
@@ -322,6 +356,112 @@ test('weekly decision keeps weak learning calibration as watch context without o
   assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
   assert.match(contract.options.find(option => option.kind === 'defer_decision')?.weekImpact ?? '', /Pulse beobachtet weiter/);
   assert.equal(contract.options.every(option => option.readOnly), true);
+});
+
+test('weekly decision keeps on-track goal progress as Plan confidence', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'goal-on-track', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: goalProjectionWith({ status: 'on_track', limiterStatus: 'clear' }),
+    personalResponse: null,
+    decisionQuality: null,
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const risk = contract.sections.find(section => section.id === 'risk');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+
+  assert.equal(contract.tone, 'ok');
+  assert.equal(contract.title, 'Woche aktuell stabil');
+  assert.equal(contract.primaryOption, 'accept_current');
+  assert.match(learned?.title ?? '', /Ziel-Fortschritt.*Beibehalten/);
+  assert.match(learned?.body ?? '', /70\.3 Kraichgau/);
+  assert.match(learned?.body ?? '', /78%/);
+  assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
+  assert.match(risk?.body ?? '', /Risiko aktuell ruhig/);
+  assert.doesNotMatch(risk?.body ?? '', /70\.3 Kraichgau|Ziel|Limiter|Fueling/);
+  assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Ziel|70\.3 Kraichgau|Fueling/);
+  assert.match(contract.evidence.join(' · '), /Ziel-Fortschritt stabil: 70\.3 Kraichgau 78%/);
+});
+
+test('weekly decision keeps watch goal limiters as weekly confidence evidence', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'goal-watch', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: goalProjectionWith({ status: 'watch', limiterStatus: 'watch', probabilityPct: 64 }),
+    personalResponse: null,
+    decisionQuality: null,
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const risk = contract.sections.find(section => section.id === 'risk');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+
+  assert.equal(contract.tone, 'ok');
+  assert.equal(contract.title, 'Woche aktuell stabil');
+  assert.equal(contract.primaryOption, 'accept_current');
+  assert.match(learned?.title ?? '', /Ziel-Limiter beobachten/);
+  assert.match(learned?.body ?? '', /70\.3 Kraichgau/);
+  assert.match(learned?.body ?? '', /64%/);
+  assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
+  assert.match(learned?.body ?? '', /Anpassen oeffnet erst wieder, wenn der Ziel-Limiter kritisch wird/);
+  assert.match(risk?.body ?? '', /Risiko aktuell ruhig/);
+  assert.doesNotMatch(risk?.body ?? '', /Long Endurance|Fueling-Praxis|70\.3 Kraichgau/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Long Endurance|Fueling-Praxis|70\.3 Kraichgau/);
+  assert.match(contract.evidence.join(' · '), /Ziel-Limiter beobachten: 70\.3 Kraichgau 64%/);
+});
+
+test('weekly decision opens only at-risk or blocked goal limiters as explicit Plan decisions', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'goal-blocked', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: goalProjectionWith({ status: 'watch', limiterStatus: 'blocked', probabilityPct: 38 }),
+    personalResponse: null,
+    decisionQuality: null,
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const risk = contract.sections.find(section => section.id === 'risk');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const accept = contract.options.find(option => option.kind === 'accept_current');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'adapt_week', '2026-05-12T07:30:00.000Z');
+
+  assert.equal(contract.tone, 'attention');
+  assert.equal(contract.title, 'Wochenentscheidung offen');
+  assert.equal(contract.primaryOption, 'adapt_week');
+  assert.match(learned?.title ?? '', /Ziel-Limiter/);
+  assert.match(learned?.body ?? '', /Beibehalten, Anpassen oder Spaeter/);
+  assert.match(changed?.body ?? '', /Ziel-Limiter/);
+  assert.match(changed?.body ?? '', /Fueling-Praxis absichern/);
+  assert.match(risk?.body ?? '', /70\.3 Kraichgau/);
+  assert.match(risk?.body ?? '', /38%/);
+  assert.match(risk?.body ?? '', /Lange Einheit mit sauberem Fueling-Log/);
+  assert.match(nextAction?.body ?? '', /Ziel-Limiter explizit/);
+  assert.match(adapt?.weekImpact ?? '', /Ziel-Limiter/);
+  assert.match(adapt?.weekImpact ?? '', /Fueling-Praxis absichern/);
+  assert.match(accept?.weekImpact ?? '', /trotz Ziel-Limiter/);
+  assert.equal(contract.options.every(option => option.readOnly), true);
+  assert.match(receipt.nextConsequence, /Ziel-Limiter/);
+  assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
 
 test('weekly decision carries repeated daily tradeoffs into the Plan receipt without hidden writes', () => {
@@ -993,7 +1133,8 @@ test('builds one weekly decision contract from learning, plan change, goal, reco
   assert.match(contract.sections.find(section => section.id === 'learned')?.body ?? '', /Boundary und Warm-up/);
   assert.match(contract.sections.find(section => section.id === 'changed')?.body ?? '', /Garmin- und Recovery-Daten/);
   assert.match(contract.sections.find(section => section.id === 'risk')?.body ?? '', /TSB -28/);
-  assert.match(contract.sections.find(section => section.id === 'risk')?.body ?? '', /70\.3 Kraichgau/);
+  assert.doesNotMatch(contract.sections.find(section => section.id === 'risk')?.body ?? '', /70\.3 Kraichgau/);
+  assert.match(contract.evidence.join(' · '), /Ziel-Limiter beobachten: 70\.3 Kraichgau 64%/);
   assert.match(contract.sections.find(section => section.id === 'risk')?.body ?? '', /Garmin/);
   assert.match(contract.sections.find(section => section.id === 'next_action')?.body ?? '', /anpassen, beibehalten oder verschieben/);
 });
