@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan zeigt kalibriertes Wochenreceipt-Lernvertrauen im Wochenvertrauen
+
+- **Decision:** Plan nutzt Data/Home-kalibriertes `Wochenreceipt-Lernvertrauen` in der Wochenentscheidung. Bestaetigte Folgewirkung stuetzt `Beibehalten`; geschwaechtes Vertrauen erscheint nur als Review-Kontext, wenn frische Wochen-Evidenz ohnehin `Anpassen` oeffnet.
+- **Why:** Die Wochensteuerung soll aus der kalibrierten Lernschleife Vertrauen ziehen, ohne alte Receipts als neue Planprobleme auszugeben. Bestaetigte Folgewirkung macht Stabilitaet verdient; geschwaechtes Vertrauen erklaert eine echte neue Wochenwirkung, waehrend Plan/Garmin weiter nur nach explizitem Klick schreiben.
+- **Alternatives:** Kalibrierung nur in Data/Home lassen (Plan wirkt blind fuer Folgewirkung); geschwaechte Receipts als eigenes `Anpassen`-Signal fuehren (zu laut); alte Plan-Receipts in Vorschau oder Primaerentscheidung wiederholen (wirkt wie vergessenes Lernen).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home zeigt kalibriertes Wochenreceipt-Lernvertrauen als Tagesruhe
 
 - **Decision:** Home nutzt Data-kalibriertes `Wochenreceipt-Lernvertrauen` nur in Kontinuitaet und Data-Evidenz. Bestaetigte Folgewirkung erscheint als ruhiger Vertrauensgrund; geschwaechtes Vertrauen erscheint nur als Review-Kontext, wenn frische Heute-Evidenz ohnehin die sichere Option oeffnet.
