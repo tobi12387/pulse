@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Shipped Plan-Docs werden aus aktiver Planung archiviert
+
+- **Decision:** Verifizierte, bereits gemergte Plan-Dokumente fuer Analysis Translation v1, Everyday Adaptation Inbox v1, Resilience Radar v1, Support Activation v1 und Nutrition Learning Readiness v1 werden nach `docs/superpowers/plans/completed/` verschoben und im Completed-Index referenziert.
+- **Why:** Der aktive Plan-Ordner soll keine bereits shipped Implementierungsplaene als scheinbare Backlog-Arbeit zeigen. Das reduziert stale Kontext und macht die echten verbleibenden Gates fuer Performance-OS-Arbeit sichtbarer.
+- **Alternatives:** Alle 2026-05-14-Plan-Dateien pauschal archivieren (zu riskant ohne aktuelle Completion-Evidence); die verifizierten Dateien im aktiven Ordner lassen (naechste Agenten koennten shipped Arbeit erneut planen); Completed-Index nicht anfassen (Archiv waere schwerer auffindbar).
+- **Decided by:** Codex, nach Commit-/PR- und Code-/Decision-Abgleich im Branch `codex/archive-shipped-plans`.
+- **Status:** active.
+
 ## 2026-05-21 — Frische Route-Evidence laesst Backlog gated
 
 - **Decision:** Nach frischer Desktop- und Mobile-Route-Evidence bleibt kein ungated autonomes Performance-OS-Produktpaket queued. UI/UX-Produktarbeit startet erst wieder mit konkreter Route-/User-Friction, Roadmap-Repriorisierung, genuegend Nutrition-Logs, iPhone/PWA-Realgeraetevidence oder Tobis expliziter Richtung.

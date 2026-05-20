@@ -113,6 +113,11 @@
 | `2026-05-14-settings-desktop-layout.md` | Settings Desktop Layout — Settings uses a wider desktop shell with status/profile side by side while mobile remains stacked | Settings Density PR |
 | `2026-05-14-settings-section-scroll-repair.md` | Settings Section Scroll Repair — URL-backed Settings sections re-scroll after async layout stabilization | Settings CI Repair PR |
 | `2026-05-14-insights-distinct-next-check.md` | Insights Distinct Next Check — duplicate focus checks are filtered so the card shows a useful next distinct check | Insights Density PR |
+| `2026-05-14-support-activation-v1.md` | Support Activation v1 — explicit support preferences in Settings and Coach context without automatic escalation | PR #369 |
+| `2026-05-14-resilience-radar-v1.md` | Resilience Radar v1 — read-only Data Mental multi-day pattern layer for mood, overload, routine gaps and support prompts | PR #370 |
+| `2026-05-14-everyday-adaptation-inbox-v1.md` | Everyday Adaptation Inbox v1 — Plan routes less-time, not-ready, done-differently and skip decisions through explicit preview or feedback flows | PR #373 |
+| `2026-05-14-analysis-translation-v1.md` | Analysis Translation v1 — Data Analyse translates deep evidence into one action signal, one watch signal and read-only support labels | PR #374 |
+| `2026-05-15-nutrition-learning-readiness-v1.md` | Nutrition Learning Readiness v1 — Fueling baseline exposes Trend-Evidenz readiness and guards new during logs for carbs plus GI comfort | PR #376 |
 
 ## Bekannte veraltete Stellen
 
