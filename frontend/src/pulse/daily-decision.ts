@@ -208,20 +208,39 @@ function todayOptionsAdaptiveDetail(todayOptions: PulseTodayOptionsResponse, opt
 
 function tradeoffFreshEvidenceSummary(pattern: TradeoffPattern): string {
   const freshDetails = pattern.freshEvidence
-    .map(item => sentenceWithoutTrailingPeriod(item)
-      .replace(/^Neue Evidenz seit gemerkter (Tagesentscheidung|Entscheidung):\s*/iu, '')
-      .replace(/^Neue Evidenz:\s*/iu, '')
-      .trim())
-    .filter(item => item && !/^Tageskonflikt mit neuer heutiger Evidenz$/iu.test(item));
+    .map(item => {
+      const clean = sentenceWithoutTrailingPeriod(item)
+        .replace(/^Neue Evidenz seit gemerkter (Tagesentscheidung|Entscheidung):\s*/iu, '')
+        .replace(/^Neue Evidenz:\s*/iu, '')
+        .trim();
+      return pattern.reopenSourceTrends.length > 0
+        ? clean.replace(/^\d+x\s+/u, '').trim()
+        : clean;
+    })
+    .filter(item => item
+      && !/^Tageskonflikt mit neuer heutiger Evidenz$/iu.test(item)
+      && (pattern.reopenSourceTrends.length === 0 || !/wiederholter reopen-grund|reopen-grund|reopen-source|quellentrend/i.test(item)));
 
   return freshDetails.length > 0
     ? freshDetails.join(' · ')
     : `${pattern.count}x ${pattern.themeLabel}`;
 }
 
+function tradeoffReopenSourceHint(pattern: TradeoffPattern): string | null {
+  if (!pattern.hasFreshEvidence) return null;
+  if (pattern.reopenSourceTrends.length === 0) return 'Reopen-Quelle heute isoliert.';
+
+  const trendLabel = pattern.reopenSourceTrends
+    .slice(0, 2)
+    .map(trend => `${trend.label} ${trend.count}x`)
+    .join(' · ');
+  return `Reopen-Quellentrend: ${trendLabel}.`;
+}
+
 function tradeoffLearningDetail(pattern: TradeoffPattern, option: TodayOption): string {
   if (pattern.hasFreshEvidence) {
-    return `Frische Heute-Evidenz: ${tradeoffFreshEvidenceSummary(pattern)}. Heute kleinste sichere Option: ${option.title}.`;
+    const sourceHint = tradeoffReopenSourceHint(pattern);
+    return `Frische Heute-Evidenz: ${tradeoffFreshEvidenceSummary(pattern)}. ${sourceHint ? `${sourceHint} ` : ''}Heute kleinste sichere Option: ${option.title}.`;
   }
 
   return `Lernmuster: ${pattern.count}x ${pattern.themeLabel}. Heute kleinste sichere Option: ${option.title}. ${pattern.suggestedAdjustment}.`;
