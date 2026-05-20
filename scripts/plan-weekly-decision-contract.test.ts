@@ -512,6 +512,104 @@ test('weekly decision keeps repeated watch tradeoffs quiet until fresh weekly ev
   assert.match(contract.evidence.join(' · '), /Tageskonflikt Watch-Kontext/);
 });
 
+test('weekly decision keeps handled tradeoff receipts as quiet continuity', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'handled-tradeoff-receipt', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 70,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt bereits eingeordnet',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-12',
+        status: 'useful_repetition',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten trotz Tageskonflikt',
+          'Tradeoff bereits in Plan eingeordnet',
+        ],
+      }],
+      bestEvidence: ['Tageskonflikt bereits in Plan eingeordnet und als Beibehalten gemerkt'],
+      suggestedAdjustment: 'Bereits gehandhabt: ruhig lassen, bis frische Wochen-Evidenz die Woche erneut veraendert.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'accept_current', '2026-05-12T07:25:00.000Z');
+
+  assert.equal(contract.tone, 'ok');
+  assert.equal(contract.title, 'Woche aktuell stabil');
+  assert.equal(contract.primaryOption, 'accept_current');
+  assert.match(learned?.title ?? '', /Receipt bleibt ruhig/);
+  assert.match(learned?.body ?? '', /bereits in Plan eingeordnet/);
+  assert.match(learned?.body ?? '', /Beibehalten gemerkt/);
+  assert.match(learned?.body ?? '', /frische Wochen-Evidenz/);
+  assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
+  assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Tageskonflikte|Tradeoff-Evidenz/);
+  assert.match(contract.evidence.join(' · '), /Tageskonflikt erledigt/);
+  assert.ok(receipt.evidence?.some(item => /Tageskonflikt erledigt/.test(item)));
+  assert.match(receipt.nextConsequence, /Woche bleibt/);
+});
+
+test('weekly decision reopens handled tradeoff receipts only when fresh weekly evidence appears', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'fresh-handled-tradeoff', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 34,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt mit neuer Wochenwirkung',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-12',
+        status: 'stale',
+        evidence: [
+          'Tageskonflikt bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Wochenentscheidung: Planlast kollidiert erneut mit Recovery und Garmin-Ausfuehrung',
+        ],
+      }],
+      bestEvidence: ['Neue Evidenz seit gemerkter Wochenentscheidung veraendert die Wochenlast erneut'],
+      suggestedAdjustment: 'Jetzt wieder Wochenentscheidung oeffnen: Planlast reduzieren oder leichtere Option fuer die Woche festlegen.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'adapt_week', '2026-05-12T07:30:00.000Z');
+
+  assert.equal(contract.tone, 'attention');
+  assert.equal(contract.title, 'Wochenentscheidung offen');
+  assert.equal(contract.primaryOption, 'adapt_week');
+  assert.match(learned?.title ?? '', /Tageskonflikte/);
+  assert.match(learned?.body ?? '', /Neue Wochen-Evidenz/);
+  assert.match(learned?.body ?? '', /seit gemerkter Wochenentscheidung/);
+  assert.match(changed?.body ?? '', /frische Wochenentscheidung/);
+  assert.match(adapt?.weekImpact ?? '', /Neue Wochen-Evidenz/);
+  assert.match(contract.evidence.join(' · '), /Tageskonflikt Wochenentscheidung/);
+  assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
+});
+
 test('builds one weekly decision contract from learning, plan change, goal, recovery and Garmin debt evidence', () => {
   const contract = buildPlanWeeklyDecisionContract({
     today: '2026-05-12',
