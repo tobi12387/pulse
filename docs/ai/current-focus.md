@@ -38,7 +38,7 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Push registration and test-push activation are manual per target browser/device.
 - PWA offline fallback has automated service-worker proof, but the real iPhone VPN/network disconnect check remains manual field evidence.
 - Real Garmin calendar/workout writes should not run during generic QA unless the task explicitly requires sync repair/testing.
-- Server deploy currently needs manual SSH/auth repair from Tobi; Codex deploy attempts fail with publickey/password denial until access is restored.
+- Server deploy currently needs manual SSH/auth repair from Tobi; Codex deploy attempts fail with publickey/password denial until access is restored. `scripts/verify-server.sh` now reports this as an SSH preflight failure before Git/PM2/health checks.
 - Native iOS is evidence-gated; local web/PWA over VPN remains the current access model.
 - New fueling/nutrition logic should stay conservative, educational and tied to workout/recovery evidence rather than medical prescription.
 - Benchmark work may use public TrainerRoad/TrainingPeaks/JOIN/Runna/Intervals/WKO capability patterns, but must not copy proprietary plan or workout content.

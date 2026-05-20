@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Verify-Server prueft SSH-Zugang vor Serverchecks
+
+- **Decision:** `scripts/verify-server.sh` fuehrt vor Git-, PM2-, Log- und HTTP-Checks einen nicht-interaktiven SSH-Preflight mit Timeout aus und bricht bei fehlendem Zugriff mit einer klaren Deploy-Verifikationsmeldung ab.
+- **Why:** Runtime-PRs koennen aktuell gemergt werden, aber Codex-Deploys und Serververifikation scheitern an SSH-Auth, bevor der eigentliche Serverzustand sichtbar wird. Ein expliziter Preflight macht den echten Ops-Blocker sofort unterscheidbar von App-, PM2-, Health- oder Commit-Problemen.
+- **Alternatives:** Raw-SSH-Fehler weiter durch `verify-server` laufen lassen (unklar und wiederholt Passworteingaben); Deploy-Regeln lockern oder Server direkt bearbeiten (verletzt Source-of-Truth); einen neuen Ops-Stack bauen (zu gross fuer den lokalen Mirror).
+- **Decided by:** Codex, als Deploy-/Ops-Micro-Slice im Branch `codex/deploy-ssh-preflight`.
+- **Status:** active.
+
 ## 2026-05-21 — Plan-Preview-Label bleibt ein evidenzbasierter Micro-Slice
 
 - **Decision:** Das mobile Plan-Szenario-Preview-Label wird von `Preview-only` auf `Nur Vorschau` umgestellt und gegen Umbruch abgesichert; daraus entsteht kein neues Performance-OS-Produktpaket.
