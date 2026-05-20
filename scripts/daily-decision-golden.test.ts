@@ -927,6 +927,7 @@ test('handled reopen-source trend stays quiet continuity in Home', () => {
       }],
       bestEvidence: [
         'Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled',
+        'Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
       ],
       suggestedAdjustment: 'Bereits gehandhabt: Quellentrend als Kontinuitaet behalten, bis frische Heute- oder Wochen-Evidenz erneut wirkt.',
     }),
@@ -938,15 +939,16 @@ test('handled reopen-source trend stays quiet continuity in Home', () => {
   assert.equal(decision.cta, 'Workout öffnen');
   assert.equal(decision.targetPath, '/plan?tab=training');
   assert.equal(decision.contract.signals.find(signal => signal.label === 'Tageskonflikt'), undefined);
-  assert.match(decision.contract.continuity, /Wochenreceipt-Lernvertrauen bleibt ruhig/);
+  assert.match(decision.contract.continuity, /Wochenreceipt-Lernvertrauen bestaetigt/);
   assert.match(decision.contract.continuity, /Planlast 2x/);
   assert.match(decision.contract.continuity, /Garmin-Ausfuehrung 2x/);
   assert.match(decision.contract.continuity, /Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
+  assert.match(decision.contract.continuity, /Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle/);
   assert.doesNotMatch(decision.contract.leadingFactor, /Wochenreceipt|Lernvertrauen|Plan-Receipt/);
   assert.doesNotMatch(decision.contract.safestAlternative, /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Tageskonflikt-Lernen|Wochenreceipt|Lernvertrauen|Plan-Receipt/);
   const tradeoffEvidence = decision.evidence.find(item => (
     typeof item !== 'string'
-    && /Wochenreceipt-Lernvertrauen/.test(item.label)
+    && /Wochenreceipt-Lernvertrauen bestaetigt/.test(item.label)
   ));
   assert.ok(tradeoffEvidence);
   assert.match(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.label : '', /Planlast 2x.*Garmin-Ausfuehrung 2x/);
@@ -1033,12 +1035,12 @@ test('fresh recurrence can reopen a handled source trend in Home', () => {
   assert.match(decision.contract.safestAlternative, /Tageskonflikt-Lernen heute nutzen/);
   assert.match(decision.contract.safestAlternative, /Reopen-Quellentrend: Recovery 2x/);
   assert.doesNotMatch(decision.contract.safestAlternative, /bereits in Plan eingeordnet|Wochenentscheidung gemerkt|Wochenreceipt|Lernvertrauen|Plan-Receipt/);
-  assert.match(decision.contract.continuity, /Wochenreceipt bleibt Lernvertrauen/);
+  assert.match(decision.contract.continuity, /Wochenreceipt-Lernvertrauen braucht Review/);
   assert.match(decision.contract.continuity, /Recovery 2x/);
   assert.doesNotMatch(decision.contract.continuity, /Wochenentscheidung gemerkt|Plan-Receipt:/);
   const tradeoffEvidence = decision.evidence.find(item => (
     typeof item !== 'string'
-    && /Wochenreceipt-Lernvertrauen als Kontext/.test(item.label)
+    && /Wochenreceipt-Lernvertrauen braucht Review/.test(item.label)
   ));
   assert.ok(tradeoffEvidence);
   assert.match(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.label : '', /Recovery 2x/);

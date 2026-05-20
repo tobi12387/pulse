@@ -248,6 +248,10 @@ function tradeoffWeeklyReceiptSummary(pattern: TradeoffPattern): string | null {
   return clean.replace(/^wochenentscheidung gemerkt:\s*/iu, 'Wochenreceipt: ');
 }
 
+function tradeoffReceiptFollowupEvidence(pattern: TradeoffPattern): string | null {
+  return pattern.receiptFollowupEvidence[0] ?? null;
+}
+
 function tradeoffReopenSourceHint(pattern: TradeoffPattern): string | null {
   if (!pattern.hasFreshEvidence) return null;
   if (pattern.reopenSourceTrends.length === 0) return 'Reopen-Quelle heute isoliert.';
@@ -848,6 +852,10 @@ function resolvedTradeoffContinuity(decisionQuality: PulseDailyDecisionQualityRe
     if (sourceTrendLabel) {
       const receiptSummary = tradeoffWeeklyReceiptSummary(pattern);
       if (receiptSummary) {
+        const followup = tradeoffReceiptFollowupEvidence(pattern);
+        if (followup) {
+          return `Wochenreceipt-Lernvertrauen bestaetigt: ${sourceTrendLabel}. ${receiptSummary}. ${followup}. ${pattern.suggestedAdjustment}.`;
+        }
         return `Wochenreceipt-Lernvertrauen bleibt ruhig: ${sourceTrendLabel}. ${receiptSummary}. ${pattern.suggestedAdjustment}.`;
       }
       return `Geschlossener Reopen-Quellentrend bleibt ruhig: ${sourceTrendLabel}. ${pattern.suggestedAdjustment}.`;
@@ -861,7 +869,7 @@ function resolvedTradeoffContinuity(decisionQuality: PulseDailyDecisionQualityRe
   if (sourceTrendLabel) {
     const receiptSummary = tradeoffWeeklyReceiptSummary(reopened);
     if (receiptSummary) {
-      return `Wochenreceipt bleibt Lernvertrauen: ${sourceTrendLabel}. Frische Heute-Evidenz fuehrt nur die heutige adaptive Option.`;
+      return `Wochenreceipt-Lernvertrauen braucht Review: ${sourceTrendLabel}. Frische Heute-Evidenz fuehrt nur die heutige adaptive Option.`;
     }
     return `Geschlossener Reopen-Quellentrend bleibt Kontext: ${sourceTrendLabel}. Frische Heute-Evidenz fuehrt nur die heutige adaptive Option.`;
   }
@@ -879,7 +887,7 @@ function resolvedTradeoffEvidence(decisionQuality: PulseDailyDecisionQualityResp
       const receiptSummary = tradeoffWeeklyReceiptSummary(reopened);
       return [{
         label: receiptSummary
-          ? `Wochenreceipt-Lernvertrauen als Kontext: ${sourceTrendLabel}`
+          ? `Wochenreceipt-Lernvertrauen braucht Review: ${sourceTrendLabel}`
           : `Geschlossener Reopen-Quellentrend als Kontext: ${sourceTrendLabel}`,
         targetPath: DATA_DECISION_QUALITY_PATH,
       }];
@@ -893,8 +901,11 @@ function resolvedTradeoffEvidence(decisionQuality: PulseDailyDecisionQualityResp
   const sourceTrendLabel = tradeoffReopenSourceTrendLabel(pattern.resolvedReopenSourceTrends);
   if (sourceTrendLabel) {
     const receiptSummary = tradeoffWeeklyReceiptSummary(pattern);
+    const followup = tradeoffReceiptFollowupEvidence(pattern);
     return [{
-      label: receiptSummary
+      label: receiptSummary && followup
+        ? `Wochenreceipt-Lernvertrauen bestaetigt: ${sourceTrendLabel}`
+        : receiptSummary
         ? `Wochenreceipt-Lernvertrauen: ${sourceTrendLabel}`
         : `Geschlossener Reopen-Quellentrend: ${sourceTrendLabel}`,
       targetPath: DATA_DECISION_QUALITY_PATH,
