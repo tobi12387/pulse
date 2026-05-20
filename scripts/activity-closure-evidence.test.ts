@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import type { PulseFuelingOutcomeBaseline } from '../shared/types/pulse/index.ts';
+import {
+  fuelingBaselineNextLearningLogText,
+  fuelingBaselineReadinessGap,
+  fuelingBaselineTrendEvidenceValue,
+} from '../frontend/src/components/FuelingOutcomeBaseline.tsx';
 import type { NutritionLog } from '../frontend/src/pulse/api-client.ts';
-import { buildFuelingEvidenceQuality } from '../frontend/src/features/activity/activity-closure-evidence.ts';
+import {
+  buildFuelingEvidenceQuality,
+  fuelingTrendEvidenceLabel,
+} from '../frontend/src/features/activity/activity-closure-evidence.ts';
 
 function log(overrides: Partial<NutritionLog> = {}): NutritionLog {
   return {
@@ -29,6 +38,36 @@ function log(overrides: Partial<NutritionLog> = {}): NutritionLog {
     giComfort: null,
     notes: null,
     createdAt: '2026-05-01T13:15:00.000Z',
+    ...overrides,
+  };
+}
+
+function fuelingBaseline(overrides: Partial<PulseFuelingOutcomeBaseline> = {}): PulseFuelingOutcomeBaseline {
+  return {
+    status: 'learning',
+    label: 'Fueling-Baseline lernt',
+    summary: 'Pulse sammelt vergleichbare During-Logs mit Carbs und GI-Komfort.',
+    latestLogDate: null,
+    observedCarbsPerHour: 52,
+    targetCarbsPerHour: { min: 50, max: 65 },
+    bottles750Ml: null,
+    powderG: null,
+    fluidMlPerHour: null,
+    sodiumMgPerHour: null,
+    trendSummary: null,
+    evidence: ['Fueling-Evidence offen.'],
+    learningReadiness: {
+      comparableCompleteLogs: 1,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+      missingEvidence: ['Noch zwei vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.'],
+      nextAction: {
+        kind: 'log_next_long_session',
+        label: 'Naechsten Lernlog vollstaendig erfassen',
+        detail: 'Naechste lange Einheit mit Dauer, Carbs und GI-Komfort zusammen erfassen.',
+        activityId: null,
+      },
+    },
     ...overrides,
   };
 }
@@ -104,4 +143,40 @@ test('long sessions without measured hydration avoid invented sodium or sweat cl
   assert.match(quality.detail, /Sodium, Hitze und Schweißrate nur ergänzen, wenn du sie wirklich gemessen hast/);
   assert.ok(!quality.items.some(item => item.includes('mg/h')));
   assert.ok(!quality.items.some(item => item.includes('Schweißrate')));
+});
+
+test('activity fueling trend evidence label enforces the central three-log floor', () => {
+  const label = fuelingTrendEvidenceLabel(fuelingBaseline({
+    learningReadiness: {
+      comparableCompleteLogs: 2,
+      requiredComparableCompleteLogs: 2,
+      readyForTrendSummary: true,
+      missingEvidence: ['Noch ein vergleichbarer During-Log mit Dauer, Carbs und GI-Komfort fehlt.'],
+      nextAction: null,
+    },
+  }));
+
+  assert.equal(label, 'Trend-Evidenz 2/3');
+});
+
+test('fueling baseline block copy keeps malformed two-log readiness in learning mode', () => {
+  const baseline = fuelingBaseline({
+    trendSummary: 'Fueling-Trend: 2/2 sollte der Baseline-Block noch nicht zeigen.',
+    learningReadiness: {
+      comparableCompleteLogs: 2,
+      requiredComparableCompleteLogs: 2,
+      readyForTrendSummary: true,
+      missingEvidence: ['Noch ein vergleichbarer During-Log mit Dauer, Carbs und GI-Komfort fehlt.'],
+      nextAction: {
+        kind: 'log_next_long_session',
+        label: 'Naechsten Lernlog vollstaendig erfassen',
+        detail: 'Naechste lange Einheit mit Dauer, Carbs und GI-Komfort zusammen erfassen.',
+        activityId: null,
+      },
+    },
+  });
+
+  assert.equal(fuelingBaselineTrendEvidenceValue(baseline), '2/3');
+  assert.match(fuelingBaselineReadinessGap(baseline) ?? '', /Noch ein vergleichbarer During-Log/);
+  assert.match(fuelingBaselineNextLearningLogText(baseline) ?? '', /Nächster Lernlog/);
 });

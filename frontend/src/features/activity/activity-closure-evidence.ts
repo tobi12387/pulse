@@ -1,5 +1,6 @@
 import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
 import type { NutritionLog, NutritionLogPatch } from '../../pulse/api-client';
+import { fuelingTrendEvidenceLabel as sharedFuelingTrendEvidenceLabel } from '../../pulse/fueling-learning';
 
 const POWER_CARB_ID = 'mnstry-power-carb-sour-cherry-1-0-8';
 
@@ -45,7 +46,7 @@ function hasFuelingCarbEvidence(log: NutritionLog): boolean {
 export function fuelingTrendEvidenceLabel(baseline: PulseFuelingOutcomeBaseline | null): string {
   const learningReadiness = baseline?.learningReadiness ?? null;
   if (!learningReadiness) return 'Trend-Evidenz offen';
-  return `Trend-Evidenz ${learningReadiness.comparableCompleteLogs}/${learningReadiness.requiredComparableCompleteLogs}`;
+  return sharedFuelingTrendEvidenceLabel(baseline);
 }
 
 function parseGermanNumber(value: string): number | null {
