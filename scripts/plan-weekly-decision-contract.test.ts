@@ -563,6 +563,63 @@ test('weekly decision keeps handled tradeoff receipts as quiet continuity', () =
   assert.match(receipt.nextConsequence, /Woche bleibt/);
 });
 
+test('weekly decision keeps handled reopen-source trends as quiet receipt continuity', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'handled-reopen-source-receipt', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 74,
+      status: 'helpful',
+      statusLabel: 'Reopen-Quellentrend bereits in Wochenentscheidung eingeordnet',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 5,
+        lastSeen: '2026-05-12',
+        status: 'useful_repetition',
+        evidence: [
+          'Wochenentscheidung gemerkt: Anpassen wegen Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x',
+          'Reopen-Quellentrend Planlast 2x bereits in Plan eingeordnet',
+          'Reopen-Quellentrend Garmin-Ausfuehrung 2x bereits in Plan eingeordnet',
+        ],
+      }],
+      bestEvidence: [
+        'Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled',
+      ],
+      suggestedAdjustment: 'Bereits gehandhabt: Quellentrend als Kontinuitaet behalten, bis frische Wochen-Evidenz erneut wirkt.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'accept_current', '2026-05-12T07:27:00.000Z');
+
+  assert.equal(contract.tone, 'ok');
+  assert.equal(contract.title, 'Woche aktuell stabil');
+  assert.equal(contract.primaryOption, 'accept_current');
+  assert.match(learned?.title ?? '', /Reopen-Quellentrend.*Receipt bleibt ruhig/);
+  assert.match(learned?.body ?? '', /Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.match(learned?.body ?? '', /Wochenentscheidung.*eingeordnet|bereits.*Wochenentscheidung/);
+  assert.match(learned?.body ?? '', /Kontinuitaet|ruhig/);
+  assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
+  assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x/);
+  assert.match(contract.evidence.join(' · '), /Reopen-Quellentrend erledigt: Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
+  assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Garmin-Ausfuehrung 2x/);
+  assert.ok(receipt.evidence?.some(item => /Reopen-Quellentrend erledigt/.test(item)));
+  assert.match(receipt.nextConsequence, /Woche bleibt/);
+  assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
+});
+
 test('weekly decision reopens handled tradeoff receipts only when fresh weekly evidence appears', () => {
   const contract = buildPlanWeeklyDecisionContract({
     today: '2026-05-12',
@@ -612,6 +669,64 @@ test('weekly decision reopens handled tradeoff receipts only when fresh weekly e
   assert.equal(adapt?.readOnly, true);
   assert.match(contract.evidence.join(' · '), /Tageskonflikt Wochenentscheidung/);
   assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
+});
+
+test('weekly decision reopens handled source trends only with fresh weekly source evidence', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'fresh-handled-source-trend', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 26,
+      status: 'needs_strategy_change',
+      statusLabel: 'Reopen-Quellentrend mit neuer Wochenwirkung',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 6,
+        lastSeen: '2026-05-12',
+        status: 'stale',
+        evidence: [
+          'Wochenentscheidung gemerkt: Anpassen wegen Reopen-Quellentrend Planlast 2x',
+          'Reopen-Quellentrend Planlast 2x bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Wochenentscheidung: 2x Planlast erneut zu hoch nach verschobener Einheit',
+        ],
+      }],
+      bestEvidence: [
+        'Wiederholter Reopen-Grund: Planlast 2x erneut zu hoch',
+      ],
+      suggestedAdjustment: 'Wochenentscheidung erneut aus Quellentrend oeffnen: Planlast kleiner vorschauen, bevor Garmin synchronisiert wird.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const accept = contract.options.find(option => option.kind === 'accept_current');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'adapt_week', '2026-05-12T07:32:00.000Z');
+
+  assert.equal(contract.tone, 'attention');
+  assert.equal(contract.title, 'Wochenentscheidung offen');
+  assert.equal(contract.primaryOption, 'adapt_week');
+  assert.match(learned?.title ?? '', /Reopen-Quellentrend/);
+  assert.match(learned?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
+  assert.match(learned?.body ?? '', /Geschlossener Reopen-Quellentrend bleibt Kontext: Planlast 2x/);
+  assert.doesNotMatch(learned?.body ?? '', /Wochenentscheidung gemerkt/);
+  assert.match(changed?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
+  assert.match(adapt?.weekImpact ?? '', /Reopen-Quellentrend: Planlast 2x/);
+  assert.match(adapt?.weekImpact ?? '', /Szenario-Vorschau/);
+  assert.match(accept?.weekImpact ?? '', /trotz Reopen-Quellentrend/);
+  assert.equal(adapt?.targetPath, '#plan-scenario-preview');
+  assert.equal(adapt?.readOnly, true);
+  assert.match(contract.evidence.join(' · '), /Reopen-Trend Planlast 2x/);
+  assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
+  assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
+  assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
 
 test('weekly decision names goal-pressure as the fresh tradeoff reopen source', () => {

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan haelt geschlossene Reopen-Quellentrends als Receipt ruhig
+
+- **Decision:** Plan behandelt bereits entschiedene `Reopen-Quellentrends` als ruhige Wochenreceipt-Kontinuitaet. Geschlossene Quellentrends fuehren `Beibehalten`, erscheinen als Receipt-/Evidenzspur und oeffnen `Anpassen` erst wieder, wenn frische Wochen-Evidenz denselben oder einen neuen Quellentrend aktiviert.
+- **Why:** Nach Data und Home muss auch die Wochensteuerung leiser werden, sobald Plan eine Quellentrend-Entscheidung bewusst eingeordnet hat. Der Receipt soll erklaeren, warum die Woche stabil bleibt, ohne Planlast-, Recovery-, Garmin-, Alltag- oder Zielrisiko-Trends als neue Aenderung wirken zu lassen.
+- **Alternatives:** Geschlossene Quellentrends weiter als generische Tageskonflikt-Receipts anzeigen (verliert die Source-Lernspur); jeden Quellentrend erneut `Anpassen` fuehren lassen (zu laut und aggressiv); handled Quellentrends komplett entfernen (verliert Vertrauen in die Wochenentscheidung).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home haelt geschlossene Reopen-Quellentrends ruhig
 
 - **Decision:** Home nutzt bereits entschiedene `Reopen-Quellentrends` nur noch als kurze Kontinuitaet und Data-Evidenz. Diese Trends bleiben aus `Heute entscheidet`, CTA und `Sicherste Option` heraus; nur frische Heute-Evidenz kann die adaptive Option erneut oeffnen und nennt dann den aktiven Quellentrend.

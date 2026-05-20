@@ -11,7 +11,7 @@ import type {
   PulseWeeklyReview,
 } from '@coaching-os/shared/pulse';
 import { buildLearningCalibration, type LearningCalibrationSignal } from '../../pulse/learning-calibration';
-import { classifyTradeoffPattern } from '../../pulse/tradeoff-patterns';
+import { classifyTradeoffPattern, type TradeoffReopenSourceTrend } from '../../pulse/tradeoff-patterns';
 import { buildPlanChangeInbox } from './change-inbox-model';
 
 export type PlanWeeklyDecisionTone = 'attention' | 'watch' | 'ok';
@@ -134,6 +134,7 @@ type TradeoffDecisionContext = {
   hasHandledReceipt: boolean;
   hasFreshEvidence: boolean;
   sourceTrendLabel: string | null;
+  resolvedSourceTrendLabel: string | null;
   title: string;
   body: string;
   evidence: string[];
@@ -204,14 +205,23 @@ function tradeoffFreshSourceLabel(
   return sources.length > 0 ? germanList(unique(sources)) : null;
 }
 
+function sourceTrendLabel(trends: TradeoffReopenSourceTrend[]): string | null {
+  if (trends.length === 0) return null;
+  return germanList(trends.map(trend => `${trend.label} ${trend.count}x`));
+}
+
 function tradeoffSourceTrendLabel(pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>): string | null {
-  if (pattern.reopenSourceTrends.length === 0) return null;
-  return germanList(pattern.reopenSourceTrends.map(trend => `${trend.label} ${trend.count}x`));
+  return sourceTrendLabel(pattern.reopenSourceTrends);
+}
+
+function tradeoffResolvedSourceTrendLabel(pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>): string | null {
+  return sourceTrendLabel(pattern.resolvedReopenSourceTrends);
 }
 
 function tradeoffEvidence(pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>): string[] {
   return unique([
     ...pattern.reopenSourceTrends.map(trend => `Reopen-Trend ${trend.label} ${trend.count}x`),
+    ...pattern.resolvedReopenSourceTrends.map(trend => `Reopen-Trend entschieden ${trend.label} ${trend.count}x`),
     ...pattern.evidence,
   ]);
 }
@@ -227,6 +237,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
   if (!pattern) return null;
   const evidenceHint = pattern.evidence.slice(1, 4).join(' ');
   const sourceTrendLabel = tradeoffSourceTrendLabel(pattern);
+  const resolvedSourceTrendLabel = tradeoffResolvedSourceTrendLabel(pattern);
   const freshSourceLabel = pattern.hasFreshEvidence ? tradeoffFreshSourceLabel(pattern) : null;
   const freshEvidenceSummary = pattern.hasFreshEvidence ? tradeoffFreshEvidenceSummary(pattern) : null;
   const handledEvidenceSummary = pattern.hasFreshEvidence ? tradeoffHandledEvidenceSummary(pattern) : null;
@@ -245,7 +256,9 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
     const trendDetail = sourceTrendLabel
       ? 'Data hat die wiederholten Quellen gebuendelt; Plan prueft nur, ob daraus eine Wochenwahl entsteht. '
       : '';
-    const handledDetail = handledEvidenceSummary ? `Aeltere Receipt-Evidenz bleibt Kontext: ${handledEvidenceSummary}. ` : '';
+    const handledDetail = resolvedSourceTrendLabel
+      ? `Geschlossener Reopen-Quellentrend bleibt Kontext: ${resolvedSourceTrendLabel}. `
+      : handledEvidenceSummary ? `Aeltere Receipt-Evidenz bleibt Kontext: ${handledEvidenceSummary}. ` : '';
     return {
       count: pattern.count,
       hasDecision: true,
@@ -253,6 +266,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       hasHandledReceipt: false,
       hasFreshEvidence: pattern.hasFreshEvidence,
       sourceTrendLabel,
+      resolvedSourceTrendLabel,
       title: sourceTrendLabel ? 'Reopen-Quellentrend verändert die Woche' : 'Tageskonflikte verändern die Woche',
       body: sourceTrendLabel
         ? `${evidencePrefix}. ${trendDetail}${handledDetail}${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`
@@ -274,6 +288,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       hasHandledReceipt: false,
       hasFreshEvidence: pattern.hasFreshEvidence,
       sourceTrendLabel,
+      resolvedSourceTrendLabel,
       title: sourceTrendLabel ? 'Reopen-Quellentrend bleibt Heute-Kontext' : 'Tageskonflikt bleibt Heute-Kontext',
       body: sourceTrendLabel
         ? `Reopen-Quellentrend: ${sourceTrendLabel}. Der Trend veraendert heute die sichere Option, nicht die Woche: ${pattern.suggestedAdjustment}. Das ist keine Wochenentscheidung, bis neue Wochen-Evidenz Plan oder Garmin betrifft.`
@@ -288,6 +303,26 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
   }
 
   if (pattern.state === 'resolved') {
+    if (resolvedSourceTrendLabel) {
+      return {
+        count: pattern.count,
+        hasDecision: false,
+        hasWatch: true,
+        hasHandledReceipt: true,
+        hasFreshEvidence: false,
+        sourceTrendLabel,
+        resolvedSourceTrendLabel,
+        title: 'Reopen-Quellentrend-Receipt bleibt ruhig',
+        body: `Geschlossener Reopen-Quellentrend: ${resolvedSourceTrendLabel}. Die Wochenentscheidung hat diesen Trend bereits eingeordnet; ${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`,
+        evidence,
+        suggestedAdjustment: pattern.suggestedAdjustment,
+        freshSourceLabel,
+        freshEvidenceSummary,
+        handledEvidenceSummary,
+        ...adaptTarget,
+      };
+    }
+
     return {
       count: pattern.count,
       hasDecision: false,
@@ -295,6 +330,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       hasHandledReceipt: true,
       hasFreshEvidence: false,
       sourceTrendLabel,
+      resolvedSourceTrendLabel,
       title: 'Tageskonflikt-Receipt bleibt ruhig',
       body: `Erledigter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${evidenceHint ? `${evidenceHint}. ` : ''}${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`,
       evidence,
@@ -317,6 +353,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
     hasHandledReceipt: false,
     hasFreshEvidence: pattern.hasFreshEvidence,
     sourceTrendLabel,
+    resolvedSourceTrendLabel,
     title: sourceTrendLabel ? 'Reopen-Quellentrend bleibt Watch-Kontext' : 'Tageskonflikt bleibt Watch-Kontext',
     body: sourceTrendLabel
       ? `Reopen-Quellentrend: ${sourceTrendLabel}. Der Trend ist noch keine Wochenaenderung: ${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten, bis der Trend echte Wochenwirkung bekommt.`
@@ -620,8 +657,12 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
       tradeoffContext?.hasHandledReceipt ? `Tageskonflikt erledigt: ${tradeoffContext.evidence[0]}` : null,
       tradeoffContext?.hasWatch && !tradeoffContext.hasHandledReceipt ? 'Tageskonflikt Watch-Kontext' : null,
       tradeoffContext?.sourceTrendLabel ? `Reopen-Quellentrend: ${tradeoffContext.sourceTrendLabel}` : null,
+      tradeoffContext?.hasHandledReceipt && tradeoffContext.resolvedSourceTrendLabel ? `Reopen-Quellentrend erledigt: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
       ...(tradeoffContext?.sourceTrendLabel
         ? tradeoffContext.evidence.filter(item => item.startsWith('Reopen-Trend')).slice(0, 3)
+        : []),
+      ...(tradeoffContext?.resolvedSourceTrendLabel
+        ? tradeoffContext.evidence.filter(item => item.startsWith('Reopen-Trend entschieden')).slice(0, 3)
         : []),
       learningContext?.hasDecision ? `Lernkalibrierung: ${learningContext.calibration.title}` : null,
       learningContext?.hasWatch ? 'Lernkalibrierung Watch-Kontext' : null,
