@@ -481,7 +481,7 @@ test('tradeoff reopen explains fresh Plan evidence while older resolved history 
         ],
       }],
       bestEvidence: [
-        'Neue Evidenz seit gemerkter Wochenentscheidung: 2x Garmin-Ausfuehrung abgebrochen bei hoher Planlast',
+        'Neue Evidenz seit gemerkter Wochenentscheidung: Garmin-Ausfuehrung war bei hoher Planlast abgebrochen',
       ],
       suggestedAdjustment: 'Jetzt wieder Wochenentscheidung oeffnen: Planlast reduzieren oder leichtere Wochenoption vorab festlegen.',
     }),
@@ -503,6 +503,86 @@ test('tradeoff reopen explains fresh Plan evidence while older resolved history 
   assert.match(translation.primary.summary, /Beibehalten trotz Tageskonflikt/);
   assert.match(translation.primary.summary, /alter Kontext|bleibt Kontext/i);
   assert.match(translation.primary.resultPreview ?? '', /Planentscheidung/);
+});
+
+test('tradeoff reopen source trend groups repeated Recovery evidence for Home learning', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 81,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt mit neuer heutiger Evidenz',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 4,
+        lastSeen: '2026-05-19',
+        status: 'useful_repetition',
+        evidence: [
+          'Tageskonflikt bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Tagesentscheidung: 2x Recovery nach harter Einheit niedrig',
+        ],
+      }],
+      bestEvidence: [
+        'Wiederholter Reopen-Grund: Recovery 2x mit niedrigem HRV und schlechtem Schlaf',
+      ],
+      suggestedAdjustment: 'Heute leichtere Option nur wegen wiederholter Recovery-Reopens bestaetigen; alte Plan-Entscheidung bleibt Kontext.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'today_action');
+  assert.equal(translation.primary.actionLabel, 'Heute einordnen');
+  assert.equal(translation.primary.targetPath, '/?source=data-tradeoff');
+  assert.match(translation.primary.title, /Reopen-Quellen.*Lerntrend/);
+  assert.match(translation.primary.summary, /Reopen-Quellentrend: Recovery 2x/);
+  assert.match(translation.primary.summary, /Data buendelt/);
+  assert.match(translation.primary.summary, /alte.*Konflikte/i);
+  assert.match(translation.primary.summary, /Tageskonflikt bereits in Plan eingeordnet/);
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend Recovery 2x'));
+});
+
+test('tradeoff reopen source trend groups Planlast and Garmin for the weekly decision', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 28,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt mit neuer Wochenwirkung',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 5,
+        lastSeen: '2026-05-19',
+        status: 'stale',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten trotz Tageskonflikt',
+          'Neue Evidenz seit gemerkter Wochenentscheidung: 2x Planlast kollidiert mit Recovery',
+          'Frische Planwirkung: 2x Garmin-Ausfuehrung nach leichter Option abgebrochen',
+        ],
+      }],
+      bestEvidence: [
+        'Wiederholter Reopen-Grund: Planlast 2x zu hoch',
+        'Wiederholter Reopen-Grund: Garmin-Ausfuehrung 2x abgebrochen',
+      ],
+      suggestedAdjustment: 'Wochenentscheidung aus Quellentrend oeffnen: Planlast kleiner vorschauen, bevor Garmin synchronisiert wird.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'plan_decision');
+  assert.equal(translation.primary.actionLabel, 'Wochenentscheidung prüfen');
+  assert.equal(translation.primary.targetPath, '/plan?tab=training&source=data-tradeoff#plan-weekly-decision');
+  assert.match(translation.primary.title, /Reopen-Quellen.*Lerntrend/);
+  assert.match(translation.primary.summary, /Reopen-Quellentrend: Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.match(translation.primary.summary, /Wochenentscheidung aus Quellentrend/);
+  assert.match(translation.primary.summary, /Beibehalten trotz Tageskonflikt/);
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend Planlast 2x'));
+  assert.ok(translation.primary.evidence.includes('Reopen-Trend Garmin-Ausfuehrung 2x'));
 });
 
 test('tradeoff pattern classification routes useful repeated evidence to Home', () => {

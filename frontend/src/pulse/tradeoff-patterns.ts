@@ -2,6 +2,19 @@ import type { PulseDailyDecisionQualityResponse } from '@coaching-os/shared/puls
 
 export type TradeoffPatternEffect = 'today_action' | 'plan_decision' | 'watch_context';
 export type TradeoffPatternState = 'active' | 'resolved' | 'evidence_gap';
+export type TradeoffReopenSourceId =
+  | 'goal_risk'
+  | 'plan_load'
+  | 'recovery'
+  | 'garmin_execution'
+  | 'everyday';
+
+export interface TradeoffReopenSourceTrend {
+  id: TradeoffReopenSourceId;
+  label: string;
+  count: number;
+  evidence: string[];
+}
 
 export interface TradeoffPatternClassification {
   count: number;
@@ -13,6 +26,7 @@ export interface TradeoffPatternClassification {
   effect: TradeoffPatternEffect;
   state: TradeoffPatternState;
   hasFreshEvidence: boolean;
+  reopenSourceTrends: TradeoffReopenSourceTrend[];
 }
 
 function unique(items: Array<string | null | undefined>, limit: number): string[] {
@@ -33,7 +47,78 @@ function withoutTrailingPeriod(value: string): string {
 }
 
 const RESOLVED_TRADEOFF_PATTERN = /bereits|eingeordnet|gemerkt|beibehalten gemerkt|gehandhabt|handled|resolved|geloest|gelöst|erledigt|abgehakt/i;
-const FRESH_TRADEOFF_PATTERN = /frisch|fresh|neu|neue evidenz|erneut|seit gemerkter|seit der|seit dem|wieder wochenentscheidung|jetzt wieder/i;
+const FRESH_TRADEOFF_PATTERN = /frisch|fresh|neu|neue evidenz|erneut|seit gemerkter|seit der|seit dem|wieder wochenentscheidung|jetzt wieder|reopen|re-open|quellentrend/i;
+const REOPEN_SOURCE_REPEAT_PATTERN = /\b([2-9]\d*)x\b|wiederholte?r?|mehrfach|mehrere|quellentrend|reopen-grund|reopen-source|trend/i;
+
+const REOPEN_SOURCE_DEFINITIONS: Array<{
+  id: TradeoffReopenSourceId;
+  label: string;
+  pattern: RegExp;
+}> = [
+  {
+    id: 'goal_risk',
+    label: 'Zielrisiko',
+    pattern: /ziel|goal|race|kraichgau|70\.3|wahrscheinlichkeit|limiter|long[-\s]?endurance/i,
+  },
+  {
+    id: 'plan_load',
+    label: 'Planlast',
+    pattern: /planlast|wochenlast|trainingslast|load|tss|umfang|intensitaet|intensität/i,
+  },
+  {
+    id: 'recovery',
+    label: 'Recovery',
+    pattern: /recovery|erholung|readiness|tsb|hrv|schlaf|ermuedung|ermüdung/i,
+  },
+  {
+    id: 'garmin_execution',
+    label: 'Garmin-Ausfuehrung',
+    pattern: /garmin|ausfuehrung|ausführung|sync|handoff|uhr|edge|abgebrochen/i,
+  },
+  {
+    id: 'everyday',
+    label: 'Alltag',
+    pattern: /alltag|zeitfenster|kalender|termin|45 minuten|familie|arbeit|verfuegbar|verfügbar/i,
+  },
+];
+
+function reopenSourceRepeatCount(value: string): number {
+  const explicitCount = value.match(/\b([2-9]\d*)x\b/u)?.[1] ?? null;
+  if (explicitCount) return Number.parseInt(explicitCount, 10);
+  return REOPEN_SOURCE_REPEAT_PATTERN.test(value) ? 2 : 1;
+}
+
+function buildReopenSourceTrends(freshEvidence: string[]): TradeoffReopenSourceTrend[] {
+  const trends = new Map<TradeoffReopenSourceId, TradeoffReopenSourceTrend>();
+
+  for (const item of freshEvidence) {
+    const count = reopenSourceRepeatCount(item);
+    if (count < 2) continue;
+
+    for (const source of REOPEN_SOURCE_DEFINITIONS) {
+      if (!source.pattern.test(item)) continue;
+      const current = trends.get(source.id) ?? {
+        id: source.id,
+        label: source.label,
+        count: 0,
+        evidence: [],
+      };
+      trends.set(source.id, {
+        ...current,
+        count: Math.max(current.count, count),
+        evidence: unique([...current.evidence, item], 3),
+      });
+    }
+  }
+
+  return [...trends.values()]
+    .filter(trend => trend.count >= 2)
+    .sort((a, b) => {
+      const sourceOrder = (id: TradeoffReopenSourceId) =>
+        REOPEN_SOURCE_DEFINITIONS.findIndex(source => source.id === id);
+      return b.count - a.count || sourceOrder(a.id) - sourceOrder(b.id);
+    });
+}
 
 export function classifyTradeoffPattern(
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
@@ -86,6 +171,7 @@ export function classifyTradeoffPattern(
     : effect === 'watch_context'
       ? 'evidence_gap'
       : 'active';
+  const reopenSourceTrends = buildReopenSourceTrends(freshEvidence);
 
   return {
     count: tradeoffTheme.count,
@@ -101,5 +187,6 @@ export function classifyTradeoffPattern(
     effect,
     state,
     hasFreshEvidence,
+    reopenSourceTrends,
   };
 }
