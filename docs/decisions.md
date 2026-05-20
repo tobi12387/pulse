@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home zeigt Wochenreceipt-Lernvertrauen als ruhige Tageskontinuitaet
+
+- **Decision:** Home zeigt geschlossene `Reopen-Quellentrends` mit Wochenreceipt jetzt als `Wochenreceipt-Lernvertrauen` nur in Kontinuitaet und Data-Evidenz. `Heute entscheidet`, CTA und `Sicherste Option` bleiben frei von Receipt-Vertrauen; frische Heute-Evidenz darf den Tageskonflikt weiter fuehren, wenn sie die heutige sichere Option veraendert.
+- **Why:** Nach Data soll auch die Tagesoberflaeche erklaeren, warum ein geschlossener Trend ruhig bleibt. Das Vertrauen entsteht aus dem Wochenreceipt, aber die taegliche Fuehrung darf dadurch nicht lauter werden oder alte Plan-Einordnungen neu starten.
+- **Alternatives:** Geschlossene Quellentrends weiter nur generisch als geschlossen anzeigen (zu wenig vertrauensbildend); Receipt-Vertrauen in die Leitentscheidung ziehen (zu laut); frische Wiederkehr wegen altem Receipt blockieren (verliert Tageshandlungsfaehigkeit).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data zeigt Wochenreceipt-Quellentrends als Lernvertrauen
 
 - **Decision:** Data zeigt bereits geschlossene `Reopen-Quellentrends` jetzt als Wochenreceipt-Lernvertrauen. Die Analyse nennt den Receipt, der den Trend geschlossen hat, haelt Home/Plan ruhig und routet nur frische Wiederkehr erneut zu Heute oder zur Wochenentscheidung.
