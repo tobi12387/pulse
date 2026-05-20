@@ -390,6 +390,51 @@ test('Data analysis classifies repeated tradeoffs as weekly plan decisions', asy
   await expect(page.getByTestId('plan-weekly-decision-contract')).toBeVisible();
 });
 
+test('Data analysis keeps resolved tradeoff patterns quiet', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 79,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt bereits eingeordnet',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-01',
+        status: 'useful_repetition',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten trotz Tageskonflikt',
+          'Tradeoff bereits in Plan eingeordnet',
+        ],
+      }],
+      bestEvidence: ['Tageskonflikt bereits in Plan eingeordnet und als Beibehalten gemerkt'],
+      evidence: [],
+      suggestedAdjustment: 'Bereits gehandhabt: ruhig lassen, bis frische Evidenz Plan oder Heute erneut veraendert.',
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Tradeoff-Muster');
+  await expect(card).toContainText('Tageskonflikt bereits eingeordnet');
+  await expect(card).toContainText('Wirkung: Watch-Kontext');
+  await expect(card).toContainText('Data haelt das Muster ruhig');
+  await expect(card).not.toContainText('Tageskonflikte werden Wochenentscheidung');
+  await expect(card).not.toContainText('Tageskonflikt verändert Heute');
+  await card.getByRole('button', { name: 'Muster prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-decision-quality');
+  await expect(page.locator('#data-decision-quality')).toBeVisible();
+});
+
 test('Data analysis opens personal response evidence from the primary response signal', async ({ page }) => {
   await mockPulseApi(page, {
     goalProjection: {
