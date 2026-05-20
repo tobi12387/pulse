@@ -77,7 +77,7 @@ export const TRACKS = {
           '--',
           'frontend/e2e/pulse-smoke.spec.ts',
           '-g',
-          'Plan starts with the current action contract|Plan weekly decision surfaces learning calibration without applying plan or Garmin|Plan weekly decision stores a local receipt without applying plan or Garmin|Plan exposes open change signals in one inbox before detailed evidence|Data analysis opens plan impact from plan limiter evidence',
+          'Plan starts with the current action contract|Plan weekly decision surfaces repeated tradeoffs without applying plan or Garmin|Plan weekly decision stores a local receipt without applying plan or Garmin|Plan exposes open change signals in one inbox before detailed evidence|Data analysis opens plan impact from plan limiter evidence',
           ...E2E_PROJECTS,
         ],
       },
