@@ -1,6 +1,6 @@
 # Daily Intelligent Action Contract v2 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Home's primary daily decision explicitly names the top contributing domains, goal impact, Garmin execution state and safest alternative using existing Pulse data.
 
@@ -38,7 +38,7 @@ It must not:
 - Modify: `docs/ai/current-focus.md`
 - Modify: `docs/decisions.md`
 
-- [ ] **Step 1: Replace the manual review gate in current focus**
+- [x] **Step 1: Replace the manual review gate in current focus**
 
 Change the Performance OS line in `docs/ai/current-focus.md` from:
 
@@ -52,7 +52,7 @@ to:
 - Performance Operating System spec is merged and Tobi has granted autonomous follow-up execution. First selected slice: Daily Intelligent Action Contract v2, which should enrich Home's primary daily decision without backend, migration, plan-mutation or Garmin-write scope.
 ```
 
-- [ ] **Step 2: Add newest decision-log entry**
+- [x] **Step 2: Add newest decision-log entry**
 
 Insert this entry immediately after the first `---` in `docs/decisions.md`:
 
@@ -68,7 +68,7 @@ Insert this entry immediately after the first `---` in `docs/decisions.md`:
 ---
 ```
 
-- [ ] **Step 3: Verify docs edit**
+- [x] **Step 3: Verify docs edit**
 
 Run:
 
@@ -78,7 +78,7 @@ rg -n "Autonomie|Daily Intelligent Action Contract v2|Performance Operating Syst
 
 Expected: output includes the new current-focus line and the new decision entry.
 
-- [ ] **Step 4: Commit docs gate**
+- [x] **Step 4: Commit docs gate**
 
 Run:
 
@@ -94,7 +94,7 @@ Expected: commit succeeds with only the two docs files staged.
 **Files:**
 - Modify: `frontend/src/pulse/daily-decision.ts`
 
-- [ ] **Step 1: Add the contract interfaces**
+- [x] **Step 1: Add the contract interfaces**
 
 Add these exports after `DailyDecisionEvidence`:
 
@@ -122,7 +122,7 @@ Extend `DailyDecision` with:
   contract: DailyDecisionContract;
 ```
 
-- [ ] **Step 2: Add helper functions before `deriveDailyDecision`**
+- [x] **Step 2: Add helper functions before `deriveDailyDecision`**
 
 Add these helper functions near `actionResultPreview`:
 
@@ -236,7 +236,7 @@ function buildContract({
 }
 ```
 
-- [ ] **Step 3: Wire completed-workout decisions**
+- [x] **Step 3: Wire completed-workout decisions**
 
 Inside the completed planned workout branch, add:
 
@@ -252,7 +252,7 @@ Inside the completed planned workout branch, add:
 
 Then include `contract,` in that returned object.
 
-- [ ] **Step 4: Wire off-plan activity decisions**
+- [x] **Step 4: Wire off-plan activity decisions**
 
 Inside the off-plan activity branch, add:
 
@@ -268,7 +268,7 @@ Inside the off-plan activity branch, add:
 
 Then include `contract,` in that returned object.
 
-- [ ] **Step 5: Wire open daily decisions**
+- [x] **Step 5: Wire open daily decisions**
 
 Before the final return, add:
 
@@ -285,7 +285,7 @@ Before the final return, add:
 
 Then include `contract,` in the final returned object.
 
-- [ ] **Step 6: Run focused typecheck**
+- [x] **Step 6: Run focused typecheck**
 
 Run:
 
@@ -300,7 +300,7 @@ Expected before Task 3 may still pass or fail only if `DailyDecisionCard` has no
 **Files:**
 - Modify: `frontend/src/components/DailyDecisionCard.tsx`
 
-- [ ] **Step 1: Add tone helper**
+- [x] **Step 1: Add tone helper**
 
 Add after `priorityColor`:
 
@@ -314,7 +314,7 @@ function signalToneColor(tone: DailyDecision['contract']['signals'][number]['ton
 }
 ```
 
-- [ ] **Step 2: Add renderer for top signals**
+- [x] **Step 2: Add renderer for top signals**
 
 Add near `evidenceItems`:
 
@@ -387,7 +387,7 @@ function contractSignalItems({
 }
 ```
 
-- [ ] **Step 3: Add visible decision logic block**
+- [x] **Step 3: Add visible decision logic block**
 
 Inside `detailsOpen && (...)`, before the existing `showDeferredResultPreview` block, insert:
 
@@ -418,11 +418,11 @@ Inside `detailsOpen && (...)`, before the existing `showDeferredResultPreview` b
               </div>
 ```
 
-- [ ] **Step 4: Keep first viewport calm**
+- [x] **Step 4: Keep first viewport calm**
 
 Do not render `daily-decision-contract` outside `detailsOpen` in this slice. The primary card still leads with title, reason, next step and one action; the richer operating-system explanation becomes explicit under `Details & Evidenz anzeigen`.
 
-- [ ] **Step 5: Run frontend build**
+- [x] **Step 5: Run frontend build**
 
 Run:
 
@@ -437,7 +437,7 @@ Expected: exit 0.
 **Files:**
 - Modify: `frontend/e2e/ux-daily-flow.spec.ts`
 
-- [ ] **Step 1: Add planned-workout contract test**
+- [x] **Step 1: Add planned-workout contract test**
 
 After `Home renders exactly one main daily decision card`, add:
 
@@ -497,7 +497,7 @@ test('Home daily decision details expose top signals goal impact Garmin state an
 });
 ```
 
-- [ ] **Step 2: Add completed/off-plan Garmin contract assertion**
+- [x] **Step 2: Add completed/off-plan Garmin contract assertion**
 
 In `Home no-training daily decision opens the missing check-in before Coach support`, after details are opened, add:
 
@@ -505,7 +505,7 @@ In `Home no-training daily decision opens the missing check-in before Coach supp
   await expect(page.getByTestId('daily-decision-contract')).toContainText('Garmin: kein Schreibpfad fuer heute');
 ```
 
-- [ ] **Step 3: Run focused e2e**
+- [x] **Step 3: Run focused e2e**
 
 Run:
 
@@ -520,7 +520,7 @@ Expected: the new and existing daily-flow tests pass.
 **Files:**
 - All files touched above
 
-- [ ] **Step 1: Run docs and whitespace checks**
+- [x] **Step 1: Run docs and whitespace checks**
 
 Run:
 
@@ -531,7 +531,7 @@ git diff --check
 
 Expected: `rg` returns no matches; `git diff --check` exits 0.
 
-- [ ] **Step 2: Run frontend build**
+- [x] **Step 2: Run frontend build**
 
 Run:
 
@@ -541,7 +541,7 @@ npm run build -w frontend
 
 Expected: exit 0.
 
-- [ ] **Step 3: Run focused Playwright regression**
+- [x] **Step 3: Run focused Playwright regression**
 
 Run:
 
@@ -551,7 +551,7 @@ npm run test:e2e -- frontend/e2e/ux-daily-flow.spec.ts --project=desktop-chromiu
 
 Expected: all tests in `ux-daily-flow.spec.ts` pass.
 
-- [ ] **Step 4: Review diff**
+- [x] **Step 4: Review diff**
 
 Run:
 
@@ -562,7 +562,7 @@ git diff -- frontend/src/pulse/daily-decision.ts frontend/src/components/DailyDe
 
 Expected: the diff only contains the planned frontend contract, tests, current-focus/decision docs and this implementation plan.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run:
 
@@ -573,7 +573,7 @@ git commit -m "feat: expose daily intelligent action contract"
 
 Expected: commit succeeds.
 
-- [ ] **Step 6: Push and create PR**
+- [x] **Step 6: Push and create PR**
 
 Run:
 

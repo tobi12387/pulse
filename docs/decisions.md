@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Aktive Planflaeche bleibt auf Roadmap und offene Gates reduziert
+
+- **Decision:** Die uebrigen verifizierten 2026-05-14-Plan-Dokumente fuer Daily Intelligent Action Contract v2, Home/Plan/Desktop-Density, Plan Week First und Desktop Plan IA werden nach `docs/superpowers/plans/completed/` verschoben. Der aktive Plan-Ordner enthaelt damit nur noch Roadmap-/Pointer-Dokumente und die offene Mobile-Field-Reliability-Gate-Planung.
+- **Why:** Diese Plaene sind durch gemergte PRs (#363, #364, #365, #367, #368, #372), QA-Evidence und aktuelle Code-/Testabdeckung erledigt. Als aktive Dateien wuerden sie die bereits erreichten Performance-OS-Baselines wie offene Arbeit aussehen lassen und naechste Agenten vom echten Gate-Status ablenken.
+- **Alternatives:** Die Plan-Dateien aktiv lassen (stale Backlog-Signal); nur einzelne Docs archivieren (aktive Flaeche bleibt verrauscht); ohne PR-/Code-Evidence pauschal alles verschieben (zu riskant).
+- **Decided by:** Codex, nach PR-/QA-/Code-Abgleich im Branch `codex/archive-desktop-plan-docs`.
+- **Status:** active.
+
 ## 2026-05-21 — Shipped Plan-Docs werden aus aktiver Planung archiviert
 
 - **Decision:** Verifizierte, bereits gemergte Plan-Dokumente fuer Analysis Translation v1, Everyday Adaptation Inbox v1, Resilience Radar v1, Support Activation v1 und Nutrition Learning Readiness v1 werden nach `docs/superpowers/plans/completed/` verschoben und im Completed-Index referenziert.

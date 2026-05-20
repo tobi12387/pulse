@@ -113,8 +113,14 @@
 | `2026-05-14-settings-desktop-layout.md` | Settings Desktop Layout — Settings uses a wider desktop shell with status/profile side by side while mobile remains stacked | Settings Density PR |
 | `2026-05-14-settings-section-scroll-repair.md` | Settings Section Scroll Repair — URL-backed Settings sections re-scroll after async layout stabilization | Settings CI Repair PR |
 | `2026-05-14-insights-distinct-next-check.md` | Insights Distinct Next Check — duplicate focus checks are filtered so the card shows a useful next distinct check | Insights Density PR |
+| `2026-05-14-home-plan-desktop-cleanup.md` | Home + Plan Desktop Cleanup — Plan hides duplicate daily-decision copy behind disclosure so Home owns the daily decision | PR #363 |
+| `2026-05-14-plan-progression-desktop-density.md` | Plan Progression Desktop Density — Plan keeps progression summary visible while detailed calibration/repetition evidence opens on demand | PR #364 |
+| `2026-05-14-plan-week-first-desktop.md` | Plan Week First Desktop — Plan Training starts with the week strip before detailed next-training reasoning | PR #365 |
+| `2026-05-14-desktop-plan-ia-density.md` | Desktop Plan IA Density — Plan Training separates week/execution from strategy and keeps manual scenario tools collapsed by default | PR #367 |
+| `2026-05-14-home-desktop-action-density.md` | Home Desktop Action Density — Home hero keeps one visible primary action while result/support context opens in details | PR #368 |
 | `2026-05-14-support-activation-v1.md` | Support Activation v1 — explicit support preferences in Settings and Coach context without automatic escalation | PR #369 |
 | `2026-05-14-resilience-radar-v1.md` | Resilience Radar v1 — read-only Data Mental multi-day pattern layer for mood, overload, routine gaps and support prompts | PR #370 |
+| `2026-05-14-daily-intelligent-action-contract-v2.md` | Daily Intelligent Action Contract v2 — Home details show top signals, goal impact, Garmin state and safest option without new writes | PR #372 |
 | `2026-05-14-everyday-adaptation-inbox-v1.md` | Everyday Adaptation Inbox v1 — Plan routes less-time, not-ready, done-differently and skip decisions through explicit preview or feedback flows | PR #373 |
 | `2026-05-14-analysis-translation-v1.md` | Analysis Translation v1 — Data Analyse translates deep evidence into one action signal, one watch signal and read-only support labels | PR #374 |
 | `2026-05-15-nutrition-learning-readiness-v1.md` | Nutrition Learning Readiness v1 — Fueling baseline exposes Trend-Evidenz readiness and guards new during logs for carbs plus GI comfort | PR #376 |
