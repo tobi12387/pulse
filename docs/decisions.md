@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan zeigt Wochenreceipt-Vertrauensdauer im Wochenvertrauen
+
+- **Decision:** Plan nutzt Wochenreceipt-Vertrauensdauer nur in Gelernt-/Evidenz-/Receipt-Kontinuitaet. Bestaetigte Dauer stuetzt `Beibehalten`; unaufgefrischtes Vertrauen bleibt ruhiger Wochenkontext; frische Wochenwiederkehr oeffnet weiter nur den bestehenden `Anpassen`-Pfad.
+- **Why:** Die Wochensteuerung soll aus Data/Home-Dauer Vertrauen ziehen, ohne Vorschau oder Primaerentscheidung zum Receipt-Log zu machen. Dauer macht Stabilitaet verdient, waehrend Plan/Garmin weiter erst nach explizitem Klick schreiben.
+- **Alternatives:** Dauer nur in Data/Home lassen (Plan wirkt blind); Dauer in `Anpassen`-Preview oder Primaerentscheidung ziehen (zu laut); unaufgefrischtes Vertrauen als gebrochen werten (falsche Eskalation).
+- **Decided by:** Codex, als Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home zeigt Wochenreceipt-Vertrauensdauer als Tagesruhe
 
 - **Decision:** Home nutzt Data-Vertrauensdauer fuer Wochenreceipts nur in Kontinuitaet und Data-Evidenz. Bestaetigte Dauer macht Tagesruhe verdient; unaufgefrischtes Vertrauen bleibt ruhiger Kontext; frische Heute-Wiederkehr fuehrt weiter den Tages-Review.
