@@ -137,17 +137,93 @@ type TradeoffDecisionContext = {
   body: string;
   evidence: string[];
   suggestedAdjustment: string;
+  freshSourceLabel: string | null;
+  freshEvidenceSummary: string | null;
+  handledEvidenceSummary: string | null;
+  adaptTargetLabel: string;
+  adaptTargetPath: string;
 };
+
+function unique(items: string[]): string[] {
+  return items.filter((item, index) => items.indexOf(item) === index);
+}
+
+function germanList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  if (items.length === 2) return `${items[0]} und ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')} und ${items[items.length - 1]}`;
+}
+
+function withoutTrailingPeriod(value: string): string {
+  return value.trim().replace(/[.\s]+$/u, '');
+}
+
+function cleanFreshTradeoffEvidence(value: string): string {
+  return withoutTrailingPeriod(value)
+    .replace(/^Neue Evidenz seit gemerkter Wochenentscheidung:\s*/iu, '')
+    .replace(/^Neue Evidenz:\s*/iu, '')
+    .trim();
+}
+
+function tradeoffFreshEvidenceSummary(pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>): string | null {
+  const fresh = pattern.freshEvidence
+    .map(cleanFreshTradeoffEvidence)
+    .filter(item => item.length > 0 && !/^Tageskonflikt mit neuer Wochenwirkung$/iu.test(item));
+  return fresh.length > 0 ? fresh.join(' · ') : null;
+}
+
+function tradeoffHandledEvidenceSummary(pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>): string | null {
+  const handled = pattern.resolvedEvidence.map(withoutTrailingPeriod).filter(Boolean);
+  return handled.length > 0 ? handled.join(' · ') : null;
+}
+
+function tradeoffFreshSourceLabel(
+  pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>,
+): string | null {
+  const corpus = [
+    ...pattern.freshEvidence,
+  ].join(' ');
+  const sources: string[] = [];
+
+  if (/ziel|goal|race|kraichgau|70\.3|wahrscheinlichkeit|limiter|long[-\s]?endurance/i.test(corpus)) {
+    sources.push('Zielrisiko');
+  }
+  if (/planlast|wochenlast|trainingslast|load|tss|umfang/i.test(corpus)) {
+    sources.push('Planlast');
+  }
+  if (/recovery|erholung|readiness|tsb|hrv|schlaf/i.test(corpus)) {
+    sources.push('Recovery');
+  }
+  if (/garmin|ausfuehrung|ausführung|sync|handoff|uhr|edge/i.test(corpus)) {
+    sources.push('Garmin-Ausfuehrung');
+  }
+
+  return sources.length > 0 ? germanList(unique(sources)) : null;
+}
+
+function tradeoffAdaptTarget(input: PlanWeeklyDecisionContractInput): Pick<TradeoffDecisionContext, 'adaptTargetLabel' | 'adaptTargetPath'> {
+  return hasRefreshSignal(input.refreshPreview)
+    ? { adaptTargetLabel: 'Refresh-Vorschau', adaptTargetPath: '#plan-refresh-preview-card' }
+    : { adaptTargetLabel: 'Szenario-Vorschau', adaptTargetPath: '#plan-scenario-preview' };
+}
 
 function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): TradeoffDecisionContext | null {
   const pattern = classifyTradeoffPattern(input.decisionQuality);
   if (!pattern) return null;
   const evidenceHint = pattern.evidence.slice(1, 4).join(' ');
+  const freshSourceLabel = pattern.hasFreshEvidence ? tradeoffFreshSourceLabel(pattern) : null;
+  const freshEvidenceSummary = pattern.hasFreshEvidence ? tradeoffFreshEvidenceSummary(pattern) : null;
+  const handledEvidenceSummary = pattern.hasFreshEvidence ? tradeoffHandledEvidenceSummary(pattern) : null;
+  const adaptTarget = tradeoffAdaptTarget(input);
 
   if (pattern.effect === 'plan_decision') {
-    const evidencePrefix = pattern.hasFreshEvidence
-      ? 'Neue Wochen-Evidenz fuer erledigte Tageskonflikte'
+    const evidencePrefix = freshSourceLabel
+      ? `Frische Wochen-Evidenz aus ${freshSourceLabel}`
+      : pattern.hasFreshEvidence
+        ? 'Frische Wochen-Evidenz'
       : 'Wiederholter Tageskonflikt';
+    const freshDetail = freshEvidenceSummary ? `${freshEvidenceSummary}. ` : '';
+    const handledDetail = handledEvidenceSummary ? `Aeltere Receipt-Evidenz bleibt Kontext: ${handledEvidenceSummary}. ` : '';
     return {
       count: pattern.count,
       hasDecision: true,
@@ -155,9 +231,13 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       hasHandledReceipt: false,
       hasFreshEvidence: pattern.hasFreshEvidence,
       title: 'Tageskonflikte verändern die Woche',
-      body: `${evidencePrefix}: ${pattern.count}x ${pattern.themeLabel}. ${evidenceHint ? `${evidenceHint}. ` : ''}${pattern.suggestedAdjustment}. Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
+      body: `${evidencePrefix}: ${freshDetail}${handledDetail}${pattern.hasFreshEvidence ? '' : evidenceHint ? `${evidenceHint}. ` : ''}${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
       evidence: pattern.evidence,
       suggestedAdjustment: pattern.suggestedAdjustment,
+      freshSourceLabel,
+      freshEvidenceSummary,
+      handledEvidenceSummary,
+      ...adaptTarget,
     };
   }
 
@@ -172,6 +252,10 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       body: `Heute veraendert der wiederholte Tageskonflikt die sichere Option, nicht die Woche: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Das ist keine Wochenentscheidung, bis neue Wochen-Evidenz Plan oder Garmin betrifft.`,
       evidence: pattern.evidence,
       suggestedAdjustment: pattern.suggestedAdjustment,
+      freshSourceLabel,
+      freshEvidenceSummary,
+      handledEvidenceSummary,
+      ...adaptTarget,
     };
   }
 
@@ -186,6 +270,10 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       body: `Erledigter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${evidenceHint ? `${evidenceHint}. ` : ''}${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`,
       evidence: pattern.evidence,
       suggestedAdjustment: pattern.suggestedAdjustment,
+      freshSourceLabel,
+      freshEvidenceSummary,
+      handledEvidenceSummary,
+      ...adaptTarget,
     };
   }
 
@@ -203,6 +291,10 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
     body: `${prefix}: ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Pulse wartet auf frische Wochen-Evidenz, bevor Plan oder Garmin zur Entscheidung werden.`,
     evidence: pattern.evidence,
     suggestedAdjustment: pattern.suggestedAdjustment,
+    freshSourceLabel,
+    freshEvidenceSummary,
+    handledEvidenceSummary,
+    ...adaptTarget,
   };
 }
 
@@ -246,7 +338,11 @@ function changedBody(input: PlanWeeklyDecisionContractInput, tradeoffContext: Tr
   const first = inbox.items.find(item => item.id.startsWith('adaptation-')) ?? inbox.items[0] ?? null;
   if (!first && tradeoffContext?.hasDecision) {
     if (tradeoffContext.hasFreshEvidence) {
-      return `Frische Wochen-Evidenz oeffnet die erledigte Tageskonflikt-Entscheidung erneut als frische Wochenentscheidung: ${tradeoffContext.suggestedAdjustment}.`;
+      const source = tradeoffContext.freshSourceLabel
+        ? `Frische Wochen-Evidenz aus ${tradeoffContext.freshSourceLabel}`
+        : 'Frische Wochen-Evidenz';
+      const fresh = tradeoffContext.freshEvidenceSummary ? `${tradeoffContext.freshEvidenceSummary}. ` : '';
+      return `${source} oeffnet die erledigte Tageskonflikt-Entscheidung erneut: ${fresh}${tradeoffContext.suggestedAdjustment}.`;
     }
     return `Wiederholte Tageskonflikte verlangen eine bewusste Wochenentscheidung: ${tradeoffContext.suggestedAdjustment}.`;
   }
@@ -301,7 +397,7 @@ function buildOptions(
     ? `Vorschau: TSS ${sign(preview.loadImpact.tssDelta)}, Dauer ${sign(preview.loadImpact.durationDeltaMin)} min; ${preview.garminImpact.summary}`
     : hasTradeoffDecision
       ? tradeoffContext!.hasFreshEvidence
-        ? `Vorschau: Neue Wochen-Evidenz aus erledigten Tageskonflikten pruefen; ${tradeoffContext!.suggestedAdjustment}.`
+        ? `Vorschau: ${tradeoffContext!.freshSourceLabel ? `Frische Wochen-Evidenz aus ${tradeoffContext!.freshSourceLabel}` : 'Frische Wochen-Evidenz'} in der ${tradeoffContext!.adaptTargetLabel} pruefen; ${tradeoffContext!.suggestedAdjustment}.`
         : `Vorschau: wiederholte Tageskonflikte in eine Wochenentscheidung uebersetzen; ${tradeoffContext!.suggestedAdjustment}.`
     : 'Vorschau: Woche bleibt strukturell unveraendert, bis ein Szenario geoeffnet wird.';
   return [
@@ -325,7 +421,7 @@ function buildOptions(
       weekImpact: impact,
       resultPreview: 'Pulse oeffnet die Vorschau; erst ein explizites Anwenden schreibt in Plan oder Garmin.',
       readOnly: true,
-      targetPath: preview ? '#plan-refresh-preview-card' : '#plan-scenario-preview',
+      targetPath: preview ? '#plan-refresh-preview-card' : tradeoffContext?.adaptTargetPath ?? '#plan-scenario-preview',
     },
     {
       kind: 'defer_decision',
@@ -356,7 +452,7 @@ export function planWeeklyDecisionContractSignature(contract: PlanWeeklyDecision
 
 function receiptNextConsequence(option: PlanWeeklyDecisionOption): string {
   if (option.kind === 'adapt_week') {
-    if (/tageskonflikt|tradeoff/i.test(option.weekImpact)) {
+    if (/tageskonflikt|tradeoff|frische wochen-evidenz/i.test(option.weekImpact)) {
       return 'Tradeoff-Evidenz in der Vorschau pruefen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.';
     }
     return option.targetPath

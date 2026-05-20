@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan benennt frische Tradeoff-Reopens nach Evidenzquelle
+
+- **Decision:** Plan erklaert wiedergeoeffnete `Tageskonflikt`-Receipts nach frischer Wochen-Evidenzquelle, zum Beispiel Planlast, Recovery, Garmin-Ausfuehrung oder Zielrisiko. Die alte Receipt-Evidenz bleibt Kontext, `Anpassen` bleibt read-only und fuehrt zur kleinsten bestehenden Vorschau statt direkt Plan oder Garmin zu schreiben.
+- **Why:** Die Wochenentscheidung soll nach einem handled Receipt nicht wie "alter Konflikt nochmal" wirken. Wenn frische Evidenz die Woche erneut oeffnet, muss Plan sagen, was sich geaendert hat und welcher sichere Preview-Schritt jetzt lohnt.
+- **Alternatives:** Generisch `Neue Wochen-Evidenz` anzeigen (zu vage); alte Receipt-Historie wieder in die Leitentscheidung mischen (zu laut); aus Reopen-Quellen direkt Plan-/Garmin-Writes ableiten (verletzt no-hidden-write).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home erklaert frische Tradeoff-Reopens ohne alte Muster
 
 - **Decision:** Home fuehrt wiedergeoeffnete `Tageskonflikt`-Muster nur mit der frischen Heute-Evidenz und der heutigen adaptiven Option. Bereits geloeste oder eingeordnete Tradeoff-Historie bleibt als Kontinuitaet und verlinkte Evidenz sichtbar, wird aber nicht in `Heute entscheidet` oder `Sicherste Option` wiederholt.

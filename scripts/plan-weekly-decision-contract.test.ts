@@ -602,12 +602,72 @@ test('weekly decision reopens handled tradeoff receipts only when fresh weekly e
   assert.equal(contract.title, 'Wochenentscheidung offen');
   assert.equal(contract.primaryOption, 'adapt_week');
   assert.match(learned?.title ?? '', /Tageskonflikte/);
-  assert.match(learned?.body ?? '', /Neue Wochen-Evidenz/);
+  assert.match(learned?.body ?? '', /Frische Wochen-Evidenz aus Planlast, Recovery und Garmin-Ausfuehrung/);
   assert.match(learned?.body ?? '', /seit gemerkter Wochenentscheidung/);
-  assert.match(changed?.body ?? '', /frische Wochenentscheidung/);
-  assert.match(adapt?.weekImpact ?? '', /Neue Wochen-Evidenz/);
+  assert.match(learned?.body ?? '', /Aeltere Receipt-Evidenz bleibt Kontext: Tageskonflikt bereits in Plan eingeordnet/);
+  assert.match(changed?.body ?? '', /Frische Wochen-Evidenz aus Planlast, Recovery und Garmin-Ausfuehrung/);
+  assert.match(adapt?.weekImpact ?? '', /Frische Wochen-Evidenz aus Planlast, Recovery und Garmin-Ausfuehrung/);
+  assert.match(adapt?.weekImpact ?? '', /Szenario-Vorschau/);
+  assert.equal(adapt?.targetPath, '#plan-scenario-preview');
+  assert.equal(adapt?.readOnly, true);
   assert.match(contract.evidence.join(' · '), /Tageskonflikt Wochenentscheidung/);
   assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
+});
+
+test('weekly decision names goal-pressure as the fresh tradeoff reopen source', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'fresh-goal-tradeoff', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: {
+      ...goalProjection,
+      projections: [{
+        ...goalProjection.projections[0],
+        probabilityPct: 48,
+        status: 'at_risk',
+        nextBestIntervention: {
+          ...goalProjection.projections[0].nextBestIntervention,
+          summary: 'Long-Endurance-Reiz und Fueling-Praxis brauchen diese Woche eine bewusst kleinere Entscheidung.',
+        },
+      }],
+    },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 33,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt mit neuer Wochenwirkung',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-12',
+        status: 'stale',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten trotz Tageskonflikt',
+          'Neue Evidenz seit gemerkter Wochenentscheidung: Ziel 70.3 Kraichgau rutscht auf 48% und braucht kleinere Long-Endurance-Entscheidung',
+        ],
+      }],
+      bestEvidence: ['Neue Evidenz seit gemerkter Wochenentscheidung: Zielrisiko veraendert die Wochenentscheidung erneut'],
+      suggestedAdjustment: 'Jetzt wieder Wochenentscheidung oeffnen: Long-Endurance-Reiz kleiner vorschauen, bevor Garmin synchronisiert wird.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+
+  assert.equal(contract.tone, 'attention');
+  assert.equal(contract.primaryOption, 'adapt_week');
+  assert.match(learned?.body ?? '', /Frische Wochen-Evidenz aus Zielrisiko/);
+  assert.doesNotMatch(learned?.body ?? '', /Recovery|Garmin-Ausfuehrung/);
+  assert.match(changed?.body ?? '', /Zielrisiko/);
+  assert.match(adapt?.weekImpact ?? '', /Zielrisiko/);
+  assert.match(adapt?.weekImpact ?? '', /Szenario-Vorschau/);
+  assert.equal(adapt?.targetPath, '#plan-scenario-preview');
+  assert.equal(adapt?.readOnly, true);
 });
 
 test('builds one weekly decision contract from learning, plan change, goal, recovery and Garmin debt evidence', () => {
