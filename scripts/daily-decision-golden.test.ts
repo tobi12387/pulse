@@ -609,6 +609,72 @@ test('daily decision names the body goal and everyday tradeoff before the safe a
   assertSignalBefore(decision, 'Tageskonflikt', 'Ziel');
 });
 
+test('completed body goal everyday tradeoffs become a learnable closure step', () => {
+  const completed = activity({
+    id: 'activity-tradeoff-closure',
+    plannedWorkoutId: 'planned-tradeoff-closure',
+    durationSec: 45 * 60,
+    distanceM: 21000,
+    tss: 38,
+    name: '45 min Z2 statt Schwelle',
+  });
+  const planned = workout({
+    id: 'planned-tradeoff-closure',
+    status: 'completed',
+    zone: 4,
+    durationMin: 75,
+    targetTss: 96,
+    capabilityFit: 'too_hard_today',
+    archetypeId: 'threshold_build',
+    difficultyEnergySystem: 'threshold',
+    description: 'Schwellenreiz fuer das Ziel.',
+    completedActivityId: completed.id,
+    executionStatus: 'completed_matched',
+    executionMatchedAt: `${TODAY}T08:55:00.000Z`,
+    executionMatchConfidence: 0.92,
+  });
+
+  const decision = decisionFor(home({
+    todayWorkout: planned,
+    todayActivities: [completed],
+    recentActivities: [completed],
+    recovery: recovery({
+      sleepDebt7d: { hours: 2.4, targetH: 7.5, baselineSource: 'garmin_sleep_need', status: 'mild' },
+      recoveryScore: 62,
+      recommendation: 'Heute Grenze klein halten.',
+    }),
+  }), {
+    goalProjection: goalProjection(),
+    todayOptions: plannedTodayOptions(planned.id),
+    dailyDelta: dailyDelta({
+      status: 'replaced',
+      title: 'Schwelle wurde als 45 min Z2 geschlossen',
+      summary: 'Die alltagstaugliche Alternative wurde statt des harten Reizes erledigt.',
+      score: 72,
+      loadDeltaTss: -58,
+      nextPlanEffect: 'Plan kann den Zielkontakt halten, muss aber die naechste Intensitaet bewusst bestaetigen.',
+      evidence: ['Geplant: Rad Z4 75 min', 'Garmin: Rad Z2 45 min'],
+      targetPath: '/plan/activity/activity-tradeoff-closure',
+    }),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Tageskonflikt: Abschluss lernbar/);
+  assert.match(decision.contract.leadingFactor, /Schwelle wurde als 45 min Z2 geschlossen/);
+  assert.match(decision.contract.leadingFactor, /Koerper: Schlafdefizit: 2\.4 h/);
+  assert.equal(decision.cta, 'Feedback erfassen');
+  assert.equal(decision.targetPath, '/plan/activity/activity-tradeoff-closure');
+  assert.match(decision.resultPreview ?? '', /Tageskonflikt/);
+  assert.match(decision.resultPreview ?? '', /nächste Empfehlung/);
+  assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
+  assert.match(decision.contract.safestAlternative, /Tageskonflikt-Abschluss zuerst schließen/);
+  assert.match(decision.contract.safestAlternative, /Feedback zuerst erfassen/);
+  assert.match(decision.completionCriterion, /Tageskonflikt-Abschluss/);
+  assert.ok(decision.evidence.some(item => typeof item !== 'string' && /Tageskonflikt lernbar/.test(item.label)));
+  assertSignalBefore(decision, 'Tageskonflikt', 'Feedback');
+  assertSignalBefore(decision, 'Tageskonflikt', 'Folge');
+  assertSignalBefore(decision, 'Tageskonflikt', 'Ziel');
+});
+
 test('blocked Garmin execution beats normal training without creating a hidden write', () => {
   const planned = workout({
     id: 'planned-garmin-blocked',
