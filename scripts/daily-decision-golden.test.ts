@@ -309,6 +309,25 @@ function strongDecisionQuality(overrides: Partial<PulseDailyDecisionQualityRespo
   };
 }
 
+function tradeoffDecisionQuality(overrides: Partial<PulseDailyDecisionQualityResponse> = {}): PulseDailyDecisionQualityResponse {
+  return strongDecisionQuality({
+    qualityScore: 76,
+    status: 'helpful',
+    statusLabel: 'Tageskonflikt hilfreich',
+    repeatedThemes: [{
+      theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+      count: 2,
+      lastSeen: TODAY,
+      status: 'useful_repetition',
+      evidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+    }],
+    bestEvidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+    evidence: [],
+    suggestedAdjustment: 'Heute zuerst die leichtere Option bestaetigen, wenn Schlaf und Alltag eng sind.',
+    ...overrides,
+  });
+}
+
 function personalResponse(): PulsePersonalResponseResponse {
   return {
     summary: {
@@ -767,6 +786,87 @@ test('helpful learning calibration stays short in the Home daily answer', () => 
   assert.ok(decision.contract.leadingFactor.length < 150);
   assert.match(decision.contract.safestAlternative, /Lernkalibrierung zuerst prüfen: bestätigte Entscheidungsmuster beibehalten/);
   assert.ok(decision.contract.safestAlternative.length < 190);
+});
+
+test('repeated tradeoff learning changes Home only when todays adaptive option exists', () => {
+  const planned = workout({ id: 'planned-tradeoff-learning' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: tradeoffDecisionQuality(),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Tageskonflikt: Lernmuster/);
+  assert.match(decision.contract.leadingFactor, /2x Tageskonflikt/);
+  assert.equal(decision.cta, 'Alternative prüfen');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-tradeoff-learning#next-training-decision');
+  assert.match(decision.resultPreview ?? '', /leichtere Tagesoption/);
+  assert.match(decision.resultPreview ?? '', /Plan oder Garmin ändern sich erst nach einem bewussten Klick/);
+  assert.match(decision.contract.safestAlternative, /Tageskonflikt-Lernen heute nutzen/);
+  assert.match(decision.contract.safestAlternative, /leichtere Option/);
+  assertSignalBefore(decision, 'Tageskonflikt', 'Training');
+});
+
+test('plan-classified repeated tradeoff learning stays below current-day training in Home', () => {
+  const planned = workout({ id: 'planned-tradeoff-plan-context' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 34,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt wiederholt',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: TODAY,
+        status: 'stale',
+        evidence: ['3x Tageskonflikt mit zu hartem Plan'],
+      }],
+      bestEvidence: ['3x Tageskonflikt mit zu hartem Plan'],
+      suggestedAdjustment: 'Diese Woche Intensitaet erst nach Warm-up freigeben und leichtere Option vorab festlegen.',
+    }),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.equal(decision.cta, 'Workout öffnen');
+  assert.equal(decision.targetPath, '/plan?tab=training');
+  const tradeoff = decision.contract.signals.find(signal => signal.label === 'Tageskonflikt');
+  assert.ok(tradeoff);
+  assert.equal(tradeoff.tone, 'muted');
+  assert.equal(tradeoff.targetPath, '/plan?tab=training&source=home-tradeoff#plan-weekly-decision');
+  assert.match(tradeoff.detail, /Wochenentscheidung/);
+  assertSignalBefore(decision, 'Training', 'Tageskonflikt');
+});
+
+test('watch tradeoff learning stays quiet below current-day training in Home', () => {
+  const planned = workout({ id: 'planned-tradeoff-watch-context' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 52,
+      status: 'watch',
+      statusLabel: 'Tageskonflikt noch unsicher',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 2,
+        lastSeen: TODAY,
+        status: 'watch',
+        evidence: ['2x Tageskonflikt, aber Feedback nur einmal geschlossen'],
+      }],
+      bestEvidence: ['2x Tageskonflikt, aber Feedback nur einmal geschlossen'],
+      suggestedAdjustment: 'Noch ein abgeschlossenes Feedback fehlt, bevor Heute anders entscheidet.',
+    }),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.equal(decision.cta, 'Workout öffnen');
+  assert.equal(decision.targetPath, '/plan?tab=training');
+  const tradeoff = decision.contract.signals.find(signal => signal.label === 'Tageskonflikt');
+  assert.ok(tradeoff);
+  assert.equal(tradeoff.tone, 'muted');
+  assert.equal(tradeoff.targetPath, '/data?tab=analysis#data-decision-quality');
+  assert.match(tradeoff.detail, /Watch-Kontext/);
+  assert.match(tradeoff.detail, /Feedback fehlt/);
+  assertSignalBefore(decision, 'Training', 'Tageskonflikt');
 });
 
 test('weak learning calibration stays watch context below a productive training decision', () => {

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home nutzt Tradeoff-Lernmuster nur bei echter Tageswirkung
+
+- **Decision:** Home erkennt klassifizierte `Tageskonflikt`-Muster aus der Decision-Quality-Evidenz separat von generischer Lernkalibrierung. Nur hilfreiche wiederholte Muster mit einer heutigen adaptiven Option fuehren die Tagesentscheidung; Plan- oder Watch-Muster bleiben ruhiger Kontext unter aktuellen Recovery-, Garmin-, Plan- und Trainingssignalen.
+- **Why:** Wiederholte Koerper-Ziel-Alltag-Konflikte sind nur dann Tagesklarheit, wenn sie heute den sicheren naechsten Schritt veraendern. Sonst sollen sie Data/Plan informieren, ohne Home in alte Erklaerungen oder generische Lernhinweise kippen zu lassen.
+- **Alternatives:** Tradeoff-Muster weiter als generische `Lernkalibrierung` fuehren (zu laut und unspezifisch); alle Tradeoffs nach Plan routen (Plan wird zu frueh geoeffnet); Tradeoff-Klassifizierung in Data und Home duplizieren (hoeheres Drift-Risiko).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data klassifiziert Tageskonflikt-Muster nach Entscheidungswirkung
 
 - **Decision:** Data erkennt `Tageskonflikt`-Muster aus der Decision-Quality-Evidenz als eigene Analyse-Wirkung: einzelne oder schwache Muster bleiben `watch_context`, hilfreiche wiederholte Muster werden `today_action` Richtung Home, und stale/strategieaendernde Muster werden `plan_decision` Richtung Wochenentscheidung.
