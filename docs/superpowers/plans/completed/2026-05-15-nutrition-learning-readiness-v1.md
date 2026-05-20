@@ -150,7 +150,7 @@ git status --short --branch
 
 Expected: all pass and only intended files are modified.
 
-- [ ] **Step 4: Commit, push, PR**
+- [x] **Step 4: Commit, push, PR**
 
 Stage explicit files only, commit with:
 
