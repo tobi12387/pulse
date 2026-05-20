@@ -537,10 +537,7 @@ function quietGoalProgressContinuity(goalProjection: PulseGoalProjectionResponse
   const goal = quietGoalProgress(goalProjection);
   if (!goal) return null;
 
-  const limiter = goal.limiterRisk.summary
-    ? ` ${goal.limiterRisk.label}: ${goal.limiterRisk.summary}.`
-    : '';
-  return `${quietGoalProgressLabel(goal)}: ${goal.title} ${goalProbabilityLabel(goal)}. ${goal.summary}${limiter} Bleibt ruhige Data-Kontinuitaet, keine neue Tages- oder Planhandlung.`;
+  return `${quietGoalProgressLabel(goal)}: ${goal.title} ${goalProbabilityLabel(goal)} bleibt Data-Evidenz; keine neue Tages- oder Planhandlung.`;
 }
 
 function quietGoalProgressEvidence(goalProjection: PulseGoalProjectionResponse | null | undefined): DailyDecisionEvidence[] {

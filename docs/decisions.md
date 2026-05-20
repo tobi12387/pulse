@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home haelt ruhige Ziel-Kontinuitaet kompakt
+
+- **Decision:** Home zeigt stabile oder Watch-Zielprojektionen in `Seit letzter Entscheidung` nur noch als kurze Data-Evidenz-Zeile. Die ausfuehrliche Ziel- und Limiter-Erklaerung bleibt ueber den Data-Handoff erreichbar; fuehrende Entscheidung, CTA und `Sicherste Option` bleiben frei von ruhigem Ziel-Fortschritt.
+- **Why:** Frische mobile Route-Evidence zeigte, dass die korrekte ruhige Ziel-Kontinuitaet zu lang wurde und die Tagesentscheidung wieder analytisch wirken liess. Home soll beruhigen und fuehren; Data soll erklaeren.
+- **Alternatives:** Die volle Zielzusammenfassung weiter in Home zeigen (zu dicht); Ziel-Kontinuitaet ganz entfernen (verliert Motivation); at-risk und Watch-Ziele gleich behandeln (zu laut oder zu leise).
+- **Decided by:** Codex, als Track-1-Paketfortschritt aus frischer Route-Evidence.
+- **Status:** active.
+
 ## 2026-05-20 — Performance-OS-Backlog braucht neue Paketkarten
 
 - **Decision:** Nach PR #522 ist kein ungated autonomes Produktpaket mehr in `docs/ai/next-product-packages.md` queued. Neue Produktarbeit soll erst starten, nachdem die Backlog-Karten aus Roadmap oder Tobis expliziter Richtung erneuert wurden; die verbleibenden Roadmap-Themen Nutrition-Trends und iPhone/PWA-Feldzuverlaessigkeit bleiben evidenz- bzw. device-gated.
