@@ -2140,8 +2140,8 @@ function PlanScenarioPreviewCard({
             Erst Auswirkungen prüfen, dann bewusst anwenden. Die Vorschau schreibt nichts in Plan oder Garmin.
           </p>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
-          Preview-only
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          Nur Vorschau
         </span>
       </div>
 

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Plan-Preview-Label bleibt ein evidenzbasierter Micro-Slice
+
+- **Decision:** Das mobile Plan-Szenario-Preview-Label wird von `Preview-only` auf `Nur Vorschau` umgestellt und gegen Umbruch abgesichert; daraus entsteht kein neues Performance-OS-Produktpaket.
+- **Why:** Frische Route-Evidence zeigte einen konkreten ersten-Viewport-Friction-Point im Plan-Mobile-Intent-Pfad, aber keine breitere UI/UX-Workflow-Luecke. Der kleine `Trainingsanpassung`-Support-Fix staerkt den expliziten Plan/Garmin-No-Write-Vertrag, ohne die aktuell gated Produkt-Backlog-Lage zu ueberstimmen.
+- **Alternatives:** Den Wrap als reines Aesthetik-Thema ignorieren (schwaecht den mobilen Apply-Vertrag); ein groesseres Plan-IA-Paket daraus machen (keine Evidenz); neue Produktarbeit ohne Logs, Realgeraetevidence oder Tobi-Richtung starten (zu spekulativ).
+- **Decided by:** Codex, nach frischer Route-Evidence im Branch `codex/ux-evidence-refresh`.
+- **Status:** active.
+
 ## 2026-05-21 — Frontend-Public-Assets verlangen Deploy im Delivery Manifest
 
 - **Decision:** `npm run delivery:manifest` behandelt `frontend/public/*`, `frontend/index.html` und `frontend/vite.config.ts` als deploypflichtige Frontend-Runtime-Aenderungen. E2E-only Dateien bleiben reine Testaenderungen ohne Deploy-Signal.

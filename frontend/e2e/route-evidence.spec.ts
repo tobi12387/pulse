@@ -260,6 +260,8 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(page.getByTestId('plan-scenario-entry-context')).toBeVisible();
           await expect(page.getByTestId('plan-scenario-entry-context')).toBeInViewport();
           await expect(scenarioCard).toContainText('Mobile Quick Decision');
+          await expect(scenarioCard).toContainText('Nur Vorschau');
+          await expect(scenarioCard).not.toContainText('Preview-only');
           await expect(scenarioCard).not.toContainText('155 km');
           await expect(scenarioCard).not.toContainText('423 min');
         },

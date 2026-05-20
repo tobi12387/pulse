@@ -1190,7 +1190,7 @@ test('Plan everyday adaptation inbox opens preview without plan writes', async (
           label: '-25 min',
         }],
         loadImpact: { tssDelta: -20, durationDeltaMin: -25, nextDayRecoveryDate: null },
-        reasons: ['Alltagsanpassung bleibt Preview-only bis zur expliziten Anwendung.'],
+        reasons: ['Alltagsanpassung bleibt nur Vorschau bis zur expliziten Anwendung.'],
         warnings: [],
         applySupported: true,
       },
@@ -2054,7 +2054,7 @@ test('mobile Home availability intent opens a workout scenario preview', async (
           label: '+1 Einheit, +36 TSS',
         }],
         loadImpact: { tssDelta: 36, durationDeltaMin: body.workout?.durationMin ?? 0, nextDayRecoveryDate: null },
-        reasons: ['Mobile Intent bleibt Preview-only bis zur expliziten Anwendung.'],
+        reasons: ['Mobile Intent bleibt nur Vorschau bis zur expliziten Anwendung.'],
         warnings: [],
         applySupported: true,
       },
@@ -2068,6 +2068,8 @@ test('mobile Home availability intent opens a workout scenario preview', async (
   const scenarioCard = page.getByTestId('plan-scenario-preview-card');
   await expect(scenarioCard).toBeVisible();
   await expect(scenarioCard).toContainText('Mobile Quick Decision');
+  await expect(scenarioCard).toContainText('Nur Vorschau');
+  await expect(scenarioCard).not.toContainText('Preview-only');
   await expect(page.getByTestId('plan-scenario-preview-result')).toBeVisible();
   await expect(page.getByTestId('scenario-garmin-impact')).toBeVisible();
   await expect(page.getByTestId('scenario-result-contract')).toContainText('Nach Apply');
