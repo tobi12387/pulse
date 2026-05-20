@@ -338,7 +338,10 @@ function tradeoffReopenSummary(
   scope: 'Heute' | 'Wochen',
 ): string {
   const sourceTrend = tradeoffReopenSourceTrendSummary(pattern);
-  const resolved = pattern.resolvedEvidence.length > 0
+  const resolvedSourceContext = sourceTrend ? tradeoffResolvedReopenSourceTrendContext(pattern) : null;
+  const resolved = resolvedSourceContext
+    ? `${resolvedSourceContext} `
+    : pattern.resolvedEvidence.length > 0
     ? `Aeltere eingeordnete Evidenz bleibt Kontext: ${pattern.resolvedEvidence.join(' · ')}. `
     : '';
   if (sourceTrend) {
@@ -356,11 +359,22 @@ function tradeoffReopenSummary(
   return `${prefix}: ${fresh}${resolved}${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
 }
 
-function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
-  if (pattern.reopenSourceTrends.length === 0) return null;
-  const trendLabel = pattern.reopenSourceTrends
+function tradeoffSourceTrendLabel(trends: TradeoffPatternClassification['reopenSourceTrends']): string | null {
+  if (trends.length === 0) return null;
+  return trends
     .map(trend => `${trend.label} ${trend.count}x`)
     .join(', ');
+}
+
+function tradeoffReceiptEvidence(pattern: TradeoffPatternClassification): string | null {
+  return pattern.resolvedEvidence.find(item => /plan-receipt/i.test(item))
+    ?? pattern.resolvedEvidence.find(item => /wochenentscheidung gemerkt/i.test(item))
+    ?? null;
+}
+
+function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
+  if (pattern.reopenSourceTrends.length === 0) return null;
+  const trendLabel = tradeoffSourceTrendLabel(pattern.reopenSourceTrends);
   const drivers = unique(pattern.reopenSourceTrends.flatMap(trend => trend.evidence), 2);
   const driverDetail = drivers.length > 0 ? ` Treiber: ${drivers.join(' · ')}.` : '';
   if (pattern.resolvedReopenSourceTrends.length > 0) {
@@ -370,17 +384,25 @@ function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification
 }
 
 function tradeoffResolvedReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
-  if (pattern.resolvedReopenSourceTrends.length === 0) return null;
-  const trendLabel = pattern.resolvedReopenSourceTrends
-    .map(trend => `${trend.label} ${trend.count}x`)
-    .join(', ');
-  return `Die Wochenentscheidung hat den Reopen-Quellentrend ${trendLabel} bereits eingeordnet. Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+  const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
+  if (!trendLabel) return null;
+  const receipt = tradeoffReceiptEvidence(pattern);
+  const receiptDetail = receipt ? `Wochenreceipt: ${receipt}. ` : '';
+  return `${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend ${trendLabel} bereits eingeordnet. Das ist Lernvertrauen: Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+}
+
+function tradeoffResolvedReopenSourceTrendContext(pattern: TradeoffPatternClassification): string | null {
+  const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
+  if (!trendLabel) return null;
+  return `Wochenreceipt bleibt Lernvertrauen: ${trendLabel} war bereits eingeordnet; frische Quellen oeffnen Home oder Plan nur wegen neuer Heute- oder Wochenwirkung.`;
 }
 
 function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
+  const receipt = tradeoffReceiptEvidence(pattern);
   return unique([
     ...pattern.reopenSourceTrends.map(trend => `Reopen-Trend ${trend.label} ${trend.count}x`),
     ...pattern.resolvedReopenSourceTrends.map(trend => `Reopen-Trend entschieden ${trend.label} ${trend.count}x`),
+    receipt ? `Wochenreceipt: ${receipt}` : null,
     ...pattern.evidence,
   ], 4);
 }
