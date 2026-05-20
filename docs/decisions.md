@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home zeigt kalibriertes Wochenreceipt-Lernvertrauen als Tagesruhe
+
+- **Decision:** Home nutzt Data-kalibriertes `Wochenreceipt-Lernvertrauen` nur in Kontinuitaet und Data-Evidenz. Bestaetigte Folgewirkung erscheint als ruhiger Vertrauensgrund; geschwaechtes Vertrauen erscheint nur als Review-Kontext, wenn frische Heute-Evidenz ohnehin die sichere Option oeffnet.
+- **Why:** Die Tagesoberflaeche soll von Data lernen, ohne zum Receipt-Report zu werden. Bestaetigtes Vertrauen macht Home ruhiger, waehrend geschwaechtes Vertrauen erklaert, warum eine frische Wiederkehr echt ist, ohne alte Plan-Receipts erneut in `Heute entscheidet` zu ziehen.
+- **Alternatives:** Kalibrierung nur in Data lassen (Home wirkt blind fuer bestaetigte Folgewirkung); geschwaechte Receipts als eigenes Tages-Signal fuehren (zu laut); alte Plan-Receipts in Leitentscheidung oder sichere Option wiederholen (wirkt wie vergessenes Lernen).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data kalibriert Wochenreceipt-Lernvertrauen nach Folgewirkung
 
 - **Decision:** Data unterscheidet bei `Wochenreceipt-Lernvertrauen` jetzt zwischen bestaetigter Folgewirkung und geschwaechtem Vertrauen durch frische Wiederkehr. Bestaetigte Receipts bleiben ruhige Evidenz; geschwaechte Receipts routen nur ueber die vorhandenen frischen Heute-/Wochenwirkungs-Pfade und nennen das alte Receipt als Kontext.
