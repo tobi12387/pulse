@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data klassifiziert Tageskonflikt-Muster nach Entscheidungswirkung
+
+- **Decision:** Data erkennt `Tageskonflikt`-Muster aus der Decision-Quality-Evidenz als eigene Analyse-Wirkung: einzelne oder schwache Muster bleiben `watch_context`, hilfreiche wiederholte Muster werden `today_action` Richtung Home, und stale/strategieaendernde Muster werden `plan_decision` Richtung Wochenentscheidung.
+- **Why:** Der Lernlayer soll nicht jede Wiederholung wie eine sichere Empfehlung behandeln. Data ist die richtige Stelle, um die MacroFactor-/Intervals-artige Evidenzstärke zu klassifizieren, bevor Home oder Plan daraus eine konkrete Handlung machen.
+- **Alternatives:** Tradeoffs weiter als generische Decision Quality behandeln (zu unscharf fuer Home/Plan); jede Wiederholung sofort in Plan routen (zu laut); nur Home/Plan direkt erkennen lassen (doppelte Logik, Data bleibt kein klaerender Workbench).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan übernimmt wiederholte Tageskonflikte in die Wochenentscheidung
 
 - **Decision:** Plan erkennt wiederholte `Tageskonflikt`-Muster aus der Decision-Quality-Evidenz als explizite Wochenentscheidung. Wiederholte Konflikte erscheinen in der Weekly-Decision-Sprache, den preview-only Optionen und dem lokalen Entscheidungsbeleg; einzelne Konflikte bleiben Watch-Kontext.

@@ -26,7 +26,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - No Telegram integration. Web Push is the planned notification channel.
 - No Data Export unless Tobi explicitly reverses this decision.
 - Completed plans are historical references only. Do not rebuild them.
-- New product work must serve the hard Performance-OS backlog order in `docs/ai/next-product-packages.md`: `Tagesentscheidung`, `Trainingsanpassung`, then `Lernschleifen`.
+- New product work must serve the current hard Performance-OS backlog order in `docs/ai/next-product-packages.md`.
 
 ## Product Quality Bar
 

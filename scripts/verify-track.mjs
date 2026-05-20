@@ -114,7 +114,7 @@ export const TRACKS = {
           '--',
           'frontend/e2e/pulse-smoke.spec.ts',
           '-g',
-          'Data analysis opens decision-quality evidence from the primary learning signal|Data analysis exposes fueling evidence as a concrete learning loop|Data analysis keeps learning calibration gated until comparable fueling evidence is complete|Data analysis opens personal response evidence from the primary response signal',
+          'Data analysis opens decision-quality evidence from the primary learning signal|Data analysis classifies repeated tradeoffs as weekly plan decisions|Data analysis exposes fueling evidence as a concrete learning loop|Data analysis keeps learning calibration gated until comparable fueling evidence is complete|Data analysis opens personal response evidence from the primary response signal',
           ...E2E_PROJECTS,
         ],
       },

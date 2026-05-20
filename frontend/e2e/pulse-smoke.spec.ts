@@ -346,6 +346,50 @@ test('Data analysis opens decision-quality evidence from the primary learning si
   await expect(page.locator('#data-decision-quality')).toBeVisible();
 });
 
+test('Data analysis classifies repeated tradeoffs as weekly plan decisions', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T00:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Evidenzlücke.',
+      projections: [],
+      missingEvidence: [],
+    },
+    planTrace: null,
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 34,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt wiederholt',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-01',
+        status: 'stale',
+        evidence: [
+          '3x Tageskonflikt mit zu hartem Plan',
+          '2x Abschluss als leichtere Option gelernt',
+        ],
+      }],
+      bestEvidence: ['3x Tageskonflikt mit zu hartem Plan'],
+      evidence: [],
+      suggestedAdjustment: 'Diese Woche Intensitaet erst nach Warm-up freigeben und leichtere Option vorab festlegen.',
+    },
+  });
+
+  await page.goto('/data?tab=analysis');
+  const card = page.getByTestId('analysis-translation-card');
+
+  await expect(card).toContainText('Tradeoff-Muster');
+  await expect(card).toContainText('Tageskonflikte werden Wochenentscheidung');
+  await expect(card).toContainText('Wirkung: Planentscheidung');
+  await expect(card).toContainText('3x Tageskonflikt');
+  await expect(card).toContainText('Plan und Garmin bleiben unverändert');
+  await card.getByRole('button', { name: 'Wochenentscheidung prüfen' }).click();
+  await expect(page).toHaveURL('/plan?tab=training&source=data-tradeoff#plan-weekly-decision');
+  await expect(page.getByTestId('plan-weekly-decision-contract')).toBeVisible();
+});
+
 test('Data analysis opens personal response evidence from the primary response signal', async ({ page }) => {
   await mockPulseApi(page, {
     goalProjection: {
