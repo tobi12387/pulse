@@ -1510,6 +1510,9 @@ test('Home daily decision keeps on-track goal progress as quiet motivation', asy
   await expect(decision.getByTestId('daily-decision-safest-option')).not.toContainText('Ziel-Fortschritt');
   await expect(decision.getByTestId('daily-decision-continuity')).toContainText('Ziel-Fortschritt stabil');
   await expect(decision.getByTestId('daily-decision-continuity')).toContainText('70.3 Kraichgau 78%');
+  await expect(decision.getByTestId('daily-decision-continuity')).toContainText('bleibt Data-Evidenz');
+  await expect(decision.getByTestId('daily-decision-continuity')).not.toContainText('aktuelle Woche haelt den Aufbau stabil');
+  await expect(decision.getByTestId('daily-decision-continuity')).not.toContainText('Kein dominanter Ziel-Limiter');
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   await expect(decision).toContainText('Ziel-Fortschritt stabil: 70.3 Kraichgau 78%');

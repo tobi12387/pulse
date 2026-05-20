@@ -615,7 +615,9 @@ test('on-track goal progress stays quiet daily motivation', () => {
   assert.doesNotMatch(decision.contract.safestAlternative, /Zielintervention|Ziel-Fortschritt|Fueling-Praxis/);
   assert.match(decision.contract.continuity, /Ziel-Fortschritt stabil/);
   assert.match(decision.contract.continuity, /70\.3 Kraichgau 78%/);
+  assert.match(decision.contract.continuity, /bleibt Data-Evidenz/);
   assert.match(decision.contract.continuity, /keine neue Tages- oder Planhandlung/);
+  assert.doesNotMatch(decision.contract.continuity, /aktuelle Woche haelt den Aufbau stabil|Kein dominanter Ziel-Limiter/);
   assert.equal(decision.contract.signals.find(signal => signal.label === 'Ziel'), undefined);
   assert.ok(decision.evidence.some(item => (
     typeof item !== 'string'
@@ -654,8 +656,9 @@ test('watch goal limiters stay quiet motivation instead of opening a tradeoff', 
   assert.doesNotMatch(decision.contract.safestAlternative, /Tageskonflikt zuerst lösen|Zielintervention|Ziel:/);
   assert.match(decision.contract.safestAlternative, /Recovery schützen/);
   assert.match(decision.contract.continuity, /Ziel-Limiter beobachten/);
-  assert.match(decision.contract.continuity, /Fueling-Limiter/);
+  assert.match(decision.contract.continuity, /70\.3 Kraichgau 61% bleibt Data-Evidenz/);
   assert.match(decision.contract.continuity, /keine neue Tages- oder Planhandlung/);
+  assert.doesNotMatch(decision.contract.continuity, /Fueling-Limiter|GI- und During-Logs fehlen|Long-Endurance/);
   assert.equal(decision.contract.signals.find(signal => signal.label === 'Tageskonflikt'), undefined);
   assert.equal(decision.contract.signals.find(signal => signal.label === 'Ziel'), undefined);
   assert.ok(decision.evidence.some(item => (
