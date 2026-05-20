@@ -36,6 +36,7 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Nutrition trend summaries remain gated until at least three comparable complete `during` logs exist with carbs, duration/activity context and GI comfort. Sodium, heat and sweat-rate stay evidence gaps until measured.
 - iPhone certificate trust is still manual if warning-free Safari/PWA behavior is required.
 - Push registration and test-push activation are manual per target browser/device.
+- PWA offline fallback has automated service-worker proof, but the real iPhone VPN/network disconnect check remains manual field evidence.
 - Real Garmin calendar/workout writes should not run during generic QA unless the task explicitly requires sync repair/testing.
 - Server deploy currently needs manual SSH/auth repair from Tobi; Codex deploy attempts fail with publickey/password denial until access is restored.
 - Native iOS is evidence-gated; local web/PWA over VPN remains the current access model.

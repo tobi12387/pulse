@@ -48,6 +48,8 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 - Temporarily disconnect VPN or network.
 - Reopen Pulse from the Home Screen.
 - Confirm the offline fallback explains that the local server or VPN is unavailable.
+- Optional automated fallback proof: `npm run test:e2e -- frontend/e2e/pulse-smoke.spec.ts -g "PWA manifest|service worker navigation fallback|app starts when service workers" --project=desktop-chromium --project=mobile-chromium`.
+- Optional iPhone WebKit fallback proof: `PULSE_E2E_WEBKIT=true npm run test:e2e -- frontend/e2e/pulse-smoke.spec.ts -g "PWA manifest|service worker navigation fallback|app starts when service workers" --project=iphone-webkit`.
 
 ## Local Operations Reference
 

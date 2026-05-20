@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import vm from 'node:vm';
 import { mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
@@ -2382,4 +2385,46 @@ test('app starts when service workers are unavailable', async ({ page }) => {
 
   await page.goto('/');
   await expectHealthyPage(page, 'READINESS');
+});
+
+test('service worker navigation fallback explains local server or VPN outage', async () => {
+  const source = await fs.readFile(path.resolve(process.cwd(), 'frontend/public/sw.js'), 'utf8');
+  const listeners = new Map<string, (event: {
+    request: { mode: string };
+    respondWith: (response: Promise<Response>) => void;
+  }) => void>();
+  const noopAsync = async () => undefined;
+  const sandbox = {
+    Response,
+    fetch: () => Promise.reject(new Error('network unavailable')),
+    self: {
+      addEventListener: (type: string, listener: (event: never) => void) => listeners.set(type, listener),
+      skipWaiting: noopAsync,
+      clients: { claim: noopAsync },
+      registration: { showNotification: noopAsync },
+      location: { origin: 'https://127.0.0.1:5173' },
+    },
+    clients: { matchAll: async () => [], openWindow: noopAsync },
+  };
+
+  vm.runInNewContext(source, sandbox);
+  const fetchListener = listeners.get('fetch');
+  expect(fetchListener).toBeTruthy();
+
+  let responsePromise: Promise<Response> | null = null;
+  fetchListener!({
+    request: { mode: 'navigate' },
+    respondWith: (response) => {
+      responsePromise = Promise.resolve(response);
+    },
+  });
+  expect(responsePromise).not.toBeNull();
+
+  const response = await responsePromise!;
+  expect(response.headers.get('content-type')).toContain('text/html');
+  const html = await response.text();
+  expect(html).toContain('Pulse ist offline');
+  expect(html).toContain('lokale Server oder die VPN-Verbindung');
+  expect(html).toContain('VPN oder WLAN prüfen');
+  expect(html).toContain('Neu laden');
 });

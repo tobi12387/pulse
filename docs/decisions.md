@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Frontend-Public-Assets verlangen Deploy im Delivery Manifest
+
+- **Decision:** `npm run delivery:manifest` behandelt `frontend/public/*`, `frontend/index.html` und `frontend/vite.config.ts` als deploypflichtige Frontend-Runtime-Aenderungen. E2E-only Dateien bleiben reine Testaenderungen ohne Deploy-Signal.
+- **Why:** Service Worker, Manifest und statische Frontend-Assets werden in den ausgelieferten Build kopiert. Wenn sie nicht als deploypflichtig gelten, koennen PWA-/Offline-Fixes gemergt werden, ohne dass der Server-Mirror aktualisiert wird.
+- **Alternatives:** Nur `frontend/src/*` deploypflichtig lassen (verpasst PWA/Public-Asset-Aenderungen); alle `frontend/*` Dateien deploypflichtig machen (E2E- und reine Testaenderungen wuerden falschen Deploy-Druck erzeugen).
+- **Decided by:** Codex, beim PWA-Offline-Fallback-Fix im Branch `codex/pwa-offline-fallback-proof`.
+- **Status:** active.
+
 ## 2026-05-21 — Aktive Planflaeche bleibt auf Roadmap und offene Gates reduziert
 
 - **Decision:** Die uebrigen verifizierten 2026-05-14-Plan-Dokumente fuer Daily Intelligent Action Contract v2, Home/Plan/Desktop-Density, Plan Week First und Desktop Plan IA werden nach `docs/superpowers/plans/completed/` verschoben. Der aktive Plan-Ordner enthaelt damit nur noch Roadmap-/Pointer-Dokumente und die offene Mobile-Field-Reliability-Gate-Planung.
