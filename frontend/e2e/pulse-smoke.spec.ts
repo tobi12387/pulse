@@ -100,20 +100,22 @@ test('Data analysis translates deep evidence into daily impact without AI cards'
   await expect(card).toBeVisible();
   await expect(card).toContainText('Analyse -> Tageswirkung');
   await expect(card).toContainText('Handlungsrelevant');
-  await expect(card).toContainText('Fueling-Praxis absichern');
+  await expect(card).toContainText('Ziel-Fortschritt');
+  await expect(card).toContainText('Ziel-Limiter beobachten');
   await expect(card).toContainText('70.3 Kraichgau');
-  await expect(card).toContainText('Wirkung: Planentscheidung');
+  await expect(card).toContainText('Wirkung: Watch-Kontext');
+  await expect(card).toContainText('Data-Evidenz und keine Planentscheidung');
   await expect(card).toContainText('Nach dem Klick');
-  await expect(card.getByRole('button', { name: 'Plan pruefen' })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Zielprojektion prüfen' })).toBeVisible();
   await expect(card).toContainText('Interessant, aber noch nicht entscheidend');
   await expect(card).toContainText('Wiederholte stabile Fueling');
   await expect(card).toContainText('Read-only');
-  await card.getByRole('button', { name: 'Plan pruefen' }).click();
-  await expect(page).toHaveURL('/plan?tab=training');
+  await card.getByRole('button', { name: 'Zielprojektion prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-goal-projection');
   expect(insightRequests).toBe(0);
 });
 
-test('Data analysis action contract follows non-plan goal interventions', async ({ page }) => {
+test('Data analysis keeps insufficient goal evidence in Data', async ({ page }) => {
   await mockPulseApi(page, {
     goalProjection: {
       generatedAt: '2026-05-01T00:00:00.000Z',
@@ -153,12 +155,13 @@ test('Data analysis action contract follows non-plan goal interventions', async 
   await page.goto('/data?tab=analysis');
   const card = page.getByTestId('analysis-translation-card');
 
-  await expect(card).toContainText('Evidenz vervollständigen');
-  await expect(card).toContainText('Wirkung: Tageshandlung');
+  await expect(card).toContainText('Datenvertrauen');
+  await expect(card).toContainText('Wahrscheinlichkeit offen');
+  await expect(card).toContainText('Wirkung: Watch-Kontext');
   await expect(card).toContainText('Nach dem Klick');
-  await expect(card).toContainText('Öffnet die Datengrundlage als Tageshandlung');
-  await card.getByRole('button', { name: 'Daten prüfen' }).click();
-  await expect(page).toHaveURL('/data?tab=quality#data-garmin-quality');
+  await expect(card).toContainText('Öffnet die Zielprojektion als Watch-Kontext');
+  await card.getByRole('button', { name: 'Zielprojektion prüfen' }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-goal-projection');
 });
 
 test('Data analysis opens secondary goal evidence from the watch signal', async ({ page }) => {
