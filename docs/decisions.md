@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Frische Route-Evidence laesst Backlog gated
+
+- **Decision:** Nach frischer Desktop- und Mobile-Route-Evidence bleibt kein ungated autonomes Performance-OS-Produktpaket queued. UI/UX-Produktarbeit startet erst wieder mit konkreter Route-/User-Friction, Roadmap-Repriorisierung, genuegend Nutrition-Logs, iPhone/PWA-Realgeraetevidence oder Tobis expliziter Richtung.
+- **Why:** Der neue Evidence-Pack bei `f7bdfe3` zeigt 24 Screenshots und 0 horizontalen Overflow; die geprueften Home-, Data-, Plan-, Insights- und Settings-Zustaende tragen keinen klaren Workflow-Fix. Ein Code-Slice ohne solche Evidenz waere spekulativer Produktlaerm.
+- **Alternatives:** Eine kleine UI-Polish-Aenderung trotz fehlender Friction bauen (zu spekulativ); Nutrition-Trends oder iPhone/PWA starten (Gates fehlen); die Backlog-Leere nur im Chat lassen (naechste Agenten wuerden stale Arbeit wieder suchen).
+- **Decided by:** Codex, nach frischer Route-Evidence im Branch `codex/performance-os-next-evidence`.
+- **Status:** active.
+
 ## 2026-05-20 — Home haelt ruhige Ziel-Kontinuitaet kompakt
 
 - **Decision:** Home zeigt stabile oder Watch-Zielprojektionen in `Seit letzter Entscheidung` nur noch als kurze Data-Evidenz-Zeile. Die ausfuehrliche Ziel- und Limiter-Erklaerung bleibt ueber den Data-Handoff erreichbar; fuehrende Entscheidung, CTA und `Sicherste Option` bleiben frei von ruhigem Ziel-Fortschritt.
