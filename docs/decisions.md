@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Performance-OS-Backlog braucht neue Paketkarten
+
+- **Decision:** Nach PR #522 ist kein ungated autonomes Produktpaket mehr in `docs/ai/next-product-packages.md` queued. Neue Produktarbeit soll erst starten, nachdem die Backlog-Karten aus Roadmap oder Tobis expliziter Richtung erneuert wurden; die verbleibenden Roadmap-Themen Nutrition-Trends und iPhone/PWA-Feldzuverlaessigkeit bleiben evidenz- bzw. device-gated.
+- **Why:** Der harte Backlog-Pointer darf nicht auf ein bereits shipped Paket zeigen, sonst starten Agenten aus stale Kontext. Ein bewusster Replenishment-Schritt ist schneller und sicherer als ein spontaner neuer Produkt-Slice ausserhalb der drei Tracks.
+- **Alternatives:** Die shipped Plan-Zielkarte als naechstes Paket stehen lassen (stale); sofort Nutrition oder iPhone/PWA bauen (Gates fehlen); ein neues Produktpaket ohne Roadmap-Abgleich erfinden (zu spekulativ).
+- **Decided by:** Codex, nach Merge von PR #522.
+- **Status:** active.
+
 ## 2026-05-20 — Plan behandelt Ziel-Fortschritt als Wochenvertrauen
 
 - **Decision:** Plan zeigt `on_track` und Watch-Zielprojektionen als Beibehalten-Vertrauen/Evidenz; nur `at_risk` oder geblockte Ziel-Limiter oeffnen die bestehende explizite Wochenentscheidung mit `Anpassen`.
