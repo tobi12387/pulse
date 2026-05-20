@@ -284,15 +284,17 @@ function tradeoffLearningSignal(
 ): DailyDecisionSignal | null {
   const pattern = classifyTradeoffPattern(decisionQuality);
   if (!pattern || completedActivity || mentalBoundary?.level === 'protect') return null;
+  if (pattern.state === 'resolved') return null;
 
   const option = todayOptionsAdaptiveOption(todayOptions);
   const openWorkoutDecision = Boolean(workout && workout.status !== 'completed' && !workout.completedActivityId);
   const canChangeToday = pattern.effect === 'today_action' && openWorkoutDecision && option;
+  const todayPrefix = pattern.hasFreshEvidence ? 'Neue Evidenz' : 'Lernmuster';
 
   if (canChangeToday && option) {
     return {
       label: 'Tageskonflikt',
-      detail: `Lernmuster: ${pattern.count}x ${pattern.themeLabel}. Heute kleinste sichere Option: ${option.title}. ${pattern.suggestedAdjustment}.`,
+      detail: `${todayPrefix}: ${pattern.count}x ${pattern.themeLabel}. Heute kleinste sichere Option: ${option.title}. ${pattern.suggestedAdjustment}.`,
       tone: 'accent',
       targetPath: option.targetPath,
       actionLabel: option.cta || 'Alternative prüfen',
@@ -767,6 +769,26 @@ function mapEvidence(item: string): DailyDecisionEvidence {
     return { label: item, targetPath: DATA_PLAN_TRACE_PATH };
   }
   return item;
+}
+
+function resolvedTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined) {
+  const pattern = classifyTradeoffPattern(decisionQuality);
+  return pattern?.state === 'resolved' ? pattern : null;
+}
+
+function resolvedTradeoffContinuity(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): string | null {
+  const pattern = resolvedTradeoffPattern(decisionQuality);
+  if (!pattern) return null;
+  return `Geloester Tageskonflikt bleibt ruhig: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
+}
+
+function resolvedTradeoffEvidence(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): DailyDecisionEvidence[] {
+  const pattern = resolvedTradeoffPattern(decisionQuality);
+  if (!pattern) return [];
+  return [{
+    label: `Geloester Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}`,
+    targetPath: DATA_DECISION_QUALITY_PATH,
+  }];
 }
 
 function actionResultPreview(action: PulseNextBestAction | null, fallbackPath: string): string {
@@ -1459,31 +1481,36 @@ function continuitySummary({
   workout,
   completedActivity,
   dailyDelta,
+  decisionQuality,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
   workout: HomeWorkout | null;
   completedActivity: HomeActivity | null;
   dailyDelta: PulseDailyDeltaItem | null;
+  decisionQuality: PulseDailyDecisionQualityResponse | null;
 }): string {
+  const resolvedTradeoff = resolvedTradeoffContinuity(decisionQuality);
+  const withResolvedTradeoff = (summary: string) => resolvedTradeoff ? `${summary} ${resolvedTradeoff}` : summary;
+
   if (dailyDelta?.date === home.date) {
     const prefix = dailyDelta.status === 'matched' ? 'Bleibt gültig' : 'Geändert';
-    return `${prefix}: ${dailyDelta.title}. ${dailyDelta.nextPlanEffect}`;
+    return withResolvedTradeoff(`${prefix}: ${dailyDelta.title}. ${dailyDelta.nextPlanEffect}`);
   }
 
   if (workout?.status === 'completed' || workout?.completedActivityId) {
-    return 'Geändert: Die Einheit ist erledigt; die Entscheidung wechselt von Ausführung zu Feedback, Versorgung und Regeneration.';
+    return withResolvedTradeoff('Geändert: Die Einheit ist erledigt; die Entscheidung wechselt von Ausführung zu Feedback, Versorgung und Regeneration.');
   }
   if (completedActivity) {
-    return 'Geändert: Garmin hat reale Belastung geliefert; Feedback und Planabgleich sind heute wichtiger als zusätzliches Training.';
+    return withResolvedTradeoff('Geändert: Garmin hat reale Belastung geliefert; Feedback und Planabgleich sind heute wichtiger als zusätzliches Training.');
   }
   if (workout) {
-    return 'Bleibt gültig: Readiness, TSB und Workout-Profil bestimmen weiter Ausführen oder bewusstes Anpassen, nicht Zusatzumfang.';
+    return withResolvedTradeoff('Bleibt gültig: Readiness, TSB und Workout-Profil bestimmen weiter Ausführen oder bewusstes Anpassen, nicht Zusatzumfang.');
   }
   if (action) {
-    return 'Bleibt gültig: Der offene nächste Schritt ist noch nicht geschlossen; Pulse hält die Entscheidung auf diesem Hebel.';
+    return withResolvedTradeoff('Bleibt gültig: Der offene nächste Schritt ist noch nicht geschlossen; Pulse hält die Entscheidung auf diesem Hebel.');
   }
-  return 'Bleibt gültig: Ohne geplantes Training schließen Check-in und Erholung den Tag ruhiger als eine neue Einheit.';
+  return withResolvedTradeoff('Bleibt gültig: Ohne geplantes Training schließen Check-in und Erholung den Tag ruhiger als eine neue Einheit.');
 }
 
 function topSignals(
@@ -1681,7 +1708,7 @@ function buildContract({
     leadingFactor: leadingFactorSummary(signals, fallbackLead),
     goalImpact: goalImpactSummary(home, workout, completedActivity, goalProjection),
     garminExecution: executionSummary(workout, completedActivity),
-    continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta }),
+    continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta, decisionQuality }),
     safestAlternative: alternative,
     signals,
   };
@@ -1741,6 +1768,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       ...(fuelingStep?.targetPath
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
         : []),
+      ...resolvedTradeoffEvidence(decisionQuality),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ];
@@ -1832,6 +1860,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       ...(fuelingStep?.targetPath
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
         : []),
+      ...resolvedTradeoffEvidence(decisionQuality),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ];
@@ -1910,6 +1939,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
     ...(dailyDelta ? [{ label: `Folge: ${dailyDelta.title}`, targetPath: dailyDelta.targetPath }] : []),
+    ...resolvedTradeoffEvidence(decisionQuality),
     ...(action?.evidence?.map(mapEvidence) ?? []),
   ];
   const decisionWorkout = home.todayWorkout?.plannedDate === home.date ? home.todayWorkout : null;

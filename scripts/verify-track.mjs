@@ -37,7 +37,7 @@ export const TRACKS = {
           '--',
           'frontend/e2e/pulse-smoke.spec.ts',
           '-g',
-          'daily training surfaces use localized activity labels|Home daily decision opens strong learning calibration from Data evidence|Home daily decision uses repeated tradeoff learning for todays adaptive option|Home daily decision opens the body goal everyday tradeoff as one safe option|Home daily decision closes completed body goal everyday tradeoffs as learning evidence|mobile Home availability intent opens a workout scenario preview|mobile Home planned workout state shows the concrete plan option without availability intents',
+          'daily training surfaces use localized activity labels|Home daily decision opens strong learning calibration from Data evidence|Home daily decision uses repeated tradeoff learning for todays adaptive option|Home daily decision keeps resolved tradeoff learning as continuity|Home daily decision opens the body goal everyday tradeoff as one safe option|Home daily decision closes completed body goal everyday tradeoffs as learning evidence|mobile Home availability intent opens a workout scenario preview|mobile Home planned workout state shows the concrete plan option without availability intents',
           ...E2E_PROJECTS,
         ],
       },
