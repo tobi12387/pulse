@@ -12,6 +12,9 @@ FRONTEND_PROC="${PULSE_PM2_FRONTEND:-pulse-frontend}"
 EXPECTED_COMMIT="${PULSE_EXPECTED_COMMIT:-$(git rev-parse --short HEAD)}"
 LOG_LINES="${PULSE_SERVER_LOG_LINES:-300}"
 LOG_WINDOW_MINUTES="${PULSE_SERVER_LOG_WINDOW_MINUTES:-60}"
+SSH_CONNECT_TIMEOUT="${PULSE_SSH_CONNECT_TIMEOUT:-8}"
+SSH_BATCH_MODE="${PULSE_SSH_BATCH_MODE:-yes}"
+SSH_OPTS=(-o "BatchMode=$SSH_BATCH_MODE" -o "ConnectTimeout=$SSH_CONNECT_TIMEOUT")
 
 usage() {
   cat <<'USAGE'
@@ -28,8 +31,12 @@ Environment overrides:
   PULSE_SERVER_LOG_WINDOW_MINUTES
                          Timestamped log attention window, default 60
   PULSE_SERVER_LOG_SINCE ISO timestamp override for timestamped log attention
+  PULSE_SSH_CONNECT_TIMEOUT
+                         SSH connection timeout in seconds, default 8
+  PULSE_SSH_BATCH_MODE   Use non-interactive SSH auth, default yes
 
 Checks:
+  - SSH access is available before server commands run
   - server worktree is clean on main
   - server commit matches PULSE_EXPECTED_COMMIT
   - backend and frontend PM2 processes are online, with restart counters printed
@@ -52,10 +59,16 @@ fail() {
 
 [[ "$LOG_LINES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_LINES must be numeric"
 [[ "$LOG_WINDOW_MINUTES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_WINDOW_MINUTES must be numeric"
+[[ "$SSH_CONNECT_TIMEOUT" =~ ^[0-9]+$ ]] || fail "PULSE_SSH_CONNECT_TIMEOUT must be numeric"
 LOG_SINCE_ISO="${PULSE_SERVER_LOG_SINCE:-$(PULSE_SERVER_LOG_WINDOW_MINUTES="$LOG_WINDOW_MINUTES" node --input-type=module -e 'const minutes = Number(process.env.PULSE_SERVER_LOG_WINDOW_MINUTES); console.log(new Date(Date.now() - minutes * 60_000).toISOString())')}"
 
+echo "==> ssh access"
+if ! ssh "${SSH_OPTS[@]}" "$HOST" "printf 'ssh=ok\n'"; then
+  fail "SSH access to $HOST failed before server checks. Confirm VPN/network access and non-interactive SSH credentials for deploy verification."
+fi
+
 echo "==> server git status"
-server_info="$(ssh "$HOST" "cd '$APP_PATH' && \
+server_info="$(ssh "${SSH_OPTS[@]}" "$HOST" "cd '$APP_PATH' && \
   branch=\$(git rev-parse --abbrev-ref HEAD) && \
   commit=\$(git rev-parse --short HEAD) && \
   dirty=\$(git status --porcelain | wc -l | tr -d ' ') && \
@@ -68,7 +81,7 @@ echo "branch=$server_branch commit=$server_commit dirty=$dirty_count"
 [[ "$server_commit" == "$EXPECTED_COMMIT" ]] || fail "server commit $server_commit != expected $EXPECTED_COMMIT"
 
 echo "==> pm2 status"
-pm2_json="$(ssh "$HOST" "pm2 jlist")"
+pm2_json="$(ssh "${SSH_OPTS[@]}" "$HOST" "pm2 jlist")"
 PM2_JSON="$pm2_json" node --input-type=module - "$BACKEND_PROC" "$FRONTEND_PROC" <<'NODE'
 const apps = JSON.parse(process.env.PM2_JSON ?? '[]');
 const required = process.argv.slice(2);
@@ -92,8 +105,8 @@ NODE
 echo "==> recent server log signals since $LOG_SINCE_ISO"
 for log_name in "${BACKEND_PROC}-error.log" "${FRONTEND_PROC}-error.log"; do
   log_path="/root/.pm2/logs/${log_name}"
-  if ssh "$HOST" "[ -f '$log_path' ]"; then
-    summary="$(ssh "$HOST" "tail -n '$LOG_LINES' '$log_path'" | node scripts/server-log-attention.mjs --since "$LOG_SINCE_ISO")"
+  if ssh "${SSH_OPTS[@]}" "$HOST" "[ -f '$log_path' ]"; then
+    summary="$(ssh "${SSH_OPTS[@]}" "$HOST" "tail -n '$LOG_LINES' '$log_path'" | node scripts/server-log-attention.mjs --since "$LOG_SINCE_ISO")"
     printf '%s %s\n' "$log_name" "$summary"
   else
     printf '%s recent_attention=missing\n' "$log_name"

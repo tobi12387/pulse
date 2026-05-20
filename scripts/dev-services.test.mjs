@@ -42,11 +42,16 @@ test('pulse-status checks local services and server health independently', () =>
   assert.match(pulseStatusScript, /Server deploy mirror/);
   assert.match(pulseStatusScript, /bash scripts\/dev-services\.sh status/);
   assert.match(pulseStatusScript, /bash scripts\/verify-server\.sh/);
+  assert.match(pulseStatusScript, /non-interactive SSH credentials/);
   assert.match(pulseStatusScript, /local_status=0/);
   assert.match(pulseStatusScript, /server_status=0/);
 });
 
 test('verify-server surfaces PM2 restart and recent log attention signals', () => {
+  assert.match(verifyServerScript, /==> ssh access/);
+  assert.match(verifyServerScript, /BatchMode=\$SSH_BATCH_MODE/);
+  assert.match(verifyServerScript, /ConnectTimeout=\$SSH_CONNECT_TIMEOUT/);
+  assert.match(verifyServerScript, /non-interactive SSH credentials/);
   assert.match(verifyServerScript, /restarts=\$\{restarts\}/);
   assert.match(verifyServerScript, /unstable_restarts=\$\{unstableRestarts\}/);
   assert.match(verifyServerScript, /recent server log signals/);

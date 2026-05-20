@@ -34,7 +34,7 @@ else
   server_status=1
   cat <<'SERVER_HELP'
 server mirror: unavailable or out of sync
-Check VPN/network access, SSH credentials, server PM2 status, and whether the server is on GitHub main.
+Check VPN/network access, non-interactive SSH credentials, server PM2 status, and whether the server is on GitHub main.
 SERVER_HELP
 fi
 
