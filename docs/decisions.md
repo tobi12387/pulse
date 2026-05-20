@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Delivery Intake und Fast-Gates trennen Entwicklungs- von PR-Pruefung
+
+- **Decision:** Pulse nutzt `npm run delivery:intake -- --track <track> --outcome "..."` als Paket-Startpunkt und ergaenzt fuer jede Performance-OS-Spur contract-only Gates: `npm run verify:tagesentscheidung:fast`, `npm run verify:trainingsanpassung:fast` und `npm run verify:lernschleifen:fast`. Die bestehenden `verify:<track>` Gates bleiben die PR-/Release-Gates mit Build und fokussierten Playwright-Smokes.
+- **Why:** Time-to-Market bleibt langsam, wenn jede Produktiteration sofort Build und Browser-Smokes auf der kritischen Entwicklungsstrecke ausfuehrt oder das Paketformat neu herleitet. Intake + Fast-Gates machen den Start billig und standardisiert, ohne die finale PR-Qualitaet zu lockern.
+- **Alternatives:** Die bestehenden Track-Gates unveraendert fuer jeden lokalen Loop verwenden (zu teuer); nur `--no-e2e` nutzen (spart Browser, aber baut weiter jedes Mal); Intake als reine Doku lassen (nicht verifizierbar und leicht zu uebersehen).
+- **Decided by:** Codex, als Build-Speed-Support nach Tobis erneuter Time-to-Market-Vorgabe.
+- **Status:** active.
+
 ## 2026-05-20 — Plan-Wochenentscheidung stapelt Evidence-Lanes auf Mobile
 
 - **Decision:** Der `PlanWeeklyDecisionContractPanel` stapelt seine Evidence-Lanes auf schmalen mobilen Viewports und behält die dichte Mehrspaltenansicht auf Desktop. Optionen, lokale Receipts, Preview-only-Verhalten und Plan/Garmin-No-Write-Grenzen bleiben unveraendert.
