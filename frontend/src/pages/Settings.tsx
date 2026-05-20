@@ -676,19 +676,15 @@ function SettingsDiagnosticsMatrix({
                 return (
                   <div
                     key={row.key}
+                    className="settings-optional-summary-row"
                     data-testid="settings-optional-summary-row"
                     style={{
                       borderTop: '1px solid var(--border)',
                       paddingTop: 8,
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(0, 1fr) auto auto',
-                      gap: 8,
-                      alignItems: 'center',
-                      minWidth: 0,
                       gridColumn: '1 / -1',
                     }}
                   >
-                    <div style={{ minWidth: 0 }}>
+                    <div className="settings-optional-summary-copy">
                       <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
                         {row.label}
                       </div>
@@ -696,27 +692,30 @@ function SettingsDiagnosticsMatrix({
                         Optional pro Gerät aktivieren.
                       </div>
                     </div>
-                    <Pill color={row.color}>{row.value}</Pill>
-                    <button
-                      type="button"
-                      onClick={() => onNavigate(row.action.path)}
-                      style={{
-                        minWidth: 44,
-                        minHeight: 44,
-                        padding: '6px 9px',
-                        background: 'var(--surface-2)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 4,
-                        color: 'var(--text-2)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 9,
-                        letterSpacing: 0,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {row.action.label}
-                    </button>
+                    <div className="settings-optional-summary-actions">
+                      <Pill color={row.color}>{row.value}</Pill>
+                      <button
+                        type="button"
+                        className="settings-optional-summary-action"
+                        onClick={() => onNavigate(row.action.path)}
+                        style={{
+                          minWidth: 44,
+                          minHeight: 44,
+                          padding: '6px 9px',
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 4,
+                          color: 'var(--text-2)',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          letterSpacing: 0,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {row.action.label}
+                      </button>
+                    </div>
                   </div>
                 );
               }

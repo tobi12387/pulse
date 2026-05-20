@@ -492,6 +492,29 @@
     align-items: start;
   }
 
+  .settings-optional-summary-row {
+    display: grid;
+    grid-template-areas: "copy actions";
+    grid-template-columns: minmax(180px, 1fr) auto;
+    gap: 8px 10px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .settings-optional-summary-copy {
+    grid-area: copy;
+    min-width: 0;
+  }
+
+  .settings-optional-summary-actions {
+    grid-area: actions;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+  }
+
   .data-primary-action-mobile-details {
     display: none;
   }
@@ -747,6 +770,19 @@
 
     .settings-profile-fueling-details {
       gap: 5px !important;
+    }
+
+    .settings-optional-summary-row {
+      grid-template-areas:
+        "copy"
+        "actions";
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .settings-optional-summary-actions {
+      justify-content: space-between;
+      width: 100%;
     }
 
     .today-options-card--plan-action {
