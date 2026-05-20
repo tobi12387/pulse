@@ -612,18 +612,22 @@ test('weekly decision keeps handled reopen-source trends as quiet receipt contin
   assert.match(learned?.body ?? '', /Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
   assert.match(learned?.body ?? '', /Wochenreceipt-Vertrauensdauer: 14 Tage/);
   assert.match(learned?.body ?? '', /Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle/);
+  assert.match(learned?.body ?? '', /Wochenreceipt-Erneuerungscheck/);
+  assert.match(learned?.body ?? '', /keine erneute Reopen-Quelle/);
   assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
   assert.match(learned?.body ?? '', /Kontinuitaet|ruhig/);
   assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
   assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
-  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Erneuerungscheck|Plan-Receipt/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen bestaetigt: Planlast 2x.*Garmin-Ausfuehrung 2x/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt-Vertrauensdauer: 14 Tage/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt-Erneuerungscheck: Planlast 2x.*Garmin-Ausfuehrung 2x/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt: Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Garmin-Ausfuehrung 2x/);
   assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Lernvertrauen bestaetigt/.test(item)));
   assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Vertrauensdauer: 14 Tage/.test(item)));
+  assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Erneuerungscheck/.test(item)));
   assert.match(receipt.nextConsequence, /Woche bleibt/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
@@ -672,14 +676,18 @@ test('weekly decision keeps unrefreshed weekly receipt trust quiet in Plan', () 
   assert.match(learned?.title ?? '', /Wochenreceipt-Lernvertrauen unaufgefrischt.*Beibehalten/);
   assert.match(learned?.body ?? '', /Wochenreceipt-Lernvertrauen unaufgefrischt: Recovery 2x/);
   assert.match(learned?.body ?? '', /nicht neu bestaetigt/);
+  assert.match(learned?.body ?? '', /Wochenreceipt-Erneuerungscheck offen/);
+  assert.match(learned?.body ?? '', /naechste Heute- oder Wochen-Evidenz ohne erneute Reopen-Quelle/);
   assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
   assert.doesNotMatch(learned?.body ?? '', /braucht Review|Vertrauensdauer/);
   assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
   assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
-  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Recovery 2x|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Recovery 2x|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Erneuerungscheck|Plan-Receipt/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen unaufgefrischt: Recovery 2x/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt-Erneuerungscheck offen: Recovery 2x/);
   assert.doesNotMatch(contract.evidence.join(' · '), /Vertrauensdauer|braucht Review/);
   assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Lernvertrauen unaufgefrischt/.test(item)));
+  assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Erneuerungscheck offen/.test(item)));
   assert.match(receipt.nextConsequence, /Woche bleibt/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
@@ -762,6 +770,7 @@ test('weekly decision reopens handled source trends only with fresh weekly sourc
       bestEvidence: [
         'Plan-Receipt: Reopen-Quellentrend Planlast 2x handled',
         'Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
+        'Wochenreceipt-Erneuerungscheck: Planlast 2x bleibt bestaetigt, solange weiter keine erneute Reopen-Quelle auftaucht',
         'Wiederholter Reopen-Grund: Planlast 2x erneut zu hoch',
       ],
       suggestedAdjustment: 'Wochenentscheidung erneut aus Quellentrend oeffnen: Planlast kleiner vorschauen, bevor Garmin synchronisiert wird.',
@@ -782,19 +791,19 @@ test('weekly decision reopens handled source trends only with fresh weekly sourc
   assert.match(learned?.title ?? '', /Reopen-Quellentrend/);
   assert.match(learned?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(learned?.body ?? '', /Wochenreceipt-Lernvertrauen braucht Review: Planlast 2x/);
-  assert.doesNotMatch(learned?.body ?? '', /unaufgefrischt|Vertrauensdauer/);
+  assert.doesNotMatch(learned?.body ?? '', /unaufgefrischt|Vertrauensdauer|Erneuerungscheck/);
   assert.doesNotMatch(learned?.body ?? '', /Wochenentscheidung gemerkt|Plan-Receipt:/);
   assert.match(changed?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(adapt?.weekImpact ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(adapt?.weekImpact ?? '', /Szenario-Vorschau/);
-  assert.doesNotMatch(adapt?.weekImpact ?? '', /Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Wochenreceipt|Lernvertrauen|Vertrauensdauer|Erneuerungscheck|Plan-Receipt/);
   assert.match(accept?.weekImpact ?? '', /trotz Reopen-Quellentrend/);
   assert.equal(adapt?.targetPath, '#plan-scenario-preview');
   assert.equal(adapt?.readOnly, true);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen braucht Review: Planlast 2x/);
-  assert.doesNotMatch(contract.evidence.join(' · '), /unaufgefrischt|Vertrauensdauer/);
+  assert.doesNotMatch(contract.evidence.join(' · '), /unaufgefrischt|Vertrauensdauer|Erneuerungscheck/);
   assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });

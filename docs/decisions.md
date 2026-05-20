@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-20 — Plan haelt Wochenreceipt-Erneuerungschecks im Wochenvertrauen ruhig
+
+- **Decision:** Plan nutzt Wochenreceipt-Erneuerungschecks nur in Gelernt-/Evidenz-/Receipt-Kontinuitaet. Bestaetigte oder unaufgefrischte Checks stuetzen `Beibehalten`, bleiben aus der primaeren `Anpassen`-Vorschau und frische Wochenwiederkehr oeffnet weiter nur den bestehenden `Anpassen`-Pfad.
+- **Why:** Der Erneuerungscheck ist Wochenvertrauenspflege, keine Planmutation. Plan soll Data/Home-Vertrauen erben, ohne alte Receipts als neue Wochenprobleme oder versteckte Garmin-/Plan-Schritte auszugeben.
+- **Alternatives:** Checks nur in Data/Home lassen (Plan wirkt blind); Checks in `Anpassen`-Preview oder Primaerentscheidung ziehen (zu laut); frische Wiederkehr weiter mit Erneuerungscheck mischen (unklarer Action-Kontext).
+- **Decided by:** Codex, als Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
+## 2026-05-20 — Naechstes Paket macht Ziel-Fortschritt in Data verstaendlich
+
+- **Decision:** Nach dem Wochenreceipt-Erneuerungscheck-Zyklus ist das naechste autonome Paket `Lernschleifen`: Data soll Ziel-Fortschritt als motivierende Performance-Evidenz sichtbar machen und nur echte Limiter-Risiken zu Home oder Plan routen.
+- **Why:** Der Performance-OS-North-Star verlangt, dass die intelligente Handlung Ziel, Koerper und Alltag verbindet. Ziel-Projektion existiert bereits; der naechste Nutzen ist, Fortschritt und Limiter so zu trennen, dass stabile Ziele motivieren und nur actionable Risiken lauter werden.
+- **Alternatives:** Direkt Home oder Plan lauter machen (zu frueh ohne Data-Quellklarheit); Nutrition-Trends vor dem Evidenzgate starten (gesperrt); neue UI-Flows ohne Route-Evidenz planen (zu spekulativ).
+- **Decided by:** Codex, als naechste harte Backlog-Prioritaet aus Roadmap und Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home haelt Wochenreceipt-Erneuerungschecks als Data-Kontinuitaet ruhig
 
 - **Decision:** Home nutzt Wochenreceipt-Erneuerungschecks nur in Kontinuitaet und Data-Evidenz. Bestaetigte oder unaufgefrischte Checks bleiben aus `Heute entscheidet`, CTA und `Sicherste Option`; frische Heute-Wiederkehr blendet den Check aus und fuehrt weiter den Tages-Review.
