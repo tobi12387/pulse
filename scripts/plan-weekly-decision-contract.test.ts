@@ -590,6 +590,7 @@ test('weekly decision keeps handled reopen-source trends as quiet receipt contin
       bestEvidence: [
         'Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled',
         'Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
+        'Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
       ],
       suggestedAdjustment: 'Bereits gehandhabt: Quellentrend als Kontinuitaet behalten, bis frische Wochen-Evidenz erneut wirkt.',
     }),
@@ -609,17 +610,76 @@ test('weekly decision keeps handled reopen-source trends as quiet receipt contin
   assert.match(learned?.title ?? '', /Wochenreceipt-Lernvertrauen bestaetigt.*Beibehalten/);
   assert.match(learned?.body ?? '', /Planlast 2x.*Garmin-Ausfuehrung 2x/);
   assert.match(learned?.body ?? '', /Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
-  assert.match(learned?.body ?? '', /Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle/);
+  assert.match(learned?.body ?? '', /Wochenreceipt-Vertrauensdauer: 14 Tage/);
+  assert.match(learned?.body ?? '', /Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle/);
   assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
   assert.match(learned?.body ?? '', /Kontinuitaet|ruhig/);
   assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
   assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
-  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Wochenreceipt|Lernvertrauen|Plan-Receipt/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen bestaetigt: Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt-Vertrauensdauer: 14 Tage/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt: Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Garmin-Ausfuehrung 2x/);
   assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Lernvertrauen bestaetigt/.test(item)));
+  assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Vertrauensdauer: 14 Tage/.test(item)));
+  assert.match(receipt.nextConsequence, /Woche bleibt/);
+  assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
+});
+
+test('weekly decision keeps unrefreshed weekly receipt trust quiet in Plan', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'unrefreshed-reopen-source-receipt', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 71,
+      status: 'helpful',
+      statusLabel: 'Reopen-Quellentrend bereits in Wochenentscheidung eingeordnet',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 4,
+        lastSeen: '2026-05-12',
+        status: 'useful_repetition',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten wegen Reopen-Quellentrend Recovery 2x',
+          'Reopen-Quellentrend Recovery 2x bereits in Plan eingeordnet',
+        ],
+      }],
+      bestEvidence: [
+        'Plan-Receipt: Reopen-Quellentrend Recovery 2x handled',
+      ],
+      suggestedAdjustment: 'Bereits gehandhabt: Quellentrend beobachten, bis frische Wochen-Evidenz erneut wirkt.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'accept_current', '2026-05-12T07:28:00.000Z');
+
+  assert.equal(contract.tone, 'ok');
+  assert.equal(contract.title, 'Woche aktuell stabil');
+  assert.equal(contract.primaryOption, 'accept_current');
+  assert.match(learned?.title ?? '', /Wochenreceipt-Lernvertrauen unaufgefrischt.*Beibehalten/);
+  assert.match(learned?.body ?? '', /Wochenreceipt-Lernvertrauen unaufgefrischt: Recovery 2x/);
+  assert.match(learned?.body ?? '', /nicht neu bestaetigt/);
+  assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
+  assert.doesNotMatch(learned?.body ?? '', /braucht Review|Vertrauensdauer/);
+  assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
+  assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Recovery 2x|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen unaufgefrischt: Recovery 2x/);
+  assert.doesNotMatch(contract.evidence.join(' · '), /Vertrauensdauer|braucht Review/);
+  assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Lernvertrauen unaufgefrischt/.test(item)));
   assert.match(receipt.nextConsequence, /Woche bleibt/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
@@ -701,6 +761,7 @@ test('weekly decision reopens handled source trends only with fresh weekly sourc
       }],
       bestEvidence: [
         'Plan-Receipt: Reopen-Quellentrend Planlast 2x handled',
+        'Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
         'Wiederholter Reopen-Grund: Planlast 2x erneut zu hoch',
       ],
       suggestedAdjustment: 'Wochenentscheidung erneut aus Quellentrend oeffnen: Planlast kleiner vorschauen, bevor Garmin synchronisiert wird.',
@@ -721,17 +782,19 @@ test('weekly decision reopens handled source trends only with fresh weekly sourc
   assert.match(learned?.title ?? '', /Reopen-Quellentrend/);
   assert.match(learned?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(learned?.body ?? '', /Wochenreceipt-Lernvertrauen braucht Review: Planlast 2x/);
+  assert.doesNotMatch(learned?.body ?? '', /unaufgefrischt|Vertrauensdauer/);
   assert.doesNotMatch(learned?.body ?? '', /Wochenentscheidung gemerkt|Plan-Receipt:/);
   assert.match(changed?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(adapt?.weekImpact ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(adapt?.weekImpact ?? '', /Szenario-Vorschau/);
-  assert.doesNotMatch(adapt?.weekImpact ?? '', /Wochenreceipt|Lernvertrauen|Plan-Receipt/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
   assert.match(accept?.weekImpact ?? '', /trotz Reopen-Quellentrend/);
   assert.equal(adapt?.targetPath, '#plan-scenario-preview');
   assert.equal(adapt?.readOnly, true);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen braucht Review: Planlast 2x/);
+  assert.doesNotMatch(contract.evidence.join(' · '), /unaufgefrischt|Vertrauensdauer/);
   assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
