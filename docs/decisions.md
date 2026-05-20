@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan nutzt Reopen-Quellentrends als Wochenkontext
+
+- **Decision:** Plan behandelt wiederholte `Tageskonflikt`-Reopen-Quellen jetzt als `Reopen-Quellentrend`. Ein Quellentrend oeffnet `Anpassen` nur, wenn der gemeinsame Classifier echte Wochenwirkung sieht; sonst bleibt er Watch-Kontext mit `Beibehalten`. Isolierte frische Quellen bleiben source-spezifische Wochen-Evidenz ohne Trend-Sprache.
+- **Why:** Data und Home koennen bereits zeigen, ob ein frischer Reopen-Grund isoliert oder wiederholt ist. Die Wochenentscheidung muss daraus entscheiden, ob der Trend die Woche veraendert, ohne jede einzelne Quelle erneut zu erklaeren oder Plan/Garmin vor einem bewussten Klick zu schreiben.
+- **Alternatives:** Reopen-Quellen weiter nur einzeln erklaeren (verliert die Trend-Lernschleife); jeden Quellentrend automatisch als Wochenentscheidung oeffnen (zu laut und zu aggressiv); Trendlogik separat in Plan duplizieren statt den gemeinsamen Classifier zu nutzen (Drift zu Data/Home).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home zeigt frische Reopen-Quellen als isoliert oder Trend
 
 - **Decision:** Home nennt bei frischen `Tageskonflikt`-Reopens jetzt knapp, ob die Quelle heute isoliert ist oder bereits ein `Reopen-Quellentrend` ist. Die fuehrende Tagesentscheidung bleibt auf der aktuellen adaptiven Option, alte handled Plan-/Data-Evidenz bleibt nur Kontinuitaet und verlinkter Kontext.
