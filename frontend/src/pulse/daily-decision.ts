@@ -80,6 +80,7 @@ type GoalProjection = PulseGoalProjectionResponse['projections'][number];
 type HomeDataStatus = PulseHomeScreenData['dataStatus'];
 type HomeRecovery = PulseHomeScreenData['recovery'];
 type TodayOption = PulseTodayOptionsResponse['options'][number];
+type TradeoffPattern = NonNullable<ReturnType<typeof classifyTradeoffPattern>>;
 
 const DATA_DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
 const DATA_PLAN_TRACE_PATH = '/data?tab=analysis#data-plan-trace';
@@ -205,6 +206,27 @@ function todayOptionsAdaptiveDetail(todayOptions: PulseTodayOptionsResponse, opt
   ].filter(Boolean).join(' · ');
 }
 
+function tradeoffFreshEvidenceSummary(pattern: TradeoffPattern): string {
+  const freshDetails = pattern.freshEvidence
+    .map(item => sentenceWithoutTrailingPeriod(item)
+      .replace(/^Neue Evidenz seit gemerkter (Tagesentscheidung|Entscheidung):\s*/iu, '')
+      .replace(/^Neue Evidenz:\s*/iu, '')
+      .trim())
+    .filter(item => item && !/^Tageskonflikt mit neuer heutiger Evidenz$/iu.test(item));
+
+  return freshDetails.length > 0
+    ? freshDetails.join(' · ')
+    : `${pattern.count}x ${pattern.themeLabel}`;
+}
+
+function tradeoffLearningDetail(pattern: TradeoffPattern, option: TodayOption): string {
+  if (pattern.hasFreshEvidence) {
+    return `Frische Heute-Evidenz: ${tradeoffFreshEvidenceSummary(pattern)}. Heute kleinste sichere Option: ${option.title}.`;
+  }
+
+  return `Lernmuster: ${pattern.count}x ${pattern.themeLabel}. Heute kleinste sichere Option: ${option.title}. ${pattern.suggestedAdjustment}.`;
+}
+
 function everydaySignal(
   todayOptions: PulseTodayOptionsResponse | null | undefined,
   workout: HomeWorkout | null,
@@ -289,12 +311,11 @@ function tradeoffLearningSignal(
   const option = todayOptionsAdaptiveOption(todayOptions);
   const openWorkoutDecision = Boolean(workout && workout.status !== 'completed' && !workout.completedActivityId);
   const canChangeToday = pattern.effect === 'today_action' && openWorkoutDecision && option;
-  const todayPrefix = pattern.hasFreshEvidence ? 'Neue Evidenz' : 'Lernmuster';
 
   if (canChangeToday && option) {
     return {
       label: 'Tageskonflikt',
-      detail: `${todayPrefix}: ${pattern.count}x ${pattern.themeLabel}. Heute kleinste sichere Option: ${option.title}. ${pattern.suggestedAdjustment}.`,
+      detail: tradeoffLearningDetail(pattern, option),
       tone: 'accent',
       targetPath: option.targetPath,
       actionLabel: option.cta || 'Alternative prüfen',
@@ -776,15 +797,35 @@ function resolvedTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRespo
   return pattern?.state === 'resolved' ? pattern : null;
 }
 
+function reopenedTradeoffContext(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined) {
+  const pattern = classifyTradeoffPattern(decisionQuality);
+  if (!pattern || pattern.state === 'resolved' || !pattern.hasFreshEvidence || pattern.resolvedEvidence.length === 0) return null;
+  return pattern;
+}
+
 function resolvedTradeoffContinuity(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): string | null {
   const pattern = resolvedTradeoffPattern(decisionQuality);
-  if (!pattern) return null;
-  return `Geloester Tageskonflikt bleibt ruhig: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
+  if (pattern) {
+    return `Geloester Tageskonflikt bleibt ruhig: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
+  }
+
+  const reopened = reopenedTradeoffContext(decisionQuality);
+  if (!reopened) return null;
+  const context = reopened.resolvedEvidence.map(sentenceWithoutTrailingPeriod).join(' · ');
+  return `Geloester Tageskonflikt bleibt Kontext: ${context}. Frische Heute-Evidenz fuehrt nur die heutige adaptive Option.`;
 }
 
 function resolvedTradeoffEvidence(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): DailyDecisionEvidence[] {
   const pattern = resolvedTradeoffPattern(decisionQuality);
-  if (!pattern) return [];
+  if (!pattern) {
+    const reopened = reopenedTradeoffContext(decisionQuality);
+    if (!reopened) return [];
+    return [{
+      label: `Geloester Tageskonflikt als Kontext: ${reopened.resolvedEvidence[0] ?? `${reopened.count}x ${reopened.themeLabel}`}`,
+      targetPath: DATA_DECISION_QUALITY_PATH,
+    }];
+  }
+
   return [{
     label: `Geloester Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}`,
     targetPath: DATA_DECISION_QUALITY_PATH,

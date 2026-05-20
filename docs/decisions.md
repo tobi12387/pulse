@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home erklaert frische Tradeoff-Reopens ohne alte Muster
+
+- **Decision:** Home fuehrt wiedergeoeffnete `Tageskonflikt`-Muster nur mit der frischen Heute-Evidenz und der heutigen adaptiven Option. Bereits geloeste oder eingeordnete Tradeoff-Historie bleibt als Kontinuitaet und verlinkte Evidenz sichtbar, wird aber nicht in `Heute entscheidet` oder `Sicherste Option` wiederholt.
+- **Why:** Ein Reopen soll sich wie "das hat sich heute geaendert" anfuehlen, nicht wie vergessenes Lernen. Die Tagesantwort muss schneller zur konkreten Handlung fuehren und zugleich Vertrauen behalten, dass alte Plan-/Data-Entscheidungen nicht verloren sind.
+- **Alternatives:** Weiter nur abstrakt `Neue Evidenz` anzeigen (zu wenig erklaerend); alte handled Historie in der Leitzeile wiederholen (zu laut und wirkt regressiv); alte Historie komplett aus Home entfernen (verliert Kontinuitaet).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data benennt frische Tradeoff-Reopen-Evidenz
 
 - **Decision:** Der gemeinsame `Tageskonflikt`-Classifier liefert jetzt getrennte frische und bereits eingeordnete Evidenzzeilen. Data nutzt diese Felder, um Reopens als `Frische Heute-Evidenz` oder `Frische Wochen-Evidenz` zu erklaeren, waehrend alte handled/resolved Evidenz ausdruecklich Kontext bleibt.

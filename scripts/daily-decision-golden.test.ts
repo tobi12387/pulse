@@ -921,21 +921,32 @@ test('fresh resolved tradeoff evidence can reopen todays adaptive option', () =>
         status: 'useful_repetition',
         evidence: [
           'Tageskonflikt bereits in Plan eingeordnet',
-          'Neue Evidenz seit gemerkter Entscheidung: leichtere Option senkte Folgetag-RPE erneut',
+          'Neue Evidenz seit gemerkter Tagesentscheidung: Recovery niedrig und Alltag nur 45 Minuten frei',
         ],
       }],
-      bestEvidence: ['Neue Evidenz seit gemerkter Entscheidung: leichtere Option senkte Folgetag-RPE erneut'],
-      suggestedAdjustment: 'Bereits gehandhabt, aber neue Evidenz veraendert Heute: zuerst die leichtere Option bestaetigen.',
+      bestEvidence: ['Neue Evidenz seit gemerkter Tagesentscheidung: leichtere Option senkte Folgetag-RPE bei niedriger Recovery'],
+      suggestedAdjustment: 'Heute erneut leichtere Option bestaetigen; alte Plan-Einordnung nur als Kontext behalten.',
     }),
     todayOptions: plannedTodayOptions(planned.id),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Tageskonflikt: Neue Evidenz/);
+  assert.match(decision.contract.leadingFactor, /^Tageskonflikt: Frische Heute-Evidenz/);
+  assert.match(decision.contract.leadingFactor, /Recovery niedrig/);
+  assert.match(decision.contract.leadingFactor, /Alltag nur 45 Minuten/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /bereits in Plan eingeordnet|alte Plan-Einordnung|Beibehalten/);
   assert.equal(decision.cta, 'Alternative prüfen');
   assert.equal(decision.targetPath, '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-fresh-tradeoff-learning#next-training-decision');
   assert.match(decision.resultPreview ?? '', /leichtere Tagesoption/);
   assert.match(decision.contract.safestAlternative, /Tageskonflikt-Lernen heute nutzen/);
-  assert.doesNotMatch(decision.contract.continuity, /Geloester Tageskonflikt bleibt ruhig/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /bereits in Plan eingeordnet|alte Plan-Einordnung|Beibehalten/);
+  assert.match(decision.contract.continuity, /Geloester Tageskonflikt bleibt Kontext/);
+  assert.match(decision.contract.continuity, /Tageskonflikt bereits in Plan eingeordnet/);
+  const tradeoffEvidence = decision.evidence.find(item => (
+    typeof item !== 'string'
+    && /Geloester Tageskonflikt als Kontext/.test(item.label)
+  ));
+  assert.ok(tradeoffEvidence);
+  assert.equal(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.targetPath : null, '/data?tab=analysis#data-decision-quality');
   assertSignalBefore(decision, 'Tageskonflikt', 'Training');
 });
 
