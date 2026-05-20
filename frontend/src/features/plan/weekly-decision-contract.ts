@@ -143,6 +143,7 @@ type TradeoffDecisionContext = {
   freshEvidenceSummary: string | null;
   handledEvidenceSummary: string | null;
   receiptSummary: string | null;
+  receiptFollowupSummary: string | null;
   adaptTargetLabel: string;
   adaptTargetPath: string;
 };
@@ -195,6 +196,10 @@ function tradeoffWeeklyReceiptSummary(pattern: NonNullable<ReturnType<typeof cla
   const clean = withoutTrailingPeriod(receipt);
   if (/^plan-receipt:/iu.test(clean)) return clean;
   return clean.replace(/^wochenentscheidung gemerkt:\s*/iu, '');
+}
+
+function tradeoffReceiptFollowupSummary(pattern: NonNullable<ReturnType<typeof classifyTradeoffPattern>>): string | null {
+  return pattern.receiptFollowupEvidence[0] ? withoutTrailingPeriod(pattern.receiptFollowupEvidence[0]) : null;
 }
 
 function tradeoffFreshSourceLabel(
@@ -260,6 +265,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
   const freshEvidenceSummary = pattern.hasFreshEvidence ? tradeoffFreshEvidenceSummary(pattern) : null;
   const handledEvidenceSummary = pattern.hasFreshEvidence ? tradeoffHandledEvidenceSummary(pattern) : null;
   const receiptSummary = tradeoffWeeklyReceiptSummary(pattern);
+  const receiptFollowupSummary = tradeoffReceiptFollowupSummary(pattern);
   const evidence = tradeoffEvidence(pattern);
   const adaptTarget = tradeoffAdaptTarget(input);
 
@@ -277,7 +283,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       : '';
     const handledDetail = resolvedSourceTrendLabel
       ? receiptSummary
-        ? `Wochenreceipt bleibt Lernvertrauen: ${resolvedSourceTrendLabel}. `
+        ? `Wochenreceipt-Lernvertrauen braucht Review: ${resolvedSourceTrendLabel}. `
         : `Geschlossener Reopen-Quellentrend bleibt Kontext: ${resolvedSourceTrendLabel}. `
       : handledEvidenceSummary ? `Aeltere Receipt-Evidenz bleibt Kontext: ${handledEvidenceSummary}. ` : '';
     return {
@@ -298,6 +304,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       freshEvidenceSummary,
       handledEvidenceSummary,
       receiptSummary,
+      receiptFollowupSummary,
       ...adaptTarget,
     };
   }
@@ -321,6 +328,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       freshEvidenceSummary,
       handledEvidenceSummary,
       receiptSummary,
+      receiptFollowupSummary,
       ...adaptTarget,
     };
   }
@@ -335,9 +343,15 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
         hasFreshEvidence: false,
         sourceTrendLabel,
         resolvedSourceTrendLabel,
-        title: receiptSummary ? 'Wochenreceipt-Lernvertrauen stuetzt Beibehalten' : 'Reopen-Quellentrend-Receipt bleibt ruhig',
+        title: receiptSummary && receiptFollowupSummary
+          ? 'Wochenreceipt-Lernvertrauen bestaetigt Beibehalten'
+          : receiptSummary
+          ? 'Wochenreceipt-Lernvertrauen stuetzt Beibehalten'
+          : 'Reopen-Quellentrend-Receipt bleibt ruhig',
         body: receiptSummary
-          ? `Wochenreceipt-Lernvertrauen: ${resolvedSourceTrendLabel}. Wochenreceipt: ${receiptSummary}. ${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`
+          ? receiptFollowupSummary
+            ? `Wochenreceipt-Lernvertrauen bestaetigt: ${resolvedSourceTrendLabel}. Wochenreceipt: ${receiptSummary}. ${receiptFollowupSummary}. ${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`
+            : `Wochenreceipt-Lernvertrauen: ${resolvedSourceTrendLabel}. Wochenreceipt: ${receiptSummary}. ${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`
           : `Geschlossener Reopen-Quellentrend: ${resolvedSourceTrendLabel}. Die Wochenentscheidung hat diesen Trend bereits eingeordnet; ${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`,
         evidence,
         suggestedAdjustment: pattern.suggestedAdjustment,
@@ -345,6 +359,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
         freshEvidenceSummary,
         handledEvidenceSummary,
         receiptSummary,
+        receiptFollowupSummary,
         ...adaptTarget,
       };
     }
@@ -365,6 +380,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       freshEvidenceSummary,
       handledEvidenceSummary,
       receiptSummary,
+      receiptFollowupSummary,
       ...adaptTarget,
     };
   }
@@ -391,6 +407,7 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
     freshEvidenceSummary,
     handledEvidenceSummary,
     receiptSummary,
+    receiptFollowupSummary,
     ...adaptTarget,
   };
 }
@@ -682,11 +699,12 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     evidence: [
       `${inbox.items.length} offene Planpunkte`,
       tradeoffContext?.hasDecision ? `Tageskonflikt Wochenentscheidung: ${tradeoffContext.evidence[0]}` : null,
-      tradeoffContext?.hasHandledReceipt && tradeoffContext.resolvedSourceTrendLabel && tradeoffContext.receiptSummary ? `Wochenreceipt-Lernvertrauen: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
+      tradeoffContext?.hasHandledReceipt && tradeoffContext.resolvedSourceTrendLabel && tradeoffContext.receiptSummary && tradeoffContext.receiptFollowupSummary ? `Wochenreceipt-Lernvertrauen bestaetigt: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
+      tradeoffContext?.hasHandledReceipt && tradeoffContext.resolvedSourceTrendLabel && tradeoffContext.receiptSummary && !tradeoffContext.receiptFollowupSummary ? `Wochenreceipt-Lernvertrauen: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
       tradeoffContext?.hasHandledReceipt && (!tradeoffContext.resolvedSourceTrendLabel || !tradeoffContext.receiptSummary) ? `Tageskonflikt erledigt: ${tradeoffContext.evidence[0]}` : null,
       tradeoffContext?.hasWatch && !tradeoffContext.hasHandledReceipt ? 'Tageskonflikt Watch-Kontext' : null,
       tradeoffContext?.sourceTrendLabel ? `Reopen-Quellentrend: ${tradeoffContext.sourceTrendLabel}` : null,
-      tradeoffContext?.hasDecision && tradeoffContext.resolvedSourceTrendLabel && tradeoffContext.receiptSummary ? `Wochenreceipt-Lernvertrauen als Kontext: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
+      tradeoffContext?.hasDecision && tradeoffContext.resolvedSourceTrendLabel && tradeoffContext.receiptSummary ? `Wochenreceipt-Lernvertrauen braucht Review: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
       tradeoffContext?.hasHandledReceipt && tradeoffContext.resolvedSourceTrendLabel && !tradeoffContext.receiptSummary ? `Reopen-Quellentrend erledigt: ${tradeoffContext.resolvedSourceTrendLabel}` : null,
       tradeoffContext?.receiptSummary ? `Wochenreceipt: ${tradeoffContext.receiptSummary}` : null,
       ...(tradeoffContext?.sourceTrendLabel

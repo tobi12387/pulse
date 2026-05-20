@@ -30,11 +30,11 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness, the eighth-pass fresh Home reopen explanation, the ninth-pass reopen-source trend context, the tenth-pass closed source-trend continuity, the eleventh-pass weekly receipt learning confidence and the twelfth-pass calibrated receipt-confidence continuity, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears, names source-specific fresh Plan reopens, uses repeated reopen-source trends as weekly decision context, keeps closed source trends as quiet weekly receipts and shows weekly receipt learning confidence as stable Plan confidence, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet, names source-specific fresh reopen evidence, groups repeated reopen sources into learning trends, closes handled source trends after weekly decisions, shows weekly receipt source trends as learning confidence and calibrates that confidence after follow-up evidence.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness, the eighth-pass fresh Home reopen explanation, the ninth-pass reopen-source trend context, the tenth-pass closed source-trend continuity, the eleventh-pass weekly receipt learning confidence and the twelfth-pass calibrated receipt-confidence continuity, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears, names source-specific fresh Plan reopens, uses repeated reopen-source trends as weekly decision context, keeps closed source trends as quiet weekly receipts, shows weekly receipt learning confidence as stable Plan confidence and calibrates that confidence after follow-up evidence, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet, names source-specific fresh reopen evidence, groups repeated reopen sources into learning trends, closes handled source trends after weekly decisions, shows weekly receipt source trends as learning confidence and calibrates that confidence after follow-up evidence.
 
 Keep the next package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Trainingsanpassung`: **Plan zeigt kalibriertes Wochenreceipt-Lernvertrauen im Wochenvertrauen.**
+1. `Lernschleifen`: **Data zeigt Wochenreceipt-Vertrauensdauer.**
 
 ## Track 1: Tagesentscheidung
 
@@ -204,9 +204,9 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped tenth-pass package plus later ready card**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt, consumes the shared tradeoff classifier only for true weekly decisions, keeps handled tradeoff receipts quiet until fresh weekly evidence appears, explains fresh reopens by source, uses repeated reopen-source trends as weekly decision context, keeps closed source trends as quiet weekly receipts and shows weekly receipt learning confidence as stable Plan confidence.
+Status: **shipped eleventh-pass package**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt, consumes the shared tradeoff classifier only for true weekly decisions, keeps handled tradeoff receipts quiet until fresh weekly evidence appears, explains fresh reopens by source, uses repeated reopen-source trends as weekly decision context, keeps closed source trends as quiet weekly receipts, shows weekly receipt learning confidence as stable Plan confidence and calibrates that confidence after follow-up evidence.
 
-Later ready package: **Plan zeigt kalibriertes Wochenreceipt-Lernvertrauen im Wochenvertrauen.**
+Shipped package: **Plan zeigt kalibriertes Wochenreceipt-Lernvertrauen im Wochenvertrauen.**
 
 Outcome: after Data/Home distinguish confirmed versus weakened receipt confidence, Plan should show confirmed confidence as stable `Beibehalten` evidence and use weakened confidence only as context when fresh weekly evidence opens `Anpassen`.
 
@@ -357,7 +357,20 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **shipped ninth-pass package**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears, the fifth pass explains source-specific fresh reopen evidence while older handled evidence stays context, the sixth pass groups repeated reopen sources into trend-level learning, the seventh pass closes handled source trends after weekly decisions, the eighth pass shows weekly receipt source trends as learning confidence and the ninth pass calibrates that confidence after follow-up evidence.
+Status: **shipped ninth-pass package plus later ready card**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears, the fifth pass explains source-specific fresh reopen evidence while older handled evidence stays context, the sixth pass groups repeated reopen sources into trend-level learning, the seventh pass closes handled source trends after weekly decisions, the eighth pass shows weekly receipt source trends as learning confidence and the ninth pass calibrates that confidence after follow-up evidence.
+
+Later ready package: **Data zeigt Wochenreceipt-Vertrauensdauer.**
+
+Outcome: after Data/Home/Plan all distinguish confirmed versus weakened receipt confidence, Data should summarize how long a weekly receipt has stayed confirmed and when that confidence is merely unrefreshed rather than broken.
+
+Why it matters: a private Performance OS should not show the same receipt forever at the same strength. Confirmed quietness should build trust over time, stale-but-unbroken receipts should stay calm, and fresh recurrence should still be the only route back to Home or Plan action.
+
+Package PRs:
+
+- Add Data action-contract scenarios for repeated confirmed follow-up, unrefreshed receipt confidence and fresh recurrence after a receipt.
+- Show receipt trust duration as quiet evidence, not a Home or Plan route by itself.
+- Keep stale-but-unbroken receipt confidence separate from weakened confidence caused by fresh today/week recurrence.
+- Use the Fast Lane `verify:lernschleifen:pr` gate plus one CI/Data smoke unless local rendered behavior is changed.
 
 Shipped package: **Data kalibriert Wochenreceipt-Lernvertrauen nach Folgewirkung.**
 
