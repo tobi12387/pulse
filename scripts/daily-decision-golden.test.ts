@@ -911,8 +911,41 @@ test('helpful learning calibration stays short in the Home daily answer', () => 
   assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Entscheidungsmuster bestätigt/);
   assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen/);
   assert.ok(decision.contract.leadingFactor.length < 150);
+  assert.equal(decision.cta, 'Kalibrierung prüfen');
+  assert.match(decision.completionCriterion, /Entscheidungsmuster bestätigt/);
+  assert.doesNotMatch(decision.completionCriterion, /Stimmung|Check-in/);
   assert.match(decision.contract.safestAlternative, /Lernkalibrierung zuerst prüfen: bestätigte Entscheidungsmuster beibehalten/);
   assert.ok(decision.contract.safestAlternative.length < 190);
+});
+
+test('completed days keep learning calibration out of the review lead when nothing is open', () => {
+  const completed = activity({
+    id: 'activity-completed-calibration-quiet',
+    plannedWorkoutId: null,
+    feedbackLoggedAt: `${TODAY}T10:30:00.000Z`,
+    rpe: 4,
+  });
+
+  const decision = decisionFor(home({
+    todayActivities: [completed],
+    recentActivities: [completed],
+  }), {
+    decisionQuality: strongDecisionQuality({
+      qualityScore: 82,
+      status: 'helpful',
+      statusLabel: 'Hilfreich',
+      bestEvidence: ['3x gute Entscheidung bestätigt'],
+      suggestedAdjustment: 'Diesen Entscheidungstyp beibehalten und weiter mit aktueller Evidenz begründen.',
+    }),
+  });
+
+  assert.equal(decision.title, 'Training heute erledigt');
+  assert.equal(decision.emptyState, 'Für heute ist nichts mehr offen. Garmin-Aktivität und Feedback sind erledigt.');
+  assert.equal(decision.cta, 'Aktivität ansehen');
+  assert.match(decision.contract.leadingFactor, /^Garmin:/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Lernkalibrierung/);
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Lernkalibrierung'), undefined);
+  assert.match(decision.completionCriterion, /nichts mehr offen/);
 });
 
 test('repeated tradeoff learning changes Home only when todays adaptive option exists', () => {
