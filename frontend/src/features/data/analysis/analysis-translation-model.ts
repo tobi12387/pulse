@@ -12,7 +12,7 @@ import {
   buildLearningCalibration,
   strongestPersonalResponseSignal,
 } from '../../../pulse/learning-calibration';
-import { classifyTradeoffPattern } from '../../../pulse/tradeoff-patterns';
+import { classifyTradeoffPattern, type TradeoffPatternClassification } from '../../../pulse/tradeoff-patterns';
 
 export type AnalysisTranslationTone = 'green' | 'amber' | 'rose' | 'muted';
 export type AnalysisDecisionEffect = 'today_action' | 'plan_decision' | 'watch_context';
@@ -333,6 +333,24 @@ function primaryFromDecisionQuality(decisionQuality: PulseDailyDecisionQualityRe
   }, 'today_action');
 }
 
+function tradeoffReopenSummary(
+  pattern: TradeoffPatternClassification,
+  scope: 'Heute' | 'Wochen',
+): string {
+  const prefix = pattern.hasFreshEvidence
+    ? `Frische ${scope}-Evidenz`
+    : scope === 'Heute'
+      ? 'Wiederholter Tageskonflikt'
+      : 'Wiederholter Tageskonflikt';
+  const fresh = pattern.freshEvidence.length > 0
+    ? `${pattern.freshEvidence.join(' · ')}. `
+    : '';
+  const resolved = pattern.resolvedEvidence.length > 0
+    ? `Aeltere eingeordnete Evidenz bleibt Kontext: ${pattern.resolvedEvidence.join(' · ')}. `
+    : '';
+  return `${prefix}: ${fresh}${resolved}${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
+}
+
 function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): AnalysisTranslationSignal | null {
   const pattern = classifyTradeoffPattern(decisionQuality);
   if (!pattern || !decisionQuality) return null;
@@ -350,7 +368,7 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
     return withEffect({
       label: 'Tradeoff-Muster',
       title: 'Tageskonflikte werden Wochenentscheidung',
-      summary: `${pattern.hasFreshEvidence ? 'Neue Evidenz fuer die Wochenentscheidung' : 'Wiederholter Tageskonflikt'}: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+      summary: tradeoffReopenSummary(pattern, 'Wochen'),
       evidence: pattern.evidence,
       tone,
       actionLabel: 'Wochenentscheidung prüfen',
@@ -363,7 +381,7 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
     return withEffect({
       label: 'Tradeoff-Muster',
       title: 'Tageskonflikt verändert Heute',
-      summary: `Wiederholter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+      summary: tradeoffReopenSummary(pattern, 'Heute'),
       evidence: pattern.evidence,
       tone,
       actionLabel: 'Heute einordnen',

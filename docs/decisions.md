@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data benennt frische Tradeoff-Reopen-Evidenz
+
+- **Decision:** Der gemeinsame `Tageskonflikt`-Classifier liefert jetzt getrennte frische und bereits eingeordnete Evidenzzeilen. Data nutzt diese Felder, um Reopens als `Frische Heute-Evidenz` oder `Frische Wochen-Evidenz` zu erklaeren, waehrend alte handled/resolved Evidenz ausdruecklich Kontext bleibt.
+- **Why:** Ein ruhiger Lernloop ist nur glaubwuerdig, wenn ein erneutes Oeffnen wie neue Evidenz wirkt und nicht wie vergessenes Lernen. Data muss die Quelle des Reopens sichtbar machen, bevor Home oder Plan daraus eine Handlung ableiten.
+- **Alternatives:** Weiter nur `Neue Evidenz` ohne Quelle anzeigen (zu vage); alte handled Evidenz in Reopen-Copy ausblenden (verliert Vertrauen); separate Data-only Heuristik bauen (Drift zum gemeinsamen Home/Plan-Classifier).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan haelt erledigte Tradeoff-Receipts ruhig
 
 - **Decision:** Plan behandelt geloeste oder bereits gehandhabte `Tageskonflikt`-Muster als ruhige lokale Receipt-Kontinuitaet. Solche Receipts fuehren `Beibehalten`, erscheinen als `Tageskonflikt erledigt`-Evidenz und oeffnen `Anpassen` erst wieder, wenn frische Wochen-Evidenz den Classifier erneut als `plan_decision` aktiviert.

@@ -8,6 +8,8 @@ export interface TradeoffPatternClassification {
   themeLabel: string;
   suggestedAdjustment: string;
   evidence: string[];
+  freshEvidence: string[];
+  resolvedEvidence: string[];
   effect: TradeoffPatternEffect;
   state: TradeoffPatternState;
   hasFreshEvidence: boolean;
@@ -58,6 +60,15 @@ export function classifyTradeoffPattern(
     ...decisionQuality.bestEvidence,
   ].join(' ');
   const hasFreshEvidence = FRESH_TRADEOFF_PATTERN.test(freshEvidenceCorpus);
+  const freshEvidence = unique([
+    decisionQuality.statusLabel,
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ].filter(item => FRESH_TRADEOFF_PATTERN.test(item)), 3);
+  const resolvedEvidence = unique([
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ].filter(item => RESOLVED_TRADEOFF_PATTERN.test(item) && !FRESH_TRADEOFF_PATTERN.test(item)), 3);
   const isResolved = RESOLVED_TRADEOFF_PATTERN.test(resolutionCorpus) && !hasFreshEvidence;
   const repeated = tradeoffTheme.count >= 2;
   const becomesWeeklyDecision = repeated
@@ -85,6 +96,8 @@ export function classifyTradeoffPattern(
       ...tradeoffTheme.evidence,
       ...decisionQuality.bestEvidence,
     ], 4),
+    freshEvidence,
+    resolvedEvidence,
     effect,
     state,
     hasFreshEvidence,
