@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data zeigt den naechsten Wochenreceipt-Erneuerungscheck
+
+- **Decision:** Data nennt fuer Wochenreceipt-Vertrauen jetzt den naechsten Erneuerungscheck als Data-only Evidenz. Bestaetigte oder unaufgefrischte Receipts zeigen, welche weitere Heute- oder Wochen-Evidenz das Vertrauen neu bestaetigt; frische Wiederkehr blendet den Erneuerungscheck aus und nutzt weiter die bestehenden Home-/Plan-Aktionspfade mit altem Receipt nur als Kontext.
+- **Why:** Vertrauensdauer ist nur brauchbar, wenn die Lernschleife sichtbar macht, wie Vertrauen erneuert wird. Der Check gehoert in Data, damit Home und Plan ruhig bleiben, bis echte frische Evidenz die Handlung veraendert.
+- **Alternatives:** Unaufgefrischtes Vertrauen ohne naechsten Check anzeigen (zu vage); den Check als Home- oder Plan-Handlung fuehren (zu laut); frische Wiederkehr weiter mit Erneuerungscheck mischen (unklarer Action-Kontext).
+- **Decided by:** Codex, als Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan zeigt Wochenreceipt-Vertrauensdauer im Wochenvertrauen
 
 - **Decision:** Plan nutzt Wochenreceipt-Vertrauensdauer nur in Gelernt-/Evidenz-/Receipt-Kontinuitaet. Bestaetigte Dauer stuetzt `Beibehalten`; unaufgefrischtes Vertrauen bleibt ruhiger Wochenkontext; frische Wochenwiederkehr oeffnet weiter nur den bestehenden `Anpassen`-Pfad.

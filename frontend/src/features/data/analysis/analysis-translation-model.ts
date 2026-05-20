@@ -373,7 +373,14 @@ function tradeoffReceiptEvidence(pattern: TradeoffPatternClassification): string
 }
 
 function tradeoffReceiptFollowupEvidence(pattern: TradeoffPatternClassification): string | null {
-  return pattern.receiptFollowupEvidence[0] ?? null;
+  const [first] = pattern.receiptFollowupEvidence;
+  if (!first) return null;
+
+  return pattern.receiptFollowupEvidence.reduce((selected, evidence) => {
+    const selectedDays = receiptFollowupDays(selected) ?? -1;
+    const evidenceDays = receiptFollowupDays(evidence) ?? -1;
+    return evidenceDays > selectedDays ? evidence : selected;
+  }, first);
 }
 
 function receiptFollowupDays(value: string): number | null {
@@ -394,6 +401,19 @@ function tradeoffReceiptTrustDuration(pattern: TradeoffPatternClassification): s
   return `${maxDays} ${maxDays === 1 ? 'Tag' : 'Tage'}`;
 }
 
+function tradeoffReceiptRenewalCheck(pattern: TradeoffPatternClassification): string | null {
+  const receipt = tradeoffReceiptEvidence(pattern);
+  const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
+  if (!receipt || !trendLabel || pattern.hasFreshEvidence || pattern.reopenSourceTrends.length > 0) return null;
+
+  const followup = tradeoffReceiptFollowupEvidence(pattern);
+  if (followup) {
+    return `Wochenreceipt-Erneuerungscheck: ${trendLabel} bleibt bestaetigt, solange weiter keine erneute Reopen-Quelle auftaucht`;
+  }
+
+  return `Wochenreceipt-Erneuerungscheck offen: ${trendLabel} - naechste Heute- oder Wochen-Evidenz ohne erneute Reopen-Quelle bestaetigt das Vertrauen neu`;
+}
+
 function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
   if (pattern.reopenSourceTrends.length === 0) return null;
   const trendLabel = tradeoffSourceTrendLabel(pattern.reopenSourceTrends);
@@ -411,14 +431,16 @@ function tradeoffResolvedReopenSourceTrendSummary(pattern: TradeoffPatternClassi
   const receipt = tradeoffReceiptEvidence(pattern);
   const followup = tradeoffReceiptFollowupEvidence(pattern);
   const trustDuration = tradeoffReceiptTrustDuration(pattern);
+  const renewalCheck = tradeoffReceiptRenewalCheck(pattern);
   const receiptDetail = receipt ? `Wochenreceipt: ${receipt}. ` : '';
   const trustDurationDetail = trustDuration ? `Wochenreceipt-Vertrauensdauer: ${trustDuration}. ` : '';
   const followupDetail = followup ? `${followup}. ` : '';
+  const renewalCheckDetail = renewalCheck ? `${renewalCheck}. ` : '';
   if (receipt && followup) {
-    return `Wochenreceipt-Lernvertrauen bestaetigt: ${trendLabel}. ${receiptDetail}${trustDurationDetail}${followupDetail}Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+    return `Wochenreceipt-Lernvertrauen bestaetigt: ${trendLabel}. ${receiptDetail}${trustDurationDetail}${followupDetail}${renewalCheckDetail}Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
   }
   if (receipt) {
-    return `Wochenreceipt-Lernvertrauen unaufgefrischt: ${trendLabel}. ${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend bereits eingeordnet, aber diese Folgewirkung ist noch nicht neu bestaetigt. Data behandelt ihn als ungebrochenen Watch-Kontext, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+    return `Wochenreceipt-Lernvertrauen unaufgefrischt: ${trendLabel}. ${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend bereits eingeordnet, aber diese Folgewirkung ist noch nicht neu bestaetigt. ${renewalCheckDetail}Data behandelt ihn als ungebrochenen Watch-Kontext, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
   }
 
   return `${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend ${trendLabel} bereits eingeordnet. Das ist Lernvertrauen: Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
@@ -439,6 +461,7 @@ function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
   const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
   const followup = tradeoffReceiptFollowupEvidence(pattern);
   const trustDuration = tradeoffReceiptTrustDuration(pattern);
+  const renewalCheck = tradeoffReceiptRenewalCheck(pattern);
   const receiptConfidenceEvidence = receipt && trendLabel
     ? pattern.reopenSourceTrends.length > 0
       ? `Wochenreceipt-Folgewirkung geschwaecht: ${trendLabel}`
@@ -453,6 +476,7 @@ function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
     trustDuration ? `Wochenreceipt-Vertrauensdauer: ${trustDuration}` : null,
     receiptConfidenceEvidence,
     receipt ? `Wochenreceipt: ${receipt}` : null,
+    renewalCheck,
     ...pattern.evidence,
   ], 6);
 }

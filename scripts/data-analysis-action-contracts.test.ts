@@ -604,8 +604,8 @@ test('handled reopen-source trends stay quiet after the weekly decision', () => 
       }],
       bestEvidence: [
         'Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled',
-        'Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
         'Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
+        'Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
       ],
       suggestedAdjustment: 'Bereits gehandhabt: Quellentrend als Kontinuitaet behalten, bis frische Heute- oder Wochen-Evidenz erneut wirkt.',
     }),
@@ -624,6 +624,8 @@ test('handled reopen-source trends stay quiet after the weekly decision', () => 
   assert.match(translation.primary.summary, /Wochenreceipt-Lernvertrauen bestaetigt/);
   assert.match(translation.primary.summary, /Wochenreceipt-Vertrauensdauer: 14 Tage/);
   assert.match(translation.primary.summary, /Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle/);
+  assert.match(translation.primary.summary, /Wochenreceipt-Erneuerungscheck/);
+  assert.match(translation.primary.summary, /keine erneute Reopen-Quelle/);
   assert.match(translation.primary.summary, /Wochenreceipt|Plan-Receipt/i);
   assert.match(translation.primary.summary, /Lernvertrauen/i);
   assert.match(translation.primary.summary, /Kontinuitaet|ruhig/i);
@@ -633,6 +635,7 @@ test('handled reopen-source trends stay quiet after the weekly decision', () => 
   assert.ok(translation.primary.evidence.some(item => /Plan-Receipt/.test(item)));
   assert.ok(translation.primary.evidence.some(item => /Wochenreceipt-Vertrauensdauer: 14 Tage/.test(item)));
   assert.ok(translation.primary.evidence.some(item => /Wochenreceipt-Folgewirkung bestaetigt/.test(item)));
+  assert.ok(translation.primary.evidence.some(item => /Wochenreceipt-Erneuerungscheck: Planlast 2x.*Garmin-Ausfuehrung 2x/.test(item)));
   assert.doesNotMatch(translation.primary.targetPath ?? '', /data-tradeoff|source=data-tradeoff/);
   assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
 });
@@ -668,12 +671,17 @@ test('handled reopen-source trends without fresh follow-up stay unrefreshed but 
   assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-decision-quality');
   assert.match(translation.primary.summary, /Wochenreceipt-Lernvertrauen unaufgefrischt: Recovery 2x/);
   assert.match(translation.primary.summary, /nicht neu bestaetigt/);
+  assert.match(translation.primary.summary, /Wochenreceipt-Erneuerungscheck offen/);
+  assert.match(translation.primary.summary, /naechste Heute- oder Wochen-Evidenz ohne erneute Reopen-Quelle/);
   assert.doesNotMatch(translation.primary.summary, /braucht Review|geschwaecht|geschwächt/);
   assert.ok(translation.primary.evidence.some(item => /Wochenreceipt-Vertrauen unaufgefrischt: Recovery 2x/.test(item)));
+  assert.ok(translation.primary.evidence.some(item => /Wochenreceipt-Erneuerungscheck offen: Recovery 2x/.test(item)));
+  assert.doesNotMatch(translation.primary.evidence.join(' · '), /Vertrauensdauer/);
   assert.doesNotMatch(translation.primary.targetPath ?? '', /data-tradeoff|source=data-tradeoff/);
+  assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
 });
 
-test('fresh recurrence reopens a handled reopen-source trend for Plan', () => {
+test('fresh recurrence after unrefreshed receipt trust reopens a handled source trend for Plan', () => {
   const translation = buildAnalysisTranslation({
     decisionQuality: tradeoffDecisionQuality({
       qualityScore: 25,
@@ -710,13 +718,15 @@ test('fresh recurrence reopens a handled reopen-source trend for Plan', () => {
   assert.match(translation.primary.summary, /Reopen-Quellentrend erneut aktiv: Planlast 2x/);
   assert.match(translation.primary.summary, /Wochenreceipt-Lernvertrauen braucht Review: Planlast 2x/);
   assert.match(translation.primary.summary, /frische.*Folgewirkung.*schwaecht|frische.*schwächt/i);
-  assert.doesNotMatch(translation.primary.summary, /unaufgefrischt|Vertrauensdauer/);
+  assert.doesNotMatch(translation.primary.summary, /unaufgefrischt|Vertrauensdauer|Erneuerungscheck/);
   assert.match(translation.primary.summary, /frische Quellen|frische.*Wochenwirkung/i);
   assert.doesNotMatch(translation.primary.summary, /Wochenentscheidung gemerkt|Plan-Receipt:/);
   assert.match(translation.primary.summary, /Wochenentscheidung erneut aus Quellentrend/);
   assert.ok(translation.primary.evidence.includes('Reopen-Trend Planlast 2x'));
   assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Planlast 2x'));
   assert.ok(translation.primary.evidence.some(item => /Wochenreceipt-Folgewirkung geschwaecht: Planlast 2x/.test(item)));
+  assert.ok(translation.primary.evidence.some(item => /Wochenreceipt: Plan-Receipt: Reopen-Quellentrend Planlast 2x handled/.test(item)));
+  assert.doesNotMatch(translation.primary.evidence.join(' · '), /unaufgefrischt|Vertrauensdauer|Erneuerungscheck/);
 });
 
 test('tradeoff pattern classification routes useful repeated evidence to Home', () => {
