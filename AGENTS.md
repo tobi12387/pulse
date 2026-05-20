@@ -53,13 +53,17 @@ Every new product slice must name which track it serves. Work that does not serv
 
 For `frontend/src/pulse/daily-decision.ts` and other Daily Decision contract logic, prefer fast unit/golden tests for signal priority, CTA target, safest option and goal impact before adding Playwright. Use Playwright for 1-2 rendered route/click-path smokes per package, not as the default proof for every signal branch.
 
-Use the track-specific verification shortcuts as the default local gate for product packages:
+Use the track-specific verification shortcuts as the default local gate for product packages. There are three levels:
 
 - `npm run verify:tagesentscheidung`
 - `npm run verify:trainingsanpassung`
 - `npm run verify:lernschleifen`
 
-They run the relevant fast contract/golden tests, the frontend build and one focused desktop/mobile smoke set. Use `-- --no-e2e` only for quick local iteration; PR readiness should either run the full matching command or explain why the rendered smoke was intentionally skipped.
+- `npm run verify:<track>:fast` is the contract-only development loop.
+- `npm run verify:<track>:pr` is the Fast Lane local PR gate: fast contracts plus frontend build, with rendered smoke coverage left to PR CI unless the slice specifically needs local browser proof.
+- `npm run verify:<track>` is the Full Lane/release gate: contracts, frontend build and one focused desktop/mobile smoke set.
+
+Use `npm run delivery:manifest` to choose the local gate from changed files. Fast Lane product PRs normally run the `:pr` gate locally, enable auto-merge, and let CI's `browser-tests` smoke be the rendered release proof. Full Lane PRs, high-risk UI changes, and slices where rendered behavior is the point should run the full matching command or explicitly explain any skipped browser proof.
 
 Before opening a PR, run `npm run delivery:manifest` (or `npm run delivery:manifest -- --files <paths...>` while planning) to choose the track, delivery lane, local gates, expected CI attention, auto-merge eligibility and deploy requirement from the actual changed files. Use the rendered fields in the PR body instead of re-deriving this from chat history.
 

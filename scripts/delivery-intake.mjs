@@ -36,12 +36,13 @@ export function buildDeliveryIntake(options = {}) {
     packageOutcome: normalizeOutcome(options.outcome),
     surface: config.surface,
     developmentGate: `npm run verify:${track}:fast`,
-    prGate: `npm run verify:${track}`,
+    prGate: `npm run verify:${track}:pr`,
+    releaseGate: `npm run verify:${track}`,
     deliveryManifest: 'npm run delivery:manifest',
     packageShape: [
       'Shape the PR as 3-5 tightly related changes with one user-facing outcome.',
       'Keep the first implementation loop on fast contract/golden tests.',
-      'Escalate to the full track gate only after the package behavior is coherent.',
+      'Use the PR gate before Fast Lane PRs; use the release gate when the manifest marks Full Lane or local smoke proof is needed.',
     ],
     evidence: [
       'Use explicit user friction or fresh route evidence for UI/UX work.',
@@ -62,6 +63,7 @@ export function renderDeliveryIntake(intake) {
     `- Package outcome: ${intake.packageOutcome}`,
     `- Development gate: \`${intake.developmentGate}\``,
     `- PR gate: \`${intake.prGate}\``,
+    `- Release gate: \`${intake.releaseGate}\``,
     `- Delivery manifest: \`${intake.deliveryManifest}\``,
     '',
     '## Package Shape',

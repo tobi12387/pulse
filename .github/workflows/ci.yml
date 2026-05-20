@@ -44,7 +44,6 @@ jobs:
               - 'backend/**'
               - 'package.json'
               - 'package-lock.json'
-              - 'scripts/**'
               - 'shared/**'
               - 'tsconfig*.json'
             frontend:

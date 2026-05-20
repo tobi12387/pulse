@@ -18,6 +18,30 @@
 
 ---
 
+## 2026-05-20 — Fast Lane nutzt lokale PR-Gates ohne Playwright-Doppelung
+
+- **Decision:** Pulse ergaenzt fuer jede Performance-OS-Spur ein lokales `npm run verify:<track>:pr` Gate. `:fast` bleibt Contract-only fuer die Implementierung, `:pr` laeuft Contracts plus Frontend-Build fuer Fast-Lane-PRs, und das volle `npm run verify:<track>` Gate bleibt fuer Full Lane, high-risk UI oder bewusst lokale Browser-Beweise. Fast-Lane-Manifeste fuegen `npm run test:scripts` nicht zusaetzlich hinzu, wenn die geaenderten Script-Testdateien bereits vom Track-Gate abgedeckt sind.
+- **Why:** Die letzten PRs zeigen, dass GitHub/CI nach PR-Oeffnung nicht der lange Pfad ist; die Reibung liegt vor dem PR in wiederholten lokalen Smokes und breiten Script-Suiten. Fast-Lane-PRs koennen die lokale Doppelung vermeiden, weil CI weiterhin den gerenderten Browser-Smoke ausfuehrt und die Track-Gates die relevanten Contract-Tests gezielt laufen lassen.
+- **Alternatives:** Vor jedem PR weiter das volle Track-Gate lokal laufen lassen (zu viel CI-Doppelung); nur `:fast` vor PR verwenden (kein Build-Schutz); Playwright generell entfernen (zu wenig gerenderte Sicherheit fuer echte UI-Aenderungen).
+- **Decided by:** Codex, nach Tobis erneuter Time-to-Market-Vorgabe.
+- **Status:** active.
+
+## 2026-05-20 — Script-only CI laesst Backend-Service-Tests aus
+
+- **Decision:** `scripts/**`-Aenderungen laufen in der PR-CI weiter durch den `build` Job mit `npm run test:scripts`, triggern aber nicht mehr automatisch den schweren `backend-tests` Job mit Postgres/Redis. Backend-Tests laufen weiter fuer Backend-, Shared-, Dependency-, Package-Manifest- und Workflow-Aenderungen.
+- **Why:** Script- und Gate-Aenderungen sollen schnell Feedback bekommen, ohne jedes Mal lokale Testservices in CI zu starten. Der Build-Job prueft die Script-Guards bereits; der Backend-Service-Job bleibt fuer Runtime- oder Infrastruktur-Risiko reserviert.
+- **Alternatives:** `scripts/**` weiter in `backend-tests` lassen (zu teuer fuer Build-Speed-Support und Track-Testdateien); Script-Aenderungen komplett aus CI nehmen (zu wenig Schutz); eine neue separate Workflow-Datei bauen (mehr CI-Oberflaeche als noetig).
+- **Decided by:** Codex, nach Tobis erneuter Time-to-Market-Vorgabe.
+- **Status:** active.
+
+## 2026-05-20 — Performance-OS-Backlog bleibt mit drei Ready-Paketen bestueckt
+
+- **Decision:** `docs/ai/next-product-packages.md` enthaelt wieder drei konkrete naechste Paketkarten in harter Reihenfolge: Home macht Tageskonflikt-Abschluss lernbar, Plan uebernimmt wiederholte Tageskonflikte in die Wochenentscheidung, Data erklaert Tradeoff-Muster als Handlung, Planentscheidung oder Watch-Kontext.
+- **Why:** Time-to-Market wird langsamer, wenn nach jedem Merge erneut entschieden werden muss, ob ueberhaupt ein naechstes Produktpaket existiert. Fertige Paketkarten halten die autonome Arbeit auf dem Performance-OS-Ziel, ohne eine vierte Spur oder spontane Mikro-Slices zu erfinden.
+- **Alternatives:** Nach jedem shipped package auf "kein Paket gewaehlt" zurueckfallen (zu viel Re-Planung); nur das naechste Einzelpaket notieren (blockiert nach dem naechsten Merge erneut); neue Themen ausserhalb der drei Spuren aufnehmen (verwaessert die Zielreihenfolge).
+- **Decided by:** Codex, nach Tobis erneuter Time-to-Market-Vorgabe.
+- **Status:** active.
+
 ## 2026-05-20 — Home fuehrt Koerper-Ziel-Alltag-Konflikte als Tageskonflikt
 
 - **Decision:** Home/Daily Decision bekommt das Signal `Tageskonflikt`, wenn eine offene geplante Einheit mit Koerpergrenze, Zielrisiko und einer alltagstauglichen Ausweichoption kollidiert. Das Signal fuehrt vor einzelnen Ziel-/Trainingssignalen, oeffnet die leichtere Tagesoption und schreibt weder Plan noch Garmin automatisch.

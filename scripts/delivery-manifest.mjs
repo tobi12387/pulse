@@ -6,6 +6,12 @@ const TRACKS = {
   tagesentscheidung: {
     label: 'Tagesentscheidung',
     gate: 'npm run verify:tagesentscheidung',
+    prGate: 'npm run verify:tagesentscheidung:pr',
+    gateFiles: [
+      'scripts/daily-decision-golden.test.ts',
+      'scripts/daily-decision-signal-registry.test.ts',
+      'scripts/activity-closure-evidence.test.ts',
+    ],
     patterns: [
       /^frontend\/src\/pages\/Home\.tsx$/,
       /^frontend\/src\/pulse\/daily-decision/,
@@ -19,6 +25,14 @@ const TRACKS = {
   trainingsanpassung: {
     label: 'Trainingsanpassung',
     gate: 'npm run verify:trainingsanpassung',
+    prGate: 'npm run verify:trainingsanpassung:pr',
+    gateFiles: [
+      'scripts/plan-weekly-decision-contract.test.ts',
+      'scripts/data-analysis-weekly-decision.test.ts',
+      'scripts/plan-change-inbox.test.ts',
+      'scripts/plan-workout-progression.test.ts',
+      'scripts/weekly-coach-review.test.ts',
+    ],
     patterns: [
       /^frontend\/src\/pages\/Plan\.tsx$/,
       /^frontend\/src\/features\/plan\//,
@@ -30,6 +44,11 @@ const TRACKS = {
   lernschleifen: {
     label: 'Lernschleifen',
     gate: 'npm run verify:lernschleifen',
+    prGate: 'npm run verify:lernschleifen:pr',
+    gateFiles: [
+      'scripts/data-analysis-action-contracts.test.ts',
+      'scripts/daily-decision-golden.test.ts',
+    ],
     patterns: [
       /^frontend\/src\/pages\/Data\.tsx$/,
       /^frontend\/src\/pulse\/learning-calibration/,
@@ -99,6 +118,10 @@ function trackMatchesForFile(file) {
     .map(([track]) => track);
 }
 
+function isCoveredByTrackGate(file, tracks) {
+  return tracks.some(track => (TRACKS[track].gateFiles ?? []).includes(file));
+}
+
 export function buildDeliveryManifest(files, options = {}) {
   const changedFiles = unique(files.map(normalizePath).filter(Boolean)).sort();
   const areas = Object.fromEntries(
@@ -134,22 +157,10 @@ export function buildDeliveryManifest(files, options = {}) {
             ? 'runtime_support'
             : 'unknown';
 
-  const checks = new Set(['git diff --check']);
-  if (productTracks.length > 0) {
-    for (const track of productTracks) checks.add(TRACKS[track].gate);
-  }
-  if (areas.scripts || areas.workflow || areas.packageManifest || options.includeScriptTests) checks.add('npm run test:scripts');
-  if (areas.migrations) checks.add('npm run check:migrations');
-  if (changedFiles.some(file => /^backend\//.test(file))) checks.add('npm run build -w shared && npm run build -w backend');
-  if (changedFiles.some(file => /^backend\/src\//.test(file))) checks.add('npm test');
-  if (changedFiles.some(file => /^frontend\//.test(file)) && productTracks.length === 0) checks.add('npm run build -w frontend');
-  if (changedFiles.some(file => /^frontend\/e2e\//.test(file)) && productTracks.length === 0) checks.add('npm run test:e2e:smoke');
-  if (changedFiles.some(file => /^shared\//.test(file)) && productTracks.length === 0) checks.add('npm run build');
-
   const ciJobs = ['changes'];
   const ciRuntime = runtimeAppChange || areas.scripts || areas.workflow || areas.packageManifest;
   if (ciRuntime) ciJobs.push('build');
-  if (areas.backend || areas.shared || areas.dependencies || areas.packageManifest || areas.scripts || areas.workflow) ciJobs.push('backend-tests');
+  if (areas.backend || areas.shared || areas.dependencies || areas.packageManifest || areas.workflow) ciJobs.push('backend-tests');
   if (areas.frontend || areas.shared || areas.dependencies || areas.packageManifest || areas.workflow) ciJobs.push('browser-tests');
   ciJobs.push('build-and-test');
 
@@ -172,6 +183,28 @@ export function buildDeliveryManifest(files, options = {}) {
     : riskReasons.length > 0
       ? riskReasons
       : ['No changed files detected; choose a lane after the diff exists.'];
+
+  const checks = new Set(['git diff --check']);
+  if (productTracks.length > 0) {
+    for (const track of productTracks) checks.add(fastLaneEligible ? TRACKS[track].prGate : TRACKS[track].gate);
+  }
+  const changedScriptFiles = changedFiles.filter(file => hasArea(file, 'scripts'));
+  const trackGateCoversScriptChanges = fastLaneEligible
+    && productTracks.length === 1
+    && changedScriptFiles.length > 0
+    && changedScriptFiles.every(file => isCoveredByTrackGate(file, productTracks));
+  if (
+    areas.workflow
+    || areas.packageManifest
+    || options.includeScriptTests
+    || (areas.scripts && !trackGateCoversScriptChanges)
+  ) checks.add('npm run test:scripts');
+  if (areas.migrations) checks.add('npm run check:migrations');
+  if (changedFiles.some(file => /^backend\//.test(file))) checks.add('npm run build -w shared && npm run build -w backend');
+  if (changedFiles.some(file => /^backend\/src\//.test(file))) checks.add('npm test');
+  if (changedFiles.some(file => /^frontend\//.test(file)) && productTracks.length === 0) checks.add('npm run build -w frontend');
+  if (changedFiles.some(file => /^frontend\/e2e\//.test(file)) && productTracks.length === 0) checks.add('npm run test:e2e:smoke');
+  if (changedFiles.some(file => /^shared\//.test(file)) && productTracks.length === 0) checks.add('npm run build');
 
   const deployRequired = changedFiles.some(file =>
     /^backend\//.test(file)

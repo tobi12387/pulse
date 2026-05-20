@@ -50,3 +50,27 @@ test('track verify configs expose contract-only fast gates for development loops
     assert.equal(fastSteps[0].command, './node_modules/.bin/tsx');
   }
 });
+
+test('track verify configs expose contract-plus-build PR gates before CI smokes', () => {
+  const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+
+  for (const [track, config] of Object.entries(TRACKS)) {
+    assert.equal(
+      packageJson.scripts[`verify:${track}:pr`],
+      `node scripts/verify-track.mjs ${track} --pr`,
+      `${track} needs a package script for its Fast Lane PR gate`,
+    );
+
+    const prSteps = config.steps.filter(step => step.stage === 'fast' || step.stage === 'pr');
+    assert.equal(prSteps.length, 2, `${track} PR gate should stay to contracts plus frontend build`);
+    assert.match(prSteps[0].label, /contract|golden/i);
+    assert.match(prSteps[1].label, /frontend build/i);
+    assert.equal(prSteps[1].command, 'npm');
+    assert.deepEqual(prSteps[1].args, ['run', 'build', '-w', 'frontend']);
+    assert.equal(
+      prSteps.some(step => /smoke/i.test(step.label)),
+      false,
+      `${track} PR gate should leave rendered smoke coverage to CI for Fast Lane PRs`,
+    );
+  }
+});
