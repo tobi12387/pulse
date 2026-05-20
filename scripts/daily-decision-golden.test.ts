@@ -581,12 +581,33 @@ test('decision quality result preview explains how the next check changes', () =
     decisionQuality: strongDecisionQuality(),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Empfehlung darf lernen/);
+  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Entscheidungsmuster ändern/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen/);
   assert.equal(decision.cta, 'Kalibrierung prüfen');
   assert.equal(decision.targetPath, '/data?tab=analysis#data-decision-quality');
   assert.match(decision.resultPreview ?? '', /Lern-Evidenz als Tageshandlung/);
   assert.match(decision.resultPreview ?? '', /keine neue Empfehlung ohne deinen nächsten expliziten Schritt/);
   assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
+  assert.match(decision.contract.safestAlternative, /Lernkalibrierung zuerst prüfen: kleinere Option zuerst festlegen/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /Watch-Kontext bleibt/);
+});
+
+test('helpful learning calibration stays short in the Home daily answer', () => {
+  const decision = decisionFor(home(), {
+    decisionQuality: strongDecisionQuality({
+      qualityScore: 82,
+      status: 'helpful',
+      statusLabel: 'Hilfreich',
+      bestEvidence: ['3x gute Entscheidung bestätigt'],
+      suggestedAdjustment: 'Diesen Entscheidungstyp beibehalten und weiter mit aktueller Evidenz begründen.',
+    }),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Entscheidungsmuster bestätigt/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen/);
+  assert.ok(decision.contract.leadingFactor.length < 150);
+  assert.match(decision.contract.safestAlternative, /Lernkalibrierung zuerst prüfen: bestätigte Entscheidungsmuster beibehalten/);
+  assert.ok(decision.contract.safestAlternative.length < 190);
 });
 
 test('weak learning calibration stays watch context below a productive training decision', () => {
@@ -614,7 +635,7 @@ test('personal response calibration names the changed daily boundary without hid
     personalResponse: personalResponse(),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Empfehlung darf lernen/);
+  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Reaktionsmuster kalibrieren/);
   assert.match(decision.contract.leadingFactor, /Heute zuerst Boundary setzen/);
   assert.equal(decision.cta, 'Kalibrierung prüfen');
   assert.equal(decision.targetPath, '/data?tab=analysis#data-personal-response');

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home fasst Lernkalibrierung als Entscheidung statt Analyse zusammen
+
+- **Decision:** Home/Daily Decision nutzt fuer fuehrende `Lernkalibrierung` eine eigene kurze Entscheidungskopie: bestaetigte Entscheidungsmuster, notwendige Strategieaenderung oder Reaktionsmuster-Kalibrierung. Die `Sicherste Option` wiederholt nicht mehr die komplette Lern-Evidenz, sondern nennt nur die Sicherheitsregel; Data und Plan behalten die ausfuehrlichere Kalibrierungs-Evidenz.
+- **Why:** Frische mobile Route-Evidence zeigte keine Layoutfehler, aber Entscheidungsrauschen: Home wiederholte die technische Data-Kalibrierung in `Heute entscheidet` und `Sicherste Option`. Track `Tagesentscheidung` braucht die ruhige naechste Handlung, waehrend die Detailanalyse in Data bleiben darf.
+- **Alternatives:** Die Data-Zusammenfassung unveraendert in Home zeigen (zu analytisch); Lernkalibrierung aus Home entfernen (verliert sichtbares Lernen); nur per CSS kuerzen (versteckt Inhalt statt die Entscheidung klarer zu formulieren).
+- **Decided by:** Codex, aus frischer Route-Evidence fuer den naechsten Performance-OS-Slice.
+- **Status:** active.
+
 ## 2026-05-19 — Delivery Manifest trennt Fast Lane und Full Lane
 
 - **Decision:** `npm run delivery:manifest` klassifiziert PRs zusaetzlich als `Fast Lane` oder `Full Lane`. Fast Lane gilt fuer einspurige Frontend-/Docs-/Support-Aenderungen ohne Backend-, Shared-Contract-, Dependency-, Migration-, Workflow-, Deploy- oder LLM-Risiko; nur diese PRs sind automatisch auto-merge-faehig. Full Lane verlangt explizite CI-/Review-Aufmerksamkeit.
