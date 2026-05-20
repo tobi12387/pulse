@@ -30,13 +30,13 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning and the sixth-pass today-only tradeoff learning, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, and Track 3 classifies tradeoff evidence as action, plan decision or watch context.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning and the sixth-pass today-only tradeoff learning, Track 2 carries repeated Tageskonflikte into the weekly decision receipt and now gates classified tradeoff patterns to true weekly decisions, and Track 3 classifies tradeoff evidence as action, plan decision or watch context.
 
 Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Trainingsanpassung`: **Plan nutzt klassifizierte Tradeoff-Muster nur bei echter Wochenwirkung.**
-2. `Lernschleifen`: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
-3. `Tagesentscheidung`: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
+1. `Lernschleifen`: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
+2. `Tagesentscheidung`: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
+3. `Trainingsanpassung`: **Plan haelt erledigte Tradeoff-Receipts ruhig, bis neue Wochenwirkung entsteht.**
 
 ## Track 1: Tagesentscheidung
 
@@ -141,9 +141,22 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped fourth-pass package plus later ready card**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, and carries repeated Tageskonflikte into the weekly decision receipt.
+Status: **shipped fifth-pass package plus later ready card**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, uses gated learning calibration as explicit weekly decision evidence, carries repeated Tageskonflikte into the weekly decision receipt and consumes the shared tradeoff classifier only for true weekly decisions.
 
-Later ready package: **Plan nutzt klassifizierte Tradeoff-Muster nur bei echter Wochenwirkung.**
+Later ready package: **Plan haelt erledigte Tradeoff-Receipts ruhig, bis neue Wochenwirkung entsteht.**
+
+Outcome: after Data/Home mark a tradeoff as handled or resolved, Plan should keep the local receipt as quiet continuity and reopen `Anpassen` only when fresh weekly evidence appears.
+
+Why it matters: the weekly command loop should become calmer after a conscious decision. A handled conflict should explain why Plan stayed stable, not behave like a new plan problem on every visit.
+
+Package PRs:
+
+- Add Plan weekly decision scenarios for handled receipt versus stale-with-new-weekly-evidence.
+- Keep handled receipts visible as continuity without changing the primary option from `Beibehalten`.
+- Reopen `Anpassen` only when new plan, recovery, Garmin or classified `plan_decision` evidence arrives.
+- Use the Fast Lane `verify:trainingsanpassung:pr` gate plus one CI/Plan smoke unless local rendered behavior is changed.
+
+Shipped package: **Plan nutzt klassifizierte Tradeoff-Muster nur bei echter Wochenwirkung.**
 
 Outcome: after Data classifies tradeoff patterns as `plan_decision` versus watch context, Plan should consume only the weekly-relevant classification and avoid reopening the weekly decision for already-handled or weak tradeoff history.
 

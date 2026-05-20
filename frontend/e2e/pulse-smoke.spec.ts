@@ -763,6 +763,79 @@ test('Plan weekly decision surfaces repeated tradeoffs without applying plan or 
   await expect(receipt).toContainText('Tageskonflikt Wochenentscheidung');
 });
 
+test('Plan weekly decision keeps today tradeoff learning out of weekly change', async ({ page }) => {
+  const writeRequests: string[] = [];
+  await mockPulseApi(page, {
+    planWorkouts: [{
+      id: 'plan-today-tradeoff',
+      plannedDate: localIsoDate(1),
+      activityType: 'bike',
+      zone: 2,
+      durationMin: 75,
+      targetTss: 64,
+      status: 'planned',
+      archetypeId: 'endurance_steady',
+      difficultyLevel: 3.8,
+      difficultyEnergySystem: 'endurance',
+      capabilityFit: 'productive',
+      description: 'Ruhige Ausdauer mit sauberem Garmin-Handoff.',
+      garminWorkoutId: 'garmin-plan-today-tradeoff',
+      garminScheduledId: 'schedule-plan-today-tradeoff',
+      executionStatus: 'garmin_scheduled',
+    }],
+    personalResponse: null,
+    outcomeBaseline: null,
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Wochenintervention.',
+      projections: [],
+      missingEvidence: [],
+    },
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 78,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt hilft heute',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 2,
+        lastSeen: '2026-05-01',
+        status: 'useful_repetition',
+        evidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      }],
+      bestEvidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      evidence: [],
+      suggestedAdjustment: 'Heute zuerst die leichtere Option bestaetigen, wenn Schlaf und Alltag eng sind.',
+    },
+    onRequest: (path, method) => {
+      if (method !== 'GET' && method !== 'OPTIONS') {
+        writeRequests.push(`${method} ${path}`);
+      }
+    },
+  });
+
+  await page.goto('/plan');
+
+  const weeklyDecision = page.getByTestId('plan-weekly-decision-contract');
+  await expect(weeklyDecision).toBeVisible();
+  await expect(weeklyDecision).toContainText('Woche aktuell stabil');
+  await expect(weeklyDecision).toContainText('Tageskonflikt bleibt Heute-Kontext');
+  await expect(weeklyDecision).toContainText('Heute veraendert');
+  await expect(weeklyDecision).toContainText('keine Wochenentscheidung');
+  await expect(weeklyDecision).not.toContainText('Wochenentscheidung offen');
+  await expect(weeklyDecision).not.toContainText('Tageskonflikte verändern die Woche');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).not.toContainText('trotz wiederholter Tageskonflikte');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).not.toContainText('wiederholte Tageskonflikte');
+
+  writeRequests.length = 0;
+  await weeklyDecision.getByRole('button', { name: 'Entscheidung merken', exact: true }).click();
+  expect(writeRequests).toEqual([]);
+  const receipt = weeklyDecision.getByTestId('plan-weekly-decision-receipt');
+  await expect(receipt).toContainText('Tageskonflikt Watch-Kontext');
+  await expect(receipt).toContainText('Keine Plan- oder Garmin-Aenderung gespeichert');
+});
+
 test('Plan weekly decision stores a local receipt without applying plan or Garmin', async ({ page }) => {
   const writeRequests: string[] = [];
   await mockPulseApi(page, {
