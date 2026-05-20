@@ -1466,6 +1466,57 @@ test('Home daily decision opens strong learning calibration from Data evidence',
   await expect(page.locator('#data-decision-quality')).toBeVisible();
 });
 
+test('Home daily decision keeps on-track goal progress as quiet motivation', async ({ page }) => {
+  await mockPulseApi(page, {
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: '70.3 Kraichgau ist auf Kurs.',
+      projections: [{
+        goalId: 'goal-703',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-06-14',
+        daysUntil: 44,
+        probabilityPct: 78,
+        status: 'on_track',
+        confidence: 'medium',
+        summary: 'Ziel ist auf Kurs; die aktuelle Woche haelt den Aufbau stabil.',
+        limiterRisk: {
+          status: 'clear',
+          label: 'Kein dominanter Limiter',
+          summary: 'Kein dominanter Ziel-Limiter begrenzt die Projektion.',
+          evidence: ['Zielsignal stabil'],
+        },
+        nextBestIntervention: {
+          kind: 'consistency',
+          title: 'Zielrhythmus halten',
+          summary: 'Ruhig weitertrainieren und keine neue Planentscheidung erzwingen.',
+          actionLabel: 'Zielprojektion prüfen',
+          targetPath: '/data?tab=analysis#data-goal-projection',
+          evidence: ['Zielsignal stabil'],
+        },
+        evidence: ['Zielsignal stabil'],
+        missingEvidence: [],
+      }],
+      missingEvidence: [],
+    },
+  });
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('Ziel-Fortschritt');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('70.3 Kraichgau');
+  await expect(decision.getByTestId('daily-decision-safest-option')).not.toContainText('Ziel-Fortschritt');
+  await expect(decision.getByTestId('daily-decision-continuity')).toContainText('Ziel-Fortschritt stabil');
+  await expect(decision.getByTestId('daily-decision-continuity')).toContainText('70.3 Kraichgau 78%');
+
+  await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
+  await expect(decision).toContainText('Ziel-Fortschritt stabil: 70.3 Kraichgau 78%');
+  await decision.getByRole('button', { name: /Ziel-Fortschritt stabil/ }).click();
+  await expect(page).toHaveURL('/data?tab=analysis#data-goal-projection');
+});
+
 test('Home daily decision uses repeated tradeoff learning for todays adaptive option', async ({ page }) => {
   const plannedWorkout = {
     id: 'planned-default',

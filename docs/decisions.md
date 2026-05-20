@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-20 — Naechstes Paket haelt Ziel-Fortschritt in Plan ruhig
+
+- **Decision:** Nach Home-Ziel-Fortschritt ist das naechste autonome Paket `Trainingsanpassung`: Plan soll stabile und Watch-Zielprojektionen nur als Wochenvertrauen/Evidenz zeigen und nur echte `at_risk` oder geblockte Ziel-Limiter in bestehende Wochenentscheidungen fuehren.
+- **Why:** Data hat die Quellwirkung getrennt und Home erbt sie als Tagesruhe; Plan muss dieselbe Ruhe im Wochencontrol halten. So bleibt Zielnaehe auch im Plan motivierend, ohne `Anpassen` oder Garmin-/Plan-Vorschauen zu frueh zu oeffnen.
+- **Alternatives:** Ziel-Fortschritt in Plan ausblenden (Plan wirkt blind); stabile Ziele in `Anpassen` ziehen (zu laut); Watch-Limiter als Wochenentscheidung fuehren (verfruehte Eskalation).
+- **Decided by:** Codex, als naechste harte Backlog-Prioritaet aus Roadmap und Performance-OS-Ziel.
+- **Status:** active.
+
+## 2026-05-20 — Home haelt Ziel-Fortschritt als ruhige Tagesmotivation
+
+- **Decision:** Home behandelt `on_track` und Watch-Zielprojektionen als Kontinuitaet/Evidenz mit Data-Handoff; sie duerfen nicht `Heute entscheidet`, CTA, `Sicherste Option` oder den `Tageskonflikt` fuehren. `at_risk` oder geblockte Ziel-Limiter behalten die bestehenden expliziten Ziel-/Planpfade.
+- **Why:** Ziel-Fortschritt soll die Tagesentscheidung motivierender und vertrauenswuerdiger machen, ohne jede erreichbare Projektion zur neuen Handlung zu machen. Erst echter Limiter-Risiko-Kontext darf die intelligente Tageshandlung fuer Koerper, Ziel und Alltag veraendern.
+- **Alternatives:** Jede Zielprojektion als Home-Signal fuehren (zu laut); stabile Ziele nur in Data lassen (Home verliert Motivation); Watch-Limiter in den Tageskonflikt ziehen (zu fruehe Eskalation).
+- **Decided by:** Codex, als Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data macht Ziel-Fortschritt als motivierende Performance-Evidenz sichtbar
 
 - **Decision:** Data unterscheidet Ziel-Fortschritt jetzt nach Wirkung: `on_track` und Watch-Limiter bleiben motivierende Data-Evidenz, waehrend `at_risk` oder geblockte Limiter nur ueber bestehende explizite Home-/Plan-Zielpfade lauter werden.

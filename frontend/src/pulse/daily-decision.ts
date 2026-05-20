@@ -84,6 +84,7 @@ type TodayOption = PulseTodayOptionsResponse['options'][number];
 type TradeoffPattern = NonNullable<ReturnType<typeof classifyTradeoffPattern>>;
 
 const DATA_DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
+const DATA_GOAL_PROJECTION_PATH = '/data?tab=analysis#data-goal-projection';
 const DATA_PLAN_TRACE_PATH = '/data?tab=analysis#data-plan-trace';
 const DATA_POWER_QUALITY_PATH = '/data?tab=analysis#data-power-quality';
 const DATA_POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
@@ -355,7 +356,7 @@ function dailyTradeoffSignal(
   if (home.recovery?.sleepDebt7d.status === 'severe' || (home.recovery?.recoveryScore ?? 100) < 45) return null;
   const option = todayOptionsAdaptiveOption(todayOptions);
   const goal = topGoalProjection(goalProjection);
-  if (!todayOptions || !option || !goal || goal.status === 'on_track') return null;
+  if (!todayOptions || !option || !goal || !goalHasActionableLimiter(goal)) return null;
 
   const bodyDetail = bodyTradeoffDetail(home, workout);
   if (!bodyDetail) return null;
@@ -440,7 +441,7 @@ function completedTradeoffSignal(
 
   const option = todayOptionsAdaptiveOption(todayOptions);
   const goal = topGoalProjection(goalProjection);
-  if (!todayOptions || !option || !goal || goal.status === 'on_track') return null;
+  if (!todayOptions || !option || !goal || !goalHasActionableLimiter(goal)) return null;
 
   const bodyDetail = bodyTradeoffDetail(home, workout);
   if (!bodyDetail) return null;
@@ -506,7 +507,7 @@ function topGoalProjection(goalProjection: PulseGoalProjectionResponse | null | 
 }
 
 function goalSignalTone(goal: GoalProjection): DailyDecisionSignalTone {
-  if (goal.status === 'at_risk') return 'rose';
+  if (goal.status === 'at_risk' || goal.limiterRisk.status === 'blocked') return 'rose';
   if (goal.status === 'watch') return 'amber';
   if (goal.status === 'on_track') return 'green';
   return 'muted';
@@ -516,9 +517,44 @@ function goalProbabilityLabel(goal: GoalProjection): string {
   return goal.probabilityPct == null ? 'Evidenz offen' : `${goal.probabilityPct}%`;
 }
 
+function goalHasActionableLimiter(goal: GoalProjection): boolean {
+  return goal.status === 'at_risk' || goal.limiterRisk.status === 'blocked';
+}
+
+function quietGoalProgress(goalProjection: PulseGoalProjectionResponse | null | undefined): GoalProjection | null {
+  const goal = topGoalProjection(goalProjection);
+  if (!goal || goalHasActionableLimiter(goal)) return null;
+  return goal;
+}
+
+function quietGoalProgressLabel(goal: GoalProjection): string {
+  if (goal.status === 'on_track' && goal.limiterRisk.status === 'clear') return 'Ziel-Fortschritt stabil';
+  if (goal.status === 'insufficient_evidence') return 'Zielevidenz offen';
+  return 'Ziel-Limiter beobachten';
+}
+
+function quietGoalProgressContinuity(goalProjection: PulseGoalProjectionResponse | null | undefined): string | null {
+  const goal = quietGoalProgress(goalProjection);
+  if (!goal) return null;
+
+  const limiter = goal.limiterRisk.summary
+    ? ` ${goal.limiterRisk.label}: ${goal.limiterRisk.summary}.`
+    : '';
+  return `${quietGoalProgressLabel(goal)}: ${goal.title} ${goalProbabilityLabel(goal)}. ${goal.summary}${limiter} Bleibt ruhige Data-Kontinuitaet, keine neue Tages- oder Planhandlung.`;
+}
+
+function quietGoalProgressEvidence(goalProjection: PulseGoalProjectionResponse | null | undefined): DailyDecisionEvidence[] {
+  const goal = quietGoalProgress(goalProjection);
+  if (!goal) return [];
+  return [{
+    label: `${quietGoalProgressLabel(goal)}: ${goal.title} ${goalProbabilityLabel(goal)}`,
+    targetPath: DATA_GOAL_PROJECTION_PATH,
+  }];
+}
+
 function goalPressureAlternative(goalProjection: PulseGoalProjectionResponse | null | undefined): string | null {
   const goal = topGoalProjection(goalProjection);
-  if (!goal || goal.status !== 'at_risk') return null;
+  if (!goal || !goalHasActionableLimiter(goal)) return null;
 
   const limiter = goal.limiterRisk?.summary ? ` Limiter: ${goal.limiterRisk.summary}.` : '';
   return `Zielintervention: ${goal.nextBestIntervention.title}: ${goal.nextBestIntervention.summary} ${goal.title}: ${goalProbabilityLabel(goal)}.${limiter}`;
@@ -1627,7 +1663,7 @@ function goalImpactSummary(
   goalProjection: PulseGoalProjectionResponse | null,
 ): string {
   const goal = topGoalProjection(goalProjection);
-  const goalContext = goal
+  const goalContext = goal && goalHasActionableLimiter(goal)
     ? ` ${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}.`
     : '';
 
@@ -1656,6 +1692,7 @@ function continuitySummary({
   completedActivity,
   dailyDelta,
   decisionQuality,
+  goalProjection,
 }: {
   home: PulseHomeScreenData;
   action: PulseNextBestAction | null;
@@ -1663,28 +1700,30 @@ function continuitySummary({
   completedActivity: HomeActivity | null;
   dailyDelta: PulseDailyDeltaItem | null;
   decisionQuality: PulseDailyDecisionQualityResponse | null;
+  goalProjection: PulseGoalProjectionResponse | null;
 }): string {
   const resolvedTradeoff = resolvedTradeoffContinuity(decisionQuality);
-  const withResolvedTradeoff = (summary: string) => resolvedTradeoff ? `${summary} ${resolvedTradeoff}` : summary;
+  const quietGoal = quietGoalProgressContinuity(goalProjection);
+  const withContinuityContext = (summary: string) => [summary, resolvedTradeoff, quietGoal].filter(Boolean).join(' ');
 
   if (dailyDelta?.date === home.date) {
     const prefix = dailyDelta.status === 'matched' ? 'Bleibt gültig' : 'Geändert';
-    return withResolvedTradeoff(`${prefix}: ${dailyDelta.title}. ${dailyDelta.nextPlanEffect}`);
+    return withContinuityContext(`${prefix}: ${dailyDelta.title}. ${dailyDelta.nextPlanEffect}`);
   }
 
   if (workout?.status === 'completed' || workout?.completedActivityId) {
-    return withResolvedTradeoff('Geändert: Die Einheit ist erledigt; die Entscheidung wechselt von Ausführung zu Feedback, Versorgung und Regeneration.');
+    return withContinuityContext('Geändert: Die Einheit ist erledigt; die Entscheidung wechselt von Ausführung zu Feedback, Versorgung und Regeneration.');
   }
   if (completedActivity) {
-    return withResolvedTradeoff('Geändert: Garmin hat reale Belastung geliefert; Feedback und Planabgleich sind heute wichtiger als zusätzliches Training.');
+    return withContinuityContext('Geändert: Garmin hat reale Belastung geliefert; Feedback und Planabgleich sind heute wichtiger als zusätzliches Training.');
   }
   if (workout) {
-    return withResolvedTradeoff('Bleibt gültig: Readiness, TSB und Workout-Profil bestimmen weiter Ausführen oder bewusstes Anpassen, nicht Zusatzumfang.');
+    return withContinuityContext('Bleibt gültig: Readiness, TSB und Workout-Profil bestimmen weiter Ausführen oder bewusstes Anpassen, nicht Zusatzumfang.');
   }
   if (action) {
-    return withResolvedTradeoff('Bleibt gültig: Der offene nächste Schritt ist noch nicht geschlossen; Pulse hält die Entscheidung auf diesem Hebel.');
+    return withContinuityContext('Bleibt gültig: Der offene nächste Schritt ist noch nicht geschlossen; Pulse hält die Entscheidung auf diesem Hebel.');
   }
-  return withResolvedTradeoff('Bleibt gültig: Ohne geplantes Training schließen Check-in und Erholung den Tag ruhiger als eine neue Einheit.');
+  return withContinuityContext('Bleibt gültig: Ohne geplantes Training schließen Check-in und Erholung den Tag ruhiger als eine neue Einheit.');
 }
 
 function topSignals(
@@ -1804,7 +1843,7 @@ function topSignals(
     });
   }
 
-  if (goal) {
+  if (goal && goalHasActionableLimiter(goal)) {
     signals.push({
       label: 'Ziel',
       detail: `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`,
@@ -1882,7 +1921,7 @@ function buildContract({
     leadingFactor: leadingFactorSummary(signals, fallbackLead),
     goalImpact: goalImpactSummary(home, workout, completedActivity, goalProjection),
     garminExecution: executionSummary(workout, completedActivity),
-    continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta, decisionQuality }),
+    continuity: continuitySummary({ home, action, workout, completedActivity, dailyDelta, decisionQuality, goalProjection }),
     safestAlternative: alternative,
     signals,
   };
@@ -1942,6 +1981,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       ...(fuelingStep?.targetPath
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
         : []),
+      ...quietGoalProgressEvidence(goalProjection),
       ...resolvedTradeoffEvidence(decisionQuality),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
@@ -2034,6 +2074,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
       ...(fuelingStep?.targetPath
         ? [{ label: fuelingReadinessDetail(fuelingOutcomeBaseline) ?? 'Fueling-Evidenz offen', targetPath: fuelingStep.targetPath }]
         : []),
+      ...quietGoalProgressEvidence(goalProjection),
       ...resolvedTradeoffEvidence(decisionQuality),
       { label: `Readiness ${home.readiness.score}/100`, targetPath: '/data?tab=trends#data-recovery' },
       { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
@@ -2113,6 +2154,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     { label: `TSB ${home.fitnessLoad.tsb.toFixed(1)}`, targetPath: DATA_PLAN_TRACE_PATH },
     ...(todayWorkout ? [`Training ${todayWorkout}`] : []),
     ...(dailyDelta ? [{ label: `Folge: ${dailyDelta.title}`, targetPath: dailyDelta.targetPath }] : []),
+    ...quietGoalProgressEvidence(goalProjection),
     ...resolvedTradeoffEvidence(decisionQuality),
     ...(action?.evidence?.map(mapEvidence) ?? []),
   ];

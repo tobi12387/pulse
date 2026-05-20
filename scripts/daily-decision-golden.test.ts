@@ -181,7 +181,16 @@ function fuelingBaseline(activityId: string): PulseFuelingOutcomeBaseline {
   };
 }
 
-function goalProjection(): PulseGoalProjectionResponse {
+function goalProjection(overrides: {
+  status?: PulseGoalProjectionResponse['projections'][number]['status'];
+  limiterStatus?: PulseGoalProjectionResponse['projections'][number]['limiterRisk']['status'];
+  probabilityPct?: number | null;
+  summary?: string;
+  limiterLabel?: string;
+  limiterSummary?: string;
+} = {}): PulseGoalProjectionResponse {
+  const status = overrides.status ?? 'at_risk';
+  const limiterStatus = overrides.limiterStatus ?? (status === 'at_risk' ? 'blocked' : status === 'on_track' ? 'clear' : 'watch');
   return {
     generatedAt: `${TODAY}T08:00:00.000Z`,
     horizonDays: 180,
@@ -192,14 +201,18 @@ function goalProjection(): PulseGoalProjectionResponse {
       category: 'race',
       targetDate: '2026-06-14',
       daysUntil: 44,
-      probabilityPct: 48,
-      status: 'at_risk',
+      probabilityPct: overrides.probabilityPct ?? (status === 'on_track' ? 78 : status === 'watch' ? 61 : 48),
+      status,
       confidence: 'medium',
-      summary: 'Long-Endurance und Fueling sind noch nicht belastbar genug.',
+      summary: overrides.summary ?? (status === 'on_track'
+        ? 'Ziel ist auf Kurs; die aktuelle Woche haelt den Aufbau stabil.'
+        : 'Long-Endurance und Fueling sind noch nicht belastbar genug.'),
       limiterRisk: {
-        status: 'blocked',
-        label: 'Fueling-Limiter',
-        summary: 'GI- und During-Logs fehlen fuer lange Einheiten.',
+        status: limiterStatus,
+        label: overrides.limiterLabel ?? (limiterStatus === 'clear' ? 'Kein dominanter Limiter' : 'Fueling-Limiter'),
+        summary: overrides.limiterSummary ?? (limiterStatus === 'clear'
+          ? 'Kein dominanter Ziel-Limiter begrenzt die Projektion.'
+          : 'GI- und During-Logs fehlen fuer lange Einheiten.'),
         evidence: ['1/3 vergleichbare Logs'],
       },
       nextBestIntervention: {
@@ -587,6 +600,69 @@ test('at-risk goals can become the primary intervention when no stronger blocker
   assert.match(decision.contract.safestAlternative, /Zielintervention: Fueling-Praxis absichern/);
   assert.match(decision.contract.goalImpact, /70\.3 Kraichgau: 48% · Fueling-Praxis absichern/);
   assertSignalBefore(decision, 'Ziel', 'Training');
+});
+
+test('on-track goal progress stays quiet daily motivation', () => {
+  const planned = workout({ id: 'planned-goal-on-track' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    goalProjection: goalProjection({ status: 'on_track', limiterStatus: 'clear' }),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Ziel/);
+  assert.equal(decision.cta, 'Workout öffnen');
+  assert.equal(decision.targetPath, '/plan?tab=training');
+  assert.doesNotMatch(decision.contract.safestAlternative, /Zielintervention|Ziel-Fortschritt|Fueling-Praxis/);
+  assert.match(decision.contract.continuity, /Ziel-Fortschritt stabil/);
+  assert.match(decision.contract.continuity, /70\.3 Kraichgau 78%/);
+  assert.match(decision.contract.continuity, /keine neue Tages- oder Planhandlung/);
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Ziel'), undefined);
+  assert.ok(decision.evidence.some(item => (
+    typeof item !== 'string'
+      && item.label.includes('Ziel-Fortschritt')
+      && item.targetPath === '/data?tab=analysis#data-goal-projection'
+  )));
+});
+
+test('watch goal limiters stay quiet motivation instead of opening a tradeoff', () => {
+  const planned = workout({
+    id: 'planned-goal-watch',
+    zone: 4,
+    durationMin: 75,
+    targetTss: 96,
+    capabilityFit: 'too_hard_today',
+    archetypeId: 'threshold_build',
+    difficultyEnergySystem: 'threshold',
+    description: 'Schwellenreiz fuer das Ziel.',
+  });
+  const decision = decisionFor(home({
+    todayWorkout: planned,
+    recovery: recovery({
+      sleepDebt7d: { hours: 2.4, targetH: 7.5, baselineSource: 'garmin_sleep_need', status: 'mild' },
+      recoveryScore: 62,
+      recommendation: 'Heute Grenze klein halten.',
+    }),
+  }), {
+    goalProjection: goalProjection({ status: 'watch', limiterStatus: 'watch', probabilityPct: 61 }),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Tageskonflikt|Ziel/);
+  assert.equal(decision.cta, 'Training anpassen');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-goal-watch#next-training-decision');
+  assert.doesNotMatch(decision.contract.safestAlternative, /Tageskonflikt zuerst lösen|Zielintervention|Ziel:/);
+  assert.match(decision.contract.safestAlternative, /Recovery schützen/);
+  assert.match(decision.contract.continuity, /Ziel-Limiter beobachten/);
+  assert.match(decision.contract.continuity, /Fueling-Limiter/);
+  assert.match(decision.contract.continuity, /keine neue Tages- oder Planhandlung/);
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Tageskonflikt'), undefined);
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Ziel'), undefined);
+  assert.ok(decision.evidence.some(item => (
+    typeof item !== 'string'
+      && item.label.includes('Ziel-Limiter beobachten')
+      && item.targetPath === '/data?tab=analysis#data-goal-projection'
+  )));
 });
 
 test('daily decision names the body goal and everyday tradeoff before the safe action', () => {
