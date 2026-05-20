@@ -249,7 +249,32 @@ function tradeoffWeeklyReceiptSummary(pattern: TradeoffPattern): string | null {
 }
 
 function tradeoffReceiptFollowupEvidence(pattern: TradeoffPattern): string | null {
-  return pattern.receiptFollowupEvidence[0] ?? null;
+  const [first] = pattern.receiptFollowupEvidence;
+  if (!first) return null;
+
+  return pattern.receiptFollowupEvidence.reduce((selected, evidence) => {
+    const selectedDays = receiptFollowupDays(selected) ?? -1;
+    const evidenceDays = receiptFollowupDays(evidence) ?? -1;
+    return evidenceDays > selectedDays ? evidence : selected;
+  }, first);
+}
+
+function receiptFollowupDays(value: string): number | null {
+  const days = value.match(/\b(\d+)\s*Tage?\b/iu)?.[1] ?? null;
+  if (days) return Number.parseInt(days, 10);
+
+  const weeks = value.match(/\b(\d+)\s*Wochen?\b/iu)?.[1] ?? null;
+  return weeks ? Number.parseInt(weeks, 10) * 7 : null;
+}
+
+function tradeoffReceiptTrustDuration(pattern: TradeoffPattern): string | null {
+  const durations = pattern.receiptFollowupEvidence
+    .map(receiptFollowupDays)
+    .filter((days): days is number => days != null && Number.isFinite(days));
+  if (durations.length === 0) return null;
+
+  const maxDays = Math.max(...durations);
+  return `${maxDays} ${maxDays === 1 ? 'Tag' : 'Tage'}`;
 }
 
 function tradeoffReopenSourceHint(pattern: TradeoffPattern): string | null {
@@ -853,10 +878,12 @@ function resolvedTradeoffContinuity(decisionQuality: PulseDailyDecisionQualityRe
       const receiptSummary = tradeoffWeeklyReceiptSummary(pattern);
       if (receiptSummary) {
         const followup = tradeoffReceiptFollowupEvidence(pattern);
+        const trustDuration = tradeoffReceiptTrustDuration(pattern);
         if (followup) {
-          return `Wochenreceipt-Lernvertrauen bestaetigt: ${sourceTrendLabel}. ${receiptSummary}. ${followup}. ${pattern.suggestedAdjustment}.`;
+          const durationDetail = trustDuration ? `Wochenreceipt-Vertrauensdauer: ${trustDuration}. ` : '';
+          return `Wochenreceipt-Lernvertrauen bestaetigt: ${sourceTrendLabel}. ${receiptSummary}. ${durationDetail}${followup}. ${pattern.suggestedAdjustment}.`;
         }
-        return `Wochenreceipt-Lernvertrauen bleibt ruhig: ${sourceTrendLabel}. ${receiptSummary}. ${pattern.suggestedAdjustment}.`;
+        return `Wochenreceipt-Lernvertrauen unaufgefrischt: ${sourceTrendLabel}. ${receiptSummary}. Die Folgewirkung ist noch nicht neu bestaetigt. ${pattern.suggestedAdjustment}.`;
       }
       return `Geschlossener Reopen-Quellentrend bleibt ruhig: ${sourceTrendLabel}. ${pattern.suggestedAdjustment}.`;
     }
@@ -902,11 +929,14 @@ function resolvedTradeoffEvidence(decisionQuality: PulseDailyDecisionQualityResp
   if (sourceTrendLabel) {
     const receiptSummary = tradeoffWeeklyReceiptSummary(pattern);
     const followup = tradeoffReceiptFollowupEvidence(pattern);
+    const trustDuration = tradeoffReceiptTrustDuration(pattern);
     return [{
-      label: receiptSummary && followup
+      label: receiptSummary && followup && trustDuration
+        ? `Wochenreceipt-Vertrauensdauer: ${trustDuration} · ${sourceTrendLabel}`
+        : receiptSummary && followup
         ? `Wochenreceipt-Lernvertrauen bestaetigt: ${sourceTrendLabel}`
         : receiptSummary
-        ? `Wochenreceipt-Lernvertrauen: ${sourceTrendLabel}`
+        ? `Wochenreceipt-Lernvertrauen unaufgefrischt: ${sourceTrendLabel}`
         : `Geschlossener Reopen-Quellentrend: ${sourceTrendLabel}`,
       targetPath: DATA_DECISION_QUALITY_PATH,
     }];

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home zeigt Wochenreceipt-Vertrauensdauer als Tagesruhe
+
+- **Decision:** Home nutzt Data-Vertrauensdauer fuer Wochenreceipts nur in Kontinuitaet und Data-Evidenz. Bestaetigte Dauer macht Tagesruhe verdient; unaufgefrischtes Vertrauen bleibt ruhiger Kontext; frische Heute-Wiederkehr fuehrt weiter den Tages-Review.
+- **Why:** Die Tagesoberflaeche soll staerkeres Data-Vertrauen erben, ohne zum Receipt-Log zu werden. Vertrauensdauer darf nicht mit heutiger Koerper-, Ziel-, Garmin- oder Recovery-Aktion konkurrieren.
+- **Alternatives:** Vertrauensdauer nur in Data lassen (Home wirkt blind); Dauer in Leitentscheidung, CTA oder sicherste Option ziehen (zu laut); unaufgefrischtes Vertrauen als gebrochen werten (falsche Eskalation).
+- **Decided by:** Codex, als Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data zeigt Wochenreceipt-Vertrauensdauer
 
 - **Decision:** Data fasst `Wochenreceipt-Lernvertrauen` jetzt mit Vertrauensdauer zusammen. Bestaetigte Folgewirkung zeigt die laengste erkannte Dauer, unaufgefrischte Receipts bleiben ruhiger Watch-Kontext, und geschwaechtes Vertrauen entsteht nur durch frische Heute- oder Wochenwiederkehr.

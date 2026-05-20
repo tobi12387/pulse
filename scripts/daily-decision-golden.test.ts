@@ -928,6 +928,7 @@ test('handled reopen-source trend stays quiet continuity in Home', () => {
       bestEvidence: [
         'Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled',
         'Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
+        'Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle nach Plan-Receipt',
       ],
       suggestedAdjustment: 'Bereits gehandhabt: Quellentrend als Kontinuitaet behalten, bis frische Heute- oder Wochen-Evidenz erneut wirkt.',
     }),
@@ -943,16 +944,61 @@ test('handled reopen-source trend stays quiet continuity in Home', () => {
   assert.match(decision.contract.continuity, /Planlast 2x/);
   assert.match(decision.contract.continuity, /Garmin-Ausfuehrung 2x/);
   assert.match(decision.contract.continuity, /Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
-  assert.match(decision.contract.continuity, /Folgewirkung bestaetigt: 7 Tage ohne erneute Reopen-Quelle/);
-  assert.doesNotMatch(decision.contract.leadingFactor, /Wochenreceipt|Lernvertrauen|Plan-Receipt/);
-  assert.doesNotMatch(decision.contract.safestAlternative, /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Tageskonflikt-Lernen|Wochenreceipt|Lernvertrauen|Plan-Receipt/);
+  assert.match(decision.contract.continuity, /Wochenreceipt-Vertrauensdauer: 14 Tage/);
+  assert.match(decision.contract.continuity, /Folgewirkung bestaetigt: 14 Tage ohne erneute Reopen-Quelle/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Tageskonflikt-Lernen|Wochenreceipt|Lernvertrauen|Vertrauensdauer|Plan-Receipt/);
   const tradeoffEvidence = decision.evidence.find(item => (
     typeof item !== 'string'
-    && /Wochenreceipt-Lernvertrauen bestaetigt/.test(item.label)
+    && /Wochenreceipt-Vertrauensdauer/.test(item.label)
   ));
   assert.ok(tradeoffEvidence);
+  assert.match(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.label : '', /14 Tage/);
   assert.match(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.label : '', /Planlast 2x.*Garmin-Ausfuehrung 2x/);
   assert.doesNotMatch(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.label : '', /Wochenentscheidung gemerkt/);
+  assert.equal(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.targetPath : null, '/data?tab=analysis#data-decision-quality');
+});
+
+test('unrefreshed weekly receipt trust stays quiet continuity in Home', () => {
+  const planned = workout({ id: 'planned-unrefreshed-receipt-trust' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 68,
+      status: 'helpful',
+      statusLabel: 'Reopen-Quellentrend bereits in Wochenentscheidung eingeordnet',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 4,
+        lastSeen: TODAY,
+        status: 'useful_repetition',
+        evidence: [
+          'Wochenentscheidung gemerkt: Beibehalten wegen Reopen-Quellentrend Recovery 2x',
+          'Reopen-Quellentrend Recovery 2x bereits in Plan eingeordnet',
+        ],
+      }],
+      bestEvidence: [
+        'Plan-Receipt: Reopen-Quellentrend Recovery 2x handled',
+      ],
+      suggestedAdjustment: 'Bereits gehandhabt: Quellentrend beobachten, bis frische Heute- oder Wochen-Evidenz erneut wirkt.',
+    }),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Training:/);
+  assert.equal(decision.cta, 'Workout öffnen');
+  assert.equal(decision.targetPath, '/plan?tab=training');
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Tageskonflikt'), undefined);
+  assert.match(decision.contract.continuity, /Wochenreceipt-Lernvertrauen unaufgefrischt/);
+  assert.match(decision.contract.continuity, /Recovery 2x/);
+  assert.match(decision.contract.continuity, /nicht neu bestaetigt/);
+  assert.doesNotMatch(decision.contract.continuity, /braucht Review|Vertrauensdauer/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Wochenreceipt|Lernvertrauen|Plan-Receipt|Recovery 2x/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /Wochenreceipt|Lernvertrauen|Plan-Receipt|Recovery 2x|Reopen-Quellentrend/);
+  const tradeoffEvidence = decision.evidence.find(item => (
+    typeof item !== 'string'
+    && /Wochenreceipt-Lernvertrauen unaufgefrischt/.test(item.label)
+  ));
+  assert.ok(tradeoffEvidence);
   assert.equal(typeof tradeoffEvidence !== 'string' ? tradeoffEvidence.targetPath : null, '/data?tab=analysis#data-decision-quality');
 });
 
@@ -1037,6 +1083,7 @@ test('fresh recurrence can reopen a handled source trend in Home', () => {
   assert.doesNotMatch(decision.contract.safestAlternative, /bereits in Plan eingeordnet|Wochenentscheidung gemerkt|Wochenreceipt|Lernvertrauen|Plan-Receipt/);
   assert.match(decision.contract.continuity, /Wochenreceipt-Lernvertrauen braucht Review/);
   assert.match(decision.contract.continuity, /Recovery 2x/);
+  assert.doesNotMatch(decision.contract.continuity, /unaufgefrischt|Vertrauensdauer/);
   assert.doesNotMatch(decision.contract.continuity, /Wochenentscheidung gemerkt|Plan-Receipt:/);
   const tradeoffEvidence = decision.evidence.find(item => (
     typeof item !== 'string'
