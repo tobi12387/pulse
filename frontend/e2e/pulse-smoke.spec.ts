@@ -1345,6 +1345,103 @@ test('Home daily decision opens strong learning calibration from Data evidence',
   await expect(page.locator('#data-decision-quality')).toBeVisible();
 });
 
+test('Home daily decision uses repeated tradeoff learning for todays adaptive option', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'planned-default',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 2,
+    durationMin: 75,
+    distanceKm: null,
+    targetTss: 62,
+    archetypeId: 'endurance_steady',
+    difficultyLevel: 3.1,
+    difficultyEnergySystem: 'endurance',
+    capabilityFit: 'productive',
+    description: 'Ruhige Ausdauer.',
+    steps: null,
+    garminWorkoutId: 'garmin-planned-default',
+    garminScheduledId: 'schedule-planned-default',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+
+  await mockPulseApi(page, {
+    home: { todayWorkout: plannedWorkout },
+    todayOptionsState: 'planned_workout',
+    personalResponse: null,
+    powerDataQuality: {
+      source: 'stream',
+      status: 'trusted',
+      coveragePct: 98,
+      spikeCount: 0,
+      limitations: [],
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    powerDuration: {
+      bestEfforts: [],
+      durability: {
+        rating: 'strong',
+        powerDropPct: -4,
+        hrDriftBpm: 1,
+        evidence: ['Power stabil', 'HR +1 bpm'],
+        activityId: null,
+        activityDate: '2026-05-01',
+        qualitySource: 'stream',
+        qualityStatus: 'trusted',
+      },
+      bestEffortLine: '20 min 215 W',
+      durabilityLine: 'Durability strong: Power stabil · HR +1 bpm',
+      updatedAt: '2026-05-01T06:00:00.000Z',
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: 'Zielprojektion hat keine offene Tagesintervention.',
+      projections: [],
+      missingEvidence: [],
+    },
+    decisionQuality: {
+      range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
+      qualityScore: 76,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt hilfreich',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 2,
+        lastSeen: '2026-05-01',
+        status: 'useful_repetition',
+        evidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      }],
+      bestEvidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      evidence: [],
+      suggestedAdjustment: 'Heute zuerst die leichtere Option bestaetigen, wenn Schlaf und Alltag eng sind.',
+    },
+  });
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Tageskonflikt');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Lernmuster');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('2x Tageskonflikt');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('Lernkalibrierung');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Tageskonflikt-Lernen heute nutzen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Leichtere Alternative');
+
+  await decision.getByRole('button', { name: 'Plan anpassen', exact: true }).click();
+  await expect(page).toHaveURL('/plan?tab=training&source=today-change&intent=easier&workoutId=planned-default#next-training-decision');
+});
+
 test('Home daily decision opens the body goal everyday tradeoff as one safe option', async ({ page }) => {
   const plannedWorkout = {
     id: 'home-tradeoff-workout',

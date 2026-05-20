@@ -1,6 +1,7 @@
 import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulsePersonalResponseResponse, PulsePersonalResponseSignal, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from './activity-labels';
 import { buildLearningCalibration, decisionQualityCanCalibrate, strongestPersonalResponseSignal } from './learning-calibration';
+import { classifyTradeoffPattern } from './tradeoff-patterns';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
 export type DailyDecisionSignalTone = 'green' | 'amber' | 'rose' | 'accent' | 'muted';
@@ -85,6 +86,7 @@ const DATA_PLAN_TRACE_PATH = '/data?tab=analysis#data-plan-trace';
 const DATA_POWER_QUALITY_PATH = '/data?tab=analysis#data-power-quality';
 const DATA_POWER_DURATION_PATH = '/data?tab=analysis#data-power-duration';
 const PLAN_WEEKLY_DECISION_PATH = '/plan?tab=training&source=home-load#plan-weekly-decision';
+const HOME_TRADEOFF_WEEKLY_DECISION_PATH = '/plan?tab=training&source=home-tradeoff#plan-weekly-decision';
 
 function activityDetailPath(activityId: string): string {
   return `/plan/activity/${activityId}`;
@@ -273,6 +275,55 @@ function dailyTradeoffSignal(
   };
 }
 
+function tradeoffLearningSignal(
+  decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
+  todayOptions: PulseTodayOptionsResponse | null | undefined,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
+): DailyDecisionSignal | null {
+  const pattern = classifyTradeoffPattern(decisionQuality);
+  if (!pattern || completedActivity || mentalBoundary?.level === 'protect') return null;
+
+  const option = todayOptionsAdaptiveOption(todayOptions);
+  const openWorkoutDecision = Boolean(workout && workout.status !== 'completed' && !workout.completedActivityId);
+  const canChangeToday = pattern.effect === 'today_action' && openWorkoutDecision && option;
+
+  if (canChangeToday && option) {
+    return {
+      label: 'Tageskonflikt',
+      detail: `Lernmuster: ${pattern.count}x ${pattern.themeLabel}. Heute kleinste sichere Option: ${option.title}. ${pattern.suggestedAdjustment}.`,
+      tone: 'accent',
+      targetPath: option.targetPath,
+      actionLabel: option.cta || 'Alternative prüfen',
+      resultPreview: 'Pulse öffnet die leichtere Tagesoption; Plan oder Garmin ändern sich erst nach einem bewussten Klick.',
+    };
+  }
+
+  if (pattern.effect === 'plan_decision') {
+    return {
+      label: 'Tageskonflikt',
+      detail: `Wochenentscheidung statt Heute: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+      tone: 'muted',
+      targetPath: HOME_TRADEOFF_WEEKLY_DECISION_PATH,
+      actionLabel: 'Wochenentscheidung prüfen',
+      resultPreview: 'Pulse öffnet die Wochenentscheidung als Kontext. Plan und Garmin bleiben unverändert, bis du dort bewusst entscheidest.',
+    };
+  }
+
+  const prefix = pattern.effect === 'today_action'
+    ? 'Heute noch kein eigener Hebel'
+    : 'Watch-Kontext';
+  return {
+    label: 'Tageskonflikt',
+    detail: `${prefix}: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+    tone: 'muted',
+    targetPath: DATA_DECISION_QUALITY_PATH,
+    actionLabel: 'Muster prüfen',
+    resultPreview: 'Pulse öffnet die Entscheidungsqualität als Watch-Kontext. Plan und Garmin bleiben unverändert.',
+  };
+}
+
 function completedTradeoffSignal(
   home: PulseHomeScreenData,
   todayOptions: PulseTodayOptionsResponse | null | undefined,
@@ -437,6 +488,11 @@ function learningCalibrationAlternative(signal: DailyDecisionSignal | null): str
   return `Lernkalibrierung zuerst prüfen: ${detail}. Plan und Garmin bleiben unverändert, bis du die Evidenz öffnest.`;
 }
 
+function tradeoffLearningAlternative(signal: DailyDecisionSignal | null): string | null {
+  if (!signal || signal.label !== 'Tageskonflikt' || signal.tone === 'muted') return null;
+  return `Tageskonflikt-Lernen heute nutzen: ${signal.detail}. Plan und Garmin bleiben bis zum bewussten Klick unverändert.`;
+}
+
 function learningCalibrationSafetyRule(detail: string): string {
   if (detail.includes('Entscheidungsmuster bestätigt')) {
     return 'bestätigte Entscheidungsmuster beibehalten; schwächere Muster nur beobachten';
@@ -591,9 +647,11 @@ function alternativeFor(
   const deltaAlternative = dailyDeltaAlternative(dailyDelta);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const dataAlternative = dataConfidenceAlternative(dataSignal);
-  const calibrationSignal = learningCalibrationSignal(decisionQuality, personalResponse, fuelingOutcomeBaseline);
+  const tradeoffPattern = classifyTradeoffPattern(decisionQuality);
+  const decisionQualityForGenericLearning = tradeoffPattern ? null : decisionQuality;
+  const calibrationSignal = learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
   const calibrationAlternative = learningCalibrationAlternative(calibrationSignal);
-  const qualitySignal = decisionQualitySignal(decisionQuality);
+  const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning);
   const qualityAlternative = decisionQualityAlternative(qualitySignal);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const planAdaptationAlternative = adaptationAlternative(adaptationEvent);
@@ -604,6 +662,8 @@ function alternativeFor(
   const executionAlternative = trainingExecutionAlternative(todayWorkout);
   const goalAlternative = goalPressureAlternative(goalProjection);
   const tradeoffSignal = dailyTradeoffSignal(home, todayOptions, todayWorkout, null, goalProjection, mentalBoundary);
+  const tradeoffLearning = tradeoffLearningSignal(decisionQuality, todayOptions, todayWorkout, null, mentalBoundary);
+  const tradeoffLearningOption = tradeoffLearningAlternative(tradeoffLearning);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
   const responseAlternative = personalResponseAlternative(responseSignal);
@@ -629,6 +689,8 @@ function alternativeFor(
     alternative = bodyAlternative;
   } else if (trainingAlternative) {
     alternative = trainingAlternative;
+  } else if (tradeoffLearningOption) {
+    alternative = tradeoffLearningOption;
   } else if (planAdaptationAlternative) {
     alternative = planAdaptationAlternative;
   } else if (blockingAnalysisAlternative) {
@@ -1457,8 +1519,10 @@ function topSignals(
   const goal = topGoalProjection(goalProjection);
   const recovery = recoverySignal(home.recovery);
   const dataSignal = dataConfidenceSignal(home.dataStatus);
-  const qualitySignal = decisionQualitySignal(decisionQuality);
-  const learningCalibration = learningCalibrationSignal(decisionQuality, personalResponse, fuelingOutcomeBaseline);
+  const tradeoffPattern = classifyTradeoffPattern(decisionQuality);
+  const decisionQualityForGenericLearning = tradeoffPattern ? null : decisionQuality;
+  const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning);
+  const learningCalibration = learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
   const deltaSignal = dailyDeltaSignal(dailyDelta);
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
@@ -1470,10 +1534,14 @@ function topSignals(
     : personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
   const everyday = everydaySignal(todayOptions, workout, completedActivity);
   const tradeoff = dailyTradeoffSignal(home, todayOptions, workout, completedActivity, goalProjection, mentalBoundary);
+  const tradeoffLearning = tradeoffLearningSignal(decisionQuality, todayOptions, workout, completedActivity, mentalBoundary);
   const completedTradeoff = completedTradeoffSignal(home, todayOptions, workout, completedActivity, goalProjection, mentalBoundary, dailyDelta);
 
   if (tradeoff) {
     signals.push(tradeoff);
+  }
+  if (tradeoffLearning) {
+    signals.push(tradeoffLearning);
   }
   if (completedTradeoff) {
     signals.push(completedTradeoff);

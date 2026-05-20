@@ -12,6 +12,7 @@ import {
   buildLearningCalibration,
   strongestPersonalResponseSignal,
 } from '../../../pulse/learning-calibration';
+import { classifyTradeoffPattern } from '../../../pulse/tradeoff-patterns';
 
 export type AnalysisTranslationTone = 'green' | 'amber' | 'rose' | 'muted';
 export type AnalysisDecisionEffect = 'today_action' | 'plan_decision' | 'watch_context';
@@ -115,10 +116,6 @@ function unique(items: Array<string | null | undefined>, limit: number): string[
     if (result.length >= limit) break;
   }
   return result;
-}
-
-function withoutTrailingPeriod(value: string): string {
-  return value.trim().replace(/[.]+$/u, '');
 }
 
 function effectForTargetPath(targetPath: string): AnalysisDecisionEffect {
@@ -337,37 +334,21 @@ function primaryFromDecisionQuality(decisionQuality: PulseDailyDecisionQualityRe
 }
 
 function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): AnalysisTranslationSignal | null {
-  if (!decisionQuality) return null;
-  const tradeoffTheme = decisionQuality.repeatedThemes
-    .filter(theme => /tageskonflikt|koerper|körper|ziel|alltag|tradeoff/i.test(`${theme.theme} ${theme.evidence.join(' ')}`))
-    .sort((a, b) => b.count - a.count)[0] ?? null;
-  if (!tradeoffTheme) return null;
-
-  const themeLabel = withoutTrailingPeriod(tradeoffTheme.theme);
-  const suggestedAdjustment = withoutTrailingPeriod(decisionQuality.suggestedAdjustment);
-  const evidence = unique([
-    `${tradeoffTheme.count}x ${themeLabel}`,
-    ...tradeoffTheme.evidence,
-    ...decisionQuality.bestEvidence,
-  ], 4);
-  const repeated = tradeoffTheme.count >= 2;
-  const effect: AnalysisDecisionEffect = repeated && (decisionQuality.status === 'needs_strategy_change' || tradeoffTheme.status === 'stale')
-    ? 'plan_decision'
-    : repeated && (decisionQuality.status === 'helpful' || tradeoffTheme.status === 'useful_repetition')
-      ? 'today_action'
-      : 'watch_context';
+  const pattern = classifyTradeoffPattern(decisionQuality);
+  if (!pattern) return null;
+  const effect: AnalysisDecisionEffect = pattern.effect;
   const tone: AnalysisTranslationTone = effect === 'plan_decision'
     ? 'rose'
     : effect === 'today_action'
       ? 'green'
-      : qualityTone(decisionQuality.status);
+      : qualityTone(decisionQuality!.status);
 
   if (effect === 'plan_decision') {
     return withEffect({
       label: 'Tradeoff-Muster',
       title: 'Tageskonflikte werden Wochenentscheidung',
-      summary: `Wiederholter Tageskonflikt: ${tradeoffTheme.count}x ${themeLabel}. ${suggestedAdjustment}.`,
-      evidence,
+      summary: `Wiederholter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+      evidence: pattern.evidence,
       tone,
       actionLabel: 'Wochenentscheidung prüfen',
       targetPath: TRADEOFF_PLAN_DECISION_PATH,
@@ -379,8 +360,8 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
     return withEffect({
       label: 'Tradeoff-Muster',
       title: 'Tageskonflikt verändert Heute',
-      summary: `Wiederholter Tageskonflikt: ${tradeoffTheme.count}x ${themeLabel}. ${suggestedAdjustment}.`,
-      evidence,
+      summary: `Wiederholter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+      evidence: pattern.evidence,
       tone,
       actionLabel: 'Heute einordnen',
       targetPath: TRADEOFF_TODAY_PATH,
@@ -388,12 +369,12 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
     }, 'today_action');
   }
 
-  const prefix = repeated ? 'Noch nicht stark genug' : 'Ein einzelner Tageskonflikt';
+  const prefix = pattern.count >= 2 ? 'Noch nicht stark genug' : 'Ein einzelner Tageskonflikt';
   return withEffect({
     label: 'Tradeoff-Muster',
     title: 'Tageskonflikt beobachten',
-    summary: `${prefix} ist noch keine Planentscheidung und keine neue Tageshandlung: ${themeLabel}. ${suggestedAdjustment}.`,
-    evidence,
+    summary: `${prefix} ist noch keine Planentscheidung und keine neue Tageshandlung: ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+    evidence: pattern.evidence,
     tone,
     actionLabel: 'Muster prüfen',
     targetPath: DECISION_QUALITY_PATH,
