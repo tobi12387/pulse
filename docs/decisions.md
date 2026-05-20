@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Home-Lernkalibrierung fuehrt nur aktive Tagesaktionen
+
+- **Decision:** Home darf `Lernkalibrierung` weiter als Tagesaktion fuehren, wenn sie den offenen heutigen Schritt bestimmt; auf abgeschlossenen Review-Tagen bleibt sie aus dem Lead, und signalgetriebene CTA-Overrides muessen auch die sichtbare `Naechster Schritt`-Beschreibung besitzen.
+- **Why:** Frische Mobile-Route-Evidence zeigte, dass ein fertiger Garmin-Tag gleichzeitig `Heute fertig` sagte und als `Heute entscheidet` trotzdem Lernkalibrierung fuehrte. Auf aktiven Tagen konnte die CTA auf `Kalibrierung pruefen` wechseln, waehrend der Detailtext noch den generischen Check-in-/Workout-Fallback beschrieb.
+- **Alternatives:** Lernkalibrierung komplett aus Home entfernen (verliert aktive Data-Lernhandlungen); nur den Screenshot kosmetisch kuerzen (Kontrakt bleibt inkonsistent); abgeschlossene Tage weiter durch Data-Lernen fuehren lassen (Review-Status wird unruhig).
+- **Decided by:** Codex, nach frischer Route-Evidence im Branch `codex/route-evidence-refresh`.
+- **Status:** active.
+
 ## 2026-05-21 — Deploy-Auth-Recovery bleibt Repo-Runbook statt Chatwissen
 
 - **Decision:** Der SSH-/Deploy-Auth-Blocker wird in `docs/ai/checklists/deploy-auth-recovery.md` als sicheres Recovery-Runbook dokumentiert: Preflight, Grenzen, Auth-Reparatur ausserhalb des Repos, danach Deploy und `verify:server`.

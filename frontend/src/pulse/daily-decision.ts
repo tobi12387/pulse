@@ -62,7 +62,9 @@ export interface DailyDecision {
   supportPath?: string;
 }
 
-type DailyDecisionPrimaryAction = Pick<DailyDecision, 'cta' | 'targetPath' | 'resultPreview'>;
+type DailyDecisionPrimaryAction = Pick<DailyDecision, 'cta' | 'targetPath' | 'resultPreview'> & {
+  completionCriterion?: string;
+};
 
 export interface DailyDecisionContext {
   dailyDelta?: PulseDailyDeltaItem | null;
@@ -1150,6 +1152,7 @@ function primaryActionForLeadingSignal(
   return {
     cta,
     targetPath: leading.targetPath,
+    completionCriterion: sentenceWithoutTrailingPeriod(leading.detail),
     resultPreview: leading.resultPreview ?? signalActionResultPreview(leading.targetPath),
   };
 }
@@ -1760,7 +1763,9 @@ function topSignals(
   const tradeoffPattern = classifyTradeoffPattern(decisionQuality);
   const decisionQualityForGenericLearning = tradeoffPattern ? null : decisionQuality;
   const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning);
-  const learningCalibration = learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
+  const learningCalibration = completedActivity || workout?.status === 'completed' || workout?.completedActivityId
+    ? null
+    : learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
   const deltaSignal = dailyDeltaSignal(dailyDelta);
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
@@ -2173,14 +2178,15 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     fuelingOutcomeBaseline,
     personalResponse,
   });
-  const primaryAction = primaryActionForLeadingSignal(contract.signals, { cta, targetPath, resultPreview }, { canOverride: action == null });
+  const primaryAction = primaryActionForLeadingSignal(contract.signals, { cta, targetPath, resultPreview, completionCriterion }, { canOverride: action == null });
+  const effectiveCompletionCriterion = primaryAction.completionCriterion ?? completionCriterion;
   const steps = dailyDeltaFollowUpSteps(dailyDelta, primaryAction);
   const prompt = [
     `Tagesentscheidung: ${title}.`,
     `Warum: ${reason}`,
     `Grenze: ${boundary}`,
     `Alternative: ${alternative}`,
-    `Abschluss: ${completionCriterion}`,
+    `Abschluss: ${effectiveCompletionCriterion}`,
     'Hilf mir, das jetzt konkret für heute zu entscheiden.',
   ].join(' ');
 
@@ -2189,7 +2195,7 @@ export function deriveDailyDecision(home: PulseHomeScreenData | null | undefined
     reason,
     boundary,
     alternative,
-    completionCriterion,
+    completionCriterion: effectiveCompletionCriterion,
     resultPreview: primaryAction.resultPreview,
     cta: primaryAction.cta,
     targetPath: primaryAction.targetPath,
