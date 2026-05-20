@@ -16,32 +16,46 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 ## Verification Rules
 
 - For `frontend/src/pulse/daily-decision.ts`, add or extend fast unit/golden scenario tests before Playwright. Cover signal priority, CTA label/target, safest option and goal impact.
-- Use Playwright for 1-2 package-level UI smokes that prove rendered route behavior, responsive safety or click-path handoff.
+- Use `npm run verify:<track>:fast` for the first implementation loop, `npm run verify:<track>:pr` before Fast Lane PRs, and the full `npm run verify:<track>` gate for Full Lane, high-risk UI changes or slices where local rendered proof is the point.
+- Use Playwright for 1-2 package-level UI smokes that prove rendered route behavior, responsive safety or click-path handoff; for normal Fast Lane PRs this rendered proof may be left to CI `browser-tests` after the local `:pr` gate is green.
 - If a package touches several Home decision signals, move toward a data-driven signal registry/priority table instead of adding more one-off branches.
 - PR bodies should name the track, package outcome, local checks, CI state and whether deploy is required.
 
 ## Automerge Rule
 
-- When local checks are green and CI has no special review risk, prefer GitHub auto-merge instead of blocking the session on active waiting.
+- When manifest-selected local `:pr` checks are green and CI has no special review risk, prefer GitHub auto-merge instead of blocking the session on active waiting.
 - Inspect and fix failed checks.
 - Runtime changes still deploy only after the PR is merged to `main`.
 - Docs-only and planning-only PRs normally do not require server deploy.
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, and Track 1 has the fourth-pass `Tageskonflikt` signal.
 
-No new product package is selected after the current Track-2 learning-calibration package. Use the shipped delivery manifest before opening any new PR, then derive the next product package only from an explicit user ask, a regression, or fresh route/product evidence.
+Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Tagesentscheidung`: reopen only for regressions or a new explicit Home package.
-2. `Trainingsanpassung`: reopen only for regressions or a new explicit Plan package.
-3. `Lernschleifen`: reopen only for regressions or a new explicit Data package.
+1. `Tagesentscheidung`: **Home macht Tageskonflikt-Abschluss lernbar.**
+2. `Trainingsanpassung`: **Plan uebernimmt wiederholte Tageskonflikte in die Wochenentscheidung.**
+3. `Lernschleifen`: **Data erklaert Tradeoff-Muster als Handlung, Planentscheidung oder Watch-Kontext.**
 
 ## Track 1: Tagesentscheidung
 
-Status: **fourth-pass package**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context. The fourth pass makes Home name the single body/goal/everyday tradeoff before the safest action.
+Status: **next ready package plus shipped fourth-pass package**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context. The fourth pass makes Home name the single body/goal/everyday tradeoff before the safest action.
 
-Package: **Home erklaert Koerper, Ziel und Alltag als einen Tageskonflikt.**
+Next package: **Home macht Tageskonflikt-Abschluss lernbar.**
+
+Outcome: after a body/goal/everyday tradeoff day is completed, Home should say what Pulse learned from the chosen or changed option, route to the existing smallest closure surface, and update the next safest option/result preview without a new form or hidden Plan/Garmin write.
+
+Why it matters: the new `Tageskonflikt` signal is only fast in practice if the next day can close the loop. This turns a hard daily tradeoff into reusable learning evidence instead of another one-off explanation.
+
+Package PRs:
+
+- Add Daily Decision golden scenarios for completed tradeoff outcome, changed option and missed closure.
+- Reuse the signal registry/result-preview path so tradeoff learning does not become a separate Home branch.
+- Route closure to existing Activity/Data/Plan surfaces with explicit no-hidden-write copy.
+- Use the Fast Lane `verify:tagesentscheidung:pr` gate plus one CI/Home smoke unless local rendered behavior is changed.
+
+Shipped package: **Home erklaert Koerper, Ziel und Alltag als einen Tageskonflikt.**
 
 Outcome: when the planned workout, body state, goal pressure and everyday option disagree, Home should lead with one `Tageskonflikt` signal, route to the lighter explicit Plan option and keep Plan/Garmin unchanged until the conscious click.
 
@@ -101,7 +115,20 @@ Done evidence:
 
 ## Track 2: Trainingsanpassung
 
-Status: **shipped third-pass package**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, and uses gated learning calibration as explicit weekly decision evidence.
+Status: **next ready package plus shipped third-pass package**. The shared weekly decision contract now appears in Plan Review and Change Inbox, exposes preview-only `Beibehalten`, `Anpassen` and `Spaeter` controls, ties goal/recovery/Garmin debt into one decision language, receives Home/Data Plan-/Load handoffs at `#plan-weekly-decision`, can store a local decision receipt without Plan/Garmin writes, and uses gated learning calibration as explicit weekly decision evidence.
+
+Next package: **Plan uebernimmt wiederholte Tageskonflikte in die Wochenentscheidung.**
+
+Outcome: when several daily tradeoffs point in the same direction, Plan should surface them as explicit weekly decision evidence, show whether `Beibehalten`, `Anpassen` or `Spaeter` is safest, and keep the receipt preview-only until the existing apply/sync actions are used.
+
+Why it matters: the weekly loop should not ignore the daily Performance-OS learning. Repeated body/goal/everyday conflicts are the exact signal that the plan may need a conscious weekly adjustment.
+
+Package PRs:
+
+- Add Plan weekly decision contract scenarios for repeated tradeoff evidence versus isolated one-day conflict.
+- Surface tradeoff evidence in Plan Review and Change Inbox without mutating Plan or Garmin.
+- Attach the evidence to local weekly receipts so Home/Data handoffs reopen the same decision.
+- Use the Fast Lane `verify:trainingsanpassung:pr` gate plus one CI/Plan smoke unless local rendered behavior is changed.
 
 Shipped package: **Plan nutzt kalibrierte Lernsignale explizit.**
 
@@ -150,7 +177,20 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **shipped second-pass baseline**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates.
+Status: **next ready package plus shipped second-pass baseline**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates.
+
+Next package: **Data erklaert Tradeoff-Muster als Handlung, Planentscheidung oder Watch-Kontext.**
+
+Outcome: Data should classify body/goal/everyday tradeoff evidence as a `today_action`, `plan_decision` or `watch_context`, explain what is still missing, and route only strong repeated evidence toward Home or the weekly Plan decision.
+
+Why it matters: this keeps the MacroFactor/Intervals-style learning layer honest. One hard day is context; repeated tradeoff outcomes can change the next recommendation or the weekly plan.
+
+Package PRs:
+
+- Add fast Data action-contract scenarios for isolated versus repeated tradeoff evidence.
+- Keep weak or incomplete tradeoff evidence visible as watch context.
+- Route strong repeated tradeoffs to the smallest existing Home/Plan decision target.
+- Use the Fast Lane `verify:lernschleifen:pr` gate plus one CI/Data smoke unless local rendered behavior is changed.
 
 Package: **Data kalibriert Decision Quality und Fueling-Trends nach Evidenzgates.**
 
@@ -192,9 +232,11 @@ These improvements are mandatory support for the three tracks, not a fourth prod
 - Shipped support package: **Delivery manifest + gate mapping.** `npm run delivery:manifest` prints a compact PR/package manifest and changed-files-to-track-gate map so Codex can choose local checks, expected CI jobs, auto-merge eligibility and deploy requirement without rediscovering scope each session.
 - Delivery-speed support now uses `Fast Lane` versus `Full Lane`: one-track frontend/docs/support changes without backend, shared-contract, dependency, migration, workflow, deploy or LLM risk can auto-merge after listed local checks and green CI; Full Lane PRs keep explicit CI/review attention.
 - Start known packages with `npm run delivery:intake -- --track <track> --outcome "..."` so the package outcome, fast development gate, PR gate and evidence rules are fixed before broad exploration.
-- Use the contract-only gates while implementing: `npm run verify:tagesentscheidung:fast`, `npm run verify:trainingsanpassung:fast` and `npm run verify:lernschleifen:fast`; run the full `verify:<track>` gate before PR.
+- Use the contract-only gates while implementing: `npm run verify:tagesentscheidung:fast`, `npm run verify:trainingsanpassung:fast` and `npm run verify:lernschleifen:fast`; run the manifest-selected `verify:<track>:pr` gate before Fast Lane PRs and the full `verify:<track>` gate for Full Lane or high-risk local UI proof.
+- Covered track contract-test files do not add the full `npm run test:scripts` suite to Fast Lane manifests; uncovered script/tooling changes still do.
+- Script-only support changes run through the CI `build` job and script guards, not the heavier backend service test job.
 - Keep `docs/ai/current-focus.md` below roughly 80 short lines and link detailed status to this file, the canonical roadmap and decisions.
-- Use the track-specific gates instead of re-deriving local checks per PR: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` and `npm run verify:lernschleifen`.
+- Use the track-specific gates instead of re-deriving local checks per PR: `npm run verify:tagesentscheidung:pr`, `npm run verify:trainingsanpassung:pr` and `npm run verify:lernschleifen:pr` for Fast Lane; full track gates for Full Lane.
 - Extract Daily Decision contract fixtures from Playwright into fast unit/golden tests.
 - Introduce data-driven signal registry/priority tables when package work touches multiple signal contracts.
 - Prefer package PRs with 3-5 related changes over repeated one-signal PRs when the evidence surface is shared.

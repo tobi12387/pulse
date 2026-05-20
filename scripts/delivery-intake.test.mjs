@@ -15,7 +15,8 @@ test('delivery intake renders a track package starting point with fast and relea
   assert.equal(intake.trackLabel, 'Trainingsanpassung');
   assert.equal(intake.packageOutcome, 'Plan makes weekly decisions easier to confirm on mobile.');
   assert.equal(intake.developmentGate, 'npm run verify:trainingsanpassung:fast');
-  assert.equal(intake.prGate, 'npm run verify:trainingsanpassung');
+  assert.equal(intake.prGate, 'npm run verify:trainingsanpassung:pr');
+  assert.equal(intake.releaseGate, 'npm run verify:trainingsanpassung');
   assert.equal(intake.deliveryManifest, 'npm run delivery:manifest');
   assert.ok(intake.packageShape.some(item => /3-5/.test(item)));
   assert.ok(intake.evidence.some(item => /route evidence/i.test(item)));
@@ -24,6 +25,7 @@ test('delivery intake renders a track package starting point with fast and relea
   assert.match(markdown, /# Delivery Intake/);
   assert.match(markdown, /Trainingsanpassung \(trainingsanpassung\)/);
   assert.match(markdown, /npm run verify:trainingsanpassung:fast/);
+  assert.match(markdown, /npm run verify:trainingsanpassung:pr/);
   assert.match(markdown, /npm run verify:trainingsanpassung/);
   assert.match(markdown, /Package outcome/);
 });

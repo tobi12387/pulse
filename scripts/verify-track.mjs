@@ -21,7 +21,7 @@ export const TRACKS = {
       },
       {
         label: 'Frontend build',
-        stage: 'release',
+        stage: 'pr',
         command: 'npm',
         args: ['run', 'build', '-w', 'frontend'],
       },
@@ -59,7 +59,7 @@ export const TRACKS = {
       },
       {
         label: 'Frontend build',
-        stage: 'release',
+        stage: 'pr',
         command: 'npm',
         args: ['run', 'build', '-w', 'frontend'],
       },
@@ -94,7 +94,7 @@ export const TRACKS = {
       },
       {
         label: 'Frontend build',
-        stage: 'release',
+        stage: 'pr',
         command: 'npm',
         args: ['run', 'build', '-w', 'frontend'],
       },
@@ -170,21 +170,24 @@ export async function runTrack(trackName, options = {}) {
 
   const steps = options.fast
     ? config.steps.filter(step => step.stage === 'fast')
+    : options.pr
+      ? config.steps.filter(step => step.stage === 'fast' || step.stage === 'pr')
     : options.noE2e
       ? config.steps.filter(step => !/smoke/i.test(step.label))
       : config.steps;
-  console.log(`==> verify:${normalized}${options.fast ? ':fast' : ''}`);
-  console.log(`==> ${options.fast ? 'Contract-only development gate.' : config.description}`);
+  const suffix = options.fast ? ':fast' : options.pr ? ':pr' : '';
+  console.log(`==> verify:${normalized}${suffix}`);
+  console.log(`==> ${options.fast ? 'Contract-only development gate.' : options.pr ? 'Fast Lane PR gate: contracts plus frontend build; rendered smokes run in CI.' : config.description}`);
   for (const step of steps) {
     console.log(`\n==> ${step.label}`);
     console.log(`$ ${printableCommand(step)}`);
     await spawnStep(step);
   }
-  console.log(`\n==> verify:${normalized}${options.fast ? ':fast' : ''} done`);
+  console.log(`\n==> verify:${normalized}${suffix} done`);
 }
 
 function printUsage() {
-  console.log('Usage: node scripts/verify-track.mjs <tagesentscheidung|trainingsanpassung|lernschleifen> [--fast|--no-e2e]');
+  console.log('Usage: node scripts/verify-track.mjs <tagesentscheidung|trainingsanpassung|lernschleifen> [--fast|--pr|--no-e2e]');
   console.log('Aliases: home, today, daily, plan, training, data, learning');
 }
 
@@ -206,7 +209,7 @@ async function main(argv) {
     process.exitCode = 1;
     return;
   }
-  await runTrack(trackName, { fast: args.includes('--fast'), noE2e: args.includes('--no-e2e') });
+  await runTrack(trackName, { fast: args.includes('--fast'), pr: args.includes('--pr'), noE2e: args.includes('--no-e2e') });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

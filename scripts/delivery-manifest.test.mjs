@@ -13,7 +13,8 @@ test('delivery manifest maps Home decision changes to the Tagesentscheidung gate
   assert.equal(manifest.scope, 'product_package');
   assert.equal(manifest.track, 'tagesentscheidung');
   assert.equal(manifest.trackLabel, 'Tagesentscheidung');
-  assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung'));
+  assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung:pr'));
+  assert.equal(manifest.localChecks.includes('npm run verify:tagesentscheidung'), false);
   assert.equal(manifest.deployRequired, true);
   assert.equal(manifest.autoMergeEligible, true);
   assert.equal(manifest.deliveryLane, 'fast_lane');
@@ -27,8 +28,32 @@ test('delivery manifest maps Plan contract changes to the Trainingsanpassung gat
 
   assert.equal(manifest.scope, 'product_package');
   assert.equal(manifest.track, 'trainingsanpassung');
-  assert.ok(manifest.localChecks.includes('npm run verify:trainingsanpassung'));
+  assert.ok(manifest.localChecks.includes('npm run verify:trainingsanpassung:pr'));
+  assert.equal(manifest.localChecks.includes('npm run test:scripts'), false);
   assert.ok(manifest.ciJobs.includes('browser-tests'));
+});
+
+test('delivery manifest avoids full script suite when Fast Lane track gates cover changed script tests', () => {
+  const manifest = buildDeliveryManifest([
+    'frontend/src/pages/Home.tsx',
+    'scripts/daily-decision-golden.test.ts',
+    'scripts/daily-decision-signal-registry.test.ts',
+  ]);
+
+  assert.equal(manifest.deliveryLane, 'fast_lane');
+  assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung:pr'));
+  assert.equal(manifest.localChecks.includes('npm run test:scripts'), false);
+});
+
+test('delivery manifest keeps full script suite for uncovered script changes', () => {
+  const manifest = buildDeliveryManifest([
+    'frontend/src/pages/Home.tsx',
+    'scripts/new-home-support.test.ts',
+  ]);
+
+  assert.equal(manifest.deliveryLane, 'fast_lane');
+  assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung:pr'));
+  assert.ok(manifest.localChecks.includes('npm run test:scripts'));
 });
 
 test('delivery manifest maps Data learning changes to the Lernschleifen gate', () => {
@@ -40,7 +65,7 @@ test('delivery manifest maps Data learning changes to the Lernschleifen gate', (
 
   assert.equal(manifest.scope, 'product_package');
   assert.equal(manifest.track, 'lernschleifen');
-  assert.ok(manifest.localChecks.includes('npm run verify:lernschleifen'));
+  assert.ok(manifest.localChecks.includes('npm run verify:lernschleifen:pr'));
 });
 
 test('delivery manifest keeps docs-only changes out of deploy and product gates', () => {
@@ -88,6 +113,19 @@ test('delivery manifest treats package script support as CI attention without ru
   assert.ok(manifest.autoMergeNotes.some(note => /package manifest/i.test(note)));
 });
 
+test('delivery manifest does not expect backend service tests for script-only support changes', () => {
+  const manifest = buildDeliveryManifest([
+    'scripts/delivery-manifest.mjs',
+    'scripts/delivery-manifest.test.mjs',
+  ]);
+
+  assert.equal(manifest.scope, 'build_speed_support');
+  assert.ok(manifest.localChecks.includes('npm run test:scripts'));
+  assert.ok(manifest.ciJobs.includes('build'));
+  assert.equal(manifest.ciJobs.includes('backend-tests'), false);
+  assert.equal(manifest.ciJobs.includes('browser-tests'), false);
+});
+
 test('delivery manifest holds mixed product tracks for explicit review', () => {
   const manifest = buildDeliveryManifest([
     'frontend/src/pages/Home.tsx',
@@ -100,6 +138,21 @@ test('delivery manifest holds mixed product tracks for explicit review', () => {
   assert.equal(manifest.deliveryLane, 'full_lane');
   assert.ok(manifest.localChecks.includes('npm run verify:tagesentscheidung'));
   assert.ok(manifest.localChecks.includes('npm run verify:trainingsanpassung'));
+});
+
+test('delivery manifest keeps full track gates when a product PR has attention risk', () => {
+  const manifest = buildDeliveryManifest([
+    'frontend/src/pages/Plan.tsx',
+    'package.json',
+  ]);
+
+  assert.equal(manifest.scope, 'product_package');
+  assert.equal(manifest.track, 'trainingsanpassung');
+  assert.equal(manifest.deliveryLane, 'full_lane');
+  assert.equal(manifest.autoMergeEligible, false);
+  assert.ok(manifest.localChecks.includes('npm run verify:trainingsanpassung'));
+  assert.equal(manifest.localChecks.includes('npm run verify:trainingsanpassung:pr'), false);
+  assert.ok(manifest.localChecks.includes('npm run test:scripts'));
 });
 
 test('delivery manifest sends backend runtime changes through the full lane', () => {
@@ -120,7 +173,7 @@ test('delivery manifest renders PR-ready markdown fields', () => {
   assert.match(markdown, /# Delivery Manifest/);
   assert.match(markdown, /Track: Trainingsanpassung/);
   assert.match(markdown, /Delivery lane: Fast Lane/);
-  assert.match(markdown, /npm run verify:trainingsanpassung/);
+  assert.match(markdown, /npm run verify:trainingsanpassung:pr/);
   assert.match(markdown, /Auto-merge/);
   assert.match(markdown, /Deploy/);
 });

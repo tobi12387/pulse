@@ -42,7 +42,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - Prefer weekly package-shaped PRs with 3-5 related changes over repeated one-signal micro-slices when the evidence and verification surface is shared.
 - Daily Decision contract logic should get fast unit/golden coverage for signal priority, CTA, safest option and goal impact before Playwright smokes.
 - Home signal contracts should become more data-driven over time; avoid adding more bespoke branches when a local signal registry/priority table is the simpler durable path.
-- When local checks are green and CI has no special review risk, prefer GitHub auto-merge; deploy runtime changes only after merge to `main`.
+- When Fast Lane `:pr` checks are green and CI has no special review risk, prefer GitHub auto-merge; deploy runtime changes only after merge to `main`. Full Lane and high-risk rendered UI changes still need the full matching gate or an explicit skip reason.
 
 ## Current Product Gates
 
