@@ -1,6 +1,6 @@
 import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDailyDeltaItem, PulseFuelingOutcomeBaseline, PulseGoalProjectionResponse, PulseHomeScreenData, PulseNextBestAction, PulsePersonalResponseResponse, PulsePersonalResponseSignal, PulseTodayOptionsResponse, PulseTrainingAnalyticsResponse } from '@coaching-os/shared/pulse';
 import { activityLabel } from './activity-labels';
-import { buildLearningCalibration, decisionQualityCanCalibrate } from './learning-calibration';
+import { buildLearningCalibration, decisionQualityCanCalibrate, strongestPersonalResponseSignal } from './learning-calibration';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
 export type DailyDecisionSignalTone = 'green' | 'amber' | 'rose' | 'accent' | 'muted';
@@ -344,8 +344,21 @@ function decisionQualityAlternative(signal: DailyDecisionSignal | null): string 
 
 function learningCalibrationAlternative(signal: DailyDecisionSignal | null): string | null {
   if (!signal || signal.tone === 'green' || signal.tone === 'muted') return null;
-  const detail = sentenceWithoutTrailingPeriod(signal.detail);
-  return `Lernkalibrierung zuerst prüfen: ${detail}. Heute die Empfehlung nur auf belastbare Lernevidenz stützen; Plan und Garmin bleiben unverändert, bis du die Evidenz öffnest.`;
+  const detail = learningCalibrationSafetyRule(signal.detail);
+  return `Lernkalibrierung zuerst prüfen: ${detail}. Plan und Garmin bleiben unverändert, bis du die Evidenz öffnest.`;
+}
+
+function learningCalibrationSafetyRule(detail: string): string {
+  if (detail.includes('Entscheidungsmuster bestätigt')) {
+    return 'bestätigte Entscheidungsmuster beibehalten; schwächere Muster nur beobachten';
+  }
+  if (detail.includes('Entscheidungsmuster ändern')) {
+    return 'kleinere Option zuerst festlegen; Intensität erst nach Warm-up freigeben';
+  }
+  if (detail.includes('Reaktionsmuster kalibrieren')) {
+    return 'heutige Boundary zuerst setzen; Reaktionsmuster nur als Evidenz prüfen';
+  }
+  return sentenceWithoutTrailingPeriod(detail);
 }
 
 function recoveryPressureAlternative(recovery: HomeRecovery): string | null {
@@ -810,9 +823,7 @@ function learningCalibrationSignal(
 ): DailyDecisionSignal | null {
   const calibration = buildLearningCalibration(decisionQuality, personalResponse, fuelingOutcomeBaseline);
   if (calibration.effect === 'watch_context' && calibration.evidence.length === 0) return null;
-  const detail = calibration.title.startsWith('Empfehlung darf')
-    ? calibration.summary
-    : `${calibration.title}: ${calibration.summary}`;
+  const detail = learningCalibrationHomeDetail(calibration, decisionQuality, personalResponse);
 
   return {
     label: 'Lernkalibrierung',
@@ -824,6 +835,36 @@ function learningCalibrationSignal(
     actionLabel: calibration.actionLabel,
     resultPreview: calibration.resultPreview,
   };
+}
+
+function learningCalibrationHomeDetail(
+  calibration: ReturnType<typeof buildLearningCalibration>,
+  decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
+  personalResponse: PulsePersonalResponseResponse | null | undefined,
+): string {
+  if (calibration.effect !== 'today_action') {
+    return calibration.title.startsWith('Noch')
+      ? calibration.summary
+      : `${calibration.title}: ${calibration.summary}`;
+  }
+
+  const watchSuffix = calibration.title.includes('teilweise') ? ' Schwächere Muster bleiben Watch-Kontext.' : '';
+
+  if (decisionQualityCanCalibrate(decisionQuality)) {
+    const adjustment = sentenceWithoutTrailingPeriod(decisionQuality!.suggestedAdjustment);
+    const prefix = decisionQuality!.status === 'helpful'
+      ? 'Entscheidungsmuster bestätigt'
+      : 'Entscheidungsmuster ändern';
+    return `${prefix}: ${adjustment}.${watchSuffix}`;
+  }
+
+  const responseSignal = strongestPersonalResponseSignal(personalResponse);
+  if (responseSignal?.strength === 'useful') {
+    const adjustment = sentenceWithoutTrailingPeriod(responseSignal.nextAdjustment);
+    return `Reaktionsmuster kalibrieren: ${adjustment}.${watchSuffix}`;
+  }
+
+  return calibration.summary;
 }
 
 function adaptationSignalTarget(event: PulseAdaptationEvent): string {
