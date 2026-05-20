@@ -150,6 +150,16 @@ type TradeoffDecisionContext = {
   adaptTargetPath: string;
 };
 
+type GoalDecisionContext = {
+  goal: PulseGoalProjection;
+  hasDecision: boolean;
+  title: string;
+  body: string;
+  evidence: string[];
+  adaptTargetLabel: string;
+  adaptTargetPath: string;
+};
+
 function unique(items: string[]): string[] {
   return items.filter((item, index) => items.indexOf(item) === index);
 }
@@ -476,14 +486,75 @@ function reviewRecommendation(review: PulseWeeklyReview | null): string | null {
 }
 
 function topGoalProjection(response: PulseGoalProjectionResponse | null): PulseGoalProjection | null {
-  return response?.projections.find(projection => projection.status === 'at_risk')
+  return response?.projections.find(goalHasActionableLimiter)
     ?? response?.projections.find(projection => projection.status === 'watch')
     ?? response?.projections[0]
     ?? null;
 }
 
+function goalProbabilityLabel(projection: PulseGoalProjection): string {
+  return projection.probabilityPct != null ? `${projection.probabilityPct}%` : 'Zielwahrscheinlichkeit offen';
+}
+
+function goalHasActionableLimiter(projection: PulseGoalProjection): boolean {
+  return projection.status === 'at_risk' || projection.limiterRisk.status === 'blocked';
+}
+
+function goalDecisionContext(response: PulseGoalProjectionResponse | null): GoalDecisionContext | null {
+  const goal = topGoalProjection(response);
+  if (!goal) return null;
+
+  const probability = goalProbabilityLabel(goal);
+  const limiter = goal.limiterRisk;
+  const evidence = unique([
+    goalHasActionableLimiter(goal)
+      ? `Ziel-Limiter kritisch: ${goal.title} ${probability}`
+      : goal.status === 'watch'
+        ? `Ziel-Limiter beobachten: ${goal.title} ${probability}`
+        : `Ziel-Fortschritt stabil: ${goal.title} ${probability}`,
+    limiter.label ? `${limiter.label}: ${limiter.summary}` : limiter.summary,
+    ...goal.evidence,
+    ...limiter.evidence,
+    ...goal.nextBestIntervention.evidence,
+  ].filter((item): item is string => item != null && item.length > 0));
+
+  if (goalHasActionableLimiter(goal)) {
+    return {
+      goal,
+      hasDecision: true,
+      title: 'Ziel-Limiter braucht Wochenentscheidung',
+      body: `Ziel-Limiter: ${goal.title} ${probability}. ${limiter.label}: ${limiter.summary}. ${goal.nextBestIntervention.title}: ${goal.nextBestIntervention.summary}. Plan und Garmin bleiben unveraendert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
+      evidence,
+      adaptTargetLabel: 'Szenario-Vorschau',
+      adaptTargetPath: '#plan-scenario-preview',
+    };
+  }
+
+  if (goal.status === 'watch') {
+    return {
+      goal,
+      hasDecision: false,
+      title: 'Ziel-Limiter beobachten, Beibehalten stuetzen',
+      body: `Ziel-Limiter beobachten: ${goal.title} ${probability}. ${limiter.label}: ${limiter.summary}. ${goal.summary} Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn der Ziel-Limiter kritisch wird.`,
+      evidence,
+      adaptTargetLabel: 'Szenario-Vorschau',
+      adaptTargetPath: '#plan-scenario-preview',
+    };
+  }
+
+  return {
+    goal,
+    hasDecision: false,
+    title: 'Ziel-Fortschritt stuetzt Beibehalten',
+    body: `Ziel-Fortschritt stabil: ${goal.title} ${probability}. ${goal.summary} Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn der Ziel-Limiter kritisch wird.`,
+    evidence,
+    adaptTargetLabel: 'Szenario-Vorschau',
+    adaptTargetPath: '#plan-scenario-preview',
+  };
+}
+
 function goalRiskLine(projection: PulseGoalProjection | null): string | null {
-  if (!projection || (projection.status !== 'watch' && projection.status !== 'at_risk')) return null;
+  if (!projection || !goalHasActionableLimiter(projection)) return null;
   const probability = projection.probabilityPct != null ? ` (${projection.probabilityPct}% Zielwahrscheinlichkeit)` : '';
   return `${projection.title}${probability}: ${projection.nextBestIntervention.summary}`;
 }
@@ -500,7 +571,11 @@ function explicitRecoveryEventLine(events: PulseAdaptationEvent[]): string | nul
   return event?.summary ?? null;
 }
 
-function changedBody(input: PlanWeeklyDecisionContractInput, tradeoffContext: TradeoffDecisionContext | null): string {
+function changedBody(
+  input: PlanWeeklyDecisionContractInput,
+  tradeoffContext: TradeoffDecisionContext | null,
+  goalContext: GoalDecisionContext | null,
+): string {
   if (hasRefreshSignal(input.refreshPreview)) return input.refreshPreview.summary;
   const inbox = buildPlanChangeInbox({
     today: input.today,
@@ -522,6 +597,9 @@ function changedBody(input: PlanWeeklyDecisionContractInput, tradeoffContext: Tr
     }
     return `Wiederholte Tageskonflikte verlangen eine bewusste Wochenentscheidung: ${tradeoffContext.suggestedAdjustment}.`;
   }
+  if (!first && goalContext?.hasDecision) {
+    return `Ziel-Limiter ${goalContext.goal.title} oeffnet die Wochenentscheidung: ${goalContext.goal.nextBestIntervention.title} - ${goalContext.goal.nextBestIntervention.summary}.`;
+  }
   return first?.summary
     ?? reviewRecommendation(input.review)
     ?? 'Keine offene Planaenderung; Woche, Garmin-Handoff und Adaptionssignale wirken aktuell geschlossen.';
@@ -536,25 +614,26 @@ function riskBody(input: PlanWeeklyDecisionContractInput): { body: string; evide
   });
   const garminDebt = inbox.items.find(item => item.id === 'garmin-sync-debt') ?? null;
   const goal = topGoalProjection(input.goalProjection);
+  const actionableGoal = goal && goalHasActionableLimiter(goal) ? goal : null;
   const lines = [
     recoveryRiskLine(input.currentLoad),
     explicitRecoveryEventLine(input.adaptationEvents),
-    goalRiskLine(goal),
+    goalRiskLine(actionableGoal),
     garminDebt ? `Garmin: ${garminDebt.summary}` : null,
   ].filter((item): item is string => item != null);
 
   const hasAttention = (input.currentLoad?.tsb ?? 0) <= -20
-    || goal?.status === 'at_risk'
+    || Boolean(actionableGoal)
     || input.adaptationEvents.some(event => event.severity === 'action');
   const hasWatch = lines.length > 0;
 
   return {
     body: lines.length > 0
       ? lines.join(' ')
-      : 'Risiko aktuell ruhig: keine starke Recovery-, Ziel- oder Garmin-Gegenanzeige.',
+      : 'Risiko aktuell ruhig: keine starke Recovery- oder Garmin-Gegenanzeige.',
     evidence: [
       input.currentLoad ? `CTL ${Math.round(input.currentLoad.ctl)} / ATL ${Math.round(input.currentLoad.atl)} / TSB ${Math.round(input.currentLoad.tsb)}` : null,
-      goal ? `Ziel: ${goal.title}` : null,
+      actionableGoal ? `Ziel: ${actionableGoal.title}` : null,
       garminDebt ? garminDebt.evidence.join(' · ') : null,
     ].filter((item): item is string => item != null && item.length > 0),
     hasAttention,
@@ -566,9 +645,11 @@ function buildOptions(
   input: PlanWeeklyDecisionContractInput,
   hasOpenChange: boolean,
   tradeoffContext: TradeoffDecisionContext | null,
+  goalContext: GoalDecisionContext | null,
 ): PlanWeeklyDecisionOption[] {
   const preview = hasRefreshSignal(input.refreshPreview) ? input.refreshPreview : null;
   const hasTradeoffDecision = Boolean(tradeoffContext?.hasDecision);
+  const hasGoalDecision = Boolean(goalContext?.hasDecision);
   const impact = preview
     ? `Vorschau: TSS ${sign(preview.loadImpact.tssDelta)}, Dauer ${sign(preview.loadImpact.durationDeltaMin)} min; ${preview.garminImpact.summary}`
     : hasTradeoffDecision
@@ -577,6 +658,8 @@ function buildOptions(
         : tradeoffContext!.hasFreshEvidence
         ? `Vorschau: ${tradeoffContext!.freshSourceLabel ? `Frische Wochen-Evidenz aus ${tradeoffContext!.freshSourceLabel}` : 'Frische Wochen-Evidenz'} in der ${tradeoffContext!.adaptTargetLabel} pruefen; ${tradeoffContext!.suggestedAdjustment}.`
         : `Vorschau: wiederholte Tageskonflikte in eine Wochenentscheidung uebersetzen; ${tradeoffContext!.suggestedAdjustment}.`
+      : hasGoalDecision
+        ? `Vorschau: Ziel-Limiter ${goalContext!.goal.title} in der ${goalContext!.adaptTargetLabel} pruefen; ${goalContext!.goal.nextBestIntervention.title}: ${goalContext!.goal.nextBestIntervention.summary}.`
     : 'Vorschau: Woche bleibt strukturell unveraendert, bis ein Szenario geoeffnet wird.';
   return [
     {
@@ -588,6 +671,8 @@ function buildOptions(
           ? tradeoffContext?.sourceTrendLabel
             ? 'Aktuelle Planlast bleibt trotz Reopen-Quellentrend bestehen; offene Vorschlaege werden nicht angewendet.'
             : 'Aktuelle Planlast bleibt trotz wiederholter Tageskonflikte bestehen; offene Vorschlaege werden nicht angewendet.'
+          : hasGoalDecision
+            ? 'Aktuelle Planlast bleibt trotz Ziel-Limiter bestehen; offene Vorschlaege werden nicht angewendet.'
           : 'Aktuelle Planlast bleibt bestehen; offene Vorschlaege werden nicht angewendet.'
         : 'Woche bleibt wie geplant; keine neue Aenderung noetig.',
       resultPreview: 'Du bestaetigst die Richtung nur in dieser Ansicht; keine Plan- oder Garmin-Aenderung passiert hier.',
@@ -601,7 +686,7 @@ function buildOptions(
       weekImpact: impact,
       resultPreview: 'Pulse oeffnet die Vorschau; erst ein explizites Anwenden schreibt in Plan oder Garmin.',
       readOnly: true,
-      targetPath: preview ? '#plan-refresh-preview-card' : tradeoffContext?.adaptTargetPath ?? '#plan-scenario-preview',
+      targetPath: preview ? '#plan-refresh-preview-card' : tradeoffContext?.adaptTargetPath ?? goalContext?.adaptTargetPath ?? '#plan-scenario-preview',
     },
     {
       kind: 'defer_decision',
@@ -610,6 +695,8 @@ function buildOptions(
       weekImpact: hasOpenChange
         ? hasTradeoffDecision
           ? 'Die Woche bleibt vorerst wie geplant; Tradeoff-Evidenz bleibt Watch-Kontext bis zur bewussten Wochenvorschau.'
+          : hasGoalDecision
+            ? 'Die Woche bleibt vorerst wie geplant; Ziel-Limiter bleibt Watch-Kontext bis zur bewussten Wochenvorschau.'
           : 'Die Woche bleibt vorerst wie geplant; das offene Signal bleibt Watch-Kontext.'
         : 'Keine Wochenlast-Aenderung; Pulse beobachtet weiter.',
       resultPreview: 'Du verschiebst nur die Entscheidung in dieser Ansicht; keine Plan- oder Garmin-Aenderung passiert hier.',
@@ -632,6 +719,9 @@ export function planWeeklyDecisionContractSignature(contract: PlanWeeklyDecision
 
 function receiptNextConsequence(option: PlanWeeklyDecisionOption): string {
   if (option.kind === 'adapt_week') {
+    if (/ziel-limiter/i.test(option.weekImpact)) {
+      return 'Ziel-Limiter in der Vorschau pruefen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.';
+    }
     if (/tageskonflikt|tradeoff|frische wochen-evidenz|reopen|quellentrend/i.test(option.weekImpact)) {
       return 'Tradeoff-Evidenz in der Vorschau pruefen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.';
     }
@@ -677,6 +767,7 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     refreshPreview: input.refreshPreview,
   });
   const tradeoffContext = tradeoffDecisionContext(input);
+  const goalContext = goalDecisionContext(input.goalProjection);
   const learningContext = tradeoffContext && tradeoffContext.count >= 2
     ? null
     : learningCalibrationContext(input);
@@ -684,16 +775,17 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     ? tradeoffContext
     : learningContext?.hasDecision
       ? learningContext
-      : tradeoffContext ?? learningContext;
+      : tradeoffContext ?? learningContext ?? goalContext;
   const learned = learningSurface?.body
     ?? firstUsefulSignal(input.personalResponse)
     ?? reviewRecommendation(input.review)
     ?? 'Noch nicht genug verdichtete Wochen-Evidenz. Pulse sammelt weiter Ausfuehrung, Feedback und Check-ins, bevor daraus eine harte Planregel wird.';
-  const changed = changedBody(input, tradeoffContext);
+  const changed = changedBody(input, tradeoffContext, goalContext);
   const risk = riskBody(input);
   const hasPlanChange = inbox.items.length > 0 || hasRefreshSignal(input.refreshPreview);
   const hasLearningDecision = Boolean(tradeoffContext?.hasDecision || learningContext?.hasDecision);
-  const hasOpenChange = hasPlanChange || hasLearningDecision;
+  const hasGoalDecision = Boolean(goalContext?.hasDecision);
+  const hasOpenChange = hasPlanChange || hasLearningDecision || hasGoalDecision;
   const tone: PlanWeeklyDecisionTone = inbox.hasAction
     || risk.hasAttention
     || Boolean(tradeoffContext?.hasDecision)
@@ -708,6 +800,8 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
       ? tradeoffContext.sourceTrendLabel
         ? 'Reopen-Quellentrend explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
         : 'Wiederholte Tageskonflikte explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
+    : goalContext?.hasDecision
+      ? 'Ziel-Limiter explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
     : learningContext?.hasDecision
       ? 'Lernkalibrierung explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
     : 'Aktuelle Woche beibehalten und nur reagieren, wenn Check-in, Ausfuehrung oder Zielrisiko ein neues Signal liefern.';
@@ -743,7 +837,7 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     },
   ];
 
-  const options = buildOptions(input, hasOpenChange, tradeoffContext);
+  const options = buildOptions(input, hasOpenChange, tradeoffContext, goalContext);
   const primaryOption: PlanWeeklyDecisionOptionKind = hasOpenChange ? 'adapt_week' : 'accept_current';
 
   return {
@@ -776,6 +870,7 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
         : []),
       learningContext?.hasDecision ? `Lernkalibrierung: ${learningContext.calibration.title}` : null,
       learningContext?.hasWatch ? 'Lernkalibrierung Watch-Kontext' : null,
+      ...(goalContext ? goalContext.evidence.slice(0, 3) : []),
       ...risk.evidence.slice(0, 3),
     ].filter((item): item is string => item != null && item.length > 0),
   };
