@@ -206,11 +206,16 @@ export function buildDeliveryManifest(files, options = {}) {
   if (changedFiles.some(file => /^frontend\/e2e\//.test(file)) && productTracks.length === 0) checks.add('npm run test:e2e:smoke');
   if (changedFiles.some(file => /^shared\//.test(file)) && productTracks.length === 0) checks.add('npm run build');
 
+  const frontendRuntimeDeploy = changedFiles.some(file =>
+    /^frontend\/src\//.test(file)
+    || /^frontend\/public\//.test(file)
+    || /^frontend\/index\.html$/.test(file)
+    || /^frontend\/vite\.config\.ts$/.test(file));
   const deployRequired = changedFiles.some(file =>
     /^backend\//.test(file)
-    || /^frontend\/src\//.test(file)
     || /^shared\//.test(file)
-    || hasArea(file, 'dependencies'));
+    || hasArea(file, 'dependencies'))
+    || frontendRuntimeDeploy;
 
   return {
     files: changedFiles,

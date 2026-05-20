@@ -113,6 +113,18 @@ test('delivery manifest treats package script support as CI attention without ru
   assert.ok(manifest.autoMergeNotes.some(note => /package manifest/i.test(note)));
 });
 
+test('delivery manifest requires deploy for frontend public runtime assets', () => {
+  const manifest = buildDeliveryManifest([
+    'frontend/public/sw.js',
+    'frontend/e2e/pulse-smoke.spec.ts',
+  ]);
+
+  assert.equal(manifest.scope, 'runtime_support');
+  assert.equal(manifest.deployRequired, true);
+  assert.ok(manifest.localChecks.includes('npm run build -w frontend'));
+  assert.ok(manifest.localChecks.includes('npm run test:e2e:smoke'));
+});
+
 test('delivery manifest does not expect backend service tests for script-only support changes', () => {
   const manifest = buildDeliveryManifest([
     'scripts/delivery-manifest.mjs',
