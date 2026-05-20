@@ -1,5 +1,10 @@
 import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
-import { fuelingLearningActionTargetPath, fuelingTrendSummaryForDisplay } from '../pulse/fueling-learning';
+import {
+  fuelingLearningActionTargetPath,
+  fuelingTrendSummaryForDisplay,
+  isFuelingTrendReady,
+  requiredComparableFuelingLogs,
+} from '../pulse/fueling-learning';
 
 function chip(label: string, value: string | number | null | undefined): string | null {
   if (value == null || value === '') return null;
@@ -20,9 +25,21 @@ function hydrationLearningContext(baseline: PulseFuelingOutcomeBaseline): string
   return fuelingLearningContext;
 }
 
-function nextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | null {
+export function fuelingBaselineTrendEvidenceValue(baseline: PulseFuelingOutcomeBaseline): string | null {
   const readiness = baseline.learningReadiness ?? null;
-  if (!readiness || readiness.readyForTrendSummary) return null;
+  if (!readiness) return null;
+  return `${readiness.comparableCompleteLogs}/${requiredComparableFuelingLogs(baseline)}`;
+}
+
+export function fuelingBaselineReadinessGap(baseline: PulseFuelingOutcomeBaseline): string | null {
+  const readiness = baseline.learningReadiness ?? null;
+  if (!readiness || isFuelingTrendReady(baseline)) return null;
+  return readiness.missingEvidence[0] ?? null;
+}
+
+export function fuelingBaselineNextLearningLogText(baseline: PulseFuelingOutcomeBaseline): string | null {
+  const readiness = baseline.learningReadiness ?? null;
+  if (!readiness || isFuelingTrendReady(baseline)) return null;
 
   const nextAction = readiness.nextAction ?? null;
   if (nextAction && nextAction.kind !== 'log_next_long_session') {
@@ -59,13 +76,11 @@ export function FuelingOutcomeBaselineBlock({
     chip('Pulver', baseline.powderG != null ? `${Math.round(baseline.powderG)}g` : null),
     chip('Fluid', baseline.fluidMlPerHour != null ? `${baseline.fluidMlPerHour} ml/h` : null),
     chip('Sodium', baseline.sodiumMgPerHour != null ? `${baseline.sodiumMgPerHour} mg/h` : 'offen'),
-    readiness ? chip('Trend-Evidenz', `${readiness.comparableCompleteLogs}/${readiness.requiredComparableCompleteLogs}`) : null,
+    chip('Trend-Evidenz', fuelingBaselineTrendEvidenceValue(baseline)),
   ].filter((item): item is string => item != null);
-  const readinessGap = readiness?.readyForTrendSummary === false
-    ? readiness.missingEvidence[0] ?? null
-    : null;
+  const readinessGap = fuelingBaselineReadinessGap(baseline);
   const hydrationGap = hydrationGapText(baseline);
-  const nextLearningLog = nextLearningLogText(baseline);
+  const nextLearningLog = fuelingBaselineNextLearningLogText(baseline);
   const nextLearningAction = baseline.learningReadiness?.nextAction ?? null;
   const nextLearningActionTargetPath = fuelingLearningActionTargetPath(baseline);
   const trendSummary = fuelingTrendSummaryForDisplay(baseline);
