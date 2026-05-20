@@ -35,7 +35,7 @@ export const TRACKS = {
           '--',
           'frontend/e2e/pulse-smoke.spec.ts',
           '-g',
-          'daily training surfaces use localized activity labels|Home daily decision opens strong learning calibration from Data evidence|mobile Home availability intent opens a workout scenario preview|mobile Home planned workout state shows the concrete plan option without availability intents',
+          'daily training surfaces use localized activity labels|Home daily decision opens strong learning calibration from Data evidence|Home daily decision opens the body goal everyday tradeoff as one safe option|mobile Home availability intent opens a workout scenario preview|mobile Home planned workout state shows the concrete plan option without availability intents',
           ...E2E_PROJECTS,
         ],
       },

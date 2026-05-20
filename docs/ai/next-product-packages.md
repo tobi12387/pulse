@@ -39,7 +39,20 @@ No new product package is selected after the current Track-2 learning-calibratio
 
 ## Track 1: Tagesentscheidung
 
-Status: **shipped third-pass package**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context.
+Status: **fourth-pass package**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context. The fourth pass makes Home name the single body/goal/everyday tradeoff before the safest action.
+
+Package: **Home erklaert Koerper, Ziel und Alltag als einen Tageskonflikt.**
+
+Outcome: when the planned workout, body state, goal pressure and everyday option disagree, Home should lead with one `Tageskonflikt` signal, route to the lighter explicit Plan option and keep Plan/Garmin unchanged until the conscious click.
+
+Why it matters: this is the central Performance-OS promise in daily language: the intelligent action is not just what the plan wants, what the body tolerates or what the calendar allows, but the calm tradeoff between all three.
+
+Package PRs:
+
+- Add a Daily Decision golden scenario for body + at-risk goal + everyday alternative.
+- Keep the signal in the registry/priority table instead of a loose branch.
+- Route the CTA to the existing lighter day option with a no-hidden-write result preview.
+- Add one rendered Home smoke for the tradeoff and click path.
 
 Shipped package: **Home nutzt kalibrierte Data-Lernsignale.**
 
