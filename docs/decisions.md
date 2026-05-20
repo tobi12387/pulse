@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data zeigt Wochenreceipt-Quellentrends als Lernvertrauen
+
+- **Decision:** Data zeigt bereits geschlossene `Reopen-Quellentrends` jetzt als Wochenreceipt-Lernvertrauen. Die Analyse nennt den Receipt, der den Trend geschlossen hat, haelt Home/Plan ruhig und routet nur frische Wiederkehr erneut zu Heute oder zur Wochenentscheidung.
+- **Why:** Ein ruhiger Lernloop muss erklaeren, warum nichts eskaliert. Ein geschlossener Planlast-, Recovery-, Garmin-, Alltag- oder Zielrisiko-Trend ist aktive Evidenz fuer gelernte Stabilitaet, nicht nur fehlende Handlung.
+- **Alternatives:** Geschlossene Quellentrends nur als generische Kontinuitaet anzeigen (zu wenig vertrauensbildend); alte Receipt-Zeilen in frischen Reopens roh wiederholen (zu laut); den Receipt aus der Evidenz kappen (verliert die Plan/Data-Lernspur).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan haelt geschlossene Reopen-Quellentrends als Receipt ruhig
 
 - **Decision:** Plan behandelt bereits entschiedene `Reopen-Quellentrends` als ruhige Wochenreceipt-Kontinuitaet. Geschlossene Quellentrends fuehren `Beibehalten`, erscheinen als Receipt-/Evidenzspur und oeffnen `Anpassen` erst wieder, wenn frische Wochen-Evidenz denselben oder einen neuen Quellentrend aktiviert.

@@ -620,10 +620,13 @@ test('handled reopen-source trends stay quiet after the weekly decision', () => 
   assert.match(translation.primary.title, /Reopen-Quellentrend.*geschlossen|entschieden/i);
   assert.match(translation.primary.summary, /Planlast 2x.*Garmin-Ausfuehrung 2x/);
   assert.match(translation.primary.summary, /Wochenentscheidung.*bereits eingeordnet|bereits.*Wochenentscheidung/i);
+  assert.match(translation.primary.summary, /Wochenreceipt|Plan-Receipt/i);
+  assert.match(translation.primary.summary, /Lernvertrauen/i);
   assert.match(translation.primary.summary, /Kontinuitaet|ruhig/i);
   assert.doesNotMatch(translation.primary.summary, /Data buendelt frische Reopen-Gruende/);
   assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Planlast 2x'));
   assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Garmin-Ausfuehrung 2x'));
+  assert.ok(translation.primary.evidence.some(item => /Plan-Receipt/.test(item)));
   assert.doesNotMatch(translation.primary.targetPath ?? '', /data-tradeoff|source=data-tradeoff/);
   assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
 });
@@ -662,10 +665,13 @@ test('fresh recurrence reopens a handled reopen-source trend for Plan', () => {
   assert.equal(translation.primary.targetPath, '/plan?tab=training&source=data-tradeoff#plan-weekly-decision');
   assert.match(translation.primary.title, /Reopen-Quellen.*erneut|Lerntrend/);
   assert.match(translation.primary.summary, /Reopen-Quellentrend erneut aktiv: Planlast 2x/);
-  assert.match(translation.primary.summary, /Aeltere eingeordnete Evidenz bleibt Kontext/);
+  assert.match(translation.primary.summary, /Wochenreceipt bleibt Lernvertrauen: Planlast 2x/);
+  assert.match(translation.primary.summary, /frische Quellen|frische.*Wochenwirkung/i);
+  assert.doesNotMatch(translation.primary.summary, /Wochenentscheidung gemerkt/);
   assert.match(translation.primary.summary, /Wochenentscheidung erneut aus Quellentrend/);
   assert.ok(translation.primary.evidence.includes('Reopen-Trend Planlast 2x'));
   assert.ok(translation.primary.evidence.includes('Reopen-Trend entschieden Planlast 2x'));
+  assert.ok(translation.primary.evidence.some(item => /Plan-Receipt|Wochenentscheidung gemerkt/.test(item)));
 });
 
 test('tradeoff pattern classification routes useful repeated evidence to Home', () => {

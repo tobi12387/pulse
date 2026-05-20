@@ -164,7 +164,7 @@ export function classifyTradeoffPattern(
     decisionQuality.statusLabel,
     ...tradeoffTheme.evidence,
     ...decisionQuality.bestEvidence,
-  ].filter(isResolvedTradeoffEvidence), 3);
+  ].filter(isResolvedTradeoffEvidence), 5);
   const isResolved = RESOLVED_TRADEOFF_PATTERN.test(resolutionCorpus) && !hasFreshEvidence;
   const repeated = tradeoffTheme.count >= 2;
   const becomesWeeklyDecision = repeated
