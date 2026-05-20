@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus
+
+- **Decision:** Home nutzt geloeste `Tageskonflikt`-Muster nicht mehr als Tagesentscheidungs-Signal. Resolved/handled Muster erscheinen nur noch als ruhige Kontinuitaet und verlinkte Evidenz; frische Evidenz darf die heutige adaptive Option wieder als `Neue Evidenz` oeffnen.
+- **Why:** Die Tagesentscheidung soll nach gelerntem Tradeoff ruhiger werden. Ein geloestes Muster soll erklaeren, warum Pulse stabil bleibt, aber nicht erneut `Heute entscheidet`, CTA oder `Sicherste Option` fuehren, solange keine neue Tageswirkung entsteht.
+- **Alternatives:** Resolved Muster weiter als muted Signal anzeigen (immer noch sichtbares Rauschen); die Evidenz komplett aus Home entfernen (verliert Vertrauen und Anschluss an Data); nur CSS/Kopie aendern (laesst CTA-/Signalrisiko bestehen).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data haelt geloeste Tradeoff-Muster ruhig
 
 - **Decision:** Data klassifiziert `Tageskonflikt`-Muster als `active`, `resolved` oder `evidence_gap`. Bereits eingeordnete oder gehandhabte Muster bleiben `watch_context`, routen weder Home/Plan noch generische Lernkalibrierung, und nur frische Evidenz darf Home oder die Wochenentscheidung erneut oeffnen.

@@ -30,23 +30,36 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning and the sixth-pass today-only tradeoff learning, Track 2 carries repeated Tageskonflikte into the weekly decision receipt and now gates classified tradeoff patterns to true weekly decisions, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning and the seventh-pass resolved tradeoff quietness, Track 2 carries repeated Tageskonflikte into the weekly decision receipt and now gates classified tradeoff patterns to true weekly decisions, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap.
 
 Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Tagesentscheidung`: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
-2. `Trainingsanpassung`: **Plan haelt erledigte Tradeoff-Receipts ruhig, bis neue Wochenwirkung entsteht.**
-3. `Lernschleifen`: **Data erklaert Reopen-Gruende fuer geloeste Tradeoffs nur bei frischer Evidenz.**
+1. `Trainingsanpassung`: **Plan haelt erledigte Tradeoff-Receipts ruhig, bis neue Wochenwirkung entsteht.**
+2. `Lernschleifen`: **Data erklaert Reopen-Gruende fuer geloeste Tradeoffs nur bei frischer Evidenz.**
+3. `Tagesentscheidung`: **Home erklaert frische Tradeoff-Reopens ohne alte Muster zu wiederholen.**
 
 ## Track 1: Tagesentscheidung
 
-Status: **shipped sixth-pass package plus later ready card**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context. The fourth pass makes Home name the single body/goal/everyday tradeoff before the safest action. The fifth pass makes completed Tageskonflikt days learnable through existing Activity feedback. The sixth pass lets Home use repeated tradeoff learning only when it changes today's adaptive option.
+Status: **shipped seventh-pass package plus later ready card**. PRs #464-#466 delivered completed-day Daily Decision golden coverage, Home-to-Activity closure evidence, Activity Detail language alignment and the first local Daily Decision signal registry. The second pass added a `Folge` signal from Daily Delta plus result previews for Decision Quality and Personal Response, so Home can explain what changed since the last decision without creating a new form or hidden write. The third pass lets Home use the shared Data learning calibration only when gates make it a true `today_action`; weak fueling or response evidence stays visible as watch context. The fourth pass makes Home name the single body/goal/everyday tradeoff before the safest action. The fifth pass makes completed Tageskonflikt days learnable through existing Activity feedback. The sixth pass lets Home use repeated tradeoff learning only when it changes today's adaptive option. The seventh pass keeps resolved tradeoff learning out of the daily lead and shows it only as quiet continuity/evidence unless fresh evidence changes today.
 
-Later ready package: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
+Later ready package: **Home erklaert frische Tradeoff-Reopens ohne alte Muster zu wiederholen.**
 
-Outcome: after Plan/Data mark tradeoff patterns as resolved or already handled, Home should keep them as quiet continuity or evidence instead of reopening the daily lead unless fresh evidence changes today's safest action.
+Outcome: after Data/Plan can name reopen reasons, Home should lead only with the fresh reason that changes today and keep older resolved history as short continuity, not as repeated explanation.
 
-Why it matters: a private Performance OS should get calmer after it learns. Resolved tradeoffs should make Home more confident, not make the same old pattern compete with today's body, Garmin, Plan or training signal.
+Why it matters: fresh evidence should feel like a new daily decision, not like Pulse forgot an old one. Home needs the calm "what changed today" layer after Data explains the evidence.
+
+Package PRs:
+
+- Add Daily Decision golden scenarios for fresh Home-impact reopen reasons versus old resolved history.
+- Keep the leading factor focused on the new evidence source and today's adaptive option.
+- Keep old resolved evidence in continuity/evidence only, without repeating the full historical pattern.
+- Use the Fast Lane `verify:tagesentscheidung:pr` gate plus one CI/Home smoke unless local rendered behavior is changed.
+
+Shipped package: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
+
+Outcome: after Plan/Data mark tradeoff patterns as resolved or already handled, Home keeps them as quiet continuity or evidence instead of reopening the daily lead unless fresh evidence changes today's safest action.
+
+Why it matters: a private Performance OS should get calmer after it learns. Resolved tradeoffs make Home more confident, not make the same old pattern compete with today's body, Garmin, Plan or training signal.
 
 Package PRs:
 
