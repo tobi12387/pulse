@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan-Wochenentscheidung stapelt Evidence-Lanes auf Mobile
+
+- **Decision:** Der `PlanWeeklyDecisionContractPanel` stapelt seine Evidence-Lanes auf schmalen mobilen Viewports und behält die dichte Mehrspaltenansicht auf Desktop. Optionen, lokale Receipts, Preview-only-Verhalten und Plan/Garmin-No-Write-Grenzen bleiben unveraendert.
+- **Why:** Frische Route-Evidence zeigte keine technische Overflow-Regelverletzung, aber eine echte Lesbarkeitsreibung: `Gelernt` und `Geaendert` standen auf Mobile nebeneinander und zerlegten die Wochenentscheidung in sehr schmale Textspalten. Track `Trainingsanpassung` braucht eine schnell scannbare Wochenentscheidung, bevor Tobi bewusst akzeptiert, anpasst oder vertagt.
+- **Alternatives:** Zweispaltige Mobile-Lanes beibehalten (dichter, aber langsamer zu lesen); Plan-Kopie kuerzen (verliert Evidenz statt Layout zu klaeren); das gesamte Wochenentscheidungs-Panel neu strukturieren (zu grosser Eingriff fuer den belegten Friction-Punkt).
+- **Decided by:** Codex, aus frischer Route-Evidence fuer den naechsten Performance-OS-Slice.
+- **Status:** active.
+
 ## 2026-05-20 — Home fasst Lernkalibrierung als Entscheidung statt Analyse zusammen
 
 - **Decision:** Home/Daily Decision nutzt fuer fuehrende `Lernkalibrierung` eine eigene kurze Entscheidungskopie: bestaetigte Entscheidungsmuster, notwendige Strategieaenderung oder Reaktionsmuster-Kalibrierung. Die `Sicherste Option` wiederholt nicht mehr die komplette Lern-Evidenz, sondern nennt nur die Sicherheitsregel; Data und Plan behalten die ausfuehrlichere Kalibrierungs-Evidenz.
