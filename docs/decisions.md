@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data buendelt wiederkehrende Tradeoff-Reopen-Quellen
+
+- **Decision:** Data gruppiert wiederholte frische `Tageskonflikt`-Reopen-Quellen als `Reopen-Quellentrend`, zum Beispiel Recovery, Planlast, Garmin-Ausfuehrung, Alltag oder Zielrisiko. Isolierte frische Reopens behalten die bestehende Home-/Plan-Wirkung, alte handled Evidenz bleibt Kontext.
+- **Why:** Einzelne source-spezifische Reopen-Texte erklaeren den Moment, aber wiederholte Quellen sind die eigentliche Lernschleife. Data soll deshalb sichtbar machen, ob ein Reopen ein Einzelfall ist oder ob dieselbe Quelle zum Trend wird, ohne Home oder Plan in einen Trendbericht zu verwandeln.
+- **Alternatives:** Jede frische Quelle weiter einzeln erklaeren (zu wenig lernfaehig); alle Reopens sofort als Planentscheidung behandeln (zu aggressiv); die Gruppierung erst in Home oder Plan duplizieren (Classifier-Drift und mehr UI-Laerm).
+- **Decided by:** Codex, PR #500 als Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan benennt frische Tradeoff-Reopens nach Evidenzquelle
 
 - **Decision:** Plan erklaert wiedergeoeffnete `Tageskonflikt`-Receipts nach frischer Wochen-Evidenzquelle, zum Beispiel Planlast, Recovery, Garmin-Ausfuehrung oder Zielrisiko. Die alte Receipt-Evidenz bleibt Kontext, `Anpassen` bleibt read-only und fuehrt zur kleinsten bestehenden Vorschau statt direkt Plan oder Garmin zu schreiben.

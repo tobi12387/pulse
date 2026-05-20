@@ -30,13 +30,12 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness and the eighth-pass fresh Home reopen explanation, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears and names source-specific fresh Plan reopens, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet and names source-specific fresh reopen evidence.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning, the sixth-pass today-only tradeoff learning, the seventh-pass resolved tradeoff quietness and the eighth-pass fresh Home reopen explanation, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, gates classified tradeoff patterns to true weekly decisions, keeps handled receipts quiet until fresh weekly evidence appears and names source-specific fresh Plan reopens, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap, keeps resolved evidence quiet, names source-specific fresh reopen evidence and groups repeated reopen sources into learning trends.
 
-Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
+Keep the next package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Lernschleifen`: **Data buendelt wiederkehrende Reopen-Quellen zu Lerntrends.**
-2. `Tagesentscheidung`: **Home zeigt Reopen-Quellen als Tageskontext statt alte Konflikte neu zu starten.**
-3. `Trainingsanpassung`: **Plan nutzt Reopen-Quellentrends als Wochenentscheidungs-Kontext.**
+1. `Tagesentscheidung`: **Home zeigt Reopen-Quellen als Tageskontext statt alte Konflikte neu zu starten.**
+2. `Trainingsanpassung`: **Plan nutzt Reopen-Quellentrends als Wochenentscheidungs-Kontext.**
 
 ## Track 1: Tagesentscheidung
 
@@ -281,9 +280,9 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **shipped fifth-pass package plus later ready card**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears, and the fifth pass explains source-specific fresh reopen evidence while older handled evidence stays context.
+Status: **shipped sixth-pass package**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears, the fifth pass explains source-specific fresh reopen evidence while older handled evidence stays context, and the sixth pass groups repeated reopen sources into trend-level learning.
 
-Later ready package: **Data buendelt wiederkehrende Reopen-Quellen zu Lerntrends.**
+Shipped package: **Data buendelt wiederkehrende Reopen-Quellen zu Lerntrends.**
 
 Outcome: after Home and Plan consume fresh reopen reasons, Data should show whether reopen sources are isolated or becoming a trend across Recovery, Alltag, Planlast, Garmin execution or goal pressure.
 
