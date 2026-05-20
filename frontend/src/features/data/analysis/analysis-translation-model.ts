@@ -372,6 +372,10 @@ function tradeoffReceiptEvidence(pattern: TradeoffPatternClassification): string
     ?? null;
 }
 
+function tradeoffReceiptFollowupEvidence(pattern: TradeoffPatternClassification): string | null {
+  return pattern.receiptFollowupEvidence[0] ?? null;
+}
+
 function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
   if (pattern.reopenSourceTrends.length === 0) return null;
   const trendLabel = tradeoffSourceTrendLabel(pattern.reopenSourceTrends);
@@ -387,21 +391,40 @@ function tradeoffResolvedReopenSourceTrendSummary(pattern: TradeoffPatternClassi
   const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
   if (!trendLabel) return null;
   const receipt = tradeoffReceiptEvidence(pattern);
+  const followup = tradeoffReceiptFollowupEvidence(pattern);
   const receiptDetail = receipt ? `Wochenreceipt: ${receipt}. ` : '';
+  const followupDetail = followup ? `${followup}. ` : '';
+  if (receipt && followup) {
+    return `Wochenreceipt-Lernvertrauen bestaetigt: ${trendLabel}. ${receiptDetail}${followupDetail}Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+  }
   return `${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend ${trendLabel} bereits eingeordnet. Das ist Lernvertrauen: Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
 }
 
 function tradeoffResolvedReopenSourceTrendContext(pattern: TradeoffPatternClassification): string | null {
   const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
   if (!trendLabel) return null;
+  const receipt = tradeoffReceiptEvidence(pattern);
+  if (receipt) {
+    return `Wochenreceipt-Lernvertrauen braucht Review: ${trendLabel}. Frische Folgewirkung schwaecht die Sicherheit; frische Quellen oeffnen Home oder Plan nur wegen neuer Heute- oder Wochenwirkung.`;
+  }
   return `Wochenreceipt bleibt Lernvertrauen: ${trendLabel} war bereits eingeordnet; frische Quellen oeffnen Home oder Plan nur wegen neuer Heute- oder Wochenwirkung.`;
 }
 
 function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
   const receipt = tradeoffReceiptEvidence(pattern);
+  const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
+  const followup = tradeoffReceiptFollowupEvidence(pattern);
+  const receiptConfidenceEvidence = receipt && trendLabel
+    ? pattern.reopenSourceTrends.length > 0
+      ? `Wochenreceipt-Folgewirkung geschwaecht: ${trendLabel}`
+      : followup
+        ? `Wochenreceipt-Folgewirkung bestaetigt: ${followup}`
+        : null
+    : null;
   return unique([
     ...pattern.reopenSourceTrends.map(trend => `Reopen-Trend ${trend.label} ${trend.count}x`),
     ...pattern.resolvedReopenSourceTrends.map(trend => `Reopen-Trend entschieden ${trend.label} ${trend.count}x`),
+    receiptConfidenceEvidence,
     receipt ? `Wochenreceipt: ${receipt}` : null,
     ...pattern.evidence,
   ], 4);
