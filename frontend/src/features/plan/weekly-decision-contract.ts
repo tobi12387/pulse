@@ -56,6 +56,7 @@ export interface PlanWeeklyDecisionReceipt {
   mutationBoundary: string;
   targetPath: string | null;
   createdAt: string;
+  evidence?: string[];
 }
 
 export interface PlanWeeklyDecisionContractInput {
@@ -77,6 +78,23 @@ function hasRefreshSignal(preview: PulsePlanRefreshPreview | null): preview is P
 
 function sign(value: number): string {
   return value >= 0 ? `+${value}` : String(value);
+}
+
+function withoutTrailingPeriod(value: string): string {
+  return value.trim().replace(/[.]+$/u, '');
+}
+
+function uniqueStrings(items: Array<string | null | undefined>, limit: number): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of items) {
+    const clean = item?.trim();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    result.push(clean);
+    if (result.length >= limit) break;
+  }
+  return result;
 }
 
 function firstUsefulSignal(response: PulsePersonalResponseResponse | null): string | null {
@@ -125,6 +143,57 @@ function learningCalibrationContext(input: PlanWeeklyDecisionContractInput): {
   };
 }
 
+type TradeoffDecisionContext = {
+  hasDecision: boolean;
+  hasWatch: boolean;
+  title: string;
+  body: string;
+  evidence: string[];
+  suggestedAdjustment: string;
+};
+
+function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): TradeoffDecisionContext | null {
+  const decisionQuality = input.decisionQuality;
+  if (!decisionQuality) return null;
+  const tradeoffTheme = decisionQuality.repeatedThemes
+    .filter(theme => /tageskonflikt|koerper|körper|ziel|alltag|tradeoff/i.test(`${theme.theme} ${theme.evidence.join(' ')}`))
+    .sort((a, b) => b.count - a.count)[0] ?? null;
+  if (!tradeoffTheme) return null;
+
+  const themeLabel = withoutTrailingPeriod(tradeoffTheme.theme);
+  const suggestedAdjustment = withoutTrailingPeriod(decisionQuality.suggestedAdjustment);
+  const evidence = uniqueStrings([
+    `${tradeoffTheme.count}x ${themeLabel}`,
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ], 4);
+  const isRepeated = tradeoffTheme.count >= 2
+    && (tradeoffTheme.status === 'useful_repetition'
+      || tradeoffTheme.status === 'stale'
+      || decisionQuality.status === 'needs_strategy_change'
+      || decisionQuality.status === 'helpful');
+
+  if (isRepeated) {
+    return {
+      hasDecision: true,
+      hasWatch: false,
+      title: 'Tageskonflikte verändern die Woche',
+      body: `Wiederholter Tageskonflikt: ${tradeoffTheme.count}x ${themeLabel}. ${suggestedAdjustment}. Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
+      evidence,
+      suggestedAdjustment,
+    };
+  }
+
+  return {
+    hasDecision: false,
+    hasWatch: true,
+    title: 'Tageskonflikt bleibt Watch-Kontext',
+    body: `Ein einzelner Tageskonflikt ist noch keine Wochenaenderung: ${themeLabel}. ${suggestedAdjustment}. Pulse beobachtet erst Wiederholung, bevor Plan oder Garmin zur Entscheidung werden.`,
+    evidence,
+    suggestedAdjustment,
+  };
+}
+
 function reviewRecommendation(review: PulseWeeklyReview | null): string | null {
   return review?.recommendations.find(item => item.trim().length > 0)?.trim() ?? null;
 }
@@ -154,7 +223,7 @@ function explicitRecoveryEventLine(events: PulseAdaptationEvent[]): string | nul
   return event?.summary ?? null;
 }
 
-function changedBody(input: PlanWeeklyDecisionContractInput): string {
+function changedBody(input: PlanWeeklyDecisionContractInput, tradeoffContext: TradeoffDecisionContext | null): string {
   if (hasRefreshSignal(input.refreshPreview)) return input.refreshPreview.summary;
   const inbox = buildPlanChangeInbox({
     today: input.today,
@@ -163,6 +232,9 @@ function changedBody(input: PlanWeeklyDecisionContractInput): string {
     refreshPreview: input.refreshPreview,
   });
   const first = inbox.items.find(item => item.id.startsWith('adaptation-')) ?? inbox.items[0] ?? null;
+  if (!first && tradeoffContext?.hasDecision) {
+    return `Wiederholte Tageskonflikte verlangen eine bewusste Wochenentscheidung: ${tradeoffContext.suggestedAdjustment}.`;
+  }
   return first?.summary
     ?? reviewRecommendation(input.review)
     ?? 'Keine offene Planaenderung; Woche, Garmin-Handoff und Adaptionssignale wirken aktuell geschlossen.';
@@ -203,10 +275,17 @@ function riskBody(input: PlanWeeklyDecisionContractInput): { body: string; evide
   };
 }
 
-function buildOptions(input: PlanWeeklyDecisionContractInput, hasOpenChange: boolean): PlanWeeklyDecisionOption[] {
+function buildOptions(
+  input: PlanWeeklyDecisionContractInput,
+  hasOpenChange: boolean,
+  tradeoffContext: TradeoffDecisionContext | null,
+): PlanWeeklyDecisionOption[] {
   const preview = hasRefreshSignal(input.refreshPreview) ? input.refreshPreview : null;
+  const hasTradeoffDecision = Boolean(tradeoffContext?.hasDecision);
   const impact = preview
     ? `Vorschau: TSS ${sign(preview.loadImpact.tssDelta)}, Dauer ${sign(preview.loadImpact.durationDeltaMin)} min; ${preview.garminImpact.summary}`
+    : hasTradeoffDecision
+      ? `Vorschau: wiederholte Tageskonflikte in eine Wochenentscheidung uebersetzen; ${tradeoffContext!.suggestedAdjustment}.`
     : 'Vorschau: Woche bleibt strukturell unveraendert, bis ein Szenario geoeffnet wird.';
   return [
     {
@@ -214,7 +293,9 @@ function buildOptions(input: PlanWeeklyDecisionContractInput, hasOpenChange: boo
       label: 'Beibehalten',
       title: hasOpenChange ? 'Aktuelle Woche bewusst akzeptieren' : 'Aktuelle Woche weiterfahren',
       weekImpact: hasOpenChange
-        ? 'Aktuelle Planlast bleibt bestehen; offene Vorschlaege werden nicht angewendet.'
+        ? hasTradeoffDecision
+          ? 'Aktuelle Planlast bleibt trotz wiederholter Tageskonflikte bestehen; offene Vorschlaege werden nicht angewendet.'
+          : 'Aktuelle Planlast bleibt bestehen; offene Vorschlaege werden nicht angewendet.'
         : 'Woche bleibt wie geplant; keine neue Aenderung noetig.',
       resultPreview: 'Du bestaetigst die Richtung nur in dieser Ansicht; keine Plan- oder Garmin-Aenderung passiert hier.',
       readOnly: true,
@@ -234,7 +315,9 @@ function buildOptions(input: PlanWeeklyDecisionContractInput, hasOpenChange: boo
       label: 'Spaeter',
       title: 'Entscheidung bewusst vertagen',
       weekImpact: hasOpenChange
-        ? 'Die Woche bleibt vorerst wie geplant; das offene Signal bleibt Watch-Kontext.'
+        ? hasTradeoffDecision
+          ? 'Die Woche bleibt vorerst wie geplant; Tradeoff-Evidenz bleibt Watch-Kontext bis zur bewussten Wochenvorschau.'
+          : 'Die Woche bleibt vorerst wie geplant; das offene Signal bleibt Watch-Kontext.'
         : 'Keine Wochenlast-Aenderung; Pulse beobachtet weiter.',
       resultPreview: 'Du verschiebst nur die Entscheidung in dieser Ansicht; keine Plan- oder Garmin-Aenderung passiert hier.',
       readOnly: true,
@@ -256,6 +339,9 @@ export function planWeeklyDecisionContractSignature(contract: PlanWeeklyDecision
 
 function receiptNextConsequence(option: PlanWeeklyDecisionOption): string {
   if (option.kind === 'adapt_week') {
+    if (/tageskonflikt|tradeoff/i.test(option.weekImpact)) {
+      return 'Tradeoff-Evidenz in der Vorschau pruefen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.';
+    }
     return option.targetPath
       ? 'Vorschau als naechsten Schritt oeffnen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.'
       : 'Szenario-Vorschau als naechsten Schritt oeffnen; Anwenden oder Garmin-Sync passiert erst dort nach explizitem Klick.';
@@ -286,6 +372,7 @@ export function buildPlanWeeklyDecisionReceipt(
     mutationBoundary: 'Keine Plan- oder Garmin-Aenderung gespeichert; dies ist ein lokaler Entscheidungsbeleg.',
     targetPath: option.targetPath,
     createdAt,
+    evidence: contract.evidence.slice(0, 4),
   };
 }
 
@@ -296,18 +383,25 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     adaptationEvents: input.adaptationEvents,
     refreshPreview: input.refreshPreview,
   });
+  const tradeoffContext = tradeoffDecisionContext(input);
   const learningContext = learningCalibrationContext(input);
-  const learned = learningContext?.body
+  const learningSurface = tradeoffContext?.hasDecision
+    ? tradeoffContext
+    : learningContext?.hasDecision
+      ? learningContext
+      : tradeoffContext ?? learningContext;
+  const learned = learningSurface?.body
     ?? firstUsefulSignal(input.personalResponse)
     ?? reviewRecommendation(input.review)
     ?? 'Noch nicht genug verdichtete Wochen-Evidenz. Pulse sammelt weiter Ausfuehrung, Feedback und Check-ins, bevor daraus eine harte Planregel wird.';
-  const changed = changedBody(input);
+  const changed = changedBody(input, tradeoffContext);
   const risk = riskBody(input);
   const hasPlanChange = inbox.items.length > 0 || hasRefreshSignal(input.refreshPreview);
-  const hasLearningDecision = Boolean(learningContext?.hasDecision);
+  const hasLearningDecision = Boolean(tradeoffContext?.hasDecision || learningContext?.hasDecision);
   const hasOpenChange = hasPlanChange || hasLearningDecision;
   const tone: PlanWeeklyDecisionTone = inbox.hasAction
     || risk.hasAttention
+    || Boolean(tradeoffContext?.hasDecision)
     || (learningContext?.hasDecision && learningContext.calibration.tone === 'rose')
     ? 'attention'
     : hasOpenChange || risk.hasWatch
@@ -315,7 +409,9 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
       : 'ok';
   const nextBody = hasPlanChange
     ? 'Prüfen, ob du diese Woche anpassen, beibehalten oder verschieben solltest; erst die Vorschau macht daraus eine Aenderung.'
-    : hasLearningDecision
+    : tradeoffContext?.hasDecision
+      ? 'Wiederholte Tageskonflikte explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
+    : learningContext?.hasDecision
       ? 'Lernkalibrierung explizit in Beibehalten, Anpassen oder Spaeter einordnen; erst eine Vorschau oder ein Apply-Schritt schreibt in Plan oder Garmin.'
     : 'Aktuelle Woche beibehalten und nur reagieren, wenn Check-in, Ausfuehrung oder Zielrisiko ein neues Signal liefern.';
 
@@ -323,9 +419,9 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     {
       id: 'learned',
       label: 'Gelernt',
-      title: learningContext?.title ?? 'Was Pulse mitnimmt',
+      title: learningSurface?.title ?? 'Was Pulse mitnimmt',
       body: learned,
-      evidence: learningContext?.evidence ?? input.personalResponse?.summary.signals[0]?.evidence.slice(0, 2) ?? [],
+      evidence: learningSurface?.evidence ?? input.personalResponse?.summary.signals[0]?.evidence.slice(0, 2) ?? [],
     },
     {
       id: 'changed',
@@ -350,7 +446,7 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     },
   ];
 
-  const options = buildOptions(input, hasOpenChange);
+  const options = buildOptions(input, hasOpenChange, tradeoffContext);
   const primaryOption: PlanWeeklyDecisionOptionKind = hasOpenChange ? 'adapt_week' : 'accept_current';
 
   return {
@@ -364,6 +460,8 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     primaryOption,
     evidence: [
       `${inbox.items.length} offene Planpunkte`,
+      tradeoffContext?.hasDecision ? `Tageskonflikt Wochenentscheidung: ${tradeoffContext.evidence[0]}` : null,
+      tradeoffContext?.hasWatch ? 'Tageskonflikt Watch-Kontext' : null,
       learningContext?.hasDecision ? `Lernkalibrierung: ${learningContext.calibration.title}` : null,
       learningContext?.hasWatch ? 'Lernkalibrierung Watch-Kontext' : null,
       ...risk.evidence.slice(0, 3),

@@ -248,6 +248,12 @@ test('weekly decision uses strong learning calibration as explicit Plan evidence
         lastSeen: '2026-05-12',
         status: 'stale',
         evidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+      }, {
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 1,
+        lastSeen: '2026-05-12',
+        status: 'watch',
+        evidence: ['1x Tageskonflikt mit kleinerer Alltagsoption'],
       }],
       bestEvidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
       suggestedAdjustment: 'Diese Woche zuerst kleinere Option festlegen und Intensität erst nach Warm-up freigeben.',
@@ -315,6 +321,103 @@ test('weekly decision keeps weak learning calibration as watch context without o
   assert.doesNotMatch(learned?.body ?? '', /Fueling-Trend:/);
   assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
   assert.match(contract.options.find(option => option.kind === 'defer_decision')?.weekImpact ?? '', /Pulse beobachtet weiter/);
+  assert.equal(contract.options.every(option => option.readOnly), true);
+});
+
+test('weekly decision carries repeated daily tradeoffs into the Plan receipt without hidden writes', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'steady-tradeoff', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 36,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt wiederholt',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-12',
+        status: 'stale',
+        evidence: [
+          '3x Tageskonflikt mit zu hartem Plan und kleinerem Alltagsfenster',
+          '2x Abschluss als leichtere Option gelernt',
+        ],
+      }],
+      bestEvidence: ['3x Tageskonflikt mit zu hartem Plan und kleinerem Alltagsfenster'],
+      suggestedAdjustment: 'Diese Woche Intensitaet erst nach Warm-up freigeben und eine leichtere Option vorab festlegen.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const changed = contract.sections.find(section => section.id === 'changed');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+  const adapt = contract.options.find(option => option.kind === 'adapt_week');
+  const accept = contract.options.find(option => option.kind === 'accept_current');
+  const receipt = buildPlanWeeklyDecisionReceipt(contract, 'adapt_week', '2026-05-12T07:15:00.000Z');
+
+  assert.equal(contract.tone, 'attention');
+  assert.equal(contract.title, 'Wochenentscheidung offen');
+  assert.equal(contract.primaryOption, 'adapt_week');
+  assert.match(learned?.title ?? '', /Tageskonflikte/);
+  assert.match(learned?.body ?? '', /3x Tageskonflikt/);
+  assert.match(learned?.body ?? '', /Intensitaet erst nach Warm-up/);
+  assert.match(learned?.body ?? '', /Plan und Garmin bleiben unverändert/);
+  assert.match(changed?.body ?? '', /bewusste Wochenentscheidung/);
+  assert.match(nextAction?.body ?? '', /Beibehalten, Anpassen oder Spaeter/);
+  assert.match(adapt?.weekImpact ?? '', /Tageskonflikte/);
+  assert.match(adapt?.resultPreview ?? '', /erst ein explizites Anwenden/);
+  assert.match(accept?.weekImpact ?? '', /trotz wiederholter Tageskonflikte/);
+  assert.equal(contract.options.every(option => option.readOnly), true);
+  assert.match(contract.evidence.join(' · '), /Tageskonflikt/);
+  assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
+  assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
+  assert.ok(receipt.evidence?.some(item => /Tageskonflikt/.test(item)));
+});
+
+test('weekly decision keeps an isolated daily tradeoff as watch context', () => {
+  const contract = buildPlanWeeklyDecisionContract({
+    today: '2026-05-12',
+    workouts: [workout({ id: 'isolated-tradeoff', executionStatus: 'garmin_scheduled' })],
+    adaptationEvents: [],
+    refreshPreview: null,
+    currentLoad: stableLoad,
+    goalProjection: { ...goalProjection, projections: [] },
+    personalResponse: null,
+    decisionQuality: decisionQuality({
+      qualityScore: 72,
+      status: 'watch',
+      statusLabel: 'Einzelnen Tageskonflikt beobachten',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 1,
+        lastSeen: '2026-05-12',
+        status: 'watch',
+        evidence: ['1x Tageskonflikt mit kleinerer Alltagsoption'],
+      }],
+      bestEvidence: ['1x Tageskonflikt mit kleinerer Alltagsoption'],
+      suggestedAdjustment: 'Erst wiederholen lassen, bevor die Woche angepasst wird.',
+    }),
+    fuelingOutcomeBaseline: null,
+    review: null,
+  });
+
+  const learned = contract.sections.find(section => section.id === 'learned');
+  const nextAction = contract.sections.find(section => section.id === 'next_action');
+
+  assert.equal(contract.tone, 'ok');
+  assert.equal(contract.title, 'Woche aktuell stabil');
+  assert.equal(contract.primaryOption, 'accept_current');
+  assert.match(learned?.title ?? '', /Watch-Kontext/);
+  assert.match(learned?.body ?? '', /Ein einzelner Tageskonflikt/);
+  assert.match(learned?.body ?? '', /keine Wochenaenderung/);
+  assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
+  assert.doesNotMatch(contract.evidence.join(' · '), /Wochenentscheidung/);
   assert.equal(contract.options.every(option => option.readOnly), true);
 });
 

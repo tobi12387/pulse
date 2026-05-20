@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan übernimmt wiederholte Tageskonflikte in die Wochenentscheidung
+
+- **Decision:** Plan erkennt wiederholte `Tageskonflikt`-Muster aus der Decision-Quality-Evidenz als explizite Wochenentscheidung. Wiederholte Konflikte erscheinen in der Weekly-Decision-Sprache, den preview-only Optionen und dem lokalen Entscheidungsbeleg; einzelne Konflikte bleiben Watch-Kontext.
+- **Why:** Tagesentscheidungen werden erst dann ein Performance-OS-Lernsystem, wenn wiederholte Koerper-Ziel-Alltag-Konflikte die Wochensteuerung beeinflussen koennen. Plan bleibt dabei bewusst nicht-destruktiv: Beibehalten, Anpassen und Spaeter sind Vorschau-/Receipt-Schritte; Plan- und Garmin-Writes passieren weiterhin nur ueber vorhandene explizite Apply-/Sync-Oberflaechen.
+- **Alternatives:** Tageskonflikte nur in Home/Data erklaeren (Wochenplanung ignoriert wiederholte Muster); jeden einzelnen Konflikt als Planentscheidung behandeln (zu laut und zu frueh); direkte Plananpassung aus dem Muster ableiten (hidden write).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home macht Tageskonflikt-Abschluss lernbar
 
 - **Decision:** Abgeschlossene Tage, die aus einem Koerper-Ziel-Alltag-Tradeoff entstanden sind, fuehren in Home als lernbarer `Tageskonflikt`-Abschluss. Home routet weiter auf das vorhandene Activity-Feedback, macht den Abschluss fuer die naechste Empfehlung lernbar und schreibt weder Plan noch Garmin automatisch.

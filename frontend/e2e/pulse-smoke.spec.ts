@@ -627,7 +627,7 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(progression).toContainText('Ändern wenn');
 });
 
-test('Plan weekly decision surfaces learning calibration without applying plan or Garmin', async ({ page }, testInfo) => {
+test('Plan weekly decision surfaces repeated tradeoffs without applying plan or Garmin', async ({ page }, testInfo) => {
   const writeRequests: string[] = [];
   await mockPulseApi(page, {
     planWorkouts: [{
@@ -648,17 +648,20 @@ test('Plan weekly decision surfaces learning calibration without applying plan o
       range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
       qualityScore: 31,
       status: 'needs_strategy_change',
-      statusLabel: 'Strategie ändern',
+      statusLabel: 'Tageskonflikt wiederholt',
       repeatedThemes: [{
-        theme: 'Zu spät intensive Optionen gewählt',
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
         count: 3,
         lastSeen: '2026-05-01',
         status: 'stale',
-        evidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+        evidence: [
+          '3x Tageskonflikt mit zu hartem Plan und kleinerem Alltagsfenster',
+          '2x Abschluss als leichtere Option gelernt',
+        ],
       }],
-      bestEvidence: ['3x harte Alternative nach schlechtem Warm-up gewählt'],
+      bestEvidence: ['3x Tageskonflikt mit zu hartem Plan und kleinerem Alltagsfenster'],
       evidence: [],
-      suggestedAdjustment: 'Diese Woche zuerst kleinere Option festlegen und Intensität erst nach Warm-up freigeben.',
+      suggestedAdjustment: 'Diese Woche Intensitaet erst nach Warm-up freigeben und eine leichtere Option vorab festlegen.',
     },
     outcomeBaseline: {
       status: 'learning',
@@ -692,10 +695,13 @@ test('Plan weekly decision surfaces learning calibration without applying plan o
   const weeklyDecision = page.getByTestId('plan-weekly-decision-contract');
   await expect(weeklyDecision).toBeVisible();
   await expect(weeklyDecision).toContainText('Wochenentscheidung offen');
-  await expect(weeklyDecision).toContainText('Lernkalibrierung entscheidet mit');
-  await expect(weeklyDecision).toContainText('Empfehlung darf lernen');
-  await expect(weeklyDecision).toContainText('Diese Woche zuerst kleinere Option');
+  await expect(weeklyDecision).toContainText('Tageskonflikte verändern die Woche');
+  await expect(weeklyDecision).toContainText('Wiederholter Tageskonflikt');
+  await expect(weeklyDecision).toContainText('3x Tageskonflikt');
+  await expect(weeklyDecision).toContainText('Intensitaet erst nach Warm-up');
   await expect(weeklyDecision).toContainText('Plan und Garmin bleiben unverändert');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('trotz wiederholter Tageskonflikte');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).toContainText('wiederholte Tageskonflikte');
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-active-preview')).toContainText('erst ein explizites Anwenden');
   if (testInfo.project.name === 'mobile-chromium') {
     const learnedBox = await weeklyDecision.getByTestId('plan-weekly-decision-section-learned').boundingBox();
@@ -708,7 +714,9 @@ test('Plan weekly decision surfaces learning calibration without applying plan o
   writeRequests.length = 0;
   await weeklyDecision.getByRole('button', { name: 'Entscheidung merken', exact: true }).click();
   expect(writeRequests).toEqual([]);
-  await expect(weeklyDecision.getByTestId('plan-weekly-decision-receipt')).toContainText('Keine Plan- oder Garmin-Aenderung gespeichert');
+  const receipt = weeklyDecision.getByTestId('plan-weekly-decision-receipt');
+  await expect(receipt).toContainText('Keine Plan- oder Garmin-Aenderung gespeichert');
+  await expect(receipt).toContainText('Tageskonflikt Wochenentscheidung');
 });
 
 test('Plan weekly decision stores a local receipt without applying plan or Garmin', async ({ page }) => {

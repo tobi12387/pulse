@@ -276,6 +276,26 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
           <p style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
             {receipt.mutationBoundary}
           </p>
+          {receipt.evidence && receipt.evidence.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+              {receipt.evidence.slice(0, 4).map(evidence => (
+                <span
+                  key={evidence}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    color: 'var(--text-3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    padding: '3px 5px',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {evidence}
+                </span>
+              ))}
+            </div>
+          )}
           {receipt.targetPath && (
             <button
               type="button"
