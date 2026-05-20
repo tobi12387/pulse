@@ -2,10 +2,18 @@
 
 Use this before opening a PR when scope, local gates, auto-merge eligibility or deploy need to be decided quickly.
 
+Use `delivery:intake` at package start when the track and outcome are known but the PR shape is still being formed.
+
 ## Command
 
 ```bash
 npm run delivery:manifest
+```
+
+Start a package with:
+
+```bash
+npm run delivery:intake -- --track trainingsanpassung --outcome "Plan makes weekly decisions easier to confirm"
 ```
 
 For examples, reviews or tests without relying on git state:
@@ -24,6 +32,12 @@ npm run delivery:manifest -- --format json
 - CI attention: expected CI jobs from the same path logic used by the repo.
 - Auto-merge: eligible only in `Fast Lane`; `Full Lane` PRs should wait for explicit CI/review attention.
 - Deploy: required only for runtime app code or dependency changes; docs/tooling-only changes normally do not deploy.
+
+## Development Vs PR Gates
+
+- During implementation, use the contract-only fast gate first: `npm run verify:<track>:fast`.
+- Before PR, use the full track gate from the manifest: `npm run verify:<track>`.
+- Keep route evidence or Playwright evidence focused on the package behavior; full route evidence is for UI/UX packages or fresh friction discovery.
 
 ## PR Body Fields
 

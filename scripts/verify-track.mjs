@@ -10,6 +10,7 @@ export const TRACKS = {
     steps: [
       {
         label: 'Contract/golden tests',
+        stage: 'fast',
         command: './node_modules/.bin/tsx',
         args: [
           '--test',
@@ -20,11 +21,13 @@ export const TRACKS = {
       },
       {
         label: 'Frontend build',
+        stage: 'release',
         command: 'npm',
         args: ['run', 'build', '-w', 'frontend'],
       },
       {
         label: 'Home smoke tests',
+        stage: 'release',
         command: 'npm',
         args: [
           'run',
@@ -43,6 +46,7 @@ export const TRACKS = {
     steps: [
       {
         label: 'Contract/golden tests',
+        stage: 'fast',
         command: './node_modules/.bin/tsx',
         args: [
           '--test',
@@ -55,11 +59,13 @@ export const TRACKS = {
       },
       {
         label: 'Frontend build',
+        stage: 'release',
         command: 'npm',
         args: ['run', 'build', '-w', 'frontend'],
       },
       {
         label: 'Plan smoke tests',
+        stage: 'release',
         command: 'npm',
         args: [
           'run',
@@ -78,6 +84,7 @@ export const TRACKS = {
     steps: [
       {
         label: 'Contract/golden tests',
+        stage: 'fast',
         command: './node_modules/.bin/tsx',
         args: [
           '--test',
@@ -87,11 +94,13 @@ export const TRACKS = {
       },
       {
         label: 'Frontend build',
+        stage: 'release',
         command: 'npm',
         args: ['run', 'build', '-w', 'frontend'],
       },
       {
         label: 'Data analysis smoke tests',
+        stage: 'release',
         command: 'npm',
         args: [
           'run',
@@ -159,19 +168,23 @@ export async function runTrack(trackName, options = {}) {
     throw new Error(`Unknown track "${trackName}". Valid tracks: ${Object.keys(TRACKS).join(', ')}`);
   }
 
-  const steps = options.noE2e ? config.steps.filter(step => !/smoke/i.test(step.label)) : config.steps;
-  console.log(`==> verify:${normalized}`);
-  console.log(`==> ${config.description}`);
+  const steps = options.fast
+    ? config.steps.filter(step => step.stage === 'fast')
+    : options.noE2e
+      ? config.steps.filter(step => !/smoke/i.test(step.label))
+      : config.steps;
+  console.log(`==> verify:${normalized}${options.fast ? ':fast' : ''}`);
+  console.log(`==> ${options.fast ? 'Contract-only development gate.' : config.description}`);
   for (const step of steps) {
     console.log(`\n==> ${step.label}`);
     console.log(`$ ${printableCommand(step)}`);
     await spawnStep(step);
   }
-  console.log(`\n==> verify:${normalized} done`);
+  console.log(`\n==> verify:${normalized}${options.fast ? ':fast' : ''} done`);
 }
 
 function printUsage() {
-  console.log('Usage: node scripts/verify-track.mjs <tagesentscheidung|trainingsanpassung|lernschleifen> [--no-e2e]');
+  console.log('Usage: node scripts/verify-track.mjs <tagesentscheidung|trainingsanpassung|lernschleifen> [--fast|--no-e2e]');
   console.log('Aliases: home, today, daily, plan, training, data, learning');
 }
 
@@ -193,7 +206,7 @@ async function main(argv) {
     process.exitCode = 1;
     return;
   }
-  await runTrack(trackName, { noE2e: args.includes('--no-e2e') });
+  await runTrack(trackName, { fast: args.includes('--fast'), noE2e: args.includes('--no-e2e') });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -178,6 +178,8 @@ These improvements are mandatory support for the three tracks, not a fourth prod
 
 - Shipped support package: **Delivery manifest + gate mapping.** `npm run delivery:manifest` prints a compact PR/package manifest and changed-files-to-track-gate map so Codex can choose local checks, expected CI jobs, auto-merge eligibility and deploy requirement without rediscovering scope each session.
 - Delivery-speed support now uses `Fast Lane` versus `Full Lane`: one-track frontend/docs/support changes without backend, shared-contract, dependency, migration, workflow, deploy or LLM risk can auto-merge after listed local checks and green CI; Full Lane PRs keep explicit CI/review attention.
+- Start known packages with `npm run delivery:intake -- --track <track> --outcome "..."` so the package outcome, fast development gate, PR gate and evidence rules are fixed before broad exploration.
+- Use the contract-only gates while implementing: `npm run verify:tagesentscheidung:fast`, `npm run verify:trainingsanpassung:fast` and `npm run verify:lernschleifen:fast`; run the full `verify:<track>` gate before PR.
 - Keep `docs/ai/current-focus.md` below roughly 80 short lines and link detailed status to this file, the canonical roadmap and decisions.
 - Use the track-specific gates instead of re-deriving local checks per PR: `npm run verify:tagesentscheidung`, `npm run verify:trainingsanpassung` and `npm run verify:lernschleifen`.
 - Extract Daily Decision contract fixtures from Playwright into fast unit/golden tests.
