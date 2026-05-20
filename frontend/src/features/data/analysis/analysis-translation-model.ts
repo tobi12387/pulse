@@ -376,6 +376,24 @@ function tradeoffReceiptFollowupEvidence(pattern: TradeoffPatternClassification)
   return pattern.receiptFollowupEvidence[0] ?? null;
 }
 
+function receiptFollowupDays(value: string): number | null {
+  const days = value.match(/\b(\d+)\s*Tage?\b/iu)?.[1] ?? null;
+  if (days) return Number.parseInt(days, 10);
+
+  const weeks = value.match(/\b(\d+)\s*Wochen?\b/iu)?.[1] ?? null;
+  return weeks ? Number.parseInt(weeks, 10) * 7 : null;
+}
+
+function tradeoffReceiptTrustDuration(pattern: TradeoffPatternClassification): string | null {
+  const durations = pattern.receiptFollowupEvidence
+    .map(receiptFollowupDays)
+    .filter((days): days is number => days != null && Number.isFinite(days));
+  if (durations.length === 0) return null;
+
+  const maxDays = Math.max(...durations);
+  return `${maxDays} ${maxDays === 1 ? 'Tag' : 'Tage'}`;
+}
+
 function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
   if (pattern.reopenSourceTrends.length === 0) return null;
   const trendLabel = tradeoffSourceTrendLabel(pattern.reopenSourceTrends);
@@ -392,11 +410,17 @@ function tradeoffResolvedReopenSourceTrendSummary(pattern: TradeoffPatternClassi
   if (!trendLabel) return null;
   const receipt = tradeoffReceiptEvidence(pattern);
   const followup = tradeoffReceiptFollowupEvidence(pattern);
+  const trustDuration = tradeoffReceiptTrustDuration(pattern);
   const receiptDetail = receipt ? `Wochenreceipt: ${receipt}. ` : '';
+  const trustDurationDetail = trustDuration ? `Wochenreceipt-Vertrauensdauer: ${trustDuration}. ` : '';
   const followupDetail = followup ? `${followup}. ` : '';
   if (receipt && followup) {
-    return `Wochenreceipt-Lernvertrauen bestaetigt: ${trendLabel}. ${receiptDetail}${followupDetail}Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+    return `Wochenreceipt-Lernvertrauen bestaetigt: ${trendLabel}. ${receiptDetail}${trustDurationDetail}${followupDetail}Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
   }
+  if (receipt) {
+    return `Wochenreceipt-Lernvertrauen unaufgefrischt: ${trendLabel}. ${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend bereits eingeordnet, aber diese Folgewirkung ist noch nicht neu bestaetigt. Data behandelt ihn als ungebrochenen Watch-Kontext, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
+  }
+
   return `${receiptDetail}Die Wochenentscheidung hat den Reopen-Quellentrend ${trendLabel} bereits eingeordnet. Das ist Lernvertrauen: Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
 }
 
@@ -414,6 +438,7 @@ function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
   const receipt = tradeoffReceiptEvidence(pattern);
   const trendLabel = tradeoffSourceTrendLabel(pattern.resolvedReopenSourceTrends);
   const followup = tradeoffReceiptFollowupEvidence(pattern);
+  const trustDuration = tradeoffReceiptTrustDuration(pattern);
   const receiptConfidenceEvidence = receipt && trendLabel
     ? pattern.reopenSourceTrends.length > 0
       ? `Wochenreceipt-Folgewirkung geschwaecht: ${trendLabel}`
@@ -424,10 +449,12 @@ function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
   return unique([
     ...pattern.reopenSourceTrends.map(trend => `Reopen-Trend ${trend.label} ${trend.count}x`),
     ...pattern.resolvedReopenSourceTrends.map(trend => `Reopen-Trend entschieden ${trend.label} ${trend.count}x`),
+    receipt && trendLabel && !followup && pattern.reopenSourceTrends.length === 0 ? `Wochenreceipt-Vertrauen unaufgefrischt: ${trendLabel}` : null,
+    trustDuration ? `Wochenreceipt-Vertrauensdauer: ${trustDuration}` : null,
     receiptConfidenceEvidence,
     receipt ? `Wochenreceipt: ${receipt}` : null,
     ...pattern.evidence,
-  ], 4);
+  ], 6);
 }
 
 function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): AnalysisTranslationSignal | null {

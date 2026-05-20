@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data zeigt Wochenreceipt-Vertrauensdauer
+
+- **Decision:** Data fasst `Wochenreceipt-Lernvertrauen` jetzt mit Vertrauensdauer zusammen. Bestaetigte Folgewirkung zeigt die laengste erkannte Dauer, unaufgefrischte Receipts bleiben ruhiger Watch-Kontext, und geschwaechtes Vertrauen entsteht nur durch frische Heute- oder Wochenwiederkehr.
+- **Why:** Ein Receipt darf nicht ewig mit gleicher Staerke wirken. Die Lernschleife muss zeigen, ob Vertrauen aktiv bestaetigt wurde, nur noch ungebrochen aber nicht neu belegt ist, oder durch echte neue Evidenz wieder Review braucht.
+- **Alternatives:** Weiter jedes bestaetigte Receipt gleich anzeigen (zu statisch); fehlende neue Folgewirkung als gebrochen werten (zu laut); Vertrauensdauer in Home oder Plan statt in Data ableiten (mehr Drift).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan zeigt kalibriertes Wochenreceipt-Lernvertrauen im Wochenvertrauen
 
 - **Decision:** Plan nutzt Data/Home-kalibriertes `Wochenreceipt-Lernvertrauen` in der Wochenentscheidung. Bestaetigte Folgewirkung stuetzt `Beibehalten`; geschwaechtes Vertrauen erscheint nur als Review-Kontext, wenn frische Wochen-Evidenz ohnehin `Anpassen` oeffnet.
