@@ -2,6 +2,7 @@ import type { PulseAdaptationEvent, PulseDailyDecisionQualityResponse, PulseDail
 import { activityLabel } from './activity-labels';
 import { buildLearningCalibration, decisionQualityCanCalibrate, strongestPersonalResponseSignal } from './learning-calibration';
 import { classifyTradeoffPattern } from './tradeoff-patterns';
+import type { TradeoffReopenSourceTrend } from './tradeoff-patterns';
 
 export type DailyDecisionEvidence = string | { label: string; targetPath: string };
 export type DailyDecisionSignalTone = 'green' | 'amber' | 'rose' | 'accent' | 'muted';
@@ -226,14 +227,21 @@ function tradeoffFreshEvidenceSummary(pattern: TradeoffPattern): string {
     : `${pattern.count}x ${pattern.themeLabel}`;
 }
 
+function tradeoffReopenSourceTrendLabel(trends: TradeoffReopenSourceTrend[], limit = 2): string | null {
+  if (trends.length === 0) return null;
+  const labels = trends
+    .slice(0, limit)
+    .map(trend => `${trend.label} ${trend.count}x`)
+    .join(' · ');
+  const overflow = trends.length > limit ? ` +${trends.length - limit}` : '';
+  return `${labels}${overflow}`;
+}
+
 function tradeoffReopenSourceHint(pattern: TradeoffPattern): string | null {
   if (!pattern.hasFreshEvidence) return null;
   if (pattern.reopenSourceTrends.length === 0) return 'Reopen-Quelle heute isoliert.';
 
-  const trendLabel = pattern.reopenSourceTrends
-    .slice(0, 2)
-    .map(trend => `${trend.label} ${trend.count}x`)
-    .join(' · ');
+  const trendLabel = tradeoffReopenSourceTrendLabel(pattern.reopenSourceTrends);
   return `Reopen-Quellentrend: ${trendLabel}.`;
 }
 
@@ -825,11 +833,19 @@ function reopenedTradeoffContext(decisionQuality: PulseDailyDecisionQualityRespo
 function resolvedTradeoffContinuity(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): string | null {
   const pattern = resolvedTradeoffPattern(decisionQuality);
   if (pattern) {
+    const sourceTrendLabel = tradeoffReopenSourceTrendLabel(pattern.resolvedReopenSourceTrends);
+    if (sourceTrendLabel) {
+      return `Geschlossener Reopen-Quellentrend bleibt ruhig: ${sourceTrendLabel}. ${pattern.suggestedAdjustment}.`;
+    }
     return `Geloester Tageskonflikt bleibt ruhig: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
   }
 
   const reopened = reopenedTradeoffContext(decisionQuality);
   if (!reopened) return null;
+  const sourceTrendLabel = tradeoffReopenSourceTrendLabel(reopened.resolvedReopenSourceTrends);
+  if (sourceTrendLabel) {
+    return `Geschlossener Reopen-Quellentrend bleibt Kontext: ${sourceTrendLabel}. Frische Heute-Evidenz fuehrt nur die heutige adaptive Option.`;
+  }
   const context = reopened.resolvedEvidence.map(sentenceWithoutTrailingPeriod).join(' · ');
   return `Geloester Tageskonflikt bleibt Kontext: ${context}. Frische Heute-Evidenz fuehrt nur die heutige adaptive Option.`;
 }
@@ -839,8 +855,23 @@ function resolvedTradeoffEvidence(decisionQuality: PulseDailyDecisionQualityResp
   if (!pattern) {
     const reopened = reopenedTradeoffContext(decisionQuality);
     if (!reopened) return [];
+    const sourceTrendLabel = tradeoffReopenSourceTrendLabel(reopened.resolvedReopenSourceTrends);
+    if (sourceTrendLabel) {
+      return [{
+        label: `Geschlossener Reopen-Quellentrend als Kontext: ${sourceTrendLabel}`,
+        targetPath: DATA_DECISION_QUALITY_PATH,
+      }];
+    }
     return [{
       label: `Geloester Tageskonflikt als Kontext: ${reopened.resolvedEvidence[0] ?? `${reopened.count}x ${reopened.themeLabel}`}`,
+      targetPath: DATA_DECISION_QUALITY_PATH,
+    }];
+  }
+
+  const sourceTrendLabel = tradeoffReopenSourceTrendLabel(pattern.resolvedReopenSourceTrends);
+  if (sourceTrendLabel) {
+    return [{
+      label: `Geschlossener Reopen-Quellentrend: ${sourceTrendLabel}`,
       targetPath: DATA_DECISION_QUALITY_PATH,
     }];
   }

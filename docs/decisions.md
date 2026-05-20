@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home haelt geschlossene Reopen-Quellentrends ruhig
+
+- **Decision:** Home nutzt bereits entschiedene `Reopen-Quellentrends` nur noch als kurze Kontinuitaet und Data-Evidenz. Diese Trends bleiben aus `Heute entscheidet`, CTA und `Sicherste Option` heraus; nur frische Heute-Evidenz kann die adaptive Option erneut oeffnen und nennt dann den aktiven Quellentrend.
+- **Why:** Nach einer bewussten Wochenentscheidung muss die Tagesentscheidung ruhiger werden, ohne die Lernspur zu verlieren. Geschlossene Planlast-, Recovery-, Garmin-, Alltag- oder Zielrisiko-Trends sollen Vertrauen schaffen, waehrend echte neue Heute-Evidenz weiter handlungsfaehig bleibt.
+- **Alternatives:** Geschlossene Quellentrends komplett aus Home ausblenden (verliert Kontinuitaet); sie wieder in der Leitentscheidung nennen (zu laut und wirkt wie vergessenes Lernen); jedes `Reopen-Quellentrend`-Wort erneut als aktive Tagesentscheidung behandeln (reopened handled Trends staendig).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data schliesst Reopen-Quellentrends nach Wochenentscheidungen
 
 - **Decision:** Der gemeinsame `Tageskonflikt`-Classifier trennt jetzt frische Reopen-Quellen von bereits entschiedenen `Reopen-Quellentrends`. Data zeigt handled Quellentrends als ruhige Kontinuitaet und routet nur frische Wiederkehr erneut zu Home oder zur Wochenentscheidung.
