@@ -627,7 +627,7 @@ test('Plan starts with the current action contract', async ({ page }) => {
   await expect(progression).toContainText('Ändern wenn');
 });
 
-test('Plan weekly decision surfaces learning calibration without applying plan or Garmin', async ({ page }) => {
+test('Plan weekly decision surfaces learning calibration without applying plan or Garmin', async ({ page }, testInfo) => {
   const writeRequests: string[] = [];
   await mockPulseApi(page, {
     planWorkouts: [{
@@ -697,6 +697,13 @@ test('Plan weekly decision surfaces learning calibration without applying plan o
   await expect(weeklyDecision).toContainText('Diese Woche zuerst kleinere Option');
   await expect(weeklyDecision).toContainText('Plan und Garmin bleiben unverändert');
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-active-preview')).toContainText('erst ein explizites Anwenden');
+  if (testInfo.project.name === 'mobile-chromium') {
+    const learnedBox = await weeklyDecision.getByTestId('plan-weekly-decision-section-learned').boundingBox();
+    const changedBox = await weeklyDecision.getByTestId('plan-weekly-decision-section-changed').boundingBox();
+    expect(learnedBox).not.toBeNull();
+    expect(changedBox).not.toBeNull();
+    expect(changedBox!.y).toBeGreaterThanOrEqual(learnedBox!.y + learnedBox!.height + 6);
+  }
 
   writeRequests.length = 0;
   await weeklyDecision.getByRole('button', { name: 'Entscheidung merken', exact: true }).click();

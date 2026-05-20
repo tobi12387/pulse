@@ -130,7 +130,7 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
         {contract.summary}
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, marginTop: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 8, marginTop: 12 }}>
         {contract.sections.map(section => (
           <div
             key={section.id}
