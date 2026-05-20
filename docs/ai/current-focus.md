@@ -20,14 +20,14 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - Product north star: Pulse is a personal resilience and performance coach that connects physical training, nutrition, recovery and mental wellbeing into one understandable daily next action.
 - Canonical roadmap: `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md`.
 - Next autonomous work should come from `docs/ai/next-product-packages.md` instead of re-deriving a tiny signal polish from this file.
-- First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; Track 1 and Track 2 also have their third-pass learning-calibration packages.
+- First-pass and second-pass Performance-OS baselines across `Tagesentscheidung`, `Trainingsanpassung` and `Lernschleifen` are shipped; Track 1 and Track 2 also have their third-pass learning-calibration packages. Track 1 now has a fourth-pass package for the Home body/goal/everyday tradeoff.
 - Delivery-speed support is active in the workflow: use `npm run delivery:intake -- --track <track> --outcome "..."` to start known packages, `npm run verify:<track>:fast` during implementation, and `npm run delivery:manifest` before PRs to choose lane, gates, CI attention, auto-merge and deploy from changed files.
 - Current hard Performance-OS backlog order:
   1. **Tagesentscheidung:** reopen only for regressions or a new explicit Home package.
   2. **Trainingsanpassung:** reopen only for regressions or a new explicit Plan package.
   3. **Lernschleifen:** reopen only for regressions or a new explicit Data package.
 - Shipped baselines:
-  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry, the last-decision follow-up signal and gated Data learning calibration in Home; reopen only for regressions or a new explicit Track-1 package.
+  - **Tagesentscheidung** delivered Home completed-day learning, Activity closure evidence, the local Daily Decision signal registry, the last-decision follow-up signal and gated Data learning calibration in Home; the fourth-pass package makes Home lead with one `Tageskonflikt` when body, goal and everyday option disagree.
   - **Trainingsanpassung** delivered the shared Plan weekly decision contract, preview-only Accept/Adapt/Defer controls, Home/Data handoffs, local weekly decision receipts and gated learning calibration in explicit weekly decisions; reopen only for regressions or a new explicit Track-2 package.
   - **Lernschleifen** delivered Data action contracts, Fueling learning-loop copy, Home watch-context gating, the Data training-risk contract and the Data learning-calibration gate for Decision Quality, Personal Response and Fueling trends; reopen only for regressions or a new explicit Track-3 package.
 - Future UI/UX work starts from fresh route evidence via `docs/qa/route-evidence-pack.md` and `npm run qa:ux-summary -- <evidence-root>` unless the user reports a concrete friction point.

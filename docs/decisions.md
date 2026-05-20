@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home fuehrt Koerper-Ziel-Alltag-Konflikte als Tageskonflikt
+
+- **Decision:** Home/Daily Decision bekommt das Signal `Tageskonflikt`, wenn eine offene geplante Einheit mit Koerpergrenze, Zielrisiko und einer alltagstauglichen Ausweichoption kollidiert. Das Signal fuehrt vor einzelnen Ziel-/Trainingssignalen, oeffnet die leichtere Tagesoption und schreibt weder Plan noch Garmin automatisch.
+- **Why:** Das Performance-OS-Ziel verlangt eine ruhige Antwort auf "Was ist heute die intelligenteste Handlung fuer meinen Koerper, mein Ziel und meinen Alltag?". Bisher konnte Home zwar Koerper, Ziel und Alltag einzeln zeigen, fuehrte in solchen Faellen aber mit `Ziel` oder `Training` statt den eigentlichen Tradeoff zu benennen.
+- **Alternatives:** Zielrisiko weiter alleine fuehren lassen (verliert Alltag und Koerpergrenze); Training `too_hard_today` fuehren lassen (zu eng auf Workout-Fit); eine neue UI-Flaeche bauen (mehr Oberflaeche statt besserer Tagesvertrag).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Delivery Intake und Fast-Gates trennen Entwicklungs- von PR-Pruefung
 
 - **Decision:** Pulse nutzt `npm run delivery:intake -- --track <track> --outcome "..."` als Paket-Startpunkt und ergaenzt fuer jede Performance-OS-Spur contract-only Gates: `npm run verify:tagesentscheidung:fast`, `npm run verify:trainingsanpassung:fast` und `npm run verify:lernschleifen:fast`. Die bestehenden `verify:<track>` Gates bleiben die PR-/Release-Gates mit Build und fokussierten Playwright-Smokes.

@@ -1293,6 +1293,139 @@ test('Home daily decision opens strong learning calibration from Data evidence',
   await expect(page.locator('#data-decision-quality')).toBeVisible();
 });
 
+test('Home daily decision opens the body goal everyday tradeoff as one safe option', async ({ page }) => {
+  const plannedWorkout = {
+    id: 'home-tradeoff-workout',
+    userId: 'user-1',
+    plannedDate: '2026-05-01',
+    activityType: 'bike',
+    zone: 4,
+    durationMin: 75,
+    distanceKm: null,
+    targetTss: 96,
+    archetypeId: 'threshold_build',
+    difficultyLevel: 4.4,
+    difficultyEnergySystem: 'threshold',
+    capabilityFit: 'too_hard_today',
+    description: 'Schwellenreiz fuer das Ziel.',
+    steps: null,
+    garminWorkoutId: 'garmin-home-tradeoff',
+    garminScheduledId: 'schedule-home-tradeoff',
+    garminSyncContract: null,
+    status: 'planned',
+    workoutFeedback: null,
+    complianceScore: null,
+    origin: 'generated',
+    userLocked: false,
+    completedActivityId: null,
+    executionStatus: 'garmin_scheduled',
+    executionMatchedAt: null,
+    executionMatchConfidence: null,
+    executionNotes: null,
+  };
+  const easierPath = '/plan?tab=training&source=today-change&intent=easier&workoutId=home-tradeoff-workout#next-training-decision';
+
+  await mockPulseApi(page, {
+    home: {
+      todayWorkout: plannedWorkout,
+      recovery: {
+        sleepDebt7d: { hours: 2.4, targetH: 7.5, baselineSource: 'garmin_sleep_need', status: 'mild' },
+        hrvDeviation7d: { pct: 2, recentMs: 51, baselineMs: 50, status: 'stable' },
+        rhrDrift7d: { bpmAboveBaseline: 1, recent: 49, baseline: 48, status: 'normal' },
+        recoveryScore: 62,
+        recommendation: 'Heute Grenze klein halten.',
+      },
+    },
+    goalProjection: {
+      generatedAt: '2026-05-01T08:00:00.000Z',
+      horizonDays: 180,
+      headline: '70.3 Kraichgau braucht Fueling-Praxis.',
+      projections: [{
+        goalId: 'goal-703',
+        title: '70.3 Kraichgau',
+        category: 'race',
+        targetDate: '2026-06-14',
+        daysUntil: 44,
+        probabilityPct: 48,
+        status: 'at_risk',
+        confidence: 'medium',
+        summary: 'Long-Endurance und Fueling sind noch nicht belastbar genug.',
+        limiterRisk: {
+          status: 'blocked',
+          label: 'Fueling-Limiter',
+          summary: 'GI- und During-Logs fehlen fuer lange Einheiten.',
+          evidence: ['1/3 vergleichbare Logs'],
+        },
+        nextBestIntervention: {
+          kind: 'fueling_practice',
+          title: 'Fueling-Praxis absichern',
+          summary: 'Die naechste lange Einheit sollte kontrolliert Fueling und GI-Vertraeglichkeit schliessen.',
+          actionLabel: 'Plan prüfen',
+          targetPath: '/plan?tab=training#goal-projection',
+          evidence: ['Long-Endurance-Level 3.1', '1 kontrollierter During-Log'],
+        },
+        evidence: ['Ziel in 44 Tagen'],
+        missingEvidence: ['Fueling-Vertraeglichkeit offen'],
+      }],
+      missingEvidence: [],
+    },
+    todayOptions: {
+      todayOptions: {
+        date: '2026-05-01',
+        state: 'planned_workout',
+        summary: 'Heute ist Training geplant; Pulse zeigt Plan und alltagstaugliche Ausweichoption.',
+        signature: 'home-tradeoff-options',
+        options: [
+          {
+            id: 'home-tradeoff-primary',
+            kind: 'workout',
+            priority: 'primary',
+            title: 'Plan ausführen',
+            detail: '75 min Z4. Nur sinnvoll, wenn Warm-up und Tagesfenster passen.',
+            cta: 'Workout öffnen',
+            targetPath: '/plan?tab=training',
+            evidence: ['Zielreiz geplant'],
+            activityType: 'bike',
+            zone: 4,
+            durationMin: 75,
+            archetypeId: 'threshold_build',
+            capabilityFit: 'too_hard_today',
+            signalLabels: [{ kind: 'fit_too_hard_today', label: 'Zu hart heute', detail: 'Warm-up und Recovery muessen die Freigabe liefern', tone: 'rose' }],
+          },
+          {
+            id: 'home-tradeoff-easier',
+            kind: 'workout',
+            priority: 'secondary',
+            title: '45 min Z2 statt Schwelle',
+            detail: 'Erhaelt Routine und Zielkontakt, ohne den Tag zu ueberziehen.',
+            cta: 'Alternative prüfen',
+            targetPath: easierPath,
+            evidence: ['Schlafdefizit', 'Alltagsfenster kleiner'],
+            activityType: 'bike',
+            zone: 2,
+            durationMin: 45,
+            archetypeId: 'recovery_spin',
+            capabilityFit: 'maintenance',
+            signalLabels: [{ kind: 'fit_maintenance', label: 'Machbar', detail: 'Erhaltung statt Progression', tone: 'green' }],
+          },
+        ],
+      },
+    },
+  });
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Tageskonflikt');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Koerper: Schlafdefizit: 2.4 h');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Ziel: 70.3 Kraichgau: 48%');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Alltag: 45 min Z2 statt Schwelle');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Tageskonflikt zuerst lösen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('alltagstaugliche Alternative');
+
+  await decision.getByRole('button', { name: 'Alternative prüfen', exact: true }).click();
+  await expect(page).toHaveURL(/source=today-change.*#next-training-decision$/);
+});
+
 test('mobile Home availability intent opens a workout scenario preview', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
   let previewBody: unknown = null;

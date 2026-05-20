@@ -18,6 +18,7 @@ test('daily decision signal registry owns signal priority order in one table', (
     Analyse: 1,
     Fueling: 2,
     'Fueling-Lernen': 2,
+    Tageskonflikt: 2,
     Folge: 3,
     Feedback: 3,
     Ziel: 4,
@@ -36,6 +37,7 @@ test('daily decision signal registry owns default CTA copy', () => {
   assert.equal(dailyDecisionSignalRegistry.Recovery.defaultActionLabel, 'Recovery ansehen');
   assert.equal(dailyDecisionSignalRegistry.Feedback.defaultActionLabel, 'Feedback erfassen');
   assert.equal(dailyDecisionSignalRegistry.Folge.defaultActionLabel, 'Planfolge prüfen');
+  assert.equal(dailyDecisionSignalRegistry.Tageskonflikt.defaultActionLabel, 'Alternative prüfen');
   assert.equal(dailyDecisionSignalRegistry.Garmin.defaultActionLabel, 'Garmin prüfen');
   assert.equal(dailyDecisionSignalRegistry.Koerper.defaultActionLabel, 'Readiness prüfen');
   assert.equal(dailyDecisionSignalRegistry.Belastung.defaultActionLabel, 'Belastung prüfen');
@@ -50,5 +52,6 @@ test('daily decision signal registry keeps conditional actions explicit', () => 
   assert.equal(dailyDecisionSignalRegistry.Ziel.preferSignalActionLabel, true);
   assert.equal(dailyDecisionSignalRegistry.Analyse.preferSignalActionLabel, true);
   assert.equal(dailyDecisionSignalRegistry.Folge.preferSignalActionLabel, true);
+  assert.equal(dailyDecisionSignalRegistry.Tageskonflikt.preferSignalActionLabel, true);
   assert.equal(dailyDecisionSignalRegistry.Anpassung.actionFromDetailPrefix, true);
 });

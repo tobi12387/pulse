@@ -10,6 +10,7 @@ import type {
   PulseHomeScreenData,
   PulsePersonalResponseResponse,
   PulsePlannedWorkout,
+  PulseTodayOptionsResponse,
   PulseTrainingAnalyticsResponse,
 } from '../shared/types/pulse/index.ts';
 import { deriveDailyDecision, type DailyDecision } from '../frontend/src/pulse/daily-decision.ts';
@@ -213,6 +214,59 @@ function goalProjection(): PulseGoalProjectionResponse {
       missingEvidence: ['Fueling-Vertraeglichkeit offen'],
     }],
     missingEvidence: [],
+  };
+}
+
+function plannedTodayOptions(workoutId = 'planned-1'): PulseTodayOptionsResponse {
+  return {
+    date: TODAY,
+    state: 'planned_workout',
+    summary: 'Heute ist Training geplant; Pulse zeigt Plan und alltagstaugliche Ausweichoption.',
+    signature: `${TODAY}|planned-workout|tradeoff`,
+    options: [
+      {
+        id: 'planned-default',
+        kind: 'workout',
+        priority: 'primary',
+        title: 'Plan ausführen',
+        detail: '75 min Z4. Nur sinnvoll, wenn Warm-up und Tagesfenster passen.',
+        cta: 'Workout öffnen',
+        targetPath: '/plan?tab=training',
+        evidence: ['Zielreiz geplant'],
+        activityType: 'bike',
+        zone: 4,
+        durationMin: 75,
+        archetypeId: 'threshold_build',
+        capabilityFit: 'too_hard_today',
+        signalLabels: [{
+          kind: 'fit_too_hard_today',
+          label: 'Zu hart heute',
+          detail: 'Warm-up und Recovery muessen die Freigabe liefern',
+          tone: 'rose',
+        }],
+      },
+      {
+        id: 'planned-easier',
+        kind: 'workout',
+        priority: 'secondary',
+        title: '45 min Z2 statt Schwelle',
+        detail: 'Erhaelt Routine und Zielkontakt, ohne den Tag zu ueberziehen.',
+        cta: 'Alternative prüfen',
+        targetPath: `/plan?tab=training&source=today-change&intent=easier&workoutId=${workoutId}#next-training-decision`,
+        evidence: ['Schlafdefizit', 'Alltagsfenster kleiner'],
+        activityType: 'bike',
+        zone: 2,
+        durationMin: 45,
+        archetypeId: 'recovery_spin',
+        capabilityFit: 'maintenance',
+        signalLabels: [{
+          kind: 'fit_maintenance',
+          label: 'Machbar',
+          detail: 'Erhaltung statt Progression',
+          tone: 'green',
+        }],
+      },
+    ],
   };
 }
 
@@ -514,6 +568,45 @@ test('at-risk goals can become the primary intervention when no stronger blocker
   assert.match(decision.contract.safestAlternative, /Zielintervention: Fueling-Praxis absichern/);
   assert.match(decision.contract.goalImpact, /70\.3 Kraichgau: 48% · Fueling-Praxis absichern/);
   assertSignalBefore(decision, 'Ziel', 'Training');
+});
+
+test('daily decision names the body goal and everyday tradeoff before the safe action', () => {
+  const planned = workout({
+    id: 'planned-body-goal-day',
+    zone: 4,
+    durationMin: 75,
+    targetTss: 96,
+    capabilityFit: 'too_hard_today',
+    archetypeId: 'threshold_build',
+    difficultyEnergySystem: 'threshold',
+    description: 'Schwellenreiz fuer das Ziel.',
+  });
+  const decision = decisionFor(home({
+    todayWorkout: planned,
+    recovery: recovery({
+      sleepDebt7d: { hours: 2.4, targetH: 7.5, baselineSource: 'garmin_sleep_need', status: 'mild' },
+      recoveryScore: 62,
+      recommendation: 'Heute Grenze klein halten.',
+    }),
+  }), {
+    goalProjection: goalProjection(),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Tageskonflikt:/);
+  assert.match(decision.contract.leadingFactor, /Koerper: Schlafdefizit: 2\.4 h/);
+  assert.match(decision.contract.leadingFactor, /Ziel: 70\.3 Kraichgau: 48%/);
+  assert.match(decision.contract.leadingFactor, /Alltag: 45 min Z2 statt Schwelle/);
+  assert.equal(decision.cta, 'Alternative prüfen');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-body-goal-day#next-training-decision');
+  assert.match(decision.resultPreview ?? '', /leichtere Tagesoption/);
+  assert.match(decision.resultPreview ?? '', /Plan oder Garmin ändern sich erst nach einem bewussten Klick/);
+  assert.match(decision.contract.safestAlternative, /Tageskonflikt zuerst lösen/);
+  assert.match(decision.contract.safestAlternative, /Koerper: Schlafdefizit: 2\.4 h/);
+  assert.match(decision.contract.safestAlternative, /Ziel: 70\.3 Kraichgau: 48%/);
+  assert.match(decision.contract.safestAlternative, /Alltag: 45 min Z2 statt Schwelle/);
+  assertSignalBefore(decision, 'Tageskonflikt', 'Training');
+  assertSignalBefore(decision, 'Tageskonflikt', 'Ziel');
 });
 
 test('blocked Garmin execution beats normal training without creating a hidden write', () => {

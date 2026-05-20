@@ -222,6 +222,57 @@ function everydaySignal(
   };
 }
 
+function bodyTradeoffDetail(home: PulseHomeScreenData, workout: HomeWorkout): string | null {
+  const recovery = home.recovery;
+  if (recovery?.sleepDebt7d.status === 'severe' || recovery?.sleepDebt7d.status === 'mild') {
+    return `Schlafdefizit: ${recovery.sleepDebt7d.hours.toFixed(1)} h`;
+  }
+  if (recovery?.recoveryScore != null && recovery.recoveryScore < 70) {
+    return `Recovery ${recovery.recoveryScore}/100`;
+  }
+  if (home.readiness.score < 70) {
+    return `Readiness ${home.readiness.score}/100`;
+  }
+  if (workout.capabilityFit === 'too_hard_today') {
+    return 'geplante Einheit zu hart fuer heute';
+  }
+  return null;
+}
+
+function dailyTradeoffSignal(
+  home: PulseHomeScreenData,
+  todayOptions: PulseTodayOptionsResponse | null | undefined,
+  workout: HomeWorkout | null,
+  completedActivity: HomeActivity | null,
+  goalProjection: PulseGoalProjectionResponse | null | undefined,
+  mentalBoundary: DailyDecisionMentalBoundary | null,
+): DailyDecisionSignal | null {
+  if (completedActivity || mentalBoundary?.level === 'protect') return null;
+  if (!workout || workout.status === 'completed' || workout.completedActivityId) return null;
+  if (home.recovery?.sleepDebt7d.status === 'severe' || (home.recovery?.recoveryScore ?? 100) < 45) return null;
+  const option = todayOptionsAdaptiveOption(todayOptions);
+  const goal = topGoalProjection(goalProjection);
+  if (!todayOptions || !option || !goal || goal.status === 'on_track') return null;
+
+  const bodyDetail = bodyTradeoffDetail(home, workout);
+  if (!bodyDetail) return null;
+
+  const goalDetail = `${goal.title}: ${goalProbabilityLabel(goal)} · ${goal.nextBestIntervention.title}`;
+  const everydayDetail = `${option.title}: ${sentenceWithoutTrailingPeriod(option.detail)}`;
+  const tone: DailyDecisionSignalTone = goal.status === 'at_risk' || workout.capabilityFit === 'too_hard_today'
+    ? 'rose'
+    : 'amber';
+
+  return {
+    label: 'Tageskonflikt',
+    detail: `Koerper: ${bodyDetail} · Ziel: ${goalDetail} · Alltag: ${everydayDetail}`,
+    tone,
+    targetPath: option.targetPath,
+    actionLabel: option.cta || 'Alternative prüfen',
+    resultPreview: 'Pulse öffnet die leichtere Tagesoption; Plan oder Garmin ändern sich erst nach einem bewussten Klick.',
+  };
+}
+
 function workoutFitLabel(workout: HomeWorkout): string | null {
   if (workout.capabilityFit === 'too_hard_today') return 'Zu hart heute';
   if (workout.capabilityFit === 'stretch') return 'Stretch';
@@ -514,6 +565,7 @@ function alternativeFor(
   const stretchAlternative = trainingStretchAlternative(todayWorkout);
   const executionAlternative = trainingExecutionAlternative(todayWorkout);
   const goalAlternative = goalPressureAlternative(goalProjection);
+  const tradeoffSignal = dailyTradeoffSignal(home, todayOptions, todayWorkout, null, goalProjection, mentalBoundary);
   const garminAlternative = todayWorkout ? garminExecutionAlternative(todayWorkout) : null;
   const responseSignal = personalResponseSignal(personalResponse, todayWorkout, null, mentalBoundary);
   const responseAlternative = personalResponseAlternative(responseSignal);
@@ -531,6 +583,8 @@ function alternativeFor(
     alternative = calibrationAlternative;
   } else if (qualityAlternative && qualitySignal?.tone === 'rose') {
     alternative = qualityAlternative;
+  } else if (tradeoffSignal) {
+    alternative = `Tageskonflikt zuerst lösen: ${tradeoffSignal.detail}. Sicherste Option ist die alltagstaugliche Alternative; Plan und Garmin bleiben bis zum bewussten Klick unverändert.`;
   } else if (recoveryAlternative) {
     alternative = recoveryAlternative;
   } else if (bodyAlternative && signalToneForReadiness(home.readiness.score) === 'rose') {
@@ -676,6 +730,7 @@ export const dailyDecisionSignalRegistry = {
   Analyse: { priority: 1, defaultActionLabel: 'Analyse prüfen', preferSignalActionLabel: true },
   Fueling: { priority: 2, defaultActionLabel: 'Fueling schließen' },
   'Fueling-Lernen': { priority: 2, defaultActionLabel: 'Fueling vorbereiten' },
+  Tageskonflikt: { priority: 2, defaultActionLabel: 'Alternative prüfen', preferSignalActionLabel: true },
   Folge: { priority: 3, defaultActionLabel: 'Planfolge prüfen', preferSignalActionLabel: true },
   Feedback: { priority: 3, defaultActionLabel: 'Feedback erfassen', preferSignalActionLabel: true },
   Ziel: { priority: 4, defaultActionLabel: 'Ziel prüfen', preferSignalActionLabel: true, requiredTone: 'rose' },
@@ -1369,7 +1424,11 @@ function topSignals(
     ? null
     : personalResponseSignal(personalResponse, workout, completedActivity, mentalBoundary);
   const everyday = everydaySignal(todayOptions, workout, completedActivity);
+  const tradeoff = dailyTradeoffSignal(home, todayOptions, workout, completedActivity, goalProjection, mentalBoundary);
 
+  if (tradeoff) {
+    signals.push(tradeoff);
+  }
   if (adaptation) {
     signals.push(adaptation);
   }
