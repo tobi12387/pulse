@@ -131,6 +131,8 @@ type TradeoffDecisionContext = {
   count: number;
   hasDecision: boolean;
   hasWatch: boolean;
+  hasHandledReceipt: boolean;
+  hasFreshEvidence: boolean;
   title: string;
   body: string;
   evidence: string[];
@@ -140,14 +142,20 @@ type TradeoffDecisionContext = {
 function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): TradeoffDecisionContext | null {
   const pattern = classifyTradeoffPattern(input.decisionQuality);
   if (!pattern) return null;
+  const evidenceHint = pattern.evidence.slice(1, 4).join(' ');
 
   if (pattern.effect === 'plan_decision') {
+    const evidencePrefix = pattern.hasFreshEvidence
+      ? 'Neue Wochen-Evidenz fuer erledigte Tageskonflikte'
+      : 'Wiederholter Tageskonflikt';
     return {
       count: pattern.count,
       hasDecision: true,
       hasWatch: false,
+      hasHandledReceipt: false,
+      hasFreshEvidence: pattern.hasFreshEvidence,
       title: 'Tageskonflikte verändern die Woche',
-      body: `Wiederholter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
+      body: `${evidencePrefix}: ${pattern.count}x ${pattern.themeLabel}. ${evidenceHint ? `${evidenceHint}. ` : ''}${pattern.suggestedAdjustment}. Plan und Garmin bleiben unverändert; Beibehalten, Anpassen oder Spaeter sind explizite Wochenentscheidungen.`,
       evidence: pattern.evidence,
       suggestedAdjustment: pattern.suggestedAdjustment,
     };
@@ -158,8 +166,24 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
       count: pattern.count,
       hasDecision: false,
       hasWatch: true,
+      hasHandledReceipt: false,
+      hasFreshEvidence: pattern.hasFreshEvidence,
       title: 'Tageskonflikt bleibt Heute-Kontext',
       body: `Heute veraendert der wiederholte Tageskonflikt die sichere Option, nicht die Woche: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Das ist keine Wochenentscheidung, bis neue Wochen-Evidenz Plan oder Garmin betrifft.`,
+      evidence: pattern.evidence,
+      suggestedAdjustment: pattern.suggestedAdjustment,
+    };
+  }
+
+  if (pattern.state === 'resolved') {
+    return {
+      count: pattern.count,
+      hasDecision: false,
+      hasWatch: true,
+      hasHandledReceipt: true,
+      hasFreshEvidence: false,
+      title: 'Tageskonflikt-Receipt bleibt ruhig',
+      body: `Erledigter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${evidenceHint ? `${evidenceHint}. ` : ''}${pattern.suggestedAdjustment}. Plan bleibt bei Beibehalten; Anpassen oeffnet erst wieder, wenn frische Wochen-Evidenz aus Plan, Recovery oder Garmin die Woche veraendert.`,
       evidence: pattern.evidence,
       suggestedAdjustment: pattern.suggestedAdjustment,
     };
@@ -173,6 +197,8 @@ function tradeoffDecisionContext(input: PlanWeeklyDecisionContractInput): Tradeo
     count: pattern.count,
     hasDecision: false,
     hasWatch: true,
+    hasHandledReceipt: false,
+    hasFreshEvidence: pattern.hasFreshEvidence,
     title: 'Tageskonflikt bleibt Watch-Kontext',
     body: `${prefix}: ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Pulse wartet auf frische Wochen-Evidenz, bevor Plan oder Garmin zur Entscheidung werden.`,
     evidence: pattern.evidence,
@@ -219,6 +245,9 @@ function changedBody(input: PlanWeeklyDecisionContractInput, tradeoffContext: Tr
   });
   const first = inbox.items.find(item => item.id.startsWith('adaptation-')) ?? inbox.items[0] ?? null;
   if (!first && tradeoffContext?.hasDecision) {
+    if (tradeoffContext.hasFreshEvidence) {
+      return `Frische Wochen-Evidenz oeffnet die erledigte Tageskonflikt-Entscheidung erneut als frische Wochenentscheidung: ${tradeoffContext.suggestedAdjustment}.`;
+    }
     return `Wiederholte Tageskonflikte verlangen eine bewusste Wochenentscheidung: ${tradeoffContext.suggestedAdjustment}.`;
   }
   return first?.summary
@@ -271,7 +300,9 @@ function buildOptions(
   const impact = preview
     ? `Vorschau: TSS ${sign(preview.loadImpact.tssDelta)}, Dauer ${sign(preview.loadImpact.durationDeltaMin)} min; ${preview.garminImpact.summary}`
     : hasTradeoffDecision
-      ? `Vorschau: wiederholte Tageskonflikte in eine Wochenentscheidung uebersetzen; ${tradeoffContext!.suggestedAdjustment}.`
+      ? tradeoffContext!.hasFreshEvidence
+        ? `Vorschau: Neue Wochen-Evidenz aus erledigten Tageskonflikten pruefen; ${tradeoffContext!.suggestedAdjustment}.`
+        : `Vorschau: wiederholte Tageskonflikte in eine Wochenentscheidung uebersetzen; ${tradeoffContext!.suggestedAdjustment}.`
     : 'Vorschau: Woche bleibt strukturell unveraendert, bis ein Szenario geoeffnet wird.';
   return [
     {
@@ -449,7 +480,8 @@ export function buildPlanWeeklyDecisionContract(input: PlanWeeklyDecisionContrac
     evidence: [
       `${inbox.items.length} offene Planpunkte`,
       tradeoffContext?.hasDecision ? `Tageskonflikt Wochenentscheidung: ${tradeoffContext.evidence[0]}` : null,
-      tradeoffContext?.hasWatch ? 'Tageskonflikt Watch-Kontext' : null,
+      tradeoffContext?.hasHandledReceipt ? `Tageskonflikt erledigt: ${tradeoffContext.evidence[0]}` : null,
+      tradeoffContext?.hasWatch && !tradeoffContext.hasHandledReceipt ? 'Tageskonflikt Watch-Kontext' : null,
       learningContext?.hasDecision ? `Lernkalibrierung: ${learningContext.calibration.title}` : null,
       learningContext?.hasWatch ? 'Lernkalibrierung Watch-Kontext' : null,
       ...risk.evidence.slice(0, 3),

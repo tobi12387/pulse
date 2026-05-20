@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan haelt erledigte Tradeoff-Receipts ruhig
+
+- **Decision:** Plan behandelt geloeste oder bereits gehandhabte `Tageskonflikt`-Muster als ruhige lokale Receipt-Kontinuitaet. Solche Receipts fuehren `Beibehalten`, erscheinen als `Tageskonflikt erledigt`-Evidenz und oeffnen `Anpassen` erst wieder, wenn frische Wochen-Evidenz den Classifier erneut als `plan_decision` aktiviert.
+- **Why:** Die Wochenentscheidung soll nach einer bewussten Entscheidung leiser werden. Ein erledigter Tradeoff soll erklaeren, warum die Woche stabil bleibt, waehrend neue Plan-, Recovery-, Garmin- oder Zielwirkung klar als frische Wochenentscheidung sichtbar wird.
+- **Alternatives:** Erledigte Receipts weiter als generischen Watch-Kontext anzeigen (zu ungenau und lauter als noetig); alle geloesten Muster komplett aus Plan entfernen (verliert Vertrauen und Receipt-Spur); jeden frischen Hinweis sofort ohne Source-/Freshness-Sprache als alten wiederholten Konflikt oeffnen (wirkt wie vergessenes Lernen).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus
 
 - **Decision:** Home nutzt geloeste `Tageskonflikt`-Muster nicht mehr als Tagesentscheidungs-Signal. Resolved/handled Muster erscheinen nur noch als ruhige Kontinuitaet und verlinkte Evidenz; frische Evidenz darf die heutige adaptive Option wieder als `Neue Evidenz` oeffnen.
