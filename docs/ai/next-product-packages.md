@@ -30,13 +30,13 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning and the sixth-pass today-only tradeoff learning, Track 2 carries repeated Tageskonflikte into the weekly decision receipt and now gates classified tradeoff patterns to true weekly decisions, and Track 3 classifies tradeoff evidence as action, plan decision or watch context.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal, the fifth-pass completed-day closure learning and the sixth-pass today-only tradeoff learning, Track 2 carries repeated Tageskonflikte into the weekly decision receipt and now gates classified tradeoff patterns to true weekly decisions, and Track 3 classifies tradeoff evidence as action, plan decision, resolved quiet context or evidence gap.
 
 Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Lernschleifen`: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
-2. `Tagesentscheidung`: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
-3. `Trainingsanpassung`: **Plan haelt erledigte Tradeoff-Receipts ruhig, bis neue Wochenwirkung entsteht.**
+1. `Tagesentscheidung`: **Home haelt geloeste Tradeoff-Lernmuster aus der Tagesfuehrung raus.**
+2. `Trainingsanpassung`: **Plan haelt erledigte Tradeoff-Receipts ruhig, bis neue Wochenwirkung entsteht.**
+3. `Lernschleifen`: **Data erklaert Reopen-Gruende fuer geloeste Tradeoffs nur bei frischer Evidenz.**
 
 ## Track 1: Tagesentscheidung
 
@@ -229,13 +229,26 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **shipped third-pass package plus later ready card**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`.
+Status: **shipped fourth-pass package plus later ready card**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`, and the fourth pass keeps resolved tradeoff patterns quiet until fresh evidence appears.
 
-Later ready package: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
+Later ready package: **Data erklaert Reopen-Gruende fuer geloeste Tradeoffs nur bei frischer Evidenz.**
 
-Outcome: after Home and Plan consume classified tradeoff signals, Data should mark patterns as active, resolved or still-evidence-gap and avoid re-routing already-handled history unless fresh evidence changes the next action.
+Outcome: after resolved tradeoff patterns stay quiet by default, Data should explain precisely why a pattern reopened: which fresh evidence appeared, whether it changes Home or Plan, and why older resolved history remains only context.
 
-Why it matters: the learning loop should become quieter as it learns. A repeated conflict that was already handled should stay useful evidence, not keep reopening Home or the weekly decision.
+Why it matters: quiet learning is only trustworthy if reopen moments are legible. When a handled conflict becomes active again, Data should make the new evidence obvious instead of making it feel like Pulse forgot the prior decision.
+
+Package PRs:
+
+- Add fast Data action-contract scenarios for resolved history, fresh Home-impact evidence and fresh Plan-impact evidence.
+- Make reopened cards name the fresh evidence source and keep older handled evidence as context.
+- Keep resolved patterns quiet when freshness is missing or only copied from suggested copy.
+- Use the Fast Lane `verify:lernschleifen:pr` gate plus one CI/Data smoke unless local rendered behavior is changed.
+
+Shipped package: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
+
+Outcome: after Home and Plan consume classified tradeoff signals, Data marks patterns as active, resolved or still-evidence-gap and avoids re-routing already-handled history unless fresh evidence changes the next action.
+
+Why it matters: the learning loop should become quieter as it learns. A repeated conflict that was already handled stays useful evidence instead of reopening Home or the weekly decision on every analysis visit.
 
 Package PRs:
 

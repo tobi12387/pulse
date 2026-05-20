@@ -335,19 +335,22 @@ function primaryFromDecisionQuality(decisionQuality: PulseDailyDecisionQualityRe
 
 function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): AnalysisTranslationSignal | null {
   const pattern = classifyTradeoffPattern(decisionQuality);
-  if (!pattern) return null;
+  if (!pattern || !decisionQuality) return null;
   const effect: AnalysisDecisionEffect = pattern.effect;
-  const tone: AnalysisTranslationTone = effect === 'plan_decision'
-    ? 'rose'
-    : effect === 'today_action'
-      ? 'green'
-      : qualityTone(decisionQuality!.status);
+  let tone: AnalysisTranslationTone = qualityTone(decisionQuality.status);
+  if (pattern.state === 'resolved') {
+    tone = 'muted';
+  } else if (effect === 'plan_decision') {
+    tone = 'rose';
+  } else if (effect === 'today_action') {
+    tone = 'green';
+  }
 
   if (effect === 'plan_decision') {
     return withEffect({
       label: 'Tradeoff-Muster',
       title: 'Tageskonflikte werden Wochenentscheidung',
-      summary: `Wiederholter Tageskonflikt: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+      summary: `${pattern.hasFreshEvidence ? 'Neue Evidenz fuer die Wochenentscheidung' : 'Wiederholter Tageskonflikt'}: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
       evidence: pattern.evidence,
       tone,
       actionLabel: 'Wochenentscheidung prüfen',
@@ -367,6 +370,19 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
       targetPath: TRADEOFF_TODAY_PATH,
       resultPreview: resultPreviewForTargetPath(TRADEOFF_TODAY_PATH, 'today_action'),
     }, 'today_action');
+  }
+
+  if (pattern.state === 'resolved') {
+    return withEffect({
+      label: 'Tradeoff-Muster',
+      title: 'Tageskonflikt bereits eingeordnet',
+      summary: `Bereits eingeordnet: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Data haelt das Muster ruhig, bis frische Evidenz die Handlung erneut veraendert.`,
+      evidence: pattern.evidence,
+      tone,
+      actionLabel: 'Muster prüfen',
+      targetPath: DECISION_QUALITY_PATH,
+      resultPreview: resultPreviewForTargetPath(DECISION_QUALITY_PATH, 'watch_context'),
+    }, 'watch_context');
   }
 
   const prefix = pattern.count >= 2 ? 'Noch nicht stark genug' : 'Ein einzelner Tageskonflikt';
@@ -505,7 +521,8 @@ export function buildAnalysisTranslation({
       tone: 'muted' as const,
     }, 'watch_context');
   const trainingRisk = buildTrainingRiskContract(planTrace, trainingAnalytics);
-  const calibration = buildLearningCalibration(decisionQuality, personalResponse, fuelingOutcomeBaseline);
+  const decisionQualityForGenericLearning = classifyTradeoffPattern(decisionQuality) ? null : decisionQuality;
+  const calibration = buildLearningCalibration(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
   const learning = withEffect({
     label: calibration.label,
     title: calibration.title,

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data haelt geloeste Tradeoff-Muster ruhig
+
+- **Decision:** Data klassifiziert `Tageskonflikt`-Muster als `active`, `resolved` oder `evidence_gap`. Bereits eingeordnete oder gehandhabte Muster bleiben `watch_context`, routen weder Home/Plan noch generische Lernkalibrierung, und nur frische Evidenz darf Home oder die Wochenentscheidung erneut oeffnen.
+- **Why:** Der Lernloop soll nach einer bewussten Home-/Plan-Entscheidung ruhiger werden. Ein geloestes Muster ist weiterhin nuetzliche Kontinuitaet, aber keine neue Handlung, solange keine neue Evidenz die Wirkung veraendert.
+- **Alternatives:** Jede hilfreiche Wiederholung weiter routen (zu laut); geloeste Evidenz komplett ausblenden (verliert erklaerende Kontinuitaet); erst einen Backend-Status bauen (groesser als dieses Paket).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan nutzt Tradeoff-Klassifizierung nur bei Wochenwirkung
 
 - **Decision:** Plan konsumiert `Tageskonflikt`-Muster ueber den gemeinsamen Classifier und oeffnet die Wochenentscheidung nur fuer `plan_decision`. `today_action`-Muster bleiben Heute-Kontext, wiederholte Watch-Muster bleiben ruhige Evidenz und lokale Receipts koennen diesen Kontext speichern, ohne `Anpassen` zu fuehren.

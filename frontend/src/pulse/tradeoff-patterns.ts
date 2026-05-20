@@ -1,6 +1,7 @@
 import type { PulseDailyDecisionQualityResponse } from '@coaching-os/shared/pulse';
 
 export type TradeoffPatternEffect = 'today_action' | 'plan_decision' | 'watch_context';
+export type TradeoffPatternState = 'active' | 'resolved' | 'evidence_gap';
 
 export interface TradeoffPatternClassification {
   count: number;
@@ -8,6 +9,8 @@ export interface TradeoffPatternClassification {
   suggestedAdjustment: string;
   evidence: string[];
   effect: TradeoffPatternEffect;
+  state: TradeoffPatternState;
+  hasFreshEvidence: boolean;
 }
 
 function unique(items: Array<string | null | undefined>, limit: number): string[] {
@@ -27,6 +30,9 @@ function withoutTrailingPeriod(value: string): string {
   return value.trim().replace(/[.]+$/u, '');
 }
 
+const RESOLVED_TRADEOFF_PATTERN = /bereits|eingeordnet|gemerkt|beibehalten gemerkt|gehandhabt|handled|resolved|geloest|gelöst|erledigt|abgehakt/i;
+const FRESH_TRADEOFF_PATTERN = /frisch|fresh|neu|neue evidenz|erneut|seit gemerkter|seit der|seit dem|wieder wochenentscheidung|jetzt wieder/i;
+
 export function classifyTradeoffPattern(
   decisionQuality: PulseDailyDecisionQualityResponse | null | undefined,
 ): TradeoffPatternClassification | null {
@@ -38,12 +44,37 @@ export function classifyTradeoffPattern(
 
   const themeLabel = withoutTrailingPeriod(tradeoffTheme.theme);
   const suggestedAdjustment = withoutTrailingPeriod(decisionQuality.suggestedAdjustment);
+  const resolutionCorpus = [
+    decisionQuality.statusLabel,
+    decisionQuality.suggestedAdjustment,
+    tradeoffTheme.theme,
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ].join(' ');
+  const freshEvidenceCorpus = [
+    decisionQuality.statusLabel,
+    tradeoffTheme.theme,
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ].join(' ');
+  const hasFreshEvidence = FRESH_TRADEOFF_PATTERN.test(freshEvidenceCorpus);
+  const isResolved = RESOLVED_TRADEOFF_PATTERN.test(resolutionCorpus) && !hasFreshEvidence;
   const repeated = tradeoffTheme.count >= 2;
-  const effect: TradeoffPatternEffect = repeated && (decisionQuality.status === 'needs_strategy_change' || tradeoffTheme.status === 'stale')
-    ? 'plan_decision'
-    : repeated && (decisionQuality.status === 'helpful' || tradeoffTheme.status === 'useful_repetition')
-      ? 'today_action'
-      : 'watch_context';
+  const becomesWeeklyDecision = repeated
+    && (decisionQuality.status === 'needs_strategy_change' || tradeoffTheme.status === 'stale');
+  const changesToday = repeated
+    && (decisionQuality.status === 'helpful' || tradeoffTheme.status === 'useful_repetition');
+  let effect: TradeoffPatternEffect = 'watch_context';
+  if (!isResolved && becomesWeeklyDecision) {
+    effect = 'plan_decision';
+  } else if (!isResolved && changesToday) {
+    effect = 'today_action';
+  }
+  const state: TradeoffPatternState = isResolved
+    ? 'resolved'
+    : effect === 'watch_context'
+      ? 'evidence_gap'
+      : 'active';
 
   return {
     count: tradeoffTheme.count,
@@ -55,5 +86,7 @@ export function classifyTradeoffPattern(
       ...decisionQuality.bestEvidence,
     ], 4),
     effect,
+    state,
+    hasFreshEvidence,
   };
 }
