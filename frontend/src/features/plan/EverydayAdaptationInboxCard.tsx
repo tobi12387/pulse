@@ -123,7 +123,7 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Heute anders?</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>Preview-only</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>Nur Vorschau</span>
       </div>
       {offPlanActivityContext && (
         <div

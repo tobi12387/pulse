@@ -2678,7 +2678,7 @@ test('Data Plan Load triage hands off to the shared Plan weekly decision', async
   await expect(weeklyDecision).toBeFocused();
   await expect(weeklyDecision).toContainText('Wochenentscheidung');
   await expect(weeklyDecision).toContainText('Anpassen');
-  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).toContainText('Preview-only');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-adapt_week')).toContainText('Nur Vorschau');
 });
 
 test('Data ignores malformed hashes and stays usable', async ({ page }) => {
@@ -4375,7 +4375,7 @@ test('Plan Review surfaces the weekly coach review with a clear next action', as
   await expect(weeklyDecision).toContainText('Wochenentscheidung');
   await expect(weeklyDecision).toContainText('Anpassen');
   await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-accept_current')).toContainText('keine Plan- oder Garmin-Aenderung');
-  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-defer_decision')).toContainText('Preview-only');
+  await expect(weeklyDecision.getByTestId('plan-weekly-decision-option-defer_decision')).toContainText('Nur Vorschau');
 
   await review.getByRole('button', { name: 'Planpunkte prüfen' }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=weekly-review#plan-change-inbox');

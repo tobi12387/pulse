@@ -181,8 +181,8 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
                 <span className="label-mono" style={{ color: active ? tone : 'var(--text-3)', fontSize: 8.5 }}>
                   {option.label}
                 </span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)' }}>
-                  Preview-only
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--text-3)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  Nur Vorschau
                 </span>
               </div>
               <div style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
