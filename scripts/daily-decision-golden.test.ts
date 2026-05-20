@@ -950,6 +950,75 @@ test('fresh resolved tradeoff evidence can reopen todays adaptive option', () =>
   assertSignalBefore(decision, 'Tageskonflikt', 'Training');
 });
 
+test('isolated fresh tradeoff reopen stays current-day context in Home', () => {
+  const planned = workout({ id: 'planned-isolated-reopen-source' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 82,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt mit neuer heutiger Evidenz',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: TODAY,
+        status: 'useful_repetition',
+        evidence: [
+          'Tageskonflikt bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Tagesentscheidung: Alltag nur 45 Minuten frei',
+        ],
+      }],
+      bestEvidence: ['Neue Evidenz seit gemerkter Tagesentscheidung: leichtere Option passt ins heutige Alltagsfenster'],
+      suggestedAdjustment: 'Heute erneut leichtere Option bestaetigen; alte Plan-Einordnung nur als Kontext behalten.',
+    }),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Tageskonflikt: Frische Heute-Evidenz/);
+  assert.match(decision.contract.leadingFactor, /Alltag nur 45 Minuten/);
+  assert.match(decision.contract.leadingFactor, /Reopen-Quelle heute isoliert/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Reopen-Quellentrend|bereits in Plan eingeordnet|alte Plan-Einordnung/);
+  assert.equal(decision.cta, 'Alternative prüfen');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-isolated-reopen-source#next-training-decision');
+  assert.match(decision.contract.safestAlternative, /Tageskonflikt-Lernen heute nutzen/);
+  assert.match(decision.contract.safestAlternative, /Reopen-Quelle heute isoliert/);
+  assert.match(decision.contract.continuity, /Geloester Tageskonflikt bleibt Kontext/);
+});
+
+test('repeated reopen-source trend stays a concise daily hint in Home', () => {
+  const planned = workout({ id: 'planned-reopen-source-trend' });
+  const decision = decisionFor(home({ todayWorkout: planned }), {
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 82,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt mit neuer heutiger Evidenz',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 4,
+        lastSeen: TODAY,
+        status: 'useful_repetition',
+        evidence: [
+          'Tageskonflikt bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Tagesentscheidung: 2x Recovery nach harter Einheit niedrig',
+        ],
+      }],
+      bestEvidence: ['Wiederholter Reopen-Grund: Recovery 2x mit niedrigem HRV und schlechtem Schlaf'],
+      suggestedAdjustment: 'Heute leichtere Option wegen wiederholter Recovery-Reopens bestaetigen; alte Plan-Einordnung bleibt Kontext.',
+    }),
+    todayOptions: plannedTodayOptions(planned.id),
+  });
+
+  assert.match(decision.contract.leadingFactor, /^Tageskonflikt: Frische Heute-Evidenz/);
+  assert.match(decision.contract.leadingFactor, /Recovery nach harter Einheit niedrig/);
+  assert.match(decision.contract.leadingFactor, /Reopen-Quellentrend: Recovery 2x/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /bereits in Plan eingeordnet|alte Plan-Einordnung|Wiederholter Reopen-Grund/);
+  assert.equal(decision.cta, 'Alternative prüfen');
+  assert.equal(decision.targetPath, '/plan?tab=training&source=today-change&intent=easier&workoutId=planned-reopen-source-trend#next-training-decision');
+  assert.match(decision.contract.safestAlternative, /Tageskonflikt-Lernen heute nutzen/);
+  assert.match(decision.contract.safestAlternative, /Reopen-Quellentrend: Recovery 2x/);
+  assert.match(decision.contract.continuity, /Geloester Tageskonflikt bleibt Kontext/);
+  assert.match(decision.evidence.map(item => typeof item === 'string' ? item : item.label).join(' · '), /Geloester Tageskonflikt als Kontext/);
+});
+
 test('weak learning calibration stays watch context below a productive training decision', () => {
   const planned = workout({ id: 'planned-learning-watch' });
   const decision = decisionFor(home({ todayWorkout: planned }), {

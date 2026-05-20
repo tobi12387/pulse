@@ -1531,30 +1531,37 @@ test('Home daily decision uses repeated tradeoff learning for todays adaptive op
     },
     decisionQuality: {
       range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
-      qualityScore: 76,
+      qualityScore: 82,
       status: 'helpful',
-      statusLabel: 'Tageskonflikt hilfreich',
+      statusLabel: 'Tageskonflikt mit neuer heutiger Evidenz',
       repeatedThemes: [{
         theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
-        count: 2,
+        count: 4,
         lastSeen: '2026-05-01',
         status: 'useful_repetition',
-        evidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+        evidence: [
+          'Tageskonflikt bereits in Plan eingeordnet',
+          'Neue Evidenz seit gemerkter Tagesentscheidung: 2x Recovery nach harter Einheit niedrig',
+        ],
       }],
-      bestEvidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      bestEvidence: ['Wiederholter Reopen-Grund: Recovery 2x mit niedrigem HRV und schlechtem Schlaf'],
       evidence: [],
-      suggestedAdjustment: 'Heute zuerst die leichtere Option bestaetigen, wenn Schlaf und Alltag eng sind.',
+      suggestedAdjustment: 'Heute leichtere Option wegen wiederholter Recovery-Reopens bestaetigen; alte Plan-Einordnung bleibt Kontext.',
     },
   });
 
   await page.goto('/');
   const decision = page.getByTestId('daily-decision-card');
   await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Tageskonflikt');
-  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Lernmuster');
-  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('2x Tageskonflikt');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Frische Heute-Evidenz');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Recovery nach harter Einheit niedrig');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Reopen-Quellentrend: Recovery 2x');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('Wiederholter Reopen-Grund');
   await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('Lernkalibrierung');
   await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Tageskonflikt-Lernen heute nutzen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Reopen-Quellentrend: Recovery 2x');
   await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Leichtere Alternative');
+  await expect(decision.getByTestId('daily-decision-continuity')).toContainText('Geloester Tageskonflikt bleibt Kontext');
 
   await decision.getByRole('button', { name: 'Plan anpassen', exact: true }).click();
   await expect(page).toHaveURL('/plan?tab=training&source=today-change&intent=easier&workoutId=planned-default#next-training-decision');

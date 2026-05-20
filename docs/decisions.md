@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Home zeigt frische Reopen-Quellen als isoliert oder Trend
+
+- **Decision:** Home nennt bei frischen `Tageskonflikt`-Reopens jetzt knapp, ob die Quelle heute isoliert ist oder bereits ein `Reopen-Quellentrend` ist. Die fuehrende Tagesentscheidung bleibt auf der aktuellen adaptiven Option, alte handled Plan-/Data-Evidenz bleibt nur Kontinuitaet und verlinkter Kontext.
+- **Why:** Nach der Data-Gruppierung soll Home nicht wie ein Trendbericht klingen und auch keinen alten Konflikt neu starten. Die Tagesantwort braucht nur den ruhigen Hinweis, ob Recovery, Alltag, Planlast oder Garmin-Ausfuehrung einmalig auftaucht oder sich als Muster wiederholt.
+- **Alternatives:** Nur die frische Quelle ohne Trendhinweis zeigen (verliert die neue Data-Lernschleife); die komplette Trend-Evidenz in Home fuehren (zu laut fuer Tagesklarheit); alte handled Evidenz in der Leitentscheidung wiederholen (wirkt wie vergessenes Lernen).
+- **Decided by:** Codex, als naechster Track-1-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Data buendelt wiederkehrende Tradeoff-Reopen-Quellen
 
 - **Decision:** Data gruppiert wiederholte frische `Tageskonflikt`-Reopen-Quellen als `Reopen-Quellentrend`, zum Beispiel Recovery, Planlast, Garmin-Ausfuehrung, Alltag oder Zielrisiko. Isolierte frische Reopens behalten die bestehende Home-/Plan-Wirkung, alte handled Evidenz bleibt Kontext.
