@@ -287,16 +287,59 @@ function resultPreviewForTargetPath(targetPath: string, effect: AnalysisDecision
   return 'Öffnet den nächsten expliziten Schritt aus der Analyse. Plan und Garmin bleiben unverändert, bis du dort bewusst weitergehst.';
 }
 
+function goalProbabilityLabel(goal: PulseGoalProjection): string {
+  return goal.probabilityPct == null ? 'Wahrscheinlichkeit offen' : `${goal.probabilityPct}%`;
+}
+
+function goalDistanceLabel(goal: PulseGoalProjection): string | null {
+  if (goal.daysUntil == null) return null;
+  if (goal.daysUntil === 0) return 'heute';
+  if (goal.daysUntil === 1) return 'morgen';
+  return `${goal.daysUntil} Tage`;
+}
+
+function goalEvidence(goal: PulseGoalProjection): string[] {
+  return unique([
+    `${goalProbabilityLabel(goal)} Zielwahrscheinlichkeit`,
+    goalDistanceLabel(goal),
+    goal.limiterRisk.label,
+    goal.limiterRisk.summary,
+    ...goal.limiterRisk.evidence,
+    ...goal.evidence,
+    ...goal.nextBestIntervention.evidence,
+  ], 4);
+}
+
+function goalHasActionableLimiter(goal: PulseGoalProjection): boolean {
+  return goal.status === 'at_risk' || goal.limiterRisk.status === 'blocked';
+}
+
 function primaryFromGoal(goalProjection: PulseGoalProjectionResponse | null | undefined): AnalysisTranslationSignal | null {
   const top = goalProjection?.projections[0] ?? null;
   if (!top) return null;
   const intervention = top.nextBestIntervention;
+  if (!goalHasActionableLimiter(top)) {
+    const isOnTrack = top.status === 'on_track' && top.limiterRisk.status === 'clear';
+    return withEffect({
+      label: 'Ziel-Fortschritt',
+      title: isOnTrack ? 'Ziel-Fortschritt stabil' : 'Ziel-Limiter beobachten',
+      summary: isOnTrack
+        ? `${top.title}: ${goalProbabilityLabel(top)} auf Kurs. ${top.summary} ${top.limiterRisk.summary} Motivierende Performance-Evidenz, keine neue Home- oder Plan-Handlung.`
+        : `${top.title}: ${goalProbabilityLabel(top)}. ${top.summary} Limiter: ${top.limiterRisk.label} - ${top.limiterRisk.summary} Das bleibt Data-Evidenz und keine Planentscheidung, bis der Limiter kritisch wird.`,
+      evidence: goalEvidence(top),
+      tone: goalTone(top.status),
+      actionLabel: 'Zielprojektion prüfen',
+      targetPath: GOAL_PROJECTION_PATH,
+      resultPreview: resultPreviewForTargetPath(GOAL_PROJECTION_PATH, 'watch_context'),
+    }, 'watch_context');
+  }
+
   const effect = effectForTargetPath(intervention.targetPath);
   return withEffect({
-    label: 'Zielwirkung',
+    label: 'Ziel-Limiter',
     title: intervention.title,
-    summary: `${top.title}: ${top.summary} ${intervention.summary}`,
-    evidence: unique([...intervention.evidence, ...top.evidence, top.limiterRisk.summary], 4),
+    summary: `${top.title}: ${goalProbabilityLabel(top)}. ${top.summary} Limiter: ${top.limiterRisk.label} - ${top.limiterRisk.summary} ${intervention.summary}`,
+    evidence: goalEvidence(top),
     tone: goalTone(top.status),
     actionLabel: intervention.actionLabel,
     targetPath: intervention.targetPath,

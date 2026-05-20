@@ -107,7 +107,18 @@ const quietTrainingAnalytics: PulseTrainingAnalyticsResponse = {
   },
 };
 
-function goalProjection(targetPath = '/plan?tab=training'): PulseGoalProjectionResponse {
+function goalProjection(
+  targetPath = '/plan?tab=training',
+  overrides: {
+    status?: PulseGoalProjectionResponse['projections'][number]['status'];
+    limiterStatus?: PulseGoalProjectionResponse['projections'][number]['limiterRisk']['status'];
+    probabilityPct?: number;
+    summary?: string;
+    limiterSummary?: string;
+  } = {},
+): PulseGoalProjectionResponse {
+  const status = overrides.status ?? 'watch';
+  const limiterStatus = overrides.limiterStatus ?? (status === 'at_risk' ? 'blocked' : status === 'on_track' ? 'clear' : 'watch');
   return {
     generatedAt: '2026-05-19T06:00:00.000Z',
     horizonDays: 180,
@@ -118,14 +129,18 @@ function goalProjection(targetPath = '/plan?tab=training'): PulseGoalProjectionR
       category: 'race',
       targetDate: '2026-07-11',
       daysUntil: 53,
-      probabilityPct: 61,
-      status: 'watch',
+      probabilityPct: overrides.probabilityPct ?? (status === 'on_track' ? 78 : status === 'at_risk' ? 31 : 61),
+      status,
       confidence: 'medium',
-      summary: 'Ziel ist erreichbar, aber Fueling bleibt der Limiter.',
+      summary: overrides.summary ?? (status === 'on_track'
+        ? 'Ziel ist auf Kurs; die aktuelle Woche haelt den Aufbau stabil.'
+        : 'Ziel ist erreichbar, aber Fueling bleibt der Limiter.'),
       limiterRisk: {
-        status: 'watch',
+        status: limiterStatus,
         label: 'Long Endurance + Fueling',
-        summary: 'Fueling-Vertraeglichkeit ist noch nicht stabil.',
+        summary: overrides.limiterSummary ?? (limiterStatus === 'clear'
+          ? 'Kein dominanter Ziel-Limiter begrenzt die Projektion.'
+          : 'Fueling-Vertraeglichkeit ist noch nicht stabil.'),
         evidence: ['1/3 komplette During-Logs'],
       },
       nextBestIntervention: {
@@ -269,10 +284,49 @@ function planTrace(overrides: Partial<PulsePlanTrace['inputSnapshot']> = {}): Pu
   };
 }
 
-test('plan goal interventions are classified as plan decisions', () => {
+test('on-track goal progress stays motivating Data evidence', () => {
   const translation = buildAnalysisTranslation({
     decisionQuality: null,
-    goalProjection: goalProjection('/plan?tab=training'),
+    goalProjection: goalProjection('/plan?tab=training', { status: 'on_track' }),
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.effect, 'watch_context');
+  assert.equal(translation.primary.effectLabel, 'Watch-Kontext');
+  assert.equal(translation.primary.label, 'Ziel-Fortschritt');
+  assert.match(translation.primary.title, /stabil/);
+  assert.match(translation.primary.summary, /Motivierende Performance-Evidenz/);
+  assert.match(translation.primary.summary, /78%/);
+  assert.equal(translation.primary.actionLabel, 'Zielprojektion prüfen');
+  assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-goal-projection');
+  assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
+});
+
+test('watch goal limiters stay Data evidence without opening Plan', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: null,
+    goalProjection: goalProjection('/plan?tab=training', { status: 'watch', limiterStatus: 'watch' }),
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.effect, 'watch_context');
+  assert.equal(translation.primary.effectLabel, 'Watch-Kontext');
+  assert.match(translation.primary.title, /Ziel-Limiter beobachten/);
+  assert.match(translation.primary.summary, /Long Endurance \+ Fueling/);
+  assert.match(translation.primary.summary, /keine Planentscheidung/);
+  assert.equal(translation.primary.actionLabel, 'Zielprojektion prüfen');
+  assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-goal-projection');
+  assert.doesNotMatch(translation.primary.resultPreview ?? '', /Planentscheidung|Tageshandlung/);
+});
+
+test('at-risk goal limiters route only to existing explicit decision paths', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: null,
+    goalProjection: goalProjection('/plan?tab=training#goal-projection', { status: 'at_risk', limiterStatus: 'blocked' }),
     personalResponse: null,
     planTrace: null,
     trainingAnalytics: quietTrainingAnalytics,
@@ -280,21 +334,13 @@ test('plan goal interventions are classified as plan decisions', () => {
 
   assert.equal(translation.primary.effect, 'plan_decision');
   assert.equal(translation.primary.effectLabel, 'Planentscheidung');
+  assert.equal(translation.primary.label, 'Ziel-Limiter');
+  assert.match(translation.primary.title, /Fueling-Praxis absichern/);
+  assert.match(translation.primary.summary, /31%/);
+  assert.match(translation.primary.summary, /Long Endurance \+ Fueling/);
+  assert.equal(translation.primary.actionLabel, 'Plan pruefen');
+  assert.equal(translation.primary.targetPath, '/plan?tab=training#goal-projection');
   assert.match(translation.primary.resultPreview ?? '', /Planentscheidung/);
-});
-
-test('non-plan goal interventions are classified as today actions', () => {
-  const translation = buildAnalysisTranslation({
-    decisionQuality: null,
-    goalProjection: goalProjection('/data?tab=quality#data-garmin-quality'),
-    personalResponse: null,
-    planTrace: null,
-    trainingAnalytics: quietTrainingAnalytics,
-  });
-
-  assert.equal(translation.primary.effect, 'today_action');
-  assert.equal(translation.primary.effectLabel, 'Tageshandlung');
-  assert.match(translation.primary.resultPreview ?? '', /Tageshandlung/);
 });
 
 test('decision quality and personal response expose today-action learning loops', () => {

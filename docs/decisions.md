@@ -18,6 +18,22 @@
 
 ---
 
+## 2026-05-20 — Data macht Ziel-Fortschritt als motivierende Performance-Evidenz sichtbar
+
+- **Decision:** Data unterscheidet Ziel-Fortschritt jetzt nach Wirkung: `on_track` und Watch-Limiter bleiben motivierende Data-Evidenz, waehrend `at_risk` oder geblockte Limiter nur ueber bestehende explizite Home-/Plan-Zielpfade lauter werden.
+- **Why:** Ziel-Fortschritt soll Vertrauen und Motivation geben, ohne jede Projektion zur Tages- oder Wochenforderung zu machen. Erst ein echter Limiter-Risikozustand darf die Handlung fuer Koerper, Ziel und Alltag veraendern.
+- **Alternatives:** Jede Zielprojektion direkt zu Plan/Home routen (zu laut); Ziel-Fortschritt nur in der Zielkarte verstecken (zu wenig Performance-OS-Kontext); Watch-Limiter als Planentscheidung behandeln (verfruehte Eskalation).
+- **Decided by:** Codex, als Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
+## 2026-05-20 — Naechstes Paket haelt Ziel-Fortschritt in Home ruhig
+
+- **Decision:** Nach Data-Ziel-Fortschritt ist das naechste autonome Paket `Tagesentscheidung`: Home soll stabile und Watch-Zielprojektionen nur als Tagesmotivation/Kontinuitaet zeigen und nur echte at-risk Limiter in bestehende Tages- oder Planentscheidungen fuehren.
+- **Why:** Data hat die Quellwirkung getrennt; jetzt muss die Tagesoberflaeche dieselbe Ruhe erben. So bleibt Zielnaehe motivierend, ohne `Heute entscheidet`, CTA oder `Sicherste Option` zu ueberladen.
+- **Alternatives:** Direkt Plan-Zielvertrauen bauen (Home wuerde Data-Kontext noch nicht erben); stabile Ziele aus Home fernhalten (verliert Motivation); Watch-Limiter als Tagesaktion fuehren (zu laut).
+- **Decided by:** Codex, als naechste harte Backlog-Prioritaet aus Roadmap und Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan haelt Wochenreceipt-Erneuerungschecks im Wochenvertrauen ruhig
 
 - **Decision:** Plan nutzt Wochenreceipt-Erneuerungschecks nur in Gelernt-/Evidenz-/Receipt-Kontinuitaet. Bestaetigte oder unaufgefrischte Checks stuetzen `Beibehalten`, bleiben aus der primaeren `Anpassen`-Vorschau und frische Wochenwiederkehr oeffnet weiter nur den bestehenden `Anpassen`-Pfad.
