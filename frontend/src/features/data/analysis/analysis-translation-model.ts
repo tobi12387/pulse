@@ -39,6 +39,8 @@ export type AnalysisTranslation = {
 };
 
 const PLAN_WEEKLY_DECISION_PATH = '/plan?tab=training&source=data-load#plan-weekly-decision';
+const TRADEOFF_PLAN_DECISION_PATH = '/plan?tab=training&source=data-tradeoff#plan-weekly-decision';
+const TRADEOFF_TODAY_PATH = '/?source=data-tradeoff';
 const GOAL_PROJECTION_PATH = '/data?tab=analysis#data-goal-projection';
 const DECISION_QUALITY_PATH = '/data?tab=analysis#data-decision-quality';
 const PERSONAL_RESPONSE_PATH = '/data?tab=analysis#data-personal-response';
@@ -113,6 +115,10 @@ function unique(items: Array<string | null | undefined>, limit: number): string[
     if (result.length >= limit) break;
   }
   return result;
+}
+
+function withoutTrailingPeriod(value: string): string {
+  return value.trim().replace(/[.]+$/u, '');
 }
 
 function effectForTargetPath(targetPath: string): AnalysisDecisionEffect {
@@ -255,7 +261,9 @@ function resultPreviewForTargetPath(targetPath: string, effect: AnalysisDecision
     return 'Öffnet die Zielprojektion als Watch-Kontext. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
   }
   if (targetPath.includes('#data-decision-quality')) {
-    return 'Öffnet die Entscheidungsqualität als Tageshandlung und Lernschleife. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
+    return effect === 'today_action'
+      ? 'Öffnet die Entscheidungsqualität als Tageshandlung und Lernschleife. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.'
+      : 'Öffnet die Entscheidungsqualität als Watch-Kontext. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
   }
   if (targetPath.includes('#data-personal-response')) {
     return 'Öffnet die Reaktionsmuster und Fueling-Evidenz als Tageshandlung. Plan und Garmin bleiben unverändert; du prüfst dort nur die Grundlage.';
@@ -326,6 +334,71 @@ function primaryFromDecisionQuality(decisionQuality: PulseDailyDecisionQualityRe
     targetPath: DECISION_QUALITY_PATH,
     resultPreview: resultPreviewForTargetPath(DECISION_QUALITY_PATH, 'today_action'),
   }, 'today_action');
+}
+
+function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): AnalysisTranslationSignal | null {
+  if (!decisionQuality) return null;
+  const tradeoffTheme = decisionQuality.repeatedThemes
+    .filter(theme => /tageskonflikt|koerper|körper|ziel|alltag|tradeoff/i.test(`${theme.theme} ${theme.evidence.join(' ')}`))
+    .sort((a, b) => b.count - a.count)[0] ?? null;
+  if (!tradeoffTheme) return null;
+
+  const themeLabel = withoutTrailingPeriod(tradeoffTheme.theme);
+  const suggestedAdjustment = withoutTrailingPeriod(decisionQuality.suggestedAdjustment);
+  const evidence = unique([
+    `${tradeoffTheme.count}x ${themeLabel}`,
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ], 4);
+  const repeated = tradeoffTheme.count >= 2;
+  const effect: AnalysisDecisionEffect = repeated && (decisionQuality.status === 'needs_strategy_change' || tradeoffTheme.status === 'stale')
+    ? 'plan_decision'
+    : repeated && (decisionQuality.status === 'helpful' || tradeoffTheme.status === 'useful_repetition')
+      ? 'today_action'
+      : 'watch_context';
+  const tone: AnalysisTranslationTone = effect === 'plan_decision'
+    ? 'rose'
+    : effect === 'today_action'
+      ? 'green'
+      : qualityTone(decisionQuality.status);
+
+  if (effect === 'plan_decision') {
+    return withEffect({
+      label: 'Tradeoff-Muster',
+      title: 'Tageskonflikte werden Wochenentscheidung',
+      summary: `Wiederholter Tageskonflikt: ${tradeoffTheme.count}x ${themeLabel}. ${suggestedAdjustment}.`,
+      evidence,
+      tone,
+      actionLabel: 'Wochenentscheidung prüfen',
+      targetPath: TRADEOFF_PLAN_DECISION_PATH,
+      resultPreview: resultPreviewForTargetPath(TRADEOFF_PLAN_DECISION_PATH, 'plan_decision'),
+    }, 'plan_decision');
+  }
+
+  if (effect === 'today_action') {
+    return withEffect({
+      label: 'Tradeoff-Muster',
+      title: 'Tageskonflikt verändert Heute',
+      summary: `Wiederholter Tageskonflikt: ${tradeoffTheme.count}x ${themeLabel}. ${suggestedAdjustment}.`,
+      evidence,
+      tone,
+      actionLabel: 'Heute einordnen',
+      targetPath: TRADEOFF_TODAY_PATH,
+      resultPreview: resultPreviewForTargetPath(TRADEOFF_TODAY_PATH, 'today_action'),
+    }, 'today_action');
+  }
+
+  const prefix = repeated ? 'Noch nicht stark genug' : 'Ein einzelner Tageskonflikt';
+  return withEffect({
+    label: 'Tradeoff-Muster',
+    title: 'Tageskonflikt beobachten',
+    summary: `${prefix} ist noch keine Planentscheidung und keine neue Tageshandlung: ${themeLabel}. ${suggestedAdjustment}.`,
+    evidence,
+    tone,
+    actionLabel: 'Muster prüfen',
+    targetPath: DECISION_QUALITY_PATH,
+    resultPreview: resultPreviewForTargetPath(DECISION_QUALITY_PATH, 'watch_context'),
+  }, 'watch_context');
 }
 
 function primaryFromPersonalResponse(personalResponse: PulsePersonalResponseResponse | null | undefined): AnalysisTranslationSignal | null {
@@ -429,6 +502,7 @@ export function buildAnalysisTranslation({
 }: Input): AnalysisTranslation {
   const primary = primaryFromGoal(goalProjection)
     ?? primaryFromPlanTrace(planTrace)
+    ?? primaryFromTradeoffPattern(decisionQuality)
     ?? primaryFromDecisionQuality(decisionQuality)
     ?? primaryFromPersonalResponse(personalResponse)
     ?? withEffect({

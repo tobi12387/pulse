@@ -30,13 +30,13 @@ Use this file after `docs/ai/current-focus.md` and before opening broad code con
 
 ## Current Package Order
 
-The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal plus the fifth-pass completed-day closure learning, and Track 2 carries repeated Tageskonflikte into the weekly decision receipt.
+The first two passes through all three Performance-OS tracks are shipped: `Tagesentscheidung` delivered Home closure/registry/follow-up work, `Trainingsanpassung` delivered the weekly decision contract, handoffs and local receipts, and `Lernschleifen` delivered Data action contracts, the training-risk contract and learning calibration gates. Track 1 and Track 2 also have third-pass learning-calibration packages, Track 1 has the fourth-pass `Tageskonflikt` signal plus the fifth-pass completed-day closure learning, Track 2 carries repeated Tageskonflikte into the weekly decision receipt, and Track 3 classifies tradeoff evidence as action, plan decision or watch context.
 
 Keep the next three package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
-1. `Lernschleifen`: **Data erklaert Tradeoff-Muster als Handlung, Planentscheidung oder Watch-Kontext.**
-2. `Tagesentscheidung`: **Home nutzt wiederholte Tradeoff-Lernmuster nur bei echter Tageswirkung.**
-3. `Trainingsanpassung`: **Plan nutzt klassifizierte Tradeoff-Muster nur bei echter Wochenwirkung.**
+1. `Tagesentscheidung`: **Home nutzt wiederholte Tradeoff-Lernmuster nur bei echter Tageswirkung.**
+2. `Trainingsanpassung`: **Plan nutzt klassifizierte Tradeoff-Muster nur bei echter Wochenwirkung.**
+3. `Lernschleifen`: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
 
 ## Track 1: Tagesentscheidung
 
@@ -203,9 +203,22 @@ Done evidence:
 
 ## Track 3: Lernschleifen
 
-Status: **next ready package plus shipped second-pass baseline**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates.
+Status: **shipped third-pass package plus later ready card**. PRs #471 and #473 delivered Data action-effect contracts, Fueling learning-loop copy, Home watch-context gating and a compact Data training-risk contract. The second pass adds Data learning calibration across Decision Quality, Personal Response and Fueling trends with shared Fueling trend gates. The third pass classifies repeated body/goal/everyday tradeoff evidence as `today_action`, `plan_decision` or `watch_context`.
 
-Next package: **Data erklaert Tradeoff-Muster als Handlung, Planentscheidung oder Watch-Kontext.**
+Later ready package: **Data haelt geloeste Tradeoff-Muster ruhig und zeigt nur neue Evidenz.**
+
+Outcome: after Home and Plan consume classified tradeoff signals, Data should mark patterns as active, resolved or still-evidence-gap and avoid re-routing already-handled history unless fresh evidence changes the next action.
+
+Why it matters: the learning loop should become quieter as it learns. A repeated conflict that was already handled should stay useful evidence, not keep reopening Home or the weekly decision.
+
+Package PRs:
+
+- Add fast Data action-contract scenarios for active, resolved and stale-with-new-evidence tradeoff patterns.
+- Keep resolved patterns as watch/quiet context with clear evidence notes.
+- Route only fresh strong evidence to Home or the weekly Plan decision.
+- Use the Fast Lane `verify:lernschleifen:pr` gate plus one CI/Data smoke unless local rendered behavior is changed.
+
+Shipped package: **Data erklaert Tradeoff-Muster als Handlung, Planentscheidung oder Watch-Kontext.**
 
 Outcome: Data should classify body/goal/everyday tradeoff evidence as a `today_action`, `plan_decision` or `watch_context`, explain what is still missing, and route only strong repeated evidence toward Home or the weekly Plan decision.
 

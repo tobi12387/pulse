@@ -43,11 +43,7 @@ Do not re-read long histories by default. Use:
 
 Default to weekly, package-shaped product work instead of isolated micro-slices. A good runtime PR should normally advance one package with 3-5 tightly related changes that share the same evidence and verification surface, for example Home completion learning, Plan weekly decision control, or Data analysis-to-action translation. Use a smaller micro-slice only for urgent fixes, regressions, CI/deploy repair, docs-only workflow updates, or when the package would otherwise mix unrelated ownership boundaries.
 
-The hard Performance-OS backlog order lives in [`docs/ai/next-product-packages.md`](docs/ai/next-product-packages.md):
-
-1. **Tagesentscheidung:** Home learns completed days fully and keeps the daily answer concrete.
-2. **Trainingsanpassung:** Plan makes the weekly decision active and explicit.
-3. **Lernschleifen:** Data turns analysis, feedback and fueling evidence into the next useful action.
+The hard Performance-OS backlog order lives in [`docs/ai/next-product-packages.md`](docs/ai/next-product-packages.md). Read that file every session and take the first unshipped package unless Tobi explicitly reprioritizes or a regression/CI/deploy repair takes precedence.
 
 Every new product slice must name which track it serves. Work that does not serve one of these tracks is deferred unless Tobi explicitly reprioritizes it.
 

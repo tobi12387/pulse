@@ -41,6 +41,26 @@ const watchDecisionQuality: PulseDailyDecisionQualityResponse = {
   suggestedAdjustment: 'Noch nicht hochregeln; erst komplette Fueling-Logs schließen.',
 };
 
+function tradeoffDecisionQuality(overrides: Partial<PulseDailyDecisionQualityResponse> = {}): PulseDailyDecisionQualityResponse {
+  return {
+    range: { from: '2026-05-05', to: '2026-05-19', days: 14 },
+    qualityScore: 48,
+    status: 'watch',
+    statusLabel: 'Tageskonflikt beobachten',
+    repeatedThemes: [{
+      theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+      count: 1,
+      lastSeen: '2026-05-18',
+      status: 'watch',
+      evidence: ['1x Tageskonflikt mit kleinerer Alltagsoption'],
+    }],
+    bestEvidence: ['1x Tageskonflikt mit kleinerer Alltagsoption'],
+    evidence: [],
+    suggestedAdjustment: 'Erst Wiederholung abwarten, bevor Plan oder Heute anders entscheiden.',
+    ...overrides,
+  };
+}
+
 const quietTrainingAnalytics: PulseTrainingAnalyticsResponse = {
   weeks: 12,
   tssHeatmap: [],
@@ -313,6 +333,125 @@ test('fueling response becomes an explicit fueling learning loop', () => {
   assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-personal-response');
   assert.equal(translation.primary.effect, 'today_action');
   assert.match(translation.primary.resultPreview ?? '', /Fueling/);
+});
+
+test('tradeoff pattern classification keeps isolated evidence as watch context', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality(),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'watch_context');
+  assert.equal(translation.primary.effectLabel, 'Watch-Kontext');
+  assert.equal(translation.primary.actionLabel, 'Muster prüfen');
+  assert.equal(translation.primary.targetPath, '/data?tab=analysis#data-decision-quality');
+  assert.match(translation.primary.title, /Tageskonflikt beobachten/);
+  assert.match(translation.primary.summary, /einzelner Tageskonflikt/i);
+  assert.match(translation.primary.summary, /keine Planentscheidung/i);
+  assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
+});
+
+test('tradeoff pattern classification keeps weak repeated evidence as watch context', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 52,
+      status: 'watch',
+      statusLabel: 'Tageskonflikt noch unsicher',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 2,
+        lastSeen: '2026-05-19',
+        status: 'watch',
+        evidence: ['2x Tageskonflikt, aber Feedback nur einmal geschlossen'],
+      }],
+      bestEvidence: ['2x Tageskonflikt, aber Feedback nur einmal geschlossen'],
+      suggestedAdjustment: 'Noch ein abgeschlossenes Feedback fehlt, bevor die Woche veraendert wird.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'watch_context');
+  assert.equal(translation.primary.actionLabel, 'Muster prüfen');
+  assert.match(translation.primary.summary, /Noch nicht stark genug/);
+  assert.match(translation.primary.summary, /Feedback fehlt/);
+  assert.match(translation.primary.resultPreview ?? '', /Watch-Kontext/);
+});
+
+test('tradeoff pattern classification routes useful repeated evidence to Home', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 76,
+      status: 'helpful',
+      statusLabel: 'Tageskonflikt hilft heute',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 2,
+        lastSeen: '2026-05-19',
+        status: 'useful_repetition',
+        evidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      }],
+      bestEvidence: ['2x leichtere Option hat Folgetag-RPE gesenkt'],
+      suggestedAdjustment: 'Heute zuerst die leichtere Option bestaetigen, wenn Schlaf und Alltag eng sind.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'today_action');
+  assert.equal(translation.primary.effectLabel, 'Tageshandlung');
+  assert.equal(translation.primary.actionLabel, 'Heute einordnen');
+  assert.equal(translation.primary.targetPath, '/?source=data-tradeoff');
+  assert.match(translation.primary.title, /Heute/);
+  assert.match(translation.primary.summary, /2x Tageskonflikt/);
+  assert.match(translation.primary.summary, /leichtere Option/);
+  assert.match(translation.primary.resultPreview ?? '', /heutige Entscheidung/);
+});
+
+test('tradeoff pattern classification routes stale repeated evidence to the weekly decision', () => {
+  const translation = buildAnalysisTranslation({
+    decisionQuality: tradeoffDecisionQuality({
+      qualityScore: 34,
+      status: 'needs_strategy_change',
+      statusLabel: 'Tageskonflikt wiederholt',
+      repeatedThemes: [{
+        theme: 'Tageskonflikt: Koerper, Ziel und Alltag',
+        count: 3,
+        lastSeen: '2026-05-19',
+        status: 'stale',
+        evidence: [
+          '3x Tageskonflikt mit zu hartem Plan',
+          '2x Abschluss als leichtere Option gelernt',
+        ],
+      }],
+      bestEvidence: ['3x Tageskonflikt mit zu hartem Plan'],
+      suggestedAdjustment: 'Diese Woche Intensitaet erst nach Warm-up freigeben und leichtere Option vorab festlegen.',
+    }),
+    goalProjection: quietGoalProjection,
+    personalResponse: null,
+    planTrace: null,
+    trainingAnalytics: quietTrainingAnalytics,
+  });
+
+  assert.equal(translation.primary.label, 'Tradeoff-Muster');
+  assert.equal(translation.primary.effect, 'plan_decision');
+  assert.equal(translation.primary.effectLabel, 'Planentscheidung');
+  assert.equal(translation.primary.actionLabel, 'Wochenentscheidung prüfen');
+  assert.equal(translation.primary.targetPath, '/plan?tab=training&source=data-tradeoff#plan-weekly-decision');
+  assert.match(translation.primary.title, /Wochenentscheidung/);
+  assert.match(translation.primary.summary, /3x Tageskonflikt/);
+  assert.match(translation.primary.summary, /Intensitaet erst nach Warm-up/);
+  assert.match(translation.primary.resultPreview ?? '', /Planentscheidung/);
 });
 
 test('learning calibration keeps weak fueling evidence as watch context and hides premature trend summaries', () => {
