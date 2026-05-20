@@ -363,12 +363,24 @@ function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification
     .join(', ');
   const drivers = unique(pattern.reopenSourceTrends.flatMap(trend => trend.evidence), 2);
   const driverDetail = drivers.length > 0 ? ` Treiber: ${drivers.join(' · ')}.` : '';
+  if (pattern.resolvedReopenSourceTrends.length > 0) {
+    return `Reopen-Quellentrend erneut aktiv: ${trendLabel}. Data vergleicht die frischen Quellen mit der bereits eingeordneten Wochenentscheidung.${driverDetail}`;
+  }
   return `Reopen-Quellentrend: ${trendLabel}. Data buendelt frische Reopen-Gruende zu Lerntrends, statt einzelne alte Tageskonflikte neu zu starten.${driverDetail}`;
+}
+
+function tradeoffResolvedReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
+  if (pattern.resolvedReopenSourceTrends.length === 0) return null;
+  const trendLabel = pattern.resolvedReopenSourceTrends
+    .map(trend => `${trend.label} ${trend.count}x`)
+    .join(', ');
+  return `Die Wochenentscheidung hat den Reopen-Quellentrend ${trendLabel} bereits eingeordnet. Data haelt ihn als Kontinuitaet ruhig, bis frische Heute- oder Wochen-Evidenz Home oder Plan erneut veraendert.`;
 }
 
 function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
   return unique([
     ...pattern.reopenSourceTrends.map(trend => `Reopen-Trend ${trend.label} ${trend.count}x`),
+    ...pattern.resolvedReopenSourceTrends.map(trend => `Reopen-Trend entschieden ${trend.label} ${trend.count}x`),
     ...pattern.evidence,
   ], 4);
 }
@@ -390,7 +402,11 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
   if (effect === 'plan_decision') {
     return withEffect({
       label: 'Tradeoff-Muster',
-      title: hasSourceTrend ? 'Reopen-Quellen werden Lerntrend' : 'Tageskonflikte werden Wochenentscheidung',
+      title: hasSourceTrend
+        ? pattern.resolvedReopenSourceTrends.length > 0
+          ? 'Reopen-Quellen werden erneut aktiv'
+          : 'Reopen-Quellen werden Lerntrend'
+        : 'Tageskonflikte werden Wochenentscheidung',
       summary: tradeoffReopenSummary(pattern, 'Wochen'),
       evidence: tradeoffEvidence(pattern),
       tone,
@@ -403,7 +419,11 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
   if (effect === 'today_action') {
     return withEffect({
       label: 'Tradeoff-Muster',
-      title: hasSourceTrend ? 'Reopen-Quellen werden Lerntrend' : 'Tageskonflikt verändert Heute',
+      title: hasSourceTrend
+        ? pattern.resolvedReopenSourceTrends.length > 0
+          ? 'Reopen-Quellen werden erneut aktiv'
+          : 'Reopen-Quellen werden Lerntrend'
+        : 'Tageskonflikt verändert Heute',
       summary: tradeoffReopenSummary(pattern, 'Heute'),
       evidence: tradeoffEvidence(pattern),
       tone,
@@ -414,10 +434,13 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
   }
 
   if (pattern.state === 'resolved') {
+    const resolvedSourceTrend = tradeoffResolvedReopenSourceTrendSummary(pattern);
     return withEffect({
       label: 'Tradeoff-Muster',
-      title: 'Tageskonflikt bereits eingeordnet',
-      summary: `Bereits eingeordnet: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Data haelt das Muster ruhig, bis frische Evidenz die Handlung erneut veraendert.`,
+      title: resolvedSourceTrend ? 'Reopen-Quellentrend entschieden' : 'Tageskonflikt bereits eingeordnet',
+      summary: resolvedSourceTrend
+        ? `${resolvedSourceTrend} ${pattern.suggestedAdjustment}.`
+        : `Bereits eingeordnet: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Data haelt das Muster ruhig, bis frische Evidenz die Handlung erneut veraendert.`,
       evidence: tradeoffEvidence(pattern),
       tone,
       actionLabel: 'Muster prüfen',
