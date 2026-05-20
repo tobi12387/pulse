@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Data kalibriert Wochenreceipt-Lernvertrauen nach Folgewirkung
+
+- **Decision:** Data unterscheidet bei `Wochenreceipt-Lernvertrauen` jetzt zwischen bestaetigter Folgewirkung und geschwaechtem Vertrauen durch frische Wiederkehr. Bestaetigte Receipts bleiben ruhige Evidenz; geschwaechte Receipts routen nur ueber die vorhandenen frischen Heute-/Wochenwirkungs-Pfade und nennen das alte Receipt als Kontext.
+- **Why:** Receipt-Vertrauen darf kein permanentes Stillhalte-Label werden. Die Lernschleife muss zeigen, ob die Wochenentscheidung nachwirkt oder ob neue Evidenz die Sicherheit reduziert, ohne dabei alte Planentscheidungen als frische Handlung zu tarnen.
+- **Alternatives:** Jedes Receipt dauerhaft als unveraendertes Lernvertrauen anzeigen (zu statisch); jede Folgewirkung mit dem Wort `erneut` als frischen Reopen behandeln (falsche Eskalation); geschwaechtes Vertrauen separat statt ueber bestehende Home-/Plan-Pfade routen (mehr Drift).
+- **Decided by:** Codex, als naechster Track-3-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Plan zeigt Wochenreceipt-Lernvertrauen als stabiles Wochenvertrauen
 
 - **Decision:** Plan zeigt geschlossene `Reopen-Quellentrends` mit Wochenreceipt jetzt als `Wochenreceipt-Lernvertrauen`, das `Beibehalten` stuetzt. Dieses Vertrauen bleibt in Gelernt-/Evidenz-/Receipt-Spuren; `Anpassen` und die Vorschau oeffnen nur bei frischer Wochenwirkung.

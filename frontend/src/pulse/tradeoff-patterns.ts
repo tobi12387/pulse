@@ -23,6 +23,7 @@ export interface TradeoffPatternClassification {
   evidence: string[];
   freshEvidence: string[];
   resolvedEvidence: string[];
+  receiptFollowupEvidence: string[];
   effect: TradeoffPatternEffect;
   state: TradeoffPatternState;
   hasFreshEvidence: boolean;
@@ -49,6 +50,8 @@ function withoutTrailingPeriod(value: string): string {
 
 const RESOLVED_TRADEOFF_PATTERN = /bereits|eingeordnet|gemerkt|beibehalten gemerkt|gehandhabt|handled|resolved|geloest|gelöst|erledigt|abgehakt/i;
 const FRESH_TRADEOFF_PATTERN = /frisch|fresh|neu|neue evidenz|erneut|seit gemerkter|seit der|seit dem|wieder wochenentscheidung|jetzt wieder|reopen-grund|reopen-source/i;
+const NEGATED_FRESH_TRADEOFF_PATTERN = /(?:ohne|keine|kein|nicht)\s+(?:erneute?n?|neue?n?|frische?n?|wiederkehr|reopen)/i;
+const RECEIPT_FOLLOWUP_PATTERN = /folgewirkung|follow[-\s]?up|bestaetigt|bestätigt|stabil|ohne\s+erneute|keine\s+erneute/i;
 const GENERIC_REOPEN_PATTERN = /reopen|re-open/i;
 const REOPEN_SOURCE_REPEAT_PATTERN = /\b([2-9]\d*)x\b|wiederholte?r?|mehrfach|mehrere|quellentrend|reopen-grund|reopen-source|trend/i;
 
@@ -123,12 +126,17 @@ function buildReopenSourceTrends(freshEvidence: string[]): TradeoffReopenSourceT
 }
 
 function isFreshTradeoffEvidence(value: string): boolean {
+  if (NEGATED_FRESH_TRADEOFF_PATTERN.test(value)) return false;
   if (FRESH_TRADEOFF_PATTERN.test(value)) return true;
   return GENERIC_REOPEN_PATTERN.test(value) && !RESOLVED_TRADEOFF_PATTERN.test(value);
 }
 
 function isResolvedTradeoffEvidence(value: string): boolean {
   return RESOLVED_TRADEOFF_PATTERN.test(value) && !isFreshTradeoffEvidence(value);
+}
+
+function isReceiptFollowupEvidence(value: string): boolean {
+  return RECEIPT_FOLLOWUP_PATTERN.test(value);
 }
 
 export function classifyTradeoffPattern(
@@ -165,6 +173,11 @@ export function classifyTradeoffPattern(
     ...tradeoffTheme.evidence,
     ...decisionQuality.bestEvidence,
   ].filter(isResolvedTradeoffEvidence), 5);
+  const receiptFollowupEvidence = unique([
+    decisionQuality.statusLabel,
+    ...tradeoffTheme.evidence,
+    ...decisionQuality.bestEvidence,
+  ].filter(isReceiptFollowupEvidence), 3);
   const isResolved = RESOLVED_TRADEOFF_PATTERN.test(resolutionCorpus) && !hasFreshEvidence;
   const repeated = tradeoffTheme.count >= 2;
   const becomesWeeklyDecision = repeated
@@ -196,6 +209,7 @@ export function classifyTradeoffPattern(
     ], 4),
     freshEvidence,
     resolvedEvidence,
+    receiptFollowupEvidence,
     effect,
     state,
     hasFreshEvidence,
