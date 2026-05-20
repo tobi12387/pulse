@@ -8,12 +8,18 @@
 - Host dependency command: `npx playwright install-deps webkit`
 - Gate command: `PULSE_E2E_WEBKIT=true npm run test:e2e -- --project=iphone-webkit --grep "PWA|service workers|Mobile navigation|Settings PWA diagnostics|renders"`
 - Result: 14 passed in 25.5s.
+- Screenshot command: `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-2026-05-21-iphone-webkit npm run qa:ux-evidence:iphone`
+- Summary command: `npm run qa:ux-summary -- /tmp/pulse-2026-05-21-iphone-webkit`
+- Screenshot result: 2 passed in 20.1s; 2 manifests, 9 desktop screenshots, 9 iPhone WebKit screenshots, 0 horizontal overflow.
+- Screenshot root: `/tmp/pulse-2026-05-21-iphone-webkit/2026-05-20-0feb515/`
 
 ## Finding
 
 The optional iPhone WebKit gate now runs locally on the Linux Codex host after installing both the Playwright WebKit browser and WebKit host libraries.
 
 The first run failed before app code executed because WebKit shared libraries were missing. After `npx playwright install-deps webkit`, the same bounded gate passed across route render smokes, PWA/service-worker checks, Settings standalone iPhone diagnostics, mobile navigation readability, login rendering and the daily decision render checks.
+
+The iPhone WebKit screenshot pack did not show a new UI/UX implementation trigger. A manual spot-check of Home, Data analysis, Plan and Settings found no visible clipping, incoherent overlap, unreadable primary controls or first-viewport blocker.
 
 ## Scope
 
