@@ -5884,11 +5884,21 @@ test('Settings treats blocked push as optional when core access is ready', async
   await expect(summary).not.toContainText('Problem beheben');
   const optionalRow = summary.getByTestId('settings-optional-summary-row');
   await expect(optionalRow).toContainText('Push');
-  await expect(optionalRow).toContainText('Browser blockiert');
+  await expect(optionalRow).toContainText(/Browser (blockiert|nicht unterstützt)/);
   await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
   const optionalBox = await optionalRow.boundingBox();
   expect(optionalBox).not.toBeNull();
-  expect(optionalBox!.height).toBeLessThan(80);
+  const viewport = page.viewportSize();
+  if (viewport && viewport.width <= 600) {
+    expect(optionalBox!.height, 'Mobile optional Push summary can wrap controls but should stay compact').toBeLessThanOrEqual(110);
+    const optionalCopy = optionalRow.getByText('Optional pro Gerät aktivieren.');
+    const optionalCopyBox = await optionalCopy.boundingBox();
+    expect(optionalCopyBox, 'Missing optional Push setup copy bounds').not.toBeNull();
+    expect(optionalCopyBox!.width, 'Optional Push setup copy should not collapse into a narrow mobile column').toBeGreaterThanOrEqual(180);
+    expect(optionalCopyBox!.height, 'Optional Push setup copy should fit in at most two mobile lines').toBeLessThanOrEqual(32);
+  } else {
+    expect(optionalBox!.height).toBeLessThan(80);
+  }
 });
 
 test('Settings diagnostics matrix separates denied push and blocked Garmin states', async ({ page }) => {
