@@ -337,6 +337,14 @@ function tradeoffReopenSummary(
   pattern: TradeoffPatternClassification,
   scope: 'Heute' | 'Wochen',
 ): string {
+  const sourceTrend = tradeoffReopenSourceTrendSummary(pattern);
+  const resolved = pattern.resolvedEvidence.length > 0
+    ? `Aeltere eingeordnete Evidenz bleibt Kontext: ${pattern.resolvedEvidence.join(' · ')}. `
+    : '';
+  if (sourceTrend) {
+    return `${sourceTrend} ${resolved}${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
+  }
+
   const prefix = pattern.hasFreshEvidence
     ? `Frische ${scope}-Evidenz`
     : scope === 'Heute'
@@ -345,16 +353,31 @@ function tradeoffReopenSummary(
   const fresh = pattern.freshEvidence.length > 0
     ? `${pattern.freshEvidence.join(' · ')}. `
     : '';
-  const resolved = pattern.resolvedEvidence.length > 0
-    ? `Aeltere eingeordnete Evidenz bleibt Kontext: ${pattern.resolvedEvidence.join(' · ')}. `
-    : '';
   return `${prefix}: ${fresh}${resolved}${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`;
+}
+
+function tradeoffReopenSourceTrendSummary(pattern: TradeoffPatternClassification): string | null {
+  if (pattern.reopenSourceTrends.length === 0) return null;
+  const trendLabel = pattern.reopenSourceTrends
+    .map(trend => `${trend.label} ${trend.count}x`)
+    .join(', ');
+  const drivers = unique(pattern.reopenSourceTrends.flatMap(trend => trend.evidence), 2);
+  const driverDetail = drivers.length > 0 ? ` Treiber: ${drivers.join(' · ')}.` : '';
+  return `Reopen-Quellentrend: ${trendLabel}. Data buendelt frische Reopen-Gruende zu Lerntrends, statt einzelne alte Tageskonflikte neu zu starten.${driverDetail}`;
+}
+
+function tradeoffEvidence(pattern: TradeoffPatternClassification): string[] {
+  return unique([
+    ...pattern.reopenSourceTrends.map(trend => `Reopen-Trend ${trend.label} ${trend.count}x`),
+    ...pattern.evidence,
+  ], 4);
 }
 
 function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityResponse | null | undefined): AnalysisTranslationSignal | null {
   const pattern = classifyTradeoffPattern(decisionQuality);
   if (!pattern || !decisionQuality) return null;
   const effect: AnalysisDecisionEffect = pattern.effect;
+  const hasSourceTrend = pattern.reopenSourceTrends.length > 0;
   let tone: AnalysisTranslationTone = qualityTone(decisionQuality.status);
   if (pattern.state === 'resolved') {
     tone = 'muted';
@@ -367,9 +390,9 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
   if (effect === 'plan_decision') {
     return withEffect({
       label: 'Tradeoff-Muster',
-      title: 'Tageskonflikte werden Wochenentscheidung',
+      title: hasSourceTrend ? 'Reopen-Quellen werden Lerntrend' : 'Tageskonflikte werden Wochenentscheidung',
       summary: tradeoffReopenSummary(pattern, 'Wochen'),
-      evidence: pattern.evidence,
+      evidence: tradeoffEvidence(pattern),
       tone,
       actionLabel: 'Wochenentscheidung prüfen',
       targetPath: TRADEOFF_PLAN_DECISION_PATH,
@@ -380,9 +403,9 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
   if (effect === 'today_action') {
     return withEffect({
       label: 'Tradeoff-Muster',
-      title: 'Tageskonflikt verändert Heute',
+      title: hasSourceTrend ? 'Reopen-Quellen werden Lerntrend' : 'Tageskonflikt verändert Heute',
       summary: tradeoffReopenSummary(pattern, 'Heute'),
-      evidence: pattern.evidence,
+      evidence: tradeoffEvidence(pattern),
       tone,
       actionLabel: 'Heute einordnen',
       targetPath: TRADEOFF_TODAY_PATH,
@@ -395,7 +418,7 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
       label: 'Tradeoff-Muster',
       title: 'Tageskonflikt bereits eingeordnet',
       summary: `Bereits eingeordnet: ${pattern.count}x ${pattern.themeLabel}. ${pattern.suggestedAdjustment}. Data haelt das Muster ruhig, bis frische Evidenz die Handlung erneut veraendert.`,
-      evidence: pattern.evidence,
+      evidence: tradeoffEvidence(pattern),
       tone,
       actionLabel: 'Muster prüfen',
       targetPath: DECISION_QUALITY_PATH,
@@ -404,11 +427,14 @@ function primaryFromTradeoffPattern(decisionQuality: PulseDailyDecisionQualityRe
   }
 
   const prefix = pattern.count >= 2 ? 'Noch nicht stark genug' : 'Ein einzelner Tageskonflikt';
+  const sourceTrend = tradeoffReopenSourceTrendSummary(pattern);
   return withEffect({
     label: 'Tradeoff-Muster',
-    title: 'Tageskonflikt beobachten',
-    summary: `${prefix} ist noch keine Planentscheidung und keine neue Tageshandlung: ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
-    evidence: pattern.evidence,
+    title: hasSourceTrend ? 'Reopen-Quellen beobachten' : 'Tageskonflikt beobachten',
+    summary: sourceTrend
+      ? `${sourceTrend} ${prefix} fuer eine Planentscheidung oder neue Tageshandlung: ${pattern.suggestedAdjustment}.`
+      : `${prefix} ist noch keine Planentscheidung und keine neue Tageshandlung: ${pattern.themeLabel}. ${pattern.suggestedAdjustment}.`,
+    evidence: tradeoffEvidence(pattern),
     tone,
     actionLabel: 'Muster prüfen',
     targetPath: DECISION_QUALITY_PATH,
