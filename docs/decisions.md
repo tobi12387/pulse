@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-20 — Plan zeigt Wochenreceipt-Lernvertrauen als stabiles Wochenvertrauen
+
+- **Decision:** Plan zeigt geschlossene `Reopen-Quellentrends` mit Wochenreceipt jetzt als `Wochenreceipt-Lernvertrauen`, das `Beibehalten` stuetzt. Dieses Vertrauen bleibt in Gelernt-/Evidenz-/Receipt-Spuren; `Anpassen` und die Vorschau oeffnen nur bei frischer Wochenwirkung.
+- **Why:** Nach Data und Home muss auch die Wochenentscheidung erklaeren, warum Stabilitaet verdient ist. Ein Wochenreceipt soll Vertrauen in die aktuelle Woche schaffen, ohne alte Quellentrends wieder als Planproblem auszugeben oder Plan/Garmin vor einem bewussten Klick zu veraendern.
+- **Alternatives:** Geschlossene Quellentrends weiter nur als generischen Receipt-Text anzeigen (zu wenig vertrauensbildend); Receipt-Vertrauen in `Anpassen` oder die Vorschau mischen (zu laut); frische Wochenwirkung wegen altem Receipt blockieren (verliert Anpassungsfaehigkeit).
+- **Decided by:** Codex, als naechster Track-2-Paketfortschritt aus Tobis Performance-OS-Ziel.
+- **Status:** active.
+
 ## 2026-05-20 — Home zeigt Wochenreceipt-Lernvertrauen als ruhige Tageskontinuitaet
 
 - **Decision:** Home zeigt geschlossene `Reopen-Quellentrends` mit Wochenreceipt jetzt als `Wochenreceipt-Lernvertrauen` nur in Kontinuitaet und Data-Evidenz. `Heute entscheidet`, CTA und `Sicherste Option` bleiben frei von Receipt-Vertrauen; frische Heute-Evidenz darf den Tageskonflikt weiter fuehren, wenn sie die heutige sichere Option veraendert.

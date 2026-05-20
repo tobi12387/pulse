@@ -605,17 +605,19 @@ test('weekly decision keeps handled reopen-source trends as quiet receipt contin
   assert.equal(contract.tone, 'ok');
   assert.equal(contract.title, 'Woche aktuell stabil');
   assert.equal(contract.primaryOption, 'accept_current');
-  assert.match(learned?.title ?? '', /Reopen-Quellentrend.*Receipt bleibt ruhig/);
+  assert.match(learned?.title ?? '', /Wochenreceipt-Lernvertrauen.*Beibehalten/);
   assert.match(learned?.body ?? '', /Planlast 2x.*Garmin-Ausfuehrung 2x/);
-  assert.match(learned?.body ?? '', /Wochenentscheidung.*eingeordnet|bereits.*Wochenentscheidung/);
+  assert.match(learned?.body ?? '', /Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
+  assert.match(learned?.body ?? '', /Plan bleibt bei Beibehalten/);
   assert.match(learned?.body ?? '', /Kontinuitaet|ruhig/);
   assert.match(changed?.body ?? '', /Keine offene Planaenderung/);
   assert.match(nextAction?.body ?? '', /Aktuelle Woche beibehalten/);
-  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x/);
-  assert.match(contract.evidence.join(' · '), /Reopen-Quellentrend erledigt: Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Reopen-Quellentrend|Planlast 2x|Garmin-Ausfuehrung 2x|Wochenreceipt|Lernvertrauen|Plan-Receipt/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen: Planlast 2x.*Garmin-Ausfuehrung 2x/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt: Plan-Receipt: Reopen-Quellentrend Planlast 2x und Garmin-Ausfuehrung 2x handled/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Garmin-Ausfuehrung 2x/);
-  assert.ok(receipt.evidence?.some(item => /Reopen-Quellentrend erledigt/.test(item)));
+  assert.ok(receipt.evidence?.some(item => /Wochenreceipt-Lernvertrauen/.test(item)));
   assert.match(receipt.nextConsequence, /Woche bleibt/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
@@ -696,6 +698,7 @@ test('weekly decision reopens handled source trends only with fresh weekly sourc
         ],
       }],
       bestEvidence: [
+        'Plan-Receipt: Reopen-Quellentrend Planlast 2x handled',
         'Wiederholter Reopen-Grund: Planlast 2x erneut zu hoch',
       ],
       suggestedAdjustment: 'Wochenentscheidung erneut aus Quellentrend oeffnen: Planlast kleiner vorschauen, bevor Garmin synchronisiert wird.',
@@ -715,16 +718,18 @@ test('weekly decision reopens handled source trends only with fresh weekly sourc
   assert.equal(contract.primaryOption, 'adapt_week');
   assert.match(learned?.title ?? '', /Reopen-Quellentrend/);
   assert.match(learned?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
-  assert.match(learned?.body ?? '', /Geschlossener Reopen-Quellentrend bleibt Kontext: Planlast 2x/);
-  assert.doesNotMatch(learned?.body ?? '', /Wochenentscheidung gemerkt/);
+  assert.match(learned?.body ?? '', /Wochenreceipt bleibt Lernvertrauen: Planlast 2x/);
+  assert.doesNotMatch(learned?.body ?? '', /Wochenentscheidung gemerkt|Plan-Receipt:/);
   assert.match(changed?.body ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(adapt?.weekImpact ?? '', /Reopen-Quellentrend: Planlast 2x/);
   assert.match(adapt?.weekImpact ?? '', /Szenario-Vorschau/);
+  assert.doesNotMatch(adapt?.weekImpact ?? '', /Wochenreceipt|Lernvertrauen|Plan-Receipt/);
   assert.match(accept?.weekImpact ?? '', /trotz Reopen-Quellentrend/);
   assert.equal(adapt?.targetPath, '#plan-scenario-preview');
   assert.equal(adapt?.readOnly, true);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend Planlast 2x/);
   assert.match(contract.evidence.join(' · '), /Reopen-Trend entschieden Planlast 2x/);
+  assert.match(contract.evidence.join(' · '), /Wochenreceipt-Lernvertrauen als Kontext: Planlast 2x/);
   assert.match(receipt.nextConsequence, /Tradeoff-Evidenz/);
   assert.match(receipt.mutationBoundary, /Keine Plan- oder Garmin-Aenderung gespeichert/);
 });
