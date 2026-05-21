@@ -300,6 +300,8 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log/);
   assert.match(packet, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
+  assert.match(packet, /Completion candidates:/);
+  assert.match(packet, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
   assert.match(packet, /1\. Fueling learning/);
   assert.match(packet, /Status: gated\n   Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
   assert.match(packet, /2\. iPhone\/PWA field/);
