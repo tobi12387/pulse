@@ -24,6 +24,7 @@ function usage() {
     '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
     '  --next-unblock       Print only the first open gate unblock; with --json prints that object.',
+    '  --packet             Print one manual handoff packet for all open gates.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -580,6 +581,81 @@ export function renderNextUnblock(audit) {
   return lines.join('\n');
 }
 
+function packetGateLines(gate, index) {
+  const metadata = nextUnblockMetadata(gate);
+  const lines = [
+    `${index + 1}. ${gate.label}`,
+    `   Status: ${gate.gate}`,
+    `   Command: ${gate.command}`,
+  ];
+  if (gate.nextAction) lines.push(`   Action: ${nextUnblockAction(gate, metadata)}`);
+  const target = targetSummary(metadata);
+  if (target) lines.push(`   Target: ${target}`);
+  if (metadata?.targetPath) lines.push(`   Target path: ${metadata.targetPath}`);
+  if (metadata?.evidenceChecklist) lines.push(`   Evidence checklist: ${metadata.evidenceChecklist}`);
+  if (metadata?.capturePacketCommand) lines.push(`   Evidence packet: ${metadata.capturePacketCommand}`);
+  if (metadata?.fieldPacketCommand) lines.push(`   Field packet: ${metadata.fieldPacketCommand}`);
+  if (metadata?.serverVerifyCommand) lines.push(`   Server verify: ${metadata.serverVerifyCommand}`);
+  if (metadata?.serverRecoveryPacketCommand) lines.push(`   Server recovery packet: ${metadata.serverRecoveryPacketCommand}`);
+  if (metadata?.recoveryRunbook) lines.push(`   Recovery runbook: ${metadata.recoveryRunbook}`);
+  if (metadata?.recoveryPacketCommand) lines.push(`   Recovery packet: ${metadata.recoveryPacketCommand}`);
+  const optionSummary = optionsLine(metadata);
+  if (optionSummary) lines.push(`   ${optionSummary}`);
+  return lines;
+}
+
+export function renderPerformanceGatePacket(audit) {
+  const lines = [
+    '# Performance-OS Gate Handoff Packet',
+    '',
+    `Date: ${audit.date}`,
+    `Gate: ${audit.gate}`,
+    `Open gates: ${audit.openGates}`,
+    `Expected server commit: ${audit.expectedCommit}`,
+    '',
+  ];
+
+  if (!audit.nextUnblock) {
+    lines.push('No open Performance-OS gates. Rerun the normal audit before starting a new product package.');
+    return lines.join('\n');
+  }
+
+  lines.push('## First Unblock');
+  lines.push(`Gate: ${audit.nextUnblock.label}`);
+  lines.push(`Action: ${audit.nextUnblock.action}`);
+  const target = targetLine(audit.nextUnblock.metadata);
+  if (target) lines.push(target);
+  const pathOrRunbook = metadataLine(audit.nextUnblock.metadata);
+  if (pathOrRunbook) lines.push(pathOrRunbook);
+  const packet = packetLine(audit.nextUnblock.metadata);
+  if (packet) lines.push(packet);
+  const fieldPacket = fieldPacketLine(audit.nextUnblock.metadata);
+  if (fieldPacket) lines.push(fieldPacket);
+  const serverRecoveryPacket = serverRecoveryPacketLine(audit.nextUnblock.metadata);
+  if (serverRecoveryPacket) lines.push(serverRecoveryPacket);
+  const recoveryPacket = recoveryPacketLine(audit.nextUnblock.metadata);
+  if (recoveryPacket) lines.push(recoveryPacket);
+  const optionSummary = optionsLine(audit.nextUnblock.metadata);
+  if (optionSummary) lines.push(optionSummary);
+  lines.push('');
+
+  lines.push('## Ordered Open Gates');
+  const openGates = audit.gates.filter(gate => !gate.ready);
+  openGates.forEach((gate, index) => {
+    lines.push(...packetGateLines(gate, index));
+  });
+  lines.push('');
+
+  lines.push('## Manual Safety');
+  lines.push('- Fueling GI comfort must come from the real stomach response; do not infer it from notes, route, RPE, g/h, result or pace.');
+  lines.push('- Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly.');
+  lines.push('- Real iPhone/PWA field evidence must be recorded against the expected current commit.');
+  lines.push('- The server is a GitHub main mirror; do not edit, branch or commit on the server.');
+  lines.push(`- Rerun after any manual save or deploy: npm run audit:performance-gates -- --today ${audit.date}`);
+
+  return lines.join('\n');
+}
+
 export function exitCodeForAudit(audit, options = {}) {
   return options.failOnGated && audit.gate !== 'ready' ? 1 : 0;
 }
@@ -590,6 +666,7 @@ function parseArgs(argv) {
     skipServer: false,
     failOnGated: false,
     nextUnblock: false,
+    packet: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -609,6 +686,10 @@ function parseArgs(argv) {
     }
     if (arg === '--next-unblock') {
       result.nextUnblock = true;
+      continue;
+    }
+    if (arg === '--packet') {
+      result.packet = true;
       continue;
     }
     if (arg === '--today') {
@@ -633,7 +714,9 @@ function main(argv) {
     process.exitCode = exitCodeForAudit(audit, args);
     return;
   }
-  console.log(args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit));
+  console.log(args.packet
+    ? renderPerformanceGatePacket(audit)
+    : args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit));
   process.exitCode = exitCodeForAudit(audit, args);
 }
 

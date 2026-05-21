@@ -23,6 +23,12 @@ npm run audit:performance-next -- --today <YYYY-MM-DD>
 
 Use the printed `Target path` and `Options`. If the target changes, follow the command output instead of this document.
 
+If Fueling is part of a broader manual gate run, generate one ordered handoff first:
+
+```bash
+npm run audit:performance-gates -- --today <YYYY-MM-DD> --packet
+```
+
 For a focused table, run:
 
 ```bash
