@@ -13,8 +13,8 @@ ERROR: SSH access to root@192.168.178.46 failed before server checks.
 ```
 
 For a compact, read-only handoff that prints the current expected commit,
-preflight command, deploy boundary and rerun commands without opening an SSH
-connection:
+preflight command, local public-key candidate filenames, deploy boundary and
+rerun commands without opening an SSH connection:
 
 ```bash
 npm run verify:server -- --packet
@@ -40,6 +40,8 @@ If that fails, repair the SSH credential outside the repo:
 
 - confirm VPN/network access to `192.168.178.46`;
 - confirm the intended local public key exists, for example `~/.ssh/id_ed25519.pub`;
+  `npm run verify:server -- --packet` lists local `~/.ssh/*.pub` candidates by
+  filename only, never key contents;
 - using a trusted existing login path, add that public key to the server user's `~/.ssh/authorized_keys`;
 - keep private keys on the local machine only;
 - rerun the non-interactive SSH command above.
