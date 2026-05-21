@@ -9,6 +9,20 @@ import {
 
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
+function withPulseHost(host, fn) {
+  const previous = process.env.PULSE_HOST;
+  process.env.PULSE_HOST = host;
+  try {
+    fn();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PULSE_HOST;
+    } else {
+      process.env.PULSE_HOST = previous;
+    }
+  }
+}
+
 const CURRENT_FIELD_RECORD = `# Pulse iPhone / VPN / PWA Real-Device QA - 2026-05-02
 
 ## Scope
@@ -155,6 +169,22 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /- Server commit under test: `abc1234`/);
   assert.match(packet, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
   assert.match(packet, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
+});
+
+test('iphone pwa gate audit preserves configured server SSH host in handoff commands', () => {
+  withPulseHost('pulse-server', () => {
+    const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, {
+      evidenceFile: 'field.md',
+      expectedCommit: 'abc1234',
+    });
+
+    assert.equal(audit.serverVerifyCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
+    assert.equal(audit.serverRecoveryPacketCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
+
+    const packet = renderIphonePwaFieldPacket(audit);
+    assert.match(packet, /Server verify command: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+    assert.match(packet, /Server recovery packet: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+  });
 });
 
 test('iphone pwa gate audit opens when all manual gates match the expected commit', () => {

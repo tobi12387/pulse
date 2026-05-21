@@ -10,9 +10,11 @@ current commit and keeps the gate closed when the field evidence is stale.
 For a live packet of the current field gaps and recording steps, run
 `npm run audit:iphone-pwa-gate -- --packet`.
 The packet prints the exact `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server`
-command to run before recording new current real-device evidence. It also prints
-the read-only `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server -- --packet`
-handoff for SSH preflight failures; if SSH is still blocked, follow
+command to run before recording new current real-device evidence, including
+`PULSE_HOST=<ssh-host>` when the workspace is using an SSH alias such as
+`pulse-server`. It also prints the read-only
+`PULSE_EXPECTED_COMMIT=<commit> npm run verify:server -- --packet` handoff for
+SSH preflight failures; if SSH is still blocked, follow
 `docs/ai/checklists/deploy-auth-recovery.md` before continuing the iPhone field
 run.
 
@@ -98,6 +100,14 @@ server preflight wrapper from a clean local `main`:
 git switch main
 git pull --ff-only
 PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
+```
+
+If direct `root@192.168.178.46` auth fails but the local SSH alias works, keep
+the alias in the command so the field packet and server verifier use the same
+host:
+
+```bash
+PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
 ```
 
 If this fails at SSH auth before server Git/PM2/health checks, do not continue

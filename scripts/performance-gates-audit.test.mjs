@@ -16,6 +16,20 @@ function commandResult(status, stdout = '', stderr = '') {
   return { status, stdout, stderr };
 }
 
+function withPulseHost(host, fn) {
+  const previous = process.env.PULSE_HOST;
+  process.env.PULSE_HOST = host;
+  try {
+    fn();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PULSE_HOST;
+    } else {
+      process.env.PULSE_HOST = previous;
+    }
+  }
+}
+
 function makeRunner({ fueling, iphone, server, commit = 'abc1234' }) {
   return (command, args) => {
     if (command === 'git' && args.join(' ') === 'rev-parse --short HEAD') {
@@ -369,6 +383,36 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
   assert.match(renderNextUnblock(audit), /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+});
+
+test('performance gate audit preserves configured server SSH host in gate handoffs', () => {
+  withPulseHost('pulse-server', () => {
+    const iphoneAudit = JSON.parse(GATED_IPHONE.stdout);
+    delete iphoneAudit.serverVerifyCommand;
+    delete iphoneAudit.serverRecoveryPacketCommand;
+
+    const audit = buildPerformanceGateAudit({ today: '2026-05-21' }, makeRunner({
+      fueling: READY_FUELING,
+      iphone: commandResult(0, JSON.stringify(iphoneAudit)),
+      server: commandResult(1, '', [
+        'Permission denied (publickey,password).',
+        'expected_commit=abc1234',
+        'recovery_runbook=docs/ai/checklists/deploy-auth-recovery.md',
+        'ERROR: SSH access to pulse-server failed before server checks.',
+      ].join('\n')),
+    }));
+
+    assert.equal(audit.gates[1].fieldPacketCommand, 'PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet');
+    assert.equal(audit.gates[1].serverVerifyCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
+    assert.equal(audit.gates[1].serverRecoveryPacketCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
+    assert.equal(audit.gates[2].command, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
+    assert.equal(audit.gates[2].recoveryPacketCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
+
+    const packet = renderPerformanceGatePacket(audit);
+    assert.match(packet, /Field packet: PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
+    assert.match(packet, /Server verify: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+    assert.match(packet, /Recovery packet: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+  });
 });
 
 test('performance gate audit can pin an expected server commit for manual field runs', () => {
