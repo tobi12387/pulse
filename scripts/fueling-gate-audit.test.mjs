@@ -3,11 +3,14 @@ import test from 'node:test';
 import {
   buildFuelingGateAudit,
   exitCodeForFuelingCandidateUrls,
+  exitCodeForFuelingNewLogChecklist,
   fuelingCandidateUrls,
+  fuelingNewLogChecklistUsers,
   parseArgs,
   renderFuelingCandidateUrls,
   renderFuelingEvidencePacket,
   renderFuelingGateAudit,
+  renderFuelingNewLogChecklist,
   shiftIsoDate,
 } from './fueling-gate-audit.mjs';
 
@@ -103,6 +106,8 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
     audit.users[0].completionCandidates[1].targetUrl,
   ].join('\n'));
   assert.equal(exitCodeForFuelingCandidateUrls(audit), 0);
+  assert.deepEqual(fuelingNewLogChecklistUsers(audit), [audit.users[0]]);
+  assert.equal(exitCodeForFuelingNewLogChecklist(audit), 0);
 
   const rendered = renderFuelingGateAudit(audit);
   assert.match(rendered, /Comparable complete logs: 0\/3/);
@@ -134,6 +139,16 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(packet, /Choose GI comfort only from the real stomach response/);
   assert.match(packet, /Rerun after each save: npm run audit:fueling-gate -- --today 2026-05-21/);
   assert.match(packet, /New complete long-session logs still needed: 1/);
+
+  const checklist = renderFuelingNewLogChecklist(audit);
+  assert.match(checklist, /# Fueling New Long-Session Log Checklist/);
+  assert.match(checklist, /Needed after existing candidates: 1 complete long-session log/);
+  assert.match(checklist, /Existing candidates to close first: 2/);
+  assert.match(checklist, /Activity\/date and duration context from the real long endurance session/);
+  assert.match(checklist, /During-activity carbs with enough detail to compute g\/h/);
+  assert.match(checklist, /Structured GI comfort from the real stomach response: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme\./);
+  assert.match(checklist, /Infer GI comfort from notes, route, RPE, g\/h, result, pace or how the workout looks afterward/);
+  assert.match(checklist, /Rerun after capture: npm run audit:fueling-gate -- --today 2026-05-21/);
 });
 
 test('fueling gate packet respects a configured Pulse URL', () => {
@@ -179,16 +194,20 @@ test('fueling gate audit opens after three comparable complete logs', () => {
   assert.deepEqual(fuelingCandidateUrls(audit), []);
   assert.equal(renderFuelingCandidateUrls(audit), '');
   assert.equal(exitCodeForFuelingCandidateUrls(audit), 1);
+  assert.deepEqual(fuelingNewLogChecklistUsers(audit), []);
+  assert.equal(exitCodeForFuelingNewLogChecklist(audit), 1);
+  assert.match(renderFuelingNewLogChecklist(audit), /No new complete long-session log is currently needed/);
   assert.match(renderFuelingGateAudit(audit), /trend summaries can be enabled/);
 });
 
-test('fueling gate audit CLI args accept candidate-url mode', () => {
+test('fueling gate audit CLI args accept handoff-only modes', () => {
   assert.deepEqual(parseArgs([
     'node',
     'scripts/fueling-gate-audit.mjs',
     '--today',
     '2026-05-21',
     '--candidate-urls',
+    '--new-log-checklist',
   ]), {
     today: '2026-05-21',
     since: null,
@@ -197,6 +216,7 @@ test('fueling gate audit CLI args accept candidate-url mode', () => {
     envFile: null,
     packet: false,
     candidateUrls: true,
+    newLogChecklist: true,
     json: false,
   });
 });
