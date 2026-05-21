@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Current-Gate-Refresh `4c046ab` bleibt produktgegated
+
+- **Decision:** Nach dem iPhone-Commit-Freshness-Support bleibt der autonome Produktbacklog weiter gegated; es wird aus `4c046ab` kein neues UI-/Produkt-Slice abgeleitet.
+- **Why:** Der aktuelle Gate-Audit zeigt weiterhin Fueling als ersten unblockenden Schritt, iPhone/PWA braucht aktuelle Real-Device-Evidence statt `9e05189`, und der Server-Spiegel scheitert vor Git/PM2/Health an SSH-Auth. Ohne neue Nutzerevidenz oder frische Route-Friction waere ein weiteres Produkt-Slice spekulativ.
+- **Alternatives:** Trotz offener Gates Produktcode starten (nicht backlog-gedeckt); den alten iPhone-Field-Record als ausreichend behandeln (stale); Server-Ready ohne SSH-Beweis annehmen (zu riskant).
+- **Decided by:** Codex, als Current-Gate-Handoff im Branch `codex/current-focus-iphone-gate-4c046ab`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-Feldgate prueft aktuelle Commit-Evidenz
 
 - **Decision:** `npm run audit:iphone-pwa-gate` vergleicht den im Feldrecord genannten `Server commit under test` mit dem erwarteten aktuellen Commit und macht fehlende oder veraltete Commit-Evidenz zu einem eigenen Gate-Gap.
