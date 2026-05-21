@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
 import type { ActivityAnalytics, NutritionLog } from '@/pulse/api-client';
@@ -39,6 +39,15 @@ function fmtDuration(sec: number | null | undefined): string {
   const s = Math.floor(sec % 60);
   if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function hashFromLocation(hash: string): string {
+  const value = hash.replace(/^#/, '');
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function fmtPace(speedMs: number | null | undefined): string {
@@ -707,7 +716,7 @@ function FuelingSection({
 
   return (
     <>
-      <div id="activity-fueling-log" className="card" style={{ padding: '12px 14px' }}>
+      <div id="activity-fueling-log" className="card" tabIndex={-1} style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase' }}>
             Fueling
@@ -1195,6 +1204,7 @@ function ActivityEquipmentSection({
 export default function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data, isLoading, error } = useQuery({
     queryKey: pulseKeys.activityDetail(id!),
@@ -1211,6 +1221,21 @@ export default function ActivityDetail() {
     && dismissedAutoRpeActivityId !== loadedActivity.id
     && nowMs - new Date(loadedActivity.startTime).getTime() < 24 * 60 * 60 * 1000;
   const isRpeSheetOpen = rpeOpen || shouldAutoOpenRpe;
+
+  useEffect(() => {
+    if (isLoading || !data) return;
+
+    const hash = hashFromLocation(location.hash);
+    if (!hash) return;
+
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(hash);
+      if (!target) return;
+      target.scrollIntoView({ block: 'start' });
+      target.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [data, isLoading, location.hash]);
 
   function closeRpeSheet() {
     if (loadedActivity && shouldAutoOpenRpe) {

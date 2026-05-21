@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Activity-Deep-Links fokussieren die Closure-Fläche
+
+- **Decision:** Activity-Detail-Links mit Hash, insbesondere `#activity-fueling-log`, scrollen und fokussieren nach dem asynchronen Laden die Zielkarte.
+- **Why:** Data und Home können Fueling- oder Feedback-Lücken korrekt auf eine Aktivität routen, aber die URL allein reicht nicht, wenn die Zielkarte erst nach dem Activity-Fetch rendert. Der Tagesaktionsvertrag muss den kleinsten Abschluss-Schritt sichtbar machen, nicht nur die richtige Seite öffnen.
+- **Alternatives:** Nur die URL testen (zu schwach für mobile Closure-Flows); eine neue Fueling-Route bauen (zu groß und dupliziert Activity-Evidence); das Verhalten dem Browser-Default überlassen (bricht bei async Render).
+- **Decided by:** Codex, im Branch `codex/activity-fueling-anchor-focus`.
+- **Status:** active.
+
 ## 2026-05-21 — Data fuehrt offene Fueling-Evidenz als Tagesaktion
 
 - **Decision:** Data priorisiert eine konkrete Fueling-Lernluecke auf der `Heute relevant`-Flaeche, wenn Mental-Check-in und Garmin-Frische geklaert sind und die Fueling-Baseline eine vervollstaendigbare Aktivitaet liefert.
