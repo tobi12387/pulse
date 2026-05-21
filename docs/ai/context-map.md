@@ -56,6 +56,7 @@ Do not read historical archives by default. Use `docs/superpowers/plans/complete
 |---|---|
 | PR readiness | `docs/ai/checklists/pr-ready.md` |
 | PR delivery manifest | `docs/ai/checklists/delivery-manifest.md` |
+| Fueling evidence capture | `docs/ai/checklists/fueling-evidence-capture.md` |
 | Deploy auth recovery | `docs/ai/checklists/deploy-auth-recovery.md` |
 | Backend change guard | `docs/ai/checklists/backend-change.md` |
 | Frontend/mobile guard | `docs/ai/checklists/frontend-change.md` |

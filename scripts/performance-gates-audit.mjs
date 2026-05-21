@@ -2,6 +2,8 @@
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
+const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
+
 function usage() {
   return [
     'Usage: node scripts/performance-gates-audit.mjs [options]',
@@ -177,6 +179,7 @@ function summarizeFueling(today, runner) {
       command: commandText,
       detail: 'No during nutrition logs were found in the audit window.',
       nextAction: 'Capture comparable during Fueling logs with activity/duration context, carbs and GI comfort.',
+      evidenceChecklist: FUELING_EVIDENCE_CHECKLIST,
       users: summaryUsers,
     };
   }
@@ -206,6 +209,7 @@ function summarizeFueling(today, runner) {
     command: commandText,
     detail,
     nextAction,
+    evidenceChecklist: blockingUser.nextAction?.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
     users: summaryUsers,
     completionCandidates,
   };
@@ -308,6 +312,7 @@ function nextUnblockMetadata(gate) {
       kind: nextAction?.kind ?? null,
       targetPath: nextAction?.targetPath ?? gate.completionCandidates?.find(candidate => candidate.targetPath)?.targetPath ?? null,
       date: nextAction?.date ?? null,
+      evidenceChecklist: nextAction?.evidenceChecklist ?? gate.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
       options: nextAction?.options ?? [],
       status: user ? {
         comparableCompleteLogs: user.comparableCompleteLogs ?? null,
@@ -395,6 +400,7 @@ export function renderPerformanceGateAudit(audit) {
     lines.push(`- Command: \`${gate.command}\``);
     lines.push(`- Detail: ${gate.detail}`);
     lines.push(`- Next: ${gate.nextAction}`);
+    if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
     lines.push('');
   }
 
@@ -407,6 +413,10 @@ function metadataLine(metadata) {
   if (metadata.firstGap?.label) return `First gap: ${metadata.firstGap.label} (${metadata.firstGap.status ?? 'unknown'})`;
   if (metadata.recoveryRunbook) return `Recovery runbook: ${metadata.recoveryRunbook}`;
   return null;
+}
+
+function checklistLine(metadata) {
+  return metadata?.evidenceChecklist ? `Evidence checklist: ${metadata.evidenceChecklist}` : null;
 }
 
 function targetSummary(metadata) {
@@ -480,6 +490,8 @@ export function renderNextUnblock(audit) {
   if (targetSummary) lines.push(targetSummary);
   const pathOrRunbook = metadataLine(next.metadata);
   if (pathOrRunbook) lines.push(pathOrRunbook);
+  const checklist = checklistLine(next.metadata);
+  if (checklist) lines.push(checklist);
   const optionSummary = optionsLine(next.metadata);
   if (optionSummary) lines.push(optionSummary);
   lines.push(...completionCandidateLines(next.metadata));
