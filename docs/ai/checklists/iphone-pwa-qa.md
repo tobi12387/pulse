@@ -25,9 +25,9 @@ For a combined Performance-OS handoff, run
 `npm run audit:performance-gates -- --today <YYYY-MM-DD> --packet`. It defaults
 to local `HEAD`; add `--expected-commit <short>` only when the field run is
 intentionally pinned to a known deployed/runtime commit.
-Use `npm run audit:performance-gates -- --today <YYYY-MM-DD> --manual-checklist`
-when the manual run needs a shorter checkbox checklist instead of the full
-handoff packet.
+Use `npm run audit:performance-checklist -- --today <YYYY-MM-DD>` when the
+manual run needs a shorter checkbox checklist instead of the full handoff
+packet.
 
 From feature branches, use `--local-planning` only for planning/handoff
 refreshes so a local branch does not create a phantom server mirror gate. It

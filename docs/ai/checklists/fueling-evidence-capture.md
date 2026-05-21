@@ -40,7 +40,7 @@ For a shorter checkbox-style manual session handoff across Fueling, iPhone/PWA
 and server gates, run:
 
 ```bash
-npm run audit:performance-gates -- --today <YYYY-MM-DD> --manual-checklist
+npm run audit:performance-checklist -- --today <YYYY-MM-DD>
 ```
 
 For a focused table, run:
