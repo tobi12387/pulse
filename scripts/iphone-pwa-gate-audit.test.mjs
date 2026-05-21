@@ -186,6 +186,8 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(scaffold, /Verify server mirror first: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
   assert.match(scaffold, /If SSH fails before server checks: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
   assert.match(scaffold, /Use a real iPhone over the VPN\/local network path/);
+  assert.match(scaffold, /Append this field run to field\.md/);
+  assert.match(scaffold, /After recording, rerun: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234`/);
   assert.match(scaffold, /Open field gaps to resolve:/);
   assert.match(scaffold, /1\. Current main field evidence \(stale\): Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234\./);
   assert.match(scaffold, /2\. Warning-free certificate trust \(needs followup\): Install and trust only frontend\/certs\/rootCA\.pem on the iPhone/);
