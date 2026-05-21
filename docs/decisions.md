@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Pulse-Status unterscheidet Compose-Status von direkten Test-Endpunkten
+
+- **Decision:** `npm run pulse:status` behandelt Docker-Compose-Status und erreichbare `.env.test`-/`.env.test.example`-Endpunkte getrennt: Wenn Compose down ist, aber DB und Redis direkt erreichbar sind, bleibt `local_status=0` und der Output empfiehlt `npm run verify:local -- --no-services`.
+- **Why:** Auf der aktuellen Codex-Umgebung sind Postgres/Redis ueber die konfigurierten Ports erreichbar, waehrend `docker compose ps` die Compose-Services als gestoppt meldet. Der Statusbefehl soll damit den real nutzbaren lokalen Verifikationspfad zeigen, statt pauschal einen lokalen DB-Blocker zu melden.
+- **Alternatives:** `pulse:status` nur an Docker Compose koppeln (verdeckt den funktionierenden No-Services-Pfad); `services:status` lockern (wuerde den stricten Compose-Check verwischen); lokale DB-Pruefung komplett auslassen (zu wenig Ops-Signal).
+- **Decided by:** Codex, als Local-Ops-Support-Slice in PR #546.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Compact-Context nutzt Evidenz-Gates statt Preference-Gate
 
 - **Decision:** `docs/ai/non-negotiables.md` beschreibt Fueling & Recovery nicht mehr als preference-gegated; neue Nutrition-Logik bleibt konservativ, edukativ und evidenz-gegated, waehrend Trend-Summaries weiter drei vergleichbare komplette During-Logs brauchen.

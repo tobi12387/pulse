@@ -58,7 +58,7 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 - Frontend URL: `https://192.168.178.46:5175`.
 - Backend health: `http://localhost:3000/api/pulse/health` on the server.
 - PM2 processes: `pulse` and `pulse-frontend`.
-- Mac-local Postgres/Redis tests require Docker Desktop and the dev services; when Docker is unavailable, call this out and rely on CI/server DB checks.
+- Mac-local Postgres/Redis tests normally use Docker Desktop and the dev services. If Docker Compose is down but `npm run pulse:status` reports the configured DB/Redis endpoints as reachable, use `npm run verify:local -- --no-services`; otherwise call out the local DB gate and rely on CI/server DB checks.
 
 ## Quick Verification Commands
 
@@ -80,4 +80,4 @@ ssh root@192.168.178.46 "pm2 status"
 ssh root@192.168.178.46 "cd /root/pulse && git rev-parse --short HEAD"
 ```
 
-`npm run pulse:status` intentionally reports local Mac services and the server deploy mirror as separate sections. If Docker Desktop is not running, the local section may fail while the server section still proves deployed Pulse is healthy.
+`npm run pulse:status` intentionally reports local Mac services and the server deploy mirror as separate sections. If Docker Compose is down, it also probes the configured DB/Redis endpoints from `.env.test` or `.env.test.example`; `local_status=0` means the direct no-services verification path is available even though `npm run services:status` remains strict.
