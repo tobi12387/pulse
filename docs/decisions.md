@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — iPhone-Field-Packet nennt Server-Recovery-Packet
+
+- **Decision:** Das iPhone/PWA-Field-Packet rendert neben dem Server-Verify-Befehl auch den read-only `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server -- --packet`-Handoff.
+- **Why:** Aktuelle iPhone-Real-Device-Evidence haengt am Server-Mirror-Commit. Wenn SSH vor Git/PM2/Health scheitert, soll der Field-Handoff direkt den sicheren Recovery-Packet-Befehl nennen, statt Tobi vom iPhone-Gate in mehrere Runbooks springen zu lassen.
+- **Alternatives:** Nur den Verify-Befehl und Runbook-Pfad anzeigen (mehr Kontextwechsel bei bekanntem SSH-Blocker); Server-Recovery ins iPhone-Audit automatisieren (vermischt getrennte Gates); SSH-Reparatur im iPhone-Gate versuchen (zu riskant).
+- **Decided by:** Codex, als iPhone/PWA-Gate-Support-Slice im Branch `codex/iphone-field-recovery-packet`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-Field-Packet nennt Server-Verify-Befehl
 
 - **Decision:** Das iPhone/PWA-Field-Packet rendert den exakten `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server`-Befehl und den SSH-Recovery-Runbook-Pfad, bevor neue Real-Device-Evidence aufgenommen wird.
