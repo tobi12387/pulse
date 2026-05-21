@@ -51,7 +51,8 @@ function clean(value) {
 
 function formatNumber(value, suffix = '') {
   if (value == null || Number.isNaN(Number(value))) return 'missing';
-  return `${Math.round(Number(value))}${suffix}`;
+  const roundedValue = Math.round(Number(value));
+  return suffix ? `${roundedValue} ${suffix}` : String(roundedValue);
 }
 
 function durationMin(log) {
@@ -118,6 +119,10 @@ function completionStatus(log) {
   return `can count after ${missingFields(log).join(' and ')}`;
 }
 
+function activityFuelingPath(activityId) {
+  return activityId ? `/plan/activity/${activityId}#activity-fueling-log` : null;
+}
+
 function nextActionFor(comparableLogs) {
   const giGap = comparableLogs.find(log => log.carbsG != null && log.giComfort == null);
   if (giGap) {
@@ -126,6 +131,7 @@ function nextActionFor(comparableLogs) {
       label: 'GI-Komfort ergaenzen',
       detail: 'Add structured GI comfort to an existing long carb log.',
       activityId: giGap.activityId,
+      targetPath: activityFuelingPath(giGap.activityId),
       date: giGap.date,
     };
   }
@@ -137,6 +143,7 @@ function nextActionFor(comparableLogs) {
       label: 'Carbs ergaenzen',
       detail: 'Add structured carbs to an existing long GI-comfort log.',
       activityId: carbGap.activityId,
+      targetPath: activityFuelingPath(carbGap.activityId),
       date: carbGap.date,
     };
   }
@@ -146,6 +153,7 @@ function nextActionFor(comparableLogs) {
     label: 'Naechsten Lernlog vollstaendig erfassen',
     detail: 'Capture duration, carbs and GI comfort together on the next long endurance session.',
     activityId: null,
+    targetPath: null,
     date: null,
   };
 }
@@ -160,6 +168,7 @@ function summarizeUser(userId, logs, requiredCompleteLogs) {
       ...log,
       missing: missingFields(log),
       status: completionStatus(log),
+      targetPath: activityFuelingPath(log.activityId),
       durationMin: durationMin(log),
       carbsPerHour: carbsPerHour(log),
     }));
@@ -224,7 +233,7 @@ function shortId(value) {
 function renderLogRow(log) {
   const activity = `${log.activityName}${log.activityId ? ` (${shortId(log.activityId)})` : ''}`;
   const carbs = log.carbsG == null ? 'missing' : `${formatNumber(log.carbsG, 'g')} (${log.carbsPerHour ?? '?'} g/h)`;
-  return `| ${log.date} | ${activity} | ${log.activityType ?? 'missing'} | ${log.durationMin ?? 'missing'} min | ${carbs} | ${log.giComfort ?? 'missing'} | ${log.status} |`;
+  return `| ${log.date} | ${activity} | ${log.activityType ?? 'missing'} | ${log.durationMin ?? 'missing'} min | ${carbs} | ${log.giComfort ?? 'missing'} | ${log.status} | ${activityFuelingPath(log.activityId) ?? 'missing'} |`;
 }
 
 export function renderFuelingGateAudit(audit) {
@@ -254,6 +263,7 @@ export function renderFuelingGateAudit(audit) {
       lines.push(`- Existing logs completable now: ${user.completableNow}`);
       lines.push(`- New complete long-session logs still needed after completion candidates: ${user.newLogsStillNeeded}`);
       lines.push(`- Next action: ${user.nextAction.label} (${user.nextAction.detail})`);
+      if (user.nextAction.targetPath) lines.push(`- Next action path: ${user.nextAction.targetPath}`);
     }
 
     const tableLogs = user.comparableLogs;
@@ -264,8 +274,8 @@ export function renderFuelingGateAudit(audit) {
     }
 
     lines.push('');
-    lines.push('| Date | Activity | Type | Duration | Carbs | GI comfort | Status |');
-    lines.push('|---|---|---:|---:|---:|---|---|');
+    lines.push('| Date | Activity | Type | Duration | Carbs | GI comfort | Status | Action path |');
+    lines.push('|---|---|---:|---:|---:|---|---|---|');
     for (const log of tableLogs) lines.push(renderLogRow(log));
     lines.push('');
   }
