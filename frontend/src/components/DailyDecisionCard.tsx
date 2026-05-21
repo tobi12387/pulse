@@ -255,12 +255,13 @@ export function DailyDecisionCard({
         padding: compact ? '8px 10px' : '9px 10px',
         background: 'var(--surface-2)',
         border: '1px solid var(--border)',
-        borderRadius: 5,
+        borderRadius: 'var(--radius-md)',
         color: 'var(--text-2)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10,
+        fontFamily: 'var(--font-sans)',
+        fontSize: 12,
+        fontWeight: 650,
         letterSpacing: 0,
-        textTransform: 'uppercase',
+        textTransform: 'none',
         cursor: 'pointer',
       }}
     >
@@ -276,15 +277,16 @@ export function DailyDecisionCard({
           onClick={primaryAction}
           style={{
             minHeight: 44,
-            padding: compact ? '8px 10px' : '9px 10px',
-            background: 'var(--surface-2)',
+            padding: compact ? '9px 12px' : '10px 12px',
+            background: color,
             border: `1px solid ${color}`,
-            borderRadius: 5,
-            color,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--bg)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            fontWeight: 750,
             letterSpacing: 0,
-            textTransform: 'uppercase',
+            textTransform: 'none',
             cursor: 'pointer',
           }}
         >
@@ -300,12 +302,13 @@ export function DailyDecisionCard({
             padding: compact ? '8px 10px' : '9px 10px',
             background: 'var(--surface-2)',
             border: '1px solid var(--accent)',
-            borderRadius: 5,
+            borderRadius: 'var(--radius-md)',
             color: 'var(--accent)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            fontWeight: 650,
             letterSpacing: 0,
-            textTransform: 'uppercase',
+            textTransform: 'none',
             cursor: 'pointer',
           }}
         >
@@ -412,11 +415,12 @@ export function DailyDecisionCard({
         padding: framed ? (compact ? '10px 12px' : '14px 16px') : 0,
         background: framed ? 'var(--surface)' : 'transparent',
         border: framed ? '1px solid var(--border)' : 'none',
-        borderRadius: framed ? 6 : 0,
+        borderRadius: framed ? 'var(--radius-lg)' : 0,
+        boxShadow: framed ? 'var(--shadow-card)' : 'none',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: compact ? 7 : 10 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.14em' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '.08em' }}>
           {label('Tagesentscheidung', labelCase)}
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color }}>
@@ -424,7 +428,7 @@ export function DailyDecisionCard({
         </span>
       </div>
 
-      <h2 style={{ fontSize: compact ? 14 : 16, color: 'var(--text)', margin: '0 0 7px', fontWeight: 600, lineHeight: 1.3 }}>
+      <h2 style={{ fontSize: compact ? 15 : 18, color: 'var(--text)', margin: '0 0 7px', fontWeight: 750, lineHeight: 1.25 }}>
         {decision.title}
       </h2>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 4 }}>
@@ -452,7 +456,7 @@ export function DailyDecisionCard({
       </div>
 
       {!compact && (
-        <div data-testid="daily-decision-next-steps" style={{ border: '1px solid var(--border)', borderRadius: 5, padding: '10px 11px', background: 'var(--surface-2)' }}>
+        <div data-testid="daily-decision-next-steps" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 13px', background: 'var(--surface-2)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 9 }}>
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
@@ -506,10 +510,11 @@ export function DailyDecisionCard({
               padding: '8px 9px',
               background: 'transparent',
               border: '1px solid var(--border)',
-              borderRadius: 5,
+              borderRadius: 'var(--radius-md)',
               color: detailsOpen ? 'var(--accent)' : 'var(--text-2)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 12,
+              fontWeight: 650,
               letterSpacing: 0,
               cursor: 'pointer',
               textAlign: 'left',

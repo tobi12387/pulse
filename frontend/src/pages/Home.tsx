@@ -1090,17 +1090,17 @@ export default function Home() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+      <div className="pulse-home-header">
         <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.18em', marginBottom: 4 }}>
-            // {fmtDate(data.date)}
+          <div className="label-mono" style={{ marginBottom: 5 }}>
+            {fmtDate(data.date)}
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)', margin: 0 }}>
+          <h1 className="pulse-page-heading" style={{ margin: 0 }}>
             Heute
           </h1>
         </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', letterSpacing: '.14em' }}>
-          TRAIN WINDOW <span style={{ color: 'var(--accent)' }}>OPEN</span>
+        <div className="pulse-home-status-chip">
+          Trainingsfenster <span>offen</span>
         </div>
       </div>
 

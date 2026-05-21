@@ -111,7 +111,7 @@ export function DecisionHero({
       <div className="focus-decision-body">
         <div style={{ minWidth: 0 }}>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 12 }}>
-            TAGESFOKUS · {formatDateLabel(date)}
+            Heute im Fokus · {formatDateLabel(date)}
           </div>
           <DailyDecisionCard
             decision={decision}
@@ -128,7 +128,7 @@ export function DecisionHero({
             <div style={{ marginTop: 22, padding: '14px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
                 <span className="label-mono" style={{ fontSize: 9 }}>
-                  WORKOUT · HEUTE
+                  Training heute
                 </span>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                   {snapshotTitle}
@@ -144,7 +144,7 @@ export function DecisionHero({
 
         <aside className="focus-recovery-panel" aria-label="Readiness und Recovery">
           <div className="label-mono" style={{ fontSize: 9, marginBottom: 14 }}>
-            {readinessLabel} · GRUNDLAGE
+            {readinessLabel} · Grundlage
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 54, fontWeight: 500, color: 'var(--accent)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.02em' }}>

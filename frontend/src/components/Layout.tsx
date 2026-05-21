@@ -1,17 +1,29 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  BarChart3,
+  CalendarDays,
+  CircleHelp,
+  Command,
+  Database,
+  Home,
+  LogOut,
+  Settings,
+  Sparkles,
+  Wifi,
+} from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/api/client';
 import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Heute',     mobileLabel: 'Heute',    key: '1', end: true  },
-  { to: '/data',      label: 'Data',      mobileLabel: 'Data',     key: '2', end: false },
-  { to: '/plan',      label: 'Plan',      mobileLabel: 'Plan',     key: '3', end: false },
-  { to: '/insights',  label: 'Insights',  mobileLabel: 'Insights', key: '4', end: false },
-  { to: '/settings',  label: 'Settings',  mobileLabel: 'Settings', key: '5', end: false },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', key: '1', end: true, icon: Home },
+  { to: '/data', label: 'Data', mobileLabel: 'Data', description: 'Evidenz & Trends', key: '2', end: false, icon: Database },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche & Anpassung', key: '3', end: false, icon: CalendarDays },
+  { to: '/insights', label: 'Insights', mobileLabel: 'Insights', description: 'Analyse & Muster', key: '4', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Settings', mobileLabel: 'Settings', description: 'Geräte & Betrieb', key: '5', end: false, icon: Settings },
 ];
 
 export default function Layout() {
@@ -27,8 +39,9 @@ export default function Layout() {
     || location.pathname.startsWith('/plan')
     || location.pathname.startsWith('/insights')
     || location.pathname.startsWith('/settings');
-  const pageShellStyle = isOperationalRoute ? { maxWidth: 1120 } : undefined;
+  const pageShellStyle = isOperationalRoute ? { maxWidth: 1180 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
+  const currentNav = NAV_ITEMS.find(item => location.pathname === item.to || (!item.end && location.pathname.startsWith(item.to))) ?? NAV_ITEMS[0];
 
   useEffect(() => {
     function handleCommand(event: globalThis.KeyboardEvent) {
@@ -67,20 +80,19 @@ export default function Layout() {
     <div className="pulse-app-shell flex flex-col overflow-hidden" style={focusCssVars as CSSProperties}>
 
       <header
-        className="pulse-shell-topbar hidden md:flex items-center justify-between px-[18px] border-b"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+        className="pulse-shell-topbar hidden md:flex items-center justify-between border-b"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="pulse-brand-lockup">
           <span className="pulse-brand-mark" aria-hidden="true" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--text)', letterSpacing: '.18em' }}>
-            PULSE.OS
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>v2.1</span>
+          <div>
+            <div className="pulse-brand-title">Pulse</div>
+            <div className="pulse-brand-subtitle">Performance OS</div>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
-          <span><span style={{ color: 'var(--green)' }}>●</span> sync bereit</span>
+        <div className="pulse-topbar-context">
+          <span className="pulse-status-chip"><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
           <span>{today}</span>
-          <span style={{ color: 'var(--text)' }}>{user?.name ?? 'Tobi'}</span>
+          <span>{user?.name ?? 'Tobi'}</span>
         </div>
       </header>
 
@@ -89,84 +101,58 @@ export default function Layout() {
       {/* ── Sidebar (desktop) ── */}
       <aside
         className="pulse-focus-sidebar hidden md:flex flex-col shrink-0 border-r"
-        style={{ background: 'var(--bg)', borderColor: 'var(--border)', padding: '14px 8px' }}
       >
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.18em', padding: '4px 10px 8px' }}>
-            NAVIGATION
+          <div className="pulse-sidebar-section-label">
+            Navigation
           </div>
-          {NAV_ITEMS.map(({ to, label, key, end }) => (
+          {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex min-h-[44px] items-center justify-between rounded-[4px] px-[10px] py-2 text-[12.5px] transition-colors ${
-                  isActive
-                    ? 'bg-[var(--surface-2)] text-[var(--text)]'
-                    : 'text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'
-                }`
+                `pulse-nav-link ${isActive ? 'pulse-nav-link--active' : ''}`
               }
-              style={({ isActive }) => ({
-                borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-              })}
             >
-              <span>{label}</span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  color: 'var(--text-3)',
-                  letterSpacing: 0,
-                }}
-              >
-                {key}
+              <span className="pulse-nav-icon" aria-hidden="true"><Icon size={17} strokeWidth={1.8} /></span>
+              <span className="pulse-nav-copy">
+                <span className="pulse-nav-label">{label}</span>
+                <span className="pulse-nav-description">{description}</span>
               </span>
+              <span className="pulse-nav-key">{key}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div style={{ padding: 10, border: '1px solid var(--border)', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', lineHeight: 1.6 }}>
-          <div style={{ color: 'var(--text-3)', marginBottom: 4 }}>SYSTEM</div>
-          <div>garmin <span style={{ color: 'var(--green)' }}>bereit</span></div>
-          <div>server lokal</div>
+        <div className="pulse-sidebar-card" aria-label="Aktueller Fokus">
+          <div className="pulse-sidebar-card-label">Heute zählt</div>
+          <div className="pulse-sidebar-card-title">Eine klare Handlung</div>
+          <p>Plan, Körper, Alltag und Evidenz werden zuerst in eine Entscheidung übersetzt.</p>
         </div>
 
         <button
           type="button"
           onClick={() => setCoachOpen(true)}
-          style={{
-            marginTop: 8,
-            minHeight: 44,
-            padding: '8px 10px',
-            border: '1px dashed var(--accent)',
-            borderRadius: 4,
-            background: 'transparent',
-            color: 'var(--accent)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            letterSpacing: '.14em',
-            textAlign: 'center',
-            cursor: 'pointer',
-          }}
+          className="pulse-coach-command"
         >
-          ⌘K · COACH
+          <Command size={15} aria-hidden="true" />
+          Coach öffnen
         </button>
 
         <div
-          className="mt-2 px-2 py-2 border-t flex items-center justify-between"
-          style={{ borderColor: 'var(--border)' }}
+          className="pulse-user-strip"
         >
-          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+          <span>
             {user?.name ?? 'Tobi'}
           </span>
           <button
             onClick={handleLogout}
-            style={{ minHeight: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}
-            className="hover:text-[var(--text)] transition-colors uppercase tracking-widest"
+            className="pulse-icon-button"
+            aria-label="Abmelden"
           >
-            out
+            <LogOut size={15} aria-hidden="true" />
           </button>
         </div>
       </aside>
@@ -174,16 +160,13 @@ export default function Layout() {
       {/* ── Mobile topbar ── */}
       <div
         className="pulse-mobile-topbar md:hidden fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 border-b"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span className="pulse-brand-lockup pulse-brand-lockup--mobile">
           <span className="pulse-brand-mark" aria-hidden="true" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, letterSpacing: '.18em', color: 'var(--text)' }}>
-            PULSE.OS
-          </span>
+          <span className="pulse-brand-title">Pulse</span>
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: 0 }}>
-          {new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
+        <span className="pulse-mobile-route-title">
+          {currentNav.label}
         </span>
       </div>
 
@@ -197,31 +180,21 @@ export default function Layout() {
       {/* ── Mobile bottom nav ── */}
       <nav
         className="pulse-mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
-        {NAV_ITEMS.map(({ to, label, mobileLabel, end }) => (
+        {NAV_ITEMS.map(({ to, label, mobileLabel, end, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, position: 'relative' }}
+            className="pulse-mobile-nav-link"
+            aria-label={label}
           >
             {({ isActive }) => (
               <>
-                <span
-                  style={{
-                    width: 16, height: 2, borderRadius: 1,
-                    background: isActive ? 'var(--accent)' : 'transparent',
-                    transition: 'background 0.15s',
-                  }}
-                />
-                <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 8.5,
-                  letterSpacing: 0, textTransform: 'uppercase',
-                  color: isActive ? 'var(--accent)' : 'var(--text-3)',
-                  lineHeight: 1.15, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis',
-                  transition: 'color 0.15s',
-                }}>
+                <span className={`pulse-mobile-nav-icon ${isActive ? 'pulse-mobile-nav-icon--active' : ''}`}>
+                  <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+                </span>
+                <span className={isActive ? 'pulse-mobile-nav-label pulse-mobile-nav-label--active' : 'pulse-mobile-nav-label'}>
                   {mobileLabel ?? label}
                 </span>
               </>
@@ -303,16 +276,16 @@ function KeyboardHelpDialog({ open, onClose }: { open: boolean; onClose: () => v
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 14 }}>
           <div>
-            <div className="label-mono" style={{ color: 'var(--accent)' }}>SHORTCUTS</div>
+            <div className="label-mono" style={{ color: 'var(--accent)' }}>Shortcuts</div>
             <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 500 }}>Tastaturhilfe</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Tastaturhilfe schließen"
-            style={{ minWidth: 44, minHeight: 44, background: 'transparent', color: 'var(--text-3)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}
+            className="pulse-icon-button"
           >
-            ×
+            <CircleHelp size={15} aria-hidden="true" />
           </button>
         </div>
         <div style={{ display: 'grid', gap: 7 }}>
@@ -435,15 +408,15 @@ function CoachCommandDrawer({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
           <div>
-            <div className="label-mono" style={{ color: 'var(--accent)' }}>⌘K · COACH</div>
+            <div className="label-mono" style={{ color: 'var(--accent)' }}>Coach</div>
             <h2 style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 500 }}>Was soll Pulse klären?</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            style={{ minWidth: 44, minHeight: 44, background: 'transparent', color: 'var(--text-3)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}
+            className="pulse-icon-button"
           >
-            ×
+            <Sparkles size={15} aria-hidden="true" />
           </button>
         </div>
         <button

@@ -17,7 +17,8 @@ export function FCard({ eyebrow, right, pad = '14px 16px', children, testId, sty
         padding: pad,
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 6,
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-card)',
         ...style,
       }}
     >
@@ -59,11 +60,11 @@ export function FButton({ children, onClick, variant = 'secondary', disabled, ar
         background: primary ? 'var(--accent)' : 'transparent',
         color: primary ? 'var(--bg)' : 'var(--text-2)',
         border: primary ? 'none' : `1px ${ghost ? 'dashed' : 'solid'} ${ghost ? 'var(--accent)' : 'var(--border)'}`,
-        borderRadius: 4,
+        borderRadius: 'var(--radius-md)',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         fontWeight: 500,
-        letterSpacing: '.12em',
+        letterSpacing: 0,
         textTransform: 'uppercase',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.6 : 1,
@@ -99,12 +100,12 @@ export function FPill({ children, tone = 'muted', filled = false }: FPillProps) 
         minHeight: 18,
         padding: '2px 7px',
         border: filled ? 'none' : `1px solid ${color}`,
-        borderRadius: 3,
+        borderRadius: 'var(--radius-sm)',
         background: filled ? (tone === 'accent' ? 'var(--accent-dim)' : `color-mix(in srgb, ${color} 16%, transparent)`) : 'transparent',
         color,
         fontFamily: 'var(--font-mono)',
         fontSize: 9,
-        letterSpacing: '.12em',
+        letterSpacing: 0,
         textTransform: 'uppercase',
         whiteSpace: 'nowrap',
       }}
@@ -116,6 +117,11 @@ export function FPill({ children, tone = 'muted', filled = false }: FPillProps) 
 
 export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW' }) {
   const stages = ['DECIDE', 'EXECUTE', 'REVIEW'] as const;
+  const stageLabel = {
+    DECIDE: 'Entscheiden',
+    EXECUTE: 'Ausführen',
+    REVIEW: 'Lernen',
+  } as const;
   return (
     <div
       data-testid="stage-strip"
@@ -128,14 +134,14 @@ export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW'
             key={stage}
             data-testid={`stage-strip-${stage.toLowerCase()}`}
             style={{
-              minHeight: 38,
-              padding: '10px 12px',
+              minHeight: 42,
+              padding: '11px 14px',
               borderRight: index < stages.length - 1 ? '1px solid var(--border)' : 'none',
-              background: isActive ? 'var(--surface-2)' : 'transparent',
+              background: isActive ? 'var(--surface-raised)' : 'transparent',
               color: isActive ? 'var(--accent)' : index < stages.indexOf(active) ? 'var(--text-2)' : 'var(--text-3)',
               display: 'flex',
               alignItems: 'center',
-              columnGap: 8,
+              columnGap: 7,
               rowGap: 2,
               flexWrap: 'wrap',
               minWidth: 0,
@@ -144,8 +150,8 @@ export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW'
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.16em', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
               {String(index + 1).padStart(2, '0')}
             </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-              {stage}
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 650, letterSpacing: 0, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+              {stageLabel[stage]}
             </span>
             {isActive && (
               <span
@@ -155,12 +161,12 @@ export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW'
                   marginLeft: 22,
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '.12em',
+                  letterSpacing: 0,
                   lineHeight: 1.2,
                   whiteSpace: 'nowrap',
                 }}
               >
-                ● JETZT
+                Jetzt
               </span>
             )}
           </div>
