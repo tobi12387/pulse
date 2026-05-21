@@ -25,6 +25,7 @@ function usage() {
     'Options:',
     `  --file <path>              Evidence markdown file, default ${DEFAULT_EVIDENCE_FILE}.`,
     '  --expected-commit <short>  Expected current commit; default PULSE_EXPECTED_COMMIT or local git HEAD.',
+    '  --packet                   Print a manual field-evidence packet instead of the audit summary.',
     '  --json                     Print machine-readable JSON.',
     '  -h, --help                 Show this help.',
   ].join('\n');
@@ -240,10 +241,55 @@ export function renderIphonePwaGateAudit(audit) {
   return lines.join('\n');
 }
 
+function statusText(status) {
+  return String(status ?? 'missing').replaceAll('_', ' ');
+}
+
+export function renderIphonePwaFieldPacket(audit) {
+  const lines = [
+    '# iPhone / PWA Field Evidence Packet',
+    '',
+    `Evidence file: ${audit.evidenceFile}`,
+    `Field checklist: ${audit.fieldChecklist}`,
+    `Expected current commit: ${audit.expectedCommit ?? 'missing'}`,
+    `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
+    `Field commit status: ${audit.commitStatus}`,
+    `Device: ${audit.scope.device ?? 'missing'}`,
+    `iOS version: ${audit.scope.iosVersion ?? 'missing'}`,
+    '',
+  ];
+
+  if (audit.gaps.length === 0) {
+    lines.push('All manual iPhone/PWA field gates are recorded as pass for the expected commit.');
+    return lines.join('\n');
+  }
+
+  lines.push(`Open field gaps: ${audit.gaps.length}`);
+  audit.gaps.forEach((gap, index) => {
+    lines.push(`${index + 1}. ${gap.label} (${statusText(gap.status)})`);
+    lines.push(`   Detail: ${gap.detail}`);
+    lines.push(`   Next: ${gap.nextAction}`);
+  });
+
+  lines.push('');
+  lines.push('Manual field run:');
+  lines.push(`- Verify the server mirror is on ${audit.expectedCommit ?? 'the expected current commit'} before recording new current evidence.`);
+  lines.push('- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.');
+  lines.push('- Open Settings first and record Device, iOS version, PWA mode, Push state and certificate state.');
+  lines.push('- Install and trust only frontend/certs/rootCA.pem if warning-free certificate behavior is required; never transfer rootCA-key.pem or any *-key.pem file.');
+  lines.push('- Deliberately enable Push and send a test push only when testing notifications.');
+  lines.push('- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.');
+  lines.push(`- Record the run in ${audit.evidenceFile}, including Server commit under test: ${audit.expectedCommit ?? '<commit>'}.`);
+  lines.push(`- Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit ${audit.expectedCommit ?? '<commit>'}`);
+
+  return lines.join('\n');
+}
+
 function parseArgs(argv) {
   const result = {
     file: DEFAULT_EVIDENCE_FILE,
     expectedCommit: null,
+    packet: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -251,6 +297,10 @@ function parseArgs(argv) {
     const arg = args[index];
     if (arg === '--json') {
       result.json = true;
+      continue;
+    }
+    if (arg === '--packet') {
+      result.packet = true;
       continue;
     }
     if (arg === '--file') {
@@ -294,7 +344,7 @@ async function main(argv) {
     console.log(JSON.stringify(audit, null, 2));
     return;
   }
-  console.log(renderIphonePwaGateAudit(audit));
+  console.log(args.packet ? renderIphonePwaFieldPacket(audit) : renderIphonePwaGateAudit(audit));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

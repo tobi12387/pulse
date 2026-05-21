@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — iPhone-Gate rendert Live-Field-Packet
+
+- **Decision:** `npm run audit:iphone-pwa-gate -- --packet` rendert ein live aus dem aktuellen iPhone/PWA-Feldrecord und dem erwarteten Commit generiertes Field-Evidence-Packet; Performance-Gate-Metadaten geben den Befehl als `fieldPacketCommand` weiter.
+- **Why:** Das iPhone/PWA-Gate ist ein echter Real-Device-Blocker. Tobi braucht fuer den naechsten Lauf eine kompakte Ansicht mit aktuellem Commit, offenen Gaps, No-Simulation-Grenze und Record-Steps, ohne die bestehende Audit-Logik oder das Field-Checklist-Dokument doppelt zu fuehren.
+- **Alternatives:** Nur die statische iPhone-Checkliste verwenden (stale Commit leichter zu uebersehen); simulierte WebKit-Evidence als ausreichend behandeln (nicht real-device); separates Field-Packet-Script bauen (Dopplung).
+- **Decided by:** Codex, als iPhone/PWA-Gate-Support-Slice im Branch `codex/iphone-field-packet`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Next nennt das Fueling-Capture-Packet
 
 - **Decision:** `npm run audit:performance-next` zeigt fuer einen Fueling-First-Unblock zusaetzlich den Packet-Befehl `npm run audit:fueling-gate -- --today <date> --packet` und gibt ihn als `nextUnblock.metadata.capturePacketCommand` aus.

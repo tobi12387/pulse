@@ -221,6 +221,7 @@ function summarizeFueling(today, runner) {
 
 function summarizeIphone(expectedCommit, runner) {
   const command = 'npm run audit:iphone-pwa-gate';
+  const fieldPacketCommand = `${command} -- --expected-commit ${expectedCommit} --packet`;
   const result = runner(process.execPath, [
     'scripts/iphone-pwa-gate-audit.mjs',
     '--json',
@@ -239,6 +240,7 @@ function summarizeIphone(expectedCommit, runner) {
       detail: parsed.error,
       nextAction: 'Restore the iPhone/PWA evidence file or pass a valid audit input, then rerun the field gate audit.',
       evidenceChecklist: IPHONE_FIELD_CHECKLIST,
+      fieldPacketCommand,
     };
   }
 
@@ -256,6 +258,7 @@ function summarizeIphone(expectedCommit, runner) {
       : `${gapLabels.length} open gaps: ${gapLabels.join(', ')}`,
     nextAction: audit.nextAction ?? 'No iPhone/PWA gate action needed.',
     evidenceChecklist: audit.fieldChecklist ?? IPHONE_FIELD_CHECKLIST,
+    fieldPacketCommand: ready ? null : fieldPacketCommand,
     evidenceFile: audit.evidenceFile,
     expectedCommit: audit.expectedCommit ?? null,
     commitStatus: audit.commitStatus ?? null,
@@ -346,6 +349,7 @@ function nextUnblockMetadata(gate) {
       expectedCommit: gate.expectedCommit ?? null,
       commitStatus: gate.commitStatus ?? null,
       serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
+      fieldPacketCommand: gate.fieldPacketCommand ?? null,
       firstGap: firstGap ? {
         kind: firstGap.kind ?? null,
         label: firstGap.label ?? null,
@@ -419,6 +423,7 @@ export function renderPerformanceGateAudit(audit) {
     lines.push(`- Next: ${gate.nextAction}`);
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
     if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
+    if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
     if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
     lines.push('');
   }
@@ -440,6 +445,10 @@ function checklistLine(metadata) {
 
 function packetLine(metadata) {
   return metadata?.capturePacketCommand ? `Evidence packet: ${metadata.capturePacketCommand}` : null;
+}
+
+function fieldPacketLine(metadata) {
+  return metadata?.fieldPacketCommand ? `Field packet: ${metadata.fieldPacketCommand}` : null;
 }
 
 function targetSummary(metadata) {
@@ -517,6 +526,8 @@ export function renderNextUnblock(audit) {
   if (checklist) lines.push(checklist);
   const packet = packetLine(next.metadata);
   if (packet) lines.push(packet);
+  const fieldPacket = fieldPacketLine(next.metadata);
+  if (fieldPacket) lines.push(fieldPacket);
   const optionSummary = optionsLine(next.metadata);
   if (optionSummary) lines.push(optionSummary);
   lines.push(...completionCandidateLines(next.metadata));

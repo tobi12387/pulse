@@ -7,6 +7,8 @@ Record the result in `docs/qa/2026-05-02-iphone-pwa-real-device.md` so the evide
 Before treating the field record as current, run `npm run audit:iphone-pwa-gate`
 from the repo. The audit compares `Server commit under test` with the expected
 current commit and keeps the gate closed when the field evidence is stale.
+For a live packet of the current field gaps and recording steps, run
+`npm run audit:iphone-pwa-gate -- --packet`.
 
 ## Network
 
