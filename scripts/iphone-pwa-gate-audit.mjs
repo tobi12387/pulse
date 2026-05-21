@@ -54,6 +54,18 @@ function cleanInlineCode(value) {
   return clean(value)?.replace(/^`|`$/g, '') ?? null;
 }
 
+function shellEnvValue(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(text)) return text;
+  return `'${text.replaceAll("'", "'\\''")}'`;
+}
+
+function serverEnvPrefix() {
+  const host = shellEnvValue(process.env.PULSE_HOST);
+  return host ? `PULSE_HOST=${host} ` : '';
+}
+
 function parseStatus(value) {
   const text = String(value ?? '').trim().toLowerCase();
   if (text === 'pass') return 'pass';
@@ -262,7 +274,7 @@ function statusText(status) {
 }
 
 function serverVerifyCommand(expectedCommit) {
-  return `PULSE_EXPECTED_COMMIT=${expectedCommit ?? '<commit>'} npm run verify:server`;
+  return `${serverEnvPrefix()}PULSE_EXPECTED_COMMIT=${expectedCommit ?? '<commit>'} npm run verify:server`;
 }
 
 function serverRecoveryPacketCommand(expectedCommit) {

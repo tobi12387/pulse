@@ -5,12 +5,28 @@ import { pathToFileURL } from 'node:url';
 const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const IPHONE_FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
 
+function shellEnvValue(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(text)) return text;
+  return `'${text.replaceAll("'", "'\\''")}'`;
+}
+
+function serverEnvPrefix() {
+  const host = shellEnvValue(process.env.PULSE_HOST);
+  return host ? `PULSE_HOST=${host} ` : '';
+}
+
 function serverVerifyCommand(expectedCommit) {
-  return `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`;
+  return `${serverEnvPrefix()}PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`;
 }
 
 function serverRecoveryPacketCommand(expectedCommit) {
   return `${serverVerifyCommand(expectedCommit)} -- --packet`;
+}
+
+function commandWithServerEnv(command) {
+  return `${serverEnvPrefix()}${command}`;
 }
 
 function usage() {
@@ -238,7 +254,7 @@ function summarizeFueling(today, runner) {
 
 function summarizeIphone(expectedCommit, runner) {
   const command = 'npm run audit:iphone-pwa-gate';
-  const fieldPacketCommand = `${command} -- --expected-commit ${expectedCommit} --packet`;
+  const fieldPacketCommand = commandWithServerEnv(`${command} -- --expected-commit ${expectedCommit} --packet`);
   const result = runner(process.execPath, [
     'scripts/iphone-pwa-gate-audit.mjs',
     '--json',
@@ -296,7 +312,10 @@ function summarizeServer(expectedCommit, runner) {
   const command = serverVerifyCommand(expectedCommit);
   const recoveryPacketCommand = serverRecoveryPacketCommand(expectedCommit);
   const result = runner('bash', ['scripts/verify-server.sh'], {
-    env: { PULSE_EXPECTED_COMMIT: expectedCommit },
+    env: {
+      ...(process.env.PULSE_HOST ? { PULSE_HOST: process.env.PULSE_HOST } : {}),
+      PULSE_EXPECTED_COMMIT: expectedCommit,
+    },
   });
   const combinedOutput = `${result.stdout}\n${result.stderr}`;
   const outputCommit = firstMatch(combinedOutput, /expected_commit=([^\s]+)/) ?? expectedCommit;

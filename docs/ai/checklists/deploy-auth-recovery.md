@@ -36,6 +36,15 @@ From the Mac or Codex workspace, confirm the failure is SSH auth, not Pulse runt
 ssh -o BatchMode=yes -o ConnectTimeout=8 root@192.168.178.46 "printf 'ssh=ok\n'"
 ```
 
+If the workspace has an SSH config alias for the Pulse server, test that before
+changing server keys. In this Codex environment the alias is `pulse-server` and
+uses a configured local identity:
+
+```bash
+ssh -o BatchMode=yes -o ConnectTimeout=8 pulse-server "printf 'ssh=ok\n'"
+PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
+```
+
 If that fails, repair the SSH credential outside the repo:
 
 - confirm VPN/network access to `192.168.178.46`;
@@ -64,6 +73,13 @@ Run the standard deploy command only after the relevant PR is merged to `main`:
 
 ```bash
 ssh root@192.168.178.46 "cd /root/pulse && bash scripts/deploy.sh"
+```
+
+If direct host auth fails but the verified local alias works, use the alias
+without changing server files:
+
+```bash
+ssh pulse-server "cd /root/pulse && bash scripts/deploy.sh"
 ```
 
 Then verify the deployed mirror:
