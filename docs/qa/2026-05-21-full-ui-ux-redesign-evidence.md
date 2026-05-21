@@ -175,3 +175,37 @@ Result:
 
 - Focused mobile action-first checks: 2 passed.
 - Route evidence at `054ccaa`: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+
+## Addendum — Command Stack and Neutral Palette Pass
+
+Tobi clarified that cards may be completely redefined and breaking route/UI changes are acceptable if they make Pulse feel like a top app. This pass keeps the shipped route IA, but removes one remaining source of daily-surface complexity:
+
+- Removed the local Home surface focus selector and its localStorage preference path.
+- Replaced configurable card sorting with a fixed Home command stack: mental check-in, primary action, today options, adaptation, delta, learning, history and follow-ups.
+- Added a compact sidebar Command Flow so desktop navigation reads as `Heute -> Plan -> Daten -> Analyse`.
+- Moved Data's section control into the route header action area so the work surface starts cleaner.
+- Shifted the visual system from teal/green dominance to a neutral light shell with blue accent and separate green/amber/rose states.
+- Updated PWA manifest, service-worker offline shell and theme color to match the new palette.
+
+Additional verification:
+
+```bash
+git diff --check
+npm --prefix frontend run build
+npx playwright test frontend/e2e/pulse-usability.spec.ts --grep "Daily command stack" --project=desktop-chromium --project=mobile-chromium
+npx playwright test frontend/e2e/ux-a11y-responsive.spec.ts frontend/e2e/pulse-smoke.spec.ts frontend/e2e/pulse-usability.spec.ts --grep "mobile top-level headers|Data segmented tabs support arrow-key navigation|Mobile navigation and tabs keep core labels readable|primary navigation exposes Focus routes without Coach tab|PWA manifest and service worker endpoints are available|Daily command stack|Data today promotes actionable fueling learning gaps|Data mobile subnavigation keeps every section tab in the visible viewport|Data mobile deep links do not clip the tab row" --project=desktop-chromium --project=mobile-chromium
+PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence-redesign-command-stack npm run qa:ux-evidence
+npm run qa:ux-summary -- test-results/route-evidence-redesign-command-stack
+npm run verify:lernschleifen
+npm run verify:trainingsanpassung
+npm run verify:tagesentscheidung
+npm run test:e2e:smoke
+```
+
+Result:
+
+- Command-stack focused checks: 4 passed.
+- Focused responsive/PWA/navigation/Data checks: 16 passed, 4 viewport-specific skipped.
+- Route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+- Track gates passed: `verify:lernschleifen`, `verify:trainingsanpassung`, `verify:tagesentscheidung`.
+- Full smoke: 105 passed, 13 skipped.

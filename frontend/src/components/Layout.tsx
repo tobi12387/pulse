@@ -26,6 +26,13 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Verbinden', key: '5', end: false, icon: Settings },
 ];
 
+const FLOW_STEPS = [
+  { label: 'Heute', detail: 'Entscheidung' },
+  { label: 'Plan', detail: 'Woche' },
+  { label: 'Daten', detail: 'Evidenz' },
+  { label: 'Analyse', detail: 'Muster' },
+];
+
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
@@ -128,10 +135,17 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="pulse-sidebar-card" aria-label="Aktueller Fokus">
-          <div className="pulse-sidebar-card-label">Daily Command</div>
-          <div className="pulse-sidebar-card-title">Erst entscheiden, dann vertiefen</div>
-          <p>Heute bleibt der Start. Plan, Daten und Analyse öffnen erst die nächste Ebene.</p>
+        <div className="pulse-sidebar-card pulse-sidebar-card--flow" aria-label="Pulse Ablauf">
+          <div className="pulse-sidebar-card-label">Command Flow</div>
+          <div className="pulse-flow-steps">
+            {FLOW_STEPS.map((step, index) => (
+              <div key={step.label} className="pulse-flow-step">
+                <span>{index + 1}</span>
+                <strong>{step.label}</strong>
+                <em>{step.detail}</em>
+              </div>
+            ))}
+          </div>
         </div>
 
         <button

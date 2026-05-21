@@ -112,7 +112,7 @@ export function ContextualCoachModeCard({
     <div
       className="card"
       data-testid="coach-contextual-mode-card"
-      style={{ borderColor: 'rgba(94,230,207,0.18)', padding: '12px 14px' }}
+      style={{ borderColor: 'rgba(47,102,208,0.18)', padding: '12px 14px' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
@@ -180,8 +180,8 @@ export function ContextualCoachModeCard({
           minHeight: 42,
           marginTop: 10,
           padding: '9px 10px',
-          background: 'rgba(94,230,207,0.12)',
-          border: '1px solid rgba(94,230,207,0.28)',
+          background: 'rgba(47,102,208,0.12)',
+          border: '1px solid rgba(47,102,208,0.28)',
           borderRadius: 5,
           color: 'var(--accent)',
           cursor: 'pointer',

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Redesign nutzt festen Home-Command-Stack und neutrale App-Palette
+
+- **Decision:** Die Home-Oberflaeche rendert nach der Tagesentscheidung einen festen Command-Stack statt eines lokalen Karten-Sortierers; die App-Palette wechselt von teal/gruen gepraegter Shell auf eine neutrale helle Basis mit blauem Accent und getrennten Statusfarben.
+- **Why:** Tobi hat ein klareres, weniger unuebersichtliches Top-App-UI mit frei neu definierbaren Karten verlangt. Ein fester Stack reduziert Sortier- und Konfigurationsrauschen auf der taeglichen Startflaeche, und die neutralere Palette macht Navigation, Evidenz und Status unterscheidbarer.
+- **Alternatives:** Den lokalen Home-Fokus-Umschalter behalten (zu viel UI-Mechanik auf der Hauptflaeche); nur Farben der vorhandenen Karten minimal anpassen (zu schwach fuer den gemeldeten Strukturbruch); weitere Routen splitten (mehr Breaking Change ohne zusaetzlichen Nutzen fuer die aktuelle Friktion).
+- **Decided by:** Tobi + Codex, als weiterer UI/UX-Redesign-Slice im Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Performance-Gate-Header zeigt Fueling-Optionen direkt
 
 - **Decision:** `npm run audit:performance-gates` rendert im Standard-Header nach `Next target URL` auch die erste passende Optionszeile aus `nextUnblock.metadata`, z.B. die GI-Komfort-Auswahl fuer den naechsten Fueling-Log.

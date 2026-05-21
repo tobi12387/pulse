@@ -428,7 +428,7 @@ export function WorkoutRow({
               <span style={{
                 fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
                 color: 'var(--accent)',
-                border: '1px solid rgba(94,230,207,0.45)',
+                border: '1px solid rgba(47,102,208,0.45)',
                 borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase',
               }}>Eigene</span>
             )}
@@ -468,8 +468,8 @@ export function WorkoutRow({
                     maxWidth: '100%',
                     padding: '3px 6px',
                     borderRadius: 3,
-                    border: '1px solid rgba(94,230,207,0.24)',
-                    background: 'rgba(94,230,207,0.07)',
+                    border: '1px solid rgba(47,102,208,0.24)',
+                    background: 'rgba(47,102,208,0.07)',
                     color: 'var(--accent)',
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,

@@ -361,7 +361,7 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
                       minHeight: 34,
                       border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                       borderRadius: 5,
-                      background: active ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+                      background: active ? 'rgba(47,102,208,0.12)' : 'var(--surface-2)',
                       color: active ? 'var(--accent)' : 'var(--text-2)',
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,

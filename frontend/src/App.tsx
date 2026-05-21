@@ -20,8 +20,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
       const error = this.state.error as Error;
       const isDev = import.meta.env.DEV;
       return (
-        <div style={{ padding: 24, background: '#F4F7F3', minHeight: '100vh', color: '#14201E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 'min(520px, 100%)', border: '1px solid rgba(248,113,113,0.28)', borderRadius: 8, background: '#111418', padding: 20 }}>
+        <div style={{ padding: 24, background: '#F5F6F8', minHeight: '100vh', color: '#17202A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 'min(520px, 100%)', border: '1px solid rgba(195,69,84,0.28)', borderRadius: 8, background: '#FFFFFF', padding: 20 }}>
             <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#f47174', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
               Pulse braucht kurz Hilfe
             </div>
@@ -38,9 +38,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
                 minHeight: 40,
                 padding: '8px 12px',
                 borderRadius: 5,
-                border: '1px solid rgba(94,230,207,0.35)',
+                border: '1px solid rgba(47,102,208,0.35)',
                 background: 'transparent',
-                color: '#5ee6cf',
+                color: '#2F66D0',
                 cursor: 'pointer',
                 fontFamily: 'monospace',
                 fontSize: 10,

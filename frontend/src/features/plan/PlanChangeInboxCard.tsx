@@ -77,7 +77,7 @@ export function PlanChangeInboxCard({
       className="card"
       data-testid="plan-change-inbox"
       style={{
-        borderColor: inbox.hasAction ? 'rgba(251,191,36,0.28)' : 'rgba(94,230,207,0.22)',
+        borderColor: inbox.hasAction ? 'rgba(251,191,36,0.28)' : 'rgba(47,102,208,0.22)',
         background: inbox.hasAction ? 'rgba(251,191,36,0.045)' : 'var(--surface)',
       }}
     >

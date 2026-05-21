@@ -449,7 +449,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
           gap: 14,
           alignItems: 'start',
-          borderColor: 'rgba(94,230,207,0.26)',
+          borderColor: 'rgba(47,102,208,0.26)',
         }}
       >
         <div className="data-primary-action-copy" style={{ minWidth: 0 }}>
@@ -559,8 +559,8 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           minWidth: 44,
           minHeight: 44,
           padding: '8px 10px',
-          background: secondaryOpen ? 'rgba(94,230,207,0.12)' : 'transparent',
-          border: `1px dashed ${secondaryOpen ? 'rgba(94,230,207,0.45)' : 'var(--border)'}`,
+          background: secondaryOpen ? 'rgba(47,102,208,0.12)' : 'transparent',
+          border: `1px dashed ${secondaryOpen ? 'rgba(47,102,208,0.45)' : 'var(--border)'}`,
           borderRadius: 5,
           color: secondaryOpen ? 'var(--accent)' : 'var(--text-2)',
           cursor: 'pointer',
@@ -784,8 +784,8 @@ export default function Data() {
         title="Daten, die heute etwas ändern"
         mobileTitle="Daten"
         description="Der erste Block zeigt nur die nächste relevante Datenaufgabe. Trends, Qualität und Analyse bleiben erreichbar, aber nachrangig."
+        action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Daten Bereiche" idPrefix="data" wrap />}
       />
-      <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Daten Bereiche" idPrefix="data" wrap />
       {tab === 'heute' && <TabPanel tab="heute"><DataHeuteTab onOpen={setTab} focus={focus} /></TabPanel>}
       {tab === 'trends' && <TabPanel tab="trends"><DataTrendsTab focus={focus} /></TabPanel>}
       {tab === 'qualitaet' && <TabPanel tab="qualitaet"><EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection></TabPanel>}

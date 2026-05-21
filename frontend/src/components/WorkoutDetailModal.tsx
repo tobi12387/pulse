@@ -401,8 +401,8 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                 gap: 8,
                 padding: '10px 12px',
                 marginBottom: 12,
-                background: 'rgba(94,230,207,0.06)',
-                border: '1px solid rgba(94,230,207,0.22)',
+                background: 'rgba(47,102,208,0.06)',
+                border: '1px solid rgba(47,102,208,0.22)',
                 borderLeft: '3px solid var(--accent)',
                 borderRadius: 5,
               }}
@@ -455,8 +455,8 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                 gap: 10,
                 padding: '10px 12px',
                 marginBottom: 12,
-                background: 'rgba(94,230,207,0.06)',
-                border: '1px solid rgba(94,230,207,0.22)',
+                background: 'rgba(47,102,208,0.06)',
+                border: '1px solid rgba(47,102,208,0.22)',
                 borderLeft: '3px solid var(--accent)',
                 borderRadius: 5,
               }}

@@ -1039,8 +1039,8 @@ function FuelingSection({
               marginTop: 10,
               padding: 10,
               borderRadius: 'var(--radius)',
-              border: '1px solid rgba(94,230,207,0.28)',
-              background: 'rgba(94,230,207,0.055)',
+              border: '1px solid rgba(47,102,208,0.28)',
+              background: 'rgba(47,102,208,0.055)',
             }}
           >
             <div style={{
@@ -1096,10 +1096,10 @@ function FuelingSection({
                 onClick={() => navigate(offPlanFuelingPlanFollowUpTarget(activityId))}
                 style={{
                   minHeight: 44,
-                  border: '1px solid rgba(94,230,207,0.46)',
+                  border: '1px solid rgba(47,102,208,0.46)',
                   borderRadius: 4,
                   padding: '7px 10px',
-                  background: 'rgba(94,230,207,0.08)',
+                  background: 'rgba(47,102,208,0.08)',
                   color: 'var(--accent)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
