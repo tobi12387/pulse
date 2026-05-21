@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Audit kann alle Kandidaten-URLs ausgeben
+
+- **Decision:** `npm run audit:fueling-gate -- --candidate-urls` gibt alle vorhandenen Fueling-Completion-Candidate-URLs zeilenweise aus und beendet mit Fehler, wenn keine URL-kandidaten existieren.
+- **Why:** Der aktuelle Fueling-Gate braucht zwei vorhandene Activity-Fueling-Logs mit echter GI-Komfort-Auswahl. Ein URL-only Modus macht diesen manuellen Schritt oeffnungs-/scriptfreundlich, ohne eine DB-Schreibabkuerzung oder abgeleitete GI-Evidenz einzufuehren.
+- **Alternatives:** Nur das volle Packet scannen (mehr Reibung beim zweiten Kandidaten); `performance-next --target-url` mehrfach nach jedem Save nutzen (funktioniert, bleibt aber weniger batch-freundlich); direkte DB-Updates anbieten (gegen Capture-Regel und Evidenzqualitaet).
+- **Decided by:** Codex, als Fueling-Handoff-Support-Slice im Branch `codex/fueling-candidate-urls`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Next kann nur die Ziel-URL ausgeben
 
 - **Decision:** `npm run audit:performance-next -- --target-url` gibt nur die `targetUrl` des ersten offenen Performance-OS-Unblocks aus und beendet mit Fehler, wenn der erste Unblock keine URL hat.

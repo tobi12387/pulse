@@ -48,6 +48,13 @@ For a live manual capture packet with all current candidates and rerun steps, ru
 npm run audit:fueling-gate -- --today <YYYY-MM-DD> --packet
 ```
 
+For clipboard/script use across all existing completion candidates, print one
+candidate URL per line:
+
+```bash
+npm run audit:fueling-gate -- --today <YYYY-MM-DD> --candidate-urls
+```
+
 ## Capture Existing Log Evidence
 
 Open the `Target URL` from the audit output when available; otherwise open the

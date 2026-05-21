@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildFuelingGateAudit,
+  exitCodeForFuelingCandidateUrls,
+  fuelingCandidateUrls,
+  parseArgs,
+  renderFuelingCandidateUrls,
   renderFuelingEvidencePacket,
   renderFuelingGateAudit,
   shiftIsoDate,
@@ -90,6 +94,15 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(audit.users[0].completionCandidates[0].targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
   assert.equal(audit.users[0].completionCandidates[0].targetUrl, audit.users[0].nextAction.targetUrl);
   assert.equal(audit.users[0].completionCandidates[0].summary, '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)');
+  assert.deepEqual(fuelingCandidateUrls(audit), [
+    audit.users[0].completionCandidates[0].targetUrl,
+    audit.users[0].completionCandidates[1].targetUrl,
+  ]);
+  assert.equal(renderFuelingCandidateUrls(audit), [
+    audit.users[0].completionCandidates[0].targetUrl,
+    audit.users[0].completionCandidates[1].targetUrl,
+  ].join('\n'));
+  assert.equal(exitCodeForFuelingCandidateUrls(audit), 0);
 
   const rendered = renderFuelingGateAudit(audit);
   assert.match(rendered, /Comparable complete logs: 0\/3/);
@@ -163,5 +176,27 @@ test('fueling gate audit opens after three comparable complete logs', () => {
   assert.equal(audit.users[0].gate, 'ready');
   assert.equal(audit.users[0].comparableCompleteLogs, 3);
   assert.equal(audit.users[0].nextAction, null);
+  assert.deepEqual(fuelingCandidateUrls(audit), []);
+  assert.equal(renderFuelingCandidateUrls(audit), '');
+  assert.equal(exitCodeForFuelingCandidateUrls(audit), 1);
   assert.match(renderFuelingGateAudit(audit), /trend summaries can be enabled/);
+});
+
+test('fueling gate audit CLI args accept candidate-url mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/fueling-gate-audit.mjs',
+    '--today',
+    '2026-05-21',
+    '--candidate-urls',
+  ]), {
+    today: '2026-05-21',
+    since: null,
+    userId: null,
+    databaseUrl: null,
+    envFile: null,
+    packet: false,
+    candidateUrls: true,
+    json: false,
+  });
 });
