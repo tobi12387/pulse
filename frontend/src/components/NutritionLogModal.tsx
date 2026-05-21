@@ -33,6 +33,9 @@ const GI_OPTIONS: Array<{ value: NonNullable<NutritionLogInput['giComfort']>; la
   { value: 'issue', label: 'Magenprobleme' },
 ];
 
+const GI_COMFORT_CAPTURE_GUARD = 'Echte Magenreaktion wählen; nicht aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.';
+const HYDRATION_MEASUREMENT_GUARD = 'Sodium, Temperatur und Schweißrate nur eintragen, wenn du sie wirklich gemessen hast.';
+
 function powderCarbsG(powderG: number): number {
   return Math.round(powderG * POWER_CARB_CARB_PER_POWDER);
 }
@@ -206,6 +209,8 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
           width: '100%', maxWidth: 420,
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 10, padding: '20px 18px',
+          maxHeight: 'calc(100vh - 32px)',
+          overflowY: 'auto',
           display: 'flex', flexDirection: 'column', gap: 16,
         }}
         onClick={e => e.stopPropagation()}
@@ -287,6 +292,9 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
               unit="l/h"
             />
           </div>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+            {HYDRATION_MEASUREMENT_GUARD}
+          </span>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -396,6 +404,9 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
                 );
               })}
             </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--text-3)', lineHeight: 1.45 }}>
+              {GI_COMFORT_CAPTURE_GUARD}
+            </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

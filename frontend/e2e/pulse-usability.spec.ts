@@ -961,6 +961,8 @@ test('Activity fueling log captures 750ml bottles, powder, snacks and GI comfort
   const saveButton = page.getByRole('button', { name: 'SPEICHERN' });
   await expect(saveButton).toBeDisabled();
   await expect(page.getByText('750-ml-Flaschen')).toBeVisible();
+  await expect(page.getByText('Sodium, Temperatur und Schweißrate nur eintragen, wenn du sie wirklich gemessen hast.')).toBeVisible();
+  await expect(page.getByText('Echte Magenreaktion wählen; nicht aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.')).toBeVisible();
   await page.getByLabel('750-ml-Flaschen').fill('4');
   await page.getByLabel('POWER CARB Pulver (g)').fill('300');
   await page.getByLabel('Sodium (mg)').fill('1300');
