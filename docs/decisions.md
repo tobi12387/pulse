@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — iPhone-Audit kann Field-Run-Scaffold direkt ausgeben
+
+- **Decision:** `npm run audit:iphone-pwa-gate -- --scaffold` gibt nur das paste-ready Markdown-Scaffold fuer einen neuen realen iPhone/PWA-Field-Run aus, mit dem erwarteten Server-Commit und den bestehenden Ergebniszeilen.
+- **Why:** Der iPhone/PWA-Gate bleibt bewusst real-device-gated. Ein Scaffold-only Modus senkt die Reibung beim Erfassen der echten Beobachtung, ohne simulierte WebKit/Chromium-Evidence als Feldbeweis zu behandeln oder alte Commit-Evidence als aktuell zu werten.
+- **Alternatives:** Das Scaffold weiter nur im vollen Packet suchen (mehr Copy-Reibung); die QA-Datei automatisch beschreiben (zu riskant ohne reale Beobachtungen); simulierte Evidence akzeptieren (gegen Gate-Regel).
+- **Decided by:** Codex, als iPhone-Field-Handoff-Support-Slice im Branch `codex/iphone-field-scaffold`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Audit kann alle Kandidaten-URLs ausgeben
 
 - **Decision:** `npm run audit:fueling-gate -- --candidate-urls` gibt alle vorhandenen Fueling-Completion-Candidate-URLs zeilenweise aus und beendet mit Fehler, wenn keine URL-kandidaten existieren.
