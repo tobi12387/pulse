@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Current-Main-Evidence bei 0d8cd63 haelt Backlog gated
+
+- **Decision:** Nach aktueller Route-, Fueling- und Ops-Evidence auf `main` bei `0d8cd63` bleibt der autonome Produkt-Backlog geschlossen; aus der sauberen Home-, Data-, Activity-, Plan- und Settings-Evidence wird keine neue UI/UX- oder Fueling-Produkt-Slice abgeleitet.
+- **Why:** Der Evidence-Pack zeigt 9 Desktop- und 17 Mobile-Screenshots mit 0 horizontalem Overflow, Data und Activity fuehren weiter zum fokussierten GI-Komfort-Abschluss, und `npm run audit:fueling-gate -- --today 2026-05-21` bestaetigt weiter 0/3 vergleichbare komplette During-Logs. Die Server-Spiegel-Verifikation scheitert weiterhin am SSH-Preflight und bleibt ein Auth-/Ops-Gate, kein Produktpaket.
+- **Alternatives:** Trotz sauberer Evidence eine neue UI-Polish-Slice starten (zu spekulativ); Fueling-Trends trotz 0/3 kompletter Logs freigeben (zu wenig Evidenz); SSH/Auth-Recovery durch Server-Direktpatches umgehen (bricht GitHub `main` als Source of Truth).
+- **Decided by:** Codex, als Current-Main-Evidence-Slice im Branch `codex/current-main-evidence-0d8cd63`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Gate-Audit wird wiederholbarer Support-Befehl
 
 - **Decision:** Der Nutrition-Trend-Gate-Status wird ueber `npm run audit:fueling-gate` reproduzierbar gemacht, statt weiter als einmalige `psql`-Abfrage in QA-Notizen zu leben.
