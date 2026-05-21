@@ -2041,6 +2041,10 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
+    .daily-decision-card--action-first .daily-decision-secondary-summary {
+      display: none;
+    }
+
     .focus-diary-entry {
       grid-template-columns: 86px minmax(0, 1fr);
       gap: 14px;

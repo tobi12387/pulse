@@ -411,6 +411,7 @@ export function DailyDecisionCard({
   return (
     <div
       data-testid="daily-decision-card"
+      className={`daily-decision-card ${inlineActions ? 'daily-decision-card--action-first' : ''}`}
       style={{
         padding: framed ? (compact ? '10px 12px' : '14px 16px') : 0,
         background: framed ? 'var(--surface)' : 'transparent',
@@ -471,7 +472,7 @@ export function DailyDecisionCard({
                 {primarySummary.detail}
               </div>
             </div>
-            <div data-testid="daily-decision-continuity" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+            <div data-testid="daily-decision-continuity" className="daily-decision-secondary-summary" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
                 {label('Seit letzter Entscheidung', labelCase)}
               </div>
@@ -479,7 +480,7 @@ export function DailyDecisionCard({
                 {decision.contract.continuity}
               </div>
             </div>
-            <div data-testid="daily-decision-safest-option" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+            <div data-testid="daily-decision-safest-option" className="daily-decision-secondary-summary" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
                 {label('Sicherste Option', labelCase)}
               </div>
