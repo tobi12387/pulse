@@ -11,6 +11,7 @@ function usage() {
     'Options:',
     '  --today YYYY-MM-DD   Anchor date for the Fueling gate audit.',
     '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
+    '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -304,10 +305,15 @@ export function renderPerformanceGateAudit(audit) {
   return lines.join('\n').trimEnd();
 }
 
+export function exitCodeForAudit(audit, options = {}) {
+  return options.failOnGated && audit.gate !== 'ready' ? 1 : 0;
+}
+
 function parseArgs(argv) {
   const result = {
     today: isoDate(new Date()),
     skipServer: false,
+    failOnGated: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -319,6 +325,10 @@ function parseArgs(argv) {
     }
     if (arg === '--skip-server') {
       result.skipServer = true;
+      continue;
+    }
+    if (arg === '--fail-on-gated') {
+      result.failOnGated = true;
       continue;
     }
     if (arg === '--today') {
@@ -340,9 +350,11 @@ function main(argv) {
   const audit = buildPerformanceGateAudit(args);
   if (args.json) {
     console.log(JSON.stringify(audit, null, 2));
+    process.exitCode = exitCodeForAudit(audit, args);
     return;
   }
   console.log(renderPerformanceGateAudit(audit));
+  process.exitCode = exitCodeForAudit(audit, args);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
