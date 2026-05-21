@@ -231,3 +231,30 @@ Result:
 
 - Focused Data Fueling smoke: 2 passed.
 - `verify:lernschleifen:pr` passed with 55 contract/golden tests and frontend build.
+
+## Addendum — Activity Fueling GI Options
+
+Fresh route evidence on the resumed Redesign branch stayed overflow-free, but the Activity Fueling anchor still had one manual-gate UX issue: the three GI-comfort choices looked muted/disabled even though they are the decisive action for the current Fueling unblock.
+
+This pass keeps the same evidence contract and write behavior, but makes the choice UI read as a real decision:
+
+- The Activity Fueling GI-comfort group now renders the three choices as stable, color-coded option buttons: green `Magen ok`, amber `Magen leicht unruhig`, rose `Magenprobleme`.
+- The options are in a responsive grid with explicit viewport coverage in route evidence and focused smoke coverage.
+- The action still saves only the selected structured GI comfort value; Plan and Garmin remain unchanged.
+
+Additional verification:
+
+```bash
+git diff --check
+npm --prefix frontend run build
+npx playwright test frontend/e2e/pulse-smoke.spec.ts --grep "Data today promotes actionable fueling learning gaps" --project=desktop-chromium --project=mobile-chromium
+PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence-redesign-gi-options-full-2026-05-22 npm run qa:ux-evidence
+npm run qa:ux-summary -- test-results/route-evidence-redesign-gi-options-full-2026-05-22
+npm run verify:lernschleifen:pr
+```
+
+Result:
+
+- Focused Data-to-Activity Fueling smoke: 2 passed.
+- Route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+- `verify:lernschleifen:pr` passed with 55 contract/golden tests and frontend build.

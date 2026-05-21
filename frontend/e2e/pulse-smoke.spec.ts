@@ -738,7 +738,10 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
   const giComfortAction = page.getByTestId('activity-gi-comfort-action');
   await expect(giComfortAction).toBeFocused();
+  await expect(giComfortAction.getByTestId('activity-gi-comfort-options')).toBeInViewport();
   await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
+  await expect(giComfortAction.getByRole('button', { name: 'Magen leicht unruhig' })).toBeInViewport();
+  await expect(giComfortAction.getByRole('button', { name: 'Magenprobleme' })).toBeInViewport();
 
   await giComfortAction.getByRole('button', { name: 'Magen ok' }).click();
   const saveNotice = page.getByTestId('activity-fueling-save-notice');

@@ -370,7 +370,10 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(giComfortAction).toBeFocused();
           await expect(giComfortAction).toHaveClass(/evidence-section/);
           await expect(giComfortAction).toBeInViewport();
+          await expect(giComfortAction.getByTestId('activity-gi-comfort-options')).toBeInViewport();
           await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
+          await expect(giComfortAction.getByRole('button', { name: 'Magen leicht unruhig' })).toBeInViewport();
+          await expect(giComfortAction.getByRole('button', { name: 'Magenprobleme' })).toBeInViewport();
         },
       );
 

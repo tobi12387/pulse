@@ -710,10 +710,38 @@ function FuelingSection({
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
     : 'other';
-  const giComfortOptions: Array<{ value: NonNullable<NutritionLog['giComfort']>; label: string }> = [
-    { value: 'ok', label: GI_COMFORT_LABELS.ok },
-    { value: 'mild_issue', label: GI_COMFORT_LABELS.mild_issue },
-    { value: 'issue', label: GI_COMFORT_LABELS.issue },
+  const giComfortOptions: Array<{
+    value: NonNullable<NutritionLog['giComfort']>;
+    label: string;
+    hint: string;
+    color: string;
+    border: string;
+    background: string;
+  }> = [
+    {
+      value: 'ok',
+      label: GI_COMFORT_LABELS.ok,
+      hint: 'ruhig',
+      color: 'var(--green)',
+      border: 'rgba(22,163,74,0.36)',
+      background: 'rgba(22,163,74,0.08)',
+    },
+    {
+      value: 'mild_issue',
+      label: GI_COMFORT_LABELS.mild_issue,
+      hint: 'leicht',
+      color: 'var(--amber)',
+      border: 'rgba(217,119,6,0.38)',
+      background: 'rgba(217,119,6,0.08)',
+    },
+    {
+      value: 'issue',
+      label: GI_COMFORT_LABELS.issue,
+      hint: 'Problem',
+      color: 'var(--rose)',
+      border: 'rgba(225,29,72,0.34)',
+      background: 'rgba(225,29,72,0.07)',
+    },
   ];
   const routeHash = hashFromLocation(location.hash);
 
@@ -909,11 +937,19 @@ function FuelingSection({
                     {evidenceQuality.giComfortCompletionDetail}
                   </p>
                 )}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div
+                  data-testid="activity-gi-comfort-options"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
+                    gap: 8,
+                  }}
+                >
                   {giComfortOptions.map(option => (
                     <button
                       key={option.value}
                       type="button"
+                      aria-label={option.label}
                       onClick={() => saveFuelingEvidence(
                         giComfortCompletionLogId,
                         { giComfort: option.value },
@@ -921,18 +957,27 @@ function FuelingSection({
                       )}
                       disabled={updateNutrition.isPending}
                       style={{
-                        minHeight: 44,
-                        background: 'rgba(0,0,0,0.18)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 4,
-                        padding: '6px 9px',
+                        minHeight: 52,
+                        display: 'grid',
+                        alignContent: 'center',
+                        gap: 3,
+                        background: updateNutrition.isPending ? 'var(--surface-2)' : option.background,
+                        border: `1.5px solid ${option.border}`,
+                        borderRadius: 6,
+                        padding: '8px 10px',
                         fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        color: 'var(--text-2)',
+                        fontSize: 10.5,
+                        color: option.color,
                         cursor: updateNutrition.isPending ? 'wait' : 'pointer',
+                        textAlign: 'left',
+                        boxShadow: '0 8px 22px rgba(15,23,42,0.06)',
+                        opacity: updateNutrition.isPending ? 0.66 : 1,
                       }}
                     >
-                      {option.label}
+                      <span>{option.label}</span>
+                      <span aria-hidden="true" style={{ fontSize: 8.5, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                        {option.hint}
+                      </span>
                     </button>
                   ))}
                 </div>
