@@ -684,6 +684,7 @@ function FuelingSection({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { data } = useNutritionLogs(null, activityId);
   const fuelingDebtQuery = useFuelingDebt();
   const deleteMut = useDeleteNutritionLog();
@@ -713,6 +714,19 @@ function FuelingSection({
     { value: 'mild_issue', label: GI_COMFORT_LABELS.mild_issue },
     { value: 'issue', label: GI_COMFORT_LABELS.issue },
   ];
+  const routeHash = hashFromLocation(location.hash);
+
+  useEffect(() => {
+    if (routeHash !== 'activity-fueling-log' || !evidenceQuality) return;
+    const targetId = giComfortCompletionLogId ? 'activity-gi-comfort-action' : 'activity-fueling-evidence-quality';
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(targetId) ?? document.getElementById('activity-fueling-log');
+      if (!target) return;
+      target.scrollIntoView({ block: 'center' });
+      target.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [evidenceQuality?.detail, evidenceQuality?.label, giComfortCompletionLogId, routeHash]);
 
   return (
     <>
@@ -818,7 +832,9 @@ function FuelingSection({
 
         {evidenceQuality && (
           <div
+            id="activity-fueling-evidence-quality"
             data-testid="activity-fueling-evidence-quality"
+            tabIndex={-1}
             style={{
               marginTop: 10,
               padding: 10,
@@ -859,7 +875,12 @@ function FuelingSection({
               ))}
             </div>
             {giComfortCompletionLogId && (
-              <div style={{ marginTop: 10 }}>
+              <div
+                id="activity-gi-comfort-action"
+                data-testid="activity-gi-comfort-action"
+                tabIndex={-1}
+                style={{ marginTop: 10, scrollMarginTop: 88, scrollMarginBottom: 120 }}
+              >
                 <div style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
