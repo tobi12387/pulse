@@ -5,6 +5,7 @@ import {
   buildPerformanceGateAudit,
   exitCodeForAudit,
   renderNextUnblock,
+  renderPerformanceGatePacket,
   renderPerformanceGateAudit,
 } from './performance-gates-audit.mjs';
 
@@ -289,6 +290,21 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /- 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log \(missing: GI comfort\)/);
   assert.match(nextRendered, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
   assert.doesNotMatch(nextRendered, /## iPhone\/PWA field/);
+
+  const packet = renderPerformanceGatePacket(audit);
+  assert.match(packet, /# Performance-OS Gate Handoff Packet/);
+  assert.match(packet, /First Unblock/);
+  assert.match(packet, /Gate: Fueling learning/);
+  assert.match(packet, /Action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log/);
+  assert.match(packet, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
+  assert.match(packet, /1\. Fueling learning/);
+  assert.match(packet, /2\. iPhone\/PWA field/);
+  assert.match(packet, /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
+  assert.match(packet, /3\. Server deploy mirror/);
+  assert.match(packet, /Recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+  assert.match(packet, /Fueling GI comfort must come from the real stomach response/);
+  assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21/);
 });
 
 test('performance gate audit reports ready when all required gates are ready', () => {
@@ -305,6 +321,7 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.match(renderPerformanceGateAudit(audit), /Gate: ready/);
   assert.match(renderPerformanceGateAudit(audit), /Next unblock: none/);
   assert.match(renderNextUnblock(audit), /Next unblock: none/);
+  assert.match(renderPerformanceGatePacket(audit), /No open Performance-OS gates/);
 });
 
 test('performance gate audit exposes structured next-unblock metadata for iPhone field gates', () => {
