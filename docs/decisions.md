@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Next kann alle ersten Ziel-URLs ausgeben
+
+- **Decision:** `npm run audit:performance-next -- --target-urls` gibt alle Ziel-URLs des ersten offenen Performance-OS-Unblocks zeilenweise aus, inklusive Fueling-Completion-Candidates.
+- **Why:** Der aktuelle Fueling-Unblock braucht zwei vorhandene Activity-Fueling-Logs mit echter GI-Komfort-Auswahl. Ein pluraler URL-Modus macht beide Links shortcut-/scriptfreundlich, ohne Markdown zu parsen, ohne auf den fokussierten Fueling-Audit zu wechseln und ohne Daten zu schreiben.
+- **Alternatives:** Nur `--target-url` fuer den ersten Link behalten (zu wenig fuer den aktuellen Zwei-Kandidaten-Blocker); nur das kombinierte Packet lesen (gut fuer Menschen, weniger gut fuer Shortcuts); direkte GI-Komfort-Schreibabkuerzungen anbieten (gegen Evidenzregel).
+- **Decided by:** Codex, als Performance-Next-Handoff-Support-Slice im Branch `codex/performance-target-urls`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Packet zeigt Fueling-Kandidaten-URLs
 
 - **Decision:** `npm run audit:performance-gates -- --packet` rendert bei Fueling-Completion-Candidates zusaetzlich die volle `Target URL` pro Kandidat.

@@ -5,7 +5,9 @@ import {
   buildPerformanceGateAudit,
   exitCodeForAudit,
   exitCodeForTargetUrl,
+  exitCodeForTargetUrls,
   firstTargetUrl,
+  firstTargetUrls,
   parseArgs,
   renderNextUnblock,
   renderPerformanceGatePacket,
@@ -325,7 +327,12 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
   assert.equal(firstTargetUrl(audit), 'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log');
+  assert.deepEqual(firstTargetUrls(audit), [
+    'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log',
+    'https://192.168.178.46:5175/plan/activity/activity-b#activity-fueling-log',
+  ]);
   assert.equal(exitCodeForTargetUrl(audit), 0);
+  assert.equal(exitCodeForTargetUrls(audit), 0);
   assert.match(nextRendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(nextRendered, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(nextRendered, /GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
@@ -416,7 +423,9 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
 
   assert.equal(audit.gate, 'gated');
   assert.equal(firstTargetUrl(audit), null);
+  assert.deepEqual(firstTargetUrls(audit), []);
   assert.equal(exitCodeForTargetUrl(audit), 1);
+  assert.equal(exitCodeForTargetUrls(audit), 1);
   assert.deepEqual(audit.nextUnblock, {
     key: 'iphone_pwa',
     label: 'iPhone/PWA field',
@@ -556,6 +565,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     failOnGated: false,
     nextUnblock: false,
     targetUrl: false,
+    targetUrls: false,
     packet: true,
     json: false,
   });
@@ -581,6 +591,27 @@ test('performance gate audit CLI args accept target-url mode', () => {
     failOnGated: false,
     nextUnblock: true,
     targetUrl: true,
+    targetUrls: false,
+    packet: false,
+    json: false,
+  });
+});
+
+test('performance gate audit CLI args accept target-urls mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--target-urls',
+    '--today',
+    '2026-05-21',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: null,
+    skipServer: false,
+    failOnGated: false,
+    nextUnblock: false,
+    targetUrl: false,
+    targetUrls: true,
     packet: false,
     json: false,
   });
