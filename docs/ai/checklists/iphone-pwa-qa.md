@@ -3,6 +3,7 @@
 Use this checklist for real-device checks. Do not trigger Garmin calendar sync during this QA unless the task explicitly requires repairing Garmin workouts.
 
 Record the result in `docs/qa/2026-05-02-iphone-pwa-real-device.md` so the evidence survives beyond chat context.
+Append a fresh field run with its own `## Scope` and `## Results` sections; the audit reads the latest run as one record, so older stale evidence can remain as history.
 
 Before treating the field record as current, run `npm run audit:iphone-pwa-gate`
 from the repo. The audit compares `Server commit under test` with the expected
