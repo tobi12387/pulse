@@ -63,7 +63,8 @@ npm run audit:fueling-gate -- --today <YYYY-MM-DD> --candidate-urls
 ```
 
 For the paste-ready checklist for the future complete long-session log that
-remains after existing candidates, print only that capture scaffold:
+remains after existing candidates, print the existing candidate URLs plus that
+capture scaffold:
 
 ```bash
 npm run audit:fueling-gate -- --today <YYYY-MM-DD> --new-log-checklist

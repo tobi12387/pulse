@@ -144,6 +144,10 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(checklist, /# Fueling New Long-Session Log Checklist/);
   assert.match(checklist, /Needed after existing candidates: 1 complete long-session log/);
   assert.match(checklist, /Existing candidates to close first: 2/);
+  assert.match(checklist, /1\. 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
+  assert.match(checklist, /URL: https?:\/\/[^\s]+\/plan\/activity\/activity-long-ride#activity-fueling-log/);
+  assert.match(checklist, /2\. 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\)/);
+  assert.match(checklist, /Missing: GI comfort/);
   assert.match(checklist, /Activity\/date and duration context from the real long endurance session/);
   assert.match(checklist, /During-activity carbs with enough detail to compute g\/h/);
   assert.match(checklist, /Structured GI comfort from the real stomach response: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme\./);
