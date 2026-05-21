@@ -86,7 +86,24 @@ npm run typecheck
 npm run test:e2e -- --grep "Mobile navigation|Coach|Settings|PWA"
 ```
 
-Run these against the deployed server:
+Before a current real-device field run, verify the deployed mirror through the
+server preflight wrapper from a clean local `main`:
+
+```bash
+git switch main
+git pull --ff-only
+PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
+```
+
+If this fails at SSH auth before server Git/PM2/health checks, do not continue
+the iPhone field run as current evidence yet. Use the read-only handoff first:
+
+```bash
+PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server -- --packet
+```
+
+After SSH auth is restored, raw server checks are optional diagnostics behind the
+same boundary:
 
 ```bash
 ssh root@192.168.178.46 "curl -s http://localhost:3000/api/pulse/health"
