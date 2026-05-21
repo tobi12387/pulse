@@ -2512,7 +2512,7 @@ test('PWA manifest and service worker endpoints are available', async ({ request
     scope: '/',
     display: 'standalone',
     start_url: '/',
-    theme_color: '#0a0b0d',
+    theme_color: '#ffffff',
   });
 
   const serviceWorker = await request.get('/sw.js');

@@ -41,7 +41,9 @@ export default function Layout() {
     || location.pathname.startsWith('/settings');
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1180 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
-  const currentNav = NAV_ITEMS.find(item => location.pathname === item.to || (!item.end && location.pathname.startsWith(item.to))) ?? NAV_ITEMS[0];
+  const currentNav = NAV_ITEMS.find(item => location.pathname === item.to || (!item.end && location.pathname.startsWith(item.to)));
+  const currentRouteTitle = currentNav?.mobileLabel
+    ?? (location.pathname.startsWith('/coach') ? 'Coach' : 'Pulse');
 
   useEffect(() => {
     function handleCommand(event: globalThis.KeyboardEvent) {
@@ -166,7 +168,7 @@ export default function Layout() {
           <span className="pulse-brand-title">Pulse</span>
         </span>
         <span className="pulse-mobile-route-title">
-          {currentNav.label}
+          {currentRouteTitle}
         </span>
       </div>
 

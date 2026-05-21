@@ -101,7 +101,7 @@ function SignalBlock({
               background: 'var(--accent)',
               border: 'none',
               borderRadius: 'var(--radius)',
-              color: 'var(--bg)',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,

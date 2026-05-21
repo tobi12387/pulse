@@ -5,9 +5,9 @@ const OFFLINE_HTML = `<!doctype html>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Pulse offline</title>
     <style>
-      body{margin:0;background:#0a0b0d;color:#e8ecf1;font-family:system-ui,sans-serif;display:grid;min-height:100vh;place-items:center;padding:24px}
-      main{max-width:380px;border:1px solid #1f232a;border-radius:8px;background:#101216;padding:20px}
-      .label{margin:0 0 8px;color:#5ee6cf;font-family:monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+      body{margin:0;background:#f4f7f3;color:#14201e;font-family:system-ui,sans-serif;display:grid;min-height:100vh;place-items:center;padding:24px}
+      main{max-width:380px;border:1px solid #d2ddd6;border-radius:8px;background:#fff;padding:20px;box-shadow:0 18px 46px rgba(34,49,42,.10)}
+      .label{margin:0 0 8px;color:#0d927f;font-family:monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
       h1{font-size:20px;margin:0 0 8px}
       p{color:#8b95a3;font-size:13px;line-height:1.5;margin:0}
       ul{color:#8b95a3;font-size:13px;line-height:1.5;margin:14px 0 0;padding-left:18px}

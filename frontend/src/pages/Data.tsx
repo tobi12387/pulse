@@ -515,7 +515,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
             background: 'var(--accent)',
             border: '1px solid var(--accent)',
             borderRadius: 5,
-            color: 'var(--bg)',
+            color: 'var(--accent-contrast)',
             cursor: 'pointer',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,

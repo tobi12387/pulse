@@ -20,7 +20,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
       const error = this.state.error as Error;
       const isDev = import.meta.env.DEV;
       return (
-        <div style={{ padding: 24, background: '#0a0b0d', minHeight: '100vh', color: '#d8dde5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ padding: 24, background: '#F4F7F3', minHeight: '100vh', color: '#14201E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: 'min(520px, 100%)', border: '1px solid rgba(248,113,113,0.28)', borderRadius: 8, background: '#111418', padding: 20 }}>
             <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#f47174', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
               Pulse braucht kurz Hilfe

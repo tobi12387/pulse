@@ -605,7 +605,7 @@ export function WorkoutDetailModal({ workout: initial, notice, onClose, onUpdate
                 style={{
                   padding: '10px 24px',
                   background: generateDetail.isPending ? 'var(--surface-2)' : 'var(--accent)',
-                  color: generateDetail.isPending ? 'var(--text-3)' : 'var(--bg)',
+                  color: generateDetail.isPending ? 'var(--text-3)' : 'var(--accent-contrast)',
                   border: 'none', borderRadius: 4, cursor: generateDetail.isPending ? 'default' : 'pointer',
                   fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em',
                   textTransform: 'uppercase',

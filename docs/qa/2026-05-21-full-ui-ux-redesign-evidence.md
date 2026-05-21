@@ -112,3 +112,36 @@ Manual screenshot review covered:
 Follow-up observation:
 
 - This PR intentionally changes route labels and the keyboard navigation order. Any brittle UI copy tests should follow the new IA rather than preserving the old `Data` before `Plan` ordering.
+
+## Addendum — Light Action-First Pass
+
+Tobi explicitly allowed cards and routes to be redefined further, including breaking UI/UX changes. The follow-up pass keeps the IA from the first redesign, but changes the product feel more decisively:
+
+- Replaced the dark cockpit theme with a light, calm performance-app surface across CSS tokens and the shared `focusCssVars` override.
+- Added an explicit `--accent-contrast` token and moved primary action foregrounds off `--bg`, so accent buttons stay readable in the new light shell.
+- Moved Home's primary daily action above the secondary decision-detail block, making the first screen action-first instead of explanation-first.
+- Tightened mobile shell spacing and segmented controls so Data and Plan tabs fit in one row without hidden horizontal overflow.
+- Fixed the mobile Coach route title so the compatibility route no longer appears as `Heute` in the top bar.
+- Updated PWA manifest, theme color and offline fallback colors to match the new UI shell.
+
+Additional verification:
+
+```bash
+npm --prefix frontend run build
+PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence-redesign-final-light-action npm run qa:ux-evidence
+npm run qa:ux-summary -- test-results/route-evidence-redesign-final-light-action
+npx playwright test frontend/e2e/ux-a11y-responsive.spec.ts frontend/e2e/pulse-smoke.spec.ts frontend/e2e/pulse-usability.spec.ts --grep "mobile top-level headers use compact route titles before the work surface|Data segmented tabs support arrow-key navigation|mobile Data overview skips duplicate intro copy before the daily action|Mobile navigation and tabs keep core labels readable|Data mobile subnavigation keeps every section tab in the visible viewport|Data mobile deep links do not clip the tab row|Plan mobile week strip fits seven days without hidden horizontal scrolling|PWA manifest and service worker endpoints are available|primary navigation exposes Focus routes without Coach tab|/insights renders as a top-level evidence route" --project=desktop-chromium --project=mobile-chromium
+npm run test:e2e:smoke
+npm run delivery:manifest
+npm run verify:lernschleifen
+npm run verify:trainingsanpassung
+npm run verify:tagesentscheidung
+```
+
+Result:
+
+- Final light-action route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+- Focused responsive/PWA/IA checks: 14 passed, 6 skipped.
+- Full smoke: 105 passed, 13 skipped.
+- Track gates passed: `verify:lernschleifen`, `verify:trainingsanpassung`, `verify:tagesentscheidung`.
+- Frontend build passed.

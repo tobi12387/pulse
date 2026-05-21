@@ -60,7 +60,7 @@ export function FButton({ children, onClick, variant = 'secondary', disabled, ar
         minHeight: 44,
         padding: '12px 18px',
         background: primary ? 'var(--accent)' : 'transparent',
-        color: primary ? 'var(--bg)' : 'var(--text-2)',
+        color: primary ? 'var(--accent-contrast)' : 'var(--text-2)',
         border: primary ? 'none' : `1px ${ghost ? 'dashed' : 'solid'} ${ghost ? 'var(--accent)' : 'var(--border)'}`,
         borderRadius: 'var(--radius-md)',
         fontFamily: 'var(--font-sans)',

@@ -308,7 +308,7 @@ export function TodayOptionsCard({
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              color: '#04110f',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,

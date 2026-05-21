@@ -281,7 +281,7 @@ export function DailyDecisionCard({
             background: color,
             border: `1px solid ${color}`,
             borderRadius: 'var(--radius-md)',
-            color: 'var(--bg)',
+            color: 'var(--accent-contrast)',
             fontFamily: 'var(--font-sans)',
             fontSize: 12,
             fontWeight: 750,
@@ -455,6 +455,8 @@ export function DailyDecisionCard({
         </div>
       </div>
 
+      {inlineActions && renderActions(compact ? 10 : 12)}
+
       {!compact && (
         <div data-testid="daily-decision-next-steps" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 13px', background: 'var(--surface-2)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 9 }}>
@@ -496,8 +498,6 @@ export function DailyDecisionCard({
               </div>
             )}
           </div>
-
-          {inlineActions && renderActions(10)}
 
           <button
             type="button"

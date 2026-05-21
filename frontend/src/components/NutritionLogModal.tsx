@@ -439,7 +439,7 @@ export function NutritionLogModal({ activityId, workoutId, durationMin, activity
             disabled={create.isPending || !hasRequiredLearningEvidence}
             style={{
               width: '100%', padding: '11px',
-              background: 'var(--accent)', color: 'var(--bg)',
+              background: 'var(--accent)', color: 'var(--accent-contrast)',
               border: 'none', borderRadius: 5,
               fontFamily: 'var(--font-mono)', fontSize: 11,
               letterSpacing: '.16em', fontWeight: 600,

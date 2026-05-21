@@ -28,6 +28,14 @@
 
 ---
 
+## 2026-05-21 — Redesign wird als helle Action-First-App fortgefuehrt
+
+- **Decision:** Die Redesign-PR wechselt von der dunklen Cockpit-Aesthetik auf eine helle, ruhigere Performance-App-Oberflaeche und priorisiert primaere Aktionen vor Detailbegruendungen; mobile Tabs bleiben einzeilig kompakt, der Coach bekommt wieder eine eigene mobile Routetitel-Identitaet, und PWA-Theme-/Offline-Farben folgen der neuen Shell.
+- **Why:** Tobi hat ausdruecklich freigegeben, Karten und Routes breaking neu zu definieren. Die vorherige Redesign-Stufe klaerte IA und Dichte, fuehlte aber visuell noch stark nach technischem Cockpit an; die neue Stufe bringt die erste Handlung frueher in den Blick und naeher an fuehrende Daily-Coaching-Apps.
+- **Alternatives:** Beim dunklen Theme bleiben (zu nah am alten Eindruck); nur mobile Abstaende reduzieren (loest die Cockpit-Anmutung nicht); separate Light/Dark-Themes bauen (mehr Komplexitaet ohne aktuelles Nutzerbeduerfnis).
+- **Decided by:** Tobi + Codex, als Fortsetzung von PR #669 im Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
 ## 2026-05-21 — Pulse UI wird als ruhiges Command-Surface neu ausgerichtet
 
 - **Decision:** Die Pulse-Hauptoberflaeche wird weg vom engen technischen Cockpit hin zu einem ruhigeren Command-Surface entwickelt: klare Route-Zwecke in der Navigation, staerkere Tagesaktion, lesbarere Sans-Hierarchie, weichere Karten, mobile Icon-Navigation und reduzierte System-Jargon-Labels.

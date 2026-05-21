@@ -959,7 +959,7 @@ export default function Coach() {
             style={{
               width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
               background: input.trim() ? 'var(--accent)' : 'var(--surface-2)',
-              color: input.trim() ? '#0A0B0D' : 'var(--text-3)',
+              color: input.trim() ? 'var(--accent-contrast)' : 'var(--text-3)',
               fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600,
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               alignSelf: 'flex-end', transition: 'background 0.15s',

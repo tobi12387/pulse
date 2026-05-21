@@ -475,7 +475,7 @@ function NextTrainingDecisionCard({
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              color: '#04110f',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -827,7 +827,7 @@ function NextTrainingDecisionCard({
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              color: '#04110f',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -1177,7 +1177,7 @@ function AvailabilityEditor({
                   {isDirty && (
                     <button onClick={() => void handleSave(weekStart)} disabled={isSaving || cur.availableDays.length === 0} style={{
                       fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase',
-                      background: 'var(--accent)', color: 'var(--bg)', border: 'none',
+                      background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none',
                       borderRadius: 3, padding: '4px 10px', cursor: 'pointer',
                     }}>
                       {isSaving ? '…' : '⇪ Speichern & regenerieren'}
@@ -1900,7 +1900,7 @@ function PlanScenarioPreviewCard({
             minHeight: 44,
             minWidth: 44,
             background: actionActive ? 'var(--accent)' : 'var(--surface-2)',
-            color: actionActive ? 'var(--bg)' : 'var(--text-3)',
+            color: actionActive ? 'var(--accent-contrast)' : 'var(--text-3)',
             border: actionActive ? 'none' : '1px solid var(--border)',
             borderRadius: 'var(--radius)',
             cursor: actionActive ? 'pointer' : 'default',
