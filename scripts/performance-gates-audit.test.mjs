@@ -159,6 +159,12 @@ test('performance gate audit summarizes current gated blockers', () => {
         { value: 'mild_issue', label: 'Magen leicht unruhig' },
         { value: 'issue', label: 'Magenprobleme' },
       ],
+      status: {
+        comparableCompleteLogs: 0,
+        requiredComparableCompleteLogs: 3,
+        completableNow: 2,
+        newLogsStillNeeded: 1,
+      },
       targetLog: {
         date: '2026-05-09',
         activityName: 'Datteln Graveln',
@@ -247,9 +253,13 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /# Performance-OS Next Unblock/);
   assert.match(nextRendered, /Next unblock: Fueling learning/);
   assert.match(nextRendered, /Command: npm run audit:fueling-gate -- --today 2026-05-21/);
+  assert.match(nextRendered, /Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
   assert.match(nextRendered, /Target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Options: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.match(nextRendered, /Completion candidates:/);
+  assert.match(nextRendered, /- 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log \(missing: GI comfort\)/);
+  assert.match(nextRendered, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
   assert.doesNotMatch(nextRendered, /## iPhone\/PWA field/);
 });
 
