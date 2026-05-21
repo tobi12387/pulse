@@ -88,9 +88,34 @@ function commitStatus(serverCommit, expectedCommit) {
   return commitsMatch(serverCommit, expectedCommit) ? 'current' : 'stale';
 }
 
+function latestEvidenceRecord(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const scopeIndexes = lines
+    .map((line, index) => line.trim() === '## Scope' ? index : -1)
+    .filter(index => index >= 0);
+
+  if (scopeIndexes.length === 0) return markdown;
+
+  const start = scopeIndexes.at(-1);
+  const end = lines.findIndex((line, index) => index > start && line.trim() === '## Scope');
+  return lines.slice(start, end === -1 ? undefined : end).join('\n');
+}
+
+function headingSection(markdown, heading) {
+  const lines = markdown.split(/\r?\n/);
+  const headingIndex = lines.findIndex(line => line.trim() === heading);
+  if (headingIndex === -1) return '';
+  const end = lines.findIndex((line, index) =>
+    index > headingIndex
+    && /^##\s+/.test(line.trim())
+    && line.trim() !== heading
+  );
+  return lines.slice(headingIndex + 1, end === -1 ? undefined : end).join('\n');
+}
+
 function parseScope(markdown) {
   const scope = {};
-  for (const line of markdown.split(/\r?\n/)) {
+  for (const line of headingSection(markdown, '## Scope').split(/\r?\n/)) {
     const match = /^- ([^:]+):\s*(.*)$/.exec(line);
     if (!match) continue;
     const [, key, rawValue] = match;
@@ -145,13 +170,14 @@ function buildGap(kind, label, status, detail, nextAction) {
 export function buildIphonePwaGateAudit(markdown, options = {}) {
   const evidenceFile = options.evidenceFile ?? DEFAULT_EVIDENCE_FILE;
   const expectedCommit = cleanInlineCode(options.expectedCommit);
-  const scope = parseScope(markdown);
+  const evidenceRecord = latestEvidenceRecord(markdown);
+  const scope = parseScope(evidenceRecord);
   const fieldCommitStatus = commitStatus(scope.serverCommit, expectedCommit);
-  const results = parseMarkdownTable(markdown, '## Results').map(row => ({
+  const results = parseMarkdownTable(evidenceRecord, '## Results').map(row => ({
     ...row,
     status: parseStatus(row.result),
   }));
-  const issues = parseMarkdownTable(markdown, '## Issues Found');
+  const issues = parseMarkdownTable(evidenceRecord, '## Issues Found');
   const missingMetadata = [
     scope.device ? null : 'Device',
     scope.iosVersion ? null : 'iOS version',

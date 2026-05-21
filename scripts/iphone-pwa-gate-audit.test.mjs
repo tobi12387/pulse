@@ -92,6 +92,42 @@ const COMPLETE_FIELD_RECORD = `# Pulse iPhone / VPN / PWA Real-Device QA - compl
 |---|---|---|---|---|
 `;
 
+const APPENDED_FRESH_FIELD_RECORD = `${CURRENT_FIELD_RECORD}
+
+# Pulse iPhone / VPN / PWA Real-Device QA - 2026-05-21
+
+## Scope
+
+- Device: iPhone 15 Pro
+- iOS version: 18.5
+- Browser / launch mode: Safari, then Home Screen PWA launch
+- VPN profile: Active
+- Pulse URL: \`https://192.168.178.46:5175\`
+- Server commit under test: \`c80e463\`
+
+## Results
+
+| Area | Expected | Result | Notes |
+|---|---|---|---|
+| Network | URL opens via VPN on local origin | Pass | Reached current server. |
+| Certificate | No unexpected warning for the address in use | Pass | Trusted root CA. |
+| Login | Auth succeeds and stays on local origin | Not applicable | No login gate. |
+| Settings readiness | iPhone/PWA block truthful | Pass | Ready block looked good. |
+| Add to Home Screen | Pulse launches from Home Screen | Pass | Installed. |
+| Standalone mode | Settings shows standalone | Pass | Confirmed. |
+| Home | Daily action fits | Pass | OK. |
+| Coach | Input remains usable | Pass | OK. |
+| Plan | Bottom nav safe | Pass | OK. |
+| Insights | States readable | Pass | OK. |
+| Push support | Permission and subscription state recorded | Pass | Test push arrived. |
+| Offline fallback | VPN/network disconnect fallback | Pass | Fallback explained local server/VPN unavailable. |
+
+## Issues Found
+
+| Severity | Route | Finding | Evidence | Follow-up |
+|---|---|---|---|---|
+`;
+
 test('iphone pwa gate audit identifies remaining real-device gaps', () => {
   const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, { evidenceFile: 'field.md' });
 
@@ -169,6 +205,23 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /- Server commit under test: `abc1234`/);
   assert.match(packet, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
   assert.match(packet, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
+});
+
+test('iphone pwa gate audit evaluates the latest appended field run as one record', () => {
+  const audit = buildIphonePwaGateAudit(APPENDED_FRESH_FIELD_RECORD, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'c80e463',
+  });
+
+  assert.equal(audit.gate, 'ready');
+  assert.equal(audit.commitStatus, 'current');
+  assert.equal(audit.scope.serverCommit, 'c80e463');
+  assert.equal(audit.scope.device, 'iPhone 15 Pro');
+  assert.equal(audit.scope.iosVersion, '18.5');
+  assert.deepEqual(audit.gaps, []);
+  assert.equal(audit.results.find(result => result.area === 'Certificate')?.status, 'pass');
+  assert.equal(audit.results.find(result => result.area === 'Push support')?.status, 'pass');
+  assert.equal(audit.results.find(result => result.area === 'Offline fallback')?.status, 'pass');
 });
 
 test('iphone pwa gate audit preserves configured server SSH host in handoff commands', () => {
