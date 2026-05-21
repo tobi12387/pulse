@@ -281,6 +281,10 @@ function serverRecoveryPacketCommand(expectedCommit) {
   return `${serverVerifyCommand(expectedCommit)} -- --packet`;
 }
 
+function iphonePwaGateAuditCommand(expectedCommit) {
+  return `${serverEnvPrefix()}npm run audit:iphone-pwa-gate -- --expected-commit ${expectedCommit ?? '<commit>'}`;
+}
+
 function scaffoldValue(value, fallback) {
   return value ?? fallback;
 }
@@ -351,7 +355,7 @@ export function renderIphonePwaFieldPacket(audit) {
   lines.push('- Deliberately enable Push and send a test push only when testing notifications.');
   lines.push('- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.');
   lines.push(`- Record the run in ${audit.evidenceFile}, including Server commit under test: ${audit.expectedCommit ?? '<commit>'}.`);
-  lines.push(`- Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit ${audit.expectedCommit ?? '<commit>'}`);
+  lines.push(`- Rerun after recording: ${iphonePwaGateAuditCommand(audit.expectedCommit)}`);
   lines.push('');
   lines.push('Evidence record scaffold:');
   lines.push(renderEvidenceRecordScaffold(audit));
