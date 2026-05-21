@@ -1277,7 +1277,7 @@ test('Activity fueling evidence quality structures obvious bottle and powder evi
   await expect(page.getByText('300g Pulver', { exact: true })).toBeVisible();
 });
 
-test('Activity fueling evidence quality structures product and GI notes on the existing log', async ({ page }) => {
+test('Activity fueling evidence quality structures product notes but keeps GI comfort explicit', async ({ page }) => {
   const textOnlyLog = {
     id: 'nutrition-text-products-gi',
     userId: 'user-1',
@@ -1366,7 +1366,9 @@ test('Activity fueling evidence quality structures product and GI notes on the e
 
   const quality = page.getByTestId('activity-fueling-evidence-quality');
   await quality.getByRole('button', { name: 'Mars übernehmen' }).click();
-  await quality.getByRole('button', { name: 'Magen leicht unruhig übernehmen' }).click();
+  await expect(quality.getByRole('button', { name: 'Magen leicht unruhig übernehmen' })).toHaveCount(0);
+  await expect(quality).toContainText('Wähle die echte Magenreaktion');
+  await quality.getByRole('button', { name: 'Magen leicht unruhig' }).click();
 
   await expect.poll(() => patches).toEqual(expect.arrayContaining([
     expect.objectContaining({
@@ -1382,7 +1384,7 @@ test('Activity fueling evidence quality structures product and GI notes on the e
   await expect(page.getByText('Magen leicht unruhig', { exact: true })).toBeVisible();
 });
 
-test('Activity fueling evidence quality applies all detected old-log details in one action', async ({ page }) => {
+test('Activity fueling evidence quality applies detected old-log details without inferring GI comfort', async ({ page }) => {
   const textOnlyLog = {
     id: 'nutrition-bulk-details',
     userId: 'user-1',
@@ -1476,13 +1478,14 @@ test('Activity fueling evidence quality applies all detected old-log details in 
     id: 'nutrition-bulk-details',
     bottles750Ml: 4,
     powderG: 300,
-    giComfort: 'mild_issue',
     fuelingProducts: expect.arrayContaining(['mnstry-power-carb-sour-cherry-1-0-8', 'mars']),
   });
+  await expect(patchedLog).not.toMatchObject({ giComfort: 'mild_issue' });
+  await expect(quality.getByRole('button', { name: 'Magen leicht unruhig übernehmen' })).toHaveCount(0);
+  await expect(quality).toContainText('Wähle die echte Magenreaktion');
   await expect(page.getByText('4 x 750 ml', { exact: true })).toBeVisible();
   await expect(page.getByText('300g Pulver', { exact: true })).toBeVisible();
   await expect(page.getByText('POWER CARB, Mars', { exact: true })).toBeVisible();
-  await expect(page.getByText('Magen leicht unruhig', { exact: true })).toBeVisible();
 });
 
 test('Home owns the full daily decision while Coach carries slim prompt context', async ({ page }) => {
