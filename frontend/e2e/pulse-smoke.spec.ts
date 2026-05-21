@@ -575,13 +575,13 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
       sodiumMgPerHour: null,
       hydrationContextSummary: null,
       hydrationEvidenceGaps: ['Hitze nicht gemessen'],
-      trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
-      evidence: ['2 lange During-Logs vollständig'],
+      trendSummary: null,
+      evidence: ['2 vorhandene lange Carb-Logs brauchen GI-Komfort.'],
       learningReadiness: {
-        comparableCompleteLogs: 2,
+        comparableCompleteLogs: 0,
         requiredComparableCompleteLogs: 3,
         readyForTrendSummary: false,
-        missingEvidence: ['GI-Komfort fehlt strukturiert beim vorhandenen Carb-Log.'],
+        missingEvidence: ['Noch drei vergleichbare During-Logs fehlen: zwei vorhandene lange Logs koennen durch GI-Komfort zaehlen; danach fehlt noch ein neuer vollstaendiger Lernlog.'],
         nextAction: {
           kind: 'complete_gi_comfort',
           label: 'GI-Komfort ergänzen',
@@ -598,7 +598,7 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
   await expect(card).toContainText('Lernkalibrierung');
   await expect(card).toContainText('Noch nicht kalibrieren');
   await expect(card).toContainText('Wirkung: Watch-Kontext');
-  await expect(card).toContainText('Trend-Evidenz 2/3');
+  await expect(card).toContainText('Trend-Evidenz 0/3');
   await expect(card).toContainText('GI-Komfort ergänzen');
   await expect(card).not.toContainText('Fueling-Trend:');
 
@@ -681,13 +681,13 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
       sodiumMgPerHour: null,
       hydrationContextSummary: null,
       hydrationEvidenceGaps: ['Hitze nicht gemessen'],
-      trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
-      evidence: ['2 lange During-Logs vollständig'],
+      trendSummary: null,
+      evidence: ['2 vorhandene lange Carb-Logs brauchen GI-Komfort.'],
       learningReadiness: {
-        comparableCompleteLogs: 2,
+        comparableCompleteLogs: 0,
         requiredComparableCompleteLogs: 3,
         readyForTrendSummary: false,
-        missingEvidence: ['GI-Komfort fehlt strukturiert beim vorhandenen Carb-Log.'],
+        missingEvidence: ['Noch drei vergleichbare During-Logs fehlen: zwei vorhandene lange Logs koennen durch GI-Komfort zaehlen; danach fehlt noch ein neuer vollstaendiger Lernlog.'],
         nextAction: {
           kind: 'complete_gi_comfort',
           label: 'GI-Komfort ergänzen',
@@ -702,13 +702,13 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   const action = page.getByTestId('data-primary-action');
 
   await expect(action).toContainText('Fueling-Evidenz schließen');
-  await expect(action).toContainText('Trend-Evidenz 2/3');
+  await expect(action).toContainText('Trend-Evidenz 0/3');
   await expect(action).toContainText('GI-Komfort ergänzen');
 
   await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   const triage = page.getByTestId('data-triage-fueling');
   await expect(triage).toContainText('Fueling-Evidenz');
-  await expect(triage).toContainText('Trend-Evidenz 2/3');
+  await expect(triage).toContainText('Trend-Evidenz 0/3');
 
   await action.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
   await expect(page).toHaveURL('/plan/activity/activity-fueling-gap#activity-fueling-log');
