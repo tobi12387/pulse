@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Naechster Performance-Unblock bekommt einen kurzen npm-Befehl
+
+- **Decision:** `npm run audit:performance-next -- --today <YYYY-MM-DD>` ist der kurze Standard-Handoff fuer den ersten offenen Performance-OS-Unblock und ruft denselben read-only Gate-Audit mit `--next-unblock` auf.
+- **Why:** Der volle Gate-Audit bleibt die Quelle fuer Lagebilder, aber der haeufigste manuelle Folgeschritt ist die erste unblockende Handlung. Ein kurzer npm-Alias reduziert Tippfehler und macht die Fueling/iPhone/Server-Handoff-Nutzung auffindbarer, ohne neue Gate-Logik einzufuehren.
+- **Alternatives:** Nur `npm run audit:performance-gates -- --next-unblock` dokumentieren (laenger und schlechter merkbar); ein zweites Script mit eigener Logik bauen (Dopplung); keinen Alias einfuehren (mehr Reibung beim wiederholten Gate-Follow-up).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-gate-next-alias`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Gate-Audit kann nur den naechsten Unblock ausgeben
 
 - **Decision:** `npm run audit:performance-gates -- --next-unblock` rendert nur die erste offene unblockende Handlung; zusammen mit `--json` gibt der Befehl nur das `nextUnblock`-Objekt aus.

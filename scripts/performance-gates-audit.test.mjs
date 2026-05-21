@@ -276,4 +276,5 @@ test('performance gate audit can fail automation when gates are open', () => {
 
 test('package exposes performance gate audit as the standard command', () => {
   assert.equal(packageJson.scripts['audit:performance-gates'], 'node scripts/performance-gates-audit.mjs');
+  assert.equal(packageJson.scripts['audit:performance-next'], 'node scripts/performance-gates-audit.mjs --next-unblock');
 });
