@@ -7,6 +7,21 @@ import pg from 'pg';
 const REQUIRED_COMPLETE_LOGS = 3;
 const DEFAULT_WINDOW_DAYS = 120;
 const ENDURANCE_TYPES = new Set(['bike', 'run', 'hike']);
+const STRUCTURED_GI_COMFORT_OPTIONS = [
+  { value: 'ok', label: 'Magen ok' },
+  { value: 'mild_issue', label: 'Magen leicht unruhig' },
+  { value: 'issue', label: 'Magenprobleme' },
+];
+
+function structuredGiComfortValuesText() {
+  return STRUCTURED_GI_COMFORT_OPTIONS.map(option => option.value).join(', ');
+}
+
+function structuredGiComfortOptionsText() {
+  return STRUCTURED_GI_COMFORT_OPTIONS
+    .map(option => `${option.value}=${option.label}`)
+    .join(', ');
+}
 
 function usage() {
   return [
@@ -129,7 +144,7 @@ function nextActionFor(comparableLogs) {
     return {
       kind: 'complete_gi_comfort',
       label: 'GI-Komfort ergaenzen',
-      detail: 'Add structured GI comfort to an existing long carb log.',
+      detail: `Add structured GI comfort (${structuredGiComfortValuesText()}) to an existing long carb log.`,
       activityId: giGap.activityId,
       targetPath: activityFuelingPath(giGap.activityId),
       date: giGap.date,
@@ -264,6 +279,9 @@ export function renderFuelingGateAudit(audit) {
       lines.push(`- New complete long-session logs still needed after completion candidates: ${user.newLogsStillNeeded}`);
       lines.push(`- Next action: ${user.nextAction.label} (${user.nextAction.detail})`);
       if (user.nextAction.targetPath) lines.push(`- Next action path: ${user.nextAction.targetPath}`);
+      if (user.completionCandidates.some(log => log.missing.includes('GI comfort'))) {
+        lines.push(`- Structured GI comfort values: ${structuredGiComfortOptionsText()}`);
+      }
     }
 
     const tableLogs = user.comparableLogs;
