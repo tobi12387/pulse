@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildIphonePwaGateAudit,
+  renderIphonePwaFieldPacket,
   renderIphonePwaGateAudit,
 } from './iphone-pwa-gate-audit.mjs';
 
@@ -124,6 +125,19 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(rendered, /Expected current commit: abc1234/);
   assert.match(rendered, /Field commit status: stale/);
   assert.match(rendered, /Current main field evidence: stale/);
+
+  const packet = renderIphonePwaFieldPacket(audit);
+  assert.match(packet, /# iPhone \/ PWA Field Evidence Packet/);
+  assert.match(packet, /Expected current commit: abc1234/);
+  assert.match(packet, /Server commit under test: 9e05189/);
+  assert.match(packet, /Open field gaps: 5/);
+  assert.match(packet, /1\. Current main field evidence \(stale\)/);
+  assert.match(packet, /2\. Warning-free certificate trust \(needs followup\)/);
+  assert.match(packet, /Use a real iPhone over the VPN\/local network path/);
+  assert.match(packet, /simulated WebKit or Chromium evidence does not close this gate/);
+  assert.match(packet, /never transfer rootCA-key\.pem or any \*-key\.pem file/);
+  assert.match(packet, /Record the run in field\.md, including Server commit under test: abc1234/);
+  assert.match(packet, /Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
 });
 
 test('iphone pwa gate audit opens when all manual gates match the expected commit', () => {
@@ -136,6 +150,7 @@ test('iphone pwa gate audit opens when all manual gates match the expected commi
   assert.equal(audit.commitStatus, 'current');
   assert.deepEqual(audit.gaps, []);
   assert.match(renderIphonePwaGateAudit(audit), /Field commit status: current/);
+  assert.match(renderIphonePwaFieldPacket(audit), /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
 });
 
 test('iphone pwa gate audit opens when all manual gates are recorded', () => {

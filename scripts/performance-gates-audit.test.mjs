@@ -262,6 +262,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log/);
   assert.match(rendered, /iPhone\/PWA field/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
+  assert.match(rendered, /Field packet: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet`/);
   assert.match(rendered, /3 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
@@ -319,6 +320,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       expectedCommit: 'abc1234',
       commitStatus: 'stale',
       serverCommitUnderTest: '9e05189',
+      fieldPacketCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet',
       firstGap: {
         kind: 'current_commit_evidence',
         label: 'Current main field evidence',
@@ -328,6 +330,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
     },
   });
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
+  assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {
