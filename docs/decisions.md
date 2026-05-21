@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Next-Unblock-Metadaten bleiben maschinenlesbar
+
+- **Decision:** Der JSON-Output von `npm run audit:performance-gates` ergaenzt `nextUnblock.metadata` mit strukturierten Feldern fuer den jeweils ersten offenen Gate-Typ, z.B. Fueling-`targetPath`/GI-Optionen/Kandidaten, iPhone-Evidence/erstes Gap oder Server-`recoveryRunbook`.
+- **Why:** Der Top-Level-Unblock soll nicht nur fuer Menschen lesbar sein, sondern auch von Folge-Tools, QA-Notizen oder UI-Handoffs ohne String-Parsing genutzt werden koennen. Die Gates bleiben unveraendert streng; es wird nur die vorhandene Evidenz strukturierter nach oben gereicht.
+- **Alternatives:** Nur die Prosa im `action`-Feld parsen (fehleranfaellig); alle Gate-Details duplizieren (unnoetig breit); Gate-spezifische Top-Level-Felder ohne gemeinsame `metadata`-Klammer einfuehren (instabilere JSON-Form).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-gate-next-metadata`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Gate-Audit nennt den naechsten Unblock oben
 
 - **Decision:** `npm run audit:performance-gates` gibt im Markdown- und JSON-Output ein top-level `nextUnblock` aus und rendert den ersten offenen Gate-Schritt direkt unter der Gate-Zusammenfassung.

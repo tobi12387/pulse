@@ -263,6 +263,45 @@ function skippedServer(expectedCommit) {
   };
 }
 
+function fuelingNextAction(gate) {
+  return gate.users?.find(user => user.gate !== 'ready')?.nextAction
+    ?? gate.users?.[0]?.nextAction
+    ?? null;
+}
+
+function nextUnblockMetadata(gate) {
+  if (gate.key === 'fueling') {
+    const nextAction = fuelingNextAction(gate);
+    return {
+      kind: nextAction?.kind ?? null,
+      targetPath: nextAction?.targetPath ?? gate.completionCandidates?.find(candidate => candidate.targetPath)?.targetPath ?? null,
+      date: nextAction?.date ?? null,
+      options: nextAction?.options ?? [],
+      completionCandidates: gate.completionCandidates ?? [],
+    };
+  }
+  if (gate.key === 'iphone_pwa') {
+    const firstGap = gate.gaps?.[0] ?? null;
+    return {
+      evidenceFile: gate.evidenceFile ?? null,
+      serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
+      firstGap: firstGap ? {
+        kind: firstGap.kind ?? null,
+        label: firstGap.label ?? null,
+        status: firstGap.status ?? null,
+        nextAction: firstGap.nextAction ?? null,
+      } : null,
+    };
+  }
+  if (gate.key === 'server') {
+    return {
+      expectedCommit: gate.expectedCommit ?? null,
+      recoveryRunbook: gate.recoveryRunbook ?? null,
+    };
+  }
+  return {};
+}
+
 function nextUnblockFrom(openGates) {
   const gate = openGates[0] ?? null;
   if (!gate) return null;
@@ -272,6 +311,7 @@ function nextUnblockFrom(openGates) {
     command: gate.command,
     action: gate.nextAction,
     detail: gate.detail,
+    metadata: nextUnblockMetadata(gate),
   };
 }
 
