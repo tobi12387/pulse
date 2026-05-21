@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Server-Recovery-Packet zeigt Public-Key-Kandidaten
+
+- **Decision:** `npm run verify:server -- --packet` listet lokale `~/.ssh/*.pub`-Kandidaten als Dateinamen im read-only Recovery-Packet, ohne Key-Inhalte, private Keys oder Secrets auszugeben.
+- **Why:** Der Deploy-/Server-Mirror-Gate blockiert aktuell vor Git/PM2/Health an SSH-Auth. Der sichere Reparaturschritt verlangt einen vorhandenen Public Key; das Packet soll Tobi zeigen, ob in der aktuellen Umgebung Kandidaten existieren, ohne den Server zu beruehren oder sensible Daten offenzulegen.
+- **Alternatives:** Nur die statische Beispiel-Datei `~/.ssh/id_ed25519.pub` nennen (zu wenig konkret); Public-Key-Inhalte oder Fingerprints ausgeben (nicht noetig und lauter); SSH-Reparatur automatisieren oder Server-Dateien patchen (ausserhalb Codex-Grenze).
+- **Decided by:** Codex, als Server-Recovery-Support-Slice im Branch `codex/server-recovery-key-candidates`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Modal traegt Evidenzgrenzen direkt
 
 - **Decision:** Der Activity-Fueling-Log-Dialog zeigt die GI-Komfort-Nicht-Ableitungsregel und den measured-only Hinweis fuer Sodium, Temperatur und Schweißrate direkt im Formular; die Dialogflaeche ist hoehenbegrenzt und scrollbar.

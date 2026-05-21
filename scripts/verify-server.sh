@@ -56,6 +56,27 @@ fail() {
   exit 1
 }
 
+print_local_public_key_candidates() {
+  local ssh_dir="${HOME:-}/.ssh"
+  local found=0
+
+  if [[ -d "$ssh_dir" ]]; then
+    while IFS= read -r -d '' key_path; do
+      found=1
+      if [[ -n "${HOME:-}" && "$key_path" == "$HOME/"* ]]; then
+        printf -- "- %s\n" "~/${key_path#"$HOME"/}"
+      else
+        printf -- "- %s\n" "$key_path"
+      fi
+    done < <(find "$ssh_dir" -maxdepth 1 -type f -name '*.pub' -print0 2>/dev/null | sort -z)
+  fi
+
+  if [[ "$found" == "0" ]]; then
+    echo "- No local ~/.ssh/*.pub files found in this environment."
+    echo "- Create or choose a public key outside this repo before editing authorized_keys."
+  fi
+}
+
 render_recovery_packet() {
   cat <<PACKET
 # Server Deploy Mirror Recovery Packet
@@ -75,6 +96,11 @@ SSH auth preflight:
 - Keep private keys, passwords, .env values and *-key.pem files out of chat, docs and Git.
 - Rerun:
   ssh -o BatchMode=$SSH_BATCH_MODE -o ConnectTimeout=$SSH_CONNECT_TIMEOUT $HOST "printf 'ssh=ok\\n'"
+
+Local public key candidates in this environment (filenames only):
+PACKET
+  print_local_public_key_candidates
+  cat <<PACKET
 
 Mirror verification:
 - From a clean local main when checking deployed main:
