@@ -58,7 +58,7 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 - Frontend URL: `https://192.168.178.46:5175`.
 - Backend health: `http://localhost:3000/api/pulse/health` on the server.
 - PM2 processes: `pulse` and `pulse-frontend`.
-- Mac-local Postgres/Redis tests normally use Docker Desktop and the dev services. If Docker Compose is down but `npm run pulse:status` reports the configured DB/Redis endpoints as reachable, use `npm run verify:local -- --no-services`; otherwise call out the local DB gate and rely on CI/server DB checks.
+- Mac-local Postgres/Redis tests normally use Docker Desktop and the dev services. If Docker Compose is down but `npm run pulse:status` reports the configured DB/Redis endpoints as reachable, use `npm run verify:local -- --no-services`; if migrations fail because the test DB is ahead of its Drizzle ledger, point `DATABASE_URL_TEST` at a fresh empty test DB and rerun no-services verification. Otherwise call out the local DB gate and rely on CI/server DB checks.
 
 ## Quick Verification Commands
 
