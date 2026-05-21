@@ -330,6 +330,7 @@ export function renderIphonePwaFieldPacket(audit) {
   lines.push('');
   lines.push('Manual field run:');
   lines.push(`- Verify the server mirror before recording new current evidence: ${serverVerifyCommand(audit.expectedCommit)}.`);
+  lines.push('- If this field run is intentionally pinned to a known deployed/runtime commit, rerun this packet with `--expected-commit <short>` before recording evidence.');
   lines.push(`- If SSH fails before server Git/PM2/health checks, run the read-only recovery packet first: ${serverRecoveryPacketCommand(audit.expectedCommit)}.`);
   lines.push('- Follow docs/ai/checklists/deploy-auth-recovery.md before continuing the iPhone field run.');
   lines.push('- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.');
