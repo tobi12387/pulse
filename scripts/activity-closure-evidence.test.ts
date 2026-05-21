@@ -97,6 +97,10 @@ test('long-session closure evidence mirrors Home fueling and feedback language',
     'Schweißrate 0.9 l/h',
     'Trend-Evidenz 1/3',
   ]);
+  assert.equal(
+    quality.giComfortCompletionDetail,
+    'Wähle die echte Magenreaktion. Danach kann dieser vorhandene Carb-Log in die Trend-Evidenz einfließen; aktuell Trend-Evidenz 1/3. Plan und Garmin bleiben unverändert.',
+  );
 });
 
 test('complete long-session evidence keeps measured context and feedback closed', () => {
@@ -111,6 +115,7 @@ test('complete long-session evidence keeps measured context and feedback closed'
   assert.ok(quality);
   assert.equal(quality.label, 'Lernevidenz vollständig');
   assert.match(quality.detail, /Fueling-Evidence geschlossen/);
+  assert.equal(quality.giComfortCompletionDetail, null);
   assert.deepEqual(quality.items, [
     'RPE erfasst',
     'Dauer 240 min',
