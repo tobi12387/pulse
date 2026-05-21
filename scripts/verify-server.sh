@@ -64,6 +64,8 @@ LOG_SINCE_ISO="${PULSE_SERVER_LOG_SINCE:-$(PULSE_SERVER_LOG_WINDOW_MINUTES="$LOG
 
 echo "==> ssh access"
 if ! ssh "${SSH_OPTS[@]}" "$HOST" "printf 'ssh=ok\n'"; then
+  echo "expected_commit=$EXPECTED_COMMIT" >&2
+  echo "recovery_runbook=docs/ai/checklists/deploy-auth-recovery.md" >&2
   fail "SSH access to $HOST failed before server checks. Confirm VPN/network access and non-interactive SSH credentials for deploy verification."
 fi
 

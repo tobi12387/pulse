@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Verify-Server nennt erwarteten Commit bei SSH-Blocker
+
+- **Decision:** `scripts/verify-server.sh` gibt bei fehlgeschlagenem SSH-Preflight den erwarteten lokalen Commit und das Deploy-Auth-Recovery-Runbook aus, bevor es abbricht.
+- **Why:** Nach gemergten Runtime-Aenderungen kann der Server-Deploy an SSH-Auth scheitern, bevor der Spiegel-Commit sichtbar wird. Der erwartete Commit im Fehleroutput macht offene Deploy-Schulden nachvollziehbar, ohne Serverdateien direkt zu editieren oder Secrets zu behandeln.
+- **Alternatives:** Den rohen SSH-Fehler unveraendert lassen (zu wenig Kontext fuer pending Deploys); Serverchecks trotz fehlender SSH-Credentials umgehen (nicht moeglich und unsicher); Deploy-Wissen nur im Chat halten (geht fuer naechste Sessions verloren).
+- **Decided by:** Codex, als Deploy-Status-Support-Slice im Branch `codex/pending-deploy-status-bb68267`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-PWA-Feldgate bekommt einen Read-only-Audit
 
 - **Decision:** `node scripts/iphone-pwa-gate-audit.mjs` prueft den manuellen iPhone/VPN/PWA-Evidence-Record und nennt offene Real-Device-Gates wie Zertifikatsvertrauen, Push-Aktivierung, Offline-Fallback und fehlende Device-Metadaten.
