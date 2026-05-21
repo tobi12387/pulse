@@ -24,6 +24,12 @@ npm run audit:performance-next -- --today <YYYY-MM-DD>
 Use the printed `Target URL` or `Target path` and `Options`. If the target
 changes, follow the command output instead of this document.
 
+For clipboard/script use, print only the current first-unblock target URL:
+
+```bash
+npm run audit:performance-next -- --today <YYYY-MM-DD> --target-url
+```
+
 If Fueling is part of a broader manual gate run, generate one ordered handoff first:
 
 ```bash

@@ -4,6 +4,8 @@ import test from 'node:test';
 import {
   buildPerformanceGateAudit,
   exitCodeForAudit,
+  exitCodeForTargetUrl,
+  firstTargetUrl,
   parseArgs,
   renderNextUnblock,
   renderPerformanceGatePacket,
@@ -321,6 +323,8 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /Target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.equal(firstTargetUrl(audit), 'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log');
+  assert.equal(exitCodeForTargetUrl(audit), 0);
   assert.match(nextRendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(nextRendered, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(nextRendered, /GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
@@ -408,6 +412,8 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   }));
 
   assert.equal(audit.gate, 'gated');
+  assert.equal(firstTargetUrl(audit), null);
+  assert.equal(exitCodeForTargetUrl(audit), 1);
   assert.deepEqual(audit.nextUnblock, {
     key: 'iphone_pwa',
     label: 'iPhone/PWA field',
@@ -540,6 +546,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     skipServer: false,
     failOnGated: false,
     nextUnblock: false,
+    targetUrl: false,
     packet: true,
     json: false,
   });
@@ -548,6 +555,26 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     () => parseArgs(['node', 'scripts/performance-gates-audit.mjs', '--expected-commit', 'not-a-hash']),
     /--expected-commit must be a 7-40 character git commit hash/,
   );
+});
+
+test('performance gate audit CLI args accept target-url mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--next-unblock',
+    '--target-url',
+    '--today',
+    '2026-05-21',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: null,
+    skipServer: false,
+    failOnGated: false,
+    nextUnblock: true,
+    targetUrl: true,
+    packet: false,
+    json: false,
+  });
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {

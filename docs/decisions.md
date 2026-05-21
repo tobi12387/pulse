@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Next kann nur die Ziel-URL ausgeben
+
+- **Decision:** `npm run audit:performance-next -- --target-url` gibt nur die `targetUrl` des ersten offenen Performance-OS-Unblocks aus und beendet mit Fehler, wenn der erste Unblock keine URL hat.
+- **Why:** Der aktuelle Fueling-Unblock ist eine konkrete Activity-Fueling-UI-Aktion. Agenten, Shortcuts oder Tobi koennen den Deep-Link so direkt oeffnen oder kopieren, ohne Markdown zu scannen oder JSON zu parsen, waehrend nicht-URL-Gates wie iPhone/PWA bewusst nicht als Link simuliert werden.
+- **Alternatives:** Weiterhin `--json` parsen (mehr Reibung fuer den haeufigsten manuellen Schritt); einen eigenen zweiten Audit bauen (Logikduplikat); bei fehlender URL den Pfad oder eine leere Zeile als Erfolg ausgeben (zu leicht falsch zu automatisieren).
+- **Decided by:** Codex, als Performance-Next-Handoff-Slice im Branch `codex/performance-next-target-url`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Kombinierter iPhone-Handoff vertraut fertigem Server-Gate
 
 - **Decision:** `npm run audit:performance-gates` kuerzt den iPhone/PWA-Next-Action-Hinweis auf die reale iPhone-Checkliste, wenn der Server-Mirror-Gate im selben kombinierten Audit bereits ready ist; Server-Recovery-Packets werden dann im iPhone-Gate nicht mehr wiederholt.
