@@ -1004,7 +1004,7 @@ function renderIphoneManualChecklist(gate, index) {
     lines.push(checkbox(`If SSH fails before server checks, use the read-only recovery packet: ${commandText(metadata.serverRecoveryPacketCommand)}.`));
   }
   if (metadata?.fieldScaffoldCommand) {
-    lines.push(checkbox(`Print the paste-ready field scaffold: ${commandText(metadata.fieldScaffoldCommand)}.`));
+    lines.push(checkbox(`Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: ${commandText(metadata.fieldScaffoldCommand)}.`));
   }
   for (const gap of gate.gaps ?? []) {
     const nextAction = gap.nextAction ? ` ${gap.nextAction}` : '';
