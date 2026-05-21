@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 HOST="${PULSE_HOST:-root@192.168.178.46}"
+HOST_FALLBACKS="${PULSE_HOST_FALLBACKS:-pulse-server}"
 APP_PATH="${PULSE_PATH:-/root/pulse}"
 URL="${PULSE_URL:-https://192.168.178.46:5175}"
 BACKEND_PROC="${PULSE_PM2_BACKEND:-pulse}"
@@ -22,6 +23,8 @@ Usage: scripts/verify-server.sh [--packet]
 
 Environment overrides:
   PULSE_HOST             SSH target, default root@192.168.178.46
+  PULSE_HOST_FALLBACKS   Space/comma-separated SSH targets tried only when
+                         PULSE_HOST is unset, default pulse-server
   PULSE_PATH             Server project path, default /root/pulse
   PULSE_URL              Public LAN URL, default https://192.168.178.46:5175
   PULSE_PM2_BACKEND      Backend PM2 process, default pulse
@@ -83,6 +86,7 @@ render_recovery_packet() {
 
 Expected commit: $EXPECTED_COMMIT
 SSH target: $HOST
+SSH fallback targets: ${HOST_FALLBACKS:-none}
 Server path: $APP_PATH
 Public URL: $URL
 Recovery runbook: docs/ai/checklists/deploy-auth-recovery.md
@@ -117,6 +121,43 @@ Deploy boundary:
 PACKET
 }
 
+build_host_candidates() {
+  HOST_CANDIDATES=("$HOST")
+
+  if [[ -n "${PULSE_HOST:-}" ]]; then
+    return
+  fi
+
+  local fallback_list="${HOST_FALLBACKS//,/ }"
+  local candidate
+  for candidate in $fallback_list; do
+    [[ -n "$candidate" ]] || continue
+    [[ "$candidate" == "$HOST" ]] && continue
+    HOST_CANDIDATES+=("$candidate")
+  done
+}
+
+select_ssh_host() {
+  local candidate
+  local output
+  local errors=()
+
+  build_host_candidates
+
+  for candidate in "${HOST_CANDIDATES[@]}"; do
+    if output="$(ssh "${SSH_OPTS[@]}" "$candidate" "printf 'ssh=ok\n'" 2>&1)"; then
+      HOST="$candidate"
+      printf '%s\n' "$output"
+      echo "ssh_target=$HOST"
+      return 0
+    fi
+    errors+=("$candidate: $output")
+  done
+
+  printf '%s\n' "${errors[@]}" >&2
+  return 1
+}
+
 if [[ "$#" -gt 1 ]]; then
   fail "Unexpected extra arguments: ${*:2}"
 fi
@@ -143,7 +184,7 @@ esac
 LOG_SINCE_ISO="${PULSE_SERVER_LOG_SINCE:-$(PULSE_SERVER_LOG_WINDOW_MINUTES="$LOG_WINDOW_MINUTES" node --input-type=module -e 'const minutes = Number(process.env.PULSE_SERVER_LOG_WINDOW_MINUTES); console.log(new Date(Date.now() - minutes * 60_000).toISOString())')}"
 
 echo "==> ssh access"
-if ! ssh "${SSH_OPTS[@]}" "$HOST" "printf 'ssh=ok\n'"; then
+if ! select_ssh_host; then
   echo "expected_commit=$EXPECTED_COMMIT" >&2
   echo "recovery_runbook=docs/ai/checklists/deploy-auth-recovery.md" >&2
   fail "SSH access to $HOST failed before server checks. Confirm VPN/network access and non-interactive SSH credentials for deploy verification."

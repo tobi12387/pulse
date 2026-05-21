@@ -353,6 +353,23 @@ function resolveExpectedCommit(runner) {
   return result.stdout.trim() || 'unknown';
 }
 
+function serverIssueKind(detail) {
+  if (/server branch is|server worktree is dirty|server commit .* != expected/i.test(detail)) {
+    return 'mirror_state';
+  }
+  if (/ssh access|permission denied|publickey|non-interactive ssh/i.test(detail)) {
+    return 'ssh_auth';
+  }
+  return 'unknown';
+}
+
+function serverNextAction(issueKind, recoveryRunbook, command, expectedCommit) {
+  if (issueKind === 'mirror_state') {
+    return `Restore the server mirror to clean GitHub main at ${expectedCommit} through the standard merge/deploy flow, then rerun ${command}. Do not edit server files directly.`;
+  }
+  return `Restore non-interactive SSH auth using ${recoveryRunbook}, then rerun ${command}.`;
+}
+
 function summarizeServer(expectedCommit, runner) {
   const command = serverVerifyCommand(expectedCommit);
   const recoveryPacketCommand = serverRecoveryPacketCommand(expectedCommit);
@@ -367,6 +384,10 @@ function summarizeServer(expectedCommit, runner) {
   const recoveryRunbook = firstMatch(combinedOutput, /recovery_runbook=([^\s]+)/)
     ?? 'docs/ai/checklists/deploy-auth-recovery.md';
   const ready = result.status === 0;
+  const detail = ready
+    ? `Server mirror verified against expected commit ${expectedCommit}.`
+    : compactCommandError(result);
+  const issueKind = ready ? null : serverIssueKind(detail);
 
   return {
     key: 'server',
@@ -374,15 +395,13 @@ function summarizeServer(expectedCommit, runner) {
     gate: ready ? 'ready' : 'gated',
     ready,
     command,
-    detail: ready
-      ? `Server mirror verified against expected commit ${expectedCommit}.`
-      : compactCommandError(result),
+    detail,
     nextAction: ready
       ? 'No server mirror action needed.'
-      : `Restore non-interactive SSH auth using ${recoveryRunbook}, then rerun ${command}.`,
+      : serverNextAction(issueKind, recoveryRunbook, command, expectedCommit),
     expectedCommit: outputCommit,
-    recoveryRunbook,
-    recoveryPacketCommand: ready ? null : recoveryPacketCommand,
+    recoveryRunbook: !ready && issueKind === 'ssh_auth' ? recoveryRunbook : null,
+    recoveryPacketCommand: !ready && issueKind === 'ssh_auth' ? recoveryPacketCommand : null,
   };
 }
 

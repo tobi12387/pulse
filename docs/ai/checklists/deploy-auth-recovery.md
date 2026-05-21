@@ -1,6 +1,9 @@
 # Server Deploy Auth Recovery
 
 Use this when deploys or `npm run verify:server` fail at the SSH preflight before any server Git, PM2 or health checks run.
+When `PULSE_HOST` is unset, `npm run verify:server` tries `root@192.168.178.46`
+first and then the configured `pulse-server` alias before treating SSH as
+blocked.
 
 Current symptom (`expected_commit` follows local `HEAD` or `PULSE_EXPECTED_COMMIT`):
 
@@ -38,11 +41,12 @@ ssh -o BatchMode=yes -o ConnectTimeout=8 root@192.168.178.46 "printf 'ssh=ok\n'"
 
 If the workspace has an SSH config alias for the Pulse server, test that before
 changing server keys. In this Codex environment the alias is `pulse-server` and
-uses a configured local identity:
+uses a configured local identity; `npm run verify:server` tries it automatically
+when no explicit `PULSE_HOST` is set:
 
 ```bash
 ssh -o BatchMode=yes -o ConnectTimeout=8 pulse-server "printf 'ssh=ok\n'"
-PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
+PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
 ```
 
 If that fails, repair the SSH credential outside the repo:
