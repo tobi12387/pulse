@@ -81,6 +81,7 @@ test('iphone pwa gate audit identifies remaining real-device gaps', () => {
   const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, { evidenceFile: 'field.md' });
 
   assert.equal(audit.gate, 'gated');
+  assert.equal(audit.fieldChecklist, 'docs/ai/checklists/iphone-pwa-qa.md');
   assert.equal(audit.scope.serverCommit, '9e05189');
   assert.equal(audit.scope.pulseUrl, 'https://192.168.178.46:5175');
   assert.deepEqual(audit.gaps.map(gap => gap.kind), [
@@ -93,6 +94,7 @@ test('iphone pwa gate audit identifies remaining real-device gaps', () => {
 
   const rendered = renderIphonePwaGateAudit(audit);
   assert.match(rendered, /Gate: gated/);
+  assert.match(rendered, /Field checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(rendered, /Warning-free certificate trust: needs_followup/);
   assert.match(rendered, /Push activation and test push: partial/);
   assert.match(rendered, /Real iPhone VPN\/network offline fallback: pending/);
@@ -103,6 +105,7 @@ test('iphone pwa gate audit opens when all manual gates are recorded', () => {
   const audit = buildIphonePwaGateAudit(COMPLETE_FIELD_RECORD, { evidenceFile: 'field.md' });
 
   assert.equal(audit.gate, 'ready');
+  assert.equal(audit.fieldChecklist, 'docs/ai/checklists/iphone-pwa-qa.md');
   assert.deepEqual(audit.gaps, []);
   assert.equal(audit.nextAction, null);
   assert.match(renderIphonePwaGateAudit(audit), /All manual iPhone\/PWA field gates are recorded as pass/);
