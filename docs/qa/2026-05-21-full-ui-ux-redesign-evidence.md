@@ -121,6 +121,7 @@ Tobi explicitly allowed cards and routes to be redefined further, including brea
 - Added an explicit `--accent-contrast` token and moved primary action foregrounds off `--bg`, so accent buttons stay readable in the new light shell.
 - Moved Home's primary daily action above the secondary decision-detail block, making the first screen action-first instead of explanation-first.
 - On mobile Home, the action-first daily card now hides secondary continuity/safest-option rows from the first viewport while keeping the decision data in the card contract.
+- On mobile Plan, the weekly decision options now behave like a compact three-choice selector; detailed impact/result copy stays in the active preview instead of making the first viewport read like a report.
 - Tightened mobile shell spacing and segmented controls so Data and Plan tabs fit in one row without hidden horizontal overflow.
 - Fixed the mobile Coach route title so the compatibility route no longer appears as `Heute` in the top bar.
 - Updated PWA manifest, theme color and offline fallback colors to match the new UI shell.
@@ -146,4 +147,5 @@ Result:
 - Full smoke: 105 passed, 13 skipped.
 - Track gates passed: `verify:lernschleifen`, `verify:trainingsanpassung`, `verify:tagesentscheidung`.
 - Mobile daily-card compaction recheck: `verify:tagesentscheidung` passed with 39 contract/golden tests, frontend build and 14 rendered Home smokes.
+- Mobile Plan selector recheck: frontend build, four focused mobile Plan/navigation smokes, route evidence and `verify:trainingsanpassung` passed.
 - Frontend build passed.

@@ -1926,33 +1926,52 @@
     }
 
     .plan-weekly-decision__options {
-      grid-template-columns: minmax(0, 1fr) !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
       gap: 6px !important;
       margin-top: 10px !important;
     }
 
     .plan-weekly-decision__option {
-      padding: 8px 9px !important;
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      min-height: 58px;
+      padding: 8px 5px !important;
+      position: relative;
+      text-align: center !important;
+    }
+
+    .plan-weekly-decision__option > div:first-child {
+      align-items: center !important;
+      flex-direction: column;
+      gap: 3px !important;
+      justify-content: center !important;
+      margin-bottom: 0 !important;
     }
 
     .plan-weekly-decision__option-title {
-      margin-bottom: 2px !important;
+      border: 0 !important;
+      clip: rect(0 0 0 0);
+      height: 1px;
+      margin: -1px !important;
+      overflow: hidden;
+      padding: 0 !important;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
     }
 
     .plan-weekly-decision__option-impact,
     .plan-weekly-decision__option-result {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
+      border: 0 !important;
+      clip: rect(0 0 0 0);
+      height: 1px;
+      margin: -1px !important;
       overflow: hidden;
-    }
-
-    .plan-weekly-decision__option-impact {
-      -webkit-line-clamp: 2;
-    }
-
-    .plan-weekly-decision__option-result {
-      -webkit-line-clamp: 1;
-      margin-top: 3px !important;
+      padding: 0 !important;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
     }
 
     .plan-weekly-decision__active-preview {
