@@ -81,6 +81,22 @@ function countText(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+function summarizeCompletionCandidate(candidate) {
+  return {
+    date: candidate.date ?? null,
+    status: candidate.status ?? null,
+    targetPath: candidate.targetPath ?? null,
+    missing: candidate.missing ?? [],
+  };
+}
+
+function completionCandidatePathsText(candidates) {
+  const paths = candidates
+    .map(candidate => candidate.targetPath)
+    .filter(Boolean);
+  return paths.length > 0 ? `: ${paths.join(', ')}` : '';
+}
+
 function summarizeFueling(today, runner) {
   const command = 'npm run audit:fueling-gate -- --today';
   const result = runner(process.execPath, ['scripts/fueling-gate-audit.mjs', '--today', today, '--json']);
@@ -102,17 +118,21 @@ function summarizeFueling(today, runner) {
   const users = parsed.value.users ?? [];
   const blockingUser = users.find(user => user.gate !== 'ready') ?? users[0] ?? null;
   const ready = users.length > 0 && users.every(user => user.gate === 'ready');
-  const summaryUsers = users.map(user => ({
-    userId: user.userId,
-    gate: user.gate,
-    comparableCompleteLogs: user.comparableCompleteLogs,
-    requiredComparableCompleteLogs: user.requiredComparableCompleteLogs,
-    duringLogs: user.duringLogs,
-    comparableLongLogs: user.comparableLongLogs,
-    completableNow: user.completableNow,
-    newLogsStillNeeded: user.newLogsStillNeeded,
-    nextAction: user.nextAction ?? null,
-  }));
+  const summaryUsers = users.map(user => {
+    const completionCandidates = (user.completionCandidates ?? []).map(summarizeCompletionCandidate);
+    return {
+      userId: user.userId,
+      gate: user.gate,
+      comparableCompleteLogs: user.comparableCompleteLogs,
+      requiredComparableCompleteLogs: user.requiredComparableCompleteLogs,
+      duringLogs: user.duringLogs,
+      comparableLongLogs: user.comparableLongLogs,
+      completableNow: user.completableNow,
+      newLogsStillNeeded: user.newLogsStillNeeded,
+      nextAction: user.nextAction ?? null,
+      completionCandidates,
+    };
+  });
 
   if (!blockingUser) {
     return {
@@ -128,11 +148,12 @@ function summarizeFueling(today, runner) {
   }
 
   const complete = `${blockingUser.comparableCompleteLogs}/${blockingUser.requiredComparableCompleteLogs}`;
+  const completionCandidates = (blockingUser.completionCandidates ?? []).map(summarizeCompletionCandidate);
   const detail = ready
     ? `${complete} comparable complete logs; nutrition trend summaries can be enabled from current evidence.`
     : [
         `${complete} comparable complete logs`,
-        `${countText(blockingUser.completableNow, 'existing log')} completable now`,
+        `${countText(blockingUser.completableNow, 'existing log')} completable now${completionCandidatePathsText(completionCandidates)}`,
         `${countText(blockingUser.newLogsStillNeeded, 'new complete long-session log')} still needed after candidates`,
       ].join('; ') + '.';
   const nextAction = ready
@@ -152,6 +173,7 @@ function summarizeFueling(today, runner) {
     detail,
     nextAction,
     users: summaryUsers,
+    completionCandidates,
   };
 }
 
