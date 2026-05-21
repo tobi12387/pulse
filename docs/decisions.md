@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — AI-Kontext vermeidet rollierende Gate-Commit-Pins
+
+- **Decision:** Dauerhafte AI-Kontextdateien verweisen bei Performance-Gate-Snapshots auf Evidence-Dateien und Live-Audit-Befehle statt jeden docs-only Merge als neuen `current commit` einzupinnen.
+- **Why:** Gate-Audits loesen den erwarteten Commit ohnehin live auf. Reine Kontext-/Evidence-PRs verschieben `main` und machen statische Hashes sofort historisch, obwohl sich Fueling, iPhone/PWA und Server-Gate inhaltlich nicht geaendert haben.
+- **Alternatives:** Nach jedem docs-only PR einen weiteren Hash-Refresh mergen (Endlosschleife); Commit-Hinweise ganz entfernen (weniger reproduzierbare Evidence); Produktcode trotz unveraenderter Gates starten (nicht backlog-gedeckt).
+- **Decided by:** Codex, als Performance-Gate-Handoff-Slice im Branch `codex/performance-gate-snapshot-wording`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Current-Gate-Refresh `5477d49` bleibt produktgegated
 
 - **Decision:** Der frische Performance-Gate-Refresh auf `5477d49` oeffnet kein neues autonomes Produkt-Slice; der Backlog bleibt auf manuelle Fueling-GI-Evidenz, aktuelle iPhone/PWA-Real-Device-Evidenz und Server-SSH-Verifikation begrenzt.
