@@ -30,15 +30,14 @@ Use `npm run audit:performance-checklist -- --today <YYYY-MM-DD>` when the
 manual run needs a shorter checkbox checklist instead of the full handoff
 packet.
 
-From feature branches, use `--local-planning` only for planning/handoff
-refreshes so a local branch does not create a phantom server mirror gate. It
-defaults the expected commit to `origin/main`. Do not use that deferred server
-result as current iPhone field evidence; rerun the normal audit or
+From feature branches, packet/checklist/next-target handoff modes auto-apply
+local-planning behavior so a local branch does not create a phantom server
+mirror gate. Add `--local-planning` manually only for non-handoff planning
+summaries that need the same deferred server behavior. Local planning defaults
+the expected commit to `origin/main`. Do not use that deferred server result as
+current iPhone field evidence; rerun the normal audit or
 `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server` from clean `main` before
 recording a real-device run.
-Packet/checklist/next-target handoff modes auto-apply that local-planning
-behavior when they detect a feature branch, but the same proof boundary still
-applies.
 
 ## Network
 

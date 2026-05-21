@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Manuelle Performance-Handoffs erkennen Feature-Branches
+
+- **Decision:** Performance-OS-Handoff-Modi wie `--packet`, `--manual-checklist`, `--next-unblock`, `--target-url` und `--target-urls` aktivieren auf Feature-Branches automatisch lokale Planung: der Server-Mirror wird `deferred`, der erwartete Commit kommt von `origin/main`, und die normale Server-Verifikation bleibt fuer clean `main`, Deploy-Entscheidungen und aktuelle iPhone-Field-Evidence erforderlich.
+- **Why:** Die Standard-Codex-Arbeit passiert auf `codex/*`-Branches. Ohne Auto-Erkennung erzeugt ein Handoff aus der korrekten Feature-Branch-Arbeit leicht einen Phantom-Server-Gate und verrauscht die echte manuelle Reihenfolge Fueling -> iPhone/PWA.
+- **Alternatives:** Weiter verlangen, dass Agenten `--local-planning` jedes Mal manuell ergaenzen (fehleranfaellig); Server-Gates in Handoffs global ignorieren (zu riskant fuer Deploy/iPhone-Claims); nur in Doku warnen (zu schwach fuer Shortcut-/CLI-Nutzung).
+- **Decided by:** Codex, als Manual-Evidence-Handoff-Support-Slice in PR #665.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Delivery-Intake warnt bei gated Seeds
 
 - **Decision:** `npm run delivery:intake` rendert fuer Nutrition/Fueling-Trend-Outcomes und iPhone/PWA-Reliability-Outcomes explizite Gate-Reminder, statt diese Seeds wie normale offene Produktpakete wirken zu lassen.
