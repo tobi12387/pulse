@@ -51,9 +51,16 @@ const GATED_FUELING = commandResult(0, JSON.stringify({
         },
       ],
       nextAction: {
+        kind: 'complete_gi_comfort',
         label: 'GI-Komfort ergaenzen',
         detail: 'Add structured GI comfort to an existing long carb log.',
         targetPath: '/plan/activity/activity-a#activity-fueling-log',
+        date: '2026-05-09',
+        options: [
+          { value: 'ok', label: 'Magen ok' },
+          { value: 'mild_issue', label: 'Magen leicht unruhig' },
+          { value: 'issue', label: 'Magenprobleme' },
+        ],
       },
     },
   ],
@@ -80,8 +87,13 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
   gate: 'gated',
   scope: { serverCommit: '9e05189' },
   gaps: [
-    { label: 'Warning-free certificate trust', status: 'needs_followup' },
-    { label: 'Push activation and test push', status: 'partial' },
+    {
+      kind: 'certificate_trust',
+      label: 'Warning-free certificate trust',
+      status: 'needs_followup',
+      nextAction: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
+    },
+    { kind: 'push_activation', label: 'Push activation and test push', status: 'partial' },
   ],
   nextAction: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
 }));
@@ -115,6 +127,30 @@ test('performance gate audit summarizes current gated blockers', () => {
     command: 'npm run audit:fueling-gate -- --today 2026-05-21',
     action: 'GI-Komfort ergaenzen - Add structured GI comfort to an existing long carb log. - Path: /plan/activity/activity-a#activity-fueling-log',
     detail: '0/3 comparable complete logs; 2 existing logs completable now: /plan/activity/activity-a#activity-fueling-log, /plan/activity/activity-b#activity-fueling-log; 1 new complete long-session log still needed after candidates.',
+    metadata: {
+      kind: 'complete_gi_comfort',
+      targetPath: '/plan/activity/activity-a#activity-fueling-log',
+      date: '2026-05-09',
+      options: [
+        { value: 'ok', label: 'Magen ok' },
+        { value: 'mild_issue', label: 'Magen leicht unruhig' },
+        { value: 'issue', label: 'Magenprobleme' },
+      ],
+      completionCandidates: [
+        {
+          date: '2026-05-09',
+          status: 'can count after GI comfort',
+          targetPath: '/plan/activity/activity-a#activity-fueling-log',
+          missing: ['GI comfort'],
+        },
+        {
+          date: '2026-05-04',
+          status: 'can count after GI comfort',
+          targetPath: '/plan/activity/activity-b#activity-fueling-log',
+          missing: ['GI comfort'],
+        },
+      ],
+    },
   });
   assert.equal(audit.gates[0].nextAction, 'GI-Komfort ergaenzen - Add structured GI comfort to an existing long carb log. - Path: /plan/activity/activity-a#activity-fueling-log');
   assert.deepEqual(audit.gates[0].completionCandidates, [
@@ -164,6 +200,33 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.match(renderPerformanceGateAudit(audit), /Next unblock: none/);
 });
 
+test('performance gate audit exposes structured next-unblock metadata for iPhone field gates', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21' }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: GATED_IPHONE,
+    server: commandResult(0, '==> server verification complete: abc1234\n'),
+  }));
+
+  assert.equal(audit.gate, 'gated');
+  assert.deepEqual(audit.nextUnblock, {
+    key: 'iphone_pwa',
+    label: 'iPhone/PWA field',
+    command: 'npm run audit:iphone-pwa-gate',
+    action: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
+    detail: '2 open gaps: Warning-free certificate trust: needs_followup, Push activation and test push: partial',
+    metadata: {
+      evidenceFile: 'docs/qa/field.md',
+      serverCommitUnderTest: '9e05189',
+      firstGap: {
+        kind: 'certificate_trust',
+        label: 'Warning-free certificate trust',
+        status: 'needs_followup',
+        nextAction: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
+      },
+    },
+  });
+});
+
 test('performance gate audit keeps skipped server verification unready', () => {
   const audit = buildPerformanceGateAudit({ today: '2026-05-21', skipServer: true }, makeRunner({
     fueling: READY_FUELING,
@@ -175,6 +238,10 @@ test('performance gate audit keeps skipped server verification unready', () => {
   assert.equal(audit.openGates, 1);
   assert.equal(audit.gates[2].gate, 'skipped');
   assert.equal(audit.gates[2].ready, false);
+  assert.deepEqual(audit.nextUnblock?.metadata, {
+    expectedCommit: 'abc1234',
+    recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
+  });
   assert.match(renderPerformanceGateAudit(audit), /Skipped by --skip-server/);
   assert.match(renderPerformanceGateAudit(audit), /Gate: gated/);
 });
