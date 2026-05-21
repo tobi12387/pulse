@@ -46,6 +46,7 @@ function usage() {
     '  --database-url <url>      Read-only Postgres connection string.',
     '  --env-file <path>         Env file to load before .env/.env.test fallbacks.',
     '  --packet                  Print a manual evidence-capture packet instead of the audit table.',
+    '  --candidate-urls          Print only existing completion candidate URLs; exits 1 if none.',
     '  --json                    Print machine-readable JSON.',
     '  -h, --help                Show this help.',
   ].join('\n');
@@ -465,7 +466,22 @@ export function renderFuelingEvidencePacket(audit) {
   return lines.join('\n').trimEnd();
 }
 
-function parseArgs(argv) {
+export function fuelingCandidateUrls(audit) {
+  return audit.users
+    .flatMap(user => user.completionCandidates ?? [])
+    .map(candidate => candidate.targetUrl ?? pulseTargetUrl(candidate.targetPath))
+    .filter(Boolean);
+}
+
+export function renderFuelingCandidateUrls(audit) {
+  return fuelingCandidateUrls(audit).join('\n');
+}
+
+export function exitCodeForFuelingCandidateUrls(audit) {
+  return fuelingCandidateUrls(audit).length > 0 ? 0 : 1;
+}
+
+export function parseArgs(argv) {
   const result = {
     today: isoDate(new Date()),
     since: null,
@@ -473,6 +489,7 @@ function parseArgs(argv) {
     databaseUrl: null,
     envFile: null,
     packet: false,
+    candidateUrls: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -484,6 +501,10 @@ function parseArgs(argv) {
     }
     if (arg === '--packet') {
       result.packet = true;
+      continue;
+    }
+    if (arg === '--candidate-urls') {
+      result.candidateUrls = true;
       continue;
     }
     if (arg === '--today') {
@@ -622,6 +643,18 @@ async function main(argv) {
     database: safeDatabaseLabel(databaseUrl),
     envFile,
   };
+
+  if (args.candidateUrls) {
+    const urls = renderFuelingCandidateUrls(output);
+    if (!urls) {
+      console.error('No Fueling completion candidate URLs available.');
+      process.exitCode = exitCodeForFuelingCandidateUrls(output);
+      return;
+    }
+    console.log(urls);
+    process.exitCode = exitCodeForFuelingCandidateUrls(output);
+    return;
+  }
 
   if (args.json) {
     console.log(JSON.stringify(output, null, 2));
