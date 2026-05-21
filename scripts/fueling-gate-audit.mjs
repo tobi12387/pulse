@@ -28,6 +28,10 @@ function structuredGiComfortOptions() {
   return STRUCTURED_GI_COMFORT_OPTIONS.map(option => ({ ...option }));
 }
 
+function giComfortCaptureDetail() {
+  return 'Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.';
+}
+
 function usage() {
   return [
     'Usage: node scripts/fueling-gate-audit.mjs [options]',
@@ -185,7 +189,7 @@ function nextActionFor(comparableLogs) {
     return {
       kind: 'complete_gi_comfort',
       label: 'GI-Komfort ergaenzen',
-      detail: `Add structured GI comfort (${structuredGiComfortValuesText()}) to an existing long carb log.`,
+      detail: giComfortCaptureDetail(),
       activityId: giGap.activityId,
       targetPath: activityFuelingPath(giGap.activityId),
       date: giGap.date,
@@ -330,7 +334,7 @@ export function renderFuelingGateAudit(audit) {
       if (user.nextAction.targetLog?.summary) lines.push(`- Next action target: ${user.nextAction.targetLog.summary}`);
       if (user.nextAction.targetPath) lines.push(`- Next action path: ${user.nextAction.targetPath}`);
       if (user.completionCandidates.some(log => log.missing.includes('GI comfort'))) {
-        lines.push(`- Structured GI comfort values: ${structuredGiComfortOptionsText()}`);
+        lines.push(`- Strukturierte GI-Komfort-Werte: ${structuredGiComfortOptionsText()}`);
       }
     }
 

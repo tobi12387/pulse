@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Next nennt die Nicht-Ableitungsregel direkt
+
+- **Decision:** Fueling- und Performance-Next-Handoffs formulieren den GI-Komfort-Schritt als echte Magenreaktion am vorhandenen langen Carb-Log und nennen direkt, dass nichts aus Notizen, Route, RPE, g/h oder Ergebnis abgeleitet werden darf.
+- **Why:** Der erste Performance-OS-Unblock ist ein subjektiver Evidence-Nachtrag. Die kompakte Next-Ausgabe ist der wahrscheinlichste Einstieg fuer die manuelle Erfassung und muss die gleiche Evidenzgrenze tragen wie das Fueling-Packet.
+- **Alternatives:** Die Nicht-Ableitungsregel nur im Packet belassen (ein Kontextwechsel mehr); die alte halb englische Kurzcopy behalten (weniger ruhig und weniger eindeutig); GI-Komfort aus vorhandenen Trainingsdaten ableiten (verboten, subjektive Evidenz).
+- **Decided by:** Codex, als Fueling-Handoff-Slice im Branch `codex/fueling-next-action-copy`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — AI-Kontext vermeidet rollierende Gate-Commit-Pins
 
 - **Decision:** Dauerhafte AI-Kontextdateien verweisen bei Performance-Gate-Snapshots auf Evidence-Dateien und Live-Audit-Befehle statt jeden docs-only Merge als neuen `current commit` einzupinnen.

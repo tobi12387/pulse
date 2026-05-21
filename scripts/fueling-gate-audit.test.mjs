@@ -78,11 +78,11 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(rendered, /Comparable complete logs: 0\/3/);
   assert.match(rendered, /Existing logs completable now: 2/);
   assert.match(rendered, /New complete long-session logs still needed after completion candidates: 1/);
-  assert.match(rendered, /Next action: GI-Komfort ergaenzen \(Add structured GI comfort \(ok, mild_issue, issue\) to an existing long carb log\.\)/);
+  assert.match(rendered, /Next action: GI-Komfort ergaenzen \(Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g\/h oder Ergebnis ableiten\.\)/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(rendered, /Next action target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Next action path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
-  assert.match(rendered, /Structured GI comfort values: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.match(rendered, /Strukturierte GI-Komfort-Werte: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(rendered, /Datteln Graveln/);
   assert.match(rendered, /356 g \(54 g\/h\)/);
   assert.match(rendered, /can count after GI comfort/);
