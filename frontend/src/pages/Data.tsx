@@ -5,7 +5,13 @@ import { CoverageTab } from '@/features/data/coverage/coverage-components';
 import { MentalTab } from '@/features/data/mental/mental-components';
 import { GewichtTab, MetrikenTab, SchlafTab } from '@/features/data/recovery/recovery-components';
 import { DataAnalysenTab } from '@/pages/Insights';
-import { useCheckinToday, usePulseHome } from '@/pulse/hooks';
+import {
+  fuelingLearningActionTargetPath,
+  fuelingLearningGapSummary,
+  fuelingTrendEvidenceLabel,
+  isFuelingTrendReady,
+} from '@/pulse/fueling-learning';
+import { useCheckinToday, useFuelingDebt, usePulseHome } from '@/pulse/hooks';
 
 type Tab = 'heute' | 'trends' | 'qualitaet' | 'analyse';
 type DataFocus = 'mental' | 'recovery' | 'sleep' | 'weight' | null;
@@ -133,10 +139,14 @@ function garminTone(status: string | undefined): string {
 function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
   const homeQuery = usePulseHome();
   const checkinToday = useCheckinToday();
+  const fuelingDebt = useFuelingDebt();
   const navigate = useNavigate();
   const home = homeQuery.data;
   const garmin = home?.dataStatus.garmin;
   const hasCheckin = checkinToday.data?.checkin != null;
+  const fuelingBaseline = fuelingDebt.data?.outcomeBaseline;
+  const fuelingTargetPath = fuelingLearningActionTargetPath(fuelingBaseline);
+  const fuelingGapSummary = fuelingLearningGapSummary(fuelingBaseline);
   const rows: Array<{
     id: string;
     tab: Tab;
@@ -178,6 +188,18 @@ function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void 
       detail: `${garmin?.activitiesDays14 ?? '–'} Aktivitäten in 14 Tagen; letzte Tagesdaten ${garmin?.lastMetricDate ?? 'unbekannt'}.`,
       tone: garminTone(garmin?.status),
     },
+    ...(fuelingTargetPath && fuelingGapSummary
+      ? [{
+        id: 'fueling',
+        tab: 'analyse' as const,
+        hash: 'data-personal-response',
+        targetPath: fuelingTargetPath,
+        label: 'Fueling-Evidenz',
+        value: fuelingTrendEvidenceLabel(fuelingBaseline),
+        detail: fuelingGapSummary,
+        tone: 'var(--amber)',
+      }]
+      : []),
     {
       id: 'plan-load',
       tab: 'analyse',
@@ -254,12 +276,26 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   const [actionDetailOpen, setActionDetailOpen] = useState(false);
   const homeQuery = usePulseHome();
   const checkinToday = useCheckinToday();
+  const fuelingDebt = useFuelingDebt();
   const navigate = useNavigate();
   const home = homeQuery.data;
   const garmin = home?.dataStatus.garmin;
   const hasCheckin = checkinToday.data?.checkin != null;
   const garminReady = garmin?.status === 'ready';
   const mentalValue = checkinToday.isLoading ? 'lädt' : hasCheckin ? 'vorhanden' : 'offen';
+  const fuelingBaseline = fuelingDebt.data?.outcomeBaseline;
+  const fuelingTargetPath = fuelingLearningActionTargetPath(fuelingBaseline);
+  const fuelingGapSummary = fuelingLearningGapSummary(fuelingBaseline);
+  const fuelingNextActionLabel = fuelingBaseline?.learningReadiness?.nextAction?.label ?? 'Fueling-Evidenz schließen';
+  const fuelingAction = fuelingTargetPath && fuelingGapSummary
+    ? {
+      title: 'Fueling-Evidenz schließen',
+      reason: `${fuelingGapSummary} Bis diese During-Evidenz vollständig ist, bleibt die Lernkalibrierung zurückhaltend.`,
+      result: 'Öffnet die Aktivität und den Fueling-Log. Nach dem Speichern kann Pulse die Lernkalibrierung neu bewerten; Plan und Garmin bleiben unverändert.',
+      cta: fuelingNextActionLabel,
+      run: () => navigate(fuelingTargetPath),
+    }
+    : null;
   const primaryAction = !checkinToday.isLoading && !hasCheckin
     ? {
       title: 'Mental Check-in abschließen',
@@ -276,6 +312,8 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         cta: 'Datenqualität öffnen',
         run: () => onOpen('qualitaet', 'data-garmin-quality'),
       }
+      : fuelingAction
+        ? fuelingAction
       : {
         title: 'Wochenentscheidung prüfen',
         reason: 'Deine heutigen Kernsignale sind nutzbar. Der sinnvollste nächste Blick ist, wie Readiness, TSB und Planlast die nächste Entscheidung verändern.',
@@ -288,6 +326,9 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
     { label: 'TSB', value: fmtMetric(home?.fitnessLoad.tsb, 1), tone: 'var(--accent)' },
     { label: 'Mental', value: mentalValue, tone: hasCheckin ? 'var(--green)' : 'var(--amber)' },
     { label: 'Garmin', value: garminStatusLabel(garmin?.status), tone: garminTone(garmin?.status) },
+    ...(fuelingBaseline?.learningReadiness && !isFuelingTrendReady(fuelingBaseline)
+      ? [{ label: 'Fueling', value: fuelingTrendEvidenceLabel(fuelingBaseline), tone: fuelingAction ? 'var(--amber)' : 'var(--text-3)' }]
+      : []),
   ];
   const cards: Array<{ tab: Tab; hash?: string; title: string; text: string; cta: string }> = [
     {
