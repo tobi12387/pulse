@@ -181,8 +181,16 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(rendered, /Current main field evidence: stale/);
 
   const scaffold = renderIphonePwaFieldScaffold(audit);
-  assert.match(scaffold, /^## Scope/);
+  assert.match(scaffold, /^## Field Run Checklist/);
   assert.doesNotMatch(scaffold, /```/);
+  assert.match(scaffold, /Verify server mirror first: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
+  assert.match(scaffold, /If SSH fails before server checks: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
+  assert.match(scaffold, /Use a real iPhone over the VPN\/local network path/);
+  assert.match(scaffold, /Open field gaps to resolve:/);
+  assert.match(scaffold, /1\. Current main field evidence \(stale\): Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234\./);
+  assert.match(scaffold, /2\. Warning-free certificate trust \(needs followup\): Install and trust only frontend\/certs\/rootCA\.pem on the iPhone/);
+  assert.match(scaffold, /5\. Device and iOS metadata \(missing\): Record the iPhone model and iOS version/);
+  assert.match(scaffold, /## Scope/);
   assert.match(scaffold, /- Device: <iPhone model>/);
   assert.match(scaffold, /- iOS version: <iOS version>/);
   assert.match(scaffold, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);
@@ -211,7 +219,8 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /Record the run in field\.md, including Server commit under test: abc1234/);
   assert.match(packet, /Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
   assert.match(packet, /Evidence record scaffold:/);
-  assert.match(packet, /```markdown\n## Scope/);
+  assert.match(packet, /```markdown\n## Field Run Checklist/);
+  assert.match(packet, /Open field gaps to resolve:/);
   assert.match(packet, /- Device: <iPhone model>/);
   assert.match(packet, /- iOS version: <iOS version>/);
   assert.match(packet, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);

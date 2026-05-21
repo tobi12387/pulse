@@ -316,9 +316,31 @@ function scaffoldValue(value, fallback) {
   return value ?? fallback;
 }
 
+function scaffoldGapLines(audit) {
+  if (audit.gaps.length === 0) {
+    return ['- Current audit has no open field gaps for the expected commit.'];
+  }
+  return audit.gaps.map((gap, index) =>
+    `- ${index + 1}. ${gap.label} (${statusText(gap.status)}): ${gap.nextAction}`
+  );
+}
+
 export function renderIphonePwaFieldScaffold(audit) {
   const expectedCommit = audit.expectedCommit ?? '<commit>';
   const lines = [
+    '## Field Run Checklist',
+    '',
+    `- Verify server mirror first: \`${serverVerifyCommand(audit.expectedCommit)}\`.`,
+    `- If SSH fails before server checks: \`${serverRecoveryPacketCommand(audit.expectedCommit)}\`.`,
+    '- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.',
+    '- Open Settings first and record Device, iOS version, PWA mode, Push state and certificate state.',
+    '- Install and trust only `frontend/certs/rootCA.pem` if warning-free certificate behavior is required; never transfer `rootCA-key.pem` or any `*-key.pem` file.',
+    '- Deliberately enable Push and send a test push only when testing notifications.',
+    '- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.',
+    '',
+    'Open field gaps to resolve:',
+    ...scaffoldGapLines(audit),
+    '',
     '## Scope',
     '',
     `- Device: ${scaffoldValue(audit.scope.device, '<iPhone model>')}`,
