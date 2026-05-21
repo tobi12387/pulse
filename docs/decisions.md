@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Gate-Packet zeigt iPhone-Scaffold-Befehl
+
+- **Decision:** `npm run audit:performance-gates` rendert fuer offene iPhone/PWA-Gates zusaetzlich einen `Field scaffold`-Befehl mit passendem `--expected-commit` und optionalem `PULSE_HOST`.
+- **Why:** Nach dem Fueling-Unblock wird iPhone/PWA der naechste manuelle Gate. Das kombinierte Performance-Handoff soll den paste-ready Field-Run-Scaffold direkt anbieten, ohne dass Tobi den vollen iPhone-Packet scannen oder den erwarteten Commit manuell zusammensetzen muss.
+- **Alternatives:** Nur den Standalone-Befehl dokumentieren (mehr Copy-Reibung im kombinierten Handoff); den Scaffold automatisch in die QA-Datei schreiben (zu riskant ohne reale Beobachtungen); die iPhone-Evidence simulieren (gegen Real-Device-Gate).
+- **Decided by:** Codex, als Performance-iPhone-Handoff-Support-Slice im Branch `codex/performance-iphone-scaffold`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-Audit kann Field-Run-Scaffold direkt ausgeben
 
 - **Decision:** `npm run audit:iphone-pwa-gate -- --scaffold` gibt nur das paste-ready Markdown-Scaffold fuer einen neuen realen iPhone/PWA-Field-Run aus, mit dem erwarteten Server-Commit und den bestehenden Ergebniszeilen.
