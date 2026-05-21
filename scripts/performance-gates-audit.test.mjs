@@ -661,6 +661,7 @@ test('performance gate audit can defer server verification for local planning', 
 
   assert.equal(audit.gate, 'gated');
   assert.equal(audit.expectedCommit, 'abc1234');
+  assert.equal(audit.localPlanning, true);
   assert.equal(audit.openGates, 1);
   assert.equal(audit.deferredGates, 1);
   assert.equal(audit.gates[2].gate, 'deferred');
@@ -677,6 +678,7 @@ test('performance gate audit can defer server verification for local planning', 
   assert.match(packet, /## Deferred Gates/);
   assert.match(packet, /1\. Server deploy mirror/);
   assert.doesNotMatch(packet, /2\. Server deploy mirror/);
+  assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21 --local-planning/);
   assert.equal(exitCodeForAudit(audit, { failOnGated: true }), 1);
 });
 
@@ -691,12 +693,13 @@ test('performance gate audit local planning can finish manual gates while server
 
   assert.equal(audit.gate, 'planning_ready');
   assert.equal(audit.expectedCommit, 'abc1234');
+  assert.equal(audit.localPlanning, true);
   assert.equal(audit.openGates, 0);
   assert.equal(audit.deferredGates, 1);
   assert.equal(audit.nextUnblock, null);
   assert.equal(exitCodeForAudit(audit, { failOnGated: true }), 0);
   const packet = renderPerformanceGatePacket(audit);
-  assert.match(packet, /No open manual Performance-OS gates in this local-planning snapshot/);
+  assert.match(packet, /No open manual Performance-OS gates in this local-planning snapshot\. Rerun npm run audit:performance-gates -- --today 2026-05-21 --local-planning after manual saves/);
   assert.match(packet, /## Deferred Gates/);
   assert.match(packet, /Server deploy mirror/);
 });
