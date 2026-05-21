@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Modal traegt Evidenzgrenzen direkt
+
+- **Decision:** Der Activity-Fueling-Log-Dialog zeigt die GI-Komfort-Nicht-Ableitungsregel und den measured-only Hinweis fuer Sodium, Temperatur und Schweißrate direkt im Formular; die Dialogflaeche ist hoehenbegrenzt und scrollbar.
+- **Why:** Nach den bestehenden GI-Kandidaten braucht der Fueling-Gate noch einen neuen kompletten Long-Session-Log. Die gleiche Evidenzgrenze aus Audit und Activity-GI-Aktion muss auch beim Neu-Loggen sichtbar sein, ohne auf kleinen Viewports den Speichern-Button aus der erreichbaren Flaeche zu schieben.
+- **Alternatives:** Die Regeln nur im Audit/Checklist lassen (Kontextwechsel beim Loggen); nur den Text kuerzen (behebt kleine Viewports nicht robust); aus Notizen, Route, RPE, g/h oder Ergebnis ableiten (verboten, subjektive Evidenz).
+- **Decided by:** Codex, als Fueling-Capture-Support-Slice im Branch `codex/fueling-capture-gate-support`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Packet nennt die naechste Aktion explizit
 
 - **Decision:** `npm run audit:fueling-gate -- --packet` rendert vor Ziel-Log und Zielpfad eine `Next action`-Zeile mit dem Fueling-Action-Label und der Nicht-Ableitungsregel.
