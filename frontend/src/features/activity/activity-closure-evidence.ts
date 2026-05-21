@@ -29,6 +29,7 @@ export type FuelingEvidenceQuality = {
   items: string[];
   tone: 'green' | 'amber';
   giComfortCompletionLogId: string | null;
+  giComfortCompletionDetail: string | null;
   detailCompletionLogId: string | null;
   detailCompletions: FuelingEvidenceCompletion[];
 };
@@ -195,6 +196,10 @@ function closureItems({
   ];
 }
 
+function giComfortCompletionDetail(trendEvidence: string): string {
+  return `Wähle die echte Magenreaktion. Danach kann dieser vorhandene Carb-Log in die Trend-Evidenz einfließen; aktuell ${trendEvidence}. Plan und Garmin bleiben unverändert.`;
+}
+
 export function buildFuelingEvidenceQuality({
   logs,
   activityType,
@@ -230,6 +235,7 @@ export function buildFuelingEvidenceQuality({
       ],
       tone: 'amber',
       giComfortCompletionLogId: null,
+      giComfortCompletionDetail: null,
       detailCompletionLogId: null,
       detailCompletions: [],
     };
@@ -248,6 +254,7 @@ export function buildFuelingEvidenceQuality({
       items: closureItems({ latest, durationMin, feedbackCaptured, trendEvidence }),
       tone: 'amber',
       giComfortCompletionLogId: hasCarbs && !hasGiComfort ? latest.id : null,
+      giComfortCompletionDetail: hasCarbs && !hasGiComfort ? giComfortCompletionDetail(trendEvidence) : null,
       detailCompletionLogId: detailCompletions.length > 0 ? latest.id : null,
       detailCompletions,
     };
@@ -259,6 +266,7 @@ export function buildFuelingEvidenceQuality({
     items: closureItems({ latest, durationMin, feedbackCaptured, trendEvidence }),
     tone: 'green',
     giComfortCompletionLogId: null,
+    giComfortCompletionDetail: null,
     detailCompletionLogId: detailCompletions.length > 0 ? latest.id : null,
     detailCompletions,
   };

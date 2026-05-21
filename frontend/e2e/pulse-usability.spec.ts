@@ -1167,6 +1167,8 @@ test('Activity fueling evidence quality completes missing GI comfort on the exis
 
   const quality = page.getByTestId('activity-fueling-evidence-quality');
   await expect(quality).toContainText('GI-Komfort fehlt');
+  await expect(quality).toContainText('Wähle die echte Magenreaktion');
+  await expect(quality).toContainText('Plan und Garmin bleiben unverändert');
   await quality.getByRole('button', { name: 'Magen ok' }).click();
 
   await expect.poll(() => patchedLog).toMatchObject({

@@ -891,6 +891,11 @@ function FuelingSection({
                 }}>
                   GI-Komfort ergänzen
                 </div>
+                {evidenceQuality.giComfortCompletionDetail && (
+                  <p style={{ margin: '0 0 8px', fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
+                    {evidenceQuality.giComfortCompletionDetail}
+                  </p>
+                )}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {giComfortOptions.map(option => (
                     <button
