@@ -53,13 +53,18 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(audit.users[0].completableNow, 2);
   assert.equal(audit.users[0].newLogsStillNeeded, 1);
   assert.equal(audit.users[0].nextAction.kind, 'complete_gi_comfort');
+  assert.equal(audit.users[0].nextAction.targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.equal(audit.users[0].completionCandidates[0].targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
 
   const rendered = renderFuelingGateAudit(audit);
   assert.match(rendered, /Comparable complete logs: 0\/3/);
   assert.match(rendered, /Existing logs completable now: 2/);
   assert.match(rendered, /New complete long-session logs still needed after completion candidates: 1/);
+  assert.match(rendered, /Next action path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
   assert.match(rendered, /Datteln Graveln/);
+  assert.match(rendered, /356 g \(54 g\/h\)/);
   assert.match(rendered, /can count after GI comfort/);
+  assert.match(rendered, /\/plan\/activity\/activity-z2-ride#activity-fueling-log/);
 });
 
 test('fueling gate audit opens after three comparable complete logs', () => {

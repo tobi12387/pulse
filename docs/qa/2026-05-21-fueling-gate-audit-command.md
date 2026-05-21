@@ -15,7 +15,7 @@ logs can be completed.
   - comparable complete `during` logs vs the required 3-log floor,
   - existing long logs that can count after missing fields are added,
   - new complete long-session logs still needed after those candidates,
-  - the next smallest evidence action.
+  - the next smallest evidence action and the in-app Activity Fueling path.
 - Added focused script tests for the date window, the current two-long-log GI
   comfort gap and the ready state after three comparable complete logs.
 
@@ -36,13 +36,14 @@ Result:
 - Existing logs completable now: 2
 - New complete long-session logs still needed after completion candidates: 1
 - Next action: `GI-Komfort ergaenzen`
+- Next action path: `/plan/activity/3a77af7f-3ece-40ea-8879-c6d878519c61#activity-fueling-log`
 
 Completion candidates:
 
-| Date | Activity | Duration | Carbs | GI comfort | Status |
-|---|---:|---:|---:|---|---|
-| 2026-05-09 | Datteln Graveln | 398 min | 356 g | missing | can count after GI comfort |
-| 2026-05-04 | Datteln - Radfahren Z2 | 80 min | 30 g | missing | can count after GI comfort |
+| Date | Activity | Duration | Carbs | GI comfort | Status | Action path |
+|---|---:|---:|---:|---|---|---|
+| 2026-05-09 | Datteln Graveln | 398 min | 356 g | missing | can count after GI comfort | `/plan/activity/3a77af7f-3ece-40ea-8879-c6d878519c61#activity-fueling-log` |
+| 2026-05-04 | Datteln - Radfahren Z2 | 80 min | 30 g | missing | can count after GI comfort | `/plan/activity/4f4b873d-bb64-4410-8e63-a382e9729863#activity-fueling-log` |
 
 ## Verification
 
