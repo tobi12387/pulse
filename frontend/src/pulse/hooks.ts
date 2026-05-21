@@ -61,6 +61,7 @@ export const pulseKeys = {
   equipment:        ['pulse', 'equipment'] as const,
   nutrition: (workoutId: string | null, activityId: string | null) =>
     ['pulse', 'nutrition', workoutId, activityId] as const,
+  fuelingRecovery: ['pulse', 'fueling-recovery'] as const,
   fuelingRecoveryGuidance: (workoutId: string | null) =>
     ['pulse', 'fueling-recovery', 'guidance', workoutId] as const,
   fuelingDebt: ['pulse', 'fueling-recovery', 'debt'] as const,
@@ -1047,7 +1048,7 @@ export function useCreateNutritionLog() {
     mutationFn: (data: NutritionLogInput) => pulseApi.nutrition.create(data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
-      qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
+      qc.invalidateQueries({ queryKey: pulseKeys.fuelingRecovery });
       qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
@@ -1070,7 +1071,7 @@ export function useDeleteNutritionLog() {
     mutationFn: (id: string) => pulseApi.nutrition.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
-      qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
+      qc.invalidateQueries({ queryKey: pulseKeys.fuelingRecovery });
       qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
@@ -1087,7 +1088,7 @@ export function useUpdateNutritionLog() {
     mutationFn: ({ id, data }: { id: string; data: NutritionLogPatch }) => pulseApi.nutrition.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pulse', 'nutrition'] });
-      qc.invalidateQueries({ queryKey: pulseKeys.fuelingDebt });
+      qc.invalidateQueries({ queryKey: pulseKeys.fuelingRecovery });
       qc.invalidateQueries({ queryKey: ['pulse', 'personal-response'] });
       qc.invalidateQueries({ queryKey: ['pulse', 'goal-projection'] });
       qc.invalidateQueries({ queryKey: pulseKeys.todayOptions });
