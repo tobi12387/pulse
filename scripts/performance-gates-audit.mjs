@@ -667,10 +667,11 @@ function completionCandidateLines(metadata) {
       .map(candidate => {
         const text = completionCandidateText(candidate);
         if (!text) return null;
+        const targetUrl = candidate.targetUrl ? ` | Target URL: ${candidate.targetUrl}` : '';
         const missing = (candidate.missing ?? []).length > 0
           ? ` (missing: ${candidate.missing.join(', ')})`
           : '';
-        return `- ${text}${missing}`;
+        return `- ${text}${targetUrl}${missing}`;
       })
       .filter(Boolean),
   ];

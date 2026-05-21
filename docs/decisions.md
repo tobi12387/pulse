@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Packet zeigt Fueling-Kandidaten-URLs
+
+- **Decision:** `npm run audit:performance-gates -- --packet` rendert bei Fueling-Completion-Candidates zusaetzlich die volle `Target URL` pro Kandidat.
+- **Why:** Der aktuelle Fueling-Gate braucht zwei vorhandene Activity-Fueling-Logs mit echter GI-Komfort-Auswahl. Der kombinierte Performance-Handoff soll beide UI-Ziele direkt oeffnbar machen, ohne dass Tobi fuer den zweiten Kandidaten den Pfad manuell mit der Basis-URL zusammensetzt oder zum fokussierten Fueling-URL-Modus wechseln muss.
+- **Alternatives:** Nur den ersten `Target URL` zeigen (laesst den zweiten vorhandenen Kandidaten weniger direkt ausfuehrbar); nur `audit:fueling-gate -- --candidate-urls` nutzen (gut fuer Scripts, aber nicht im kombinierten Handoff sichtbar); GI-Komfort direkt in Daten schreiben oder ableiten (verboten).
+- **Decided by:** Codex, als Performance-Fueling-Handoff-Support-Slice im Branch `codex/performance-candidate-urls`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Gate-Packet zeigt iPhone-Scaffold-Befehl
 
 - **Decision:** `npm run audit:performance-gates` rendert fuer offene iPhone/PWA-Gates zusaetzlich einen `Field scaffold`-Befehl mit passendem `--expected-commit` und optionalem `PULSE_HOST`.
