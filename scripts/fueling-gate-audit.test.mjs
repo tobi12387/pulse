@@ -54,6 +54,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(audit.users[0].newLogsStillNeeded, 1);
   assert.equal(audit.users[0].nextAction.kind, 'complete_gi_comfort');
   assert.equal(audit.users[0].nextAction.targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.equal(audit.users[0].nextAction.evidenceChecklist, 'docs/ai/checklists/fueling-evidence-capture.md');
   assert.deepEqual(audit.users[0].nextAction.targetLog, {
     date: '2026-05-09',
     activityName: 'Datteln Graveln',
@@ -77,6 +78,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(rendered, /Existing logs completable now: 2/);
   assert.match(rendered, /New complete long-session logs still needed after completion candidates: 1/);
   assert.match(rendered, /Next action: GI-Komfort ergaenzen \(Add structured GI comfort \(ok, mild_issue, issue\) to an existing long carb log\.\)/);
+  assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(rendered, /Next action target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Next action path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
   assert.match(rendered, /Structured GI comfort values: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);

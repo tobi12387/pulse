@@ -7,6 +7,7 @@ import pg from 'pg';
 const REQUIRED_COMPLETE_LOGS = 3;
 const DEFAULT_WINDOW_DAYS = 120;
 const ENDURANCE_TYPES = new Set(['bike', 'run', 'hike']);
+const EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const STRUCTURED_GI_COMFORT_OPTIONS = [
   { value: 'ok', label: 'Magen ok' },
   { value: 'mild_issue', label: 'Magen leicht unruhig' },
@@ -187,6 +188,7 @@ function nextActionFor(comparableLogs) {
       activityId: giGap.activityId,
       targetPath: activityFuelingPath(giGap.activityId),
       date: giGap.date,
+      evidenceChecklist: EVIDENCE_CHECKLIST,
       options: structuredGiComfortOptions(),
       targetLog: candidateContext(giGap),
     };
@@ -201,6 +203,7 @@ function nextActionFor(comparableLogs) {
       activityId: carbGap.activityId,
       targetPath: activityFuelingPath(carbGap.activityId),
       date: carbGap.date,
+      evidenceChecklist: EVIDENCE_CHECKLIST,
       targetLog: candidateContext(carbGap),
     };
   }
@@ -212,6 +215,7 @@ function nextActionFor(comparableLogs) {
     activityId: null,
     targetPath: null,
     date: null,
+    evidenceChecklist: EVIDENCE_CHECKLIST,
   };
 }
 
@@ -321,6 +325,7 @@ export function renderFuelingGateAudit(audit) {
       lines.push(`- Existing logs completable now: ${user.completableNow}`);
       lines.push(`- New complete long-session logs still needed after completion candidates: ${user.newLogsStillNeeded}`);
       lines.push(`- Next action: ${user.nextAction.label} (${user.nextAction.detail})`);
+      lines.push(`- Evidence checklist: ${user.nextAction.evidenceChecklist}`);
       if (user.nextAction.targetLog?.summary) lines.push(`- Next action target: ${user.nextAction.targetLog.summary}`);
       if (user.nextAction.targetPath) lines.push(`- Next action path: ${user.nextAction.targetPath}`);
       if (user.completionCandidates.some(log => log.missing.includes('GI comfort'))) {
