@@ -296,13 +296,17 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /# Performance-OS Gate Handoff Packet/);
   assert.match(packet, /First Unblock/);
   assert.match(packet, /Gate: Fueling learning/);
+  assert.match(packet, /Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
   assert.match(packet, /Action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log/);
   assert.match(packet, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(packet, /1\. Fueling learning/);
+  assert.match(packet, /Status: gated\n   Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
   assert.match(packet, /2\. iPhone\/PWA field/);
+  assert.match(packet, /Detail: 3 open gaps: Current main field evidence: stale, Warning-free certificate trust: needs_followup, Push activation and test push: partial/);
   assert.match(packet, /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
   assert.match(packet, /3\. Server deploy mirror/);
+  assert.match(packet, /Detail: ERROR: SSH access to root@192\.168\.178\.46 failed before server checks\./);
   assert.match(packet, /Recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
   assert.match(packet, /Fueling GI comfort must come from the real stomach response/);
   assert.match(packet, /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
