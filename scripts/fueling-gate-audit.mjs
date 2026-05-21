@@ -6,6 +6,7 @@ import pg from 'pg';
 
 const REQUIRED_COMPLETE_LOGS = 3;
 const DEFAULT_WINDOW_DAYS = 120;
+const DEFAULT_PULSE_URL = 'https://192.168.178.46:5175';
 const ENDURANCE_TYPES = new Set(['bike', 'run', 'hike']);
 const EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const STRUCTURED_GI_COMFORT_OPTIONS = [
@@ -151,6 +152,14 @@ function completionStatus(log) {
 
 function activityFuelingPath(activityId) {
   return activityId ? `/plan/activity/${activityId}#activity-fueling-log` : null;
+}
+
+function pulseTargetUrl(targetPath) {
+  const cleanPath = clean(targetPath);
+  if (!cleanPath) return null;
+  if (/^https?:\/\//i.test(cleanPath)) return cleanPath;
+  const baseUrl = clean(process.env.PULSE_URL) ?? DEFAULT_PULSE_URL;
+  return `${baseUrl.replace(/\/+$/, '')}/${cleanPath.replace(/^\/+/, '')}`;
 }
 
 function carbContext(log) {
@@ -333,6 +342,8 @@ export function renderFuelingGateAudit(audit) {
       lines.push(`- Evidence checklist: ${user.nextAction.evidenceChecklist}`);
       if (user.nextAction.targetLog?.summary) lines.push(`- Next action target: ${user.nextAction.targetLog.summary}`);
       if (user.nextAction.targetPath) lines.push(`- Next action path: ${user.nextAction.targetPath}`);
+      const nextActionUrl = pulseTargetUrl(user.nextAction.targetPath);
+      if (nextActionUrl) lines.push(`- Next action URL: ${nextActionUrl}`);
       if (user.completionCandidates.some(log => log.missing.includes('GI comfort'))) {
         lines.push(`- Strukturierte GI-Komfort-Werte: ${structuredGiComfortOptionsText()}`);
       }
@@ -365,6 +376,8 @@ function packetCandidateLines(candidate, index) {
     `${index + 1}. ${candidate.summary ?? candidateSummary(candidate)}`,
   ];
   if (candidate.targetPath) lines.push(`   Path: ${candidate.targetPath}`);
+  const candidateUrl = pulseTargetUrl(candidate.targetPath);
+  if (candidateUrl) lines.push(`   URL: ${candidateUrl}`);
   lines.push(`   Missing: ${candidateMissingText(candidate)}`);
   if ((candidate.missing ?? []).includes('GI comfort')) {
     lines.push(`   GI comfort options: ${structuredGiComfortOptionsText()}`);
@@ -409,6 +422,8 @@ export function renderFuelingEvidencePacket(audit) {
     }
     if (user.nextAction?.targetLog?.summary) lines.push(`Next target: ${user.nextAction.targetLog.summary}`);
     if (user.nextAction?.targetPath) lines.push(`Next path: ${user.nextAction.targetPath}`);
+    const nextUrl = pulseTargetUrl(user.nextAction?.targetPath);
+    if (nextUrl) lines.push(`Next URL: ${nextUrl}`);
     lines.push(`Existing logs completable now: ${user.completableNow}`);
     lines.push(`New complete long-session logs still needed after candidates: ${user.newLogsStillNeeded}`);
     lines.push('');

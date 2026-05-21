@@ -30,6 +30,20 @@ function withPulseHost(host, fn) {
   }
 }
 
+function withPulseUrl(url, fn) {
+  const previous = process.env.PULSE_URL;
+  process.env.PULSE_URL = url;
+  try {
+    fn();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PULSE_URL;
+    } else {
+      process.env.PULSE_URL = previous;
+    }
+  }
+}
+
 function makeRunner({ fueling, iphone, server, commit = 'abc1234' }) {
   return (command, args) => {
     if (command === 'git' && args.join(' ') === 'rev-parse --short HEAD') {
@@ -299,6 +313,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.doesNotMatch(nextRendered, /Action: .*Path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(nextRendered, /Target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(nextRendered, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(nextRendered, /GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
@@ -314,6 +329,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
   assert.match(packet, /Action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log/);
   assert.match(packet, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(packet, /Target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(packet, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(packet, /Completion candidates:/);
@@ -330,6 +346,19 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
   assert.match(packet, /If the run is intentionally pinned to a known deployed\/runtime commit, pass --expected-commit <short> so server and iPhone checks use that commit/);
   assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21/);
+});
+
+test('performance gate packet respects a configured Pulse URL for Fueling targets', () => {
+  withPulseUrl('https://pulse.local:5175/', () => {
+    const audit = buildPerformanceGateAudit({ today: '2026-05-21' }, makeRunner({
+      fueling: GATED_FUELING,
+      iphone: READY_IPHONE,
+      server: commandResult(0, '==> server verification complete: abc1234\n'),
+    }));
+
+    const packet = renderPerformanceGatePacket(audit);
+    assert.match(packet, /Target URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-a#activity-fueling-log/);
+  });
 });
 
 test('performance gate audit reports ready when all required gates are ready', () => {
