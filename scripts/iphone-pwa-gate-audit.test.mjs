@@ -111,6 +111,8 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.equal(audit.gate, 'gated');
   assert.equal(audit.expectedCommit, 'abc1234');
   assert.equal(audit.commitStatus, 'stale');
+  assert.equal(audit.serverVerifyCommand, 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
+  assert.equal(audit.serverRecoveryPacketCommand, 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
   assert.deepEqual(audit.gaps.map(gap => gap.kind), [
     'current_commit_evidence',
     'certificate_trust',

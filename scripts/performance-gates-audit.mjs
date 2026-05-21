@@ -5,6 +5,14 @@ import { pathToFileURL } from 'node:url';
 const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const IPHONE_FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
 
+function serverVerifyCommand(expectedCommit) {
+  return `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`;
+}
+
+function serverRecoveryPacketCommand(expectedCommit) {
+  return `${serverVerifyCommand(expectedCommit)} -- --packet`;
+}
+
 function usage() {
   return [
     'Usage: node scripts/performance-gates-audit.mjs [options]',
@@ -259,6 +267,8 @@ function summarizeIphone(expectedCommit, runner) {
     nextAction: audit.nextAction ?? 'No iPhone/PWA gate action needed.',
     evidenceChecklist: audit.fieldChecklist ?? IPHONE_FIELD_CHECKLIST,
     fieldPacketCommand: ready ? null : fieldPacketCommand,
+    serverVerifyCommand: audit.serverVerifyCommand ?? serverVerifyCommand(expectedCommit),
+    serverRecoveryPacketCommand: ready ? null : (audit.serverRecoveryPacketCommand ?? serverRecoveryPacketCommand(expectedCommit)),
     evidenceFile: audit.evidenceFile,
     expectedCommit: audit.expectedCommit ?? null,
     commitStatus: audit.commitStatus ?? null,
@@ -274,8 +284,8 @@ function resolveExpectedCommit(runner) {
 }
 
 function summarizeServer(expectedCommit, runner) {
-  const command = `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`;
-  const recoveryPacketCommand = `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server -- --packet`;
+  const command = serverVerifyCommand(expectedCommit);
+  const recoveryPacketCommand = serverRecoveryPacketCommand(expectedCommit);
   const result = runner('bash', ['scripts/verify-server.sh'], {
     env: { PULSE_EXPECTED_COMMIT: expectedCommit },
   });
@@ -304,14 +314,14 @@ function summarizeServer(expectedCommit, runner) {
 }
 
 function skippedServer(expectedCommit) {
-  const recoveryPacketCommand = `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server -- --packet`;
+  const recoveryPacketCommand = serverRecoveryPacketCommand(expectedCommit);
   return {
     key: 'server',
     label: 'Server deploy mirror',
     gate: 'skipped',
     ready: false,
     skipped: true,
-    command: `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`,
+    command: serverVerifyCommand(expectedCommit),
     detail: 'Skipped by --skip-server; server mirror readiness is unverified.',
     nextAction: 'Run the server mirror verification before deploy-sensitive decisions.',
     expectedCommit,
@@ -354,6 +364,8 @@ function nextUnblockMetadata(gate) {
       commitStatus: gate.commitStatus ?? null,
       serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
       fieldPacketCommand: gate.fieldPacketCommand ?? null,
+      serverVerifyCommand: gate.serverVerifyCommand ?? null,
+      serverRecoveryPacketCommand: gate.serverRecoveryPacketCommand ?? null,
       firstGap: firstGap ? {
         kind: firstGap.kind ?? null,
         label: firstGap.label ?? null,
@@ -429,6 +441,7 @@ export function renderPerformanceGateAudit(audit) {
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
     if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
     if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
+    if (gate.serverRecoveryPacketCommand) lines.push(`- Server recovery packet: \`${gate.serverRecoveryPacketCommand}\``);
     if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
     if (gate.recoveryPacketCommand) lines.push(`- Recovery packet: \`${gate.recoveryPacketCommand}\``);
     lines.push('');
@@ -459,6 +472,10 @@ function fieldPacketLine(metadata) {
 
 function recoveryPacketLine(metadata) {
   return metadata?.recoveryPacketCommand ? `Recovery packet: ${metadata.recoveryPacketCommand}` : null;
+}
+
+function serverRecoveryPacketLine(metadata) {
+  return metadata?.serverRecoveryPacketCommand ? `Server recovery packet: ${metadata.serverRecoveryPacketCommand}` : null;
 }
 
 function targetSummary(metadata) {
@@ -538,6 +555,8 @@ export function renderNextUnblock(audit) {
   if (packet) lines.push(packet);
   const fieldPacket = fieldPacketLine(next.metadata);
   if (fieldPacket) lines.push(fieldPacket);
+  const serverRecoveryPacket = serverRecoveryPacketLine(next.metadata);
+  if (serverRecoveryPacket) lines.push(serverRecoveryPacket);
   const recoveryPacket = recoveryPacketLine(next.metadata);
   if (recoveryPacket) lines.push(recoveryPacket);
   const optionSummary = optionsLine(next.metadata);

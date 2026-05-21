@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Next traegt iPhone-Server-Recovery mit
+
+- **Decision:** Die iPhone/PWA-Gate-Metadaten geben `serverVerifyCommand` und `serverRecoveryPacketCommand` aus; `npm run audit:performance-next` zeigt den Server-Recovery-Packet-Befehl, wenn iPhone/PWA der erste offene Unblock ist.
+- **Why:** Nach Fueling wird iPhone/PWA der naechste manuelle Gate-Handoff. Weil der erste iPhone-Gap am aktuellen Server-Mirror-Commit haengt und SSH aktuell scheitert, muss der kompakte Performance-Next-Handoff denselben Recovery-Packet-Pfad zeigen wie das Field-Packet.
+- **Alternatives:** Nur das iPhone-Field-Packet ausfuehren lassen (ein Kontextwechsel mehr); den Server-Recovery-Befehl aus Text parsen (instabil); iPhone- und Server-Gate zusammenlegen (vermischt getrennte Evidenzen).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-iphone-recovery-metadata`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-Field-Packet nennt Server-Recovery-Packet
 
 - **Decision:** Das iPhone/PWA-Field-Packet rendert neben dem Server-Verify-Befehl auch den read-only `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server -- --packet`-Handoff.
