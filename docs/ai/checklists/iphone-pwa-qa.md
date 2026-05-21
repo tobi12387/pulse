@@ -10,6 +10,8 @@ from the repo. The audit compares `Server commit under test` with the expected
 current commit and keeps the gate closed when the field evidence is stale.
 For a live packet of the current field gaps and recording steps, run
 `npm run audit:iphone-pwa-gate -- --packet`.
+For the shortest first-gap field prompt to use in a manual capture/chat
+handoff, run `npm run audit:iphone-pwa-gate -- --next-prompt`.
 For paste-ready Markdown for a new field run, including the server preflight and
 the current open gap targets before the `## Scope` record, run
 `npm run audit:iphone-pwa-gate -- --scaffold`.

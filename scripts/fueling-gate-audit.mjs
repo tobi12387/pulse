@@ -46,6 +46,7 @@ function usage() {
     '  --database-url <url>      Read-only Postgres connection string.',
     '  --env-file <path>         Env file to load before .env/.env.test fallbacks.',
     '  --packet                  Print a manual evidence-capture packet instead of the audit table.',
+    '  --next-prompt             Print a short first-target prompt for manual evidence capture; exits 1 if no prompt is available.',
     '  --candidate-urls          Print only existing completion candidate URLs; exits 1 if none.',
     '  --new-log-checklist       Print only the future long-session log checklist; exits 1 if none needed.',
     '  --json                    Print machine-readable JSON.',
@@ -529,6 +530,78 @@ export function exitCodeForFuelingNewLogChecklist(audit) {
   return fuelingNewLogChecklistUsers(audit).length > 0 ? 0 : 1;
 }
 
+export function fuelingNextPromptUser(audit) {
+  return (audit.users ?? []).find(user => user.gate !== 'ready' && user.nextAction) ?? null;
+}
+
+function renderOptions(options) {
+  return (options ?? STRUCTURED_GI_COMFORT_OPTIONS)
+    .map(option => `- ${option.value} = ${option.label}`)
+    .join('\n');
+}
+
+export function renderFuelingNextPrompt(audit) {
+  const user = fuelingNextPromptUser(audit);
+  const lines = [
+    '# Fueling Next Evidence Prompt',
+    '',
+    `Window: ${audit.since}..${audit.today}`,
+    `Evidence checklist: ${EVIDENCE_CHECKLIST}`,
+    '',
+  ];
+
+  if ((audit.users ?? []).length === 0) {
+    lines.push('No during nutrition logs found in the audit window.');
+    lines.push(`Rerun: npm run audit:fueling-gate -- --today ${audit.today}`);
+    return lines.join('\n');
+  }
+
+  if (!user) {
+    lines.push('Fueling evidence is ready; no manual next prompt is needed.');
+    lines.push(`Rerun: npm run audit:fueling-gate -- --today ${audit.today}`);
+    return lines.join('\n');
+  }
+
+  const action = user.nextAction;
+  lines.push(`User: ${shortId(user.userId)}`);
+  lines.push(`Gate: ${user.gate}`);
+  lines.push(`Comparable complete logs: ${user.comparableCompleteLogs}/${user.requiredComparableCompleteLogs}`);
+  if (action.targetLog?.summary) lines.push(`Target: ${action.targetLog.summary}`);
+  if (action.targetPath) lines.push(`Path: ${action.targetPath}`);
+  const targetUrl = pulseTargetUrl(action.targetPath);
+  if (targetUrl) lines.push(`URL: ${targetUrl}`);
+  lines.push('');
+
+  if (action.kind === 'complete_gi_comfort') {
+    lines.push('Question: Welche echte Magenreaktion hattest du bei diesem vorhandenen langen Carb-Log?');
+    lines.push('');
+    lines.push('Options:');
+    lines.push(renderOptions(action.options));
+  } else if (action.kind === 'complete_carbs') {
+    lines.push('Question: Welche tatsaechlichen During-Carbs hast du bei diesem vorhandenen langen GI-Komfort-Log erfasst?');
+    lines.push('');
+    lines.push('Answer with the real during-activity carbs from that session.');
+  } else {
+    lines.push('Question: Beim naechsten langen Ausdauertraining bitte Aktivitaet/Dauer, During-Carbs und echte GI-Komfort-Antwort zusammen erfassen.');
+  }
+
+  lines.push('');
+  lines.push('Rules:');
+  lines.push('- Use the Activity Fueling UI; do not edit database rows directly for normal evidence capture.');
+  lines.push('- GI comfort must come from the real stomach response.');
+  lines.push('- Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward.');
+  if (Number(user.completionCandidates?.length ?? 0) > 1) {
+    lines.push(`- After saving this target, another existing completion candidate remains: ${user.completionCandidates.length - 1}.`);
+  }
+  lines.push(`- Rerun after save: npm run audit:fueling-gate -- --today ${audit.today}`);
+
+  return lines.join('\n').trimEnd();
+}
+
+export function exitCodeForFuelingNextPrompt(audit) {
+  return fuelingNextPromptUser(audit) ? 0 : 1;
+}
+
 export function fuelingCandidateUrls(audit) {
   return audit.users
     .flatMap(user => user.completionCandidates ?? [])
@@ -552,6 +625,7 @@ export function parseArgs(argv) {
     databaseUrl: null,
     envFile: null,
     packet: false,
+    nextPrompt: false,
     candidateUrls: false,
     newLogChecklist: false,
     json: false,
@@ -565,6 +639,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--packet') {
       result.packet = true;
+      continue;
+    }
+    if (arg === '--next-prompt') {
+      result.nextPrompt = true;
       continue;
     }
     if (arg === '--candidate-urls') {
@@ -728,6 +806,13 @@ async function main(argv) {
     const checklist = renderFuelingNewLogChecklist(output);
     console.log(checklist);
     process.exitCode = exitCodeForFuelingNewLogChecklist(output);
+    return;
+  }
+
+  if (args.nextPrompt) {
+    const prompt = renderFuelingNextPrompt(output);
+    console.log(prompt);
+    process.exitCode = exitCodeForFuelingNextPrompt(output);
     return;
   }
 

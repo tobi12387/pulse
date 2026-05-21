@@ -40,6 +40,7 @@ function usage() {
     `  --file <path>              Evidence markdown file, default ${DEFAULT_EVIDENCE_FILE}.`,
     '  --expected-commit <short>  Expected current commit; default PULSE_EXPECTED_COMMIT or local git HEAD.',
     '  --packet                   Print a manual field-evidence packet instead of the audit summary.',
+    '  --next-prompt              Print a short first-gap prompt for manual field evidence; exits 1 if no prompt is available.',
     '  --scaffold                 Print only a paste-ready Markdown field-run scaffold.',
     '  --json                     Print machine-readable JSON.',
     '  -h, --help                 Show this help.',
@@ -420,11 +421,56 @@ export function renderIphonePwaFieldPacket(audit) {
   return lines.join('\n');
 }
 
+export function renderIphonePwaNextPrompt(audit) {
+  const firstGap = audit.gaps[0] ?? null;
+  const expectedCommit = audit.expectedCommit ?? '<commit>';
+  const lines = [
+    '# iPhone / PWA Next Field Prompt',
+    '',
+    `Evidence file: ${audit.evidenceFile}`,
+    `Field checklist: ${audit.fieldChecklist}`,
+    `Expected current commit: ${expectedCommit}`,
+    `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
+    '',
+  ];
+
+  if (!firstGap) {
+    lines.push('All manual iPhone/PWA field gates are recorded as pass for the expected commit.');
+    lines.push(`Rerun: ${iphonePwaGateAuditCommand(audit.expectedCommit)}`);
+    return lines.join('\n');
+  }
+
+  lines.push(`First open gap: ${firstGap.label} (${statusText(firstGap.status)})`);
+  lines.push(`Next action: ${firstGap.nextAction}`);
+  lines.push('');
+  lines.push('Prompt:');
+  lines.push(`Run a real iPhone/PWA field check for Server commit under test: ${expectedCommit}. Start with the first open gap above, then use the scaffold if the run needs a full evidence record.`);
+  lines.push('');
+  lines.push('Commands:');
+  lines.push(`- Verify server mirror first: ${serverVerifyCommand(audit.expectedCommit)}`);
+  lines.push(`- If SSH fails before server checks: ${serverRecoveryPacketCommand(audit.expectedCommit)}`);
+  lines.push(`- Full field scaffold: ${iphonePwaGateAuditCommand(audit.expectedCommit)} --scaffold`);
+  lines.push(`- Rerun after recording: ${iphonePwaGateAuditCommand(audit.expectedCommit)}`);
+  lines.push('');
+  lines.push('Rules:');
+  lines.push('- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.');
+  lines.push('- Record Device, iOS version and Server commit under test in the Scope section.');
+  lines.push('- Never transfer rootCA-key.pem or any *-key.pem file to the phone.');
+  lines.push(`- Append the field run to ${audit.evidenceFile}.`);
+
+  return lines.join('\n');
+}
+
+export function exitCodeForIphonePwaNextPrompt(audit) {
+  return audit.gaps.length > 0 ? 0 : 1;
+}
+
 export function parseArgs(argv) {
   const result = {
     file: DEFAULT_EVIDENCE_FILE,
     expectedCommit: null,
     packet: false,
+    nextPrompt: false,
     scaffold: false,
     json: false,
   };
@@ -437,6 +483,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--packet') {
       result.packet = true;
+      continue;
+    }
+    if (arg === '--next-prompt') {
+      result.nextPrompt = true;
       continue;
     }
     if (arg === '--scaffold') {
@@ -482,6 +532,11 @@ async function main(argv) {
   });
   if (args.scaffold) {
     console.log(renderIphonePwaFieldScaffold(audit));
+    return;
+  }
+  if (args.nextPrompt) {
+    console.log(renderIphonePwaNextPrompt(audit));
+    process.exitCode = exitCodeForIphonePwaNextPrompt(audit);
     return;
   }
   if (args.json) {
