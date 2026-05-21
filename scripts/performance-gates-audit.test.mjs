@@ -501,6 +501,30 @@ test('performance gate audit can pin an expected server commit for manual field 
   assert.match(renderPerformanceGatePacket(audit), /Recovery packet: PULSE_EXPECTED_COMMIT=def5678 npm run verify:server -- --packet/);
 });
 
+test('performance gate audit distinguishes server mirror state failures from SSH recovery', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21' }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: READY_IPHONE,
+    server: commandResult(1, [
+      '==> ssh access',
+      'ssh=ok',
+      'ssh_target=pulse-server',
+      '==> server git status',
+      'branch=codex/example commit=abc1234 dirty=1',
+    ].join('\n'), 'ERROR: server branch is \'codex/example\', expected main\n'),
+  }));
+
+  assert.equal(audit.openGates, 1);
+  assert.equal(audit.nextUnblock.key, 'server');
+  assert.match(audit.gates[2].detail, /server branch is 'codex\/example'/);
+  assert.match(audit.gates[2].nextAction, /Restore the server mirror to clean GitHub main at abc1234/);
+  assert.match(audit.gates[2].nextAction, /Do not edit server files directly/);
+  assert.equal(audit.gates[2].recoveryRunbook, null);
+  assert.equal(audit.gates[2].recoveryPacketCommand, null);
+  assert.doesNotMatch(renderNextUnblock(audit), /deploy-auth-recovery/);
+  assert.match(renderNextUnblock(audit), /standard merge\/deploy flow/);
+});
+
 test('performance gate audit CLI args accept an explicit expected commit', () => {
   assert.deepEqual(parseArgs([
     'node',

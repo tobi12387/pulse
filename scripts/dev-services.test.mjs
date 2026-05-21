@@ -58,6 +58,12 @@ test('verify-server surfaces PM2 restart and recent log attention signals', () =
   assert.match(verifyServerScript, /Server Deploy Mirror Recovery Packet/);
   assert.match(verifyServerScript, /BatchMode=\$SSH_BATCH_MODE/);
   assert.match(verifyServerScript, /ConnectTimeout=\$SSH_CONNECT_TIMEOUT/);
+  assert.match(verifyServerScript, /PULSE_HOST_FALLBACKS/);
+  assert.match(verifyServerScript, /HOST_FALLBACKS="\$\{PULSE_HOST_FALLBACKS:-pulse-server\}"/);
+  assert.match(verifyServerScript, /build_host_candidates/);
+  assert.match(verifyServerScript, /select_ssh_host/);
+  assert.match(verifyServerScript, /ssh_target=\$HOST/);
+  assert.match(verifyServerScript, /PULSE_HOST is unset, default pulse-server/);
   assert.match(verifyServerScript, /print_local_public_key_candidates/);
   assert.match(verifyServerScript, /Local public key candidates in this environment \(filenames only\)/);
   assert.match(verifyServerScript, /No local ~\/\.ssh\/\*\.pub files found in this environment/);

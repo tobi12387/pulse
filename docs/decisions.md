@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Server-Verifikation nutzt Alias-Fallback
+
+- **Decision:** `npm run verify:server` behaelt `root@192.168.178.46` als primaeren Standard, versucht aber bei ungesetztem `PULSE_HOST` danach den lokalen SSH-Alias `pulse-server`, bevor der Server-Gate als SSH-blockiert gilt.
+- **Why:** Der Pulse-Server ist in dieser Codex-Umgebung ueber den Alias erreichbar, waehrend direkte `root@192.168.178.46`-Auth scheitern kann. Der kombinierte Performance-Gate-Audit soll echte Produktblocker wie Fueling und iPhone/PWA zeigen, nicht einen falschen Server-Blocker, wenn ein verifizierter Read-only-Zugang verfuegbar ist.
+- **Alternatives:** Weiterhin jeden Audit mit `PULSE_HOST=pulse-server` starten (leicht zu vergessen); den Standard komplett auf `pulse-server` umstellen (weniger explizit fuer andere Umgebungen); SSH-Reparatur erzwingen, obwohl ein sicherer Alias funktioniert (mehr Reibung ohne Produktfortschritt).
+- **Decided by:** Codex, als Server-Audit-Support-Slice im Branch `codex/server-audit-host-fallback`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Server-Recovery-Packet zeigt Public-Key-Kandidaten
 
 - **Decision:** `npm run verify:server -- --packet` listet lokale `~/.ssh/*.pub`-Kandidaten als Dateinamen im read-only Recovery-Packet, ohne Key-Inhalte, private Keys oder Secrets auszugeben.
