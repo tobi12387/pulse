@@ -29,13 +29,13 @@ const fuelingLearningOutcomeBaseline = {
   sodiumMgPerHour: null,
   hydrationContextSummary: null,
   hydrationEvidenceGaps: ['Hitze nicht gemessen'],
-  trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
-  evidence: ['2 lange During-Logs vollständig'],
+  trendSummary: null,
+  evidence: ['2 vorhandene lange Carb-Logs brauchen GI-Komfort.'],
   learningReadiness: {
-    comparableCompleteLogs: 2,
+    comparableCompleteLogs: 0,
     requiredComparableCompleteLogs: 3,
     readyForTrendSummary: false,
-    missingEvidence: ['GI-Komfort fehlt strukturiert beim vorhandenen Carb-Log.'],
+    missingEvidence: ['Noch drei vergleichbare During-Logs fehlen: zwei vorhandene lange Logs koennen durch GI-Komfort zaehlen; danach fehlt noch ein neuer vollstaendiger Lernlog.'],
     nextAction: {
       kind: 'complete_gi_comfort',
       label: 'GI-Komfort ergänzen',
@@ -346,7 +346,7 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(action).toBeVisible();
           await expect(action).toBeInViewport();
           await expect(action).toContainText('Fueling-Evidenz schließen');
-          await expect(action).toContainText('Trend-Evidenz 2/3');
+          await expect(action).toContainText('Trend-Evidenz 0/3');
           await expect(action.getByRole('button', { name: 'GI-Komfort ergänzen' })).toBeInViewport();
         },
       );
