@@ -23,13 +23,20 @@ function normalizeOutcome(value) {
   return outcome || '<one user-facing package outcome>';
 }
 
+function normalizeSearchText(value) {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 function gateRemindersForOutcome(track, outcome) {
-  const text = String(outcome ?? '').toLowerCase();
+  const text = normalizeSearchText(outcome);
   const reminders = [];
 
   if (
     track === 'lernschleifen'
-    && /\b(nutrition|fueling|ernaehrung|ernährung|gi|carb|carbs|hydration|sodium)\b/i.test(text)
+    && /\b(nutrition|fueling|ernaehrung|ernahrung|gi|carb|carbs|hydration|sodium)\b/i.test(text)
     && /\b(trend|trends|summary|summaries|lern|learning|baseline)\b/i.test(text)
   ) {
     reminders.push('Nutrition/Fueling trend summaries stay gated until `npm run audit:fueling-gate -- --today <YYYY-MM-DD>` reports 3/3 comparable complete `during` logs with activity/duration context, carbs and structured GI comfort.');
