@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Compact-Context nutzt Evidenz-Gates statt Preference-Gate
+
+- **Decision:** `docs/ai/non-negotiables.md` beschreibt Fueling & Recovery nicht mehr als preference-gegated; neue Nutrition-Logik bleibt konservativ, edukativ und evidenz-gegated, waehrend Trend-Summaries weiter drei vergleichbare komplette During-Logs brauchen.
+- **Why:** Der alte Compact-Context-Satz stammte aus der Zeit vor Tobis bestaetigten Fueling-Praeferenzen. Seit der Entscheidung vom 2026-05-06 darf Pulse konservative Fueling-&-Recovery-Guidance geben, und die aktuellen Produktgates betreffen Trend-Evidence statt die Basis-Guidance.
+- **Alternatives:** Den alten Preference-Gate-Satz stehen lassen (naechste Agenten wuerden shipped Fueling-Arbeit faelschlich blockieren); Fueling-Trends freigeben (verletzt 0/3-Log-Gate); die Klarstellung nur in `current-focus` lassen (weniger verbindlich als Non-Negotiables).
+- **Decided by:** Codex, als AI-Context-Konsistenzslice im Branch `codex/fueling-gate-context-refresh`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Route-Evidence deckt Fueling-Closure-Pfad ab
 
 - **Decision:** Die mobile Route-Evidence erfasst neben generischem Data/Activity nun auch die Data-Fueling-Tagesaktion und den fokussierten Activity-Fueling-Anker.

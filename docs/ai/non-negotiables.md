@@ -48,7 +48,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 
 - UI/UX Deep Friction Closure is implemented and deployed; future UI/UX work should regenerate route evidence first.
 - Use `docs/superpowers/plans/2026-05-02-future-direction-roadmap.md` as the orientation for new product direction.
-- Fueling & Recovery remains preference-gated; ask Tobi before implementation.
+- Fueling & Recovery guidance is no longer preference-gated; new nutrition logic must stay conservative, educational and evidence-gated. Nutrition trend summaries still require three comparable complete `during` logs with activity/duration context, carbs and GI comfort.
 - Native iOS remains evidence-gated; local web/PWA over VPN is the current path.
 - iPhone certificate trust and Push activation are manual device gates.
 - Future waves may have active plans in `docs/superpowers/plans/`; do not re-plan from scratch unless `docs/decisions.md` reverses ordering.
