@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — iPhone-PWA-Feldgate bekommt einen Read-only-Audit
+
+- **Decision:** `node scripts/iphone-pwa-gate-audit.mjs` prueft den manuellen iPhone/VPN/PWA-Evidence-Record und nennt offene Real-Device-Gates wie Zertifikatsvertrauen, Push-Aktivierung, Offline-Fallback und fehlende Device-Metadaten.
+- **Why:** Die iPhone/PWA-Roadmap bleibt absichtlich real-device-gated; simulierte WebKit-Checks ersetzen Zertifikat, Push und VPN/Offline-Feldbeweis nicht. Ein read-only Audit macht den Gate-Status reproduzierbar, ohne Device-Ergebnisse zu erfinden oder native iOS/cloud scope zu starten.
+- **Alternatives:** Den Markdown-Record jedes Mal manuell lesen (fehleranfaellig); simulierte WebKit-Evidence als Ersatz werten (zu schwach); neue PWA/native Produktarbeit ohne Feldfriktion starten (nicht vom Backlog gedeckt).
+- **Decided by:** Codex, als Mobile-Field-Support-Slice im Branch `codex/iphone-pwa-gate-audit`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Gate-Audit macht GI-Komfort-Optionen maschinenlesbar
 
 - **Decision:** Der JSON-Output von `npm run audit:fueling-gate -- --json` enthaelt bei `complete_gi_comfort` die erlaubten GI-Komfort-Optionen als strukturierte `value`/`label`-Liste.
