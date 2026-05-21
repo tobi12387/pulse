@@ -42,7 +42,7 @@ function pulseTargetUrl(targetPath) {
   return `${baseUrl.replace(/\/+$/, '')}/${cleanPath.replace(/^\/+/, '')}`;
 }
 
-function usage() {
+export function usage() {
   return [
     'Usage: node scripts/performance-gates-audit.mjs [options]',
     '',
@@ -52,6 +52,7 @@ function usage() {
     '  --today YYYY-MM-DD   Anchor date for the Fueling gate audit.',
     '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
     '  --local-planning     Defer server mirror verification for feature-branch planning; do not count it as the next open gate. Defaults expected commit to origin/main.',
+    '                       Handoff modes auto-apply this behavior on feature branches unless --expected-commit or --skip-server is passed.',
     '  --expected-commit <short>',
     '                       Expected deployed/server commit; default local git HEAD.',
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
