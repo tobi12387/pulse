@@ -216,9 +216,14 @@ function summarizeFueling(today, runner) {
   };
 }
 
-function summarizeIphone(runner) {
+function summarizeIphone(expectedCommit, runner) {
   const command = 'npm run audit:iphone-pwa-gate';
-  const result = runner(process.execPath, ['scripts/iphone-pwa-gate-audit.mjs', '--json']);
+  const result = runner(process.execPath, [
+    'scripts/iphone-pwa-gate-audit.mjs',
+    '--json',
+    '--expected-commit',
+    expectedCommit,
+  ]);
   const parsed = parseJsonOutput(result);
 
   if (!parsed.value) {
@@ -249,6 +254,8 @@ function summarizeIphone(runner) {
     nextAction: audit.nextAction ?? 'No iPhone/PWA gate action needed.',
     evidenceChecklist: audit.fieldChecklist ?? IPHONE_FIELD_CHECKLIST,
     evidenceFile: audit.evidenceFile,
+    expectedCommit: audit.expectedCommit ?? null,
+    commitStatus: audit.commitStatus ?? null,
     serverCommitUnderTest: audit.scope?.serverCommit ?? null,
     gaps: audit.gaps ?? [],
   };
@@ -332,6 +339,8 @@ function nextUnblockMetadata(gate) {
     return {
       evidenceChecklist: gate.evidenceChecklist ?? IPHONE_FIELD_CHECKLIST,
       evidenceFile: gate.evidenceFile ?? null,
+      expectedCommit: gate.expectedCommit ?? null,
+      commitStatus: gate.commitStatus ?? null,
       serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
       firstGap: firstGap ? {
         kind: firstGap.kind ?? null,
@@ -368,7 +377,7 @@ export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) 
   const expectedCommit = options.expectedCommit ?? resolveExpectedCommit(runner);
   const gates = [
     summarizeFueling(today, runner),
-    summarizeIphone(runner),
+    summarizeIphone(expectedCommit, runner),
     options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner),
   ];
   const openGateList = gates.filter(gate => !gate.ready);

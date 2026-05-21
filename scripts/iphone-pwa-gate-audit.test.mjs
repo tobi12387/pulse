@@ -101,6 +101,43 @@ test('iphone pwa gate audit identifies remaining real-device gaps', () => {
   assert.match(rendered, /Device and iOS metadata: missing/);
 });
 
+test('iphone pwa gate audit gates stale field evidence against the expected commit', () => {
+  const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'abc1234',
+  });
+
+  assert.equal(audit.gate, 'gated');
+  assert.equal(audit.expectedCommit, 'abc1234');
+  assert.equal(audit.commitStatus, 'stale');
+  assert.deepEqual(audit.gaps.map(gap => gap.kind), [
+    'current_commit_evidence',
+    'certificate_trust',
+    'push_activation',
+    'offline_fallback',
+    'device_metadata',
+  ]);
+  assert.match(audit.gaps[0].detail, /Field record tested 9e05189, expected abc1234/);
+  assert.match(audit.gaps[0].nextAction, /record Server commit under test: abc1234/);
+
+  const rendered = renderIphonePwaGateAudit(audit);
+  assert.match(rendered, /Expected current commit: abc1234/);
+  assert.match(rendered, /Field commit status: stale/);
+  assert.match(rendered, /Current main field evidence: stale/);
+});
+
+test('iphone pwa gate audit opens when all manual gates match the expected commit', () => {
+  const audit = buildIphonePwaGateAudit(COMPLETE_FIELD_RECORD, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'abcdef0',
+  });
+
+  assert.equal(audit.gate, 'ready');
+  assert.equal(audit.commitStatus, 'current');
+  assert.deepEqual(audit.gaps, []);
+  assert.match(renderIphonePwaGateAudit(audit), /Field commit status: current/);
+});
+
 test('iphone pwa gate audit opens when all manual gates are recorded', () => {
   const audit = buildIphonePwaGateAudit(COMPLETE_FIELD_RECORD, { evidenceFile: 'field.md' });
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -22,9 +23,10 @@ function usage() {
     'Audits the manual iPhone/VPN/PWA field evidence record for remaining real-device gates.',
     '',
     'Options:',
-    `  --file <path>       Evidence markdown file, default ${DEFAULT_EVIDENCE_FILE}.`,
-    '  --json              Print machine-readable JSON.',
-    '  -h, --help          Show this help.',
+    `  --file <path>              Evidence markdown file, default ${DEFAULT_EVIDENCE_FILE}.`,
+    '  --expected-commit <short>  Expected current commit; default PULSE_EXPECTED_COMMIT or local git HEAD.',
+    '  --json                     Print machine-readable JSON.',
+    '  -h, --help                 Show this help.',
   ].join('\n');
 }
 
@@ -46,6 +48,17 @@ function parseStatus(value) {
   if (text === 'needs follow-up') return 'needs_followup';
   if (text === 'fail') return 'fail';
   return text ? 'unknown' : 'missing';
+}
+
+function commitsMatch(left, right) {
+  if (!left || !right) return false;
+  return left === right || left.startsWith(right) || right.startsWith(left);
+}
+
+function commitStatus(serverCommit, expectedCommit) {
+  if (!expectedCommit) return 'unknown';
+  if (!serverCommit) return 'missing';
+  return commitsMatch(serverCommit, expectedCommit) ? 'current' : 'stale';
 }
 
 function parseScope(markdown) {
@@ -104,7 +117,9 @@ function buildGap(kind, label, status, detail, nextAction) {
 
 export function buildIphonePwaGateAudit(markdown, options = {}) {
   const evidenceFile = options.evidenceFile ?? DEFAULT_EVIDENCE_FILE;
+  const expectedCommit = cleanInlineCode(options.expectedCommit);
   const scope = parseScope(markdown);
+  const fieldCommitStatus = commitStatus(scope.serverCommit, expectedCommit);
   const results = parseMarkdownTable(markdown, '## Results').map(row => ({
     ...row,
     status: parseStatus(row.result),
@@ -119,6 +134,17 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
     .map(area => ({ area, status: resultStatus(results, area) }))
     .filter(item => item.status !== 'pass');
   const gaps = [];
+  if (fieldCommitStatus === 'missing' || fieldCommitStatus === 'stale') {
+    gaps.push(buildGap(
+      'current_commit_evidence',
+      'Current main field evidence',
+      fieldCommitStatus,
+      fieldCommitStatus === 'missing'
+        ? `Missing Server commit under test; expected ${expectedCommit}.`
+        : `Field record tested ${scope.serverCommit}, expected ${expectedCommit}.`,
+      `Verify the server mirror is on ${expectedCommit}, rerun the real iPhone checklist and record Server commit under test: ${expectedCommit}.`,
+    ));
+  }
   if (coreMissing.length > 0) {
     gaps.push(buildGap(
       'core_pwa_reachability',
@@ -176,6 +202,8 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
     evidenceFile,
     fieldChecklist: FIELD_CHECKLIST,
     gate: gaps.length === 0 ? 'ready' : 'gated',
+    expectedCommit,
+    commitStatus: fieldCommitStatus,
     scope,
     results,
     issues,
@@ -192,10 +220,12 @@ export function renderIphonePwaGateAudit(audit) {
     `Field checklist: ${audit.fieldChecklist}`,
     `Gate: ${audit.gate}`,
     `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
+    audit.expectedCommit ? `Expected current commit: ${audit.expectedCommit}` : null,
+    audit.expectedCommit ? `Field commit status: ${audit.commitStatus}` : null,
     `Device: ${audit.scope.device ?? 'missing'}`,
     `iOS version: ${audit.scope.iosVersion ?? 'missing'}`,
     '',
-  ];
+  ].filter(line => line !== null);
 
   if (audit.gaps.length === 0) {
     lines.push('All manual iPhone/PWA field gates are recorded as pass.');
@@ -213,6 +243,7 @@ export function renderIphonePwaGateAudit(audit) {
 function parseArgs(argv) {
   const result = {
     file: DEFAULT_EVIDENCE_FILE,
+    expectedCommit: null,
     json: false,
   };
   const args = argv.slice(2);
@@ -227,9 +258,24 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--expected-commit') {
+      result.expectedCommit = args[index + 1];
+      index += 1;
+      continue;
+    }
     throw new Error(`Unknown argument: ${arg}`);
   }
   return result;
+}
+
+function resolveExpectedCommit() {
+  const envCommit = cleanInlineCode(process.env.PULSE_EXPECTED_COMMIT);
+  if (envCommit) return envCommit;
+  try {
+    return cleanInlineCode(execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }));
+  } catch {
+    return null;
+  }
 }
 
 async function main(argv) {
@@ -240,7 +286,10 @@ async function main(argv) {
 
   const args = parseArgs(argv);
   if (!existsSync(args.file)) throw new Error(`Evidence file not found: ${args.file}`);
-  const audit = buildIphonePwaGateAudit(readFileSync(args.file, 'utf8'), { evidenceFile: args.file });
+  const audit = buildIphonePwaGateAudit(readFileSync(args.file, 'utf8'), {
+    evidenceFile: args.file,
+    expectedCommit: args.expectedCommit ?? resolveExpectedCommit(),
+  });
   if (args.json) {
     console.log(JSON.stringify(audit, null, 2));
     return;
