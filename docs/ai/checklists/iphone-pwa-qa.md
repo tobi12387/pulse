@@ -7,7 +7,10 @@ Append a fresh field run with its own `## Scope` and `## Results` sections; the 
 
 Before treating the field record as current, run `npm run audit:iphone-pwa-gate`
 from the repo. The audit compares `Server commit under test` with the expected
-current commit and keeps the gate closed when the field evidence is stale.
+current commit, resolves both commits to their latest app-runtime commit, and
+keeps the gate closed when the field evidence is stale. Docs-only server drift
+can remain current when the app-runtime commit is unchanged; frontend, backend,
+shared or package changes still require fresh real-device evidence.
 For a live packet of the current field gaps and recording steps, run
 `npm run audit:iphone-pwa-gate -- --packet`.
 For the shortest first-gap field prompt to use in a manual capture/chat

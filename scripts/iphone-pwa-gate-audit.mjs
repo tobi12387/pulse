@@ -5,6 +5,13 @@ import { pathToFileURL } from 'node:url';
 
 const DEFAULT_EVIDENCE_FILE = 'docs/qa/2026-05-02-iphone-pwa-real-device.md';
 const FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
+const APP_RUNTIME_PATHS = [
+  'frontend',
+  'backend',
+  'shared',
+  'package.json',
+  'package-lock.json',
+];
 const CORE_PASS_AREAS = [
   'Network',
   'Settings readiness',
@@ -38,7 +45,8 @@ function usage() {
     '',
     'Options:',
     `  --file <path>              Evidence markdown file, default ${DEFAULT_EVIDENCE_FILE}.`,
-    '  --expected-commit <short>  Expected current commit; default PULSE_EXPECTED_COMMIT or local git HEAD.',
+    '  --expected-commit <short>  Expected current server commit; default PULSE_EXPECTED_COMMIT or local git HEAD.',
+    '                             Docs-only drift is accepted when both server commits resolve to the same app runtime commit.',
     '  --packet                   Print a manual field-evidence packet instead of the audit summary.',
     '  --next-prompt              Print a short first-gap prompt for manual field evidence; exits 1 if no prompt is available.',
     '  --scaffold                 Print only a paste-ready Markdown field-run scaffold.',
@@ -84,10 +92,18 @@ function commitsMatch(left, right) {
   return left === right || left.startsWith(right) || right.startsWith(left);
 }
 
-function commitStatus(serverCommit, expectedCommit) {
+function commitStatus(serverCommit, expectedCommit, runtime = {}) {
   if (!expectedCommit) return 'unknown';
   if (!serverCommit) return 'missing';
-  return commitsMatch(serverCommit, expectedCommit) ? 'current' : 'stale';
+  if (commitsMatch(serverCommit, expectedCommit)) return 'current';
+  if (
+    runtime.fieldRuntimeCommit
+    && runtime.expectedRuntimeCommit
+    && commitsMatch(runtime.fieldRuntimeCommit, runtime.expectedRuntimeCommit)
+  ) {
+    return 'current_runtime';
+  }
+  return 'stale';
 }
 
 function latestEvidenceRecord(markdown) {
@@ -174,7 +190,14 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
   const expectedCommit = cleanInlineCode(options.expectedCommit);
   const evidenceRecord = latestEvidenceRecord(markdown);
   const scope = parseScope(evidenceRecord);
-  const fieldCommitStatus = commitStatus(scope.serverCommit, expectedCommit);
+  const expectedRuntimeCommit = cleanInlineCode(options.expectedRuntimeCommit)
+    ?? cleanInlineCode(options.runtimeCommitFor?.(expectedCommit));
+  const fieldRuntimeCommit = cleanInlineCode(options.fieldRuntimeCommit)
+    ?? cleanInlineCode(options.runtimeCommitFor?.(scope.serverCommit));
+  const fieldCommitStatus = commitStatus(scope.serverCommit, expectedCommit, {
+    expectedRuntimeCommit,
+    fieldRuntimeCommit,
+  });
   const results = parseMarkdownTable(evidenceRecord, '## Results').map(row => ({
     ...row,
     status: parseStatus(row.result),
@@ -258,6 +281,8 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
     fieldChecklist: FIELD_CHECKLIST,
     gate: gaps.length === 0 ? 'ready' : 'gated',
     expectedCommit,
+    expectedRuntimeCommit,
+    fieldRuntimeCommit,
     commitStatus: fieldCommitStatus,
     serverVerifyCommand: serverVerifyCommand(expectedCommit),
     serverRecoveryPacketCommand: serverRecoveryPacketCommand(expectedCommit),
@@ -278,6 +303,8 @@ export function renderIphonePwaGateAudit(audit) {
     `Gate: ${audit.gate}`,
     `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
     audit.expectedCommit ? `Expected current commit: ${audit.expectedCommit}` : null,
+    audit.expectedRuntimeCommit ? `Expected app runtime commit: ${audit.expectedRuntimeCommit}` : null,
+    audit.fieldRuntimeCommit ? `Field app runtime commit: ${audit.fieldRuntimeCommit}` : null,
     audit.expectedCommit ? `Field commit status: ${audit.commitStatus}` : null,
     `Device: ${audit.scope.device ?? 'missing'}`,
     `iOS version: ${audit.scope.iosVersion ?? 'missing'}`,
@@ -379,6 +406,8 @@ export function renderIphonePwaFieldPacket(audit) {
     `Evidence file: ${audit.evidenceFile}`,
     `Field checklist: ${audit.fieldChecklist}`,
     `Expected current commit: ${audit.expectedCommit ?? 'missing'}`,
+    audit.expectedRuntimeCommit ? `Expected app runtime commit: ${audit.expectedRuntimeCommit}` : null,
+    audit.fieldRuntimeCommit ? `Field app runtime commit: ${audit.fieldRuntimeCommit}` : null,
     `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
     `Field commit status: ${audit.commitStatus}`,
     `Server verify command: ${serverVerifyCommand(audit.expectedCommit)}`,
@@ -387,7 +416,7 @@ export function renderIphonePwaFieldPacket(audit) {
     `Device: ${audit.scope.device ?? 'missing'}`,
     `iOS version: ${audit.scope.iosVersion ?? 'missing'}`,
     '',
-  ];
+  ].filter(line => line !== null);
 
   if (audit.gaps.length === 0) {
     lines.push('All manual iPhone/PWA field gates are recorded as pass for the expected commit.');
@@ -518,6 +547,23 @@ function resolveExpectedCommit() {
   }
 }
 
+function resolveAppRuntimeCommit(ref) {
+  const commit = cleanInlineCode(ref);
+  if (!commit) return null;
+  try {
+    return cleanInlineCode(execFileSync('git', [
+      'log',
+      '-1',
+      '--format=%h',
+      commit,
+      '--',
+      ...APP_RUNTIME_PATHS,
+    ], { encoding: 'utf8' }));
+  } catch {
+    return null;
+  }
+}
+
 async function main(argv) {
   if (argv.includes('-h') || argv.includes('--help')) {
     console.log(usage());
@@ -529,6 +575,7 @@ async function main(argv) {
   const audit = buildIphonePwaGateAudit(readFileSync(args.file, 'utf8'), {
     evidenceFile: args.file,
     expectedCommit: args.expectedCommit ?? resolveExpectedCommit(),
+    runtimeCommitFor: resolveAppRuntimeCommit,
   });
   if (args.scaffold) {
     console.log(renderIphonePwaFieldScaffold(audit));
