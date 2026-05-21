@@ -282,6 +282,9 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
 
 test('Home skips empty workout snapshot when no workout or completed activity exists', async ({ page }) => {
   await mockPulseApi(page, {
+    decisionQuality: null,
+    personalResponse: null,
+    goalProjection: null,
     home: {
       todayWorkout: null,
       nextWorkout: null,
@@ -2533,7 +2536,7 @@ test('Home evidence chips deep-link to Data evidence sections', async ({ page })
   await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
 
   await page.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
-  await page.getByRole('button', { name: /Readiness 78\/100/ }).click();
+  await page.getByRole('button', { name: 'Readiness 78/100', exact: true }).click();
   await expect(page).toHaveURL(/\/data/);
   await expect(page).toHaveURL(/#data-recovery$/);
   await expect(page.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');

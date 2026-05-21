@@ -1,8 +1,24 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mockPulseApi } from './fixtures/pulse-api';
 
+type MockPulseApiOptions = NonNullable<Parameters<typeof mockPulseApi>[1]>;
+
+const neutralDailyDecisionEvidence: MockPulseApiOptions = {
+  decisionQuality: null,
+  personalResponse: null,
+  goalProjection: null,
+  outcomeBaseline: null,
+};
+
+async function mockDailyDecisionApi(page: Page, options: MockPulseApiOptions = {}) {
+  await mockPulseApi(page, {
+    ...neutralDailyDecisionEvidence,
+    ...options,
+  });
+}
+
 test.beforeEach(async ({ page }) => {
-  await mockPulseApi(page);
+  await mockDailyDecisionApi(page);
   await page.addInitScript(() => {
     window.localStorage.setItem(
       'coaching-os-auth',
@@ -53,7 +69,7 @@ test('Activity detail is available under the Plan route namespace', async ({ pag
 });
 
 test('Today options show compact signal labels for the strongest reason', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     todayOptions: {
       todayOptions: {
         date: '2026-05-01',
@@ -109,7 +125,7 @@ test('Today options show compact signal labels for the strongest reason', async 
 });
 
 test('Plan renders completed planned workout today options as a closed decision', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     todayOptions: {
       todayOptions: {
         date: '2026-05-01',
@@ -168,7 +184,7 @@ test('Home renders exactly one main daily decision card', async ({ page }) => {
 });
 
 test('Home daily decision details expose top signals goal impact Garmin state and safest option', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-default',
@@ -250,7 +266,7 @@ test('Home daily decision details expose top signals goal impact Garmin state an
 });
 
 test('Home daily decision uses stale decision quality as a leading learning signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     decisionQuality: {
       range: { from: '2026-04-18', to: '2026-05-01', days: 14 },
       qualityScore: 42,
@@ -294,7 +310,7 @@ test('Home daily decision uses stale decision quality as a leading learning sign
 });
 
 test('Home daily decision opens changed last-decision follow-up before normal training', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-after-replaced-delta',
@@ -360,7 +376,7 @@ test('Home daily decision opens changed last-decision follow-up before normal tr
 });
 
 test('Home daily decision uses recovery pressure as a leading body signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       recovery: {
         sleepDebt7d: {
@@ -438,7 +454,7 @@ test('Home daily decision uses low readiness as the safest body option for a pla
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       readiness: {
         date: '2026-05-01',
@@ -534,7 +550,7 @@ test('Home daily decision uses load pressure as the safest option for a planned 
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       fitnessLoad: {
         date: '2026-05-01',
@@ -622,7 +638,7 @@ test('Home daily decision uses too-hard training fit as the safest planned-worko
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       fitnessLoad: {
         ctl: 47,
@@ -761,7 +777,7 @@ test('Home daily decision uses stretch training fit as a controlled execution bo
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       readiness: {
         score: 82,
@@ -884,7 +900,7 @@ test('Home daily decision uses productive training fit as an executable safest o
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       readiness: {
         score: 84,
@@ -1007,7 +1023,7 @@ test('Home daily decision uses recovery training fit as active regeneration', as
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       readiness: {
         score: 76,
@@ -1098,7 +1114,7 @@ test('Home daily decision uses recovery training fit as active regeneration', as
 });
 
 test('Home daily decision uses open plan adaptation as a leading signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     adaptationEvents: {
       events: [{
         id: 'adapt-sync-debt',
@@ -1169,7 +1185,7 @@ test('Home daily decision uses Garmin execution gaps as a leading signal for pla
     executionMatchConfidence: null,
     executionNotes: 'Workout ist nur lokal in Pulse geplant.',
   };
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: plannedWorkout,
       nextWorkout: null,
@@ -1224,7 +1240,7 @@ test('Home daily decision uses Garmin execution gaps as a leading signal for pla
 });
 
 test('Home daily decision uses personal response patterns as a leading signal for planned workouts', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-response-pattern',
@@ -1300,21 +1316,21 @@ test('Home daily decision uses personal response patterns as a leading signal fo
 
   const decision = page.getByTestId('daily-decision-card');
   const leading = decision.getByTestId('daily-decision-leading-factor');
-  await expect(leading).toContainText('Reaktion');
-  await expect(leading).toContainText('Mentale Last begrenzt Ausführung');
+  await expect(leading).toContainText('Lernschleife');
+  await expect(leading).toContainText('Reaktionsmuster');
   await expect(leading).toContainText('Heute zuerst Boundary setzen');
   const primaryCta = decision.getByRole('button', { name: 'Reaktion prüfen', exact: true });
   await expect(primaryCta).toBeVisible();
 
   const safestOption = decision.getByTestId('daily-decision-safest-option');
-  await expect(safestOption).toContainText('Persönliche Reaktion zuerst einplanen');
-  await expect(safestOption).toContainText('Heute zuerst Boundary setzen');
-  await expect(safestOption).toContainText('bewusst klein halten');
+  await expect(safestOption).toContainText('Lernschleife zuerst prüfen');
+  await expect(safestOption).toContainText('heutige Boundary zuerst setzen');
+  await expect(safestOption).toContainText('Reaktionsmuster nur als Evidenz prüfen');
 
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
   const contract = page.getByTestId('daily-decision-contract');
-  await expect(contract).toContainText('Reaktion');
-  await expect(contract).toContainText('5 Check-ins mit Energie <=4');
+  await expect(contract).toContainText('Lernschleife');
+  await expect(contract).toContainText('Reaktionsmuster');
 
   await primaryCta.click();
   await expect(page).toHaveURL('/data?tab=analysis#data-personal-response');
@@ -1322,7 +1338,7 @@ test('Home daily decision uses personal response patterns as a leading signal fo
 });
 
 test('Home daily decision uses durability analysis as a leading signal for a planned workout', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-durability-limiter',
@@ -1427,7 +1443,7 @@ test('Home daily decision uses durability analysis as a leading signal for a pla
 });
 
 test('Home daily decision uses blocked power quality as the analysis gate for a planned workout', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-power-quality-gate',
@@ -1575,7 +1591,7 @@ test('Home daily decision uses fueling learning readiness as a leading signal fo
     executionMatchConfidence: null,
     executionNotes: null,
   };
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: plannedWorkout,
       nextWorkout: null,
@@ -1706,7 +1722,7 @@ test('Home daily decision names measured hydration context for fueling learning'
     executionMatchConfidence: null,
     executionNotes: null,
   };
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: plannedWorkout,
       nextWorkout: null,
@@ -1818,7 +1834,7 @@ test('Home daily decision uses complete fueling trends as a leading signal for l
     executionMatchConfidence: null,
     executionNotes: null,
   };
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: plannedWorkout,
       nextWorkout: null,
@@ -1935,7 +1951,7 @@ test('Home daily decision uses missing post-workout feedback as the completed-da
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: completedWorkout,
       todayActivities: [completedActivity],
@@ -2052,7 +2068,7 @@ test('Home daily decision closes completed long workouts with fueling evidence c
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: completedWorkout,
       todayActivities: [completedActivity],
@@ -2179,7 +2195,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
   let feedbackPatch: { activityId: string; body: unknown } | null = null;
   let scenarioPreviewBody: unknown = null;
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: null,
       todayActivities: [completedActivity],
@@ -2293,7 +2309,7 @@ test('Home off-plan long activity keeps plan reconciliation after fueling eviden
 });
 
 test('Home daily decision details expose fueling debt as a top decision signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-vo2',
@@ -2383,7 +2399,7 @@ test('Home daily decision details expose fueling debt as a top decision signal',
 });
 
 test('Home daily decision details expose goal pressure as a top decision signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-threshold',
@@ -2491,7 +2507,7 @@ test('Home daily decision details expose goal pressure as a top decision signal'
 });
 
 test('Home daily decision details expose saved mental boundary as a top decision signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: {
         id: 'planned-easy',
@@ -2567,7 +2583,7 @@ test('Home daily decision details expose saved mental boundary as a top decision
 });
 
 test('Home daily decision details expose stale Garmin data confidence as a top decision signal', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       dataStatus: {
         userReady: true,
@@ -2674,7 +2690,7 @@ test('Home daily decision carries everyday fallback options into the safest choi
     executionNotes: null,
   };
 
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       todayWorkout: plannedWorkout,
       nextWorkout: null,
@@ -2764,7 +2780,7 @@ test('Home daily decision carries everyday fallback options into the safest choi
 });
 
 test('Home daily decision details keep combined data fueling mental goal and training signals visible', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       dataStatus: {
         userReady: true,
@@ -2931,10 +2947,11 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   await expect(contract).toContainText('Training');
   await expect(contract).toContainText('Radfahren Z2 · 60 min');
 
-  const contractText = await contract.textContent();
-  expect(contractText).toBeTruthy();
+  const signalButtonLabels = await contract.getByRole('button').evaluateAll(buttons =>
+    buttons.map(button => button.textContent?.replace(/\s+/g, ' ').trim() ?? ''),
+  );
   const signalIndex = (label: string) => {
-    const index = contractText!.indexOf(label);
+    const index = signalButtonLabels.findIndex(text => text.startsWith(label));
     expect(index, `${label} should be visible in the decision contract`).toBeGreaterThanOrEqual(0);
     return index;
   };
@@ -2942,21 +2959,22 @@ test('Home daily decision details keep combined data fueling mental goal and tra
   const mentalIndex = signalIndex('Mental');
   const dataIndex = signalIndex('Daten');
   const fuelingIndex = signalIndex('Fueling');
-  const goalIndex = signalIndex('70.3 Kraichgau');
+  const garminIndex = signalIndex('Garmin');
   const trainingIndex = signalIndex('Training');
   const bodyIndex = signalIndex('Koerper');
   const loadIndex = signalIndex('Belastung');
 
   expect(mentalIndex).toBeLessThan(dataIndex);
   expect(dataIndex).toBeLessThan(fuelingIndex);
-  expect(fuelingIndex).toBeLessThan(goalIndex);
-  expect(goalIndex).toBeLessThan(trainingIndex);
+  expect(fuelingIndex).toBeLessThan(garminIndex);
+  expect(garminIndex).toBeLessThan(trainingIndex);
   expect(trainingIndex).toBeLessThan(bodyIndex);
   expect(bodyIndex).toBeLessThan(loadIndex);
+  await expect(contract).toContainText('Ziel-Limiter beobachten: 70.3 Kraichgau 64% bleibt Data-Evidenz');
 });
 
 test('Home shows the latest planned-vs-completed daily delta', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     dailyDelta: [{
       date: '2026-05-01',
       status: 'matched',
@@ -2981,7 +2999,7 @@ test('Home shows the latest planned-vs-completed daily delta', async ({ page }) 
 
 test('Home no-training daily decision opens the missing check-in before Coach support', async ({ page }) => {
   let actionPatches = 0;
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     onActionPatch: () => { actionPatches += 1; },
   });
   await page.goto('/');
@@ -3014,7 +3032,7 @@ test('Home no-training daily decision opens the missing check-in before Coach su
 
 test('Home root-target daily decision does not patch synthetic action ids', async ({ page }) => {
   let actionPatches = 0;
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       nextBestActions: [
         {
@@ -3041,7 +3059,7 @@ test('Home root-target daily decision does not patch synthetic action ids', asyn
 });
 
 test('Home data-evidence daily decision previews read-only evidence instead of mental save', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       nextBestActions: [
         {
@@ -3073,7 +3091,7 @@ test('Home data-evidence daily decision previews read-only evidence instead of m
 });
 
 test('Home coach-target daily decision uses one prepared-prompt action', async ({ page }) => {
-  await mockPulseApi(page, {
+  await mockDailyDecisionApi(page, {
     home: {
       nextBestActions: [
         {

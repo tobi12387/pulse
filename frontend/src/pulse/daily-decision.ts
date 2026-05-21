@@ -787,9 +787,12 @@ function alternativeFor(
   const dataAlternative = dataConfidenceAlternative(dataSignal);
   const tradeoffPattern = classifyTradeoffPattern(decisionQuality);
   const decisionQualityForGenericLearning = tradeoffPattern ? null : decisionQuality;
-  const calibrationSignal = learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
+  const calibrationBaseline = fuelingDebt || !fuelingLearningSignal(fuelingOutcomeBaseline, todayWorkout, null)
+    ? fuelingOutcomeBaseline
+    : null;
+  const calibrationSignal = learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, calibrationBaseline);
   const calibrationAlternative = learningCalibrationAlternative(calibrationSignal);
-  const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning);
+  const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning, { includeWatchContext: !todayWorkout });
   const qualityAlternative = decisionQualityAlternative(qualitySignal);
   const recoveryAlternative = recoveryPressureAlternative(home.recovery);
   const planAdaptationAlternative = adaptationAlternative(adaptationEvent);
@@ -1145,6 +1148,14 @@ function primaryActionForLeadingSignal(
 
   const leading = signals[0];
   if (!leading?.targetPath) return fallback;
+  if (
+    fallback.targetPath === '/data?tab=today#data-mental'
+    && (leading.label === 'Koerper' || leading.label === 'Belastung')
+    && leading.tone !== 'rose'
+    && leading.tone !== 'amber'
+  ) {
+    return fallback;
+  }
 
   const cta = signalActionCta(leading);
   if (!cta) return fallback;
@@ -1180,8 +1191,17 @@ function dailyDeltaSignal(delta: PulseDailyDeltaItem | null | undefined): DailyD
   };
 }
 
-function decisionQualitySignal(quality: PulseDailyDecisionQualityResponse | null | undefined): DailyDecisionSignal | null {
-  if (!quality || !decisionQualityCanCalibrate(quality)) return null;
+function decisionQualitySignal(
+  quality: PulseDailyDecisionQualityResponse | null | undefined,
+  options: { includeWatchContext?: boolean } = {},
+): DailyDecisionSignal | null {
+  const hasWatchEvidence = Boolean(
+    quality
+    && options.includeWatchContext
+    && quality.status !== 'insufficient_evidence'
+    && (quality.bestEvidence.length > 0 || quality.repeatedThemes.some(theme => theme.count >= 2)),
+  );
+  if (!quality || (!decisionQualityCanCalibrate(quality) && !hasWatchEvidence)) return null;
 
   const primaryEvidence = quality.bestEvidence[0];
   const detail = quality.status === 'helpful' && primaryEvidence
@@ -1786,14 +1806,15 @@ function topSignals(
   const dataSignal = dataConfidenceSignal(home.dataStatus);
   const tradeoffPattern = classifyTradeoffPattern(decisionQuality);
   const decisionQualityForGenericLearning = tradeoffPattern ? null : decisionQuality;
-  const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning);
+  const qualitySignal = decisionQualitySignal(decisionQualityForGenericLearning, { includeWatchContext: !workout && !completedActivity });
+  const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
+  const learningCalibrationBaseline = fuelingLearning ? null : fuelingOutcomeBaseline;
   const learningCalibration = completedActivity || workout?.status === 'completed' || workout?.completedActivityId
     ? null
-    : learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, fuelingOutcomeBaseline);
+    : learningCalibrationSignal(decisionQualityForGenericLearning, personalResponse, learningCalibrationBaseline);
   const deltaSignal = dailyDeltaSignal(dailyDelta);
   const adaptation = adaptationSignal(adaptationEvent);
   const analysis = analysisSignal(trainingAnalytics, workout, completedActivity);
-  const fuelingLearning = fuelingDebt ? null : fuelingLearningSignal(fuelingOutcomeBaseline, workout, completedActivity);
   const feedback = completedFeedbackSignal(home, workout, completedActivity);
   const garminExecution = garminExecutionSignal(workout, completedActivity);
   const responsePattern = learningCalibration && learningCalibration.tone !== 'muted'
