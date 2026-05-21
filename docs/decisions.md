@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Current-Main-Route-Evidence entsperrt keine neue UI-Slice
+
+- **Decision:** Nach aktueller Route-Evidence auf `main` bei `7a09cd2` bleibt der autonome UI/UX-Backlog geschlossen; es wird keine neue Daily-Flow-, Fueling- oder Plan-Mobile-Slice aus dieser Evidence allein gestartet.
+- **Why:** Die Route-Evidence zeigt 9 Desktop- und 17 Mobile-Screenshots mit 0 horizontalem Overflow. Data Fueling, Activity Fueling Anchor und Plan Mobile Scenario Preview sind sichtbar und kontraktkonform; damit fehlt ein konkreter Friktionspunkt fuer Produktarbeit.
+- **Alternatives:** Aus sauberer Evidence trotzdem eine UI-Polish-Slice starten (zu spekulativ); alte Route-Evidence ignorieren und Produktarbeit aus Bauchgefuehl ableiten (bricht Evidence-First); die Fueling-Trend-Gates lockern (weiterhin 0/3 vergleichbare komplette Logs).
+- **Decided by:** Codex, als Evidence-Refresh im Branch `codex/current-route-evidence-refresh`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — No-Services-Verify nutzt explizite frische Test-DBs
 
 - **Decision:** `scripts/verify-local.sh` respektiert explizit gesetzte `DATABASE_URL`, `DATABASE_URL_TEST` und `REDIS_URL` auch nach dem Laden von `.env.test(.example)`; bei Migrationsfehlern weist es auf eine moegliche stale Drizzle-Ledger-Test-DB und den frischen `DATABASE_URL_TEST`-Recovery-Pfad hin.
