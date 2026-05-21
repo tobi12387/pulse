@@ -10,6 +10,8 @@ from the repo. The audit compares `Server commit under test` with the expected
 current commit and keeps the gate closed when the field evidence is stale.
 For a live packet of the current field gaps and recording steps, run
 `npm run audit:iphone-pwa-gate -- --packet`.
+For paste-ready Markdown for a new field run, run
+`npm run audit:iphone-pwa-gate -- --scaffold`.
 The packet prints the exact `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server`
 command to run before recording new current real-device evidence, including
 `PULSE_HOST=<ssh-host>` when the workspace is using an SSH alias such as

@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildIphonePwaGateAudit,
+  parseArgs,
+  renderIphonePwaFieldScaffold,
   renderIphonePwaFieldPacket,
   renderIphonePwaGateAudit,
 } from './iphone-pwa-gate-audit.mjs';
@@ -178,6 +180,17 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(rendered, /Field commit status: stale/);
   assert.match(rendered, /Current main field evidence: stale/);
 
+  const scaffold = renderIphonePwaFieldScaffold(audit);
+  assert.match(scaffold, /^## Scope/);
+  assert.doesNotMatch(scaffold, /```/);
+  assert.match(scaffold, /- Device: <iPhone model>/);
+  assert.match(scaffold, /- iOS version: <iOS version>/);
+  assert.match(scaffold, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);
+  assert.match(scaffold, /- Pulse URL: `https:\/\/192\.168\.178\.46:5175`/);
+  assert.match(scaffold, /- Server commit under test: `abc1234`/);
+  assert.match(scaffold, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
+  assert.match(scaffold, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
+
   const packet = renderIphonePwaFieldPacket(audit);
   assert.match(packet, /# iPhone \/ PWA Field Evidence Packet/);
   assert.match(packet, /Expected current commit: abc1234/);
@@ -198,6 +211,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /Record the run in field\.md, including Server commit under test: abc1234/);
   assert.match(packet, /Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
   assert.match(packet, /Evidence record scaffold:/);
+  assert.match(packet, /```markdown\n## Scope/);
   assert.match(packet, /- Device: <iPhone model>/);
   assert.match(packet, /- iOS version: <iOS version>/);
   assert.match(packet, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);
@@ -238,6 +252,22 @@ test('iphone pwa gate audit preserves configured server SSH host in handoff comm
     assert.match(packet, /Server verify command: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
     assert.match(packet, /Server recovery packet: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
     assert.match(packet, /Rerun after recording: PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
+  });
+});
+
+test('iphone pwa gate audit CLI args accept scaffold mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/iphone-pwa-gate-audit.mjs',
+    '--expected-commit',
+    'abc1234',
+    '--scaffold',
+  ]), {
+    file: 'docs/qa/2026-05-02-iphone-pwa-real-device.md',
+    expectedCommit: 'abc1234',
+    packet: false,
+    scaffold: true,
+    json: false,
   });
 });
 

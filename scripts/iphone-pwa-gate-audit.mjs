@@ -40,6 +40,7 @@ function usage() {
     `  --file <path>              Evidence markdown file, default ${DEFAULT_EVIDENCE_FILE}.`,
     '  --expected-commit <short>  Expected current commit; default PULSE_EXPECTED_COMMIT or local git HEAD.',
     '  --packet                   Print a manual field-evidence packet instead of the audit summary.',
+    '  --scaffold                 Print only a paste-ready Markdown field-run scaffold.',
     '  --json                     Print machine-readable JSON.',
     '  -h, --help                 Show this help.',
   ].join('\n');
@@ -315,10 +316,9 @@ function scaffoldValue(value, fallback) {
   return value ?? fallback;
 }
 
-function renderEvidenceRecordScaffold(audit) {
+export function renderIphonePwaFieldScaffold(audit) {
   const expectedCommit = audit.expectedCommit ?? '<commit>';
   const lines = [
-    '```markdown',
     '## Scope',
     '',
     `- Device: ${scaffoldValue(audit.scope.device, '<iPhone model>')}`,
@@ -336,8 +336,15 @@ function renderEvidenceRecordScaffold(audit) {
   for (const [area, expected] of FIELD_RESULT_ROWS) {
     lines.push(`| ${area} | ${expected} | <Pass/Partial/Pending/Needs follow-up/Fail/Not applicable> | <observed result> |`);
   }
-  lines.push('```');
   return lines.join('\n');
+}
+
+function renderEvidenceRecordScaffold(audit) {
+  return [
+    '```markdown',
+    renderIphonePwaFieldScaffold(audit),
+    '```',
+  ].join('\n');
 }
 
 export function renderIphonePwaFieldPacket(audit) {
@@ -389,11 +396,12 @@ export function renderIphonePwaFieldPacket(audit) {
   return lines.join('\n');
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const result = {
     file: DEFAULT_EVIDENCE_FILE,
     expectedCommit: null,
     packet: false,
+    scaffold: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -405,6 +413,10 @@ function parseArgs(argv) {
     }
     if (arg === '--packet') {
       result.packet = true;
+      continue;
+    }
+    if (arg === '--scaffold') {
+      result.scaffold = true;
       continue;
     }
     if (arg === '--file') {
@@ -444,6 +456,10 @@ async function main(argv) {
     evidenceFile: args.file,
     expectedCommit: args.expectedCommit ?? resolveExpectedCommit(),
   });
+  if (args.scaffold) {
+    console.log(renderIphonePwaFieldScaffold(audit));
+    return;
+  }
   if (args.json) {
     console.log(JSON.stringify(audit, null, 2));
     return;
