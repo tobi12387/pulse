@@ -224,6 +224,9 @@ function summarizeFueling(today, runner) {
   const parsed = parseJsonOutput(result);
   const commandText = `${command} ${today}`;
   const capturePacketCommand = `${commandText} --packet`;
+  const checklistCommandFor = user => Number(user?.newLogsStillNeeded ?? 0) > 0
+    ? `${commandText} --new-log-checklist`
+    : null;
 
   if (!parsed.value) {
     return {
@@ -294,6 +297,7 @@ function summarizeFueling(today, runner) {
     nextAction,
     evidenceChecklist: blockingUser.nextAction?.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
     capturePacketCommand: ready ? null : capturePacketCommand,
+    newLogChecklistCommand: ready ? null : checklistCommandFor(blockingUser),
     users: summaryUsers,
     completionCandidates,
   };
@@ -467,6 +471,7 @@ function nextUnblockMetadata(gate) {
       date: nextAction?.date ?? null,
       evidenceChecklist: nextAction?.evidenceChecklist ?? gate.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
       capturePacketCommand: gate.capturePacketCommand ?? null,
+      newLogChecklistCommand: gate.newLogChecklistCommand ?? null,
       options: nextAction?.options ?? [],
       status: user ? {
         comparableCompleteLogs: user.comparableCompleteLogs ?? null,
@@ -582,6 +587,7 @@ export function renderPerformanceGateAudit(audit) {
     lines.push(`- Next: ${gate.nextAction}`);
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
     if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
+    if (gate.newLogChecklistCommand) lines.push(`- New log checklist: \`${gate.newLogChecklistCommand}\``);
     if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
     if (gate.fieldScaffoldCommand) lines.push(`- Field scaffold: \`${gate.fieldScaffoldCommand}\``);
     if (gate.serverRecoveryPacketCommand) lines.push(`- Server recovery packet: \`${gate.serverRecoveryPacketCommand}\``);
@@ -612,6 +618,10 @@ function checklistLine(metadata) {
 
 function packetLine(metadata) {
   return metadata?.capturePacketCommand ? `Evidence packet: ${metadata.capturePacketCommand}` : null;
+}
+
+function newLogChecklistLine(metadata) {
+  return metadata?.newLogChecklistCommand ? `New log checklist: ${metadata.newLogChecklistCommand}` : null;
 }
 
 function fieldPacketLine(metadata) {
@@ -733,6 +743,8 @@ export function renderNextUnblock(audit) {
   if (checklist) lines.push(checklist);
   const packet = packetLine(next.metadata);
   if (packet) lines.push(packet);
+  const newLogChecklist = newLogChecklistLine(next.metadata);
+  if (newLogChecklist) lines.push(newLogChecklist);
   const fieldPacket = fieldPacketLine(next.metadata);
   if (fieldPacket) lines.push(fieldPacket);
   const fieldScaffold = fieldScaffoldLine(next.metadata);
@@ -765,6 +777,7 @@ function packetGateLines(gate, index) {
   if (targetUrl) lines.push(`   ${targetUrl}`);
   if (metadata?.evidenceChecklist) lines.push(`   Evidence checklist: ${metadata.evidenceChecklist}`);
   if (metadata?.capturePacketCommand) lines.push(`   Evidence packet: ${metadata.capturePacketCommand}`);
+  if (metadata?.newLogChecklistCommand) lines.push(`   New log checklist: ${metadata.newLogChecklistCommand}`);
   if (metadata?.fieldPacketCommand) lines.push(`   Field packet: ${metadata.fieldPacketCommand}`);
   if (metadata?.fieldScaffoldCommand) lines.push(`   Field scaffold: ${metadata.fieldScaffoldCommand}`);
   if (metadata?.serverVerifyCommand) lines.push(`   Server verify: ${metadata.serverVerifyCommand}`);
@@ -806,6 +819,8 @@ export function renderPerformanceGatePacket(audit) {
   if (checklist) lines.push(checklist);
   const packet = packetLine(audit.nextUnblock.metadata);
   if (packet) lines.push(packet);
+  const newLogChecklist = newLogChecklistLine(audit.nextUnblock.metadata);
+  if (newLogChecklist) lines.push(newLogChecklist);
   const fieldPacket = fieldPacketLine(audit.nextUnblock.metadata);
   if (fieldPacket) lines.push(fieldPacket);
   const fieldScaffold = fieldScaffoldLine(audit.nextUnblock.metadata);

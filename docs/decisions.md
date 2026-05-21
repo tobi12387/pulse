@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Packet zeigt Fueling-New-Log-Checkliste
+
+- **Decision:** `npm run audit:performance-gates` rendert fuer offene Fueling-Gates zusaetzlich `New log checklist: npm run audit:fueling-gate -- --today <date> --new-log-checklist`, wenn nach vorhandenen Kandidaten noch ein neuer kompletter Long-Session-Log benoetigt wird.
+- **Why:** Der kombinierte Performance-OS-Handoff ist der Standard fuer die naechste manuelle Handlung. Er soll nicht nur die zwei vorhandenen GI-Komfort-Kandidaten zeigen, sondern auch den danach benoetigten neuen Long-Session-Capture-Scaffold direkt auffindbar machen, ohne Daten zu schreiben oder GI-Komfort zu inferieren.
+- **Alternatives:** Den neuen Checklist-Befehl nur im fokussierten Fueling-Audit dokumentieren (zu leicht im kombinierten Handoff zu uebersehen); den Befehl immer anzeigen (laut, wenn kein neuer Log benoetigt wird); Produkt-Fueling-Arbeit ohne drei komplette Logs starten (Gate bleibt zu).
+- **Decided by:** Codex, als Performance-Fueling-Handoff-Support-Slice im Branch `codex/performance-new-log-checklist`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Audit kann neuen Long-Session-Log scaffolden
 
 - **Decision:** `npm run audit:fueling-gate -- --new-log-checklist` gibt nur die paste-ready Checkliste fuer den zusaetzlichen kompletten Long-Session-Fueling-Log aus und endet mit Fehler, wenn aktuell kein neuer Log benoetigt wird.
