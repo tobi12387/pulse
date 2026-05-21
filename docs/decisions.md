@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Audit trennt lokale Planung von Server-Gate
+
+- **Decision:** `npm run audit:performance-gates -- --local-planning` markiert den Server-Mirror als `deferred`, zaehlt ihn nicht als offenen manuellen Gate, nutzt ohne explizites `--expected-commit` `origin/main` als erwarteten Commit und laesst die normale Server-Verifikation fuer Deploy- und aktuelle iPhone-Field-Evidence unveraendert streng.
+- **Why:** In dieser Workspace-/Server-Spiegel-Topologie kann ein Feature-Branch sonst einen Phantom-Server-Gate erzeugen und die echte manuelle Reihenfolge Fueling -> iPhone/PWA verrauschen. Lokale Planung braucht klare Unblock-Reihenfolge, aber Deploy- und Field-Claims muessen weiter von clean `main` verifiziert werden.
+- **Alternatives:** `--skip-server` weiter als offenen Gate zaehlen (sicher, aber laut fuer Planung); den Server-Gate global ignorieren (zu riskant fuer Deploy/iPhone-Evidence); auf Feature-Branches keine kombinierten Audits laufen lassen (nimmt dem Workflow den Standard-Handoff).
+- **Decided by:** Codex, als Performance-Gate-Handoff-Support-Slice im Branch `codex/performance-gate-unblock`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Packet zeigt Fueling-New-Log-Checkliste
 
 - **Decision:** `npm run audit:performance-gates` rendert fuer offene Fueling-Gates zusaetzlich `New log checklist: npm run audit:fueling-gate -- --today <date> --new-log-checklist`, wenn nach vorhandenen Kandidaten noch ein neuer kompletter Long-Session-Log benoetigt wird.
