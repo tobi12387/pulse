@@ -12,6 +12,7 @@ function usage() {
     '  --today YYYY-MM-DD   Anchor date for the Fueling gate audit.',
     '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
+    '  --next-unblock       Print only the first open gate unblock; with --json prints that object.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -360,6 +361,48 @@ export function renderPerformanceGateAudit(audit) {
   return lines.join('\n').trimEnd();
 }
 
+function metadataLine(metadata) {
+  if (!metadata) return null;
+  if (metadata.targetPath) return `Target path: ${metadata.targetPath}`;
+  if (metadata.firstGap?.label) return `First gap: ${metadata.firstGap.label} (${metadata.firstGap.status ?? 'unknown'})`;
+  if (metadata.recoveryRunbook) return `Recovery runbook: ${metadata.recoveryRunbook}`;
+  return null;
+}
+
+function optionsLine(metadata) {
+  const options = metadata?.options ?? [];
+  if (!options.length) return null;
+  return `Options: ${options.map(option => `${option.value}=${option.label}`).join(', ')}`;
+}
+
+export function renderNextUnblock(audit) {
+  const next = audit.nextUnblock;
+  const lines = [
+    '# Performance-OS Next Unblock',
+    '',
+    `Date: ${audit.date}`,
+    `Gate: ${audit.gate}`,
+    `Open gates: ${audit.openGates}`,
+  ];
+
+  if (!next) {
+    lines.push('Next unblock: none');
+    return lines.join('\n');
+  }
+
+  lines.push(`Next unblock: ${next.label}`);
+  lines.push(`Command: ${next.command}`);
+  lines.push(`Detail: ${next.detail}`);
+  lines.push(`Action: ${next.action}`);
+
+  const pathOrRunbook = metadataLine(next.metadata);
+  if (pathOrRunbook) lines.push(pathOrRunbook);
+  const optionSummary = optionsLine(next.metadata);
+  if (optionSummary) lines.push(optionSummary);
+
+  return lines.join('\n');
+}
+
 export function exitCodeForAudit(audit, options = {}) {
   return options.failOnGated && audit.gate !== 'ready' ? 1 : 0;
 }
@@ -369,6 +412,7 @@ function parseArgs(argv) {
     today: isoDate(new Date()),
     skipServer: false,
     failOnGated: false,
+    nextUnblock: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -384,6 +428,10 @@ function parseArgs(argv) {
     }
     if (arg === '--fail-on-gated') {
       result.failOnGated = true;
+      continue;
+    }
+    if (arg === '--next-unblock') {
+      result.nextUnblock = true;
       continue;
     }
     if (arg === '--today') {
@@ -404,11 +452,11 @@ function main(argv) {
   const args = parseArgs(argv);
   const audit = buildPerformanceGateAudit(args);
   if (args.json) {
-    console.log(JSON.stringify(audit, null, 2));
+    console.log(JSON.stringify(args.nextUnblock ? audit.nextUnblock : audit, null, 2));
     process.exitCode = exitCodeForAudit(audit, args);
     return;
   }
-  console.log(renderPerformanceGateAudit(audit));
+  console.log(args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit));
   process.exitCode = exitCodeForAudit(audit, args);
 }
 
