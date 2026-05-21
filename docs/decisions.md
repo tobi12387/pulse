@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Home-Stage-Strip haelt iPhone-WebKit-Status im Segment
+
+- **Decision:** Der Home-Stage-Strip behaelt drei gleich breite Segmente, aber der aktive `JETZT`-Status bricht auf eine eigene Zeile innerhalb des aktiven Segments um und wird per mobilem Bounding-Box-Test abgesichert.
+- **Why:** Aktuelle iPhone-WebKit-Evidence zeigte, dass `01 DECIDE - JETZT` im ersten Viewport zu eng wurde und der Status am Segmentrand klemmte, obwohl kein horizontaler Overflow gemeldet wurde. Die Stage-Anzeige ist Teil der taeglichen Klarheit und muss auf dem iPhone ohne Suchen oder visuelle Uneindeutigkeit lesbar bleiben.
+- **Alternatives:** Die Stage-Leiste auf Mobile ausblenden (verliert den Decide/Execute/Review-Kontext); das aktive Segment breiter machen (verschiebt die anderen Phasen und ist fuer andere aktive Phasen fragiler); nur auf die Overflow-Summary vertrauen (hat diese konkrete Lesbarkeitsfriktion nicht erkannt).
+- **Decided by:** Codex, nach iPhone-WebKit-Evidence im Branch `codex/iphone-pwa-current-evidence`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Current-Main-Evidence bei 0d8cd63 haelt Backlog gated
 
 - **Decision:** Nach aktueller Route-, Fueling- und Ops-Evidence auf `main` bei `0d8cd63` bleibt der autonome Produkt-Backlog geschlossen; aus der sauberen Home-, Data-, Activity-, Plan- und Settings-Evidence wird keine neue UI/UX- oder Fueling-Produkt-Slice abgeleitet.
