@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Audit kann neuen Long-Session-Log scaffolden
+
+- **Decision:** `npm run audit:fueling-gate -- --new-log-checklist` gibt nur die paste-ready Checkliste fuer den zusaetzlichen kompletten Long-Session-Fueling-Log aus und endet mit Fehler, wenn aktuell kein neuer Log benoetigt wird.
+- **Why:** Nach den zwei vorhandenen GI-Komfort-Kandidaten bleibt ein neuer kompletter Long-Session-Log der naechste Fueling-Beweis. Ein eigener Checklist-Modus senkt die Capture-Reibung, ohne die echten GI-Komfort-Regeln zu verwischen, Daten zu schreiben oder den bestehenden Kandidaten-URL-Modus zu ersetzen.
+- **Alternatives:** Die Hinweise nur im vollen Packet lassen (mehr Scannen im manuellen Moment); den neuen Log automatisch aus Notizen oder Aktivitaetsdaten ableiten (gegen Evidenzregeln); einen Produkt-Fueling-Slice ohne drei komplette Logs starten (Gate bleibt geschlossen).
+- **Decided by:** Codex, als Fueling-New-Log-Handoff-Support-Slice im Branch `codex/fueling-new-log-checklist`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Next kann alle ersten Ziel-URLs ausgeben
 
 - **Decision:** `npm run audit:performance-next -- --target-urls` gibt alle Ziel-URLs des ersten offenen Performance-OS-Unblocks zeilenweise aus, inklusive Fueling-Completion-Candidates.

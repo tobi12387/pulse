@@ -47,6 +47,7 @@ function usage() {
     '  --env-file <path>         Env file to load before .env/.env.test fallbacks.',
     '  --packet                  Print a manual evidence-capture packet instead of the audit table.',
     '  --candidate-urls          Print only existing completion candidate URLs; exits 1 if none.',
+    '  --new-log-checklist       Print only the future long-session log checklist; exits 1 if none needed.',
     '  --json                    Print machine-readable JSON.',
     '  -h, --help                Show this help.',
   ].join('\n');
@@ -466,6 +467,63 @@ export function renderFuelingEvidencePacket(audit) {
   return lines.join('\n').trimEnd();
 }
 
+function pluralLog(count) {
+  return `${count} complete long-session ${count === 1 ? 'log' : 'logs'}`;
+}
+
+export function fuelingNewLogChecklistUsers(audit) {
+  return (audit.users ?? [])
+    .filter(user => user.gate !== 'ready' && Number(user.newLogsStillNeeded ?? 0) > 0);
+}
+
+export function renderFuelingNewLogChecklist(audit) {
+  const users = fuelingNewLogChecklistUsers(audit);
+  const lines = [
+    '# Fueling New Long-Session Log Checklist',
+    '',
+    `Window: ${audit.since}..${audit.today}`,
+    `Evidence checklist: ${EVIDENCE_CHECKLIST}`,
+    '',
+  ];
+
+  if ((audit.users ?? []).length === 0) {
+    lines.push('No during nutrition logs found in the audit window.');
+    lines.push(`Rerun: npm run audit:fueling-gate -- --today ${audit.today}`);
+    return lines.join('\n');
+  }
+
+  if (users.length === 0) {
+    lines.push('No new complete long-session log is currently needed.');
+    lines.push(`Rerun: npm run audit:fueling-gate -- --today ${audit.today}`);
+    return lines.join('\n');
+  }
+
+  for (const user of users) {
+    lines.push(`## User ${shortId(user.userId)}`);
+    lines.push(`Needed after existing candidates: ${pluralLog(user.newLogsStillNeeded)}`);
+    lines.push(`Existing candidates to close first: ${user.completionCandidates.length}`);
+    lines.push('');
+    lines.push('Record together:');
+    lines.push('- Activity/date and duration context from the real long endurance session.');
+    lines.push('- During-activity carbs with enough detail to compute g/h.');
+    lines.push(`- Structured GI comfort from the real stomach response: ${structuredGiComfortOptionsText()}.`);
+    lines.push('- Optional bottles, powder, sodium, temperature or sweat-rate only when explicitly measured.');
+    lines.push('');
+    lines.push('Do not:');
+    lines.push('- Infer GI comfort from notes, route, RPE, g/h, result, pace or how the workout looks afterward.');
+    lines.push('- Edit database rows directly for normal evidence capture.');
+    lines.push('');
+    lines.push(`Rerun after capture: npm run audit:fueling-gate -- --today ${audit.today}`);
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
+export function exitCodeForFuelingNewLogChecklist(audit) {
+  return fuelingNewLogChecklistUsers(audit).length > 0 ? 0 : 1;
+}
+
 export function fuelingCandidateUrls(audit) {
   return audit.users
     .flatMap(user => user.completionCandidates ?? [])
@@ -490,6 +548,7 @@ export function parseArgs(argv) {
     envFile: null,
     packet: false,
     candidateUrls: false,
+    newLogChecklist: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -505,6 +564,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--candidate-urls') {
       result.candidateUrls = true;
+      continue;
+    }
+    if (arg === '--new-log-checklist') {
+      result.newLogChecklist = true;
       continue;
     }
     if (arg === '--today') {
@@ -653,6 +716,13 @@ async function main(argv) {
     }
     console.log(urls);
     process.exitCode = exitCodeForFuelingCandidateUrls(output);
+    return;
+  }
+
+  if (args.newLogChecklist) {
+    const checklist = renderFuelingNewLogChecklist(output);
+    console.log(checklist);
+    process.exitCode = exitCodeForFuelingNewLogChecklist(output);
     return;
   }
 

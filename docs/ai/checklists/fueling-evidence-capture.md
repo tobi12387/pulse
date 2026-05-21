@@ -55,6 +55,13 @@ candidate URL per line:
 npm run audit:fueling-gate -- --today <YYYY-MM-DD> --candidate-urls
 ```
 
+For the paste-ready checklist for the future complete long-session log that
+remains after existing candidates, print only that capture scaffold:
+
+```bash
+npm run audit:fueling-gate -- --today <YYYY-MM-DD> --new-log-checklist
+```
+
 ## Capture Existing Log Evidence
 
 Open the `Target URL` from the audit output when available; otherwise open the
