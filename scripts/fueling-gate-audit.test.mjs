@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildFuelingGateAudit,
+  renderFuelingEvidencePacket,
   renderFuelingGateAudit,
   shiftIsoDate,
 } from './fueling-gate-audit.mjs';
@@ -86,6 +87,19 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(rendered, /356 g \(54 g\/h\)/);
   assert.match(rendered, /can count after GI comfort/);
   assert.match(rendered, /\/plan\/activity\/activity-z2-ride#activity-fueling-log/);
+
+  const packet = renderFuelingEvidencePacket(audit);
+  assert.match(packet, /# Fueling Evidence Packet/);
+  assert.match(packet, /Next target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
+  assert.match(packet, /Existing candidates to close first:/);
+  assert.match(packet, /1\. 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
+  assert.match(packet, /Path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
+  assert.match(packet, /2\. 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\)/);
+  assert.match(packet, /Missing: GI comfort/);
+  assert.match(packet, /GI comfort options: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.match(packet, /Choose GI comfort only from the real stomach response/);
+  assert.match(packet, /Rerun after each save: npm run audit:fueling-gate -- --today 2026-05-21/);
+  assert.match(packet, /New complete long-session logs still needed: 1/);
 });
 
 test('fueling gate audit opens after three comparable complete logs', () => {

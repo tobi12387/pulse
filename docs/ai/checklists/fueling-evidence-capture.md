@@ -29,6 +29,12 @@ For a focused table, run:
 npm run audit:fueling-gate -- --today <YYYY-MM-DD>
 ```
 
+For a live manual capture packet with all current candidates and rerun steps, run:
+
+```bash
+npm run audit:fueling-gate -- --today <YYYY-MM-DD> --packet
+```
+
 ## Capture Existing Log Evidence
 
 Open the `Target path` from the audit output.
