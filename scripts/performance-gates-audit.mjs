@@ -51,6 +51,7 @@ function usage() {
     'Options:',
     '  --today YYYY-MM-DD   Anchor date for the Fueling gate audit.',
     '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
+    '  --local-planning     Defer server mirror verification for feature-branch planning; do not count it as the next open gate. Defaults expected commit to origin/main.',
     '  --expected-commit <short>',
     '                       Expected deployed/server commit; default local git HEAD.',
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
@@ -378,10 +379,19 @@ function refineIphoneGateForServer(gate, serverGate, expectedCommit) {
   };
 }
 
-function resolveExpectedCommit(runner) {
-  const result = runner('git', ['rev-parse', '--short', 'HEAD']);
+function resolveGitCommit(runner, ref) {
+  const result = runner('git', ['rev-parse', '--short', ref]);
   if (result.status !== 0) return 'unknown';
   return result.stdout.trim() || 'unknown';
+}
+
+function resolveExpectedCommit(runner) {
+  return resolveGitCommit(runner, 'HEAD');
+}
+
+function resolveLocalPlanningCommit(runner) {
+  const mainCommit = resolveGitCommit(runner, 'origin/main');
+  return mainCommit === 'unknown' ? resolveExpectedCommit(runner) : mainCommit;
 }
 
 function serverIssueKind(detail) {
@@ -450,6 +460,22 @@ function skippedServer(expectedCommit) {
     expectedCommit,
     recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
     recoveryPacketCommand,
+  };
+}
+
+function deferredServer(expectedCommit) {
+  return {
+    key: 'server',
+    label: 'Server deploy mirror',
+    gate: 'deferred',
+    ready: false,
+    deferred: true,
+    command: serverVerifyCommand(expectedCommit),
+    detail: 'Deferred by --local-planning; server mirror readiness is intentionally outside this feature-branch planning snapshot.',
+    nextAction: 'Run the normal server mirror verification from clean main before deploy-sensitive decisions or current iPhone field evidence.',
+    expectedCommit,
+    recoveryRunbook: null,
+    recoveryPacketCommand: null,
   };
 }
 
@@ -527,6 +553,14 @@ function nextUnblockFrom(openGates) {
   };
 }
 
+function isOpenGate(gate) {
+  return !gate.ready && !gate.deferred;
+}
+
+function deferredGates(gates) {
+  return gates.filter(gate => gate.deferred);
+}
+
 function nextUnblockAction(gate, metadata) {
   if (gate.key !== 'fueling' || !metadata?.targetPath || typeof gate.nextAction !== 'string') {
     return gate.nextAction;
@@ -542,22 +576,29 @@ function escapeRegExp(value) {
 
 export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) {
   const today = assertIsoDate(options.today ?? isoDate(new Date()), '--today');
-  const expectedCommit = options.expectedCommit ?? resolveExpectedCommit(runner);
+  const expectedCommit = options.expectedCommit
+    ?? (options.localPlanning ? resolveLocalPlanningCommit(runner) : resolveExpectedCommit(runner));
   const fuelingGate = summarizeFueling(today, runner);
   const rawIphoneGate = summarizeIphone(expectedCommit, runner);
-  const serverGate = options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner);
+  const serverGate = options.localPlanning
+    ? deferredServer(expectedCommit)
+    : options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner);
   const iphoneGate = refineIphoneGateForServer(rawIphoneGate, serverGate, expectedCommit);
   const gates = [
     fuelingGate,
     iphoneGate,
     serverGate,
   ];
-  const openGateList = gates.filter(gate => !gate.ready);
+  const openGateList = gates.filter(isOpenGate);
+  const deferredGateList = deferredGates(gates);
 
   return {
     date: today,
-    gate: openGateList.length === 0 ? 'ready' : 'gated',
+    gate: openGateList.length === 0
+      ? deferredGateList.length > 0 ? 'planning_ready' : 'ready'
+      : 'gated',
     openGates: openGateList.length,
+    deferredGates: deferredGateList.length,
     expectedCommit,
     nextUnblock: nextUnblockFrom(openGateList),
     gates,
@@ -571,6 +612,7 @@ export function renderPerformanceGateAudit(audit) {
     `Date: ${audit.date}`,
     `Gate: ${audit.gate}`,
     `Open gates: ${audit.openGates}`,
+    ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
     `Expected server commit: ${audit.expectedCommit}`,
     `Next unblock: ${audit.nextUnblock ? audit.nextUnblock.label : 'none'}`,
   ];
@@ -721,6 +763,7 @@ export function renderNextUnblock(audit) {
     `Date: ${audit.date}`,
     `Gate: ${audit.gate}`,
     `Open gates: ${audit.openGates}`,
+    ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
   ];
 
   if (!next) {
@@ -796,11 +839,21 @@ export function renderPerformanceGatePacket(audit) {
     `Date: ${audit.date}`,
     `Gate: ${audit.gate}`,
     `Open gates: ${audit.openGates}`,
+    ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
     `Expected server commit: ${audit.expectedCommit}`,
     '',
   ];
 
   if (!audit.nextUnblock) {
+    if (audit.deferredGates) {
+      lines.push('No open manual Performance-OS gates in this local-planning snapshot. Rerun the normal audit before starting a deploy-sensitive product package.');
+      lines.push('');
+      lines.push('## Deferred Gates');
+      deferredGates(audit.gates).forEach((gate, index) => {
+        lines.push(...packetGateLines(gate, index));
+      });
+      return lines.join('\n');
+    }
     lines.push('No open Performance-OS gates. Rerun the normal audit before starting a new product package.');
     return lines.join('\n');
   }
@@ -835,10 +888,18 @@ export function renderPerformanceGatePacket(audit) {
   lines.push('');
 
   lines.push('## Ordered Open Gates');
-  const openGates = audit.gates.filter(gate => !gate.ready);
+  const openGates = audit.gates.filter(isOpenGate);
   openGates.forEach((gate, index) => {
     lines.push(...packetGateLines(gate, index));
   });
+  const deferred = deferredGates(audit.gates);
+  if (deferred.length > 0) {
+    lines.push('');
+    lines.push('## Deferred Gates');
+    deferred.forEach((gate, index) => {
+      lines.push(...packetGateLines(gate, index));
+    });
+  }
   lines.push('');
 
   lines.push('## Manual Safety');
@@ -853,7 +914,7 @@ export function renderPerformanceGatePacket(audit) {
 }
 
 export function exitCodeForAudit(audit, options = {}) {
-  return options.failOnGated && audit.gate !== 'ready' ? 1 : 0;
+  return options.failOnGated && audit.openGates > 0 ? 1 : 0;
 }
 
 export function firstTargetUrl(audit) {
@@ -890,6 +951,7 @@ export function parseArgs(argv) {
     today: isoDate(new Date()),
     expectedCommit: null,
     skipServer: false,
+    localPlanning: false,
     failOnGated: false,
     nextUnblock: false,
     targetUrl: false,
@@ -906,6 +968,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--skip-server') {
       result.skipServer = true;
+      continue;
+    }
+    if (arg === '--local-planning') {
+      result.localPlanning = true;
       continue;
     }
     if (arg === '--expected-commit') {

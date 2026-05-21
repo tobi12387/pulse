@@ -48,10 +48,13 @@ function withPulseUrl(url, fn) {
   }
 }
 
-function makeRunner({ fueling, iphone, server, commit = 'abc1234' }) {
+function makeRunner({ fueling, iphone, server, commit = 'abc1234', mainCommit = commit }) {
   return (command, args) => {
     if (command === 'git' && args.join(' ') === 'rev-parse --short HEAD') {
       return commandResult(0, `${commit}\n`);
+    }
+    if (command === 'git' && args.join(' ') === 'rev-parse --short origin/main') {
+      return commandResult(0, `${mainCommit}\n`);
     }
     if (args[0] === 'scripts/fueling-gate-audit.mjs') return fueling;
     if (args[0] === 'scripts/iphone-pwa-gate-audit.mjs') return iphone;
@@ -567,6 +570,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     today: '2026-05-21',
     expectedCommit: 'def5678',
     skipServer: false,
+    localPlanning: false,
     failOnGated: false,
     nextUnblock: false,
     targetUrl: false,
@@ -593,6 +597,7 @@ test('performance gate audit CLI args accept target-url mode', () => {
     today: '2026-05-21',
     expectedCommit: null,
     skipServer: false,
+    localPlanning: false,
     failOnGated: false,
     nextUnblock: true,
     targetUrl: true,
@@ -613,6 +618,7 @@ test('performance gate audit CLI args accept target-urls mode', () => {
     today: '2026-05-21',
     expectedCommit: null,
     skipServer: false,
+    localPlanning: false,
     failOnGated: false,
     nextUnblock: false,
     targetUrl: false,
@@ -620,6 +626,79 @@ test('performance gate audit CLI args accept target-urls mode', () => {
     packet: false,
     json: false,
   });
+});
+
+test('performance gate audit CLI args accept local planning mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--local-planning',
+    '--packet',
+    '--today',
+    '2026-05-21',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: null,
+    skipServer: false,
+    localPlanning: true,
+    failOnGated: false,
+    nextUnblock: false,
+    targetUrl: false,
+    targetUrls: false,
+    packet: true,
+    json: false,
+  });
+});
+
+test('performance gate audit can defer server verification for local planning', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21', localPlanning: true }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: GATED_IPHONE,
+    server: commandResult(1, '', 'should not run'),
+    commit: 'branch1',
+    mainCommit: 'abc1234',
+  }));
+
+  assert.equal(audit.gate, 'gated');
+  assert.equal(audit.expectedCommit, 'abc1234');
+  assert.equal(audit.openGates, 1);
+  assert.equal(audit.deferredGates, 1);
+  assert.equal(audit.gates[2].gate, 'deferred');
+  assert.equal(audit.gates[2].ready, false);
+  assert.equal(audit.gates[2].deferred, true);
+  assert.equal(audit.nextUnblock.key, 'iphone_pwa');
+  assert.match(renderPerformanceGateAudit(audit), /Deferred gates: 1/);
+  assert.match(renderPerformanceGateAudit(audit), /Deferred by --local-planning/);
+  const packet = renderPerformanceGatePacket(audit);
+  assert.match(packet, /Open gates: 1/);
+  assert.match(packet, /Deferred gates: 1/);
+  assert.match(packet, /## Ordered Open Gates/);
+  assert.match(packet, /1\. iPhone\/PWA field/);
+  assert.match(packet, /## Deferred Gates/);
+  assert.match(packet, /1\. Server deploy mirror/);
+  assert.doesNotMatch(packet, /2\. Server deploy mirror/);
+  assert.equal(exitCodeForAudit(audit, { failOnGated: true }), 1);
+});
+
+test('performance gate audit local planning can finish manual gates while server stays deferred', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21', localPlanning: true }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: READY_IPHONE,
+    server: commandResult(1, '', 'should not run'),
+    commit: 'branch1',
+    mainCommit: 'abc1234',
+  }));
+
+  assert.equal(audit.gate, 'planning_ready');
+  assert.equal(audit.expectedCommit, 'abc1234');
+  assert.equal(audit.openGates, 0);
+  assert.equal(audit.deferredGates, 1);
+  assert.equal(audit.nextUnblock, null);
+  assert.equal(exitCodeForAudit(audit, { failOnGated: true }), 0);
+  const packet = renderPerformanceGatePacket(audit);
+  assert.match(packet, /No open manual Performance-OS gates in this local-planning snapshot/);
+  assert.match(packet, /## Deferred Gates/);
+  assert.match(packet, /Server deploy mirror/);
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {

@@ -26,6 +26,13 @@ For a combined Performance-OS handoff, run
 to local `HEAD`; add `--expected-commit <short>` only when the field run is
 intentionally pinned to a known deployed/runtime commit.
 
+From feature branches, use `--local-planning` only for planning/handoff
+refreshes so a local branch does not create a phantom server mirror gate. It
+defaults the expected commit to `origin/main`. Do not use that deferred server
+result as current iPhone field evidence; rerun the normal audit or
+`PULSE_EXPECTED_COMMIT=<commit> npm run verify:server` from clean `main` before
+recording a real-device run.
+
 ## Network
 
 - iPhone is connected to the VPN that routes the home network.
