@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Gate-Audit wird wiederholbarer Support-Befehl
+
+- **Decision:** Der Nutrition-Trend-Gate-Status wird ueber `npm run audit:fueling-gate` reproduzierbar gemacht, statt weiter als einmalige `psql`-Abfrage in QA-Notizen zu leben.
+- **Why:** Nutrition ist der naechste klare Performance-OS-Gate, aber Trend-Zusammenfassungen duerfen erst nach drei vergleichbaren kompletten During-Logs starten. Ein read-only Audit-Befehl zeigt den aktuellen 0/3-Status, die zwei durch GI-Komfort vervollstaendigbaren langen Carb-Logs und den danach noch fehlenden neuen Lernlog, ohne das Gate zu lockern oder Notizen automatisch als GI-Komfort zu interpretieren.
+- **Alternatives:** Die SQL-Abfrage nur in Docs lassen (zukuenftige Sessions muessen neu ableiten); Produktlogik fuer Nutrition-Trends trotz 0/3 Logs starten (zu frueh); Freitext-Notizen als strukturierten GI-Komfort werten (zu fehleranfaellig).
+- **Decided by:** Codex, als Nutrition-Gate-Support-Slice im Branch `codex/fueling-gate-audit`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Current-Main-Evidence bei 20caf40 haelt Backlog gated
 
 - **Decision:** Nach aktueller Route-Evidence auf `main` bei `20caf40` bleibt der autonome UI/UX-Backlog geschlossen; aus der sauberen Home-, Fueling-, Plan- und Settings-Evidence wird keine neue Produkt-Slice abgeleitet.

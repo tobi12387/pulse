@@ -41,6 +41,7 @@
     "verify:track": "node scripts/verify-track.mjs",
     "delivery:intake": "node scripts/delivery-intake.mjs",
     "delivery:manifest": "node scripts/delivery-manifest.mjs",
+    "audit:fueling-gate": "node scripts/fueling-gate-audit.mjs",
     "verify:server": "bash scripts/verify-server.sh",
     "pulse:status": "bash scripts/pulse-status.sh",
     "dev:backend": "npm run dev -w backend",
