@@ -14,6 +14,13 @@
 
 The iPhone/PWA baseline is implemented: safe-area layout, app-start service worker registration, enriched manifest, Settings diagnostics, optional WebKit project and manual evidence record exist. The remaining work is field reliability: prove it on the real device, keep diagnostics current and make recurring server/browser failures visible before they become confusing UI failures.
 
+## Current Status 2026-05-21
+
+- Real iPhone evidence from 2026-05-02 proves VPN reachability, Add-to-Home-Screen launch, Settings readiness, route readability and Coach keyboard usability, but certificate trust still needs the local root CA installed and trusted on the iPhone.
+- Push activation/test-push and the real iPhone VPN/network-disconnect offline fallback remain manual field gates. Do not treat simulated WebKit or desktop/mobile Chromium proof as a replacement for these device checks.
+- Automated coverage has improved since the original field run: `docs/qa/2026-05-21-iphone-webkit-gate.md` records the bounded iPhone WebKit gate, and `docs/qa/2026-05-21-pwa-offline-fallback.md` records executable service-worker fallback proof.
+- Do not start native iOS, public hosting, cloud tunnel or broad Settings/PWA UI work from this plan unless Tobi reports recurring real-device friction or a deterministic browser test starts failing.
+
 ## File Map
 
 | Type | Path | Purpose |
