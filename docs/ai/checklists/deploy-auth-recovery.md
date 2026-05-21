@@ -2,11 +2,13 @@
 
 Use this when deploys or `npm run verify:server` fail at the SSH preflight before any server Git, PM2 or health checks run.
 
-Current symptom:
+Current symptom (`expected_commit` follows local `HEAD` or `PULSE_EXPECTED_COMMIT`):
 
 ```text
 ==> ssh access
 root@192.168.178.46: Permission denied (publickey,password).
+expected_commit=<short-commit>
+recovery_runbook=docs/ai/checklists/deploy-auth-recovery.md
 ERROR: SSH access to root@192.168.178.46 failed before server checks.
 ```
 
