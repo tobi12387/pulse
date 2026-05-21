@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Performance-Gate-Header zeigt erste Ziel-URL direkt
+
+- **Decision:** `npm run audit:performance-gates` rendert im Standard-Header neben `Next target` auch `Next target URL`, wenn der erste offene Gate eine direkte Ziel-URL aus den vorhandenen `nextUnblock.metadata` hat.
+- **Why:** Der kombinierte Performance-OS-Handoff soll die naechste manuelle Evidence-Handlung ohne Zusatzbefehl anklickbar machen. Fueling bleibt zuerst, aber der Schritt vom Audit zur Activity-Fueling-UI wird kuerzer und weniger fehleranfaellig.
+- **Alternatives:** Die URL nur in `--next-unblock`, `--target-url`, `--packet` oder der Checkliste lassen (korrekt, aber mehr Reibung im Standard-Handoff); neue Metadaten einfuehren (unnötig, weil die URL bereits strukturiert vorhanden ist).
+- **Decided by:** Codex, als Performance-Gate-Handoff-Support-Slice im Branch `codex/performance-next-url-summary`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — iPhone-Field-Gate akzeptiert Docs-only Drift nur bei gleicher App-Runtime
 
 - **Decision:** `npm run audit:iphone-pwa-gate` vergleicht weiterhin den aufgezeichneten `Server commit under test` mit dem erwarteten Server-Commit, akzeptiert aber reine Docs-only Drift als `current_runtime`, wenn beide Server-Commits auf denselben letzten App-Runtime-Commit fuer `frontend`, `backend`, `shared`, `package.json` und `package-lock.json` zeigen.
