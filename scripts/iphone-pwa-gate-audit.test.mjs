@@ -139,6 +139,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /1\. Current main field evidence \(stale\)/);
   assert.match(packet, /2\. Warning-free certificate trust \(needs followup\)/);
   assert.match(packet, /Verify the server mirror before recording new current evidence: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(packet, /If this field run is intentionally pinned to a known deployed\/runtime commit, rerun this packet with `--expected-commit <short>` before recording evidence/);
   assert.match(packet, /If SSH fails before server Git\/PM2\/health checks, run the read-only recovery packet first: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
   assert.match(packet, /Follow docs\/ai\/checklists\/deploy-auth-recovery\.md before continuing the iPhone field run/);
   assert.match(packet, /Use a real iPhone over the VPN\/local network path/);
