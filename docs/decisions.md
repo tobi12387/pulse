@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Readiness nennt alle vorhandenen Completion-Kandidaten
+
+- **Decision:** `PulseFuelingLearningReadiness` enthaelt neben `nextAction` eine optionale `completionCandidates`-Liste fuer vorhandene lange During-Logs, die durch GI-Komfort oder Carbs fuer die Fueling-Baseline zaehlen koennen.
+- **Why:** Der aktuelle Nutrition-Gate-Blocker besteht aus mehreren vorhandenen Logs, nicht nur einem einzelnen naechsten Link. Die App soll Tobi alle direkt schliessbaren Evidence-Pfade zeigen, ohne das 3/3-Gate zu lockern oder GI-/Carb-Werte zu erfinden.
+- **Alternatives:** Nur `nextAction` behalten (zweiter vorhandener Log bleibt versteckt); Kandidaten nur im CLI-Audit zeigen (App-Handoff bleibt unvollstaendig); das Gate nach einem Log oeffnen (zu wenig Evidenz fuer Trend-Summaries).
+- **Decided by:** Codex, als Lernschleifen/Fueling-Support-Slice im Branch `codex/fueling-completion-candidates`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Next rendert Fueling-Kandidaten als Liste
 
 - **Decision:** `npm run audit:performance-next` zeigt Fueling-Completion-Kandidaten im Markdown als eigene Liste und ergaenzt `nextUnblock.metadata.status` mit den Zaehlern fuer complete Logs, sofort completable Logs und neu benoetigte Long-Session-Logs.

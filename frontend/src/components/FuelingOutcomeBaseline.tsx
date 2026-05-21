@@ -1,5 +1,6 @@
-import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
+import type { PulseFuelingLearningCompletionCandidate, PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
 import {
+  fuelingCompletionCandidateTargetPath,
   fuelingLearningActionTargetPath,
   fuelingTrendSummaryForDisplay,
   isFuelingTrendReady,
@@ -83,6 +84,11 @@ export function FuelingOutcomeBaselineBlock({
   const nextLearningLog = fuelingBaselineNextLearningLogText(baseline);
   const nextLearningAction = baseline.learningReadiness?.nextAction ?? null;
   const nextLearningActionTargetPath = fuelingLearningActionTargetPath(baseline);
+  const completionTargets: Array<{ candidate: PulseFuelingLearningCompletionCandidate; targetPath: string }> = (readiness?.completionCandidates ?? [])
+    .map(candidate => ({ candidate, targetPath: fuelingCompletionCandidateTargetPath(candidate) }))
+    .filter((item): item is { candidate: PulseFuelingLearningCompletionCandidate; targetPath: string } =>
+      item.targetPath != null,
+    );
   const trendSummary = fuelingTrendSummaryForDisplay(baseline);
 
   return (
@@ -181,6 +187,38 @@ export function FuelingOutcomeBaselineBlock({
           </button>
           <span style={{ fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
             Nach dem Klick: Pulse öffnet die Aktivität und den Fueling-Log; Plan und Garmin bleiben unverändert.
+          </span>
+        </div>
+      )}
+      {completionTargets.length > 1 && onOpenNextAction && (
+        <div data-testid={`${testId}-completion-candidates`} style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 9 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+            Bestehende Logs schließen
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {completionTargets.map(({ candidate, targetPath }) => (
+              <button
+                key={`${candidate.kind}-${targetPath}`}
+                type="button"
+                onClick={() => onOpenNextAction(targetPath)}
+                style={{
+                  minHeight: 44,
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  padding: '7px 9px',
+                  background: 'rgba(0,0,0,0.12)',
+                  color: 'var(--text-2)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9.5,
+                  cursor: 'pointer',
+                }}
+              >
+                {candidate.summary}
+              </button>
+            ))}
+          </div>
+          <span style={{ fontSize: 10.5, lineHeight: 1.45, color: 'var(--text-3)' }}>
+            Erst echte GI- oder Carb-Evidence eintragen; danach braucht die Baseline noch neue komplette Long-Session-Logs.
           </span>
         </div>
       )}

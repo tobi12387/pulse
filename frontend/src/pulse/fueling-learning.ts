@@ -1,4 +1,4 @@
-import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
+import type { PulseFuelingLearningCompletionCandidate, PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
 
 export const MIN_COMPARABLE_FUELING_LOGS = 3;
 
@@ -35,6 +35,11 @@ export function fuelingLearningActionTargetPath(baseline: PulseFuelingOutcomeBas
   const nextAction = baseline?.learningReadiness?.nextAction ?? null;
   if (!nextAction?.activityId || nextAction.kind === 'log_next_long_session') return null;
   return `/plan/activity/${nextAction.activityId}#activity-fueling-log`;
+}
+
+export function fuelingCompletionCandidateTargetPath(candidate: PulseFuelingLearningCompletionCandidate): string | null {
+  if (!candidate.activityId) return null;
+  return `/plan/activity/${candidate.activityId}#activity-fueling-log`;
 }
 
 export function fuelingLearningGapSummary(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {

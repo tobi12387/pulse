@@ -4724,6 +4724,26 @@ test('Plan workout modal names existing fueling evidence completion before the n
             detail: 'GI-Komfort am bestehenden langen During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
             activityId: 'activity-long-carb-log',
           },
+          completionCandidates: [
+            {
+              kind: 'complete_gi_comfort',
+              label: 'GI-Komfort ergänzen',
+              detail: 'GI-Komfort am bestehenden langen During-Log ergänzen.',
+              activityId: 'activity-long-carb-log',
+              date: '2026-05-13',
+              summary: '2026-05-13 - langer During-Log - bike - 130 min - 130 g Carbs (60 g/h)',
+              missingEvidence: ['GI-Komfort'],
+            },
+            {
+              kind: 'complete_gi_comfort',
+              label: 'GI-Komfort ergänzen',
+              detail: 'GI-Komfort am bestehenden langen During-Log ergänzen.',
+              activityId: 'activity-second-carb-log',
+              date: '2026-05-09',
+              summary: '2026-05-09 - langer During-Log - bike - 240 min - 220 g Carbs (55 g/h)',
+              missingEvidence: ['GI-Komfort'],
+            },
+          ],
         },
       },
       before: [],
@@ -4744,6 +4764,10 @@ test('Plan workout modal names existing fueling evidence completion before the n
   await expect(baseline).toContainText('Plan und Garmin bleiben unverändert');
   await expect(baseline.getByRole('button', { name: 'GI-Komfort ergänzen' })).toBeVisible();
   await expect(baseline).not.toContainText('Nächster Lernlog');
+  const candidates = page.getByTestId('workout-fueling-baseline-completion-candidates');
+  await expect(candidates).toContainText('Bestehende Logs schließen');
+  await expect(candidates).toContainText('2026-05-13');
+  await expect(candidates).toContainText('2026-05-09');
 
   await baseline.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
   await expect(page).toHaveURL('/plan/activity/activity-long-carb-log#activity-fueling-log');
