@@ -502,6 +502,11 @@ export function renderFuelingNewLogChecklist(audit) {
     lines.push(`## User ${shortId(user.userId)}`);
     lines.push(`Needed after existing candidates: ${pluralLog(user.newLogsStillNeeded)}`);
     lines.push(`Existing candidates to close first: ${user.completionCandidates.length}`);
+    if (user.completionCandidates.length > 0) {
+      user.completionCandidates.forEach((candidate, index) => {
+        lines.push(...packetCandidateLines(candidate, index));
+      });
+    }
     lines.push('');
     lines.push('Record together:');
     lines.push('- Activity/date and duration context from the real long endurance session.');
