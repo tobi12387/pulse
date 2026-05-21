@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Gate-Audit bekommt optionalen Fail-Modus
+
+- **Decision:** `npm run audit:performance-gates -- --fail-on-gated` beendet sich mit Exitcode `1`, wenn einer der Performance-OS-Gates nicht bereit ist; ohne Flag bleibt der Audit ein lesbarer, read-only Statusbefehl mit Exitcode `0`.
+- **Why:** Menschen sollen den Gate-Snapshot weiter ohne Shell-Fehler lesen koennen, aber Automationen duerfen ein `gated` Ergebnis nicht versehentlich als gruen werten. Der opt-in Fail-Modus macht beide Nutzungen explizit.
+- **Alternatives:** Den Standardbefehl bei offenen Gates fehlschlagen lassen (bricht bestehende Statusnutzung); Exitcodes unveraendert immer `0` lassen (zu leicht fuer Automationen falsch zu interpretieren); separate Script-Kopie einfuehren (unnoetige Dopplung).
+- **Decided by:** Codex, als Gate-Automation-Support-Slice im Branch `codex/performance-gate-fail-mode`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Uebersprungene Server-Gates zaehlen nicht als bereit
 
 - **Decision:** `npm run audit:performance-gates -- --skip-server` markiert den Server-Spiegel als `skipped`, aber nicht als `ready`; der Sammel-Audit bleibt dadurch `gated`, solange die Server-Verifikation ausgelassen wurde.

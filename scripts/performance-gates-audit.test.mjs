@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildPerformanceGateAudit,
+  exitCodeForAudit,
   renderPerformanceGateAudit,
 } from './performance-gates-audit.mjs';
 
@@ -165,6 +166,23 @@ test('performance gate audit keeps skipped server verification unready', () => {
   assert.equal(audit.gates[2].ready, false);
   assert.match(renderPerformanceGateAudit(audit), /Skipped by --skip-server/);
   assert.match(renderPerformanceGateAudit(audit), /Gate: gated/);
+});
+
+test('performance gate audit can fail automation when gates are open', () => {
+  const gatedAudit = buildPerformanceGateAudit({ today: '2026-05-21', skipServer: true }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: READY_IPHONE,
+    server: commandResult(1, '', 'should not run'),
+  }));
+  const readyAudit = buildPerformanceGateAudit({ today: '2026-05-21' }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: READY_IPHONE,
+    server: commandResult(0, '==> server verification complete: abc1234\n'),
+  }));
+
+  assert.equal(exitCodeForAudit(gatedAudit), 0);
+  assert.equal(exitCodeForAudit(gatedAudit, { failOnGated: true }), 1);
+  assert.equal(exitCodeForAudit(readyAudit, { failOnGated: true }), 0);
 });
 
 test('package exposes performance gate audit as the standard command', () => {
