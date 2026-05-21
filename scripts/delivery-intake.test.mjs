@@ -67,6 +67,17 @@ test('delivery intake warns that nutrition trend packages remain evidence-gated'
   assert.match(markdown, /Fueling gate is closed/);
 });
 
+test('delivery intake normalizes accented nutrition wording for gate reminders', async () => {
+  const { buildDeliveryIntake } = await import('./delivery-intake.mjs');
+  const intake = buildDeliveryIntake({
+    track: 'lernschleifen',
+    outcome: 'Ern\u00e4hrung trend summaries explain stable fueling learning.',
+  });
+
+  assert.equal(intake.gateReminders.length, 2);
+  assert.match(intake.gateReminders[0], /audit:fueling-gate/);
+});
+
 test('delivery intake warns that iPhone PWA reliability needs current real-device evidence', async () => {
   const { buildDeliveryIntake, renderDeliveryIntake } = await import('./delivery-intake.mjs');
   const intake = buildDeliveryIntake({
