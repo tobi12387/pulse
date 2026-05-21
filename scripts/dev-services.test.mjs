@@ -43,6 +43,7 @@ test('pulse-status checks local services and server health independently', () =>
   assert.match(pulseStatusScript, /bash scripts\/dev-services\.sh status/);
   assert.match(pulseStatusScript, /bash scripts\/verify-server\.sh/);
   assert.match(pulseStatusScript, /non-interactive SSH credentials/);
+  assert.match(pulseStatusScript, /docs\/ai\/checklists\/deploy-auth-recovery\.md/);
   assert.match(pulseStatusScript, /local_status=0/);
   assert.match(pulseStatusScript, /server_status=0/);
 });
