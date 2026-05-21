@@ -174,4 +174,4 @@ npm run qa:ux-summary -- test-results/route-evidence-redesign-action-first
 Result:
 
 - Focused mobile action-first checks: 2 passed.
-- Route evidence at `8993f2c`: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+- Route evidence at `054ccaa`: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
