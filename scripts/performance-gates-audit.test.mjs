@@ -123,17 +123,19 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.match(renderPerformanceGateAudit(audit), /Gate: ready/);
 });
 
-test('performance gate audit can skip the SSH-backed server check', () => {
+test('performance gate audit keeps skipped server verification unready', () => {
   const audit = buildPerformanceGateAudit({ today: '2026-05-21', skipServer: true }, makeRunner({
     fueling: READY_FUELING,
     iphone: READY_IPHONE,
     server: commandResult(1, '', 'should not run'),
   }));
 
-  assert.equal(audit.gate, 'ready');
-  assert.equal(audit.openGates, 0);
+  assert.equal(audit.gate, 'gated');
+  assert.equal(audit.openGates, 1);
   assert.equal(audit.gates[2].gate, 'skipped');
+  assert.equal(audit.gates[2].ready, false);
   assert.match(renderPerformanceGateAudit(audit), /Skipped by --skip-server/);
+  assert.match(renderPerformanceGateAudit(audit), /Gate: gated/);
 });
 
 test('package exposes performance gate audit as the standard command', () => {
