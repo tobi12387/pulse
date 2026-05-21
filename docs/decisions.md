@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Current-Main-Evidence bei 20caf40 haelt Backlog gated
+
+- **Decision:** Nach aktueller Route-Evidence auf `main` bei `20caf40` bleibt der autonome UI/UX-Backlog geschlossen; aus der sauberen Home-, Fueling-, Plan- und Settings-Evidence wird keine neue Produkt-Slice abgeleitet.
+- **Why:** Der Evidence-Pack nach dem Home-Language-Merge zeigt 9 Desktop- und 17 Mobile-Screenshots mit 0 horizontalem Overflow. Die manuell geprueften Screens bestaetigen `Lernschleife`/`Muster pruefen`, die GI-Komfort-Fueling-Aktion, den fokussierten Activity-Closure-Anker, `Nur Vorschau` im Plan-Mobile-Szenario und keinen neuen Settings-Blocker.
+- **Alternatives:** Trotz sauberer Evidence eine Polish-Slice starten (zu spekulativ); alte vor-Fix-Evidence weiter als aktuellen Einstieg nutzen (stale); Nutrition- oder iPhone/PWA-Gates umgehen (weiterhin nicht belegt).
+- **Decided by:** Codex, als Evidence-Refresh im Branch `codex/post-home-language-route-evidence`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Home uebersetzt Lernkalibrierung in Alltagssprache
 
 - **Decision:** Home zeigt Daily-Decision-Lernkalibrierung als `Lernschleife` mit `Muster pruefen`/`Reaktion pruefen` statt als `Lernkalibrierung`, `Kalibrierung pruefen` oder `Watch-Kontext` im primaeren Tagesvertrag. Data und Plan duerfen die fachlicheren Labels in Analyse-/Wochenkontexten behalten.
