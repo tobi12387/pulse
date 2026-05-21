@@ -3,10 +3,12 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildIphonePwaGateAudit,
+  exitCodeForIphonePwaNextPrompt,
   parseArgs,
   renderIphonePwaFieldScaffold,
   renderIphonePwaFieldPacket,
   renderIphonePwaGateAudit,
+  renderIphonePwaNextPrompt,
 } from './iphone-pwa-gate-audit.mjs';
 
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -201,6 +203,17 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(scaffold, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
   assert.match(scaffold, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
 
+  assert.equal(exitCodeForIphonePwaNextPrompt(audit), 0);
+  const nextPrompt = renderIphonePwaNextPrompt(audit);
+  assert.match(nextPrompt, /# iPhone \/ PWA Next Field Prompt/);
+  assert.match(nextPrompt, /Expected current commit: abc1234/);
+  assert.match(nextPrompt, /First open gap: Current main field evidence \(stale\)/);
+  assert.match(nextPrompt, /Next action: Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234\./);
+  assert.match(nextPrompt, /Verify server mirror first: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(nextPrompt, /Full field scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
+  assert.match(nextPrompt, /Use a real iPhone over the VPN\/local network path/);
+  assert.match(nextPrompt, /Never transfer rootCA-key\.pem or any \*-key\.pem file to the phone/);
+
   const packet = renderIphonePwaFieldPacket(audit);
   assert.match(packet, /# iPhone \/ PWA Field Evidence Packet/);
   assert.match(packet, /Expected current commit: abc1234/);
@@ -277,6 +290,7 @@ test('iphone pwa gate audit CLI args accept scaffold mode', () => {
     file: 'docs/qa/2026-05-02-iphone-pwa-real-device.md',
     expectedCommit: 'abc1234',
     packet: false,
+    nextPrompt: false,
     scaffold: true,
     json: false,
   });
@@ -291,7 +305,9 @@ test('iphone pwa gate audit opens when all manual gates match the expected commi
   assert.equal(audit.gate, 'ready');
   assert.equal(audit.commitStatus, 'current');
   assert.deepEqual(audit.gaps, []);
+  assert.equal(exitCodeForIphonePwaNextPrompt(audit), 1);
   assert.match(renderIphonePwaGateAudit(audit), /Field commit status: current/);
+  assert.match(renderIphonePwaNextPrompt(audit), /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
   const packet = renderIphonePwaFieldPacket(audit);
   assert.match(packet, /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
   assert.doesNotMatch(packet, /Evidence record scaffold:/);
