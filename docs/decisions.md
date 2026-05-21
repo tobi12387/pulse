@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-05-21 — Server-Gate rendert Recovery-Packet
+
+- **Decision:** `npm run verify:server -- --packet` rendert ein read-only Server-Deploy-Mirror-Recovery-Packet; der Performance-Gate-Audit gibt den Befehl als `recoveryPacketCommand` weiter und zeigt ihn in Markdown.
+- **Why:** Das Server-Gate bleibt ein manueller SSH/Auth-Blocker wie Fueling und iPhone echte manuelle Evidence-Blocker sind. Ein ausfuehrbarer Packet-Handoff macht erwarteten Commit, SSH-Preflight, Deploy-Grenze und Rerun-Befehle sichtbar, ohne den Server zu beruehren oder die bestehende Runbook-Quelle zu duplizieren.
+- **Alternatives:** Nur das statische Runbook verlinken (mehr Kontextsuche); den normalen Verify-Befehl trotz bekannter SSH-Sperre laufen lassen (weniger handlungsorientiert); Deploy- oder SSH-Reparatur im Script automatisieren (zu riskant und ausserhalb Codex-Zugriff).
+- **Decided by:** Codex, als Server-Mirror-Gate-Support-Slice im Branch `codex/server-mirror-recovery-packet`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-Gate rendert Live-Field-Packet
 
 - **Decision:** `npm run audit:iphone-pwa-gate -- --packet` rendert ein live aus dem aktuellen iPhone/PWA-Feldrecord und dem erwarteten Commit generiertes Field-Evidence-Packet; Performance-Gate-Metadaten geben den Befehl als `fieldPacketCommand` weiter.

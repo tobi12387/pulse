@@ -12,6 +12,14 @@ recovery_runbook=docs/ai/checklists/deploy-auth-recovery.md
 ERROR: SSH access to root@192.168.178.46 failed before server checks.
 ```
 
+For a compact, read-only handoff that prints the current expected commit,
+preflight command, deploy boundary and rerun commands without opening an SSH
+connection:
+
+```bash
+npm run verify:server -- --packet
+```
+
 ## Boundaries
 
 - GitHub `main` remains the only source of truth.

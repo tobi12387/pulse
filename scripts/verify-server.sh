@@ -18,7 +18,7 @@ SSH_OPTS=(-o "BatchMode=$SSH_BATCH_MODE" -o "ConnectTimeout=$SSH_CONNECT_TIMEOUT
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/verify-server.sh
+Usage: scripts/verify-server.sh [--packet]
 
 Environment overrides:
   PULSE_HOST             SSH target, default root@192.168.178.46
@@ -44,18 +44,72 @@ Checks:
   - public HTTPS root returns 200
   - /api/ping returns status ok
   - /api/pulse/health returns status ok
+
+Options:
+  --packet               Print a read-only SSH/deploy recovery packet without
+                         connecting to the server.
 USAGE
 }
-
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  usage
-  exit 0
-fi
 
 fail() {
   echo "ERROR: $*" >&2
   exit 1
 }
+
+render_recovery_packet() {
+  cat <<PACKET
+# Server Deploy Mirror Recovery Packet
+
+Expected commit: $EXPECTED_COMMIT
+SSH target: $HOST
+Server path: $APP_PATH
+Public URL: $URL
+Recovery runbook: docs/ai/checklists/deploy-auth-recovery.md
+
+This packet is read-only. It does not run SSH, deploy, or change server state.
+
+SSH auth preflight:
+- Confirm VPN/network access to 192.168.178.46.
+- Confirm the intended local public key exists, for example ~/.ssh/id_ed25519.pub.
+- Using a trusted existing login path, add only the public key to the server user's ~/.ssh/authorized_keys.
+- Keep private keys, passwords, .env values and *-key.pem files out of chat, docs and Git.
+- Rerun:
+  ssh -o BatchMode=$SSH_BATCH_MODE -o ConnectTimeout=$SSH_CONNECT_TIMEOUT $HOST "printf 'ssh=ok\\n'"
+
+Mirror verification:
+- From a clean local main when checking deployed main:
+  git switch main
+  git pull --ff-only
+  PULSE_EXPECTED_COMMIT=$EXPECTED_COMMIT npm run verify:server
+
+Deploy boundary:
+- Deploy only after the relevant PR is merged to GitHub main:
+  ssh $HOST "cd $APP_PATH && bash scripts/deploy.sh"
+- Then verify:
+  PULSE_EXPECTED_COMMIT=$EXPECTED_COMMIT npm run verify:server
+- Do not edit, branch, commit or patch files directly on the server.
+PACKET
+}
+
+if [[ "$#" -gt 1 ]]; then
+  fail "Unexpected extra arguments: ${*:2}"
+fi
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  --packet)
+    render_recovery_packet
+    exit 0
+    ;;
+  "")
+    ;;
+  *)
+    fail "Unknown argument: $1"
+    ;;
+esac
 
 [[ "$LOG_LINES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_LINES must be numeric"
 [[ "$LOG_WINDOW_MINUTES" =~ ^[0-9]+$ ]] || fail "PULSE_SERVER_LOG_WINDOW_MINUTES must be numeric"
