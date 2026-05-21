@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Gate-Fueling-Action bleibt pfadfrei
+
+- **Decision:** `npm run audit:performance-gates` speichert und rendert die Fueling-`nextAction` ohne angehaengten `Path:`-Suffix; der Activity-Deep-Link bleibt als strukturierter `targetPath`, Target-Zeile und Completion-Candidate-Evidenz erhalten.
+- **Why:** Der Performance-Gate-Handoff wird von Menschen und JSON-Consumern genutzt. Die Aktion soll die echte GI-Komfort-Entscheidung beschreiben, waehrend der Zielpfad separat maschinenlesbar und scanbar bleibt.
+- **Alternatives:** Den Pfad nur im `--next-unblock`-Renderer entfernen (JSON bleibt lauter und uneinheitlich); den Pfad im per-gate `Next` behalten (dupliziert den strukturierten Handoff); den Zielpfad aus Metadaten entfernen (zu wenig direkt ausfuehrbar).
+- **Decided by:** Codex, als Performance-Gate-Handoff-Slice im Branch `codex/performance-gates-fueling-action`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — GI-Komfort bleibt eine explizite Fueling-Auswahl
 
 - **Decision:** Activity-Fueling-Evidence uebernimmt GI-Komfort nicht mehr aus Freitextnotizen; vorhandene Carb-Logs werden nur durch die expliziten GI-Komfort-Buttons `Magen ok`, `Magen leicht unruhig` oder `Magenprobleme` geschlossen.

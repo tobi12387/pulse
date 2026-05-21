@@ -139,6 +139,16 @@ function completionCandidatesText(candidates) {
   return items.length > 0 ? `: ${items.join(', ')}` : '';
 }
 
+function fuelingActionText(nextAction) {
+  const action = [
+    nextAction?.label,
+    nextAction?.detail,
+  ].filter(Boolean).join(' - ');
+  if (action) return action;
+  if (nextAction?.targetPath) return `Complete the Fueling evidence at ${nextAction.targetPath}.`;
+  return 'Capture comparable during Fueling logs with activity/duration context, carbs and GI comfort.';
+}
+
 function fuelingBlockingUser(gate) {
   return gate.users?.find(user => user.gate !== 'ready')
     ?? gate.users?.[0]
@@ -209,11 +219,7 @@ function summarizeFueling(today, runner) {
       ].join('; ') + '.';
   const nextAction = ready
     ? 'No Fueling gate action needed.'
-    : [
-        blockingUser.nextAction?.label,
-        blockingUser.nextAction?.detail,
-        blockingUser.nextAction?.targetPath ? `Path: ${blockingUser.nextAction.targetPath}` : null,
-      ].filter(Boolean).join(' - ');
+    : fuelingActionText(blockingUser.nextAction);
 
   return {
     key: 'fueling',
