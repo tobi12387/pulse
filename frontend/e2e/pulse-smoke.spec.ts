@@ -713,10 +713,12 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await action.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
   await expect(page).toHaveURL('/plan/activity/activity-fueling-gap#activity-fueling-log');
   const fuelingLog = page.locator('#activity-fueling-log');
-  await expect(fuelingLog).toBeFocused();
   await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
+  const giComfortAction = page.getByTestId('activity-gi-comfort-action');
+  await expect(giComfortAction).toBeFocused();
+  await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
 
-  await fuelingLog.getByRole('button', { name: 'Magen ok' }).click();
+  await giComfortAction.getByRole('button', { name: 'Magen ok' }).click();
   expect(nutritionPatch).toEqual({
     id: 'nutrition-fueling-gap',
     body: { giComfort: 'ok' },
