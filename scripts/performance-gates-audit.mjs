@@ -395,6 +395,29 @@ function resolveLocalPlanningCommit(runner) {
   return mainCommit === 'unknown' ? resolveExpectedCommit(runner) : mainCommit;
 }
 
+function resolveLocalBranch(runner) {
+  const result = runner('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+  if (result.status !== 0) return 'unknown';
+  return result.stdout.trim() || 'unknown';
+}
+
+function wantsManualHandoff(options) {
+  return Boolean(options.packet
+    || options.manualChecklist
+    || options.nextUnblock
+    || options.targetUrl
+    || options.targetUrls);
+}
+
+function shouldAutoLocalPlanning(options, localBranch) {
+  return wantsManualHandoff(options)
+    && !options.localPlanning
+    && !options.skipServer
+    && !options.expectedCommit
+    && localBranch !== 'main'
+    && localBranch !== 'unknown';
+}
+
 function serverIssueKind(detail) {
   if (/server branch is|server worktree is dirty|server commit .* != expected/i.test(detail)) {
     return 'mirror_state';
@@ -577,11 +600,14 @@ function escapeRegExp(value) {
 
 export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) {
   const today = assertIsoDate(options.today ?? isoDate(new Date()), '--today');
+  const localBranch = resolveLocalBranch(runner);
+  const autoLocalPlanning = shouldAutoLocalPlanning(options, localBranch);
+  const localPlanning = Boolean(options.localPlanning || autoLocalPlanning);
   const expectedCommit = options.expectedCommit
-    ?? (options.localPlanning ? resolveLocalPlanningCommit(runner) : resolveExpectedCommit(runner));
+    ?? (localPlanning ? resolveLocalPlanningCommit(runner) : resolveExpectedCommit(runner));
   const fuelingGate = summarizeFueling(today, runner);
   const rawIphoneGate = summarizeIphone(expectedCommit, runner);
-  const serverGate = options.localPlanning
+  const serverGate = localPlanning
     ? deferredServer(expectedCommit)
     : options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner);
   const iphoneGate = refineIphoneGateForServer(rawIphoneGate, serverGate, expectedCommit);
@@ -595,7 +621,9 @@ export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) 
 
   return {
     date: today,
-    localPlanning: Boolean(options.localPlanning),
+    localPlanning,
+    autoLocalPlanning,
+    localBranch,
     gate: openGateList.length === 0
       ? deferredGateList.length > 0 ? 'planning_ready' : 'ready'
       : 'gated',
@@ -616,6 +644,7 @@ export function renderPerformanceGateAudit(audit) {
     `Open gates: ${audit.openGates}`,
     ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
     `Expected server commit: ${audit.expectedCommit}`,
+    ...planningModeLines(audit),
     `Next unblock: ${audit.nextUnblock ? audit.nextUnblock.label : 'none'}`,
   ];
   if (audit.nextUnblock) lines.push(`Next action: ${audit.nextUnblock.action}`);
@@ -766,6 +795,7 @@ export function renderNextUnblock(audit) {
     `Gate: ${audit.gate}`,
     `Open gates: ${audit.openGates}`,
     ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
+    ...planningModeLines(audit),
   ];
 
   if (!next) {
@@ -848,6 +878,7 @@ export function renderPerformanceGatePacket(audit) {
     `Open gates: ${audit.openGates}`,
     ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
     `Expected server commit: ${audit.expectedCommit}`,
+    ...planningModeLines(audit),
     '',
   ];
 
@@ -929,7 +960,15 @@ function manualChecklistHeader(audit) {
     `Open gates: ${audit.openGates}`,
     ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
     `Expected server commit: ${audit.expectedCommit}`,
+    ...planningModeLines(audit),
     '',
+  ];
+}
+
+function planningModeLines(audit) {
+  if (!audit.autoLocalPlanning) return [];
+  return [
+    `Planning mode: auto-local from feature branch ${audit.localBranch}; server mirror verification is deferred until clean main.`,
   ];
 }
 

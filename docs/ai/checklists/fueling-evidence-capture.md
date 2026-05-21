@@ -51,6 +51,12 @@ and server gates, run:
 npm run audit:performance-checklist -- --today <YYYY-MM-DD>
 ```
 
+When these handoff commands run from a Codex feature branch, the audit
+automatically uses local-planning mode for packet/checklist/next-target output
+and defers the server mirror check to avoid a feature-branch false blocker.
+Rerun the normal audit from clean `main` before deploy-sensitive decisions or
+current iPhone field evidence.
+
 For a focused table, run:
 
 ```bash
