@@ -56,6 +56,7 @@ function usage() {
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
     '  --next-unblock       Print only the first open gate unblock; with --json prints that object.',
     '  --target-url         Print only the first open gate target URL; exits 1 if unavailable.',
+    '  --target-urls        Print all first open gate target URLs, one per line; exits 1 if unavailable.',
     '  --packet             Print one manual handoff packet for all open gates.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
@@ -844,8 +845,21 @@ export function firstTargetUrl(audit) {
   return audit.nextUnblock?.metadata?.targetUrl ?? null;
 }
 
+export function firstTargetUrls(audit) {
+  const metadata = audit.nextUnblock?.metadata;
+  const urls = [
+    metadata?.targetUrl,
+    ...(metadata?.completionCandidates ?? []).map(candidate => candidate.targetUrl),
+  ].filter(Boolean);
+  return [...new Set(urls)];
+}
+
 export function exitCodeForTargetUrl(audit, options = {}) {
   return firstTargetUrl(audit) ? exitCodeForAudit(audit, options) : 1;
+}
+
+export function exitCodeForTargetUrls(audit, options = {}) {
+  return firstTargetUrls(audit).length > 0 ? exitCodeForAudit(audit, options) : 1;
 }
 
 function assertCommitish(value, label) {
@@ -864,6 +878,7 @@ export function parseArgs(argv) {
     failOnGated: false,
     nextUnblock: false,
     targetUrl: false,
+    targetUrls: false,
     packet: false,
     json: false,
   };
@@ -895,6 +910,10 @@ export function parseArgs(argv) {
       result.targetUrl = true;
       continue;
     }
+    if (arg === '--target-urls') {
+      result.targetUrls = true;
+      continue;
+    }
     if (arg === '--packet') {
       result.packet = true;
       continue;
@@ -916,6 +935,17 @@ function main(argv) {
   }
   const args = parseArgs(argv);
   const audit = buildPerformanceGateAudit(args);
+  if (args.targetUrls) {
+    const urls = firstTargetUrls(audit);
+    if (!urls.length) {
+      console.error('No target URLs for the first Performance-OS unblock.');
+      process.exitCode = exitCodeForTargetUrls(audit, args);
+      return;
+    }
+    console.log(urls.join('\n'));
+    process.exitCode = exitCodeForTargetUrls(audit, args);
+    return;
+  }
   if (args.targetUrl) {
     const url = firstTargetUrl(audit);
     if (!url) {
