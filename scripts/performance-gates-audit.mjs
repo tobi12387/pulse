@@ -263,6 +263,18 @@ function skippedServer(expectedCommit) {
   };
 }
 
+function nextUnblockFrom(openGates) {
+  const gate = openGates[0] ?? null;
+  if (!gate) return null;
+  return {
+    key: gate.key,
+    label: gate.label,
+    command: gate.command,
+    action: gate.nextAction,
+    detail: gate.detail,
+  };
+}
+
 export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) {
   const today = assertIsoDate(options.today ?? isoDate(new Date()), '--today');
   const expectedCommit = options.expectedCommit ?? resolveExpectedCommit(runner);
@@ -271,13 +283,14 @@ export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) 
     summarizeIphone(runner),
     options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner),
   ];
-  const openGates = gates.filter(gate => !gate.ready);
+  const openGateList = gates.filter(gate => !gate.ready);
 
   return {
     date: today,
-    gate: openGates.length === 0 ? 'ready' : 'gated',
-    openGates: openGates.length,
+    gate: openGateList.length === 0 ? 'ready' : 'gated',
+    openGates: openGateList.length,
     expectedCommit,
+    nextUnblock: nextUnblockFrom(openGateList),
     gates,
   };
 }
@@ -290,8 +303,10 @@ export function renderPerformanceGateAudit(audit) {
     `Gate: ${audit.gate}`,
     `Open gates: ${audit.openGates}`,
     `Expected server commit: ${audit.expectedCommit}`,
-    '',
+    `Next unblock: ${audit.nextUnblock ? audit.nextUnblock.label : 'none'}`,
   ];
+  if (audit.nextUnblock) lines.push(`Next action: ${audit.nextUnblock.action}`);
+  lines.push('');
 
   for (const gate of audit.gates) {
     lines.push(`## ${gate.label}`);
