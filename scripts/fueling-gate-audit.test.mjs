@@ -90,6 +90,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
 
   const packet = renderFuelingEvidencePacket(audit);
   assert.match(packet, /# Fueling Evidence Packet/);
+  assert.match(packet, /Next action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g\/h oder Ergebnis ableiten\./);
   assert.match(packet, /Next target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(packet, /Existing candidates to close first:/);
   assert.match(packet, /1\. 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);

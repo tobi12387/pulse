@@ -401,6 +401,12 @@ export function renderFuelingEvidencePacket(audit) {
       continue;
     }
 
+    if (user.nextAction?.label || user.nextAction?.detail) {
+      lines.push(`Next action: ${[
+        user.nextAction.label,
+        user.nextAction.detail,
+      ].filter(Boolean).join(' - ')}`);
+    }
     if (user.nextAction?.targetLog?.summary) lines.push(`Next target: ${user.nextAction.targetLog.summary}`);
     if (user.nextAction?.targetPath) lines.push(`Next path: ${user.nextAction.targetPath}`);
     lines.push(`Existing logs completable now: ${user.completableNow}`);
