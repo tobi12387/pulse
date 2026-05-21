@@ -83,20 +83,46 @@ function countText(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+function formatCandidateSummary(candidate) {
+  if (candidate.summary) return candidate.summary;
+  const carbs = candidate.carbsG == null
+    ? null
+    : `${Math.round(Number(candidate.carbsG))} g carbs${candidate.carbsPerHour == null ? '' : ` (${Math.round(Number(candidate.carbsPerHour))} g/h)`}`;
+  return [
+    candidate.date ?? null,
+    candidate.activityName ?? null,
+    candidate.activityType ?? null,
+    candidate.durationMin == null ? null : `${Math.round(Number(candidate.durationMin))} min`,
+    carbs,
+  ].filter(Boolean).join(' - ') || null;
+}
+
 function summarizeCompletionCandidate(candidate) {
   return {
     date: candidate.date ?? null,
+    activityName: candidate.activityName ?? null,
+    activityType: candidate.activityType ?? null,
+    durationMin: candidate.durationMin ?? null,
+    carbsG: candidate.carbsG ?? null,
+    carbsPerHour: candidate.carbsPerHour ?? null,
+    summary: formatCandidateSummary(candidate),
     status: candidate.status ?? null,
     targetPath: candidate.targetPath ?? null,
     missing: candidate.missing ?? [],
   };
 }
 
-function completionCandidatePathsText(candidates) {
-  const paths = candidates
-    .map(candidate => candidate.targetPath)
+function completionCandidateText(candidate) {
+  const summary = formatCandidateSummary(candidate);
+  if (summary && candidate.targetPath) return `${summary} -> ${candidate.targetPath}`;
+  return summary ?? candidate.targetPath ?? null;
+}
+
+function completionCandidatesText(candidates) {
+  const items = candidates
+    .map(completionCandidateText)
     .filter(Boolean);
-  return paths.length > 0 ? `: ${paths.join(', ')}` : '';
+  return items.length > 0 ? `: ${items.join(', ')}` : '';
 }
 
 function summarizeFueling(today, runner) {
@@ -155,7 +181,7 @@ function summarizeFueling(today, runner) {
     ? `${complete} comparable complete logs; nutrition trend summaries can be enabled from current evidence.`
     : [
         `${complete} comparable complete logs`,
-        `${countText(blockingUser.completableNow, 'existing log')} completable now${completionCandidatePathsText(completionCandidates)}`,
+        `${countText(blockingUser.completableNow, 'existing log')} completable now${completionCandidatesText(completionCandidates)}`,
         `${countText(blockingUser.newLogsStillNeeded, 'new complete long-session log')} still needed after candidates`,
       ].join('; ') + '.';
   const nextAction = ready
@@ -278,6 +304,7 @@ function nextUnblockMetadata(gate) {
       targetPath: nextAction?.targetPath ?? gate.completionCandidates?.find(candidate => candidate.targetPath)?.targetPath ?? null,
       date: nextAction?.date ?? null,
       options: nextAction?.options ?? [],
+      targetLog: nextAction?.targetLog ?? gate.completionCandidates?.find(candidate => candidate.targetPath) ?? null,
       completionCandidates: gate.completionCandidates ?? [],
     };
   }
@@ -347,6 +374,8 @@ export function renderPerformanceGateAudit(audit) {
     `Next unblock: ${audit.nextUnblock ? audit.nextUnblock.label : 'none'}`,
   ];
   if (audit.nextUnblock) lines.push(`Next action: ${audit.nextUnblock.action}`);
+  const nextTarget = targetSummary(audit.nextUnblock?.metadata);
+  if (nextTarget) lines.push(`Next target: ${nextTarget}`);
   lines.push('');
 
   for (const gate of audit.gates) {
@@ -367,6 +396,15 @@ function metadataLine(metadata) {
   if (metadata.firstGap?.label) return `First gap: ${metadata.firstGap.label} (${metadata.firstGap.status ?? 'unknown'})`;
   if (metadata.recoveryRunbook) return `Recovery runbook: ${metadata.recoveryRunbook}`;
   return null;
+}
+
+function targetSummary(metadata) {
+  return metadata?.targetLog?.summary ?? null;
+}
+
+function targetLine(metadata) {
+  const summary = targetSummary(metadata);
+  return summary ? `Target: ${summary}` : null;
 }
 
 function optionsLine(metadata) {
@@ -395,6 +433,8 @@ export function renderNextUnblock(audit) {
   lines.push(`Detail: ${next.detail}`);
   lines.push(`Action: ${next.action}`);
 
+  const targetSummary = targetLine(next.metadata);
+  if (targetSummary) lines.push(targetSummary);
   const pathOrRunbook = metadataLine(next.metadata);
   if (pathOrRunbook) lines.push(pathOrRunbook);
   const optionSummary = optionsLine(next.metadata);

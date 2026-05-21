@@ -54,18 +54,30 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(audit.users[0].newLogsStillNeeded, 1);
   assert.equal(audit.users[0].nextAction.kind, 'complete_gi_comfort');
   assert.equal(audit.users[0].nextAction.targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.deepEqual(audit.users[0].nextAction.targetLog, {
+    date: '2026-05-09',
+    activityName: 'Datteln Graveln',
+    activityType: 'bike',
+    durationMin: 398,
+    carbsG: 356,
+    carbsPerHour: 54,
+    targetPath: '/plan/activity/activity-long-ride#activity-fueling-log',
+    summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
+  });
   assert.deepEqual(audit.users[0].nextAction.options, [
     { value: 'ok', label: 'Magen ok' },
     { value: 'mild_issue', label: 'Magen leicht unruhig' },
     { value: 'issue', label: 'Magenprobleme' },
   ]);
   assert.equal(audit.users[0].completionCandidates[0].targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.equal(audit.users[0].completionCandidates[0].summary, '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)');
 
   const rendered = renderFuelingGateAudit(audit);
   assert.match(rendered, /Comparable complete logs: 0\/3/);
   assert.match(rendered, /Existing logs completable now: 2/);
   assert.match(rendered, /New complete long-session logs still needed after completion candidates: 1/);
   assert.match(rendered, /Next action: GI-Komfort ergaenzen \(Add structured GI comfort \(ok, mild_issue, issue\) to an existing long carb log\.\)/);
+  assert.match(rendered, /Next action target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Next action path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
   assert.match(rendered, /Structured GI comfort values: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(rendered, /Datteln Graveln/);

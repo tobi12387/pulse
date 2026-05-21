@@ -40,12 +40,24 @@ const GATED_FUELING = commandResult(0, JSON.stringify({
       completionCandidates: [
         {
           date: '2026-05-09',
+          activityName: 'Datteln Graveln',
+          activityType: 'bike',
+          durationMin: 398,
+          carbsG: 356,
+          carbsPerHour: 54,
+          summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
           status: 'can count after GI comfort',
           targetPath: '/plan/activity/activity-a#activity-fueling-log',
           missing: ['GI comfort'],
         },
         {
           date: '2026-05-04',
+          activityName: 'Datteln - Radfahren - Z2',
+          activityType: 'bike',
+          durationMin: 80,
+          carbsG: 30,
+          carbsPerHour: 23,
+          summary: '2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h)',
           status: 'can count after GI comfort',
           targetPath: '/plan/activity/activity-b#activity-fueling-log',
           missing: ['GI comfort'],
@@ -57,6 +69,16 @@ const GATED_FUELING = commandResult(0, JSON.stringify({
         detail: 'Add structured GI comfort to an existing long carb log.',
         targetPath: '/plan/activity/activity-a#activity-fueling-log',
         date: '2026-05-09',
+        targetLog: {
+          date: '2026-05-09',
+          activityName: 'Datteln Graveln',
+          activityType: 'bike',
+          durationMin: 398,
+          carbsG: 356,
+          carbsPerHour: 54,
+          targetPath: '/plan/activity/activity-a#activity-fueling-log',
+          summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
+        },
         options: [
           { value: 'ok', label: 'Magen ok' },
           { value: 'mild_issue', label: 'Magen leicht unruhig' },
@@ -127,7 +149,7 @@ test('performance gate audit summarizes current gated blockers', () => {
     label: 'Fueling learning',
     command: 'npm run audit:fueling-gate -- --today 2026-05-21',
     action: 'GI-Komfort ergaenzen - Add structured GI comfort to an existing long carb log. - Path: /plan/activity/activity-a#activity-fueling-log',
-    detail: '0/3 comparable complete logs; 2 existing logs completable now: /plan/activity/activity-a#activity-fueling-log, /plan/activity/activity-b#activity-fueling-log; 1 new complete long-session log still needed after candidates.',
+    detail: '0/3 comparable complete logs; 2 existing logs completable now: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h) -> /plan/activity/activity-a#activity-fueling-log, 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h) -> /plan/activity/activity-b#activity-fueling-log; 1 new complete long-session log still needed after candidates.',
     metadata: {
       kind: 'complete_gi_comfort',
       targetPath: '/plan/activity/activity-a#activity-fueling-log',
@@ -137,15 +159,37 @@ test('performance gate audit summarizes current gated blockers', () => {
         { value: 'mild_issue', label: 'Magen leicht unruhig' },
         { value: 'issue', label: 'Magenprobleme' },
       ],
+      targetLog: {
+        date: '2026-05-09',
+        activityName: 'Datteln Graveln',
+        activityType: 'bike',
+        durationMin: 398,
+        carbsG: 356,
+        carbsPerHour: 54,
+        targetPath: '/plan/activity/activity-a#activity-fueling-log',
+        summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
+      },
       completionCandidates: [
         {
           date: '2026-05-09',
+          activityName: 'Datteln Graveln',
+          activityType: 'bike',
+          durationMin: 398,
+          carbsG: 356,
+          carbsPerHour: 54,
+          summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
           status: 'can count after GI comfort',
           targetPath: '/plan/activity/activity-a#activity-fueling-log',
           missing: ['GI comfort'],
         },
         {
           date: '2026-05-04',
+          activityName: 'Datteln - Radfahren - Z2',
+          activityType: 'bike',
+          durationMin: 80,
+          carbsG: 30,
+          carbsPerHour: 23,
+          summary: '2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h)',
           status: 'can count after GI comfort',
           targetPath: '/plan/activity/activity-b#activity-fueling-log',
           missing: ['GI comfort'],
@@ -157,12 +201,24 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.deepEqual(audit.gates[0].completionCandidates, [
     {
       date: '2026-05-09',
+      activityName: 'Datteln Graveln',
+      activityType: 'bike',
+      durationMin: 398,
+      carbsG: 356,
+      carbsPerHour: 54,
+      summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
       status: 'can count after GI comfort',
       targetPath: '/plan/activity/activity-a#activity-fueling-log',
       missing: ['GI comfort'],
     },
     {
       date: '2026-05-04',
+      activityName: 'Datteln - Radfahren - Z2',
+      activityType: 'bike',
+      durationMin: 80,
+      carbsG: 30,
+      carbsPerHour: 23,
+      summary: '2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h)',
       status: 'can count after GI comfort',
       targetPath: '/plan/activity/activity-b#activity-fueling-log',
       missing: ['GI comfort'],
@@ -176,9 +232,11 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Open gates: 3/);
   assert.match(rendered, /Next unblock: Fueling learning/);
   assert.match(rendered, /Next action: GI-Komfort ergaenzen/);
+  assert.match(rendered, /Next target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /0\/3 comparable complete logs/);
-  assert.match(rendered, /activity-a#activity-fueling-log, \/plan\/activity\/activity-b#activity-fueling-log/);
+  assert.match(rendered, /Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(rendered, /Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log/);
   assert.match(rendered, /iPhone\/PWA field/);
   assert.match(rendered, /2 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
@@ -189,6 +247,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /# Performance-OS Next Unblock/);
   assert.match(nextRendered, /Next unblock: Fueling learning/);
   assert.match(nextRendered, /Command: npm run audit:fueling-gate -- --today 2026-05-21/);
+  assert.match(nextRendered, /Target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Options: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.doesNotMatch(nextRendered, /## iPhone\/PWA field/);
