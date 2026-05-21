@@ -5833,7 +5833,7 @@ test('Settings diagnostics matrix is visible first and routes to support section
   const matrix = page.getByTestId('settings-diagnostics-matrix');
   const summary = page.getByTestId('settings-status-summary');
   await expect(matrix).toBeVisible();
-  await expect(summary).toContainText('Alles bereit');
+  await expect(summary).toContainText('Kern bereit');
   await expect(summary).toContainText('Optional');
   await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
   await expect(matrix).toContainText('DIAGNOSE');
@@ -5904,7 +5904,7 @@ test('Settings treats blocked push as optional when core access is ready', async
 
   await page.goto('/settings');
   const summary = page.getByTestId('settings-status-summary');
-  await expect(summary).toContainText('Alles bereit');
+  await expect(summary).toContainText('Kern bereit');
   await expect(summary).toContainText('Optional');
   await expect(summary).toContainText('Push');
   await expect(summary).not.toContainText('Problem beheben');

@@ -620,14 +620,21 @@ function SettingsDiagnosticsMatrix({
   const optionalActions = rows.filter(row => row.optionalSetup);
   const summaryActions = readinessProblems.length > 0 ? readinessProblems.slice(0, 3) : optionalActions.slice(0, 1);
   const ready = readinessProblems.length === 0;
-  const statusTitle = ready ? 'Alles bereit' : 'Problem beheben';
+  const hasOptionalSetup = optionalActions.length > 0;
+  const statusTitle = ready ? (hasOptionalSetup ? 'Kern bereit' : 'Alles bereit') : 'Problem beheben';
   const statusDetail = ready
-    ? (optionalActions.length > 0
-      ? 'Keine Blocker erkannt. Optional kannst du noch Geräte- oder Push-Schritte abschließen.'
+    ? (hasOptionalSetup
+      ? 'Keine harten Blocker erkannt. Geräte- oder Push-Schritte bleiben optional offen.'
       : 'Zugriff, Garmin, Push-Basis und Gerätefähigkeit sind aktuell nutzbar.')
     : `${readinessProblems.length} ${readinessProblems.length === 1 ? 'Punkt' : 'Punkte'} prüfen: ${readinessProblems.map(row => row.label).join(', ')}.`;
-  const statusPill = ready ? 'BEREIT' : 'PRÜFEN';
-  const statusColor = ready ? 'var(--green)' : 'var(--amber)';
+  const statusPill = ready ? (hasOptionalSetup ? 'OPTIONAL' : 'BEREIT') : 'PRÜFEN';
+  const statusColor = ready ? (hasOptionalSetup ? 'var(--accent)' : 'var(--green)') : 'var(--amber)';
+  const statusBorder = ready
+    ? (hasOptionalSetup ? 'rgba(94,230,207,0.3)' : 'rgba(74,222,128,0.28)')
+    : 'rgba(245,158,11,0.34)';
+  const statusBackground = ready
+    ? (hasOptionalSetup ? 'rgba(94,230,207,0.05)' : 'rgba(74,222,128,0.05)')
+    : 'rgba(245,158,11,0.06)';
 
   const shortcuts: Array<{ label: string; path: string }> = [
     { label: 'Gerät', path: '/settings?section=device' },
@@ -646,9 +653,9 @@ function SettingsDiagnosticsMatrix({
       <div
         data-testid="settings-status-summary"
         style={{
-          border: `1px solid ${ready ? 'rgba(74,222,128,0.28)' : 'rgba(245,158,11,0.34)'}`,
+          border: `1px solid ${statusBorder}`,
           borderRadius: 6,
-          background: ready ? 'rgba(74,222,128,0.05)' : 'rgba(245,158,11,0.06)',
+          background: statusBackground,
           display: 'flex',
           flexDirection: 'column',
           gap: 10,
@@ -657,7 +664,7 @@ function SettingsDiagnosticsMatrix({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
           <div>
-            <div className="label-mono" style={{ color: ready ? 'var(--green)' : 'var(--amber)', marginBottom: 4 }}>
+            <div className="label-mono" style={{ color: statusColor, marginBottom: 4 }}>
               SETTINGS STATUS
             </div>
             <h2 style={{ margin: 0, fontSize: 18, color: 'var(--text)', fontWeight: 650 }}>
