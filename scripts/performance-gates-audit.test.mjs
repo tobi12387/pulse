@@ -13,6 +13,7 @@ import {
   renderPerformanceGatePacket,
   renderPerformanceManualChecklist,
   renderPerformanceGateAudit,
+  usage,
 } from './performance-gates-audit.mjs';
 
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -695,6 +696,13 @@ test('performance gate audit CLI args accept local planning mode', () => {
     manualChecklist: false,
     json: false,
   });
+});
+
+test('performance gate audit help documents feature-branch auto planning for handoffs', () => {
+  const text = usage();
+  assert.match(text, /--local-planning/);
+  assert.match(text, /Handoff modes auto-apply this behavior on feature branches/);
+  assert.match(text, /unless --expected-commit or --skip-server is passed/);
 });
 
 test('performance gate audit can defer server verification for local planning', () => {
