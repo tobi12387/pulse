@@ -320,6 +320,9 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /Completion candidates:/);
   assert.match(nextRendered, /- 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log \(missing: GI comfort\)/);
   assert.match(nextRendered, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
+  assert.match(nextRendered, /Manual safety:/);
+  assert.match(nextRendered, /GI comfort must come from the real stomach response/);
+  assert.match(nextRendered, /Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly/);
   assert.doesNotMatch(nextRendered, /## iPhone\/PWA field/);
 
   const packet = renderPerformanceGatePacket(audit);
@@ -412,6 +415,9 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
   assert.match(renderNextUnblock(audit), /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+  assert.match(renderNextUnblock(audit), /Manual safety:/);
+  assert.match(renderNextUnblock(audit), /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
+  assert.match(renderNextUnblock(audit), /The server is a GitHub main mirror; do not edit, branch or commit on the server/);
 });
 
 test('performance gate audit preserves configured server SSH host in gate handoffs', () => {

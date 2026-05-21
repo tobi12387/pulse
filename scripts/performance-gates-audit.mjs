@@ -581,6 +581,31 @@ function completionCandidateLines(metadata) {
   ];
 }
 
+function manualSafetyLinesForNext(next) {
+  if (!next) return [];
+  if (next.key === 'fueling') {
+    return [
+      'Manual safety:',
+      '- GI comfort must come from the real stomach response; do not infer it from notes, route, RPE, g/h, result or pace.',
+      '- Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly.',
+    ];
+  }
+  if (next.key === 'iphone_pwa') {
+    return [
+      'Manual safety:',
+      '- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.',
+      '- The server is a GitHub main mirror; do not edit, branch or commit on the server.',
+    ];
+  }
+  if (next.key === 'server') {
+    return [
+      'Manual safety:',
+      '- The server is a GitHub main mirror; do not edit, branch or commit on the server.',
+    ];
+  }
+  return [];
+}
+
 export function renderNextUnblock(audit) {
   const next = audit.nextUnblock;
   const lines = [
@@ -620,6 +645,7 @@ export function renderNextUnblock(audit) {
   const optionSummary = optionsLine(next.metadata);
   if (optionSummary) lines.push(optionSummary);
   lines.push(...completionCandidateLines(next.metadata));
+  lines.push(...manualSafetyLinesForNext(next));
 
   return lines.join('\n');
 }
