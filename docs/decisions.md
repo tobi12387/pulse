@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Gate-Audit kann nur den naechsten Unblock ausgeben
+
+- **Decision:** `npm run audit:performance-gates -- --next-unblock` rendert nur die erste offene unblockende Handlung; zusammen mit `--json` gibt der Befehl nur das `nextUnblock`-Objekt aus.
+- **Why:** Der volle Gate-Snapshot bleibt fuer Lagebilder nuetzlich, aber Tobi, Folge-Agenten und kleine Automationen brauchen oft nur den naechsten realen Schritt. Ein fokussierter Modus nutzt dieselbe read-only Evidenz und dieselben Exitcode-Regeln, ohne ein zweites Script oder abweichende Gate-Logik einzufuehren.
+- **Alternatives:** Den vollen Audit manuell scannen (langsamer); `--json` immer voll ausgeben und extern filtern (setzt zusaetzliches Tooling voraus); ein separates Next-Action-Script bauen (Dopplung).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-gate-next-output`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Next-Unblock-Metadaten bleiben maschinenlesbar
 
 - **Decision:** Der JSON-Output von `npm run audit:performance-gates` ergaenzt `nextUnblock.metadata` mit strukturierten Feldern fuer den jeweils ersten offenen Gate-Typ, z.B. Fueling-`targetPath`/GI-Optionen/Kandidaten, iPhone-Evidence/erstes Gap oder Server-`recoveryRunbook`.

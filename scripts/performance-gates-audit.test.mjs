@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildPerformanceGateAudit,
   exitCodeForAudit,
+  renderNextUnblock,
   renderPerformanceGateAudit,
 } from './performance-gates-audit.mjs';
 
@@ -183,6 +184,14 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(rendered, /deploy-auth-recovery\.md/);
+
+  const nextRendered = renderNextUnblock(audit);
+  assert.match(nextRendered, /# Performance-OS Next Unblock/);
+  assert.match(nextRendered, /Next unblock: Fueling learning/);
+  assert.match(nextRendered, /Command: npm run audit:fueling-gate -- --today 2026-05-21/);
+  assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(nextRendered, /Options: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.doesNotMatch(nextRendered, /## iPhone\/PWA field/);
 });
 
 test('performance gate audit reports ready when all required gates are ready', () => {
@@ -198,6 +207,7 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.deepEqual(audit.gates.map(gate => gate.gate), ['ready', 'ready', 'ready']);
   assert.match(renderPerformanceGateAudit(audit), /Gate: ready/);
   assert.match(renderPerformanceGateAudit(audit), /Next unblock: none/);
+  assert.match(renderNextUnblock(audit), /Next unblock: none/);
 });
 
 test('performance gate audit exposes structured next-unblock metadata for iPhone field gates', () => {
@@ -242,6 +252,7 @@ test('performance gate audit keeps skipped server verification unready', () => {
     expectedCommit: 'abc1234',
     recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
   });
+  assert.match(renderNextUnblock(audit), /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
   assert.match(renderPerformanceGateAudit(audit), /Skipped by --skip-server/);
   assert.match(renderPerformanceGateAudit(audit), /Gate: gated/);
 });
