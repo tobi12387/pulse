@@ -606,6 +606,54 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
   await expect(page).toHaveURL('/plan/activity/activity-fueling-gap#activity-fueling-log');
 });
 
+test('Data today promotes actionable fueling learning gaps', async ({ page }) => {
+  await mockPulseApi(page, {
+    outcomeBaseline: {
+      status: 'learning',
+      label: 'Fueling-Baseline lernt',
+      summary: 'Lange Einheiten brauchen vergleichbare During-Logs.',
+      latestLogDate: '2026-04-30',
+      observedCarbsPerHour: 48,
+      targetCarbsPerHour: { min: 55, max: 65 },
+      bottles750Ml: 3,
+      powderG: 210,
+      fluidMlPerHour: 680,
+      sodiumMgPerHour: null,
+      hydrationContextSummary: null,
+      hydrationEvidenceGaps: ['Hitze nicht gemessen'],
+      trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
+      evidence: ['2 lange During-Logs vollständig'],
+      learningReadiness: {
+        comparableCompleteLogs: 2,
+        requiredComparableCompleteLogs: 3,
+        readyForTrendSummary: false,
+        missingEvidence: ['GI-Komfort fehlt strukturiert beim vorhandenen Carb-Log.'],
+        nextAction: {
+          kind: 'complete_gi_comfort',
+          label: 'GI-Komfort ergänzen',
+          detail: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+          activityId: 'activity-fueling-gap',
+        },
+      },
+    },
+  });
+
+  await page.goto('/data');
+  const action = page.getByTestId('data-primary-action');
+
+  await expect(action).toContainText('Fueling-Evidenz schließen');
+  await expect(action).toContainText('Trend-Evidenz 2/3');
+  await expect(action).toContainText('GI-Komfort ergänzen');
+
+  await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
+  const triage = page.getByTestId('data-triage-fueling');
+  await expect(triage).toContainText('Fueling-Evidenz');
+  await expect(triage).toContainText('Trend-Evidenz 2/3');
+
+  await action.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
+  await expect(page).toHaveURL('/plan/activity/activity-fueling-gap#activity-fueling-log');
+});
+
 test('Data analysis opens personal response evidence from the watch response signal', async ({ page }) => {
   await mockPulseApi(page, {
     goalProjection: {

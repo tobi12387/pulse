@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Data fuehrt offene Fueling-Evidenz als Tagesaktion
+
+- **Decision:** Data priorisiert eine konkrete Fueling-Lernluecke auf der `Heute relevant`-Flaeche, wenn Mental-Check-in und Garmin-Frische geklaert sind und die Fueling-Baseline eine vervollstaendigbare Aktivitaet liefert.
+- **Why:** Die Analyse-Seite konnte bereits zur GI-Komfort-Ergaenzung fuehren, aber die erste Data-Flaeche fiel trotz bekannter Fueling-Evidenzluecke auf die generische Wochenentscheidung zurueck. Die neue Reihenfolge macht den naechsten lernbaren Nutrition-Schritt sichtbar, ohne mentale Tageslage oder Datenfrische zu uebergehen.
+- **Alternatives:** Fueling nur in `Analyse` lassen (zu versteckt fuer die taegliche Evidence-Arbeit); Fueling vor Check-in/Garmin stellen (Basisdaten wuerden uebersprungen); eine neue Nutrition-Unterseite bauen (zu gross fuer die aktuelle kleine Lernschleifen-Luecke).
+- **Decided by:** Codex, im Branch `codex/data-fueling-evidence-action`.
+- **Status:** active.
+
 ## 2026-05-21 — Fueling-Gate nennt vervollstaendigbare Logs
 
 - **Decision:** Die Fueling-Baseline bleibt strikt bei drei vergleichbaren kompletten During-Logs, aber die Readiness-Copy unterscheidet vorhandene lange Logs mit nachtragbarer Evidenz von wirklich neuen Lernlogs.
