@@ -6003,6 +6003,16 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   await mockPulseApi(page);
 
   await page.goto('/');
+  const activeStage = page.getByTestId('stage-strip-decide');
+  const activeStageStatus = page.getByTestId('stage-strip-active-status');
+  await expect(activeStage).toContainText('JETZT');
+  const activeStageBox = await activeStage.boundingBox();
+  const activeStageStatusBox = await activeStageStatus.boundingBox();
+  expect(activeStageBox).not.toBeNull();
+  expect(activeStageStatusBox).not.toBeNull();
+  expect(activeStageStatusBox!.x).toBeGreaterThanOrEqual(activeStageBox!.x);
+  expect(activeStageStatusBox!.x + activeStageStatusBox!.width).toBeLessThanOrEqual(activeStageBox!.x + activeStageBox!.width + 1);
+
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
   await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
   await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');

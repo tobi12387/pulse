@@ -28,7 +28,7 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 - Optional screenshot pack: `npm run qa:ux-evidence:iphone`.
 - If Playwright reports a missing WebKit executable, install it with `npx playwright install webkit` before treating this gate as a product failure.
 - If Playwright reports missing WebKit shared libraries, install host dependencies with `npx playwright install-deps webkit` before treating this gate as a product failure.
-- Latest local evidence: `docs/qa/2026-05-21-iphone-webkit-gate.md`.
+- Latest local evidence: `docs/qa/2026-05-21-iphone-webkit-stage-strip.md`.
 
 ## Layout
 
