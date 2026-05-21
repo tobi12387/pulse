@@ -301,6 +301,7 @@ function summarizeFueling(today, runner) {
 function summarizeIphone(expectedCommit, runner) {
   const command = iphoneGateCommand(expectedCommit);
   const fieldPacketCommand = `${command} --packet`;
+  const fieldScaffoldCommand = `${command} --scaffold`;
   const result = runner(process.execPath, [
     'scripts/iphone-pwa-gate-audit.mjs',
     '--json',
@@ -320,6 +321,7 @@ function summarizeIphone(expectedCommit, runner) {
       nextAction: 'Restore the iPhone/PWA evidence file or pass a valid audit input, then rerun the field gate audit.',
       evidenceChecklist: IPHONE_FIELD_CHECKLIST,
       fieldPacketCommand,
+      fieldScaffoldCommand,
     };
   }
 
@@ -338,6 +340,7 @@ function summarizeIphone(expectedCommit, runner) {
     nextAction: audit.nextAction ?? 'No iPhone/PWA gate action needed.',
     evidenceChecklist: audit.fieldChecklist ?? IPHONE_FIELD_CHECKLIST,
     fieldPacketCommand: ready ? null : fieldPacketCommand,
+    fieldScaffoldCommand: ready ? null : fieldScaffoldCommand,
     serverVerifyCommand: audit.serverVerifyCommand ?? serverVerifyCommand(expectedCommit),
     serverRecoveryPacketCommand: ready ? null : (audit.serverRecoveryPacketCommand ?? serverRecoveryPacketCommand(expectedCommit)),
     evidenceFile: audit.evidenceFile,
@@ -483,6 +486,7 @@ function nextUnblockMetadata(gate) {
       commitStatus: gate.commitStatus ?? null,
       serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
       fieldPacketCommand: gate.fieldPacketCommand ?? null,
+      fieldScaffoldCommand: gate.fieldScaffoldCommand ?? null,
       serverVerifyCommand: gate.serverVerifyCommand ?? null,
       serverRecoveryPacketCommand: gate.serverRecoveryPacketCommand ?? null,
       firstGap: firstGap ? {
@@ -578,6 +582,7 @@ export function renderPerformanceGateAudit(audit) {
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
     if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
     if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
+    if (gate.fieldScaffoldCommand) lines.push(`- Field scaffold: \`${gate.fieldScaffoldCommand}\``);
     if (gate.serverRecoveryPacketCommand) lines.push(`- Server recovery packet: \`${gate.serverRecoveryPacketCommand}\``);
     if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
     if (gate.recoveryPacketCommand) lines.push(`- Recovery packet: \`${gate.recoveryPacketCommand}\``);
@@ -610,6 +615,10 @@ function packetLine(metadata) {
 
 function fieldPacketLine(metadata) {
   return metadata?.fieldPacketCommand ? `Field packet: ${metadata.fieldPacketCommand}` : null;
+}
+
+function fieldScaffoldLine(metadata) {
+  return metadata?.fieldScaffoldCommand ? `Field scaffold: ${metadata.fieldScaffoldCommand}` : null;
 }
 
 function recoveryPacketLine(metadata) {
@@ -724,6 +733,8 @@ export function renderNextUnblock(audit) {
   if (packet) lines.push(packet);
   const fieldPacket = fieldPacketLine(next.metadata);
   if (fieldPacket) lines.push(fieldPacket);
+  const fieldScaffold = fieldScaffoldLine(next.metadata);
+  if (fieldScaffold) lines.push(fieldScaffold);
   const serverRecoveryPacket = serverRecoveryPacketLine(next.metadata);
   if (serverRecoveryPacket) lines.push(serverRecoveryPacket);
   const recoveryPacket = recoveryPacketLine(next.metadata);
@@ -753,6 +764,7 @@ function packetGateLines(gate, index) {
   if (metadata?.evidenceChecklist) lines.push(`   Evidence checklist: ${metadata.evidenceChecklist}`);
   if (metadata?.capturePacketCommand) lines.push(`   Evidence packet: ${metadata.capturePacketCommand}`);
   if (metadata?.fieldPacketCommand) lines.push(`   Field packet: ${metadata.fieldPacketCommand}`);
+  if (metadata?.fieldScaffoldCommand) lines.push(`   Field scaffold: ${metadata.fieldScaffoldCommand}`);
   if (metadata?.serverVerifyCommand) lines.push(`   Server verify: ${metadata.serverVerifyCommand}`);
   if (metadata?.serverRecoveryPacketCommand) lines.push(`   Server recovery packet: ${metadata.serverRecoveryPacketCommand}`);
   if (metadata?.recoveryRunbook) lines.push(`   Recovery runbook: ${metadata.recoveryRunbook}`);
@@ -794,6 +806,8 @@ export function renderPerformanceGatePacket(audit) {
   if (packet) lines.push(packet);
   const fieldPacket = fieldPacketLine(audit.nextUnblock.metadata);
   if (fieldPacket) lines.push(fieldPacket);
+  const fieldScaffold = fieldScaffoldLine(audit.nextUnblock.metadata);
+  if (fieldScaffold) lines.push(fieldScaffold);
   const serverRecoveryPacket = serverRecoveryPacketLine(audit.nextUnblock.metadata);
   if (serverRecoveryPacket) lines.push(serverRecoveryPacket);
   const recoveryPacket = recoveryPacketLine(audit.nextUnblock.metadata);
