@@ -222,7 +222,7 @@ test('performance gate audit summarizes current gated blockers', () => {
       ],
     },
   });
-  assert.equal(audit.gates[0].nextAction, 'GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g/h oder Ergebnis ableiten. - Path: /plan/activity/activity-a#activity-fueling-log');
+  assert.equal(audit.gates[0].nextAction, 'GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.');
   assert.deepEqual(audit.gates[0].completionCandidates, [
     {
       date: '2026-05-09',
@@ -258,6 +258,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Open gates: 3/);
   assert.match(rendered, /Next unblock: Fueling learning/);
   assert.match(rendered, /Next action: GI-Komfort ergaenzen/);
+  assert.doesNotMatch(rendered, /Next: .*Path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(rendered, /Next target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
