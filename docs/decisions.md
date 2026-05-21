@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Gate-Audit macht GI-Komfort-Optionen maschinenlesbar
+
+- **Decision:** Der JSON-Output von `npm run audit:fueling-gate -- --json` enthaelt bei `complete_gi_comfort` die erlaubten GI-Komfort-Optionen als strukturierte `value`/`label`-Liste.
+- **Why:** Der Text-Audit nennt die Optionen bereits fuer Tobi, aber Folgetooling, QA-Notizen oder kleine Automationen sollten nicht die Detail-Zeile parsen muessen, um die Nutrition-Lernluecke korrekt zu schliessen. Damit bleibt das 3/3-Gate streng und trotzdem leichter wiederholbar.
+- **Alternatives:** Die Werte nur im Text halten (bricht maschinenlesbare Nutzung); Freitext als GI-Komfort akzeptieren (zu fehleranfaellig); das Gate lockern (zu wenig Evidenz fuer Nutrition-Trends).
+- **Decided by:** Codex, als Nutrition-Gate-Support-Slice im Branch `codex/fueling-gate-json-options`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Gate-Audit nennt strukturierte GI-Komfort-Werte
 
 - **Decision:** `npm run audit:fueling-gate` nennt bei fehlendem GI-Komfort neben dem Activity-Deep-Link auch die strukturierten Werte `ok`, `mild_issue` und `issue` mit UI-Labels.

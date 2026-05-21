@@ -54,6 +54,11 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(audit.users[0].newLogsStillNeeded, 1);
   assert.equal(audit.users[0].nextAction.kind, 'complete_gi_comfort');
   assert.equal(audit.users[0].nextAction.targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.deepEqual(audit.users[0].nextAction.options, [
+    { value: 'ok', label: 'Magen ok' },
+    { value: 'mild_issue', label: 'Magen leicht unruhig' },
+    { value: 'issue', label: 'Magenprobleme' },
+  ]);
   assert.equal(audit.users[0].completionCandidates[0].targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
 
   const rendered = renderFuelingGateAudit(audit);

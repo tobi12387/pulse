@@ -23,6 +23,10 @@ function structuredGiComfortOptionsText() {
     .join(', ');
 }
 
+function structuredGiComfortOptions() {
+  return STRUCTURED_GI_COMFORT_OPTIONS.map(option => ({ ...option }));
+}
+
 function usage() {
   return [
     'Usage: node scripts/fueling-gate-audit.mjs [options]',
@@ -148,6 +152,7 @@ function nextActionFor(comparableLogs) {
       activityId: giGap.activityId,
       targetPath: activityFuelingPath(giGap.activityId),
       date: giGap.date,
+      options: structuredGiComfortOptions(),
     };
   }
 
