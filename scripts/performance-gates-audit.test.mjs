@@ -389,7 +389,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(checklist, /Use the future-log scaffold when ready: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`/);
   assert.match(checklist, /## 2\. iPhone\/PWA field/);
   assert.match(checklist, /Verify the server mirror before recording current field evidence: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
-  assert.match(checklist, /Print the paste-ready field scaffold: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold`/);
+  assert.match(checklist, /Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold`/);
   assert.match(checklist, /Current main field evidence \(stale\)\. Verify the server mirror is on abc1234/);
   assert.match(checklist, /## 3\. Server deploy mirror/);
   assert.match(checklist, /read-only recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
