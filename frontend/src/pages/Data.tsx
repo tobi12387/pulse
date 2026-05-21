@@ -23,6 +23,7 @@ type DataPrimaryAction = {
   cta: string;
   run: () => void;
   targetLog?: string | null;
+  optionHint?: string | null;
 };
 
 const TABS = [
@@ -318,6 +319,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       result: 'Öffnet die Aktivität und den Fueling-Log. Nach dem Speichern kann Pulse die Lernkalibrierung neu bewerten; Plan und Garmin bleiben unverändert.',
       cta: fuelingNextActionLabel,
       targetLog: fuelingTargetLog,
+      optionHint: 'GI-Komfort: Magen ok · Magen leicht unruhig · Magenprobleme',
       run: () => navigate(fuelingTargetPath),
     }
     : null;
@@ -475,6 +477,25 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               <span className="label-mono" style={{ color: 'var(--amber)' }}>Ziel-Log</span>
               <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text)' }}>
                 {primaryAction.targetLog}
+              </span>
+            </div>
+          )}
+          {primaryAction.optionHint && (
+            <div
+              data-testid="data-primary-action-options"
+              style={{
+                display: 'grid',
+                gap: 4,
+                marginTop: 8,
+                padding: '8px 9px',
+                border: '1px solid rgba(47,102,208,0.26)',
+                borderRadius: 5,
+                background: 'rgba(47,102,208,0.07)',
+              }}
+            >
+              <span className="label-mono" style={{ color: 'var(--accent)' }}>Erlaubte Auswahl</span>
+              <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text)' }}>
+                {primaryAction.optionHint}
               </span>
             </div>
           )}

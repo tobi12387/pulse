@@ -721,6 +721,9 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
 
   await expect(action).toContainText('Fueling-Evidenz schließen');
   await expect(action.getByTestId('data-primary-action-target')).toContainText('Long Fueling Check');
+  await expect(action.getByTestId('data-primary-action-options')).toContainText('Magen ok');
+  await expect(action.getByTestId('data-primary-action-options')).toContainText('Magen leicht unruhig');
+  await expect(action.getByTestId('data-primary-action-options')).toContainText('Magenprobleme');
   await expect(action).toContainText('Trend-Evidenz 0/3');
   await expect(action).toContainText('GI-Komfort ergänzen');
 

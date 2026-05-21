@@ -209,3 +209,25 @@ Result:
 - Route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
 - Track gates passed: `verify:lernschleifen`, `verify:trainingsanpassung`, `verify:tagesentscheidung`.
 - Full smoke: 105 passed, 13 skipped.
+
+## Addendum — Data Fueling Action Options
+
+The local planning gate showed that Fueling learning remains blocked by comparable long-session logs and GI comfort values. The Data primary action already linked to the correct target log; this pass makes the allowed GI-comfort choices visible before the user opens the activity:
+
+- The Data daily action now shows the target log and the exact GI comfort options: `Magen ok`, `Magen leicht unruhig`, `Magenprobleme`.
+- The hint stays inside the primary action card so the next manual input is clear without adding a second explanatory surface.
+- The focused Data smoke now verifies that all three structured options are visible for the actionable Fueling gap.
+
+Additional verification:
+
+```bash
+git diff --check
+npm --prefix frontend run build
+npx playwright test frontend/e2e/pulse-smoke.spec.ts --grep "Data today promotes actionable fueling learning gaps" --project=desktop-chromium --project=mobile-chromium
+npm run verify:lernschleifen:pr
+```
+
+Result:
+
+- Focused Data Fueling smoke: 2 passed.
+- `verify:lernschleifen:pr` passed with 55 contract/golden tests and frontend build.
