@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildPerformanceGateAudit,
   exitCodeForAudit,
+  parseArgs,
   renderNextUnblock,
   renderPerformanceGatePacket,
   renderPerformanceGateAudit,
@@ -358,6 +359,58 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
   assert.match(renderNextUnblock(audit), /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+});
+
+test('performance gate audit can pin an expected server commit for manual field runs', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21', expectedCommit: 'def5678' }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: commandResult(0, JSON.stringify({
+      ...JSON.parse(GATED_IPHONE.stdout),
+      expectedCommit: 'def5678',
+      nextAction: 'Verify the server mirror is on def5678, rerun the real iPhone checklist and record Server commit under test: def5678.',
+      serverVerifyCommand: 'PULSE_EXPECTED_COMMIT=def5678 npm run verify:server',
+      serverRecoveryPacketCommand: 'PULSE_EXPECTED_COMMIT=def5678 npm run verify:server -- --packet',
+    })),
+    server: commandResult(1, '', [
+      'Permission denied (publickey,password).',
+      'expected_commit=def5678',
+      'recovery_runbook=docs/ai/checklists/deploy-auth-recovery.md',
+      'ERROR: SSH access to root@192.168.178.46 failed before server checks.',
+    ].join('\n')),
+  }));
+
+  assert.equal(audit.expectedCommit, 'def5678');
+  assert.equal(audit.gates[1].fieldPacketCommand, 'npm run audit:iphone-pwa-gate -- --expected-commit def5678 --packet');
+  assert.equal(audit.gates[1].serverVerifyCommand, 'PULSE_EXPECTED_COMMIT=def5678 npm run verify:server');
+  assert.equal(audit.gates[2].expectedCommit, 'def5678');
+  assert.match(renderPerformanceGatePacket(audit), /Expected server commit: def5678/);
+  assert.match(renderPerformanceGatePacket(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit def5678 --packet/);
+  assert.match(renderPerformanceGatePacket(audit), /Recovery packet: PULSE_EXPECTED_COMMIT=def5678 npm run verify:server -- --packet/);
+});
+
+test('performance gate audit CLI args accept an explicit expected commit', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--today',
+    '2026-05-21',
+    '--expected-commit',
+    'def5678',
+    '--packet',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: 'def5678',
+    skipServer: false,
+    failOnGated: false,
+    nextUnblock: false,
+    packet: true,
+    json: false,
+  });
+
+  assert.throws(
+    () => parseArgs(['node', 'scripts/performance-gates-audit.mjs', '--expected-commit', 'not-a-hash']),
+    /--expected-commit must be a 7-40 character git commit hash/,
+  );
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {

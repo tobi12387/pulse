@@ -22,6 +22,8 @@ function usage() {
     'Options:',
     '  --today YYYY-MM-DD   Anchor date for the Fueling gate audit.',
     '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
+    '  --expected-commit <short>',
+    '                       Expected deployed/server commit; default local git HEAD.',
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
     '  --next-unblock       Print only the first open gate unblock; with --json prints that object.',
     '  --packet             Print one manual handoff packet for all open gates.',
@@ -660,9 +662,18 @@ export function exitCodeForAudit(audit, options = {}) {
   return options.failOnGated && audit.gate !== 'ready' ? 1 : 0;
 }
 
-function parseArgs(argv) {
+function assertCommitish(value, label) {
+  const text = String(value ?? '').trim();
+  if (!/^[0-9a-f]{7,40}$/i.test(text)) {
+    throw new Error(`${label} must be a 7-40 character git commit hash`);
+  }
+  return text;
+}
+
+export function parseArgs(argv) {
   const result = {
     today: isoDate(new Date()),
+    expectedCommit: null,
     skipServer: false,
     failOnGated: false,
     nextUnblock: false,
@@ -678,6 +689,11 @@ function parseArgs(argv) {
     }
     if (arg === '--skip-server') {
       result.skipServer = true;
+      continue;
+    }
+    if (arg === '--expected-commit') {
+      result.expectedCommit = assertCommitish(args[index + 1], '--expected-commit');
+      index += 1;
       continue;
     }
     if (arg === '--fail-on-gated') {

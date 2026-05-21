@@ -16,6 +16,11 @@ handoff for SSH preflight failures; if SSH is still blocked, follow
 `docs/ai/checklists/deploy-auth-recovery.md` before continuing the iPhone field
 run.
 
+For a combined Performance-OS handoff, run
+`npm run audit:performance-gates -- --today <YYYY-MM-DD> --packet`. It defaults
+to local `HEAD`; add `--expected-commit <short>` only when the field run is
+intentionally pinned to a known deployed/runtime commit.
+
 ## Network
 
 - iPhone is connected to the VPN that routes the home network.
