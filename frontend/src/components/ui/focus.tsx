@@ -117,32 +117,49 @@ export function FPill({ children, tone = 'muted', filled = false }: FPillProps) 
 export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW' }) {
   const stages = ['DECIDE', 'EXECUTE', 'REVIEW'] as const;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', borderBottom: '1px solid var(--border)' }}>
+    <div
+      data-testid="stage-strip"
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', borderBottom: '1px solid var(--border)' }}
+    >
       {stages.map((stage, index) => {
         const isActive = stage === active;
         return (
           <div
             key={stage}
+            data-testid={`stage-strip-${stage.toLowerCase()}`}
             style={{
               minHeight: 38,
-              padding: '10px 14px',
+              padding: '10px 12px',
               borderRight: index < stages.length - 1 ? '1px solid var(--border)' : 'none',
               background: isActive ? 'var(--surface-2)' : 'transparent',
               color: isActive ? 'var(--accent)' : index < stages.indexOf(active) ? 'var(--text-2)' : 'var(--text-3)',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              columnGap: 8,
+              rowGap: 2,
+              flexWrap: 'wrap',
               minWidth: 0,
             }}
           >
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.18em' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.16em', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
               {String(index + 1).padStart(2, '0')}
             </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.14em' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
               {stage}
             </span>
             {isActive && (
-              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.14em' }}>
+              <span
+                data-testid="stage-strip-active-status"
+                style={{
+                  flexBasis: '100%',
+                  marginLeft: 22,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '.12em',
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 ● JETZT
               </span>
             )}
