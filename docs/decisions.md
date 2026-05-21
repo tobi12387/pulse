@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — iPhone-Feldgate prueft aktuelle Commit-Evidenz
+
+- **Decision:** `npm run audit:iphone-pwa-gate` vergleicht den im Feldrecord genannten `Server commit under test` mit dem erwarteten aktuellen Commit und macht fehlende oder veraltete Commit-Evidenz zu einem eigenen Gate-Gap.
+- **Why:** Reale iPhone/PWA-Evidence ist nur belastbar, wenn sie gegen den aktuellen Server-/Main-Stand aufgenommen wurde. Der alte Feldrecord auf `9e05189` darf nicht als aktuelle Bereitschaft erscheinen, sobald Zertifikat, Push oder Offline spaeter nachgetragen werden.
+- **Alternatives:** Commit-Frische nur im Chat/QA-Doc manuell pruefen (zu leicht zu uebersehen); alte Field-Evidence als bereit werten, wenn die anderen Zeilen pass sind (zu optimistisch); den iPhone-Gate-Audit durch Server-SSH blockieren (koppelt zwei getrennte Gates unnoetig).
+- **Decided by:** Codex, als iPhone/PWA-Gate-Support-Slice im Branch `codex/iphone-gate-stale-commit`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Route-Evidence `ec77c26` oeffnet kein neues UI-Slice
 
 - **Decision:** Die frische Route-Evidence auf `ec77c26` wird als QA-/Backlog-Beweis dokumentiert, aber nicht in ein neues UI/UX-Implementierungsslice uebersetzt.

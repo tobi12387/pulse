@@ -110,8 +110,16 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
   evidenceFile: 'docs/qa/field.md',
   fieldChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
   gate: 'gated',
+  expectedCommit: 'abc1234',
+  commitStatus: 'stale',
   scope: { serverCommit: '9e05189' },
   gaps: [
+    {
+      kind: 'current_commit_evidence',
+      label: 'Current main field evidence',
+      status: 'stale',
+      nextAction: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
+    },
     {
       kind: 'certificate_trust',
       label: 'Warning-free certificate trust',
@@ -120,13 +128,15 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
     },
     { kind: 'push_activation', label: 'Push activation and test push', status: 'partial' },
   ],
-  nextAction: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
+  nextAction: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
 }));
 
 const READY_IPHONE = commandResult(0, JSON.stringify({
   evidenceFile: 'docs/qa/field.md',
   fieldChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
   gate: 'ready',
+  expectedCommit: 'abc1234',
+  commitStatus: 'current',
   scope: { serverCommit: 'abc1234' },
   gaps: [],
   nextAction: null,
@@ -250,7 +260,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log/);
   assert.match(rendered, /iPhone\/PWA field/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
-  assert.match(rendered, /2 open gaps/);
+  assert.match(rendered, /3 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(rendered, /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
@@ -298,17 +308,19 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
     key: 'iphone_pwa',
     label: 'iPhone/PWA field',
     command: 'npm run audit:iphone-pwa-gate',
-    action: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
-    detail: '2 open gaps: Warning-free certificate trust: needs_followup, Push activation and test push: partial',
+    action: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
+    detail: '3 open gaps: Current main field evidence: stale, Warning-free certificate trust: needs_followup, Push activation and test push: partial',
     metadata: {
       evidenceChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
       evidenceFile: 'docs/qa/field.md',
+      expectedCommit: 'abc1234',
+      commitStatus: 'stale',
       serverCommitUnderTest: '9e05189',
       firstGap: {
-        kind: 'certificate_trust',
-        label: 'Warning-free certificate trust',
-        status: 'needs_followup',
-        nextAction: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
+        kind: 'current_commit_evidence',
+        label: 'Current main field evidence',
+        status: 'stale',
+        nextAction: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
       },
     },
   });
