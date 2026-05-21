@@ -1,14 +1,16 @@
-# iPhone Current Commit Handoff - 2026-05-22
+# iPhone Field Handoff Snapshot - 2026-05-22
 
 Branch: `codex/iphone-field-commit-handoff`
-Expected field commit: `638902f`
-Mode: clean `main` handoff after a docs-only main advance.
+Verified snapshot commit: `638902f`
+Mode: clean `main` handoff snapshot after a docs-only main advance.
 
 ## Purpose
 
-Keep the next real iPhone/PWA field run aligned with the live Performance gate output.
+Record the clean server and gate state that made `638902f` safe as an iPhone/PWA field target at the time of the snapshot.
 
-The earlier server preflight at `cc0ee3f` remains useful runtime evidence, but `main` later advanced to `638902f` through docs-only PR #674. The current manual checklist now expects `638902f`, so the next real-device evidence record should use the live audit's expected commit rather than the older preflight hash.
+The earlier server preflight at `cc0ee3f` remains useful runtime evidence, but `main` later advanced to `638902f` through docs-only PR #674. This file is therefore evidence for a known-good snapshot, not a permanent instruction to use `638902f` after future docs-only merges.
+
+For the actual real-device run, use the expected commit printed by the live `npm run audit:performance-checklist -- --today <YYYY-MM-DD>` output from clean `main`.
 
 ## Main Diff Since Runtime Preflight
 
@@ -63,11 +65,11 @@ Result:
 
 ## Next Manual Action
 
-For the next real iPhone/PWA field run, use the current checklist target:
+For the next real iPhone/PWA field run, use the current checklist target from clean `main`:
 
 ```bash
 npm run audit:performance-checklist -- --today 2026-05-22
-npm run audit:iphone-pwa-gate -- --expected-commit 638902f --scaffold
+npm run audit:iphone-pwa-gate -- --expected-commit <commit-from-checklist> --scaffold
 ```
 
 Run the final pre-field checklist from clean `main`; feature-branch reruns intentionally enter local-planning mode and defer server mirror verification.
@@ -76,7 +78,7 @@ Append the generated field record to `docs/qa/2026-05-02-iphone-pwa-real-device.
 
 - Device.
 - iOS version.
-- Server commit under test: `638902f`.
+- Server commit under test: the commit printed by the clean-main checklist.
 - Safari/VPN/certificate result.
 - Home Screen PWA result.
 - Settings diagnostics result.
@@ -86,6 +88,6 @@ Append the generated field record to `docs/qa/2026-05-02-iphone-pwa-real-device.
 After recording the field run, rerun:
 
 ```bash
-npm run audit:iphone-pwa-gate -- --expected-commit 638902f
+npm run audit:iphone-pwa-gate -- --expected-commit <commit-from-checklist>
 npm run audit:performance-gates -- --today 2026-05-22
 ```

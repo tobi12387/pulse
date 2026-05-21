@@ -3,7 +3,7 @@
 Branch: `codex/iphone-server-preflight-2026-05-22`
 Runtime target commit: `cc0ee3f`
 Mode: clean `main` server preflight before the next real-device iPhone/PWA field run.
-Current handoff: after docs-only PR #674 advanced `main`, the current field target is `638902f`; see `docs/qa/2026-05-22-iphone-current-commit-handoff-638902f.md` and the live `npm run audit:performance-checklist -- --today 2026-05-22` output.
+Current handoff: after docs-only PR #674 advanced `main`, `docs/qa/2026-05-22-iphone-field-handoff-snapshot-638902f.md` records a later clean-main snapshot. For the actual field run, use the expected commit printed by the live `npm run audit:performance-checklist -- --today <YYYY-MM-DD>` output from clean `main`.
 
 ## Purpose
 
