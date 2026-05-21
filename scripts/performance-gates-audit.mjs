@@ -387,14 +387,28 @@ function nextUnblockMetadata(gate) {
 function nextUnblockFrom(openGates) {
   const gate = openGates[0] ?? null;
   if (!gate) return null;
+  const metadata = nextUnblockMetadata(gate);
   return {
     key: gate.key,
     label: gate.label,
     command: gate.command,
-    action: gate.nextAction,
+    action: nextUnblockAction(gate, metadata),
     detail: gate.detail,
-    metadata: nextUnblockMetadata(gate),
+    metadata,
   };
+}
+
+function nextUnblockAction(gate, metadata) {
+  if (gate.key !== 'fueling' || !metadata?.targetPath || typeof gate.nextAction !== 'string') {
+    return gate.nextAction;
+  }
+  return gate.nextAction
+    .replace(new RegExp(`\\s+-\\s+Path:\\s+${escapeRegExp(metadata.targetPath)}\\s*$`), '')
+    .trim();
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) {

@@ -163,7 +163,7 @@ test('performance gate audit summarizes current gated blockers', () => {
     key: 'fueling',
     label: 'Fueling learning',
     command: 'npm run audit:fueling-gate -- --today 2026-05-21',
-    action: 'GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g/h oder Ergebnis ableiten. - Path: /plan/activity/activity-a#activity-fueling-log',
+    action: 'GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.',
     detail: '0/3 comparable complete logs; 2 existing logs completable now: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h) -> /plan/activity/activity-a#activity-fueling-log, 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h) -> /plan/activity/activity-b#activity-fueling-log; 1 new complete long-session log still needed after candidates.',
     metadata: {
       kind: 'complete_gi_comfort',
@@ -278,6 +278,8 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /Next unblock: Fueling learning/);
   assert.match(nextRendered, /Command: npm run audit:fueling-gate -- --today 2026-05-21/);
   assert.match(nextRendered, /Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
+  assert.match(nextRendered, /Action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log/);
+  assert.doesNotMatch(nextRendered, /Action: .*Path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(nextRendered, /Target path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(nextRendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);

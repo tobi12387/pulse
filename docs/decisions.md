@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Next trennt Fueling-Aktion und Zielpfad
+
+- **Decision:** `npm run audit:performance-next` entfernt beim Fueling-Next-Unblock den duplizierten `Path:`-Anhang aus der Action-Zeile, wenn derselbe Pfad bereits als strukturierter `Target path` vorliegt.
+- **Why:** Der erste Performance-OS-Unblock ist eine manuelle GI-Komfort-Erfassung. Die kompakte Next-Ausgabe soll die Handlung, den Ziel-Log und den Deep-Link getrennt und scanbar zeigen, ohne den Pfad zweimal in Folge zu wiederholen.
+- **Alternatives:** Den Pfad in Action und Target path doppelt lassen (lauter Handoff); den Pfad komplett entfernen (zu wenig direkt ausfuehrbar); die Gate-Logik oder Kandidatenstruktur aendern (unnötig, da nur Rendering-Reibung).
+- **Decided by:** Codex, als Performance-Next-Handoff-Slice im Branch `codex/performance-next-action-path`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Next nennt die Nicht-Ableitungsregel direkt
 
 - **Decision:** Fueling- und Performance-Next-Handoffs formulieren den GI-Komfort-Schritt als echte Magenreaktion am vorhandenen langen Carb-Log und nennen direkt, dass nichts aus Notizen, Route, RPE, g/h oder Ergebnis abgeleitet werden darf.
