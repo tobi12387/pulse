@@ -594,6 +594,7 @@ export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) 
 
   return {
     date: today,
+    localPlanning: Boolean(options.localPlanning),
     gate: openGateList.length === 0
       ? deferredGateList.length > 0 ? 'planning_ready' : 'ready'
       : 'gated',
@@ -832,6 +833,11 @@ function packetGateLines(gate, index) {
   return lines;
 }
 
+function rerunPerformanceGateCommand(audit) {
+  const modeFlag = audit.localPlanning ? ' --local-planning' : '';
+  return commandWithServerEnv(`npm run audit:performance-gates -- --today ${audit.date}${modeFlag}`);
+}
+
 export function renderPerformanceGatePacket(audit) {
   const lines = [
     '# Performance-OS Gate Handoff Packet',
@@ -846,7 +852,7 @@ export function renderPerformanceGatePacket(audit) {
 
   if (!audit.nextUnblock) {
     if (audit.deferredGates) {
-      lines.push('No open manual Performance-OS gates in this local-planning snapshot. Rerun the normal audit before starting a deploy-sensitive product package.');
+      lines.push(`No open manual Performance-OS gates in this local-planning snapshot. Rerun ${rerunPerformanceGateCommand(audit)} after manual saves, and rerun the normal audit before deploy-sensitive decisions.`);
       lines.push('');
       lines.push('## Deferred Gates');
       deferredGates(audit.gates).forEach((gate, index) => {
@@ -908,7 +914,7 @@ export function renderPerformanceGatePacket(audit) {
   lines.push('- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.');
   lines.push('- If the run is intentionally pinned to a known deployed/runtime commit, pass --expected-commit <short> so server and iPhone checks use that commit.');
   lines.push('- The server is a GitHub main mirror; do not edit, branch or commit on the server.');
-  lines.push(`- Rerun after any manual save or deploy: ${commandWithServerEnv(`npm run audit:performance-gates -- --today ${audit.date}`)}`);
+  lines.push(`- Rerun after any manual save or deploy: ${rerunPerformanceGateCommand(audit)}`);
 
   return lines.join('\n');
 }
