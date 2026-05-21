@@ -886,15 +886,15 @@ test('decision quality result preview explains how the next check changes', () =
     decisionQuality: strongDecisionQuality(),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Entscheidungsmuster ändern/);
-  assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen/);
-  assert.equal(decision.cta, 'Kalibrierung prüfen');
+  assert.match(decision.contract.leadingFactor, /^Lernschleife: Entscheidungsmuster ändern/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen|Watch-Kontext/);
+  assert.equal(decision.cta, 'Muster prüfen');
   assert.equal(decision.targetPath, '/data?tab=analysis#data-decision-quality');
-  assert.match(decision.resultPreview ?? '', /Lern-Evidenz als Tageshandlung/);
-  assert.match(decision.resultPreview ?? '', /keine neue Empfehlung ohne deinen nächsten expliziten Schritt/);
+  assert.match(decision.resultPreview ?? '', /Entscheidungsqualität in Data/);
+  assert.match(decision.resultPreview ?? '', /nur den Lernstand/);
   assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
-  assert.match(decision.contract.safestAlternative, /Lernkalibrierung zuerst prüfen: kleinere Option zuerst festlegen/);
-  assert.doesNotMatch(decision.contract.safestAlternative, /Watch-Kontext bleibt/);
+  assert.match(decision.contract.safestAlternative, /Lernschleife zuerst prüfen: kleinere Option zuerst festlegen/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /Watch-Kontext|Kalibrierung/);
 });
 
 test('helpful learning calibration stays short in the Home daily answer', () => {
@@ -908,14 +908,16 @@ test('helpful learning calibration stays short in the Home daily answer', () => 
     }),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Entscheidungsmuster bestätigt/);
-  assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen/);
-  assert.ok(decision.contract.leadingFactor.length < 150);
-  assert.equal(decision.cta, 'Kalibrierung prüfen');
+  assert.match(decision.contract.leadingFactor, /^Lernschleife: Entscheidungsmuster bestätigt/);
+  assert.match(decision.contract.leadingFactor, /Diesen Entscheidungstyp beibehalten/);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Empfehlung darf lernen|Watch-Kontext|Kalibrierung/);
+  assert.ok(decision.contract.leadingFactor.length < 120);
+  assert.equal(decision.cta, 'Muster prüfen');
   assert.match(decision.completionCriterion, /Entscheidungsmuster bestätigt/);
   assert.doesNotMatch(decision.completionCriterion, /Stimmung|Check-in/);
-  assert.match(decision.contract.safestAlternative, /Lernkalibrierung zuerst prüfen: bestätigte Entscheidungsmuster beibehalten/);
-  assert.ok(decision.contract.safestAlternative.length < 190);
+  assert.match(decision.contract.safestAlternative, /Lernschleife zuerst prüfen: bestätigte Muster beibehalten/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /Watch-Kontext|Kalibrierung/);
+  assert.ok(decision.contract.safestAlternative.length < 170);
 });
 
 test('completed days keep learning calibration out of the review lead when nothing is open', () => {
@@ -943,8 +945,8 @@ test('completed days keep learning calibration out of the review lead when nothi
   assert.equal(decision.emptyState, 'Für heute ist nichts mehr offen. Garmin-Aktivität und Feedback sind erledigt.');
   assert.equal(decision.cta, 'Aktivität ansehen');
   assert.match(decision.contract.leadingFactor, /^Garmin:/);
-  assert.doesNotMatch(decision.contract.leadingFactor, /Lernkalibrierung/);
-  assert.equal(decision.contract.signals.find(signal => signal.label === 'Lernkalibrierung'), undefined);
+  assert.doesNotMatch(decision.contract.leadingFactor, /Lernschleife|Lernkalibrierung/);
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Lernschleife'), undefined);
   assert.match(decision.completionCriterion, /nichts mehr offen/);
 });
 
@@ -1056,9 +1058,9 @@ test('resolved tradeoff learning stays continuity only in Home', () => {
   assert.equal(decision.cta, 'Workout öffnen');
   assert.equal(decision.targetPath, '/plan?tab=training');
   assert.equal(decision.contract.signals.find(signal => signal.label === 'Tageskonflikt'), undefined);
-  assert.equal(decision.contract.signals.find(signal => signal.label === 'Lernkalibrierung'), undefined);
+  assert.equal(decision.contract.signals.find(signal => signal.label === 'Lernschleife'), undefined);
   assert.match(decision.contract.continuity, /Geloester Tageskonflikt bleibt ruhig/);
-  assert.doesNotMatch(decision.contract.safestAlternative, /Tageskonflikt-Lernen|Lernkalibrierung/);
+  assert.doesNotMatch(decision.contract.safestAlternative, /Tageskonflikt-Lernen|Lernschleife|Lernkalibrierung/);
   const tradeoffEvidence = decision.evidence.find(item => (
     typeof item !== 'string'
     && /Geloester Tageskonflikt/.test(item.label)
@@ -1340,13 +1342,13 @@ test('weak learning calibration stays watch context below a productive training 
   assert.match(decision.contract.leadingFactor, /^Training:/);
   assert.equal(decision.cta, 'Workout öffnen');
   assert.equal(decision.targetPath, '/plan?tab=training');
-  const calibration = decision.contract.signals.find(signal => signal.label === 'Lernkalibrierung');
+  const calibration = decision.contract.signals.find(signal => signal.label === 'Lernschleife');
   assert.ok(calibration);
   assert.equal(calibration.tone, 'muted');
   assert.match(calibration.detail, /Noch Watch-Kontext/);
   assert.match(calibration.detail, /Decision Quality: Wiederholung prüfen/);
   assert.match(calibration.detail, /Fueling: Trend-Evidenz 1\/3/);
-  assertSignalBefore(decision, 'Training', 'Lernkalibrierung');
+  assertSignalBefore(decision, 'Training', 'Lernschleife');
 });
 
 test('personal response calibration names the changed daily boundary without hidden writes', () => {
@@ -1355,12 +1357,13 @@ test('personal response calibration names the changed daily boundary without hid
     personalResponse: personalResponse(),
   });
 
-  assert.match(decision.contract.leadingFactor, /^Lernkalibrierung: Reaktionsmuster kalibrieren/);
+  assert.match(decision.contract.leadingFactor, /^Lernschleife: Reaktionsmuster:/);
   assert.match(decision.contract.leadingFactor, /Heute zuerst Boundary setzen/);
-  assert.equal(decision.cta, 'Kalibrierung prüfen');
+  assert.doesNotMatch(decision.contract.leadingFactor, /Kalibrierung|Watch-Kontext/);
+  assert.equal(decision.cta, 'Reaktion prüfen');
   assert.equal(decision.targetPath, '/data?tab=analysis#data-personal-response');
   assert.match(decision.resultPreview ?? '', /Reaktionsmuster/);
-  assert.match(decision.resultPreview ?? '', /Heute zuerst Boundary setzen/);
+  assert.match(decision.resultPreview ?? '', /nur den Lernstand/);
   assert.match(decision.resultPreview ?? '', /Plan und Garmin bleiben unverändert/);
 });
 

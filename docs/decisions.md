@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Home uebersetzt Lernkalibrierung in Alltagssprache
+
+- **Decision:** Home zeigt Daily-Decision-Lernkalibrierung als `Lernschleife` mit `Muster pruefen`/`Reaktion pruefen` statt als `Lernkalibrierung`, `Kalibrierung pruefen` oder `Watch-Kontext` im primaeren Tagesvertrag. Data und Plan duerfen die fachlicheren Labels in Analyse-/Wochenkontexten behalten.
+- **Why:** Frische Route-Evidence auf `09af022` zeigte fachlich korrekte, aber zu interne Sprache in der ersten Home-Entscheidung. Die Performance-OS-Oberflaeche soll die tiefere Lernlogik in eine ruhige, alltagstaugliche Handlung uebersetzen, bevor Tobi in Data/Analyse eintaucht.
+- **Alternatives:** Die fachlichen Labels ueberall umbenennen (zu breit fuer Data/Plan-Kontexte); die Lernschleife aus Home entfernen (verliert echte Tageswirkung); nur E2E-Texte lockern (wuerde die sichtbare Friktion nicht beheben).
+- **Decided by:** Codex, nach aktueller Route-Evidence im Branch `codex/current-route-evidence-09af022`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Roadmap-Audit haelt Produkt-Backlog gated
 
 - **Decision:** Der Performance-OS-Backlog bleibt nach Roadmap-Replenishment geschlossen: UX Task Contract, Heute/Home-Simplification, Plan Action Hierarchy, Daily Delta, Garmin-Closure, Weekly Coach Review und Recovery/Mental Resilience gelten als shipped Foundations; daraus wird kein neues Produktpaket abgeleitet.

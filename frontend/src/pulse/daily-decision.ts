@@ -623,7 +623,7 @@ function decisionQualityAlternative(signal: DailyDecisionSignal | null): string 
 function learningCalibrationAlternative(signal: DailyDecisionSignal | null): string | null {
   if (!signal || signal.tone === 'green' || signal.tone === 'muted') return null;
   const detail = learningCalibrationSafetyRule(signal.detail);
-  return `Lernkalibrierung zuerst prüfen: ${detail}. Plan und Garmin bleiben unverändert, bis du die Evidenz öffnest.`;
+  return `Lernschleife zuerst prüfen: ${detail}. Plan und Garmin bleiben unverändert, bis du die Evidenz öffnest.`;
 }
 
 function tradeoffLearningAlternative(signal: DailyDecisionSignal | null): string | null {
@@ -633,12 +633,12 @@ function tradeoffLearningAlternative(signal: DailyDecisionSignal | null): string
 
 function learningCalibrationSafetyRule(detail: string): string {
   if (detail.includes('Entscheidungsmuster bestätigt')) {
-    return 'bestätigte Entscheidungsmuster beibehalten; schwächere Muster nur beobachten';
+    return 'bestätigte Muster beibehalten; schwächere Muster nur beobachten';
   }
   if (detail.includes('Entscheidungsmuster ändern')) {
     return 'kleinere Option zuerst festlegen; Intensität erst nach Warm-up freigeben';
   }
-  if (detail.includes('Reaktionsmuster kalibrieren')) {
+  if (detail.includes('Reaktionsmuster kalibrieren') || detail.includes('Reaktionsmuster:')) {
     return 'heutige Boundary zuerst setzen; Reaktionsmuster nur als Evidenz prüfen';
   }
   return sentenceWithoutTrailingPeriod(detail);
@@ -1054,7 +1054,7 @@ export interface DailyDecisionSignalRegistryEntry {
 
 export const dailyDecisionSignalRegistry = {
   Mental: { priority: 0, defaultActionLabel: 'Check-in öffnen', preferSignalActionLabel: true },
-  Lernkalibrierung: { priority: 0, defaultActionLabel: 'Kalibrierung prüfen', preferSignalActionLabel: true },
+  Lernschleife: { priority: 0, defaultActionLabel: 'Muster prüfen', preferSignalActionLabel: true },
   Lernen: { priority: 0, defaultActionLabel: 'Lernen prüfen' },
   Recovery: { priority: 0, defaultActionLabel: 'Recovery ansehen' },
   Anpassung: { priority: 0, defaultActionLabel: 'Anpassung prüfen', actionFromDetailPrefix: true },
@@ -1214,15 +1214,36 @@ function learningCalibrationSignal(
   const detail = learningCalibrationHomeDetail(calibration, decisionQuality, personalResponse);
 
   return {
-    label: 'Lernkalibrierung',
+    label: 'Lernschleife',
     detail,
     tone: calibration.effect === 'today_action'
       ? calibration.tone === 'rose' ? 'rose' : 'amber'
       : 'muted',
     targetPath: calibration.targetPath,
-    actionLabel: calibration.actionLabel,
-    resultPreview: calibration.resultPreview,
+    actionLabel: learningCalibrationHomeActionLabel(calibration),
+    resultPreview: learningCalibrationHomeResultPreview(calibration),
   };
+}
+
+function learningCalibrationHomeActionLabel(calibration: ReturnType<typeof buildLearningCalibration>): string | undefined {
+  if (!calibration.targetPath) return calibration.actionLabel;
+  if (calibration.targetPath.includes('#data-decision-quality')) return 'Muster prüfen';
+  if (calibration.targetPath.includes('#data-personal-response')) return 'Reaktion prüfen';
+  return calibration.actionLabel;
+}
+
+function learningCalibrationHomeResultPreview(calibration: ReturnType<typeof buildLearningCalibration>): string | undefined {
+  const targetPath = calibration.targetPath ?? '';
+  if (targetPath.includes('#activity-fueling-log')) {
+    return 'Öffnet die Aktivität und den Fueling-Log. Plan und Garmin bleiben unverändert; du schließt nur die Evidenzlücke.';
+  }
+  if (targetPath.includes('#data-decision-quality')) {
+    return 'Öffnet die Entscheidungsqualität in Data. Du prüfst nur den Lernstand; Plan und Garmin bleiben unverändert.';
+  }
+  if (targetPath.includes('#data-personal-response')) {
+    return 'Öffnet die Reaktionsmuster in Data. Du prüfst nur den Lernstand; Plan und Garmin bleiben unverändert.';
+  }
+  return calibration.resultPreview;
 }
 
 function learningCalibrationHomeDetail(
@@ -1236,10 +1257,13 @@ function learningCalibrationHomeDetail(
       : `${calibration.title}: ${calibration.summary}`;
   }
 
-  const watchSuffix = calibration.title.includes('teilweise') ? ' Schwächere Muster bleiben Watch-Kontext.' : '';
+  const watchSuffix = calibration.title.includes('teilweise') ? ' Schwächere Muster nur beobachten.' : '';
 
   if (decisionQualityCanCalibrate(decisionQuality)) {
-    const adjustment = sentenceWithoutTrailingPeriod(decisionQuality!.suggestedAdjustment);
+    const rawAdjustment = sentenceWithoutTrailingPeriod(decisionQuality!.suggestedAdjustment);
+    const adjustment = decisionQuality!.status === 'helpful' && /beibehalten/i.test(rawAdjustment)
+      ? 'Diesen Entscheidungstyp beibehalten'
+      : rawAdjustment;
     const prefix = decisionQuality!.status === 'helpful'
       ? 'Entscheidungsmuster bestätigt'
       : 'Entscheidungsmuster ändern';
@@ -1249,7 +1273,7 @@ function learningCalibrationHomeDetail(
   const responseSignal = strongestPersonalResponseSignal(personalResponse);
   if (responseSignal?.strength === 'useful') {
     const adjustment = sentenceWithoutTrailingPeriod(responseSignal.nextAdjustment);
-    return `Reaktionsmuster kalibrieren: ${adjustment}.${watchSuffix}`;
+    return `Reaktionsmuster: ${adjustment}.${watchSuffix}`;
   }
 
   return calibration.summary;

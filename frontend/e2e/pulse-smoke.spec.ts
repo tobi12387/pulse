@@ -1573,17 +1573,19 @@ test('Home daily decision opens strong learning calibration from Data evidence',
 
   await page.goto('/');
   const decision = page.getByTestId('daily-decision-card');
-  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Lernkalibrierung');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Lernschleife');
   await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Entscheidungsmuster ändern');
   await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('Empfehlung darf lernen');
+  await expect(decision.getByTestId('daily-decision-leading-factor')).not.toContainText('Watch-Kontext');
   await expect(decision.getByTestId('daily-decision-leading-factor')).toContainText('Heute zuerst kleinere Option');
-  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Lernkalibrierung zuerst prüfen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('Lernschleife zuerst prüfen');
   await expect(decision.getByTestId('daily-decision-safest-option')).toContainText('kleinere Option zuerst festlegen');
+  await expect(decision.getByTestId('daily-decision-safest-option')).not.toContainText('Kalibrierung');
   await decision.getByRole('button', { name: /Details & Evidenz/i }).click();
-  await expect(decision.getByTestId('daily-decision-contract')).toContainText('Lernkalibrierung');
-  await expect(decision).toContainText('Lern-Evidenz als Tageshandlung');
+  await expect(decision.getByTestId('daily-decision-contract')).toContainText('Lernschleife');
+  await expect(decision).toContainText('Entscheidungsqualität in Data');
 
-  await decision.getByRole('button', { name: 'Kalibrierung prüfen', exact: true }).click();
+  await decision.getByRole('button', { name: 'Muster prüfen', exact: true }).click();
   await expect(page).toHaveURL('/data?tab=analysis#data-decision-quality');
   await expect(page.locator('#data-decision-quality')).toBeVisible();
 });
