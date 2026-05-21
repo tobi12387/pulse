@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Gate-Audit nennt strukturierte GI-Komfort-Werte
+
+- **Decision:** `npm run audit:fueling-gate` nennt bei fehlendem GI-Komfort neben dem Activity-Deep-Link auch die strukturierten Werte `ok`, `mild_issue` und `issue` mit UI-Labels.
+- **Why:** Nutrition-Trends bleiben bis zu drei vergleichbaren kompletten During-Logs gegated; zwei vorhandene lange Carb-Logs koennen erst durch strukturierten GI-Komfort zaehlen. Der Audit soll deshalb nicht nur sagen, wo Tobi klicken muss, sondern auch welche gespeicherten Werte das Gate wirklich schliessen.
+- **Alternatives:** Nur die Activity-Pfade ausgeben (laesst die Value-Semantik im UI suchen); Fueling-Trends trotz unvollstaendiger Logs starten (zu wenig Evidenz); Freitext-Notizen als GI-Komfort werten (zu fehleranfaellig).
+- **Decided by:** Codex, als Nutrition-Gate-Support-Slice im Branch `codex/fueling-gate-action-links`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Home-Stage-Strip haelt iPhone-WebKit-Status im Segment
 
 - **Decision:** Der Home-Stage-Strip behaelt drei gleich breite Segmente, aber der aktive `JETZT`-Status bricht auf eine eigene Zeile innerhalb des aktiven Segments um und wird per mobilem Bounding-Box-Test abgesichert.
