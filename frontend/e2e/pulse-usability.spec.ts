@@ -2674,6 +2674,35 @@ test('Data mobile keeps the missing-check-in action before optional detail copy'
   await expect(action.getByTestId('data-primary-action-mobile-contract')).toContainText('Nach dem Klick');
 });
 
+test('Home mobile puts the daily action before evidence copy', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile action-first check');
+
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  const primaryAction = decision.getByRole('button').first();
+  const reason = decision.locator('.daily-decision-reason');
+  const leadingFactor = decision.getByTestId('daily-decision-leading-factor');
+
+  await expect(primaryAction).toBeInViewport();
+  await expect(reason).toBeVisible();
+  await expect(leadingFactor).toBeVisible();
+
+  const actionBox = await primaryAction.boundingBox();
+  const reasonBox = await reason.boundingBox();
+  const leadingBox = await leadingFactor.boundingBox();
+  expect(actionBox).not.toBeNull();
+  expect(reasonBox).not.toBeNull();
+  expect(leadingBox).not.toBeNull();
+  expect(actionBox!.y).toBeLessThan(reasonBox!.y);
+  expect(actionBox!.y).toBeLessThan(leadingBox!.y);
+  await expect(decision.locator('.daily-decision-next-step-summary')).toBeHidden();
+  await expect(decision.getByRole('button', { name: 'Details & Evidenz anzeigen' })).toBeVisible();
+  await expect(decision.getByTestId('daily-decision-safest-option')).toBeHidden();
+});
+
 test('Data Plan Load triage hands off to the shared Plan weekly decision', async ({ page }) => {
   await mockPulseApi(page);
 

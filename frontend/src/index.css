@@ -2064,6 +2064,35 @@
       display: none;
     }
 
+    .daily-decision-card--action-first .daily-decision-reason-label {
+      margin-top: 9px !important;
+    }
+
+    .daily-decision-card--action-first .daily-decision-reason {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+
+    .daily-decision-card--action-first .daily-decision-leading-factor {
+      margin-top: 8px !important;
+    }
+
+    .daily-decision-card--action-first .daily-decision-next-steps-card {
+      background: transparent !important;
+      border: 0 !important;
+      padding: 0 !important;
+    }
+
+    .daily-decision-card--action-first .daily-decision-next-step-summary {
+      display: none;
+    }
+
+    .daily-decision-card--action-first .daily-decision-next-steps-card > button {
+      margin-top: 0 !important;
+    }
+
     .focus-diary-entry {
       grid-template-columns: 86px minmax(0, 1fr);
       gap: 14px;

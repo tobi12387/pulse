@@ -149,3 +149,29 @@ Result:
 - Mobile daily-card compaction recheck: `verify:tagesentscheidung` passed with 39 contract/golden tests, frontend build and 14 rendered Home smokes.
 - Mobile Plan selector recheck: frontend build, four focused mobile Plan/navigation smokes, route evidence and `verify:trainingsanpassung` passed.
 - Frontend build passed.
+
+## Addendum — Mobile Home True Action-First Polish
+
+After the main-sync review, the mobile Home screenshot still showed one remaining clarity issue: the primary daily CTA was visible earlier than before, but the card repeated the same action again as `Nächster Schritt` before the user reached Readiness.
+
+The polish keeps the same Daily Decision contract and details drawer, but changes mobile action order:
+
+- The primary CTA now sits immediately below the daily decision title.
+- The `Warum jetzt` copy and leading factor remain visible as evidence after the action.
+- The duplicate mobile `Nächster Schritt` summary is hidden for action-first Home cards.
+- The `Details & Evidenz anzeigen` control stays visible, so contract, signals, safest option and evidence remain reachable without crowding the first viewport.
+
+Additional verification:
+
+```bash
+git diff --check
+npm --prefix frontend run build
+npx playwright test frontend/e2e/pulse-usability.spec.ts --grep "Home mobile puts the daily action before evidence copy|Data mobile keeps the missing-check-in action before optional detail copy" --project=mobile-chromium
+PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence-redesign-action-first npm run qa:ux-evidence
+npm run qa:ux-summary -- test-results/route-evidence-redesign-action-first
+```
+
+Result:
+
+- Focused mobile action-first checks: 2 passed.
+- Route evidence at `8993f2c`: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
