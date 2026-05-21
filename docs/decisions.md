@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Next rendert Fueling-Kandidaten als Liste
+
+- **Decision:** `npm run audit:performance-next` zeigt Fueling-Completion-Kandidaten im Markdown als eigene Liste und ergaenzt `nextUnblock.metadata.status` mit den Zaehlern fuer complete Logs, sofort completable Logs und neu benoetigte Long-Session-Logs.
+- **Why:** Der erste offene Performance-OS-Unblock ist ein manueller GI-Komfort-Nachtrag. Eine kompakte Statuszeile plus Kandidatenliste ist auf Terminal und Mobile leichter zu scannen als eine lange Detailzeile, waehrend JSON weiterhin maschinenlesbar bleibt.
+- **Alternatives:** Kandidaten nur in der langen Detailzeile belassen (schlechter scanbar); nur JSON verbessern (hilft Tobi im Terminal nicht); ein separates Fueling-Next-Script einfuehren (unnoetige Befehlsdopplung).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-next-candidate-list`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Naechster Fueling-Unblock nennt den konkreten Log
 
 - **Decision:** Fueling- und Performance-Gate-Audits geben fuer den ersten Nutrition-Unblock zusaetzlich zur Deep-Link-URL eine `targetLog`-/Kandidaten-Zusammenfassung mit Datum, Aktivitaetsname, Typ, Dauer, Carbs und g/h aus.

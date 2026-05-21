@@ -125,6 +125,12 @@ function completionCandidatesText(candidates) {
   return items.length > 0 ? `: ${items.join(', ')}` : '';
 }
 
+function fuelingBlockingUser(gate) {
+  return gate.users?.find(user => user.gate !== 'ready')
+    ?? gate.users?.[0]
+    ?? null;
+}
+
 function summarizeFueling(today, runner) {
   const command = 'npm run audit:fueling-gate -- --today';
   const result = runner(process.execPath, ['scripts/fueling-gate-audit.mjs', '--today', today, '--json']);
@@ -291,19 +297,24 @@ function skippedServer(expectedCommit) {
 }
 
 function fuelingNextAction(gate) {
-  return gate.users?.find(user => user.gate !== 'ready')?.nextAction
-    ?? gate.users?.[0]?.nextAction
-    ?? null;
+  return fuelingBlockingUser(gate)?.nextAction ?? null;
 }
 
 function nextUnblockMetadata(gate) {
   if (gate.key === 'fueling') {
+    const user = fuelingBlockingUser(gate);
     const nextAction = fuelingNextAction(gate);
     return {
       kind: nextAction?.kind ?? null,
       targetPath: nextAction?.targetPath ?? gate.completionCandidates?.find(candidate => candidate.targetPath)?.targetPath ?? null,
       date: nextAction?.date ?? null,
       options: nextAction?.options ?? [],
+      status: user ? {
+        comparableCompleteLogs: user.comparableCompleteLogs ?? null,
+        requiredComparableCompleteLogs: user.requiredComparableCompleteLogs ?? null,
+        completableNow: user.completableNow ?? null,
+        newLogsStillNeeded: user.newLogsStillNeeded ?? null,
+      } : null,
       targetLog: nextAction?.targetLog ?? gate.completionCandidates?.find(candidate => candidate.targetPath) ?? null,
       completionCandidates: gate.completionCandidates ?? [],
     };
@@ -413,6 +424,38 @@ function optionsLine(metadata) {
   return `Options: ${options.map(option => `${option.value}=${option.label}`).join(', ')}`;
 }
 
+function nextDetailText(next) {
+  const status = next.metadata?.status;
+  const hasCompletionCandidates = (next.metadata?.completionCandidates ?? []).length > 0;
+  if (next.key === 'fueling' && status && hasCompletionCandidates) {
+    const complete = `${status.comparableCompleteLogs}/${status.requiredComparableCompleteLogs}`;
+    return [
+      `${complete} comparable complete logs`,
+      `${countText(status.completableNow, 'existing log')} completable now`,
+      `${countText(status.newLogsStillNeeded, 'new complete long-session log')} still needed after candidates`,
+    ].join('; ') + '.';
+  }
+  return next.detail;
+}
+
+function completionCandidateLines(metadata) {
+  const candidates = metadata?.completionCandidates ?? [];
+  if (!candidates.length) return [];
+  return [
+    'Completion candidates:',
+    ...candidates
+      .map(candidate => {
+        const text = completionCandidateText(candidate);
+        if (!text) return null;
+        const missing = (candidate.missing ?? []).length > 0
+          ? ` (missing: ${candidate.missing.join(', ')})`
+          : '';
+        return `- ${text}${missing}`;
+      })
+      .filter(Boolean),
+  ];
+}
+
 export function renderNextUnblock(audit) {
   const next = audit.nextUnblock;
   const lines = [
@@ -430,7 +473,7 @@ export function renderNextUnblock(audit) {
 
   lines.push(`Next unblock: ${next.label}`);
   lines.push(`Command: ${next.command}`);
-  lines.push(`Detail: ${next.detail}`);
+  lines.push(`Detail: ${nextDetailText(next)}`);
   lines.push(`Action: ${next.action}`);
 
   const targetSummary = targetLine(next.metadata);
@@ -439,6 +482,7 @@ export function renderNextUnblock(audit) {
   if (pathOrRunbook) lines.push(pathOrRunbook);
   const optionSummary = optionsLine(next.metadata);
   if (optionSummary) lines.push(optionSummary);
+  lines.push(...completionCandidateLines(next.metadata));
 
   return lines.join('\n');
 }
