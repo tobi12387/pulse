@@ -583,8 +583,8 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow={mode === 'insights' ? 'INSIGHTS · 90D' : 'DATA · ANALYSEN'}
-        title={mode === 'insights' ? 'Insights' : 'Analysen'}
+        eyebrow={mode === 'insights' ? 'ANALYSE · 90T' : 'DATEN · ANALYSEN'}
+        title={mode === 'insights' ? 'Analyse' : 'Analysen'}
         description={mode === 'insights'
           ? 'Trends, Korrelationen und belastbare Muster aus deinen Pulse-Daten.'
           : 'Öffne eine Karte, um die Analyse gezielt zu laden.'}
@@ -761,9 +761,10 @@ function InsightsSynthesis() {
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow="INSIGHTS · SYNTHESE"
-        title="Insights"
-        description="Die wichtigsten Muster zuerst. Tiefe Evidenz bleibt erreichbar, aber sie steht nicht mehr im Weg."
+        eyebrow="Analyse"
+        title="Analyse: Muster, nicht mehr Lärm"
+        mobileTitle="Analyse"
+        description="Pulse zeigt zuerst die eine lernende Aussage, die Plan oder Alltag wirklich verändern kann. Tiefe Analyse bleibt bewusst hinter Disclosure."
       />
 
       <section

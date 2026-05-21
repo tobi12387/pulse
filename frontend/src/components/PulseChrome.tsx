@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 function colorMix(color: string, percent: number) {
@@ -14,39 +14,39 @@ type PageHeaderProps = {
 };
 
 export function PageHeader({ eyebrow, title, mobileTitle, description, action }: PageHeaderProps) {
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 600px)').matches : false
+  ));
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 600px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  const visibleTitle = mobileTitle && isMobile ? mobileTitle : title;
+
   return (
-    <div
-      className="pulse-page-header"
-      style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: 12,
-        flexWrap: 'wrap',
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
+    <header className="pulse-page-header">
+      <div className="pulse-page-header-copy">
         {eyebrow && (
-          <div className="label-mono" style={{ marginBottom: 5 }}>
+          <div className="label-mono pulse-page-eyebrow">
             {eyebrow}
           </div>
         )}
-        <h1 className="pulse-page-heading" style={{ margin: 0 }}>
-          {mobileTitle ? (
-            <>
-              <span className="pulse-page-title-desktop">{title}</span>
-              <span className="pulse-page-title-mobile">{mobileTitle}</span>
-            </>
-          ) : title}
+        <h1 className="pulse-page-heading">
+          {visibleTitle}
         </h1>
         {description && (
-          <p className="pulse-page-description" style={{ margin: '8px 0 0', maxWidth: 620 }}>
+          <p className="pulse-page-description">
             {description}
           </p>
         )}
       </div>
-      {action && <div style={{ flexShrink: 1, minWidth: 0, maxWidth: '100%' }}>{action}</div>}
-    </div>
+      {action && <div className="pulse-page-header-action">{action}</div>}
+    </header>
   );
 }
 
@@ -93,31 +93,19 @@ export function SegmentedControl({ items, active, onChange, compact = false, wra
 
   return (
     <div
+      className={`pulse-segmented-control ${wrap ? 'pulse-segmented-control--wrap' : ''}`}
       role="tablist"
       aria-label={ariaLabel}
-      style={{
-        display: 'flex',
-        flexWrap: wrap ? 'wrap' : 'nowrap',
-        gap: 4,
-        padding: 4,
-        background: 'var(--surface-raised)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        alignSelf: 'flex-start',
-        maxWidth: '100%',
-        overflowX: wrap ? 'visible' : 'auto',
-        overflowY: 'hidden',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: wrap ? 'none' : 'thin',
-      }}
     >
       {items.map((item, index) => {
         const tabId = idPrefix ? `${idPrefix}-${item.id}-tab` : undefined;
         const panelId = idPrefix ? `${idPrefix}-${item.id}-panel` : undefined;
+        const isActive = active === item.id;
         return (
           <button
             key={item.id}
             id={tabId}
+            className={`pulse-segmented-tab ${compact ? 'pulse-segmented-tab--compact' : ''} ${isActive ? 'pulse-segmented-tab--active' : ''}`}
             aria-controls={panelId}
             ref={(node) => {
               tabRefs.current[item.id] = node;
@@ -126,30 +114,8 @@ export function SegmentedControl({ items, active, onChange, compact = false, wra
             role="tab"
             onClick={() => onChange(item.id)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            aria-selected={active === item.id}
-            tabIndex={active === item.id ? 0 : -1}
-            style={{
-              flex: '0 0 auto',
-              minWidth: 44,
-              minHeight: 44,
-              padding: compact ? '8px 12px' : '9px 13px',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 12,
-              fontWeight: 650,
-              letterSpacing: 0,
-              background: active === item.id ? 'var(--surface-elevated)' : 'transparent',
-              color: active === item.id ? 'var(--text)' : 'var(--text-2)',
-              borderRadius: 'var(--radius-md)',
-              textTransform: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'background 0.12s, color 0.12s, box-shadow 0.12s',
-              boxShadow: active === item.id ? 'var(--shadow-soft)' : 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
           >
             {item.label}
           </button>
@@ -167,34 +133,21 @@ type RangeControlProps = {
 
 export function RangeControl({ value, onChange, options }: RangeControlProps) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: '100%' }}>
-      {options.map(option => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          aria-pressed={value === option.value}
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: 12,
-            fontWeight: 650,
-            minWidth: 44,
-            minHeight: 44,
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-md)',
-            letterSpacing: 0,
-            background: value === option.value ? 'var(--surface-elevated)' : 'transparent',
-            color: value === option.value ? 'var(--text)' : 'var(--text-3)',
-            border: '1px solid ' + (value === option.value ? 'var(--border)' : 'transparent'),
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {option.label}
-        </button>
-      ))}
+    <div className="pulse-range-control">
+      {options.map(option => {
+        const active = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={`pulse-range-option ${active ? 'pulse-range-option--active' : ''}`}
+            onClick={() => onChange(option.value)}
+            aria-pressed={active}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

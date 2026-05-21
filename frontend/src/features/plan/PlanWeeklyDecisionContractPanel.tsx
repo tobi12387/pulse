@@ -109,7 +109,7 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
   return (
     <Wrapper
       id="plan-weekly-decision"
-      className={variant === 'card' ? 'card' : undefined}
+      className={`plan-weekly-decision ${variant === 'card' ? 'card plan-weekly-decision--card' : 'plan-weekly-decision--embedded'}`}
       data-testid="plan-weekly-decision-contract"
       tabIndex={-1}
       style={{
@@ -130,33 +130,7 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
         {contract.summary}
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 8, marginTop: 12 }}>
-        {contract.sections.map(section => (
-          <div
-            key={section.id}
-            data-testid={`plan-weekly-decision-section-${section.id}`}
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              background: 'var(--surface-2)',
-              padding: '9px 10px',
-              minWidth: 0,
-            }}
-          >
-            <div className="label-mono" style={{ color: 'var(--text-3)', fontSize: 8.5, marginBottom: 5 }}>
-              {section.label}
-            </div>
-            <div style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
-              {section.title}
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
-              {section.body}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8, marginTop: 10 }}>
+      <div className="plan-weekly-decision__options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8, marginTop: 10 }}>
         {contract.options.map(option => {
           const active = option.kind === selectedKind;
           return (
@@ -164,6 +138,7 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
               type="button"
               key={option.kind}
               data-testid={`plan-weekly-decision-option-${option.kind}`}
+              className="plan-weekly-decision__option"
               aria-pressed={active}
               onClick={() => chooseOption(option)}
               style={{
@@ -185,13 +160,13 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
                   Nur Vorschau
                 </span>
               </div>
-              <div style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
+              <div className="plan-weekly-decision__option-title" style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
                 {option.title}
               </div>
-              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
+              <p className="plan-weekly-decision__option-impact" style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
                 {option.weekImpact}
               </p>
-              <p style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
+              <p className="plan-weekly-decision__option-result" style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
                 Nach dem Klick: {option.resultPreview}
               </p>
             </button>
@@ -202,6 +177,7 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
       {selectedOption && (
         <div
           data-testid="plan-weekly-decision-active-preview"
+          className="plan-weekly-decision__active-preview"
           style={{
             marginTop: 10,
             border: `1px solid color-mix(in srgb, ${tone} 22%, var(--border))`,
@@ -249,6 +225,33 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
           </div>
         </div>
       )}
+
+      <div className="plan-weekly-decision__sections" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 8, marginTop: 12 }}>
+        {contract.sections.map(section => (
+          <div
+            key={section.id}
+            data-testid={`plan-weekly-decision-section-${section.id}`}
+            className="plan-weekly-decision__section"
+            style={{
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              background: 'var(--surface-2)',
+              padding: '9px 10px',
+              minWidth: 0,
+            }}
+          >
+            <div className="label-mono plan-weekly-decision__section-label" style={{ color: 'var(--text-3)', fontSize: 8.5, marginBottom: 5 }}>
+              {section.label}
+            </div>
+            <div className="plan-weekly-decision__section-title" style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
+              {section.title}
+            </div>
+            <p className="plan-weekly-decision__section-body" style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
+              {section.body}
+            </p>
+          </div>
+        ))}
+      </div>
 
       {receipt && (
         <div

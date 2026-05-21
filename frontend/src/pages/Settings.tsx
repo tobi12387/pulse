@@ -223,7 +223,12 @@ export default function Settings() {
 
   return (
     <div className="settings-layout">
-      <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" mobileTitle="Settings" />
+      <PageHeader
+        eyebrow="Setup"
+        title="Geräte, Profil und Bereitschaft"
+        mobileTitle="Setup"
+        description="Alles, was die tägliche Entscheidung verlässlich macht: Garmin, PWA, Push, Profil und Health-State."
+      />
 
       <div className="settings-primary-grid">
         <SettingsDiagnosticsMatrix
@@ -665,7 +670,7 @@ function SettingsDiagnosticsMatrix({
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
           <div>
             <div className="label-mono" style={{ color: statusColor, marginBottom: 4 }}>
-              SETTINGS STATUS
+              SETUP STATUS
             </div>
             <h2 style={{ margin: 0, fontSize: 18, color: 'var(--text)', fontWeight: 650 }}>
               {statusTitle}

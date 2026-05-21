@@ -26,7 +26,7 @@ function signed(value: number, decimals = 1) {
 
 function formatDateLabel(date: string) {
   const parsed = new Date(`${date}T12:00:00`);
-  return parsed.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).toUpperCase();
+  return parsed.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
 }
 
 function todayPlannedWorkout(date: string, todayWorkout: PulsePlannedWorkout | null, nextWorkout: PulsePlannedWorkout | null) {
@@ -106,12 +106,13 @@ export function DecisionHero({
       ? `${Math.round((completedActivity.durationSec ?? 0) / 60)} min · TSS ${completedActivity.tss ?? '–'}`
       : 'Erholung, Check-in und Planruhe zählen';
   return (
-    <FCard pad="0" testId="focus-decision-hero" style={{ overflow: 'hidden' }}>
+    <FCard pad="0" testId="focus-decision-hero" className="focus-decision-hero" style={{ overflow: 'hidden' }}>
       <StageStrip active={stage} />
       <div className="focus-decision-body">
-        <div style={{ minWidth: 0 }}>
-          <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 12 }}>
-            Heute im Fokus · {formatDateLabel(date)}
+        <div className="focus-decision-main">
+          <div className="focus-hero-eyebrow">
+            <span>Heute im Fokus</span>
+            <span>{formatDateLabel(date)}</span>
           </div>
           <DailyDecisionCard
             decision={decision}
@@ -125,17 +126,17 @@ export function DecisionHero({
           />
 
           {showWorkoutSnapshot && (
-            <div style={{ marginTop: 22, padding: '14px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
-                <span className="label-mono" style={{ fontSize: 9 }}>
-                  Training heute
+            <div className="focus-training-snapshot">
+              <div className="focus-training-snapshot-header">
+                <span>
+                  Training
                 </span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                <span>
                   {snapshotTitle}
                 </span>
               </div>
               <WorkoutProfileBars profile={workoutProfile(workout)} />
-              <div style={{ marginTop: 9, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', lineHeight: 1.45 }}>
+              <div className="focus-training-snapshot-meta">
                 {snapshotMeta}
               </div>
             </div>
@@ -143,20 +144,21 @@ export function DecisionHero({
         </div>
 
         <aside className="focus-recovery-panel" aria-label="Readiness und Recovery">
-          <div className="label-mono" style={{ fontSize: 9, marginBottom: 14 }}>
-            {readinessLabel} · Grundlage
+          <div className="focus-recovery-label">
+            {readinessLabel}
+            <span>Grundlage</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 54, fontWeight: 500, color: 'var(--accent)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.02em' }}>
+          <div className="focus-readiness-score">
+            <span>
               {readiness.score}
             </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>/100</span>
+            <span>/100</span>
           </div>
           <FPill tone={tone} filled>
-            {readiness.shortLabel} · {readiness.score < 55 ? 'REST' : 'TRAIN'}
+            {readiness.shortLabel} · {readiness.score < 55 ? 'Ruhe' : 'Training'}
           </FPill>
 
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 11 }}>
+          <div className="focus-factor-list">
             <FactorRow
               label="Schlafdefizit"
               value={recovery ? `${recovery.sleepDebt7d.hours.toFixed(1)}h` : '–'}
@@ -190,12 +192,12 @@ export function DecisionHero({
 
 function FactorRow({ label, value, tone, pill }: { label: string; value: string; tone: 'green' | 'amber' | 'rose' | 'muted'; pill: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+    <div className="focus-factor-row">
+      <span>
         {label}
       </span>
-      <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+      <span>
+        <span>
           {value}
         </span>
         <FPill tone={tone}>{pill}</FPill>

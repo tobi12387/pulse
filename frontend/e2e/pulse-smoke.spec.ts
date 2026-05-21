@@ -6,19 +6,19 @@ import { mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
-  { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'DATA' },
-  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'PLAN' },
-  { path: '/insights', label: 'Insights', navHref: '/insights', visibleText: 'Insights' },
-  { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
+  { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'Frage klären' },
+  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
+  { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
+  { path: '/insights', label: 'Analyse', navHref: '/insights', visibleText: 'Analyse' },
+  { path: '/settings', label: 'Setup', navHref: '/settings', visibleText: 'Setup' },
 ] as const;
 
 const primaryNavRoutes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
-  { path: '/data', label: 'Data', navHref: '/data', visibleText: 'DATA' },
-  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'PLAN' },
-  { path: '/insights', label: 'Insights', navHref: '/insights', visibleText: 'Insights' },
-  { path: '/settings', label: 'Settings', navHref: '/settings', visibleText: 'Settings' },
+  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
+  { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
+  { path: '/insights', label: 'Analyse', navHref: '/insights', visibleText: 'Analyse' },
+  { path: '/settings', label: 'Setup', navHref: '/settings', visibleText: 'Setup' },
 ] as const;
 
 const routeReadyTimeoutMs = 15_000;
@@ -33,10 +33,10 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav).toHaveCount(1);
   await expect(primaryNav.locator('a')).toHaveCount(primaryNavRoutes.length);
   await expect(primaryNav.locator('a[href="/"]')).toContainText('Heute');
-  await expect(primaryNav.locator('a[href="/data"]')).toContainText('Data');
   await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
-  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Insights');
-  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Settings');
+  await expect(primaryNav.locator('a[href="/data"]')).toContainText('Daten');
+  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Analyse');
+  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Setup');
   await expect(primaryNav.locator('a[href="/coach"]')).toHaveCount(0);
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
@@ -588,6 +588,15 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
           detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
           activityId: 'activity-fueling-gap',
         },
+        completionCandidates: [{
+          kind: 'complete_gi_comfort',
+          label: 'GI-Komfort ergänzen',
+          detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+          activityId: 'activity-fueling-gap',
+          date: '2026-04-30',
+          summary: 'Long Fueling Check · 240 min · 120 g Carbs',
+          missingEvidence: ['GI-Komfort'],
+        }],
       },
     },
   });
@@ -694,6 +703,15 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
           detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
           activityId: 'activity-fueling-gap',
         },
+        completionCandidates: [{
+          kind: 'complete_gi_comfort',
+          label: 'GI-Komfort ergänzen',
+          detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+          activityId: 'activity-fueling-gap',
+          date: '2026-04-30',
+          summary: 'Long Fueling Check · 240 min · 120 g Carbs',
+          missingEvidence: ['GI-Komfort'],
+        }],
       },
     },
   });
@@ -702,6 +720,7 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   const action = page.getByTestId('data-primary-action');
 
   await expect(action).toContainText('Fueling-Evidenz schließen');
+  await expect(action.getByTestId('data-primary-action-target')).toContainText('Long Fueling Check');
   await expect(action).toContainText('Trend-Evidenz 0/3');
   await expect(action).toContainText('GI-Komfort ergänzen');
 
@@ -719,6 +738,9 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
 
   await giComfortAction.getByRole('button', { name: 'Magen ok' }).click();
+  const saveNotice = page.getByTestId('activity-fueling-save-notice');
+  await expect(saveNotice).toContainText('GI-Komfort gespeichert');
+  await expect(saveNotice).toContainText('Plan und Garmin bleiben unverändert');
   expect(nutritionPatch).toEqual({
     id: 'nutrition-fueling-gap',
     body: { giComfort: 'ok' },
@@ -1471,7 +1493,7 @@ test('Plan detail shows strength support blocks without misleading Garmin interv
 
 test('primary navigation reaches every Pulse page', async ({ page }) => {
   await page.goto('/');
-  await expectHealthyPage(page, 'READINESS');
+  await expectHealthyPage(page, 'Heute im Fokus');
 
   for (const route of primaryNavRoutes.slice(1)) {
     await page.locator(`a[href="${route.navHref}"]`).filter({ visible: true }).click();
@@ -1482,7 +1504,7 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
 
 test('Settings section deep links land near the target section', async ({ page }) => {
   await page.goto('/settings?section=push');
-  await expectHealthyPage(page, 'Settings');
+  await expectHealthyPage(page, 'Setup');
 
   const pushHeading = page.getByRole('heading', { name: 'Benachrichtigungen' });
   await expect(pushHeading).toBeVisible();
@@ -2306,7 +2328,7 @@ test('mobile Home planned workout state shows the concrete plan option without a
 test('/insights renders as a top-level evidence route', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/insights');
-  await expect(page.getByRole('heading', { name: 'Insights', exact: true })).toBeVisible();
+  await expect(page.locator('main h1').first()).toHaveText(/Analyse/);
   await expect(page.getByTestId('insights-synthesis-hero')).toBeVisible();
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Tiefe Analyse anzeigen' })).toBeVisible();
@@ -2317,7 +2339,7 @@ test('primary navigation exposes Focus routes without Coach tab', async ({ page 
   await expectPrimaryNavigationWithoutCoach(page);
 
   await page.goto('/coach');
-  await expectHealthyPage(page, 'TAGESBRIEFING');
+  await expectHealthyPage(page, 'Frage klären');
   await expectPrimaryNavigationWithoutCoach(page);
 });
 
@@ -2325,7 +2347,7 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data');
-  await expectHealthyPage(page, 'DATA');
+  await expectHealthyPage(page, 'Daten');
 
   const viewportWidth = page.viewportSize()?.width ?? 0;
   const labels = ['Heute relevant', 'Trends', 'Datenqualität', 'Analyse'];
@@ -2344,11 +2366,11 @@ test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data?tab=mental');
-  await expectHealthyPage(page, 'DATA');
+  await expectHealthyPage(page, 'Daten');
 
   const overflow = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
-    return Array.from(document.querySelectorAll('[role="tablist"][aria-label="Data Bereiche"] [role="tab"]'))
+    return Array.from(document.querySelectorAll('[role="tablist"][aria-label="Daten Bereiche"] [role="tab"]'))
       .map(element => {
         const rect = element.getBoundingClientRect();
         return {
@@ -2458,20 +2480,20 @@ test('top-level hotkeys follow the Focus navigation order', async ({ page }, tes
   await expectHealthyPage(page, 'TAGESENTSCHEIDUNG');
 
   await page.keyboard.press('2');
-  await expect(page).toHaveURL('/data');
-  await expectHealthyPage(page, 'DATA');
+  await expect(page).toHaveURL('/plan');
+  await expectHealthyPage(page, 'Plan');
 
   await page.keyboard.press('3');
-  await expect(page).toHaveURL('/plan');
-  await expectHealthyPage(page, 'PLAN');
+  await expect(page).toHaveURL('/data');
+  await expectHealthyPage(page, 'Daten');
 
   await page.keyboard.press('4');
   await expect(page).toHaveURL('/insights');
-  await expectHealthyPage(page, 'Insights');
+  await expectHealthyPage(page, 'Analyse');
 
   await page.keyboard.press('5');
   await expect(page).toHaveURL('/settings');
-  await expectHealthyPage(page, 'Settings');
+  await expectHealthyPage(page, 'Setup');
 });
 
 test('PWA manifest and service worker endpoints are available', async ({ request }) => {
@@ -2507,7 +2529,7 @@ test('app starts when service workers are unavailable', async ({ page }) => {
   });
 
   await page.goto('/');
-  await expectHealthyPage(page, 'READINESS');
+  await expectHealthyPage(page, 'Heute im Fokus');
 });
 
 test('service worker navigation fallback explains local server or VPN outage', async () => {

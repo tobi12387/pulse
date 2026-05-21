@@ -5,15 +5,15 @@ import path from 'node:path';
 import { MOCK_TODAY, mockPulseApi } from './fixtures/pulse-api';
 
 const routes = [
-  { path: '/', label: 'home', visibleText: 'READINESS' },
-  { path: '/coach', label: 'coach', visibleText: 'TAGESBRIEFING' },
-  { path: '/data', label: 'data', visibleText: 'DATA' },
+  { path: '/', label: 'home', visibleText: 'Heute im Fokus' },
+  { path: '/coach', label: 'coach', visibleText: 'Frage klären' },
+  { path: '/data', label: 'data', visibleText: 'Daten' },
   { path: '/data?tab=today#data-mental', label: 'data-mental', visibleText: 'Quick Check-in' },
   { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analysen' },
-  { path: '/plan', label: 'plan', visibleText: 'PLAN' },
+  { path: '/plan', label: 'plan', visibleText: 'Plan' },
   { path: '/plan/activity/activity-detail', label: 'activity-detail', visibleText: 'Rennrad Tour' },
-  { path: '/insights', label: 'insights', visibleText: 'Insights' },
-  { path: '/settings', label: 'settings', visibleText: 'Settings' },
+  { path: '/insights', label: 'insights', visibleText: 'Analyse' },
+  { path: '/settings', label: 'settings', visibleText: 'Setup' },
 ] as const;
 
 const fuelingLearningOutcomeBaseline = {
@@ -42,6 +42,15 @@ const fuelingLearningOutcomeBaseline = {
       detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
       activityId: 'activity-fueling-gap',
     },
+    completionCandidates: [{
+      kind: 'complete_gi_comfort',
+      label: 'GI-Komfort ergänzen',
+      detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+      activityId: 'activity-fueling-gap',
+      date: '2026-04-30',
+      summary: 'Long Fueling Check · 240 min · 120 g Carbs',
+      missingEvidence: ['GI-Komfort'],
+    }],
   },
 };
 
@@ -259,7 +268,7 @@ test.describe('Route evidence screenshot pack', () => {
         },
       });
       await capture(
-        { path: '/', label: 'home-planned-command', visibleText: 'READINESS' },
+        { path: '/', label: 'home-planned-command', visibleText: 'Heute im Fokus' },
         async () => {
           await expect(page.getByTestId('today-options-card')).toContainText('Plan ausfuehren: Rad');
           await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
@@ -268,7 +277,7 @@ test.describe('Route evidence screenshot pack', () => {
 
       await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'unplanned_trainable' });
       await capture(
-        { path: '/', label: 'home-free-command', visibleText: 'READINESS' },
+        { path: '/', label: 'home-free-command', visibleText: 'Heute im Fokus' },
         async () => {
           await expect(page.getByTestId('today-availability-intent')).toBeVisible();
         },
@@ -307,7 +316,7 @@ test.describe('Route evidence screenshot pack', () => {
         },
       });
       await capture(
-        { path: '/', label: 'home-completed-command', visibleText: 'READINESS' },
+        { path: '/', label: 'home-completed-command', visibleText: 'Heute im Fokus' },
         async () => {
           await expect(page.getByTestId('daily-decision-card')).toContainText('Training heute erledigt');
           await expect(page.getByTestId('today-options-card')).toHaveCount(0);
@@ -317,7 +326,7 @@ test.describe('Route evidence screenshot pack', () => {
 
       await mockPulseApi(page, { checkinToday: { checkin: null }, todayOptionsState: 'recovery_protect' });
       await capture(
-        { path: '/', label: 'home-recovery-no-intent', visibleText: 'READINESS' },
+        { path: '/', label: 'home-recovery-no-intent', visibleText: 'Heute im Fokus' },
         async () => {
           await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
         },
@@ -340,12 +349,13 @@ test.describe('Route evidence screenshot pack', () => {
         activityDetail: fuelingGapActivityDetail,
       });
       await capture(
-        { path: '/data', label: 'data-fueling-action', visibleText: 'DATA' },
+        { path: '/data', label: 'data-fueling-action', visibleText: 'Daten' },
         async () => {
           const action = page.getByTestId('data-primary-action');
           await expect(action).toBeVisible();
           await expect(action).toBeInViewport();
           await expect(action).toContainText('Fueling-Evidenz schließen');
+          await expect(action.getByTestId('data-primary-action-target')).toContainText('Long Fueling Check');
           await expect(action).toContainText('Trend-Evidenz 0/3');
           await expect(action.getByRole('button', { name: 'GI-Komfort ergänzen' })).toBeInViewport();
         },

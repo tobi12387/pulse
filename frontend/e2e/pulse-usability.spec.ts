@@ -6039,7 +6039,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   await page.goto('/');
   const activeStage = page.getByTestId('stage-strip-decide');
   const activeStageStatus = page.getByTestId('stage-strip-active-status');
-  await expect(activeStage).toContainText('JETZT');
+  await expect(activeStage).toContainText('Jetzt');
   const activeStageBox = await activeStage.boundingBox();
   const activeStageStatusBox = await activeStageStatus.boundingBox();
   expect(activeStageBox).not.toBeNull();
@@ -6048,8 +6048,8 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   expect(activeStageStatusBox!.x + activeStageStatusBox!.width).toBeLessThanOrEqual(activeStageBox!.x + activeStageBox!.width + 1);
 
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
-  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
-  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');
+  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Analyse');
+  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Setup');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);

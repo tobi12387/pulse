@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
-import type { ActivityAnalytics, NutritionLog } from '@/pulse/api-client';
+import type { ActivityAnalytics, NutritionLog, NutritionLogPatch } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
 import {
   useActivityFeedback,
@@ -683,6 +683,7 @@ function FuelingSection({
   onOpenFeedback: () => void;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [fuelingSaveNotice, setFuelingSaveNotice] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = useNutritionLogs(null, activityId);
@@ -715,6 +716,17 @@ function FuelingSection({
     { value: 'issue', label: GI_COMFORT_LABELS.issue },
   ];
   const routeHash = hashFromLocation(location.hash);
+
+  function saveFuelingEvidence(id: string, data: NutritionLogPatch, successNotice: string) {
+    setFuelingSaveNotice(null);
+    updateNutrition.mutate(
+      { id, data },
+      {
+        onSuccess: () => setFuelingSaveNotice(successNotice),
+        onError: () => setFuelingSaveNotice('Fueling-Evidence konnte nicht gespeichert werden. Bitte erneut versuchen.'),
+      },
+    );
+  }
 
   useEffect(() => {
     if (routeHash !== 'activity-fueling-log' || !evidenceQuality) return;
@@ -902,10 +914,11 @@ function FuelingSection({
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => updateNutrition.mutate({
-                        id: giComfortCompletionLogId,
-                        data: { giComfort: option.value },
-                      })}
+                      onClick={() => saveFuelingEvidence(
+                        giComfortCompletionLogId,
+                        { giComfort: option.value },
+                        'GI-Komfort gespeichert. Dieser Log kann jetzt in die Fueling-Evidence einfließen; Plan und Garmin bleiben unverändert.',
+                      )}
                       disabled={updateNutrition.isPending}
                       style={{
                         minHeight: 44,
@@ -923,6 +936,26 @@ function FuelingSection({
                     </button>
                   ))}
                 </div>
+                {fuelingSaveNotice && (
+                  <div
+                    data-testid="activity-fueling-save-notice"
+                    role="status"
+                    aria-live="polite"
+                    style={{
+                      marginTop: 8,
+                      padding: '6px 8px',
+                      borderRadius: 4,
+                      border: `1px solid ${fuelingSaveNotice.includes('konnte nicht') ? 'rgba(248,113,113,0.35)' : 'rgba(74,222,128,0.32)'}`,
+                      background: fuelingSaveNotice.includes('konnte nicht') ? 'rgba(248,113,113,0.06)' : 'rgba(74,222,128,0.06)',
+                      color: fuelingSaveNotice.includes('konnte nicht') ? 'var(--rose)' : 'var(--green)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9.5,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {fuelingSaveNotice}
+                  </div>
+                )}
               </div>
             )}
             {detailCompletionLogId && evidenceQuality.detailCompletions.length > 0 && (
@@ -941,10 +974,11 @@ function FuelingSection({
                   {detailCompletionPatch && evidenceQuality.detailCompletions.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => updateNutrition.mutate({
-                        id: detailCompletionLogId,
-                        data: detailCompletionPatch,
-                      })}
+                      onClick={() => saveFuelingEvidence(
+                        detailCompletionLogId,
+                        detailCompletionPatch,
+                        'Fueling-Details gespeichert. Pulse bewertet die Evidence neu; Plan und Garmin bleiben unverändert.',
+                      )}
                       disabled={updateNutrition.isPending}
                       style={{
                         minHeight: 44,
@@ -965,10 +999,11 @@ function FuelingSection({
                     <button
                       key={completion.label}
                       type="button"
-                      onClick={() => updateNutrition.mutate({
-                        id: detailCompletionLogId,
-                        data: completion.patch,
-                      })}
+                      onClick={() => saveFuelingEvidence(
+                        detailCompletionLogId,
+                        completion.patch,
+                        'Fueling-Detail gespeichert. Pulse bewertet die Evidence neu; Plan und Garmin bleiben unverändert.',
+                      )}
                       disabled={updateNutrition.isPending}
                       style={{
                         minHeight: 44,
@@ -1300,28 +1335,37 @@ export default function ActivityDetail() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* Back + Title */}
-      <div>
+      <header className="pulse-activity-header">
+        <div>
+          <div className="label-mono" style={{ marginBottom: 5 }}>{dateStr}</div>
+          <h1 className="pulse-activity-title">
+            {a.name ?? a.activityType}
+          </h1>
+        </div>
         <button
+          type="button"
           onClick={() => navigate(-1)}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
-            color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 8, padding: 0,
+            minWidth: 44,
+            minHeight: 44,
+            padding: '8px 12px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            color: 'var(--text-2)',
+            fontSize: 12,
+            fontWeight: 700,
           }}
         >
-          ← Zurück
+          Zurück
         </button>
-        <div className="label-mono" style={{ marginBottom: 4 }}>{dateStr}</div>
-        <h1 style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
-          {a.name ?? a.activityType}
-        </h1>
-      </div>
+      </header>
 
       <RpeFeedbackCard activity={a} nowMs={nowMs} onOpen={() => setRpeOpen(true)} />
 
       {/* KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div className="pulse-kpi-grid">
         <KpiItem label="Dauer" value={fmtDuration(a.durationSec)} />
         <KpiItem label="Distanz" value={a.distanceM ? (a.distanceM / 1000).toFixed(1) : '–'} unit="km" />
         <KpiItem label="TSS" value={fmt(a.tss, 0)} />

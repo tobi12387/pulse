@@ -16,7 +16,7 @@ import { useHomeSurfaceFocus } from '@/features/home/use-home-surface-focus';
 import { DecisionHero } from '@/features/today/DecisionHero';
 import { DayDiary } from '@/features/today/DayDiary';
 import type { PulseActionState, PulseAdaptationEvent, PulseDailyDeltaItem, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
-import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
+import { type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
 
 function fmt(v: number | null | undefined, dec = 0): string {
@@ -957,10 +957,6 @@ export default function Home() {
     navigate(path);
   }
 
-  const readinessColor = colorOf(readiness.color);
-  const tsbBucket = bucketize(fl.tsb, TSB_BUCKETS);
-  const tsbColor = colorOf(tsbBucket.color);
-
   function renderFocusSlot(slot: HomeFocusSlot) {
     if (slot === 'delta') {
       if (!latestDelta) return null;
@@ -1098,6 +1094,14 @@ export default function Home() {
           <h1 className="pulse-page-heading" style={{ margin: 0 }}>
             Heute
           </h1>
+          <p className="pulse-home-subtitle">
+            Eine ruhige Entscheidung aus Körper, Plan, Alltag und Evidenz. Alles Weitere ist Kontext.
+          </p>
+          <div className="pulse-home-context-pills" aria-label="Tageskontext">
+            <span className="pulse-context-pill">Readiness <strong>{readiness.score}/100</strong></span>
+            <span className="pulse-context-pill">TSB <strong>{fmtSigned(fl.tsb)}</strong></span>
+            <span className="pulse-context-pill">Recovery <strong>{data.recovery?.recoveryScore ?? 'offen'}</strong></span>
+          </div>
         </div>
         <div className="pulse-home-status-chip">
           Trainingsfenster <span>offen</span>
@@ -1214,37 +1218,6 @@ export default function Home() {
           adaptationSummary={primaryAdaptationEvent?.summary}
         />
       )}
-
-      <div
-        data-testid="home-command-summary"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: 6,
-        }}
-      >
-        {[
-          { label: 'Readiness', value: readiness.score, suffix: '/100', color: readinessColor },
-          { label: 'TSB', value: fmtSigned(fl.tsb), suffix: '', color: tsbColor },
-          { label: 'Recovery', value: data.recovery?.recoveryScore ?? '–', suffix: typeof data.recovery?.recoveryScore === 'number' ? '/100' : '', color: 'var(--text)' },
-        ].map(item => (
-          <div
-            key={item.label}
-            style={{
-              padding: '8px 9px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              minWidth: 0,
-            }}
-          >
-            <div className="label-mono" style={{ fontSize: 8.5, color: 'var(--text-3)', marginBottom: 3 }}>{item.label}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: item.color }}>
-              {item.value}{item.suffix}
-            </div>
-          </div>
-        ))}
-      </div>
 
       <HomeSurfaceFocusCard focus={homeSurface.focus} onFocusChange={homeSurface.setFocus} />
 

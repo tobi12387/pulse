@@ -811,6 +811,12 @@ export default function Coach() {
   return (
     <div className="pulse-coach-shell" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
+      <header className="pulse-coach-route-header">
+        <div className="label-mono" style={{ color: 'var(--accent)' }}>Coach</div>
+        <h1>Frage klären, Kontext behalten</h1>
+        <p>Der Coach ist jetzt eine fokussierte Klärfläche: Home entscheidet, Coach hilft beim Verstehen, Formulieren und Einordnen.</p>
+      </header>
+
       {/* Context strip */}
       <div style={{
         display: 'flex', gap: 16, padding: '8px 0 10px', borderBottom: '1px solid var(--border)',

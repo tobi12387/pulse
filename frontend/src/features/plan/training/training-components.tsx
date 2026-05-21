@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUpdateWorkout } from '@/pulse/hooks';
 import { ACTIVITY_LABEL, activityLabel, workoutArchetypeCopy } from '@/pulse/activity-labels';
 import type { PulseGoalLimiter, PulsePlannedWorkout, WorkoutStep } from '@coaching-os/shared/pulse';
@@ -230,6 +231,23 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
   });
 
   const today = isoDate(new Date());
+  const weekEnd = new Date(monday);
+  weekEnd.setDate(monday.getDate() + 6);
+  const weekRelation = weekOffset === 0
+    ? 'Diese Woche'
+    : weekOffset === 1
+      ? 'Nächste Woche'
+      : weekOffset === -1
+        ? 'Letzte Woche'
+        : weekOffset > 1
+          ? `In ${weekOffset} Wochen`
+          : `Vor ${Math.abs(weekOffset)} Wochen`;
+  const workoutsInWeek = workouts.filter(workout => days.some(day => day.date === workout.plannedDate));
+  const plannedWorkouts = workoutsInWeek.filter(workout => workout.status !== 'skipped');
+  const plannedMinutes = plannedWorkouts.reduce((sum, workout) => sum + (workout.durationMin ?? 0), 0);
+  const weekLoadLabel = plannedWorkouts.length === 0
+    ? 'Keine Einheiten geplant'
+    : `${plannedWorkouts.length} ${plannedWorkouts.length === 1 ? 'Einheit' : 'Einheiten'} · ${plannedMinutes} min`;
   const visibleDate = days.find(day => day.date === today)?.date
     ?? days.find(day => workouts.some(workout => workout.plannedDate === day.date))?.date
     ?? days[0]?.date;
@@ -240,37 +258,39 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
   }, [visibleDate, weekOffset]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button type="button" aria-label="Vorherige Woche" onClick={() => onChangeWeek(-1)} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)', padding: '0 10px',
-          minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}>←</button>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          {monday.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} –{' '}
-          {new Date(monday.getTime() + 6 * 86400000).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
-          {weekOffset === 0 ? '  · diese Woche' : weekOffset === 1 ? '  · nächste Woche' : weekOffset === -1 ? '  · letzte Woche' : ''}
-        </span>
-        <button type="button" aria-label="Nächste Woche" onClick={() => onChangeWeek(1)} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)', padding: '0 10px',
-          minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}>→</button>
+    <div className="plan-week-strip">
+      <div className="plan-week-strip__nav">
+        <button
+          type="button"
+          aria-label="Vorherige Woche"
+          className="plan-week-strip__nav-button"
+          onClick={() => onChangeWeek(-1)}
+        >
+          <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
+        </button>
+        <div className="plan-week-strip__range" aria-live="polite">
+          <span className="plan-week-strip__range-title">{weekRelation}</span>
+          <span className="plan-week-strip__range-meta">
+            {monday.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} -{' '}
+            {weekEnd.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} · {weekLoadLabel}
+          </span>
+        </div>
+        <button
+          type="button"
+          aria-label="Nächste Woche"
+          className="plan-week-strip__nav-button"
+          onClick={() => onChangeWeek(1)}
+        >
+          <ChevronRight size={18} strokeWidth={2.2} aria-hidden="true" />
+        </button>
       </div>
 
       <div
         aria-label="Wochenübersicht"
         data-testid="plan-week-strip-scroller"
-        style={{
-          maxWidth: '100%',
-          overflowX: 'visible',
-          overflowY: 'hidden',
-          paddingBottom: 2,
-          WebkitOverflowScrolling: 'touch',
-        }}
+        className="plan-week-strip__scroller"
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 5, minWidth: 0 }}>
+        <div className="plan-week-strip__grid">
           {days.map(({ date, dayNum, dayIdx }) => {
             const workout = workouts.find(w => w.plannedDate === date);
             const isToday = date === today;
@@ -279,6 +299,14 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
             const isSkipped = workout?.status === 'skipped';
             const zone = workout?.zone ?? 0;
             const zoneColor = zone > 0 ? (ZONE_COLOR[zone] ?? 'var(--text-3)') : 'transparent';
+            const dayClassName = [
+              'plan-week-strip__day',
+              isToday ? 'plan-week-strip__day--today' : '',
+              workout ? 'plan-week-strip__day--workout' : 'plan-week-strip__day--empty',
+              isPast && !isToday ? 'plan-week-strip__day--past' : '',
+              isDone ? 'plan-week-strip__day--done' : '',
+              isSkipped ? 'plan-week-strip__day--skipped' : '',
+            ].filter(Boolean).join(' ');
 
             return (
               <button key={date}
@@ -289,50 +317,25 @@ export function WeekStrip({ workouts, weekOffset, onChangeWeek, onSelectWorkout 
                 disabled={!workout}
                 aria-label={workout ? `${DAY_SHORT[dayIdx]} ${dayNum}: ${ACTIVITY_LABEL[workout.activityType] ?? workout.activityType} öffnen` : `${DAY_SHORT[dayIdx]} ${dayNum}: kein Training`}
                 onClick={() => workout && onSelectWorkout(workout)}
-                style={{
-                  appearance: 'none',
-                  textAlign: 'left',
-                  width: '100%',
-                  minHeight: 84,
-                  padding: '8px 7px 10px',
-                  background: isToday ? 'var(--surface-2)' : 'var(--surface)',
-                  border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
-                  borderRadius: 5,
-                  opacity: isPast && !isToday ? 0.65 : 1,
-                  cursor: workout ? 'pointer' : 'default',
-                  color: 'inherit',
-                  font: 'inherit',
-                }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                    {DAY_SHORT[dayIdx]}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: isToday ? 'var(--accent)' : 'var(--text)' }}>
-                    {dayNum}
-                  </span>
-                </div>
+                className={dayClassName}
+                style={{ '--plan-day-zone-color': zoneColor } as CSSProperties}
+              >
+                <span className="plan-week-strip__day-head">
+                  <span className="plan-week-strip__dow">{DAY_SHORT[dayIdx]}</span>
+                  <span className="plan-week-strip__date">{dayNum}</span>
+                </span>
 
-                <div style={{
-                  marginTop: 8, height: 3, borderRadius: 1,
-                  background: workout && !isSkipped ? zoneColor : 'transparent',
-                  opacity: isSkipped ? 0.25 : 1,
-                }} />
-
-                <div style={{
-                  marginTop: 6,
-                  fontSize: 9.5,
-                  color: zone === 0 ? 'var(--text-3)' : 'var(--text)',
-                  lineHeight: 1.3,
-                  overflowWrap: 'anywhere',
-                  textDecoration: isSkipped ? 'line-through' : 'none',
-                }}>
-                  {workout ? activityLabel(workout.activityType) : <span style={{ color: 'var(--text-3)' }}>–</span>}
-                </div>
+                <span className="plan-week-strip__activity">
+                  <span className="plan-week-strip__zone" aria-hidden="true" />
+                  <span className="plan-week-strip__activity-label">
+                    {workout ? activityLabel(workout.activityType) : 'frei'}
+                  </span>
+                </span>
 
                 {workout && zone > 0 && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', marginTop: 2, overflowWrap: 'anywhere' }}>
+                  <span className="plan-week-strip__meta">
                     {isDone ? <span style={{ color: 'var(--green)' }}>✓ </span> : ''}Z{zone} · {workout.durationMin}'
-                  </div>
+                  </span>
                 )}
               </button>
             );

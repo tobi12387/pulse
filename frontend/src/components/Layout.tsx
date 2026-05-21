@@ -19,11 +19,11 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', key: '1', end: true, icon: Home },
-  { to: '/data', label: 'Data', mobileLabel: 'Data', description: 'Evidenz & Trends', key: '2', end: false, icon: Database },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche & Anpassung', key: '3', end: false, icon: CalendarDays },
-  { to: '/insights', label: 'Insights', mobileLabel: 'Insights', description: 'Analyse & Muster', key: '4', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Settings', mobileLabel: 'Settings', description: 'Geräte & Betrieb', key: '5', end: false, icon: Settings },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheiden', key: '1', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Trainieren', key: '2', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Verstehen', key: '3', end: false, icon: Database },
+  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Lernen', key: '4', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Verbinden', key: '5', end: false, icon: Settings },
 ];
 
 export default function Layout() {
@@ -86,7 +86,7 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
             <div className="pulse-brand-title">Pulse</div>
-            <div className="pulse-brand-subtitle">Performance OS</div>
+            <div className="pulse-brand-subtitle">Private Performance OS</div>
           </div>
         </div>
         <div className="pulse-topbar-context">
@@ -105,7 +105,7 @@ export default function Layout() {
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
           <div className="pulse-sidebar-section-label">
-            Navigation
+            Hauptbereiche
           </div>
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
@@ -127,9 +127,9 @@ export default function Layout() {
         </nav>
 
         <div className="pulse-sidebar-card" aria-label="Aktueller Fokus">
-          <div className="pulse-sidebar-card-label">Heute zählt</div>
-          <div className="pulse-sidebar-card-title">Eine klare Handlung</div>
-          <p>Plan, Körper, Alltag und Evidenz werden zuerst in eine Entscheidung übersetzt.</p>
+          <div className="pulse-sidebar-card-label">Daily Command</div>
+          <div className="pulse-sidebar-card-title">Erst entscheiden, dann vertiefen</div>
+          <p>Heute bleibt der Start. Plan, Daten und Analyse öffnen erst die nächste Ebene.</p>
         </div>
 
         <button
@@ -238,10 +238,10 @@ function KeyboardHelpDialog({ open, onClose }: { open: boolean; onClose: () => v
 
   const shortcuts = [
     ['1', 'Heute'],
-    ['2', 'Data'],
-    ['3', 'Plan'],
-    ['4', 'Insights'],
-    ['5', 'Settings'],
+    ['2', 'Plan'],
+    ['3', 'Daten'],
+    ['4', 'Analyse'],
+    ['5', 'Setup'],
     ['⌘K', 'Coach'],
     ['?', 'Tastaturhilfe'],
     ['Esc', 'Schließen'],

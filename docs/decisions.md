@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Pulse UI darf route-weit brechen, wenn es der Klarheit dient
+
+- **Decision:** Die UI/UX-Neuausrichtung darf Hauptnavigation, Route-Koepfe, Card-System, mobile Dichte und gemeinsame Chrome-Komponenten route-weit veraendern, auch wenn alte Labels, Hotkeys oder Test-Erwartungen angepasst werden muessen. Das neue Ziel ist eine Top-App-artige Produktoberflaeche mit klarer Prioritaet: Heute entscheidet, Plan steuert, Daten belegen, Analyse lernt, Setup verbindet.
+- **Why:** Tobi hat explizit freigegeben, dass alle Routes angepasst werden duerfen und dass es breaking sein darf, wenn dadurch Struktur und Uebersicht besser werden. Der vorherige Redesign-Slice hat die Shell beruhigt, aber die innere Karten- und Route-Logik blieb noch zu cockpitartig und technisch.
+- **Alternatives:** Nur Farben/Spacing weiter polieren (zu oberflaechlich); jede vorhandene Karte unveraendert lassen (haelt die alte Gleichrangigkeit fest); Navigation/Hotkeys aus Ruecksicht auf bestehende Labels einfrieren (widerspricht der explizit freigegebenen Produktfreiheit).
+- **Decided by:** Tobi + Codex, als route-weites UI/UX-Redesign im Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Pulse UI wird als ruhiges Command-Surface neu ausgerichtet
 
 - **Decision:** Die Pulse-Hauptoberflaeche wird weg vom engen technischen Cockpit hin zu einem ruhigeren Command-Surface entwickelt: klare Route-Zwecke in der Navigation, staerkere Tagesaktion, lesbarere Sans-Hierarchie, weichere Karten, mobile Icon-Navigation und reduzierte System-Jargon-Labels.

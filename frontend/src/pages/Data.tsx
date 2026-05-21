@@ -12,9 +12,18 @@ import {
   isFuelingTrendReady,
 } from '@/pulse/fueling-learning';
 import { useCheckinToday, useFuelingDebt, usePulseHome } from '@/pulse/hooks';
+import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
 
 type Tab = 'heute' | 'trends' | 'qualitaet' | 'analyse';
 type DataFocus = 'mental' | 'recovery' | 'sleep' | 'weight' | null;
+type DataPrimaryAction = {
+  title: string;
+  reason: string;
+  result: string;
+  cta: string;
+  run: () => void;
+  targetLog?: string | null;
+};
 
 const TABS = [
   { id: 'heute', label: 'Heute relevant' },
@@ -134,6 +143,20 @@ function garminTone(status: string | undefined): string {
   if (status === 'empty') return 'var(--rose)';
   if (status === 'stale' || status === 'partial') return 'var(--amber)';
   return 'var(--accent)';
+}
+
+function fuelingPrimaryCompletionCandidateText(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
+  const readiness = baseline?.learningReadiness ?? null;
+  const nextActivityId = readiness?.nextAction?.activityId ?? null;
+  const candidate = readiness?.completionCandidates?.find(item => item.activityId === nextActivityId)
+    ?? readiness?.completionCandidates?.[0]
+    ?? null;
+  if (!candidate) return null;
+
+  const missing = candidate.missingEvidence.length > 0
+    ? ` · offen: ${candidate.missingEvidence.join(', ')}`
+    : '';
+  return `${candidate.summary}${missing}`;
 }
 
 function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
@@ -287,16 +310,18 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   const fuelingTargetPath = fuelingLearningActionTargetPath(fuelingBaseline);
   const fuelingGapSummary = fuelingLearningGapSummary(fuelingBaseline);
   const fuelingNextActionLabel = fuelingBaseline?.learningReadiness?.nextAction?.label ?? 'Fueling-Evidenz schließen';
-  const fuelingAction = fuelingTargetPath && fuelingGapSummary
+  const fuelingTargetLog = fuelingPrimaryCompletionCandidateText(fuelingBaseline);
+  const fuelingAction: DataPrimaryAction | null = fuelingTargetPath && fuelingGapSummary
     ? {
       title: 'Fueling-Evidenz schließen',
       reason: `${fuelingGapSummary} Bis diese During-Evidenz vollständig ist, bleibt die Lernkalibrierung zurückhaltend.`,
       result: 'Öffnet die Aktivität und den Fueling-Log. Nach dem Speichern kann Pulse die Lernkalibrierung neu bewerten; Plan und Garmin bleiben unverändert.',
       cta: fuelingNextActionLabel,
+      targetLog: fuelingTargetLog,
       run: () => navigate(fuelingTargetPath),
     }
     : null;
-  const primaryAction = !checkinToday.isLoading && !hasCheckin
+  const primaryAction: DataPrimaryAction = !checkinToday.isLoading && !hasCheckin
     ? {
       title: 'Mental Check-in abschließen',
       reason: 'Heute fehlt noch dein subjektives Signal. Pulse kann Training, Briefing und Erholung dadurch vorsichtiger, aber weniger persönlich einordnen.',
@@ -434,6 +459,25 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 650, color: 'var(--text)' }}>
             {primaryAction.title}
           </h3>
+          {primaryAction.targetLog && (
+            <div
+              data-testid="data-primary-action-target"
+              style={{
+                display: 'grid',
+                gap: 4,
+                marginTop: 10,
+                padding: '8px 9px',
+                border: '1px solid rgba(251,191,36,0.3)',
+                borderRadius: 5,
+                background: 'rgba(251,191,36,0.06)',
+              }}
+            >
+              <span className="label-mono" style={{ color: 'var(--amber)' }}>Ziel-Log</span>
+              <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text)' }}>
+                {primaryAction.targetLog}
+              </span>
+            </div>
+          )}
           <div
             className="data-primary-action-contract data-primary-action-contract--desktop"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 9, marginTop: 12 }}
@@ -735,8 +779,13 @@ export default function Data() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader eyebrow="DATA" title="Heute, Trends, Qualität & Analyse" mobileTitle="Data" />
-      <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Data Bereiche" idPrefix="data" wrap />
+      <PageHeader
+        eyebrow="Daten"
+        title="Daten, die heute etwas ändern"
+        mobileTitle="Daten"
+        description="Der erste Block zeigt nur die nächste relevante Datenaufgabe. Trends, Qualität und Analyse bleiben erreichbar, aber nachrangig."
+      />
+      <SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Daten Bereiche" idPrefix="data" wrap />
       {tab === 'heute' && <TabPanel tab="heute"><DataHeuteTab onOpen={setTab} focus={focus} /></TabPanel>}
       {tab === 'trends' && <TabPanel tab="trends"><DataTrendsTab focus={focus} /></TabPanel>}
       {tab === 'qualitaet' && <TabPanel tab="qualitaet"><EvidenceSection id="data-garmin-quality"><CoverageTab /></EvidenceSection></TabPanel>}
