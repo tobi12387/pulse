@@ -36,6 +36,9 @@ defaults the expected commit to `origin/main`. Do not use that deferred server
 result as current iPhone field evidence; rerun the normal audit or
 `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server` from clean `main` before
 recording a real-device run.
+Packet/checklist/next-target handoff modes auto-apply that local-planning
+behavior when they detect a feature branch, but the same proof boundary still
+applies.
 
 ## Network
 

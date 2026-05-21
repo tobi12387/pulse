@@ -49,13 +49,16 @@ function withPulseUrl(url, fn) {
   }
 }
 
-function makeRunner({ fueling, iphone, server, commit = 'abc1234', mainCommit = commit }) {
+function makeRunner({ fueling, iphone, server, commit = 'abc1234', mainCommit = commit, branch = 'main' }) {
   return (command, args) => {
     if (command === 'git' && args.join(' ') === 'rev-parse --short HEAD') {
       return commandResult(0, `${commit}\n`);
     }
     if (command === 'git' && args.join(' ') === 'rev-parse --short origin/main') {
       return commandResult(0, `${mainCommit}\n`);
+    }
+    if (command === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') {
+      return commandResult(0, `${branch}\n`);
     }
     if (args[0] === 'scripts/fueling-gate-audit.mjs') return fueling;
     if (args[0] === 'scripts/iphone-pwa-gate-audit.mjs') return iphone;
@@ -724,6 +727,31 @@ test('performance gate audit can defer server verification for local planning', 
   assert.doesNotMatch(packet, /2\. Server deploy mirror/);
   assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21 --local-planning/);
   assert.equal(exitCodeForAudit(audit, { failOnGated: true }), 1);
+});
+
+test('performance gate manual handoffs auto-defer server verification on feature branches', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21', manualChecklist: true }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: GATED_IPHONE,
+    server: commandResult(1, '', 'should not run'),
+    commit: 'branch1',
+    mainCommit: 'abc1234',
+    branch: 'codex/manual-evidence-handoff',
+  }));
+
+  assert.equal(audit.localPlanning, true);
+  assert.equal(audit.autoLocalPlanning, true);
+  assert.equal(audit.localBranch, 'codex/manual-evidence-handoff');
+  assert.equal(audit.expectedCommit, 'abc1234');
+  assert.equal(audit.openGates, 1);
+  assert.equal(audit.deferredGates, 1);
+  assert.equal(audit.gates[2].gate, 'deferred');
+  assert.equal(audit.nextUnblock.key, 'iphone_pwa');
+
+  const checklist = renderPerformanceManualChecklist(audit);
+  assert.match(checklist, /Planning mode: auto-local from feature branch codex\/manual-evidence-handoff/);
+  assert.match(checklist, /## Deferred Gates/);
+  assert.doesNotMatch(checklist, /## 2\. Server deploy mirror/);
 });
 
 test('performance gate audit local planning can finish manual gates while server stays deferred', () => {
