@@ -658,6 +658,8 @@ export function renderPerformanceGateAudit(audit) {
   if (audit.nextUnblock) lines.push(`Next action: ${audit.nextUnblock.action}`);
   const nextTarget = targetSummary(audit.nextUnblock?.metadata);
   if (nextTarget) lines.push(`Next target: ${nextTarget}`);
+  const nextTargetUrl = targetUrlValue(audit.nextUnblock?.metadata);
+  if (nextTargetUrl) lines.push(`Next target URL: ${nextTargetUrl}`);
   lines.push('');
 
   for (const gate of audit.gates) {
@@ -691,8 +693,12 @@ function metadataLine(metadata) {
 }
 
 function targetUrlLine(metadata) {
-  const url = metadata?.targetUrl ?? pulseTargetUrl(metadata?.targetPath);
+  const url = targetUrlValue(metadata);
   return url ? `Target URL: ${url}` : null;
+}
+
+function targetUrlValue(metadata) {
+  return metadata?.targetUrl ?? pulseTargetUrl(metadata?.targetPath);
 }
 
 function checklistLine(metadata) {
