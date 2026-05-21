@@ -69,6 +69,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(audit.users[0].newLogsStillNeeded, 1);
   assert.equal(audit.users[0].nextAction.kind, 'complete_gi_comfort');
   assert.equal(audit.users[0].nextAction.targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.match(audit.users[0].nextAction.targetUrl, /^https?:\/\/[^/]+\/plan\/activity\/activity-long-ride#activity-fueling-log$/);
   assert.equal(audit.users[0].nextAction.evidenceChecklist, 'docs/ai/checklists/fueling-evidence-capture.md');
   assert.deepEqual(audit.users[0].nextAction.targetLog, {
     date: '2026-05-09',
@@ -78,6 +79,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
     carbsG: 356,
     carbsPerHour: 54,
     targetPath: '/plan/activity/activity-long-ride#activity-fueling-log',
+    targetUrl: audit.users[0].nextAction.targetUrl,
     summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
   });
   assert.deepEqual(audit.users[0].nextAction.options, [
@@ -86,6 +88,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
     { value: 'issue', label: 'Magenprobleme' },
   ]);
   assert.equal(audit.users[0].completionCandidates[0].targetPath, '/plan/activity/activity-long-ride#activity-fueling-log');
+  assert.equal(audit.users[0].completionCandidates[0].targetUrl, audit.users[0].nextAction.targetUrl);
   assert.equal(audit.users[0].completionCandidates[0].summary, '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)');
 
   const rendered = renderFuelingGateAudit(audit);
@@ -137,6 +140,14 @@ test('fueling gate packet respects a configured Pulse URL', () => {
     ], { today: '2026-05-21' });
 
     const packet = renderFuelingEvidencePacket(audit);
+    assert.equal(
+      audit.users[0].nextAction.targetUrl,
+      'https://pulse.local:5175/plan/activity/activity-long-ride#activity-fueling-log',
+    );
+    assert.equal(
+      audit.users[0].completionCandidates[0].targetUrl,
+      'https://pulse.local:5175/plan/activity/activity-long-ride#activity-fueling-log',
+    );
     assert.match(packet, /Next URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-long-ride#activity-fueling-log/);
     assert.match(packet, /URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-long-ride#activity-fueling-log/);
   });

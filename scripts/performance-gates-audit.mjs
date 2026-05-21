@@ -141,6 +141,7 @@ function formatCandidateSummary(candidate) {
 }
 
 function summarizeCompletionCandidate(candidate) {
+  const targetPath = candidate.targetPath ?? null;
   return {
     date: candidate.date ?? null,
     activityName: candidate.activityName ?? null,
@@ -150,8 +151,39 @@ function summarizeCompletionCandidate(candidate) {
     carbsPerHour: candidate.carbsPerHour ?? null,
     summary: formatCandidateSummary(candidate),
     status: candidate.status ?? null,
-    targetPath: candidate.targetPath ?? null,
+    targetPath,
+    targetUrl: candidate.targetUrl ?? pulseTargetUrl(targetPath),
     missing: candidate.missing ?? [],
+  };
+}
+
+function summarizeFuelingTargetLog(targetLog, fallbackPath = null) {
+  if (!targetLog) return null;
+  const targetPath = targetLog.targetPath ?? fallbackPath;
+  return {
+    date: targetLog.date ?? null,
+    activityName: targetLog.activityName ?? null,
+    activityType: targetLog.activityType ?? null,
+    durationMin: targetLog.durationMin ?? null,
+    carbsG: targetLog.carbsG ?? null,
+    carbsPerHour: targetLog.carbsPerHour ?? null,
+    targetPath,
+    targetUrl: targetLog.targetUrl ?? pulseTargetUrl(targetPath),
+    summary: formatCandidateSummary(targetLog),
+  };
+}
+
+function summarizeFuelingNextAction(nextAction) {
+  if (!nextAction) return null;
+  const targetPath = nextAction.targetPath ?? null;
+  const targetLog = nextAction.targetLog
+    ? summarizeFuelingTargetLog(nextAction.targetLog, targetPath)
+    : null;
+  return {
+    ...nextAction,
+    targetPath,
+    targetUrl: nextAction.targetUrl ?? targetLog?.targetUrl ?? pulseTargetUrl(targetPath),
+    targetLog,
   };
 }
 
@@ -217,7 +249,7 @@ function summarizeFueling(today, runner) {
       comparableLongLogs: user.comparableLongLogs,
       completableNow: user.completableNow,
       newLogsStillNeeded: user.newLogsStillNeeded,
-      nextAction: user.nextAction ?? null,
+      nextAction: summarizeFuelingNextAction(user.nextAction),
       completionCandidates,
     };
   });
@@ -379,9 +411,13 @@ function nextUnblockMetadata(gate) {
   if (gate.key === 'fueling') {
     const user = fuelingBlockingUser(gate);
     const nextAction = fuelingNextAction(gate);
+    const fallbackCandidate = gate.completionCandidates?.find(candidate => candidate.targetPath) ?? null;
+    const targetPath = nextAction?.targetPath ?? fallbackCandidate?.targetPath ?? null;
+    const targetLog = nextAction?.targetLog ?? fallbackCandidate;
     return {
       kind: nextAction?.kind ?? null,
-      targetPath: nextAction?.targetPath ?? gate.completionCandidates?.find(candidate => candidate.targetPath)?.targetPath ?? null,
+      targetPath,
+      targetUrl: nextAction?.targetUrl ?? targetLog?.targetUrl ?? pulseTargetUrl(targetPath),
       date: nextAction?.date ?? null,
       evidenceChecklist: nextAction?.evidenceChecklist ?? gate.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
       capturePacketCommand: gate.capturePacketCommand ?? null,
@@ -392,7 +428,7 @@ function nextUnblockMetadata(gate) {
         completableNow: user.completableNow ?? null,
         newLogsStillNeeded: user.newLogsStillNeeded ?? null,
       } : null,
-      targetLog: nextAction?.targetLog ?? gate.completionCandidates?.find(candidate => candidate.targetPath) ?? null,
+      targetLog,
       completionCandidates: gate.completionCandidates ?? [],
     };
   }
@@ -514,7 +550,7 @@ function metadataLine(metadata) {
 }
 
 function targetUrlLine(metadata) {
-  const url = pulseTargetUrl(metadata?.targetPath);
+  const url = metadata?.targetUrl ?? pulseTargetUrl(metadata?.targetPath);
   return url ? `Target URL: ${url}` : null;
 }
 

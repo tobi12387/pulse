@@ -180,6 +180,7 @@ function candidateSummary(log) {
 }
 
 function candidateContext(log) {
+  const targetPath = activityFuelingPath(log.activityId);
   return {
     date: log.date ?? null,
     activityName: log.activityName ?? null,
@@ -187,7 +188,8 @@ function candidateContext(log) {
     durationMin: durationMin(log),
     carbsG: numberOrNull(log.carbsG),
     carbsPerHour: carbsPerHour(log),
-    targetPath: activityFuelingPath(log.activityId),
+    targetPath,
+    targetUrl: pulseTargetUrl(targetPath),
     summary: candidateSummary(log),
   };
 }
@@ -201,6 +203,7 @@ function nextActionFor(comparableLogs) {
       detail: giComfortCaptureDetail(),
       activityId: giGap.activityId,
       targetPath: activityFuelingPath(giGap.activityId),
+      targetUrl: pulseTargetUrl(activityFuelingPath(giGap.activityId)),
       date: giGap.date,
       evidenceChecklist: EVIDENCE_CHECKLIST,
       options: structuredGiComfortOptions(),
@@ -216,6 +219,7 @@ function nextActionFor(comparableLogs) {
       detail: 'Add structured carbs to an existing long GI-comfort log.',
       activityId: carbGap.activityId,
       targetPath: activityFuelingPath(carbGap.activityId),
+      targetUrl: pulseTargetUrl(activityFuelingPath(carbGap.activityId)),
       date: carbGap.date,
       evidenceChecklist: EVIDENCE_CHECKLIST,
       targetLog: candidateContext(carbGap),
@@ -228,6 +232,7 @@ function nextActionFor(comparableLogs) {
     detail: 'Capture duration, carbs and GI comfort together on the next long endurance session.',
     activityId: null,
     targetPath: null,
+    targetUrl: null,
     date: null,
     evidenceChecklist: EVIDENCE_CHECKLIST,
   };
@@ -239,15 +244,19 @@ function summarizeUser(userId, logs, requiredCompleteLogs) {
   const completeLogs = comparableLogs.filter(isCompleteComparableLog);
   const completionCandidates = comparableLogs
     .filter(log => !isCompleteComparableLog(log) && (log.carbsG != null || log.giComfort != null))
-    .map(log => ({
-      ...log,
-      missing: missingFields(log),
-      status: completionStatus(log),
-      targetPath: activityFuelingPath(log.activityId),
-      durationMin: durationMin(log),
-      carbsPerHour: carbsPerHour(log),
-      summary: candidateSummary(log),
-    }));
+    .map(log => {
+      const targetPath = activityFuelingPath(log.activityId);
+      return {
+        ...log,
+        missing: missingFields(log),
+        status: completionStatus(log),
+        targetPath,
+        targetUrl: pulseTargetUrl(targetPath),
+        durationMin: durationMin(log),
+        carbsPerHour: carbsPerHour(log),
+        summary: candidateSummary(log),
+      };
+    });
   const requiredRemaining = Math.max(0, requiredCompleteLogs - completeLogs.length);
   const completableNow = Math.min(requiredRemaining, completionCandidates.length);
   const newLogsStillNeeded = Math.max(0, requiredRemaining - completableNow);
