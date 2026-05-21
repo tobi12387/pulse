@@ -337,6 +337,8 @@ export function renderIphonePwaFieldScaffold(audit) {
     '- Install and trust only `frontend/certs/rootCA.pem` if warning-free certificate behavior is required; never transfer `rootCA-key.pem` or any `*-key.pem` file.',
     '- Deliberately enable Push and send a test push only when testing notifications.',
     '- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.',
+    `- Append this field run to ${scaffoldValue(audit.evidenceFile, 'docs/qa/2026-05-02-iphone-pwa-real-device.md')}.`,
+    `- After recording, rerun: \`${iphonePwaGateAuditCommand(audit.expectedCommit)}\`.`,
     '',
     'Open field gaps to resolve:',
     ...scaffoldGapLines(audit),
