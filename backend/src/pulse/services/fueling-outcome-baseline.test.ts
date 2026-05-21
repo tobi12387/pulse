@@ -32,6 +32,14 @@ describe('summarizeFuelingOutcomeBaseline', () => {
       activityId: 'activity-long-carb-log',
     });
     expect(readiness.nextAction?.detail).toContain('vorhandenen langen During-Log');
+    expect(readiness.completionCandidates).toEqual([
+      expect.objectContaining({
+        kind: 'complete_gi_comfort',
+        activityId: 'activity-long-carb-log',
+        summary: '2026-05-09 - langer During-Log - bike - 398 min - 356 g Carbs (54 g/h)',
+        missingEvidence: ['GI-Komfort'],
+      }),
+    ]);
   });
 
   it('names existing long carb logs that can count after GI comfort is added', () => {
@@ -79,6 +87,16 @@ describe('summarizeFuelingOutcomeBaseline', () => {
       label: 'GI-Komfort ergänzen',
       activityId: 'activity-long-ride',
     });
+    expect(readiness.completionCandidates).toEqual([
+      expect.objectContaining({
+        activityId: 'activity-long-ride',
+        summary: '2026-05-09 - langer During-Log - bike - 398 min - 356 g Carbs (54 g/h)',
+      }),
+      expect.objectContaining({
+        activityId: 'activity-z2-ride',
+        summary: '2026-05-04 - langer During-Log - bike - 80 min - 30 g Carbs (23 g/h)',
+      }),
+    ]);
   });
 
   it('marks trend summaries ready after three comparable complete during logs', () => {

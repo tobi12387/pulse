@@ -51,12 +51,23 @@ export interface PulseFuelingLearningNextAction {
   activityId?: string | null;
 }
 
+export interface PulseFuelingLearningCompletionCandidate {
+  kind: Exclude<PulseFuelingLearningNextActionKind, 'log_next_long_session'>;
+  label: string;
+  detail: string;
+  activityId?: string | null;
+  date: string;
+  summary: string;
+  missingEvidence: string[];
+}
+
 export interface PulseFuelingLearningReadiness {
   comparableCompleteLogs: number;
   requiredComparableCompleteLogs: number;
   readyForTrendSummary: boolean;
   missingEvidence: string[];
   nextAction?: PulseFuelingLearningNextAction | null;
+  completionCandidates?: PulseFuelingLearningCompletionCandidate[];
 }
 
 export interface PulseFuelingOutcomeBaseline {

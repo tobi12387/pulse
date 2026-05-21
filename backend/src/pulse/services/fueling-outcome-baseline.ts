@@ -1,5 +1,6 @@
 import type {
   PulseFuelingCarbRange,
+  PulseFuelingLearningCompletionCandidate,
   PulseFuelingLearningNextAction,
   PulseFuelingLearningReadiness,
   PulseFuelingOutcomeBaseline,
@@ -15,6 +16,7 @@ export interface FuelingOutcomeBaselineLogInput {
   date: string;
   context?: string | null;
   activityId?: string | null;
+  activityName?: string | null;
   activityType?: FuelingActivityType | string | null;
   durationMin?: number | null;
   carbsG?: number | null;
@@ -161,24 +163,69 @@ function comparableLogGapSummary(
   return `Noch ${countWord(remaining)} vergleichbare During-Logs fehlen: ${existingText}; danach ${plural(remainingAfterCompletion, 'fehlt', 'fehlen')} noch ${newLearningLogText(remainingAfterCompletion)}.`;
 }
 
-function learningNextAction(comparableLogs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningNextAction {
-  const giGapLog = comparableLogs.find(log => log.carbsG != null && log.giComfort == null);
-  if (giGapLog) {
+function completionCandidateSummary(log: FuelingOutcomeBaselineLogInput): string {
+  const duration = log.durationMin != null ? `${Math.round(log.durationMin)} min` : null;
+  const carbs = log.carbsG != null ? `${Math.round(log.carbsG)} g Carbs` : null;
+  const rate = carbsPerHour(log);
+  const rateText = rate != null ? `${rate} g/h` : null;
+  return [
+    log.date,
+    log.activityName?.trim() || 'langer During-Log',
+    log.activityType,
+    duration,
+    carbs && rateText ? `${carbs} (${rateText})` : carbs,
+  ].filter((item): item is string => Boolean(item)).join(' - ');
+}
+
+function completionCandidateForLog(log: FuelingOutcomeBaselineLogInput): PulseFuelingLearningCompletionCandidate | null {
+  if (isComparableCompleteLearningLog(log)) return null;
+  if (log.carbsG != null && log.giComfort == null) {
     return {
       kind: 'complete_gi_comfort',
       label: 'GI-Komfort ergänzen',
       detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen, damit der vorhandene Carb-Log für die Fueling-Baseline zählt.',
-      activityId: giGapLog.activityId ?? null,
+      activityId: log.activityId ?? null,
+      date: log.date,
+      summary: completionCandidateSummary(log),
+      missingEvidence: ['GI-Komfort'],
     };
   }
 
-  const carbGapLog = comparableLogs.find(log => log.carbsG == null && log.giComfort != null);
-  if (carbGapLog) {
+  if (log.carbsG == null && log.giComfort != null) {
     return {
       kind: 'complete_carbs',
       label: 'Carbs ergänzen',
       detail: 'Carbs am vorhandenen langen During-Log ergänzen, damit Pulse die Fueling-Baseline aus Dauer, Carbs und GI-Komfort lernen kann.',
-      activityId: carbGapLog.activityId ?? null,
+      activityId: log.activityId ?? null,
+      date: log.date,
+      summary: completionCandidateSummary(log),
+      missingEvidence: ['Carbs'],
+    };
+  }
+
+  return null;
+}
+
+function learningCompletionCandidates(
+  comparableLogs: FuelingOutcomeBaselineLogInput[],
+  completeLogs: FuelingOutcomeBaselineLogInput[],
+): PulseFuelingLearningCompletionCandidate[] {
+  const remaining = Math.max(0, REQUIRED_COMPARABLE_COMPLETE_LOGS - completeLogs.length);
+  if (remaining <= 0) return [];
+  return comparableLogs
+    .map(completionCandidateForLog)
+    .filter((candidate): candidate is PulseFuelingLearningCompletionCandidate => candidate != null)
+    .slice(0, remaining);
+}
+
+function learningNextAction(completionCandidates: PulseFuelingLearningCompletionCandidate[]): PulseFuelingLearningNextAction {
+  const completionCandidate = completionCandidates[0] ?? null;
+  if (completionCandidate) {
+    return {
+      kind: completionCandidate.kind,
+      label: completionCandidate.label,
+      detail: completionCandidate.detail,
+      activityId: completionCandidate.activityId ?? null,
     };
   }
 
@@ -193,6 +240,7 @@ function learningNextAction(comparableLogs: FuelingOutcomeBaselineLogInput[]): P
 function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningReadiness {
   const comparableLogs = comparableLearningLogs(logs);
   const completeLogs = comparableCompleteLearningLogs(logs);
+  const completionCandidates = learningCompletionCandidates(comparableLogs, completeLogs);
   const readyForTrendSummary = completeLogs.length >= REQUIRED_COMPARABLE_COMPLETE_LOGS;
   if (readyForTrendSummary) {
     return {
@@ -201,6 +249,7 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
       readyForTrendSummary,
       missingEvidence: [],
       nextAction: null,
+      completionCandidates: [],
     };
   }
 
@@ -219,7 +268,8 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
     requiredComparableCompleteLogs: REQUIRED_COMPARABLE_COMPLETE_LOGS,
     readyForTrendSummary,
     missingEvidence,
-    nextAction: learningNextAction(comparableLogs),
+    nextAction: learningNextAction(completionCandidates),
+    completionCandidates,
   };
 }
 
@@ -417,6 +467,7 @@ export async function loadFuelingOutcomeBaseline(userId: string, today: string):
   const activities = activityIds.length > 0
     ? await db.select({
         id: pulseActivities.id,
+        name: pulseActivities.name,
         activityType: pulseActivities.activityType,
         durationSec: pulseActivities.durationSec,
       }).from(pulseActivities)
@@ -431,6 +482,7 @@ export async function loadFuelingOutcomeBaseline(userId: string, today: string):
         date: log.date,
         context: log.context,
         activityId: log.activityId,
+        activityName: activity?.name ?? null,
         activityType: activity?.activityType ?? null,
         durationMin: activity?.durationSec != null ? Math.round(activity.durationSec / 60) : null,
         carbsG: log.carbsG,
