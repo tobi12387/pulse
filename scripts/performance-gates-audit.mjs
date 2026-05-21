@@ -641,6 +641,7 @@ export function renderPerformanceGatePacket(audit) {
   if (recoveryPacket) lines.push(recoveryPacket);
   const optionSummary = optionsLine(audit.nextUnblock.metadata);
   if (optionSummary) lines.push(optionSummary);
+  lines.push(...completionCandidateLines(audit.nextUnblock.metadata));
   lines.push('');
 
   lines.push('## Ordered Open Gates');
