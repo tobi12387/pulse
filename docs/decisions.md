@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — iPhone-Field-Gate akzeptiert Docs-only Drift nur bei gleicher App-Runtime
+
+- **Decision:** `npm run audit:iphone-pwa-gate` vergleicht weiterhin den aufgezeichneten `Server commit under test` mit dem erwarteten Server-Commit, akzeptiert aber reine Docs-only Drift als `current_runtime`, wenn beide Server-Commits auf denselben letzten App-Runtime-Commit fuer `frontend`, `backend`, `shared`, `package.json` und `package-lock.json` zeigen.
+- **Why:** Die reale iPhone/PWA-Evidence soll nach Frontend-, Backend-, PWA- oder Dependency-Aenderungen strikt frisch sein, aber Docs-only PRs duerfen keinen neuen Feldtest erzwingen, wenn sich die getestete App-Runtime nicht geaendert hat. So bleibt der Stale-Guard wirksam, ohne die manuelle iPhone-Schleife durch Hash-Churn zu verlaengern.
+- **Alternatives:** Jeden docs-only `main`-Commit als neue iPhone-Evidence-Pflicht behandeln (zu viel manuelle Reibung); den Commit-Check komplett lockern (zu riskant fuer echte Runtime-Aenderungen); nur Doku-Hinweise pflegen (löst den Audit-Fehlreiz nicht).
+- **Decided by:** Codex, als iPhone/PWA-Gate-Support-Slice im Branch `codex/iphone-runtime-commit-gate`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Pulse UI wird als ruhiges Command-Surface neu ausgerichtet
 
 - **Decision:** Die Pulse-Hauptoberflaeche wird weg vom engen technischen Cockpit hin zu einem ruhigeren Command-Surface entwickelt: klare Route-Zwecke in der Navigation, staerkere Tagesaktion, lesbarere Sans-Hierarchie, weichere Karten, mobile Icon-Navigation und reduzierte System-Jargon-Labels.

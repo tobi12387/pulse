@@ -262,6 +262,38 @@ test('iphone pwa gate audit evaluates the latest appended field run as one recor
   assert.equal(audit.results.find(result => result.area === 'Offline fallback')?.status, 'pass');
 });
 
+test('iphone pwa gate audit accepts docs-only server drift when app runtime matches', () => {
+  const fieldRecord = COMPLETE_FIELD_RECORD.replace(
+    'Server commit under test: `abcdef0`',
+    'Server commit under test: `docsold`',
+  );
+  const audit = buildIphonePwaGateAudit(fieldRecord, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'docsnew',
+    runtimeCommitFor: ref => ({
+      docsold: 'runtime1',
+      docsnew: 'runtime1',
+    })[ref] ?? null,
+  });
+
+  assert.equal(audit.gate, 'ready');
+  assert.equal(audit.commitStatus, 'current_runtime');
+  assert.equal(audit.expectedRuntimeCommit, 'runtime1');
+  assert.equal(audit.fieldRuntimeCommit, 'runtime1');
+  assert.deepEqual(audit.gaps, []);
+
+  const rendered = renderIphonePwaGateAudit(audit);
+  assert.match(rendered, /Expected current commit: docsnew/);
+  assert.match(rendered, /Expected app runtime commit: runtime1/);
+  assert.match(rendered, /Field app runtime commit: runtime1/);
+  assert.match(rendered, /Field commit status: current_runtime/);
+
+  const packet = renderIphonePwaFieldPacket(audit);
+  assert.match(packet, /Expected app runtime commit: runtime1/);
+  assert.match(packet, /Field app runtime commit: runtime1/);
+  assert.match(packet, /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
+});
+
 test('iphone pwa gate audit preserves configured server SSH host in handoff commands', () => {
   withPulseHost('pulse-server', () => {
     const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, {
