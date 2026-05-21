@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
+const IPHONE_FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
 
 function usage() {
   return [
@@ -229,6 +230,7 @@ function summarizeIphone(runner) {
       command,
       detail: parsed.error,
       nextAction: 'Restore the iPhone/PWA evidence file or pass a valid audit input, then rerun the field gate audit.',
+      evidenceChecklist: IPHONE_FIELD_CHECKLIST,
     };
   }
 
@@ -245,6 +247,7 @@ function summarizeIphone(runner) {
       ? 'All manual iPhone/PWA field gates are recorded as pass.'
       : `${gapLabels.length} open gaps: ${gapLabels.join(', ')}`,
     nextAction: audit.nextAction ?? 'No iPhone/PWA gate action needed.',
+    evidenceChecklist: audit.fieldChecklist ?? IPHONE_FIELD_CHECKLIST,
     evidenceFile: audit.evidenceFile,
     serverCommitUnderTest: audit.scope?.serverCommit ?? null,
     gaps: audit.gaps ?? [],
@@ -327,6 +330,7 @@ function nextUnblockMetadata(gate) {
   if (gate.key === 'iphone_pwa') {
     const firstGap = gate.gaps?.[0] ?? null;
     return {
+      evidenceChecklist: gate.evidenceChecklist ?? IPHONE_FIELD_CHECKLIST,
       evidenceFile: gate.evidenceFile ?? null,
       serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
       firstGap: firstGap ? {

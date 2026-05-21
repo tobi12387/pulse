@@ -108,6 +108,7 @@ const READY_FUELING = commandResult(0, JSON.stringify({
 
 const GATED_IPHONE = commandResult(0, JSON.stringify({
   evidenceFile: 'docs/qa/field.md',
+  fieldChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
   gate: 'gated',
   scope: { serverCommit: '9e05189' },
   gaps: [
@@ -124,6 +125,7 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
 
 const READY_IPHONE = commandResult(0, JSON.stringify({
   evidenceFile: 'docs/qa/field.md',
+  fieldChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
   gate: 'ready',
   scope: { serverCommit: 'abc1234' },
   gaps: [],
@@ -247,6 +249,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(rendered, /Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log/);
   assert.match(rendered, /iPhone\/PWA field/);
+  assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(rendered, /2 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
@@ -298,6 +301,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
     action: 'Install and trust only frontend/certs/rootCA.pem on the iPhone.',
     detail: '2 open gaps: Warning-free certificate trust: needs_followup, Push activation and test push: partial',
     metadata: {
+      evidenceChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
       evidenceFile: 'docs/qa/field.md',
       serverCommitUnderTest: '9e05189',
       firstGap: {
@@ -308,6 +312,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       },
     },
   });
+  assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {

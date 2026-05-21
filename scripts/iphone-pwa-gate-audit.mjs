@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_EVIDENCE_FILE = 'docs/qa/2026-05-02-iphone-pwa-real-device.md';
+const FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
 const CORE_PASS_AREAS = [
   'Network',
   'Settings readiness',
@@ -173,6 +174,7 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
 
   return {
     evidenceFile,
+    fieldChecklist: FIELD_CHECKLIST,
     gate: gaps.length === 0 ? 'ready' : 'gated',
     scope,
     results,
@@ -187,6 +189,7 @@ export function renderIphonePwaGateAudit(audit) {
     '# iPhone / PWA Field Gate Audit',
     '',
     `Evidence file: ${audit.evidenceFile}`,
+    `Field checklist: ${audit.fieldChecklist}`,
     `Gate: ${audit.gate}`,
     `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
     `Device: ${audit.scope.device ?? 'missing'}`,
