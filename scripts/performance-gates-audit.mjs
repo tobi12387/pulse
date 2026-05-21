@@ -139,6 +139,7 @@ function summarizeFueling(today, runner) {
   const result = runner(process.execPath, ['scripts/fueling-gate-audit.mjs', '--today', today, '--json']);
   const parsed = parseJsonOutput(result);
   const commandText = `${command} ${today}`;
+  const capturePacketCommand = `${commandText} --packet`;
 
   if (!parsed.value) {
     return {
@@ -178,6 +179,7 @@ function summarizeFueling(today, runner) {
       gate: 'gated',
       ready: false,
       command: commandText,
+      capturePacketCommand,
       detail: 'No during nutrition logs were found in the audit window.',
       nextAction: 'Capture comparable during Fueling logs with activity/duration context, carbs and GI comfort.',
       evidenceChecklist: FUELING_EVIDENCE_CHECKLIST,
@@ -211,6 +213,7 @@ function summarizeFueling(today, runner) {
     detail,
     nextAction,
     evidenceChecklist: blockingUser.nextAction?.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
+    capturePacketCommand: ready ? null : capturePacketCommand,
     users: summaryUsers,
     completionCandidates,
   };
@@ -323,6 +326,7 @@ function nextUnblockMetadata(gate) {
       targetPath: nextAction?.targetPath ?? gate.completionCandidates?.find(candidate => candidate.targetPath)?.targetPath ?? null,
       date: nextAction?.date ?? null,
       evidenceChecklist: nextAction?.evidenceChecklist ?? gate.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
+      capturePacketCommand: gate.capturePacketCommand ?? null,
       options: nextAction?.options ?? [],
       status: user ? {
         comparableCompleteLogs: user.comparableCompleteLogs ?? null,
@@ -414,6 +418,7 @@ export function renderPerformanceGateAudit(audit) {
     lines.push(`- Detail: ${gate.detail}`);
     lines.push(`- Next: ${gate.nextAction}`);
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
+    if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
     if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
     lines.push('');
   }
@@ -431,6 +436,10 @@ function metadataLine(metadata) {
 
 function checklistLine(metadata) {
   return metadata?.evidenceChecklist ? `Evidence checklist: ${metadata.evidenceChecklist}` : null;
+}
+
+function packetLine(metadata) {
+  return metadata?.capturePacketCommand ? `Evidence packet: ${metadata.capturePacketCommand}` : null;
 }
 
 function targetSummary(metadata) {
@@ -506,6 +515,8 @@ export function renderNextUnblock(audit) {
   if (pathOrRunbook) lines.push(pathOrRunbook);
   const checklist = checklistLine(next.metadata);
   if (checklist) lines.push(checklist);
+  const packet = packetLine(next.metadata);
+  if (packet) lines.push(packet);
   const optionSummary = optionsLine(next.metadata);
   if (optionSummary) lines.push(optionSummary);
   lines.push(...completionCandidateLines(next.metadata));

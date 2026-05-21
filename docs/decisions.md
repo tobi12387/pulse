@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Next nennt das Fueling-Capture-Packet
+
+- **Decision:** `npm run audit:performance-next` zeigt fuer einen Fueling-First-Unblock zusaetzlich den Packet-Befehl `npm run audit:fueling-gate -- --today <date> --packet` und gibt ihn als `nextUnblock.metadata.capturePacketCommand` aus.
+- **Why:** Der kuerzeste Performance-OS-Handoff soll direkt zur manuellen Evidence-Capture-Ansicht fuehren, nicht nur zum Tabellen-Audit. So bleibt der strenge Gate-Audit die Quelle der Wahrheit, aber Tobi und Folge-Agenten sehen den ausfuehrbaren Capture-Schritt ohne Kontextsuche.
+- **Alternatives:** Packet-Befehl nur in der Checkliste dokumentieren (leichter zu uebersehen); den normalen Fueling-Audit durch Packet-Output ersetzen (schlechter fuer Status-Scans); ein separates Performance-Packet-Script bauen (Dopplung).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-next-fueling-packet`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Audit rendert Live-Capture-Packet
 
 - **Decision:** `npm run audit:fueling-gate -- --packet` rendert ein live aus der aktuellen Datenbank generiertes Manual-Capture-Packet fuer den offenen Fueling-Gate-Schritt.
