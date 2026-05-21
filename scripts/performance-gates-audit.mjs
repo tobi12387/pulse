@@ -588,6 +588,7 @@ function packetGateLines(gate, index) {
   const lines = [
     `${index + 1}. ${gate.label}`,
     `   Status: ${gate.gate}`,
+    `   Detail: ${nextDetailText({ key: gate.key, detail: gate.detail, metadata })}`,
     `   Command: ${gate.command}`,
   ];
   if (gate.nextAction) lines.push(`   Action: ${nextUnblockAction(gate, metadata)}`);
@@ -624,6 +625,7 @@ export function renderPerformanceGatePacket(audit) {
 
   lines.push('## First Unblock');
   lines.push(`Gate: ${audit.nextUnblock.label}`);
+  lines.push(`Detail: ${nextDetailText(audit.nextUnblock)}`);
   lines.push(`Action: ${audit.nextUnblock.action}`);
   const target = targetLine(audit.nextUnblock.metadata);
   if (target) lines.push(target);
