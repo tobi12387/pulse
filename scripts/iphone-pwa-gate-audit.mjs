@@ -205,6 +205,8 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
     gate: gaps.length === 0 ? 'ready' : 'gated',
     expectedCommit,
     commitStatus: fieldCommitStatus,
+    serverVerifyCommand: serverVerifyCommand(expectedCommit),
+    serverRecoveryPacketCommand: serverRecoveryPacketCommand(expectedCommit),
     scope,
     results,
     issues,

@@ -129,6 +129,8 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
     { kind: 'push_activation', label: 'Push activation and test push', status: 'partial' },
   ],
   nextAction: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
+  serverVerifyCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server',
+  serverRecoveryPacketCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet',
 }));
 
 const READY_IPHONE = commandResult(0, JSON.stringify({
@@ -264,6 +266,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /iPhone\/PWA field/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(rendered, /Field packet: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet`/);
+  assert.match(rendered, /Server recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
   assert.match(rendered, /3 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
@@ -323,6 +326,8 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       commitStatus: 'stale',
       serverCommitUnderTest: '9e05189',
       fieldPacketCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet',
+      serverVerifyCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server',
+      serverRecoveryPacketCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet',
       firstGap: {
         kind: 'current_commit_evidence',
         label: 'Current main field evidence',
@@ -333,6 +338,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   });
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
+  assert.match(renderNextUnblock(audit), /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {
