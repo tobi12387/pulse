@@ -877,6 +877,7 @@ function FuelingSection({
             {giComfortCompletionLogId && (
               <div
                 id="activity-gi-comfort-action"
+                className="evidence-section"
                 data-testid="activity-gi-comfort-action"
                 tabIndex={-1}
                 style={{ marginTop: 10, scrollMarginTop: 88, scrollMarginBottom: 120 }}
