@@ -55,6 +55,7 @@ function usage() {
     '                       Expected deployed/server commit; default local git HEAD.',
     '  --fail-on-gated      Exit 1 when any Performance-OS gate is not ready.',
     '  --next-unblock       Print only the first open gate unblock; with --json prints that object.',
+    '  --target-url         Print only the first open gate target URL; exits 1 if unavailable.',
     '  --packet             Print one manual handoff packet for all open gates.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
@@ -824,6 +825,14 @@ export function exitCodeForAudit(audit, options = {}) {
   return options.failOnGated && audit.gate !== 'ready' ? 1 : 0;
 }
 
+export function firstTargetUrl(audit) {
+  return audit.nextUnblock?.metadata?.targetUrl ?? null;
+}
+
+export function exitCodeForTargetUrl(audit, options = {}) {
+  return firstTargetUrl(audit) ? exitCodeForAudit(audit, options) : 1;
+}
+
 function assertCommitish(value, label) {
   const text = String(value ?? '').trim();
   if (!/^[0-9a-f]{7,40}$/i.test(text)) {
@@ -839,6 +848,7 @@ export function parseArgs(argv) {
     skipServer: false,
     failOnGated: false,
     nextUnblock: false,
+    targetUrl: false,
     packet: false,
     json: false,
   };
@@ -866,6 +876,10 @@ export function parseArgs(argv) {
       result.nextUnblock = true;
       continue;
     }
+    if (arg === '--target-url') {
+      result.targetUrl = true;
+      continue;
+    }
     if (arg === '--packet') {
       result.packet = true;
       continue;
@@ -887,6 +901,17 @@ function main(argv) {
   }
   const args = parseArgs(argv);
   const audit = buildPerformanceGateAudit(args);
+  if (args.targetUrl) {
+    const url = firstTargetUrl(audit);
+    if (!url) {
+      console.error('No target URL for the first Performance-OS unblock.');
+      process.exitCode = exitCodeForTargetUrl(audit, args);
+      return;
+    }
+    console.log(url);
+    process.exitCode = exitCodeForTargetUrl(audit, args);
+    return;
+  }
   if (args.json) {
     console.log(JSON.stringify(args.nextUnblock ? audit.nextUnblock : audit, null, 2));
     process.exitCode = exitCodeForAudit(audit, args);
