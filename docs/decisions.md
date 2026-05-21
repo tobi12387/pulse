@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Current-Gate-Refresh `5477d49` bleibt produktgegated
+
+- **Decision:** Der frische Performance-Gate-Refresh auf `5477d49` oeffnet kein neues autonomes Produkt-Slice; der Backlog bleibt auf manuelle Fueling-GI-Evidenz, aktuelle iPhone/PWA-Real-Device-Evidenz und Server-SSH-Verifikation begrenzt.
+- **Why:** `npm run audit:performance-gates -- --today 2026-05-21` zeigt weiterhin 3 offene Gates. Fueling bleibt mit 0/3 vergleichbaren kompletten Logs der erste Unblock, iPhone/PWA ist gegenueber `5477d49` stale, und Server-Verify scheitert vor Git/PM2/Health an SSH.
+- **Alternatives:** Aus dem neuen Commit trotzdem Produktcode ableiten (nicht evidenzgedeckt); alten iPhone-Field-Record gegen `9e05189` weiter als aktuell behandeln (stale); Server-Bereitschaft ohne SSH-Beweis annehmen (zu riskant).
+- **Decided by:** Codex, als Current-Gate-Handoff im Branch `codex/performance-gate-handoff-refresh`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Next traegt iPhone-Server-Recovery mit
 
 - **Decision:** Die iPhone/PWA-Gate-Metadaten geben `serverVerifyCommand` und `serverRecoveryPacketCommand` aus; `npm run audit:performance-next` zeigt den Server-Recovery-Packet-Befehl, wenn iPhone/PWA der erste offene Unblock ist.
