@@ -275,6 +275,7 @@ function resolveExpectedCommit(runner) {
 
 function summarizeServer(expectedCommit, runner) {
   const command = `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`;
+  const recoveryPacketCommand = `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server -- --packet`;
   const result = runner('bash', ['scripts/verify-server.sh'], {
     env: { PULSE_EXPECTED_COMMIT: expectedCommit },
   });
@@ -298,10 +299,12 @@ function summarizeServer(expectedCommit, runner) {
       : `Restore non-interactive SSH auth using ${recoveryRunbook}, then rerun ${command}.`,
     expectedCommit: outputCommit,
     recoveryRunbook,
+    recoveryPacketCommand: ready ? null : recoveryPacketCommand,
   };
 }
 
 function skippedServer(expectedCommit) {
+  const recoveryPacketCommand = `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server -- --packet`;
   return {
     key: 'server',
     label: 'Server deploy mirror',
@@ -313,6 +316,7 @@ function skippedServer(expectedCommit) {
     nextAction: 'Run the server mirror verification before deploy-sensitive decisions.',
     expectedCommit,
     recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
+    recoveryPacketCommand,
   };
 }
 
@@ -362,6 +366,7 @@ function nextUnblockMetadata(gate) {
     return {
       expectedCommit: gate.expectedCommit ?? null,
       recoveryRunbook: gate.recoveryRunbook ?? null,
+      recoveryPacketCommand: gate.recoveryPacketCommand ?? null,
     };
   }
   return {};
@@ -425,6 +430,7 @@ export function renderPerformanceGateAudit(audit) {
     if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
     if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
     if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
+    if (gate.recoveryPacketCommand) lines.push(`- Recovery packet: \`${gate.recoveryPacketCommand}\``);
     lines.push('');
   }
 
@@ -449,6 +455,10 @@ function packetLine(metadata) {
 
 function fieldPacketLine(metadata) {
   return metadata?.fieldPacketCommand ? `Field packet: ${metadata.fieldPacketCommand}` : null;
+}
+
+function recoveryPacketLine(metadata) {
+  return metadata?.recoveryPacketCommand ? `Recovery packet: ${metadata.recoveryPacketCommand}` : null;
 }
 
 function targetSummary(metadata) {
@@ -528,6 +538,8 @@ export function renderNextUnblock(audit) {
   if (packet) lines.push(packet);
   const fieldPacket = fieldPacketLine(next.metadata);
   if (fieldPacket) lines.push(fieldPacket);
+  const recoveryPacket = recoveryPacketLine(next.metadata);
+  if (recoveryPacket) lines.push(recoveryPacket);
   const optionSummary = optionsLine(next.metadata);
   if (optionSummary) lines.push(optionSummary);
   lines.push(...completionCandidateLines(next.metadata));

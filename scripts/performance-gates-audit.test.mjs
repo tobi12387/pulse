@@ -247,6 +247,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   ]);
   assert.equal(audit.gates[2].expectedCommit, 'abc1234');
   assert.equal(audit.gates[2].recoveryRunbook, 'docs/ai/checklists/deploy-auth-recovery.md');
+  assert.equal(audit.gates[2].recoveryPacketCommand, 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
 
   const rendered = renderPerformanceGateAudit(audit);
   assert.match(rendered, /# Performance-OS Gate Audit/);
@@ -267,6 +268,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(rendered, /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
+  assert.match(rendered, /Recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
 
   const nextRendered = renderNextUnblock(audit);
   assert.match(nextRendered, /# Performance-OS Next Unblock/);
@@ -347,9 +349,12 @@ test('performance gate audit keeps skipped server verification unready', () => {
   assert.deepEqual(audit.nextUnblock?.metadata, {
     expectedCommit: 'abc1234',
     recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
+    recoveryPacketCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet',
   });
   assert.match(renderNextUnblock(audit), /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
+  assert.match(renderNextUnblock(audit), /Recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
   assert.match(renderPerformanceGateAudit(audit), /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
+  assert.match(renderPerformanceGateAudit(audit), /Recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
   assert.match(renderPerformanceGateAudit(audit), /Skipped by --skip-server/);
   assert.match(renderPerformanceGateAudit(audit), /Gate: gated/);
 });
