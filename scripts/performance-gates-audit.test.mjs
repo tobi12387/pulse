@@ -330,8 +330,8 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(nextRendered, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(nextRendered, /GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(nextRendered, /Completion candidates:/);
-  assert.match(nextRendered, /- 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log \(missing: GI comfort\)/);
-  assert.match(nextRendered, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
+  assert.match(nextRendered, /- 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log \| Target URL: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-a#activity-fueling-log \(missing: GI comfort\)/);
+  assert.match(nextRendered, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \| Target URL: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
   assert.match(nextRendered, /Manual safety:/);
   assert.match(nextRendered, /GI comfort must come from the real stomach response/);
   assert.match(nextRendered, /Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly/);
@@ -348,7 +348,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
   assert.match(packet, /Completion candidates:/);
-  assert.match(packet, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
+  assert.match(packet, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \| Target URL: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
   assert.match(packet, /1\. Fueling learning/);
   assert.match(packet, /Status: gated\n   Detail: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
   assert.match(packet, /2\. iPhone\/PWA field/);
@@ -386,6 +386,7 @@ test('performance gate packet respects a configured Pulse URL for Fueling target
       'https://pulse.local:5175/plan/activity/activity-b#activity-fueling-log',
     );
     assert.match(packet, /Target URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-a#activity-fueling-log/);
+    assert.match(packet, /Target URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-b#activity-fueling-log/);
   });
 });
 
