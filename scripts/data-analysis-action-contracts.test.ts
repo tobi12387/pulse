@@ -208,7 +208,7 @@ function fuelingBaseline(overrides: Partial<PulseFuelingOutcomeBaseline> = {}): 
       nextAction: {
         kind: 'complete_gi_comfort',
         label: 'GI-Komfort ergänzen',
-        detail: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+        detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
         activityId: 'activity-fueling-gap',
       },
     },
