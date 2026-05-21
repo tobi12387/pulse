@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Pulse UI wird als ruhiges Command-Surface neu ausgerichtet
+
+- **Decision:** Die Pulse-Hauptoberflaeche wird weg vom engen technischen Cockpit hin zu einem ruhigeren Command-Surface entwickelt: klare Route-Zwecke in der Navigation, staerkere Tagesaktion, lesbarere Sans-Hierarchie, weichere Karten, mobile Icon-Navigation und reduzierte System-Jargon-Labels.
+- **Why:** Tobi hat die bestehende UI/UX als weiterhin unuebersichtlich und wenig strukturiert bewertet und ein komplettes Redesign mit Orientierung an fuehrenden Performance-Apps freigegeben. Die neue Richtung verbindet Oura/WHOOP-At-a-glance-Tagesklarheit, TrainingPeaks/JOIN-Planorientierung, Garmin-Datenarbeit und MacroFactor-artige schnelle Handlungsflaechen, ohne die bestehenden Performance-OS-Gates oder Produktvertraege zu umgehen.
+- **Alternatives:** Nur einzelne Karten polieren (zu wenig fuer die gemeldete Strukturfriktion); Landing-/Marketing-Optik bauen (falsche Flaeche fuer ein taegliches Tool); gated Nutrition- oder iPhone-Produktarbeit starten (gegen aktuelle Evidence-Gates).
+- **Decided by:** Tobi + Codex, als UI/UX-Redesign-Slice im Branch `codex/ui-ux-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Manuelle Performance-Handoffs erkennen Feature-Branches
 
 - **Decision:** Performance-OS-Handoff-Modi wie `--packet`, `--manual-checklist`, `--next-unblock`, `--target-url` und `--target-urls` aktivieren auf Feature-Branches automatisch lokale Planung: der Server-Mirror wird `deferred`, der erwartete Commit kommt von `origin/main`, und die normale Server-Verifikation bleibt fuer clean `main`, Deploy-Entscheidungen und aktuelle iPhone-Field-Evidence erforderlich.

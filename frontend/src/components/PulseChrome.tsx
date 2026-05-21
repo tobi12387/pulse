@@ -16,10 +16,8 @@ type PageHeaderProps = {
 export function PageHeader({ eyebrow, title, mobileTitle, description, action }: PageHeaderProps) {
   return (
     <div
+      className="pulse-page-header"
       style={{
-        minHeight: 72,
-        padding: '18px 0 16px',
-        borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
@@ -29,11 +27,11 @@ export function PageHeader({ eyebrow, title, mobileTitle, description, action }:
     >
       <div style={{ minWidth: 0 }}>
         {eyebrow && (
-          <div className="label-mono" style={{ marginBottom: 3 }}>
+          <div className="label-mono" style={{ marginBottom: 5 }}>
             {eyebrow}
           </div>
         )}
-        <h1 style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)', margin: 0 }}>
+        <h1 className="pulse-page-heading" style={{ margin: 0 }}>
           {mobileTitle ? (
             <>
               <span className="pulse-page-title-desktop">{title}</span>
@@ -42,7 +40,7 @@ export function PageHeader({ eyebrow, title, mobileTitle, description, action }:
           ) : title}
         </h1>
         {description && (
-          <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5, maxWidth: 560 }}>
+          <p className="pulse-page-description" style={{ margin: '8px 0 0', maxWidth: 620 }}>
             {description}
           </p>
         )}
@@ -100,11 +98,11 @@ export function SegmentedControl({ items, active, onChange, compact = false, wra
       style={{
         display: 'flex',
         flexWrap: wrap ? 'wrap' : 'nowrap',
-        gap: 2,
-        padding: 2,
-        background: 'var(--surface)',
+        gap: 4,
+        padding: 4,
+        background: 'var(--surface-raised)',
         border: '1px solid var(--border)',
-        borderRadius: 5,
+        borderRadius: 'var(--radius-lg)',
         alignSelf: 'flex-start',
         maxWidth: '100%',
         overflowX: wrap ? 'visible' : 'auto',
@@ -134,18 +132,20 @@ export function SegmentedControl({ items, active, onChange, compact = false, wra
               flex: '0 0 auto',
               minWidth: 44,
               minHeight: 44,
-              padding: compact ? '7px 10px' : '8px 10px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              padding: compact ? '8px 12px' : '9px 13px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 12,
+              fontWeight: 650,
               letterSpacing: 0,
-              background: active === item.id ? 'var(--surface-2)' : 'transparent',
-              color: active === item.id ? 'var(--accent)' : 'var(--text-2)',
-              borderRadius: 3,
-              textTransform: 'uppercase',
+              background: active === item.id ? 'var(--surface-elevated)' : 'transparent',
+              color: active === item.id ? 'var(--text)' : 'var(--text-2)',
+              borderRadius: 'var(--radius-md)',
+              textTransform: 'none',
               border: 'none',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'background 0.12s, color 0.12s',
+              transition: 'background 0.12s, color 0.12s, box-shadow 0.12s',
+              boxShadow: active === item.id ? 'var(--shadow-soft)' : 'none',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -175,14 +175,15 @@ export function RangeControl({ value, onChange, options }: RangeControlProps) {
           onClick={() => onChange(option.value)}
           aria-pressed={value === option.value}
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            fontWeight: 650,
             minWidth: 44,
             minHeight: 44,
             padding: '8px 12px',
-            borderRadius: 4,
+            borderRadius: 'var(--radius-md)',
             letterSpacing: 0,
-            background: value === option.value ? 'var(--surface-2)' : 'transparent',
+            background: value === option.value ? 'var(--surface-elevated)' : 'transparent',
             color: value === option.value ? 'var(--text)' : 'var(--text-3)',
             border: '1px solid ' + (value === option.value ? 'var(--border)' : 'transparent'),
             cursor: 'pointer',
@@ -211,7 +212,7 @@ export function IconBadge({ icon: Icon, color, label }: IconBadgeProps) {
       style={{
         width: 24,
         height: 24,
-        borderRadius: 'var(--radius)',
+        borderRadius: 'var(--radius-md)',
         border: `1px solid ${colorMix(color, 34)}`,
         background: colorMix(color, 8),
         color,
@@ -257,11 +258,12 @@ export function MiniButton({ children, onClick, disabled, tone = 'neutral', type
         borderRadius: 'var(--radius)',
         minWidth: 44,
         minHeight: 44,
-        padding: '7px 12px',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 9,
+        padding: '8px 12px',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 12,
+        fontWeight: 650,
         letterSpacing: 0,
-        textTransform: 'uppercase',
+        textTransform: 'none',
         color: disabled ? 'var(--text-3)' : color,
         cursor: disabled ? 'default' : 'pointer',
         display: 'inline-flex',

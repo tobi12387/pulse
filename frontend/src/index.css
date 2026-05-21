@@ -3,39 +3,43 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/jetbrains-mono";
 
-/* ─── Performance Cockpit — Dark Theme ─────────────────────────────────── */
+/* ─── Pulse Clarity OS — Dark Theme ─────────────────────────────────────── */
 
 :root {
   /* Surface */
-  --bg:        #0A0B0D;
-  --surface:   #101216;
-  --surface-2: #171A1F;
-  --border:    #1F232A;
-  --border-hi: #2A3038;
+  --bg:        #0B0F13;
+  --surface:   #111820;
+  --surface-2: #17212B;
+  --surface-raised: #1B2530;
+  --surface-elevated: #22303C;
+  --border:    #26323D;
+  --border-hi: #344350;
 
   /* Text */
-  --text:      #E6E8EB;
-  --text-2:    #9098A3;
-  --text-3:    #5C636E;
+  --text:      #F0F3F5;
+  --text-2:    #AAB4BF;
+  --text-3:    #71808F;
 
   /* Accent */
-  --accent:    #5EE6CF;
+  --accent:    #5EE6D0;
 
   /* Semantic */
-  --accent-dim: rgba(94,230,207,0.16);
-  --green:     #5ECF8B;
-  --amber:     #FFB454;
-  --rose:      #F47174;
-  --blue:      #5B9DFF;
+  --accent-dim: rgba(94,230,208,0.16);
+  --green:     #78D982;
+  --amber:     #F6BF5B;
+  --rose:      #FF7474;
+  --blue:      #7AA7FF;
 
-  /* Radius — technical, not friendly */
-  --radius: 6px;
+  /* Shape */
+  --radius: 8px;
+  --shadow-soft: 0 8px 24px rgba(0,0,0,0.18);
+  --shadow-card: 0 14px 40px rgba(0,0,0,0.18);
 
   /* Mobile shell */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --mobile-topbar-height: 44px;
-  --mobile-bottomnav-height: 56px;
+  --mobile-topbar-height: 58px;
+  --mobile-bottomnav-height: 66px;
 
   /* Tailwind v4 compat mappings */
   --background: var(--bg);
@@ -61,6 +65,8 @@
   --color-bg:        var(--bg);
   --color-surface:   var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-elevated: var(--surface-elevated);
   --color-border:    var(--border);
 
   /* Text */
@@ -98,10 +104,10 @@
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 
   /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
   --radius-lg: 8px;
-  --radius-xl: 10px;
+  --radius-xl: 12px;
 }
 
 @layer base {
@@ -115,8 +121,8 @@
     background-color: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
@@ -184,15 +190,15 @@
     font-size: 28px;
     font-weight: 500;
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
-  /* Label / mono caption: 10px mono uppercase */
+  /* Label / mono caption */
   .label-mono {
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 400;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-3);
   }
@@ -208,8 +214,14 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card .card {
+    background: var(--surface-2);
+    box-shadow: none;
   }
 
   .insights-next-check-list {
@@ -256,23 +268,31 @@
   .pulse-app-shell {
     height: 100vh;
     height: 100dvh;
-    background: var(--bg);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.018), transparent 180px),
+      var(--bg);
     color: var(--text);
   }
 
   .pulse-mobile-topbar {
     height: calc(var(--mobile-topbar-height) + var(--safe-top));
     padding-top: var(--safe-top);
+    background: rgba(17,24,32,0.94);
+    border-color: var(--border);
+    backdrop-filter: blur(18px);
   }
 
   .pulse-mobile-bottom-nav {
     height: calc(var(--mobile-bottomnav-height) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);
+    background: rgba(17,24,32,0.95);
+    border-color: var(--border);
+    backdrop-filter: blur(18px);
   }
 
   .pulse-page-shell {
-    padding-top: calc(var(--mobile-topbar-height) + var(--safe-top) + 16px);
-    padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 12px);
+    padding-top: calc(var(--mobile-topbar-height) + var(--safe-top) + 18px);
+    padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 18px);
   }
 
   .pulse-page-title-mobile {
@@ -280,17 +300,24 @@
   }
 
   .pulse-shell-topbar {
-    height: 44px;
-    min-height: 44px;
+    height: 58px;
+    min-height: 58px;
+    padding: 0 22px;
+    background: rgba(17,24,32,0.94);
+    border-color: var(--border);
+    backdrop-filter: blur(18px);
   }
 
   .pulse-focus-sidebar {
-    width: 172px;
+    width: 232px;
+    background: #0A0E12;
+    border-color: var(--border);
+    padding: 18px 12px;
   }
 
   .pulse-brand-mark {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     border: 1.5px solid var(--accent);
     border-radius: 999px;
     position: relative;
@@ -302,11 +329,314 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 999px;
     background: var(--accent);
     transform: translate(-50%, -50%);
+  }
+
+  .pulse-brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .pulse-brand-lockup--mobile {
+    gap: 9px;
+  }
+
+  .pulse-brand-title {
+    font-size: 16px;
+    font-weight: 760;
+    line-height: 1.05;
+    color: var(--text);
+    letter-spacing: 0;
+  }
+
+  .pulse-brand-subtitle {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.1;
+    color: var(--text-3);
+  }
+
+  .pulse-topbar-context {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--text-2);
+    font-size: 12px;
+  }
+
+  .pulse-topbar-context > span:last-child {
+    color: var(--text);
+    font-weight: 650;
+  }
+
+  .pulse-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--green) 30%, var(--border));
+    border-radius: var(--radius-md);
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 9%, transparent);
+  }
+
+  .pulse-sidebar-section-label {
+    padding: 4px 10px 10px;
+    color: var(--text-3);
+    font-size: 11px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .pulse-nav-link {
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    color: var(--text-2);
+    transition: color 0.14s, background 0.14s, border-color 0.14s;
+  }
+
+  .pulse-nav-link:hover {
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+  }
+
+  .pulse-nav-link--active {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+    color: var(--text);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .pulse-nav-icon {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-3);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .pulse-nav-link--active .pulse-nav-icon {
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .pulse-nav-copy {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+  }
+
+  .pulse-nav-label {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .pulse-nav-description {
+    font-size: 11px;
+    color: var(--text-3);
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pulse-nav-key {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pulse-sidebar-card {
+    margin: 12px 0 10px;
+    padding: 13px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .pulse-sidebar-card-label {
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .pulse-sidebar-card-title {
+    margin-top: 7px;
+    font-size: 14px;
+    font-weight: 720;
+    color: var(--text);
+  }
+
+  .pulse-sidebar-card p {
+    margin: 6px 0 0;
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .pulse-coach-command {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid color-mix(in srgb, var(--accent) 44%, var(--border));
+    border-radius: var(--radius-lg);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pulse-user-strip {
+    margin-top: 10px;
+    padding: 11px 4px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+
+  .pulse-icon-button {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s, background 0.12s;
+  }
+
+  .pulse-icon-button:hover {
+    color: var(--text);
+    border-color: var(--border-hi);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .pulse-mobile-route-title {
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .pulse-mobile-nav-link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+    color: var(--text-3);
+    text-decoration: none;
+  }
+
+  .pulse-mobile-nav-icon {
+    width: 31px;
+    height: 29px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-3);
+    transition: color 0.14s, background 0.14s;
+  }
+
+  .pulse-mobile-nav-icon--active {
+    color: var(--bg);
+    background: var(--accent);
+  }
+
+  .pulse-mobile-nav-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-3);
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.1;
+    transition: color 0.14s;
+  }
+
+  .pulse-mobile-nav-label--active {
+    color: var(--text);
+  }
+
+  .pulse-page-header {
+    min-height: 88px;
+    padding: 22px 0 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pulse-page-heading {
+    font-size: 26px;
+    line-height: 1.1;
+    font-weight: 760;
+    color: var(--text);
+    letter-spacing: 0;
+  }
+
+  .pulse-page-description {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-2);
+  }
+
+  .pulse-home-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 22px 0 8px;
+  }
+
+  .pulse-home-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 11px;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--green) 28%, var(--border));
+    background: color-mix(in srgb, var(--green) 8%, transparent);
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .pulse-home-status-chip span {
+    color: var(--green);
   }
 
   .focus-decision-body {
@@ -565,12 +895,38 @@
   }
 
   @media (max-width: 600px) {
+    html, body {
+      font-size: 13.5px;
+    }
+
     .pulse-page-title-desktop {
       display: none;
     }
 
     .pulse-page-title-mobile {
       display: inline;
+    }
+
+    .pulse-page-shell {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+
+    .pulse-page-header {
+      min-height: auto;
+      padding: 18px 0 16px;
+    }
+
+    .pulse-page-heading {
+      font-size: 28px;
+    }
+
+    .pulse-page-description {
+      font-size: 12px;
+    }
+
+    .card {
+      padding: 14px;
     }
 
     .data-today-intro-eyebrow,
