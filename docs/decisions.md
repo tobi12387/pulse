@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Naechster Fueling-Unblock nennt den konkreten Log
+
+- **Decision:** Fueling- und Performance-Gate-Audits geben fuer den ersten Nutrition-Unblock zusaetzlich zur Deep-Link-URL eine `targetLog`-/Kandidaten-Zusammenfassung mit Datum, Aktivitaetsname, Typ, Dauer, Carbs und g/h aus.
+- **Why:** Der aktuelle Performance-OS-Blocker ist ein manueller GI-Komfort-Nachtrag an einem bestehenden langen Carb-Log. Datum, Name und Fueling-Kontext reduzieren die Gefahr, nur nach UUID-Pfaden zu arbeiten oder den falschen Log zu schliessen, ohne das 3/3-Evidenzgate zu lockern.
+- **Alternatives:** Path-only Handoff beibehalten (mehr Scannen); den fokussierten Fueling-Tabellenoutput manuell lesen (weniger automationsfreundlich); UI-/Datenwrites automatisieren (zu viel Scope und keine Nutzer-Evidenz).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/fueling-gate-candidate-context`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Naechster Performance-Unblock bekommt einen kurzen npm-Befehl
 
 - **Decision:** `npm run audit:performance-next -- --today <YYYY-MM-DD>` ist der kurze Standard-Handoff fuer den ersten offenen Performance-OS-Unblock und ruft denselben read-only Gate-Audit mit `--next-unblock` auf.

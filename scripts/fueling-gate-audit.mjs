@@ -74,6 +74,11 @@ function formatNumber(value, suffix = '') {
   return suffix ? `${roundedValue} ${suffix}` : String(roundedValue);
 }
 
+function numberOrNull(value) {
+  if (value == null || Number.isNaN(Number(value))) return null;
+  return Number(value);
+}
+
 function durationMin(log) {
   if (log.durationMin != null) return Math.round(Number(log.durationMin));
   if (log.durationSec != null) return Math.round(Number(log.durationSec) / 60);
@@ -142,6 +147,36 @@ function activityFuelingPath(activityId) {
   return activityId ? `/plan/activity/${activityId}#activity-fueling-log` : null;
 }
 
+function carbContext(log) {
+  if (log.carbsG == null) return null;
+  const perHour = carbsPerHour(log);
+  const carbs = formatNumber(log.carbsG, 'g');
+  return perHour == null ? `${carbs} carbs` : `${carbs} carbs (${perHour} g/h)`;
+}
+
+function candidateSummary(log) {
+  return [
+    log.date,
+    log.activityName,
+    log.activityType,
+    durationMin(log) == null ? null : `${durationMin(log)} min`,
+    carbContext(log),
+  ].filter(Boolean).join(' - ');
+}
+
+function candidateContext(log) {
+  return {
+    date: log.date ?? null,
+    activityName: log.activityName ?? null,
+    activityType: log.activityType ?? null,
+    durationMin: durationMin(log),
+    carbsG: numberOrNull(log.carbsG),
+    carbsPerHour: carbsPerHour(log),
+    targetPath: activityFuelingPath(log.activityId),
+    summary: candidateSummary(log),
+  };
+}
+
 function nextActionFor(comparableLogs) {
   const giGap = comparableLogs.find(log => log.carbsG != null && log.giComfort == null);
   if (giGap) {
@@ -153,6 +188,7 @@ function nextActionFor(comparableLogs) {
       targetPath: activityFuelingPath(giGap.activityId),
       date: giGap.date,
       options: structuredGiComfortOptions(),
+      targetLog: candidateContext(giGap),
     };
   }
 
@@ -165,6 +201,7 @@ function nextActionFor(comparableLogs) {
       activityId: carbGap.activityId,
       targetPath: activityFuelingPath(carbGap.activityId),
       date: carbGap.date,
+      targetLog: candidateContext(carbGap),
     };
   }
 
@@ -191,6 +228,7 @@ function summarizeUser(userId, logs, requiredCompleteLogs) {
       targetPath: activityFuelingPath(log.activityId),
       durationMin: durationMin(log),
       carbsPerHour: carbsPerHour(log),
+      summary: candidateSummary(log),
     }));
   const requiredRemaining = Math.max(0, requiredCompleteLogs - completeLogs.length);
   const completableNow = Math.min(requiredRemaining, completionCandidates.length);
@@ -283,6 +321,7 @@ export function renderFuelingGateAudit(audit) {
       lines.push(`- Existing logs completable now: ${user.completableNow}`);
       lines.push(`- New complete long-session logs still needed after completion candidates: ${user.newLogsStillNeeded}`);
       lines.push(`- Next action: ${user.nextAction.label} (${user.nextAction.detail})`);
+      if (user.nextAction.targetLog?.summary) lines.push(`- Next action target: ${user.nextAction.targetLog.summary}`);
       if (user.nextAction.targetPath) lines.push(`- Next action path: ${user.nextAction.targetPath}`);
       if (user.completionCandidates.some(log => log.missing.includes('GI comfort'))) {
         lines.push(`- Structured GI comfort values: ${structuredGiComfortOptionsText()}`);
