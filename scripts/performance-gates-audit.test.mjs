@@ -206,6 +206,7 @@ test('performance gate audit summarizes current gated blockers', () => {
       date: '2026-05-09',
       evidenceChecklist: 'docs/ai/checklists/fueling-evidence-capture.md',
       capturePacketCommand: 'npm run audit:fueling-gate -- --today 2026-05-21 --packet',
+      newLogChecklistCommand: 'npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist',
       options: [
         { value: 'ok', label: 'Magen ok' },
         { value: 'mild_issue', label: 'Magen leicht unruhig' },
@@ -259,6 +260,7 @@ test('performance gate audit summarizes current gated blockers', () => {
     },
   });
   assert.equal(audit.gates[0].nextAction, 'GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.');
+  assert.equal(audit.gates[0].newLogChecklistCommand, 'npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist');
   assert.deepEqual(audit.gates[0].completionCandidates, [
     {
       date: '2026-05-09',
@@ -301,6 +303,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(rendered, /Evidence packet: `npm run audit:fueling-gate -- --today 2026-05-21 --packet`/);
+  assert.match(rendered, /New log checklist: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`/);
   assert.match(rendered, /0\/3 comparable complete logs/);
   assert.match(rendered, /Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(rendered, /Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log/);
@@ -335,6 +338,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.equal(exitCodeForTargetUrls(audit), 0);
   assert.match(nextRendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(nextRendered, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
+  assert.match(nextRendered, /New log checklist: npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist/);
   assert.match(nextRendered, /GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(nextRendered, /Completion candidates:/);
   assert.match(nextRendered, /- 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log \| Target URL: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-a#activity-fueling-log \(missing: GI comfort\)/);
@@ -354,6 +358,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(packet, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
+  assert.match(packet, /New log checklist: npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist/);
   assert.match(packet, /Completion candidates:/);
   assert.match(packet, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \| Target URL: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
   assert.match(packet, /1\. Fueling learning/);
