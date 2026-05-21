@@ -198,6 +198,7 @@ test('performance gate audit summarizes current gated blockers', () => {
     metadata: {
       kind: 'complete_gi_comfort',
       targetPath: '/plan/activity/activity-a#activity-fueling-log',
+      targetUrl: 'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log',
       date: '2026-05-09',
       evidenceChecklist: 'docs/ai/checklists/fueling-evidence-capture.md',
       capturePacketCommand: 'npm run audit:fueling-gate -- --today 2026-05-21 --packet',
@@ -220,6 +221,7 @@ test('performance gate audit summarizes current gated blockers', () => {
         carbsG: 356,
         carbsPerHour: 54,
         targetPath: '/plan/activity/activity-a#activity-fueling-log',
+        targetUrl: 'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log',
         summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
       },
       completionCandidates: [
@@ -233,6 +235,7 @@ test('performance gate audit summarizes current gated blockers', () => {
           summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
           status: 'can count after GI comfort',
           targetPath: '/plan/activity/activity-a#activity-fueling-log',
+          targetUrl: 'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log',
           missing: ['GI comfort'],
         },
         {
@@ -245,6 +248,7 @@ test('performance gate audit summarizes current gated blockers', () => {
           summary: '2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h)',
           status: 'can count after GI comfort',
           targetPath: '/plan/activity/activity-b#activity-fueling-log',
+          targetUrl: 'https://192.168.178.46:5175/plan/activity/activity-b#activity-fueling-log',
           missing: ['GI comfort'],
         },
       ],
@@ -262,6 +266,7 @@ test('performance gate audit summarizes current gated blockers', () => {
       summary: '2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs (54 g/h)',
       status: 'can count after GI comfort',
       targetPath: '/plan/activity/activity-a#activity-fueling-log',
+      targetUrl: 'https://192.168.178.46:5175/plan/activity/activity-a#activity-fueling-log',
       missing: ['GI comfort'],
     },
     {
@@ -274,6 +279,7 @@ test('performance gate audit summarizes current gated blockers', () => {
       summary: '2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs (23 g/h)',
       status: 'can count after GI comfort',
       targetPath: '/plan/activity/activity-b#activity-fueling-log',
+      targetUrl: 'https://192.168.178.46:5175/plan/activity/activity-b#activity-fueling-log',
       missing: ['GI comfort'],
     },
   ]);
@@ -361,6 +367,18 @@ test('performance gate packet respects a configured Pulse URL for Fueling target
     }));
 
     const packet = renderPerformanceGatePacket(audit);
+    assert.equal(
+      audit.nextUnblock.metadata.targetUrl,
+      'https://pulse.local:5175/plan/activity/activity-a#activity-fueling-log',
+    );
+    assert.equal(
+      audit.nextUnblock.metadata.targetLog.targetUrl,
+      'https://pulse.local:5175/plan/activity/activity-a#activity-fueling-log',
+    );
+    assert.equal(
+      audit.nextUnblock.metadata.completionCandidates[1].targetUrl,
+      'https://pulse.local:5175/plan/activity/activity-b#activity-fueling-log',
+    );
     assert.match(packet, /Target URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-a#activity-fueling-log/);
   });
 });
