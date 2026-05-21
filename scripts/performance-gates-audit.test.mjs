@@ -11,6 +11,7 @@ import {
   parseArgs,
   renderNextUnblock,
   renderPerformanceGatePacket,
+  renderPerformanceManualChecklist,
   renderPerformanceGateAudit,
 } from './performance-gates-audit.mjs';
 
@@ -377,6 +378,22 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
   assert.match(packet, /If the run is intentionally pinned to a known deployed\/runtime commit, pass --expected-commit <short> so server and iPhone checks use that commit/);
   assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21/);
+
+  const checklist = renderPerformanceManualChecklist(audit);
+  assert.match(checklist, /# Performance-OS Manual Checklist/);
+  assert.match(checklist, /## 1\. Fueling learning/);
+  assert.match(checklist, /- \[ \] Open https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-a#activity-fueling-log for 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)\./);
+  assert.match(checklist, /- \[ \] Open https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log for 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\)\./);
+  assert.match(checklist, /Choose exactly one real GI comfort value: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.match(checklist, /After existing candidates, capture 1 new complete long-session log with activity\/duration, during carbs and structured GI comfort together/);
+  assert.match(checklist, /Use the future-log scaffold when ready: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`/);
+  assert.match(checklist, /## 2\. iPhone\/PWA field/);
+  assert.match(checklist, /Verify the server mirror before recording current field evidence: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
+  assert.match(checklist, /Print the paste-ready field scaffold: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold`/);
+  assert.match(checklist, /Current main field evidence \(stale\)\. Verify the server mirror is on abc1234/);
+  assert.match(checklist, /## 3\. Server deploy mirror/);
+  assert.match(checklist, /read-only recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
+  assert.match(checklist, /## Manual Safety/);
 });
 
 test('performance gate packet respects a configured Pulse URL for Fueling targets', () => {
@@ -420,6 +437,7 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.match(renderPerformanceGateAudit(audit), /Next unblock: none/);
   assert.match(renderNextUnblock(audit), /Next unblock: none/);
   assert.match(renderPerformanceGatePacket(audit), /No open Performance-OS gates/);
+  assert.match(renderPerformanceManualChecklist(audit), /No open Performance-OS gates/);
 });
 
 test('performance gate audit exposes structured next-unblock metadata for iPhone field gates', () => {
@@ -576,6 +594,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     targetUrl: false,
     targetUrls: false,
     packet: true,
+    manualChecklist: false,
     json: false,
   });
 
@@ -603,6 +622,7 @@ test('performance gate audit CLI args accept target-url mode', () => {
     targetUrl: true,
     targetUrls: false,
     packet: false,
+    manualChecklist: false,
     json: false,
   });
 });
@@ -624,6 +644,29 @@ test('performance gate audit CLI args accept target-urls mode', () => {
     targetUrl: false,
     targetUrls: true,
     packet: false,
+    manualChecklist: false,
+    json: false,
+  });
+});
+
+test('performance gate audit CLI args accept manual checklist mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--manual-checklist',
+    '--today',
+    '2026-05-21',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: null,
+    skipServer: false,
+    localPlanning: false,
+    failOnGated: false,
+    nextUnblock: false,
+    targetUrl: false,
+    targetUrls: false,
+    packet: false,
+    manualChecklist: true,
     json: false,
   });
 });
@@ -646,6 +689,7 @@ test('performance gate audit CLI args accept local planning mode', () => {
     targetUrl: false,
     targetUrls: false,
     packet: true,
+    manualChecklist: false,
     json: false,
   });
 });
@@ -702,6 +746,9 @@ test('performance gate audit local planning can finish manual gates while server
   assert.match(packet, /No open manual Performance-OS gates in this local-planning snapshot\. Rerun npm run audit:performance-gates -- --today 2026-05-21 --local-planning after manual saves/);
   assert.match(packet, /## Deferred Gates/);
   assert.match(packet, /Server deploy mirror/);
+  const checklist = renderPerformanceManualChecklist(audit);
+  assert.match(checklist, /No open manual Performance-OS gates in this local-planning snapshot/);
+  assert.match(checklist, /Rerun after manual saves: `npm run audit:performance-gates -- --today 2026-05-21 --local-planning`/);
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {

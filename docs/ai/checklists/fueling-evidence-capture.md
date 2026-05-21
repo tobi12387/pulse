@@ -36,6 +36,13 @@ If Fueling is part of a broader manual gate run, generate one ordered handoff fi
 npm run audit:performance-gates -- --today <YYYY-MM-DD> --packet
 ```
 
+For a shorter checkbox-style manual session handoff across Fueling, iPhone/PWA
+and server gates, run:
+
+```bash
+npm run audit:performance-gates -- --today <YYYY-MM-DD> --manual-checklist
+```
+
 For a focused table, run:
 
 ```bash
