@@ -405,6 +405,7 @@ export function renderPerformanceGateAudit(audit) {
     lines.push(`- Detail: ${gate.detail}`);
     lines.push(`- Next: ${gate.nextAction}`);
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
+    if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
     lines.push('');
   }
 

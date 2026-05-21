@@ -253,7 +253,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /2 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
   assert.match(rendered, /PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
-  assert.match(rendered, /deploy-auth-recovery\.md/);
+  assert.match(rendered, /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
 
   const nextRendered = renderNextUnblock(audit);
   assert.match(nextRendered, /# Performance-OS Next Unblock/);
@@ -331,6 +331,7 @@ test('performance gate audit keeps skipped server verification unready', () => {
     recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
   });
   assert.match(renderNextUnblock(audit), /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
+  assert.match(renderPerformanceGateAudit(audit), /Recovery runbook: docs\/ai\/checklists\/deploy-auth-recovery\.md/);
   assert.match(renderPerformanceGateAudit(audit), /Skipped by --skip-server/);
   assert.match(renderPerformanceGateAudit(audit), /Gate: gated/);
 });
