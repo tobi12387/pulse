@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Route-Evidence `ec77c26` oeffnet kein neues UI-Slice
+
+- **Decision:** Die frische Route-Evidence auf `ec77c26` wird als QA-/Backlog-Beweis dokumentiert, aber nicht in ein neues UI/UX-Implementierungsslice uebersetzt.
+- **Why:** Desktop und Mobile Chromium liefern 9 bzw. 17 Screenshots mit 0 horizontalem Overflow; die geprueften Home-, Data-, Activity-Fueling- und Plan-Mobile-Handoffs bleiben lesbar und action-first. Ohne konkrete Friktion bleibt der autonome Performance-OS-Backlog weiter durch Fueling-Evidence, iPhone/PWA-Feldbeweis und Server-SSH gedeckt statt durch spekulative UI-Politur.
+- **Alternatives:** Trotzdem ein UI-Polish-PR starten (nicht evidenzgedeckt); alte Route-Evidence weiter als aktuell behandeln (stale nach #586/#587); die manuellen Gates aus dem Backlog entfernen (zu optimistisch).
+- **Decided by:** Codex, als Current-Main-Evidence-Slice im Branch `codex/route-evidence-next-friction`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Fueling-Readiness nennt alle vorhandenen Completion-Kandidaten
 
 - **Decision:** `PulseFuelingLearningReadiness` enthaelt neben `nextAction` eine optionale `completionCandidates`-Liste fuer vorhandene lange During-Logs, die durch GI-Komfort oder Carbs fuer die Fueling-Baseline zaehlen koennen.
