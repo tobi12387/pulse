@@ -33,7 +33,8 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 
 ## Current Gates
 
-- Nutrition trend summaries remain gated until at least three comparable complete `during` logs exist with carbs, duration/activity context and GI comfort. Refresh the gate with `npm run audit:fueling-gate -- --today <YYYY-MM-DD>`. Local DB audit on 2026-05-21 found 4 during logs, 0 comparable complete logs; the 2026-05-09 and 2026-05-04 long carb logs need structured GI comfort, then one additional complete long-session log is still needed. Sodium, heat and sweat-rate stay evidence gaps until measured.
+- Refresh the current Performance-OS blockers together with `npm run audit:performance-gates -- --today <YYYY-MM-DD>`; it wraps the Fueling, iPhone/PWA and server mirror gates without changing data.
+- Nutrition trend summaries remain gated until at least three comparable complete `during` logs exist with carbs, duration/activity context and GI comfort. Refresh the focused gate with `npm run audit:fueling-gate -- --today <YYYY-MM-DD>`. Local DB audit on 2026-05-21 found 4 during logs, 0 comparable complete logs; the 2026-05-09 and 2026-05-04 long carb logs need structured GI comfort, then one additional complete long-session log is still needed. Sodium, heat and sweat-rate stay evidence gaps until measured.
 - iPhone certificate trust is still manual if warning-free Safari/PWA behavior is required. Refresh the manual field gate with `npm run audit:iphone-pwa-gate`.
 - Push registration and test-push activation are manual per target browser/device.
 - PWA offline fallback has automated service-worker proof, but the real iPhone VPN/network disconnect check remains manual field evidence.

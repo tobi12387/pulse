@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-OS-Gates bekommen einen Sammel-Audit
+
+- **Decision:** `npm run audit:performance-gates` fuehrt die bestehenden read-only Audits fuer Fueling, iPhone/PWA und Server-Spiegel in einem Gate-Snapshot zusammen.
+- **Why:** Der autonome Produkt-Backlog ist gerade durch manuelle Nutrition-, iPhone/PWA- und SSH/Deploy-Gates blockiert. Ein Sammel-Audit macht die naechste unblockende Aktion reproduzierbar, ohne die einzelnen Gates zu lockern oder Serverdateien direkt zu editieren.
+- **Alternatives:** Weiter jedes Gate einzeln aus Chat-/Doc-Historie zusammensuchen (fehleranfaellig); Produktarbeit trotz geschlossener Gates starten (nicht vom Backlog gedeckt); Serverstatus ohne SSH-Beweis als aktuell behandeln (zu riskant fuer Deploy-Entscheidungen).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-gate-audit`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Verify-Server nennt erwarteten Commit bei SSH-Blocker
 
 - **Decision:** `scripts/verify-server.sh` gibt bei fehlgeschlagenem SSH-Preflight den erwarteten lokalen Commit und das Deploy-Auth-Recovery-Runbook aus, bevor es abbricht.
