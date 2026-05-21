@@ -40,6 +40,7 @@ function usage() {
     '  --user <uuid>             Restrict the audit to one user_id.',
     '  --database-url <url>      Read-only Postgres connection string.',
     '  --env-file <path>         Env file to load before .env/.env.test fallbacks.',
+    '  --packet                  Print a manual evidence-capture packet instead of the audit table.',
     '  --json                    Print machine-readable JSON.',
     '  -h, --help                Show this help.',
   ].join('\n');
@@ -350,6 +351,86 @@ export function renderFuelingGateAudit(audit) {
   return lines.join('\n').trimEnd();
 }
 
+function candidateMissingText(candidate) {
+  const missing = candidate.missing ?? missingFields(candidate);
+  return missing.length > 0 ? missing.join(', ') : 'none';
+}
+
+function packetCandidateLines(candidate, index) {
+  const lines = [
+    `${index + 1}. ${candidate.summary ?? candidateSummary(candidate)}`,
+  ];
+  if (candidate.targetPath) lines.push(`   Path: ${candidate.targetPath}`);
+  lines.push(`   Missing: ${candidateMissingText(candidate)}`);
+  if ((candidate.missing ?? []).includes('GI comfort')) {
+    lines.push(`   GI comfort options: ${structuredGiComfortOptionsText()}`);
+  }
+  if ((candidate.missing ?? []).includes('carbs')) {
+    lines.push('   Carbs: enter the actual during-activity carbs from that session.');
+  }
+  return lines;
+}
+
+export function renderFuelingEvidencePacket(audit) {
+  const lines = [
+    '# Fueling Evidence Packet',
+    '',
+    `Window: ${audit.since}..${audit.today}`,
+    `Required comparable complete logs: ${audit.requiredCompleteLogs}`,
+    '',
+  ];
+
+  if (audit.users.length === 0) {
+    lines.push('No during nutrition logs found in the audit window.');
+    lines.push(`Rerun: npm run audit:fueling-gate -- --today ${audit.today}`);
+    return lines.join('\n');
+  }
+
+  for (const user of audit.users) {
+    lines.push(`## User ${shortId(user.userId)}`);
+    lines.push(`Gate: ${user.gate}`);
+    lines.push(`Comparable complete logs: ${user.comparableCompleteLogs}/${user.requiredComparableCompleteLogs}`);
+
+    if (user.gate === 'ready') {
+      lines.push('No manual Fueling evidence capture is needed before nutrition trend summaries can use current evidence.');
+      lines.push('');
+      continue;
+    }
+
+    if (user.nextAction?.targetLog?.summary) lines.push(`Next target: ${user.nextAction.targetLog.summary}`);
+    if (user.nextAction?.targetPath) lines.push(`Next path: ${user.nextAction.targetPath}`);
+    lines.push(`Existing logs completable now: ${user.completableNow}`);
+    lines.push(`New complete long-session logs still needed after candidates: ${user.newLogsStillNeeded}`);
+    lines.push('');
+
+    if (user.completionCandidates.length > 0) {
+      lines.push('Existing candidates to close first:');
+      user.completionCandidates.forEach((candidate, index) => {
+        lines.push(...packetCandidateLines(candidate, index));
+      });
+    } else {
+      lines.push('Existing candidates to close first: none');
+    }
+
+    lines.push('');
+    lines.push('Manual capture rules:');
+    lines.push('- Use the Activity Fueling UI; do not edit database rows directly for normal evidence capture.');
+    lines.push('- Choose GI comfort only from the real stomach response; do not infer it from notes, route, RPE, carbs per hour or workout result.');
+    lines.push(`- Accepted GI comfort values: ${structuredGiComfortOptionsText()}`);
+    lines.push(`- Evidence checklist: ${user.nextAction?.evidenceChecklist ?? EVIDENCE_CHECKLIST}`);
+    lines.push(`- Rerun after each save: npm run audit:fueling-gate -- --today ${audit.today}`);
+
+    lines.push('');
+    lines.push('After existing candidates:');
+    lines.push(`- New complete long-session logs still needed: ${user.newLogsStillNeeded}`);
+    lines.push('- A new complete long-session log needs activity/duration context, during-activity carbs and structured GI comfort together.');
+    lines.push('- Sodium, heat and sweat-rate remain measured-only evidence gaps until explicitly recorded.');
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
 function parseArgs(argv) {
   const result = {
     today: isoDate(new Date()),
@@ -357,6 +438,7 @@ function parseArgs(argv) {
     userId: null,
     databaseUrl: null,
     envFile: null,
+    packet: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -364,6 +446,10 @@ function parseArgs(argv) {
     const arg = args[index];
     if (arg === '--json') {
       result.json = true;
+      continue;
+    }
+    if (arg === '--packet') {
+      result.packet = true;
       continue;
     }
     if (arg === '--today') {
@@ -508,7 +594,7 @@ async function main(argv) {
     return;
   }
 
-  console.log(renderFuelingGateAudit(output));
+  console.log(args.packet ? renderFuelingEvidencePacket(output) : renderFuelingGateAudit(output));
   console.log('');
   console.log(`Database: ${output.database}`);
   if (envFile) console.log(`Env file: ${envFile}`);

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Audit rendert Live-Capture-Packet
+
+- **Decision:** `npm run audit:fueling-gate -- --packet` rendert ein live aus der aktuellen Datenbank generiertes Manual-Capture-Packet fuer den offenen Fueling-Gate-Schritt.
+- **Why:** Der Audit nennt bereits Kandidaten und Optionen, aber Tobi braucht beim manuellen Nachtragen von GI-Komfort eine kompakte Arbeitsansicht mit allen Pfaden, Missing-Feldern, No-Inference-Regeln und Rerun-Befehl. Das bleibt im bestehenden read-only Audit statt ein zweites Tool mit eigener Gate-Logik zu bauen.
+- **Alternatives:** Nur den Audit-Status und die statische Checkliste verwenden (mehr Kontextwechsel); ein separates Fueling-Packet-Script einfuehren (Dopplung); GI-Komfort aus vorhandenen Daten ableiten (verboten, subjektive Evidenz).
+- **Decided by:** Codex, als Fueling-Evidence-Support-Slice im Branch `codex/fueling-evidence-packet`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Current-Gate-Refresh `4c046ab` bleibt produktgegated
 
 - **Decision:** Nach dem iPhone-Commit-Freshness-Support bleibt der autonome Produktbacklog weiter gegated; es wird aus `4c046ab` kein neues UI-/Produkt-Slice abgeleitet.
