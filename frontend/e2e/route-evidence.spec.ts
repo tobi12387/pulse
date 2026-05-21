@@ -358,6 +358,7 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
           const giComfortAction = page.getByTestId('activity-gi-comfort-action');
           await expect(giComfortAction).toBeFocused();
+          await expect(giComfortAction).toHaveClass(/evidence-section/);
           await expect(giComfortAction).toBeInViewport();
           await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
         },
