@@ -146,6 +146,14 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /never transfer rootCA-key\.pem or any \*-key\.pem file/);
   assert.match(packet, /Record the run in field\.md, including Server commit under test: abc1234/);
   assert.match(packet, /Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
+  assert.match(packet, /Evidence record scaffold:/);
+  assert.match(packet, /- Device: <iPhone model>/);
+  assert.match(packet, /- iOS version: <iOS version>/);
+  assert.match(packet, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);
+  assert.match(packet, /- Pulse URL: `https:\/\/192\.168\.178\.46:5175`/);
+  assert.match(packet, /- Server commit under test: `abc1234`/);
+  assert.match(packet, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
+  assert.match(packet, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
 });
 
 test('iphone pwa gate audit opens when all manual gates match the expected commit', () => {
@@ -158,7 +166,9 @@ test('iphone pwa gate audit opens when all manual gates match the expected commi
   assert.equal(audit.commitStatus, 'current');
   assert.deepEqual(audit.gaps, []);
   assert.match(renderIphonePwaGateAudit(audit), /Field commit status: current/);
-  assert.match(renderIphonePwaFieldPacket(audit), /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
+  const packet = renderIphonePwaFieldPacket(audit);
+  assert.match(packet, /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
+  assert.doesNotMatch(packet, /Evidence record scaffold:/);
 });
 
 test('iphone pwa gate audit opens when all manual gates are recorded', () => {

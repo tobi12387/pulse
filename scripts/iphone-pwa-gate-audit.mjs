@@ -15,6 +15,20 @@ const CORE_PASS_AREAS = [
   'Plan',
   'Insights',
 ];
+const FIELD_RESULT_ROWS = [
+  ['Network', 'URL opens via VPN on local origin'],
+  ['Certificate', 'No unexpected warning for the address in use'],
+  ['Login', 'Auth succeeds and stays on local origin, if an auth gate appears'],
+  ['Settings readiness', 'iPhone/PWA block shows secure context, service worker and push capability truthfully'],
+  ['Add to Home Screen', 'Pulse launches from Home Screen'],
+  ['Standalone mode', 'Settings shows standalone after Home Screen launch'],
+  ['Home', 'Daily action fits without horizontal overflow'],
+  ['Coach', 'Input remains usable before/after keyboard focus'],
+  ['Plan', 'Bottom nav does not overlap final controls'],
+  ['Insights', 'Evidence/missing-data states remain readable'],
+  ['Push support', 'Permission and subscription state recorded when deliberately triggered'],
+  ['Offline fallback', 'Disconnecting VPN/network shows local server/VPN unavailable fallback'],
+];
 
 function usage() {
   return [
@@ -255,6 +269,35 @@ function serverRecoveryPacketCommand(expectedCommit) {
   return `${serverVerifyCommand(expectedCommit)} -- --packet`;
 }
 
+function scaffoldValue(value, fallback) {
+  return value ?? fallback;
+}
+
+function renderEvidenceRecordScaffold(audit) {
+  const expectedCommit = audit.expectedCommit ?? '<commit>';
+  const lines = [
+    '```markdown',
+    '## Scope',
+    '',
+    `- Device: ${scaffoldValue(audit.scope.device, '<iPhone model>')}`,
+    `- iOS version: ${scaffoldValue(audit.scope.iosVersion, '<iOS version>')}`,
+    `- Browser / launch mode: ${scaffoldValue(audit.scope.launchMode, 'Safari, then Home Screen PWA launch')}`,
+    `- VPN profile: ${scaffoldValue(audit.scope.vpnProfile, '<VPN profile/name>')}`,
+    `- Pulse URL: \`${scaffoldValue(audit.scope.pulseUrl, 'https://192.168.178.46:5175')}\``,
+    `- Server commit under test: \`${expectedCommit}\``,
+    '',
+    '## Results',
+    '',
+    '| Area | Expected | Result | Notes |',
+    '|---|---|---|---|',
+  ];
+  for (const [area, expected] of FIELD_RESULT_ROWS) {
+    lines.push(`| ${area} | ${expected} | <Pass/Partial/Pending/Needs follow-up/Fail/Not applicable> | <observed result> |`);
+  }
+  lines.push('```');
+  return lines.join('\n');
+}
+
 export function renderIphonePwaFieldPacket(audit) {
   const lines = [
     '# iPhone / PWA Field Evidence Packet',
@@ -296,6 +339,9 @@ export function renderIphonePwaFieldPacket(audit) {
   lines.push('- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.');
   lines.push(`- Record the run in ${audit.evidenceFile}, including Server commit under test: ${audit.expectedCommit ?? '<commit>'}.`);
   lines.push(`- Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit ${audit.expectedCommit ?? '<commit>'}`);
+  lines.push('');
+  lines.push('Evidence record scaffold:');
+  lines.push(renderEvidenceRecordScaffold(audit));
 
   return lines.join('\n');
 }
