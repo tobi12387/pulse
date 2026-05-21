@@ -23,6 +23,30 @@ function normalizeOutcome(value) {
   return outcome || '<one user-facing package outcome>';
 }
 
+function gateRemindersForOutcome(track, outcome) {
+  const text = String(outcome ?? '').toLowerCase();
+  const reminders = [];
+
+  if (
+    track === 'lernschleifen'
+    && /\b(nutrition|fueling|ernaehrung|ernährung|gi|carb|carbs|hydration|sodium)\b/i.test(text)
+    && /\b(trend|trends|summary|summaries|lern|learning|baseline)\b/i.test(text)
+  ) {
+    reminders.push('Nutrition/Fueling trend summaries stay gated until `npm run audit:fueling-gate -- --today <YYYY-MM-DD>` reports 3/3 comparable complete `during` logs with activity/duration context, carbs and structured GI comfort.');
+    reminders.push('While the Fueling gate is closed, use evidence capture, docs/tooling support or CI/deploy repair instead of product coding.');
+  }
+
+  if (
+    /\b(iphone|ios|pwa|vpn|certificate|cert|push|offline)\b/i.test(text)
+    && /\b(field|reliability|real[- ]?device|pwa|vpn|certificate|cert|push|offline)\b/i.test(text)
+  ) {
+    reminders.push('iPhone/PWA reliability stays gated until `npm run audit:iphone-pwa-gate -- --expected-commit <commit>` has current real-device evidence for the commit under test.');
+    reminders.push('Simulated WebKit or Chromium evidence can support a fix, but it does not close the real iPhone/VPN/PWA field gate.');
+  }
+
+  return reminders;
+}
+
 export function buildDeliveryIntake(options = {}) {
   const track = normalizeTrackName(options.track);
   const config = TRACKS[track];
@@ -39,6 +63,7 @@ export function buildDeliveryIntake(options = {}) {
     prGate: `npm run verify:${track}:pr`,
     releaseGate: `npm run verify:${track}`,
     deliveryManifest: 'npm run delivery:manifest',
+    gateReminders: gateRemindersForOutcome(track, options.outcome),
     packageShape: [
       'Shape the PR as 3-5 tightly related changes with one user-facing outcome.',
       'Keep the first implementation loop on fast contract/golden tests.',
@@ -69,6 +94,11 @@ export function renderDeliveryIntake(intake) {
     '## Package Shape',
     list(intake.packageShape),
     '',
+    intake.gateReminders?.length > 0 ? [
+      '## Gate Reminders',
+      list(intake.gateReminders),
+      '',
+    ].join('\n') : null,
     '## Evidence',
     list(intake.evidence),
     '',
@@ -79,7 +109,7 @@ export function renderDeliveryIntake(intake) {
     `- Local checks: \`${intake.developmentGate}\`, \`${intake.prGate}\`, \`${intake.deliveryManifest}\``,
     '- Auto-merge: copy from `npm run delivery:manifest`',
     '- Deploy: copy from `npm run delivery:manifest`',
-  ].join('\n');
+  ].filter(item => item != null).join('\n');
 }
 
 export function parseArgs(argv) {

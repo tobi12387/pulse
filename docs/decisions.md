@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Delivery-Intake warnt bei gated Seeds
+
+- **Decision:** `npm run delivery:intake` rendert fuer Nutrition/Fueling-Trend-Outcomes und iPhone/PWA-Reliability-Outcomes explizite Gate-Reminder, statt diese Seeds wie normale offene Produktpakete wirken zu lassen.
+- **Why:** Die Gate-open Package Seeds sollen die naechste Umsetzung nach echter Evidence beschleunigen, aber nicht dazu fuehren, dass Agenten die geschlossenen Fueling- oder iPhone/PWA-Gates versehentlich als startbare Product-Cards behandeln. Intake bleibt leichtgewichtig und verweist auf die bestehenden Audits, ohne selbst Daten zu schreiben oder Real-Device-Evidence zu simulieren.
+- **Alternatives:** Intake unveraendert lassen (zu leicht missverstaendlich nach den Seeds); Intake an Live-DB/SSH-Audits koppeln (langsamer und stoeranfaelliger fuer einen Package-Starter); Produktarbeit trotz Gate starten (gegen Roadmap-Regel).
+- **Decided by:** Codex, als Delivery-Intake-Gate-Reminder-Slice im Branch `codex/delivery-intake-gate-reminders`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Gate-Open-Package-Seeds bleiben evidenzgebunden
 
 - **Decision:** `docs/ai/next-product-packages.md` beschreibt fuer Nutrition trend summaries und iPhone/PWA field reliability nur Gate-open package seeds; sie sind keine unblocked Product-Cards und duerfen erst nach geoeffnetem Audit- bzw. Field-Evidence-Gate umgesetzt werden.
