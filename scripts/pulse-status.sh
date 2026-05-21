@@ -35,6 +35,7 @@ else
   cat <<'SERVER_HELP'
 server mirror: unavailable or out of sync
 Check VPN/network access, non-interactive SSH credentials, server PM2 status, and whether the server is on GitHub main.
+If the failure is SSH auth, follow docs/ai/checklists/deploy-auth-recovery.md before retrying deploy or server verification.
 SERVER_HELP
 fi
 
