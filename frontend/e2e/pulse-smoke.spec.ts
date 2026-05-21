@@ -607,7 +607,67 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
 });
 
 test('Data today promotes actionable fueling learning gaps', async ({ page }) => {
+  let nutritionPatch: { id: string; body: unknown } | null = null;
+
   await mockPulseApi(page, {
+    onNutritionPatch: (id, body) => { nutritionPatch = { id, body }; },
+    nutritionLogs: [{
+      id: 'nutrition-fueling-gap',
+      userId: 'user-1',
+      date: '2026-04-30',
+      workoutId: null,
+      activityId: 'activity-fueling-gap',
+      context: 'during',
+      mealType: null,
+      description: null,
+      calories: null,
+      proteinG: null,
+      carbsG: 120,
+      fatG: null,
+      gelsCount: null,
+      drinksMl: null,
+      sodiumMg: null,
+      ambientTempC: null,
+      sweatRateLPerHour: null,
+      bottles750Ml: null,
+      powderG: null,
+      fuelingProducts: [],
+      giComfort: null,
+      notes: null,
+      createdAt: '2026-04-30T13:15:00.000Z',
+    }],
+    activityDetail: {
+      activity: {
+        id: 'activity-fueling-gap',
+        userId: 'user-1',
+        externalId: 'garmin-fueling-gap',
+        source: 'garmin',
+        startTime: '2026-04-30T08:00:00.000Z',
+        activityType: 'bike',
+        name: 'Long Fueling Check',
+        durationSec: 4 * 3600,
+        distanceM: 88000,
+        avgHr: 137,
+        maxHr: 165,
+        avgPowerW: 176,
+        normalizedPowerW: 188,
+        tss: 210,
+        calories: 2600,
+        elevationGainM: 900,
+        trainingEffectAerobic: 3.4,
+        trainingEffectAnaerobic: 0.2,
+        vo2maxEstimate: null,
+        rpe: 7,
+        rpeNote: null,
+        sorenessAreas: null,
+        feedbackLoggedAt: '2026-04-30T13:00:00.000Z',
+        equipmentIds: [],
+        plannedWorkoutId: null,
+      },
+      laps: [],
+      hrZones: [],
+      analytics: null,
+    },
     outcomeBaseline: {
       status: 'learning',
       label: 'Fueling-Baseline lernt',
@@ -652,6 +712,15 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
 
   await action.getByRole('button', { name: 'GI-Komfort ergänzen' }).click();
   await expect(page).toHaveURL('/plan/activity/activity-fueling-gap#activity-fueling-log');
+  const fuelingLog = page.locator('#activity-fueling-log');
+  await expect(fuelingLog).toBeFocused();
+  await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
+
+  await fuelingLog.getByRole('button', { name: 'Magen ok' }).click();
+  expect(nutritionPatch).toEqual({
+    id: 'nutrition-fueling-gap',
+    body: { giComfort: 'ok' },
+  });
 });
 
 test('Data analysis opens personal response evidence from the watch response signal', async ({ page }) => {
