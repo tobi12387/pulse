@@ -585,11 +585,13 @@ test('performance gate audit distinguishes server mirror state failures from SSH
   assert.equal(audit.nextUnblock.key, 'server');
   assert.match(audit.gates[2].detail, /server branch is 'codex\/example'/);
   assert.match(audit.gates[2].nextAction, /Restore the server mirror to clean GitHub main at abc1234/);
+  assert.match(audit.gates[2].nextAction, /docs\/ai\/checklists\/server-mirror-recovery\.md/);
+  assert.match(audit.gates[2].nextAction, /if dirty, inspect before changing state/i);
   assert.match(audit.gates[2].nextAction, /Do not edit server files directly/);
   assert.equal(audit.gates[2].recoveryRunbook, null);
   assert.equal(audit.gates[2].recoveryPacketCommand, null);
   assert.doesNotMatch(renderNextUnblock(audit), /deploy-auth-recovery/);
-  assert.match(renderNextUnblock(audit), /standard merge\/deploy flow/);
+  assert.match(renderNextUnblock(audit), /server-mirror-recovery/);
 });
 
 test('performance gate audit CLI args accept an explicit expected commit', () => {

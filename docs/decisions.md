@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Server-Mirror-State-Failures bekommen eigenen Recovery-Hinweis
+
+- **Decision:** `npm run verify:server` gibt bei erfolgreichem SSH, aber falschem Server-Branch, dirty Worktree oder Commit-Mismatch einen eigenen Mirror-Recovery-Hinweis und verweist auf `docs/ai/checklists/server-mirror-recovery.md`.
+- **Why:** Ein Server auf einem Feature-Branch blockiert aktuelle iPhone/PWA-Field-Evidence anders als ein SSH-Auth-Problem. Der Check soll hart fehlschlagen, aber direkt zeigen, wie ein sauberer Mirror wieder auf GitHub `main` gebracht und danach normal deployed/verifiziert wird.
+- **Alternatives:** Nur die nackte Branch-/Commit-Fehlermeldung belassen (langsamer und fehleranfaelliger im Field-Handoff); den Zustand als SSH-Recovery behandeln (falscher Runbook-Pfad); automatisch im Verify-Skript korrigieren (zu viel implizite Server-State-Aenderung).
+- **Decided by:** Codex, als Server-Mirror-Recovery-Support-Slice im Branch `codex/server-branch-recovery-hint`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Performance-Gate-Header zeigt Fueling-Optionen direkt
 
 - **Decision:** `npm run audit:performance-gates` rendert im Standard-Header nach `Next target URL` auch die erste passende Optionszeile aus `nextUnblock.metadata`, z.B. die GI-Komfort-Auswahl fuer den naechsten Fueling-Log.

@@ -61,6 +61,7 @@ Do not read historical archives by default. Use `docs/superpowers/plans/complete
 | Backend change guard | `docs/ai/checklists/backend-change.md` |
 | Frontend/mobile guard | `docs/ai/checklists/frontend-change.md` |
 | iPhone/PWA QA | `docs/ai/checklists/iphone-pwa-qa.md` |
+| Server mirror recovery | `docs/ai/checklists/server-mirror-recovery.md` |
 | Garmin sync boundaries | `docs/ai/garmin-sync-inventory.md` |
 | Broad structure cleanup | Fresh `rg --files` / file counts; historical context in `docs/ai/project-structure-audit.md` |
 

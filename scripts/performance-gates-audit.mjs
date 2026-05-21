@@ -436,7 +436,7 @@ function serverIssueKind(detail) {
 
 function serverNextAction(issueKind, recoveryRunbook, command, expectedCommit) {
   if (issueKind === 'mirror_state') {
-    return `Restore the server mirror to clean GitHub main at ${expectedCommit} through the standard merge/deploy flow, then rerun ${command}. Do not edit server files directly.`;
+    return `Restore the server mirror to clean GitHub main at ${expectedCommit} using docs/ai/checklists/server-mirror-recovery.md, then rerun ${command}. If the server is clean, switch/pull main and deploy from main; if dirty, inspect before changing state. Do not edit server files directly.`;
   }
   return `Restore non-interactive SSH auth using ${recoveryRunbook}, then rerun ${command}.`;
 }

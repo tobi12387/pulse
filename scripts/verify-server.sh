@@ -51,6 +51,9 @@ Checks:
 Options:
   --packet               Print a read-only SSH/deploy recovery packet without
                          connecting to the server.
+
+If SSH works but the mirror is on the wrong branch, dirty or behind/ahead of the
+expected commit, the script prints a server mirror recovery hint before failing.
 USAGE
 }
 
@@ -78,6 +81,23 @@ print_local_public_key_candidates() {
     echo "- No local ~/.ssh/*.pub files found in this environment."
     echo "- Create or choose a public key outside this repo before editing authorized_keys."
   fi
+}
+
+print_mirror_state_recovery_hint() {
+  local problem="$1"
+
+  {
+    echo "mirror_recovery_runbook=docs/ai/checklists/server-mirror-recovery.md"
+    echo "mirror_recovery_summary=$problem"
+    echo "mirror_recovery_check=ssh $HOST \"cd $APP_PATH && git status --short --branch\""
+    if [[ "${dirty_count:-unknown}" == "0" ]]; then
+      echo "mirror_recovery_command=ssh $HOST \"cd $APP_PATH && git fetch --prune origin && git switch main && git pull --ff-only origin main\""
+      echo "mirror_recovery_deploy=ssh $HOST \"cd $APP_PATH && bash scripts/deploy.sh\""
+    else
+      echo "mirror_recovery_command=Inspect server dirty files before any branch switch; do not stash, delete or patch server files blindly."
+    fi
+    echo "mirror_recovery_verify=PULSE_EXPECTED_COMMIT=$EXPECTED_COMMIT npm run verify:server"
+  } >&2
 }
 
 render_recovery_packet() {
@@ -199,9 +219,18 @@ server_info="$(ssh "${SSH_OPTS[@]}" "$HOST" "cd '$APP_PATH' && \
 read -r server_branch server_commit dirty_count <<<"$server_info"
 
 echo "branch=$server_branch commit=$server_commit dirty=$dirty_count"
-[[ "$server_branch" == "main" ]] || fail "server branch is '$server_branch', expected main"
-[[ "$dirty_count" == "0" ]] || fail "server worktree is dirty"
-[[ "$server_commit" == "$EXPECTED_COMMIT" ]] || fail "server commit $server_commit != expected $EXPECTED_COMMIT"
+if [[ "$server_branch" != "main" ]]; then
+  print_mirror_state_recovery_hint "server branch is '$server_branch', expected main"
+  fail "server branch is '$server_branch', expected main"
+fi
+if [[ "$dirty_count" != "0" ]]; then
+  print_mirror_state_recovery_hint "server worktree is dirty"
+  fail "server worktree is dirty"
+fi
+if [[ "$server_commit" != "$EXPECTED_COMMIT" ]]; then
+  print_mirror_state_recovery_hint "server commit $server_commit != expected $EXPECTED_COMMIT"
+  fail "server commit $server_commit != expected $EXPECTED_COMMIT"
+fi
 
 echo "==> pm2 status"
 pm2_json="$(ssh "${SSH_OPTS[@]}" "$HOST" "pm2 jlist")"

@@ -70,6 +70,9 @@ test('verify-server surfaces PM2 restart and recent log attention signals', () =
   assert.match(verifyServerScript, /non-interactive SSH credentials/);
   assert.match(verifyServerScript, /echo "expected_commit=\$EXPECTED_COMMIT" >&2/);
   assert.match(verifyServerScript, /echo "recovery_runbook=docs\/ai\/checklists\/deploy-auth-recovery\.md" >&2/);
+  assert.match(verifyServerScript, /print_mirror_state_recovery_hint/);
+  assert.match(verifyServerScript, /mirror_recovery_runbook=docs\/ai\/checklists\/server-mirror-recovery\.md/);
+  assert.match(verifyServerScript, /mirror_recovery_command=ssh \$HOST/);
   assert.match(verifyServerScript, /restarts=\$\{restarts\}/);
   assert.match(verifyServerScript, /unstable_restarts=\$\{unstableRestarts\}/);
   assert.match(verifyServerScript, /recent server log signals/);
