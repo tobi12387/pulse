@@ -59,6 +59,7 @@ function usage() {
     '  --target-url         Print only the first open gate target URL; exits 1 if unavailable.',
     '  --target-urls        Print all first open gate target URLs, one per line; exits 1 if unavailable.',
     '  --packet             Print one manual handoff packet for all open gates.',
+    '  --manual-checklist   Print a concise checkbox checklist for the manual gate session.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -919,6 +920,167 @@ export function renderPerformanceGatePacket(audit) {
   return lines.join('\n');
 }
 
+function manualChecklistHeader(audit) {
+  return [
+    '# Performance-OS Manual Checklist',
+    '',
+    `Date: ${audit.date}`,
+    `Gate: ${audit.gate}`,
+    `Open gates: ${audit.openGates}`,
+    ...(audit.deferredGates ? [`Deferred gates: ${audit.deferredGates}`] : []),
+    `Expected server commit: ${audit.expectedCommit}`,
+    '',
+  ];
+}
+
+function checkbox(text) {
+  return `- [ ] ${text}`;
+}
+
+function commandText(command) {
+  return `\`${command}\``;
+}
+
+function compactOptionsText(metadata) {
+  const options = metadata?.options ?? [];
+  return options.length
+    ? options.map(option => `${option.value}=${option.label}`).join(', ')
+    : 'ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme';
+}
+
+function manualGateHeading(gate, index) {
+  return [
+    `## ${index + 1}. ${gate.label}`,
+    '',
+    `Status: ${gate.gate}`,
+    `Detail: ${nextDetailText({ key: gate.key, detail: gate.detail, metadata: nextUnblockMetadata(gate) })}`,
+    '',
+  ];
+}
+
+function renderFuelingManualChecklist(gate, index) {
+  const metadata = nextUnblockMetadata(gate);
+  const lines = manualGateHeading(gate, index);
+  const candidates = metadata?.completionCandidates ?? [];
+  const options = compactOptionsText(metadata);
+
+  if (candidates.length > 0) {
+    candidates.forEach((candidate, candidateIndex) => {
+      const target = candidate.targetUrl ?? candidate.targetPath;
+      const summary = candidate.summary ?? completionCandidateText(candidate) ?? `Candidate ${candidateIndex + 1}`;
+      const missing = (candidate.missing ?? []).join(', ') || 'missing evidence';
+      lines.push(checkbox(target ? `Open ${target} for ${summary}.` : `Open the Activity Fueling target for ${summary}.`));
+      lines.push(checkbox(`Confirm activity/date/duration/carbs match, then capture only the real missing evidence (${missing}).`));
+      if ((candidate.missing ?? []).includes('GI comfort')) {
+        lines.push(checkbox(`Choose exactly one real GI comfort value: ${options}; do not infer it from notes, route, RPE, g/h, result or pace.`));
+      }
+    });
+  } else {
+    const target = metadata?.targetUrl ?? metadata?.targetPath;
+    if (target) lines.push(checkbox(`Open ${target} and follow the current Fueling action.`));
+  }
+
+  const newLogsStillNeeded = Number(metadata?.status?.newLogsStillNeeded ?? 0);
+  if (newLogsStillNeeded > 0) {
+    lines.push(checkbox(`After existing candidates, capture ${countText(newLogsStillNeeded, 'new complete long-session log')} with activity/duration, during carbs and structured GI comfort together.`));
+    if (metadata?.newLogChecklistCommand) {
+      lines.push(checkbox(`Use the future-log scaffold when ready: ${commandText(metadata.newLogChecklistCommand)}.`));
+    }
+  }
+  if (metadata?.capturePacketCommand) {
+    lines.push(checkbox(`Use the detailed Fueling packet if anything changed: ${commandText(metadata.capturePacketCommand)}.`));
+  }
+  lines.push(checkbox(`Rerun the Fueling gate after each save: ${commandText(gate.command)}.`));
+  return lines;
+}
+
+function renderIphoneManualChecklist(gate, index) {
+  const metadata = nextUnblockMetadata(gate);
+  const lines = manualGateHeading(gate, index);
+  if (metadata?.serverVerifyCommand) {
+    lines.push(checkbox(`Verify the server mirror before recording current field evidence: ${commandText(metadata.serverVerifyCommand)}.`));
+  }
+  if (metadata?.serverRecoveryPacketCommand) {
+    lines.push(checkbox(`If SSH fails before server checks, use the read-only recovery packet: ${commandText(metadata.serverRecoveryPacketCommand)}.`));
+  }
+  if (metadata?.fieldScaffoldCommand) {
+    lines.push(checkbox(`Print the paste-ready field scaffold: ${commandText(metadata.fieldScaffoldCommand)}.`));
+  }
+  for (const gap of gate.gaps ?? []) {
+    const nextAction = gap.nextAction ? ` ${gap.nextAction}` : '';
+    lines.push(checkbox(`${gap.label} (${gap.status}).${nextAction}`));
+  }
+  if (metadata?.evidenceFile) {
+    lines.push(checkbox(`Append the new real-device run to ${metadata.evidenceFile}.`));
+  }
+  lines.push(checkbox(`Rerun the iPhone/PWA gate after recording evidence: ${commandText(gate.command)}.`));
+  return lines;
+}
+
+function renderServerManualChecklist(gate, index) {
+  const metadata = nextUnblockMetadata(gate);
+  const lines = manualGateHeading(gate, index);
+  lines.push(checkbox(`Run the server mirror verification: ${commandText(gate.command)}.`));
+  if (metadata?.recoveryPacketCommand) {
+    lines.push(checkbox(`If SSH auth blocks verification, use the read-only recovery packet: ${commandText(metadata.recoveryPacketCommand)}.`));
+  }
+  if (metadata?.recoveryRunbook) {
+    lines.push(checkbox(`Follow the recovery runbook before any deploy-sensitive decision: ${metadata.recoveryRunbook}.`));
+  }
+  return lines;
+}
+
+function renderManualChecklistGate(gate, index) {
+  if (gate.key === 'fueling') return renderFuelingManualChecklist(gate, index);
+  if (gate.key === 'iphone_pwa') return renderIphoneManualChecklist(gate, index);
+  if (gate.key === 'server') return renderServerManualChecklist(gate, index);
+  return [
+    ...manualGateHeading(gate, index),
+    checkbox(`Run the gate command: ${commandText(gate.command)}.`),
+  ];
+}
+
+export function renderPerformanceManualChecklist(audit) {
+  const lines = manualChecklistHeader(audit);
+  const openGates = audit.gates.filter(isOpenGate);
+
+  if (openGates.length === 0) {
+    if (audit.deferredGates) {
+      lines.push('No open manual Performance-OS gates in this local-planning snapshot.');
+      lines.push(checkbox(`Rerun after manual saves: ${commandText(rerunPerformanceGateCommand(audit))}.`));
+      lines.push(checkbox('Rerun the normal audit from clean main before deploy-sensitive decisions or current iPhone field evidence.'));
+      return lines.join('\n');
+    }
+    lines.push('No open Performance-OS gates.');
+    lines.push(checkbox('Rerun the normal audit before starting a new product package.'));
+    return lines.join('\n');
+  }
+
+  openGates.forEach((gate, index) => {
+    if (index > 0) lines.push('');
+    lines.push(...renderManualChecklistGate(gate, index));
+  });
+
+  const deferred = deferredGates(audit.gates);
+  if (deferred.length > 0) {
+    lines.push('');
+    lines.push('## Deferred Gates');
+    deferred.forEach((gate, index) => {
+      lines.push(checkbox(`${index + 1}. ${gate.label}: ${gate.detail} Run later with ${commandText(gate.command)}.`));
+    });
+  }
+
+  lines.push('');
+  lines.push('## Manual Safety');
+  lines.push('- GI comfort must come from the real stomach response; do not infer it from notes, route, RPE, g/h, result or pace.');
+  lines.push('- Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly.');
+  lines.push('- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.');
+  lines.push('- The server is a GitHub main mirror; do not edit, branch or commit on the server.');
+  lines.push(`- Rerun after any manual save or deploy: ${rerunPerformanceGateCommand(audit)}`);
+
+  return lines.join('\n');
+}
+
 export function exitCodeForAudit(audit, options = {}) {
   return options.failOnGated && audit.openGates > 0 ? 1 : 0;
 }
@@ -963,6 +1125,7 @@ export function parseArgs(argv) {
     targetUrl: false,
     targetUrls: false,
     packet: false,
+    manualChecklist: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -1003,6 +1166,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--packet') {
       result.packet = true;
+      continue;
+    }
+    if (arg === '--manual-checklist') {
+      result.manualChecklist = true;
       continue;
     }
     if (arg === '--today') {
@@ -1049,9 +1216,12 @@ function main(argv) {
     process.exitCode = exitCodeForAudit(audit, args);
     return;
   }
-  console.log(args.packet
-    ? renderPerformanceGatePacket(audit)
-    : args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit));
+  const output = args.manualChecklist
+    ? renderPerformanceManualChecklist(audit)
+    : args.packet
+      ? renderPerformanceGatePacket(audit)
+      : args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit);
+  console.log(output);
   process.exitCode = exitCodeForAudit(audit, args);
 }
 
