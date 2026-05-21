@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildIphonePwaGateAudit,
   renderIphonePwaGateAudit,
 } from './iphone-pwa-gate-audit.mjs';
+
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 const CURRENT_FIELD_RECORD = `# Pulse iPhone / VPN / PWA Real-Device QA - 2026-05-02
 
@@ -103,4 +106,8 @@ test('iphone pwa gate audit opens when all manual gates are recorded', () => {
   assert.deepEqual(audit.gaps, []);
   assert.equal(audit.nextAction, null);
   assert.match(renderIphonePwaGateAudit(audit), /All manual iPhone\/PWA field gates are recorded as pass/);
+});
+
+test('package exposes iphone pwa gate audit as the standard command', () => {
+  assert.equal(packageJson.scripts['audit:iphone-pwa-gate'], 'node scripts/iphone-pwa-gate-audit.mjs');
 });
