@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Gate-Audit nennt den naechsten Unblock oben
+
+- **Decision:** `npm run audit:performance-gates` gibt im Markdown- und JSON-Output ein top-level `nextUnblock` aus und rendert den ersten offenen Gate-Schritt direkt unter der Gate-Zusammenfassung.
+- **Why:** Solange Produktpakete durch Fueling-, iPhone/PWA- und Server-Spiegel-Gates blockiert sind, soll der Statusbefehl nicht nur drei Bereiche auflisten, sondern die naechste unblockende Handlung zuerst zeigen. Das haelt die Gates streng und reduziert trotzdem Suchaufwand fuer Tobi und Folge-Agenten.
+- **Alternatives:** Nur die bisherigen per-Gate-`Next`-Zeilen behalten (mehr Scannen); ein neues separates Next-Action-Script bauen (unnoetige Dopplung); die Gate-Reihenfolge dynamisch optimieren (mehr Policy als aktuell noetig).
+- **Decided by:** Codex, als Performance-Gate-Support-Slice im Branch `codex/performance-gate-next-action`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Gate-Audit bekommt optionalen Fail-Modus
 
 - **Decision:** `npm run audit:performance-gates -- --fail-on-gated` beendet sich mit Exitcode `1`, wenn einer der Performance-OS-Gates nicht bereit ist; ohne Flag bleibt der Audit ein lesbarer, read-only Statusbefehl mit Exitcode `0`.

@@ -109,6 +109,13 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.equal(audit.gate, 'gated');
   assert.equal(audit.openGates, 3);
   assert.deepEqual(audit.gates.map(gate => gate.gate), ['gated', 'gated', 'gated']);
+  assert.deepEqual(audit.nextUnblock, {
+    key: 'fueling',
+    label: 'Fueling learning',
+    command: 'npm run audit:fueling-gate -- --today 2026-05-21',
+    action: 'GI-Komfort ergaenzen - Add structured GI comfort to an existing long carb log. - Path: /plan/activity/activity-a#activity-fueling-log',
+    detail: '0/3 comparable complete logs; 2 existing logs completable now: /plan/activity/activity-a#activity-fueling-log, /plan/activity/activity-b#activity-fueling-log; 1 new complete long-session log still needed after candidates.',
+  });
   assert.equal(audit.gates[0].nextAction, 'GI-Komfort ergaenzen - Add structured GI comfort to an existing long carb log. - Path: /plan/activity/activity-a#activity-fueling-log');
   assert.deepEqual(audit.gates[0].completionCandidates, [
     {
@@ -130,6 +137,8 @@ test('performance gate audit summarizes current gated blockers', () => {
   const rendered = renderPerformanceGateAudit(audit);
   assert.match(rendered, /# Performance-OS Gate Audit/);
   assert.match(rendered, /Open gates: 3/);
+  assert.match(rendered, /Next unblock: Fueling learning/);
+  assert.match(rendered, /Next action: GI-Komfort ergaenzen/);
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /0\/3 comparable complete logs/);
   assert.match(rendered, /activity-a#activity-fueling-log, \/plan\/activity\/activity-b#activity-fueling-log/);
@@ -149,8 +158,10 @@ test('performance gate audit reports ready when all required gates are ready', (
 
   assert.equal(audit.gate, 'ready');
   assert.equal(audit.openGates, 0);
+  assert.equal(audit.nextUnblock, null);
   assert.deepEqual(audit.gates.map(gate => gate.gate), ['ready', 'ready', 'ready']);
   assert.match(renderPerformanceGateAudit(audit), /Gate: ready/);
+  assert.match(renderPerformanceGateAudit(audit), /Next unblock: none/);
 });
 
 test('performance gate audit keeps skipped server verification unready', () => {
