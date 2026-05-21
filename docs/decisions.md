@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Activity-Fueling-Deep-Link fokussiert die GI-Aktion
+
+- **Decision:** Bestehende `#activity-fueling-log`-Links bleiben stabil, aber Activity Detail fokussiert nach dem Laden der Nutrition-Evidence die konkrete GI-Komfort-Aktionsgruppe, wenn GI-Komfort die offene Fueling-Evidence ist.
+- **Why:** Die Data/Home-Handoff-Route fuehrte korrekt zum Fueling-Log, aber Mobile Evidence bewies bislang nur die fokussierte Karte, nicht den direkt sichtbaren kleinsten Abschluss-Schritt. Fuer die Nutrition-Lernschleife muss `GI-Komfort ergaenzen` ohne zusaetzliches Suchen erreichbar sein.
+- **Alternatives:** Neue Hashes fuer GI-Komfort einfuehren (bricht bestehende Links/Tests); nur die Karte fokussieren (lässt die eigentliche Aktion unten im Scrollbereich); eine neue Nutrition-Route bauen (zu gross fuer diese Closure-Luecke).
+- **Decided by:** Codex, als Activity-Fueling-Closure-Slice im Branch `codex/activity-fueling-action-focus`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Current-Main-Route-Evidence entsperrt keine neue UI-Slice
 
 - **Decision:** Nach aktueller Route-Evidence auf `main` bei `7a09cd2` bleibt der autonome UI/UX-Backlog geschlossen; es wird keine neue Daily-Flow-, Fueling- oder Plan-Mobile-Slice aus dieser Evidence allein gestartet.

@@ -354,9 +354,12 @@ test.describe('Route evidence screenshot pack', () => {
         { path: '/plan/activity/activity-fueling-gap#activity-fueling-log', label: 'activity-fueling-anchor', visibleText: 'Long Fueling Check' },
         async () => {
           const fuelingLog = page.locator('#activity-fueling-log');
-          await expect(fuelingLog).toBeFocused();
           await expect(fuelingLog).toBeInViewport();
           await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
+          const giComfortAction = page.getByTestId('activity-gi-comfort-action');
+          await expect(giComfortAction).toBeFocused();
+          await expect(giComfortAction).toBeInViewport();
+          await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
         },
       );
 
