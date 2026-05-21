@@ -490,7 +490,7 @@ function targetLine(metadata) {
 function optionsLine(metadata) {
   const options = metadata?.options ?? [];
   if (!options.length) return null;
-  return `Options: ${options.map(option => `${option.value}=${option.label}`).join(', ')}`;
+  return `GI-Komfort-Optionen: ${options.map(option => `${option.value}=${option.label}`).join(', ')}`;
 }
 
 function nextDetailText(next) {
