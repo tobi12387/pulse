@@ -227,6 +227,7 @@ function summarizeFueling(today, runner) {
   const parsed = parseJsonOutput(result);
   const commandText = `${command} ${today}`;
   const capturePacketCommand = `${commandText} --packet`;
+  const nextPromptCommand = `${commandText} --next-prompt`;
   const checklistCommandFor = user => Number(user?.newLogsStillNeeded ?? 0) > 0
     ? `${commandText} --new-log-checklist`
     : null;
@@ -300,6 +301,7 @@ function summarizeFueling(today, runner) {
     nextAction,
     evidenceChecklist: blockingUser.nextAction?.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
     capturePacketCommand: ready ? null : capturePacketCommand,
+    nextPromptCommand: ready ? null : nextPromptCommand,
     newLogChecklistCommand: ready ? null : checklistCommandFor(blockingUser),
     users: summaryUsers,
     completionCandidates,
@@ -522,6 +524,7 @@ function nextUnblockMetadata(gate) {
       date: nextAction?.date ?? null,
       evidenceChecklist: nextAction?.evidenceChecklist ?? gate.evidenceChecklist ?? FUELING_EVIDENCE_CHECKLIST,
       capturePacketCommand: gate.capturePacketCommand ?? null,
+      nextPromptCommand: gate.nextPromptCommand ?? null,
       newLogChecklistCommand: gate.newLogChecklistCommand ?? null,
       options: nextAction?.options ?? [],
       status: user ? {
@@ -661,6 +664,7 @@ export function renderPerformanceGateAudit(audit) {
     lines.push(`- Next: ${gate.nextAction}`);
     if (gate.evidenceChecklist) lines.push(`- Evidence checklist: ${gate.evidenceChecklist}`);
     if (gate.capturePacketCommand) lines.push(`- Evidence packet: \`${gate.capturePacketCommand}\``);
+    if (gate.nextPromptCommand) lines.push(`- Next prompt: \`${gate.nextPromptCommand}\``);
     if (gate.newLogChecklistCommand) lines.push(`- New log checklist: \`${gate.newLogChecklistCommand}\``);
     if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
     if (gate.fieldScaffoldCommand) lines.push(`- Field scaffold: \`${gate.fieldScaffoldCommand}\``);
@@ -692,6 +696,10 @@ function checklistLine(metadata) {
 
 function packetLine(metadata) {
   return metadata?.capturePacketCommand ? `Evidence packet: ${metadata.capturePacketCommand}` : null;
+}
+
+function nextPromptLine(metadata) {
+  return metadata?.nextPromptCommand ? `Next prompt: ${metadata.nextPromptCommand}` : null;
 }
 
 function newLogChecklistLine(metadata) {
@@ -819,6 +827,8 @@ export function renderNextUnblock(audit) {
   if (checklist) lines.push(checklist);
   const packet = packetLine(next.metadata);
   if (packet) lines.push(packet);
+  const nextPrompt = nextPromptLine(next.metadata);
+  if (nextPrompt) lines.push(nextPrompt);
   const newLogChecklist = newLogChecklistLine(next.metadata);
   if (newLogChecklist) lines.push(newLogChecklist);
   const fieldPacket = fieldPacketLine(next.metadata);
@@ -853,6 +863,7 @@ function packetGateLines(gate, index) {
   if (targetUrl) lines.push(`   ${targetUrl}`);
   if (metadata?.evidenceChecklist) lines.push(`   Evidence checklist: ${metadata.evidenceChecklist}`);
   if (metadata?.capturePacketCommand) lines.push(`   Evidence packet: ${metadata.capturePacketCommand}`);
+  if (metadata?.nextPromptCommand) lines.push(`   Next prompt: ${metadata.nextPromptCommand}`);
   if (metadata?.newLogChecklistCommand) lines.push(`   New log checklist: ${metadata.newLogChecklistCommand}`);
   if (metadata?.fieldPacketCommand) lines.push(`   Field packet: ${metadata.fieldPacketCommand}`);
   if (metadata?.fieldScaffoldCommand) lines.push(`   Field scaffold: ${metadata.fieldScaffoldCommand}`);
@@ -911,6 +922,8 @@ export function renderPerformanceGatePacket(audit) {
   if (checklist) lines.push(checklist);
   const packet = packetLine(audit.nextUnblock.metadata);
   if (packet) lines.push(packet);
+  const nextPrompt = nextPromptLine(audit.nextUnblock.metadata);
+  if (nextPrompt) lines.push(nextPrompt);
   const newLogChecklist = newLogChecklistLine(audit.nextUnblock.metadata);
   if (newLogChecklist) lines.push(newLogChecklist);
   const fieldPacket = fieldPacketLine(audit.nextUnblock.metadata);
@@ -1029,6 +1042,9 @@ function renderFuelingManualChecklist(gate, index) {
   }
   if (metadata?.capturePacketCommand) {
     lines.push(checkbox(`Use the detailed Fueling packet if anything changed: ${commandText(metadata.capturePacketCommand)}.`));
+  }
+  if (metadata?.nextPromptCommand) {
+    lines.push(checkbox(`Use the short first-target prompt for a manual capture/chat handoff: ${commandText(metadata.nextPromptCommand)}.`));
   }
   lines.push(checkbox(`Rerun the Fueling gate after each save: ${commandText(gate.command)}.`));
   return lines;
