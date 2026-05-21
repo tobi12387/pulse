@@ -557,7 +557,7 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
           strength: 'learning',
           summary: 'Lange Einheiten brauchen vollständige During-Logs.',
           evidence: ['Noch ein kompletter During-Log fehlt.'],
-          nextAdjustment: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+          nextAdjustment: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
         }],
         missingEvidence: [],
       },
@@ -585,7 +585,7 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
         nextAction: {
           kind: 'complete_gi_comfort',
           label: 'GI-Komfort ergänzen',
-          detail: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+          detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
           activityId: 'activity-fueling-gap',
         },
       },
@@ -691,7 +691,7 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
         nextAction: {
           kind: 'complete_gi_comfort',
           label: 'GI-Komfort ergänzen',
-          detail: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+          detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
           activityId: 'activity-fueling-gap',
         },
       },
