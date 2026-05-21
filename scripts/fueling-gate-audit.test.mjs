@@ -7,6 +7,20 @@ import {
   shiftIsoDate,
 } from './fueling-gate-audit.mjs';
 
+function withPulseUrl(url, fn) {
+  const previous = process.env.PULSE_URL;
+  process.env.PULSE_URL = url;
+  try {
+    fn();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PULSE_URL;
+    } else {
+      process.env.PULSE_URL = previous;
+    }
+  }
+}
+
 test('shiftIsoDate offsets an ISO date without local timezone drift', () => {
   assert.equal(shiftIsoDate('2026-05-21', -120), '2026-01-21');
 });
@@ -82,6 +96,7 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(rendered, /Next action target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Next action path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
+  assert.match(rendered, /Next action URL: https?:\/\/[^\s]+\/plan\/activity\/activity-long-ride#activity-fueling-log/);
   assert.match(rendered, /Strukturierte GI-Komfort-Werte: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(rendered, /Datteln Graveln/);
   assert.match(rendered, /356 g \(54 g\/h\)/);
@@ -92,15 +107,39 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(packet, /# Fueling Evidence Packet/);
   assert.match(packet, /Next action: GI-Komfort ergaenzen - Waehle die echte Magenreaktion am vorhandenen langen Carb-Log; nichts aus Notizen, Route, RPE, g\/h oder Ergebnis ableiten\./);
   assert.match(packet, /Next target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
+  assert.match(packet, /Next URL: https?:\/\/[^\s]+\/plan\/activity\/activity-long-ride#activity-fueling-log/);
   assert.match(packet, /Existing candidates to close first:/);
   assert.match(packet, /1\. 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(packet, /Path: \/plan\/activity\/activity-long-ride#activity-fueling-log/);
+  assert.match(packet, /URL: https?:\/\/[^\s]+\/plan\/activity\/activity-long-ride#activity-fueling-log/);
   assert.match(packet, /2\. 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\)/);
   assert.match(packet, /Missing: GI comfort/);
   assert.match(packet, /GI comfort options: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(packet, /Choose GI comfort only from the real stomach response/);
   assert.match(packet, /Rerun after each save: npm run audit:fueling-gate -- --today 2026-05-21/);
   assert.match(packet, /New complete long-session logs still needed: 1/);
+});
+
+test('fueling gate packet respects a configured Pulse URL', () => {
+  withPulseUrl('https://pulse.local:5175/', () => {
+    const audit = buildFuelingGateAudit([
+      {
+        userId: 'user-a',
+        date: '2026-05-09',
+        context: 'during',
+        activityId: 'activity-long-ride',
+        activityName: 'Datteln Graveln',
+        activityType: 'bike',
+        durationSec: 398 * 60,
+        carbsG: 356,
+        giComfort: null,
+      },
+    ], { today: '2026-05-21' });
+
+    const packet = renderFuelingEvidencePacket(audit);
+    assert.match(packet, /Next URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-long-ride#activity-fueling-log/);
+    assert.match(packet, /URL: https:\/\/pulse\.local:5175\/plan\/activity\/activity-long-ride#activity-fueling-log/);
+  });
 });
 
 test('fueling gate audit opens after three comparable complete logs', () => {

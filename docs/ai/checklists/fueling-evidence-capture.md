@@ -21,7 +21,8 @@ Run the current handoff first:
 npm run audit:performance-next -- --today <YYYY-MM-DD>
 ```
 
-Use the printed `Target path` and `Options`. If the target changes, follow the command output instead of this document.
+Use the printed `Target URL` or `Target path` and `Options`. If the target
+changes, follow the command output instead of this document.
 
 If Fueling is part of a broader manual gate run, generate one ordered handoff first:
 
@@ -43,7 +44,8 @@ npm run audit:fueling-gate -- --today <YYYY-MM-DD> --packet
 
 ## Capture Existing Log Evidence
 
-Open the `Target path` from the audit output.
+Open the `Target URL` from the audit output when available; otherwise open the
+`Target path` inside Pulse.
 
 On the Activity Fueling section:
 

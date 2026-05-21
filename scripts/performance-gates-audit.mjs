@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const IPHONE_FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
+const DEFAULT_PULSE_URL = 'https://192.168.178.46:5175';
 
 function shellEnvValue(value) {
   const text = String(value ?? '').trim();
@@ -27,6 +28,14 @@ function serverRecoveryPacketCommand(expectedCommit) {
 
 function commandWithServerEnv(command) {
   return `${serverEnvPrefix()}${command}`;
+}
+
+function pulseTargetUrl(targetPath) {
+  const cleanPath = String(targetPath ?? '').trim();
+  if (!cleanPath) return null;
+  if (/^https?:\/\//i.test(cleanPath)) return cleanPath;
+  const baseUrl = String(process.env.PULSE_URL ?? DEFAULT_PULSE_URL).trim() || DEFAULT_PULSE_URL;
+  return `${baseUrl.replace(/\/+$/, '')}/${cleanPath.replace(/^\/+/, '')}`;
 }
 
 function usage() {
@@ -500,6 +509,11 @@ function metadataLine(metadata) {
   return null;
 }
 
+function targetUrlLine(metadata) {
+  const url = pulseTargetUrl(metadata?.targetPath);
+  return url ? `Target URL: ${url}` : null;
+}
+
 function checklistLine(metadata) {
   return metadata?.evidenceChecklist ? `Evidence checklist: ${metadata.evidenceChecklist}` : null;
 }
@@ -591,6 +605,8 @@ export function renderNextUnblock(audit) {
   if (targetSummary) lines.push(targetSummary);
   const pathOrRunbook = metadataLine(next.metadata);
   if (pathOrRunbook) lines.push(pathOrRunbook);
+  const targetUrl = targetUrlLine(next.metadata);
+  if (targetUrl) lines.push(targetUrl);
   const checklist = checklistLine(next.metadata);
   if (checklist) lines.push(checklist);
   const packet = packetLine(next.metadata);
@@ -620,6 +636,8 @@ function packetGateLines(gate, index) {
   const target = targetSummary(metadata);
   if (target) lines.push(`   Target: ${target}`);
   if (metadata?.targetPath) lines.push(`   Target path: ${metadata.targetPath}`);
+  const targetUrl = targetUrlLine(metadata);
+  if (targetUrl) lines.push(`   ${targetUrl}`);
   if (metadata?.evidenceChecklist) lines.push(`   Evidence checklist: ${metadata.evidenceChecklist}`);
   if (metadata?.capturePacketCommand) lines.push(`   Evidence packet: ${metadata.capturePacketCommand}`);
   if (metadata?.fieldPacketCommand) lines.push(`   Field packet: ${metadata.fieldPacketCommand}`);
@@ -656,6 +674,8 @@ export function renderPerformanceGatePacket(audit) {
   if (target) lines.push(target);
   const pathOrRunbook = metadataLine(audit.nextUnblock.metadata);
   if (pathOrRunbook) lines.push(pathOrRunbook);
+  const targetUrl = targetUrlLine(audit.nextUnblock.metadata);
+  if (targetUrl) lines.push(targetUrl);
   const checklist = checklistLine(audit.nextUnblock.metadata);
   if (checklist) lines.push(checklist);
   const packet = packetLine(audit.nextUnblock.metadata);
