@@ -24,7 +24,15 @@ npm run audit:performance-next -- --today <YYYY-MM-DD>
 Use the printed `Target URL` or `Target path` and `Options`. If the target
 changes, follow the command output instead of this document.
 
-For clipboard/script use, print only the current first-unblock target URL:
+For clipboard/script use across every target attached to the current first
+unblock, print one target URL per line. This is the fastest path when the
+audit lists multiple existing completion candidates:
+
+```bash
+npm run audit:performance-next -- --today <YYYY-MM-DD> --target-urls
+```
+
+For only the single first target URL:
 
 ```bash
 npm run audit:performance-next -- --today <YYYY-MM-DD> --target-url
