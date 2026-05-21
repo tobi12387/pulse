@@ -4,13 +4,16 @@ import {
   buildFuelingGateAudit,
   exitCodeForFuelingCandidateUrls,
   exitCodeForFuelingNewLogChecklist,
+  exitCodeForFuelingNextPrompt,
   fuelingCandidateUrls,
   fuelingNewLogChecklistUsers,
+  fuelingNextPromptUser,
   parseArgs,
   renderFuelingCandidateUrls,
   renderFuelingEvidencePacket,
   renderFuelingGateAudit,
   renderFuelingNewLogChecklist,
+  renderFuelingNextPrompt,
   shiftIsoDate,
 } from './fueling-gate-audit.mjs';
 
@@ -108,6 +111,8 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(exitCodeForFuelingCandidateUrls(audit), 0);
   assert.deepEqual(fuelingNewLogChecklistUsers(audit), [audit.users[0]]);
   assert.equal(exitCodeForFuelingNewLogChecklist(audit), 0);
+  assert.equal(fuelingNextPromptUser(audit), audit.users[0]);
+  assert.equal(exitCodeForFuelingNextPrompt(audit), 0);
 
   const rendered = renderFuelingGateAudit(audit);
   assert.match(rendered, /Comparable complete logs: 0\/3/);
@@ -153,6 +158,18 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(checklist, /Structured GI comfort from the real stomach response: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme\./);
   assert.match(checklist, /Infer GI comfort from notes, route, RPE, g\/h, result, pace or how the workout looks afterward/);
   assert.match(checklist, /Rerun after capture: npm run audit:fueling-gate -- --today 2026-05-21/);
+
+  const nextPrompt = renderFuelingNextPrompt(audit);
+  assert.match(nextPrompt, /# Fueling Next Evidence Prompt/);
+  assert.match(nextPrompt, /Target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
+  assert.match(nextPrompt, /URL: https?:\/\/[^\s]+\/plan\/activity\/activity-long-ride#activity-fueling-log/);
+  assert.match(nextPrompt, /Question: Welche echte Magenreaktion hattest du bei diesem vorhandenen langen Carb-Log\?/);
+  assert.match(nextPrompt, /- ok = Magen ok/);
+  assert.match(nextPrompt, /- mild_issue = Magen leicht unruhig/);
+  assert.match(nextPrompt, /- issue = Magenprobleme/);
+  assert.match(nextPrompt, /After saving this target, another existing completion candidate remains: 1/);
+  assert.match(nextPrompt, /Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward/);
+  assert.match(nextPrompt, /Rerun after save: npm run audit:fueling-gate -- --today 2026-05-21/);
 });
 
 test('fueling gate packet respects a configured Pulse URL', () => {
@@ -200,7 +217,10 @@ test('fueling gate audit opens after three comparable complete logs', () => {
   assert.equal(exitCodeForFuelingCandidateUrls(audit), 1);
   assert.deepEqual(fuelingNewLogChecklistUsers(audit), []);
   assert.equal(exitCodeForFuelingNewLogChecklist(audit), 1);
+  assert.equal(fuelingNextPromptUser(audit), null);
+  assert.equal(exitCodeForFuelingNextPrompt(audit), 1);
   assert.match(renderFuelingNewLogChecklist(audit), /No new complete long-session log is currently needed/);
+  assert.match(renderFuelingNextPrompt(audit), /Fueling evidence is ready; no manual next prompt is needed/);
   assert.match(renderFuelingGateAudit(audit), /trend summaries can be enabled/);
 });
 
@@ -210,6 +230,7 @@ test('fueling gate audit CLI args accept handoff-only modes', () => {
     'scripts/fueling-gate-audit.mjs',
     '--today',
     '2026-05-21',
+    '--next-prompt',
     '--candidate-urls',
     '--new-log-checklist',
   ]), {
@@ -219,6 +240,7 @@ test('fueling gate audit CLI args accept handoff-only modes', () => {
     databaseUrl: null,
     envFile: null,
     packet: false,
+    nextPrompt: true,
     candidateUrls: true,
     newLogChecklist: true,
     json: false,
