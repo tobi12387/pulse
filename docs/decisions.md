@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — GI-Komfort bleibt eine explizite Fueling-Auswahl
+
+- **Decision:** Activity-Fueling-Evidence uebernimmt GI-Komfort nicht mehr aus Freitextnotizen; vorhandene Carb-Logs werden nur durch die expliziten GI-Komfort-Buttons `Magen ok`, `Magen leicht unruhig` oder `Magenprobleme` geschlossen.
+- **Why:** Der Fueling-Gate-Unblock ist subjektive Magenreaktions-Evidenz. Notizen koennen konkrete Mengen wie Flaschen, Pulver oder Produkte stuetzen, aber GI-Komfort darf nicht aus Text, Route, RPE, g/h oder Ergebnis abgeleitet werden.
+- **Alternatives:** Freitext-Muster wie `Magen ok` weiter als One-Click-Uebernahme anbieten (zu leicht mit abgeleiteter Evidenz zu verwechseln); alle Detail-Uebernahmen entfernen (unnoetig, weil Mengen/Produkte konkrete Logdetails bleiben); DB direkt editieren (gegen Capture-Regel).
+- **Decided by:** Codex, als Fueling-Evidence-Support-Slice im Branch `codex/fueling-capture-support`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Next trennt Fueling-Aktion und Zielpfad
 
 - **Decision:** `npm run audit:performance-next` entfernt beim Fueling-Next-Unblock den duplizierten `Path:`-Anhang aus der Action-Zeile, wenn derselbe Pfad bereits als strukturierter `Target path` vorliegt.

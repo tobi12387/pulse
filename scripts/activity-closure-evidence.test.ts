@@ -99,8 +99,34 @@ test('long-session closure evidence mirrors Home fueling and feedback language',
   ]);
   assert.equal(
     quality.giComfortCompletionDetail,
-    'Wähle die echte Magenreaktion. Danach kann dieser vorhandene Carb-Log in die Trend-Evidenz einfließen; aktuell Trend-Evidenz 1/3. Plan und Garmin bleiben unverändert.',
+    'Wähle die echte Magenreaktion; nicht aus Notizen, Route, RPE, g/h oder Ergebnis ableiten. Danach kann dieser vorhandene Carb-Log in die Trend-Evidenz einfließen; aktuell Trend-Evidenz 1/3. Plan und Garmin bleiben unverändert.',
   );
+});
+
+test('GI comfort must stay an explicit choice even when notes mention the stomach', () => {
+  const quality = buildFuelingEvidenceQuality({
+    logs: [log({
+      notes: 'Magen ok, Beine gut.',
+      drinksMl: null,
+      sodiumMg: null,
+      ambientTempC: null,
+      sweatRateLPerHour: null,
+      bottles750Ml: null,
+      powderG: null,
+      fuelingProducts: [],
+    })],
+    activityType: 'bike',
+    durationMin: 240,
+    feedbackCaptured: true,
+    trendEvidence: 'Trend-Evidenz 1/3',
+  });
+
+  assert.ok(quality);
+  assert.equal(quality.giComfortCompletionLogId, 'nutrition-1');
+  assert.equal(quality.detailCompletionLogId, null);
+  assert.deepEqual(quality.detailCompletions, []);
+  assert.ok(!quality.detailCompletions.some(completion => completion.patch.giComfort != null));
+  assert.match(quality.giComfortCompletionDetail ?? '', /nicht aus Notizen, Route, RPE, g\/h oder Ergebnis ableiten/);
 });
 
 test('complete long-session evidence keeps measured context and feedback closed', () => {

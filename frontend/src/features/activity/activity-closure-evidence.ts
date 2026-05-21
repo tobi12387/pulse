@@ -84,15 +84,6 @@ function inferMarsProduct(log: NutritionLog): boolean {
   return !log.fuelingProducts.includes('mars') && /\bmars(?:riegel)?\b/i.test(fuelingLogText(log));
 }
 
-function inferGiComfort(log: NutritionLog): NonNullable<NutritionLog['giComfort']> | null {
-  if (log.giComfort != null) return null;
-  const text = fuelingLogText(log).toLocaleLowerCase('de-DE');
-  if (/\bmagen\s*(?:ok|gut|ruhig)\b/.test(text)) return 'ok';
-  if (/leichte?\s+magenprobleme/.test(text) || /magen\s+leicht\s+unruhig/.test(text)) return 'mild_issue';
-  if (/\bmagenprobleme\b/.test(text) || /\bgi[-\s]?problem/.test(text)) return 'issue';
-  return null;
-}
-
 function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletion[] {
   const completions: FuelingEvidenceCompletion[] = [];
   const bottles750Ml = inferBottles750Ml(log);
@@ -120,14 +111,6 @@ function fuelingEvidenceCompletions(log: NutritionLog): FuelingEvidenceCompletio
     completions.push({
       label: 'Mars übernehmen',
       patch: { fuelingProducts: uniqueFuelingProducts(log.fuelingProducts, 'mars') },
-    });
-  }
-
-  const giComfort = inferGiComfort(log);
-  if (giComfort != null) {
-    completions.push({
-      label: `${GI_COMFORT_LABELS[giComfort]} übernehmen`,
-      patch: { giComfort },
     });
   }
 
@@ -197,7 +180,7 @@ function closureItems({
 }
 
 function giComfortCompletionDetail(trendEvidence: string): string {
-  return `Wähle die echte Magenreaktion. Danach kann dieser vorhandene Carb-Log in die Trend-Evidenz einfließen; aktuell ${trendEvidence}. Plan und Garmin bleiben unverändert.`;
+  return `Wähle die echte Magenreaktion; nicht aus Notizen, Route, RPE, g/h oder Ergebnis ableiten. Danach kann dieser vorhandene Carb-Log in die Trend-Evidenz einfließen; aktuell ${trendEvidence}. Plan und Garmin bleiben unverändert.`;
 }
 
 export function buildFuelingEvidenceQuality({
