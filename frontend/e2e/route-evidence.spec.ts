@@ -16,6 +16,94 @@ const routes = [
   { path: '/settings', label: 'settings', visibleText: 'Settings' },
 ] as const;
 
+const fuelingLearningOutcomeBaseline = {
+  status: 'learning',
+  label: 'Fueling-Baseline lernt',
+  summary: 'Lange Einheiten brauchen vergleichbare During-Logs.',
+  latestLogDate: '2026-04-30',
+  observedCarbsPerHour: 48,
+  targetCarbsPerHour: { min: 55, max: 65 },
+  bottles750Ml: 3,
+  powderG: 210,
+  fluidMlPerHour: 680,
+  sodiumMgPerHour: null,
+  hydrationContextSummary: null,
+  hydrationEvidenceGaps: ['Hitze nicht gemessen'],
+  trendSummary: 'Fueling-Trend: 3/3 komplette During-Logs, Schnitt 58 g/h; GI stabil.',
+  evidence: ['2 lange During-Logs vollständig'],
+  learningReadiness: {
+    comparableCompleteLogs: 2,
+    requiredComparableCompleteLogs: 3,
+    readyForTrendSummary: false,
+    missingEvidence: ['GI-Komfort fehlt strukturiert beim vorhandenen Carb-Log.'],
+    nextAction: {
+      kind: 'complete_gi_comfort',
+      label: 'GI-Komfort ergänzen',
+      detail: 'GI-Komfort am vorhandenen Long-Run-Log ergänzen.',
+      activityId: 'activity-fueling-gap',
+    },
+  },
+};
+
+const fuelingGapNutritionLog = {
+  id: 'nutrition-fueling-gap',
+  userId: 'user-1',
+  date: '2026-04-30',
+  workoutId: null,
+  activityId: 'activity-fueling-gap',
+  context: 'during',
+  mealType: null,
+  description: null,
+  calories: null,
+  proteinG: null,
+  carbsG: 120,
+  fatG: null,
+  gelsCount: null,
+  drinksMl: null,
+  sodiumMg: null,
+  ambientTempC: null,
+  sweatRateLPerHour: null,
+  bottles750Ml: null,
+  powderG: null,
+  fuelingProducts: [],
+  giComfort: null,
+  notes: null,
+  createdAt: '2026-04-30T13:15:00.000Z',
+};
+
+const fuelingGapActivityDetail = {
+  activity: {
+    id: 'activity-fueling-gap',
+    userId: 'user-1',
+    externalId: 'garmin-fueling-gap',
+    source: 'garmin',
+    startTime: '2026-04-30T08:00:00.000Z',
+    activityType: 'bike',
+    name: 'Long Fueling Check',
+    durationSec: 4 * 3600,
+    distanceM: 88000,
+    avgHr: 137,
+    maxHr: 165,
+    avgPowerW: 176,
+    normalizedPowerW: 188,
+    tss: 210,
+    calories: 2600,
+    elevationGainM: 900,
+    trainingEffectAerobic: 3.4,
+    trainingEffectAnaerobic: 0.2,
+    vo2maxEstimate: null,
+    rpe: 7,
+    rpeNote: null,
+    sorenessAreas: null,
+    feedbackLoggedAt: '2026-04-30T13:00:00.000Z',
+    equipmentIds: [],
+    plannedWorkoutId: null,
+  },
+  laps: [],
+  hrZones: [],
+  analytics: null,
+};
+
 function currentCommit() {
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -242,6 +330,33 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
           await expect(page.getByRole('button', { name: 'Mehr beschreiben' })).toBeVisible();
           await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toHaveCount(0);
+        },
+      );
+
+      await mockPulseApi(page, {
+        checkinToday: { checkin: { id: 'checkin-1', date: MOCK_TODAY } },
+        outcomeBaseline: fuelingLearningOutcomeBaseline,
+        nutritionLogs: [fuelingGapNutritionLog],
+        activityDetail: fuelingGapActivityDetail,
+      });
+      await capture(
+        { path: '/data', label: 'data-fueling-action', visibleText: 'DATA' },
+        async () => {
+          const action = page.getByTestId('data-primary-action');
+          await expect(action).toBeVisible();
+          await expect(action).toBeInViewport();
+          await expect(action).toContainText('Fueling-Evidenz schließen');
+          await expect(action).toContainText('Trend-Evidenz 2/3');
+          await expect(action.getByRole('button', { name: 'GI-Komfort ergänzen' })).toBeInViewport();
+        },
+      );
+      await capture(
+        { path: '/plan/activity/activity-fueling-gap#activity-fueling-log', label: 'activity-fueling-anchor', visibleText: 'Long Fueling Check' },
+        async () => {
+          const fuelingLog = page.locator('#activity-fueling-log');
+          await expect(fuelingLog).toBeFocused();
+          await expect(fuelingLog).toBeInViewport();
+          await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
         },
       );
 

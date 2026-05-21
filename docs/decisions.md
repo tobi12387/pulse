@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Route-Evidence deckt Fueling-Closure-Pfad ab
+
+- **Decision:** Die mobile Route-Evidence erfasst neben generischem Data/Activity nun auch die Data-Fueling-Tagesaktion und den fokussierten Activity-Fueling-Anker.
+- **Why:** Fueling-Lernen ist aktuell die wichtigste offene MacroFactor-aehnliche Schleife, aber die Screenshot-Baseline zeigte nur generische Data- und Activity-Zustaende. Der Evidence-Pack soll die konkrete Tagesaktion und den kleinsten Completion-Schritt sichtbar machen, bevor daraus neue UI-Arbeit abgeleitet wird.
+- **Alternatives:** Nur den Playwright-Smoke behalten (belegt Klickpfad, aber keine visuelle Route-Evidence); Fueling-Screenshots manuell sammeln (nicht wiederholbar); ohne neue Evidence weitere UI-Slices starten (zu spekulativ).
+- **Decided by:** Codex, im Branch `codex/route-evidence-post-fueling`.
+- **Status:** active.
+
 ## 2026-05-21 — Activity-Deep-Links fokussieren die Closure-Fläche
 
 - **Decision:** Activity-Detail-Links mit Hash, insbesondere `#activity-fueling-log`, scrollen und fokussieren nach dem asynchronen Laden die Zielkarte.

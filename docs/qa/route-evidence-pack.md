@@ -57,6 +57,8 @@ Mobile Daily Command evidence routes:
 - `/` with completed Garmin activity and no `today-availability-intent`
 - `/` with `recovery_protect` and no `today-availability-intent`
 - `/data?tab=today#data-mental` with the primary `Heute speichern` action in the first viewport
+- `/data` with an actionable Fueling learning gap as the primary Data action
+- `/plan/activity/activity-fueling-gap#activity-fueling-log` with the Activity Fueling closure card focused
 - `/plan?tab=training&source=mobile-intent&scenario=workout...#plan-scenario-preview`
 
 Each project directory contains:
