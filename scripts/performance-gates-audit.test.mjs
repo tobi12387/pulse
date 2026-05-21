@@ -296,6 +296,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log/);
   assert.match(rendered, /iPhone\/PWA field/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
+  assert.match(rendered, /Command: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234`/);
   assert.match(rendered, /Field packet: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet`/);
   assert.match(rendered, /Server recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
   assert.match(rendered, /3 open gaps/);
@@ -392,7 +393,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.deepEqual(audit.nextUnblock, {
     key: 'iphone_pwa',
     label: 'iPhone/PWA field',
-    command: 'npm run audit:iphone-pwa-gate',
+    command: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234',
     action: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
     detail: '3 open gaps: Current main field evidence: stale, Warning-free certificate trust: needs_followup, Push activation and test push: partial',
     metadata: {
@@ -412,6 +413,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       },
     },
   });
+  assert.match(renderNextUnblock(audit), /Command: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
   assert.match(renderNextUnblock(audit), /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
@@ -438,12 +440,14 @@ test('performance gate audit preserves configured server SSH host in gate handof
     }));
 
     assert.equal(audit.gates[1].fieldPacketCommand, 'PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet');
+    assert.equal(audit.gates[1].command, 'PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234');
     assert.equal(audit.gates[1].serverVerifyCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
     assert.equal(audit.gates[1].serverRecoveryPacketCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
     assert.equal(audit.gates[2].command, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
     assert.equal(audit.gates[2].recoveryPacketCommand, 'PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
 
     const packet = renderPerformanceGatePacket(audit);
+    assert.match(packet, /Command: PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
     assert.match(packet, /Field packet: PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
     assert.match(packet, /Server verify: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
     assert.match(packet, /Recovery packet: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
@@ -470,6 +474,7 @@ test('performance gate audit can pin an expected server commit for manual field 
   }));
 
   assert.equal(audit.expectedCommit, 'def5678');
+  assert.equal(audit.gates[1].command, 'npm run audit:iphone-pwa-gate -- --expected-commit def5678');
   assert.equal(audit.gates[1].fieldPacketCommand, 'npm run audit:iphone-pwa-gate -- --expected-commit def5678 --packet');
   assert.equal(audit.gates[1].serverVerifyCommand, 'PULSE_EXPECTED_COMMIT=def5678 npm run verify:server');
   assert.equal(audit.gates[2].expectedCommit, 'def5678');

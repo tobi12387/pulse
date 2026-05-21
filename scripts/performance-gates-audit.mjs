@@ -30,6 +30,10 @@ function commandWithServerEnv(command) {
   return `${serverEnvPrefix()}${command}`;
 }
 
+function iphoneGateCommand(expectedCommit) {
+  return commandWithServerEnv(`npm run audit:iphone-pwa-gate -- --expected-commit ${expectedCommit}`);
+}
+
 function pulseTargetUrl(targetPath) {
   const cleanPath = String(targetPath ?? '').trim();
   if (!cleanPath) return null;
@@ -262,8 +266,8 @@ function summarizeFueling(today, runner) {
 }
 
 function summarizeIphone(expectedCommit, runner) {
-  const command = 'npm run audit:iphone-pwa-gate';
-  const fieldPacketCommand = commandWithServerEnv(`${command} -- --expected-commit ${expectedCommit} --packet`);
+  const command = iphoneGateCommand(expectedCommit);
+  const fieldPacketCommand = `${command} --packet`;
   const result = runner(process.execPath, [
     'scripts/iphone-pwa-gate-audit.mjs',
     '--json',
