@@ -184,6 +184,7 @@ test('iphone pwa gate audit preserves configured server SSH host in handoff comm
     const packet = renderIphonePwaFieldPacket(audit);
     assert.match(packet, /Server verify command: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
     assert.match(packet, /Server recovery packet: PULSE_HOST=pulse-server PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+    assert.match(packet, /Rerun after recording: PULSE_HOST=pulse-server npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
   });
 });
 
