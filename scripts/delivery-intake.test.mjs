@@ -24,6 +24,8 @@ test('delivery intake renders a track package starting point with fast and relea
   const markdown = renderDeliveryIntake(intake);
   assert.match(markdown, /# Delivery Intake/);
   assert.match(markdown, /Trainingsanpassung \(trainingsanpassung\)/);
+  assert.match(markdown, /# Delivery Intake\n\n- Track:/);
+  assert.match(markdown, /## Package Shape\n-/);
   assert.match(markdown, /npm run verify:trainingsanpassung:fast/);
   assert.match(markdown, /npm run verify:trainingsanpassung:pr/);
   assert.match(markdown, /npm run verify:trainingsanpassung/);
@@ -45,6 +47,40 @@ test('delivery intake CLI args require a track and preserve the outcome text', a
 
   assert.equal(args.track, 'data');
   assert.equal(args.outcome, 'Data explains whether learning evidence changes today or stays watch context.');
+});
+
+test('delivery intake warns that nutrition trend packages remain evidence-gated', async () => {
+  const { buildDeliveryIntake, renderDeliveryIntake } = await import('./delivery-intake.mjs');
+  const intake = buildDeliveryIntake({
+    track: 'lernschleifen',
+    outcome: 'Nutrition trend summaries explain stable fueling learning.',
+  });
+
+  assert.equal(intake.track, 'lernschleifen');
+  assert.equal(intake.gateReminders.length, 2);
+  assert.match(intake.gateReminders[0], /audit:fueling-gate/);
+  assert.match(intake.gateReminders[0], /3\/3 comparable complete/);
+  assert.match(intake.gateReminders[1], /evidence capture/);
+
+  const markdown = renderDeliveryIntake(intake);
+  assert.match(markdown, /## Gate Reminders/);
+  assert.match(markdown, /Fueling gate is closed/);
+});
+
+test('delivery intake warns that iPhone PWA reliability needs current real-device evidence', async () => {
+  const { buildDeliveryIntake, renderDeliveryIntake } = await import('./delivery-intake.mjs');
+  const intake = buildDeliveryIntake({
+    track: 'tagesentscheidung',
+    outcome: 'iPhone PWA field reliability fixes offline fallback.',
+  });
+
+  assert.equal(intake.gateReminders.length, 2);
+  assert.match(intake.gateReminders[0], /audit:iphone-pwa-gate/);
+  assert.match(intake.gateReminders[0], /current real-device evidence/);
+  assert.match(intake.gateReminders[1], /does not close/);
+
+  const markdown = renderDeliveryIntake(intake);
+  assert.match(markdown, /Simulated WebKit or Chromium evidence/);
 });
 
 test('package scripts expose delivery intake as the standard package starter', () => {
