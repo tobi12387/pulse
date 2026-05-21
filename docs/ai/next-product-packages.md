@@ -34,6 +34,17 @@ The first two passes through all three Performance-OS tracks are shipped: `Tages
 
 Keep the next package cards ready so Time-to-Market is not spent re-planning. Unless Tobi explicitly reprioritizes or a regression appears, take the first unshipped package in this order:
 
+### Replenishment Audit — 2026-05-21
+
+The canonical roadmap was rechecked against current docs and evidence after PR #551; see `docs/qa/2026-05-21-performance-os-backlog-replenishment-audit.md`. The old short-term roadmap rows for UX Task Contract foundation and Today/Home simplification are shipped foundations, not new package cards: Home/Heute, Data, Plan, Settings and the main action-contract slices already carry the one-action/why/result grammar.
+
+The remaining named roadmap implementation themes are still gates, not unblocked backlog:
+
+- **Nutrition trend summaries:** still require three comparable complete `during` logs with activity/duration context, carbs and GI comfort.
+- **iPhone/PWA field reliability:** still requires real-device iPhone/VPN/PWA evidence; simulated WebKit and Chromium evidence do not replace the manual field gate.
+
+Until one of those gates opens, a new route/user-friction report appears, or Tobi explicitly reprioritizes, autonomous work should stay limited to evidence capture, docs/tooling support, CI/deploy repair, or a fresh route-evidence pass that proves a concrete regression.
+
 No ungated product package is currently queued after the Home quiet-continuity follow-up. Do not start product coding from stale history; first replenish this backlog from the roadmap, fresh route evidence or Tobi's explicit direction. The roadmap's remaining named implementation themes are gated: Nutrition trend summaries need enough comparable complete logs, and iPhone/PWA field reliability needs real-device evidence. A 2026-05-21 local nutrition DB audit found 4 during logs and 0/3 comparable complete Fueling logs; two existing long carb logs need structured GI comfort before they can count, and one new complete long-session log is still needed after that.
 
 2026-05-21 route evidence first captured 9 desktop and 15 mobile screenshots and found narrow first-viewport friction, but no new package-sized backlog: the Plan mobile scenario preview label now says `Nur Vorschau`, Home learning calibration no longer steals completed-day review or leaves calibration CTAs with generic fallback detail, and Activity Fueling deep links now focus the GI comfort action group when that is the missing evidence. Current-main route evidence at `7a09cd2` captured 9 desktop and 17 mobile screenshots with 0 horizontal overflow; focused post-fix mobile evidence keeps 17 screenshots with 0 horizontal overflow and proves the `Magen ok` choice is in viewport. No additional daily-flow or Fueling UI/UX slice is currently justified. See `docs/qa/2026-05-21-performance-os-next-evidence.md`, `docs/qa/2026-05-21-plan-preview-label-evidence.md`, `docs/qa/2026-05-21-home-calibration-review-clarity.md`, `docs/qa/2026-05-21-post-fueling-route-evidence.md`, `docs/qa/2026-05-21-current-main-route-evidence.md` and `docs/qa/2026-05-21-activity-fueling-action-focus.md` before proposing new UI/UX work from current route state.

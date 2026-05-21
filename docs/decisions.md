@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Roadmap-Audit haelt Produkt-Backlog gated
+
+- **Decision:** Der Performance-OS-Backlog bleibt nach Roadmap-Replenishment geschlossen: UX Task Contract, Heute/Home-Simplification, Plan Action Hierarchy, Daily Delta, Garmin-Closure, Weekly Coach Review und Recovery/Mental Resilience gelten als shipped Foundations; daraus wird kein neues Produktpaket abgeleitet.
+- **Why:** Die kanonische Roadmap enthielt noch alte Short-Term-Zeilen mit `Likely Plan`-Sprache, obwohl die harte Backlog-Datei und Completed-Plans diese Arbeit bereits als geliefert belegen. Die verbleibenden Roadmap-Themen Nutrition-Trends und iPhone/PWA Field Reliability sind weiter evidenz- bzw. device-gated.
+- **Alternatives:** Aus stale Roadmap-Zeilen erneut Home-/Task-Contract-Produktarbeit starten (wuerde shipped Foundations duplizieren); Nutrition-Trends oder iPhone/PWA trotz fehlender Gates beginnen (zu spekulativ); die Inkonsistenz nur im Chat lassen (naechste Agenten wuerden neu suchen).
+- **Decided by:** Codex, als Backlog-Replenishment-Audit im Branch `codex/performance-os-backlog-replenish`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Activity-Fueling-Deep-Link fokussiert die GI-Aktion
 
 - **Decision:** Bestehende `#activity-fueling-log`-Links bleiben stabil, aber Activity Detail fokussiert nach dem Laden der Nutrition-Evidence die konkrete GI-Komfort-Aktionsgruppe, wenn GI-Komfort die offene Fueling-Evidence ist.

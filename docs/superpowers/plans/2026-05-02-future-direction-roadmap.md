@@ -1,6 +1,6 @@
 # Pulse Product Roadmap
 
-> Stand: 2026-05-14 after Focus-Handoff alignment, fresh top-tools benchmark work and the resilience/performance north-star update. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
+> Stand: 2026-05-21 after Performance-OS backlog audit, current route evidence, Nutrition trend gate review and iPhone/PWA field-gate review. This is the canonical product roadmap for future Pulse work. Completed implementation plans remain historical references; new work should start here, then open the smallest matching PR-sized plan.
 
 ## Product North Star
 
@@ -60,9 +60,8 @@ New navigation is allowed when it improves orientation. A new tab, area or mode 
 - it carries work, not just more data;
 - it improves the daily path more than embedding the same content in an existing route.
 
-Potential future areas are therefore open product options, not exceptions:
+The current primary areas are `Heute`, `Data`, `Plan`, `Insights` and `Settings`. Potential future areas remain open product options, not exceptions:
 
-- `Heute` if Home becomes a dedicated daily command surface;
 - `Ausfuehrung` if Garmin/device workout execution becomes a recurring flow beyond a Plan subtab;
 - `Nutrition` if fueling and recovery become daily/weekly planning work;
 - `Coach` if it becomes a true explanation/reflection mode again rather than a fifth dashboard.
@@ -124,11 +123,11 @@ The latest benchmark against TrainerRoad, TrainingPeaks, Garmin, JOIN/Runna, WHO
 
 These come first because they reduce daily friction before adding more intelligence.
 
-| Rank | Theme | Outcome | Likely Plan |
+| Rank | Theme | Outcome | Status / Next Gate |
 |---|---|---|---|
-| 1 | Roadmap and active-plan cleanup | Active docs point to this roadmap; completed docs stop looking like backlog. | Docs-only roadmap hygiene PR |
-| 2 | UX Task Contract foundation | Shared copy/action rules are documented and then applied to Home, Plan, Data and Settings. | New focused implementation plan |
-| 3 | Today/Home simplification | The first screen gives one daily decision, one primary action and optional `Warum?`. Consider renaming Home to `Heute` if evidence supports it. | Home/Daily Command PR |
+| 1 | Roadmap and active-plan cleanup | Active docs point to this roadmap; completed docs stop looking like backlog. | Implemented; continue only evidence-backed hygiene. |
+| 2 | UX Task Contract foundation | Shared copy/action rules are documented and then applied to Home, Plan, Data and Settings. | Implemented across the shipped action-contract slices; future work needs route evidence or user friction. |
+| 3 | Today/Home simplification | The first screen gives one daily decision, one primary action and optional `Warum?`; the visible root navigation is `Heute` while `/` remains stable. | Implemented; keep Heute calm only from fresh evidence, not stale roadmap rows. |
 | 4 | Plan action hierarchy | Implemented: Plan starts with the current job, why-now copy, result preview and a primary action before evidence/tools. | Completed Plan Action Hierarchy PR |
 | 5 | Daily Delta Coach | Implemented v1 on Home: Pulse shows latest plan-vs-execution status, load delta and next plan effect from existing data. | Completed Daily Delta Home v1 PR |
 | 6 | Planned-vs-Completed Score | Implemented v1 on Home with match score and TSS delta; Plan/Data echoes remain optional polish. | Completed Daily Delta Home v1 PR |
@@ -163,6 +162,8 @@ Use this roadmap as the product orientation. Before implementation, open or crea
 
 Autonomous product execution now follows the hard Performance-OS backlog in `docs/ai/next-product-packages.md`. Product PRs should serve one of three tracks in order: `Tagesentscheidung`, `Trainingsanpassung`, then `Lernschleifen`. Prefer weekly product packages with 3-5 related changes over repeated one-signal micro-slices when they share the same outcome and verification surface. Use fast Daily Decision unit/golden tests before Playwright for contract logic, move Home signal work toward data-driven signal registries, and prefer GitHub auto-merge when local checks are green and CI has no special review risk.
 
+The 2026-05-21 backlog audit found no ungated roadmap package after the shipped UX Task Contract, Heute, Plan, Garmin, Weekly Review and Recovery/Mental foundations. The remaining named roadmap themes are evidence gates, not product backlog cards: Nutrition trend summaries need enough comparable complete logs, and iPhone/PWA reliability needs real-device field evidence.
+
 The active plan folder is intentionally small:
 
 - `2026-05-02-future-direction-roadmap.md`: canonical product roadmap and ordering.
@@ -179,8 +180,8 @@ Completed benchmark and implementation plans from the 2026-05-10 wave now live u
 4. **Garmin Execution Chain UI:** implemented as a frontend-first Plan execution chain from template to calendar, readback, repeats and execution result, with one explicit next action and no automatic writes on load.
 5. **Weekly Coach Review:** implemented as a frontend-first Plan Review surface with `Gelernt`, `Planänderung`, `Entscheidung` and one explicit next action. It reuses existing evidence and does not automatically generate reviews, mutate plans or write Garmin.
 6. **Recovery & Mental Resilience:** implemented as a compact Data > Mental guidance card after a real check-in, with `Grenze`, `Planwirkung`, `Signalqualität` and no clinical labels or hidden writes.
-7. **Nutrition trend summaries:** only after at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims.
-8. **iPhone/PWA field reliability:** only with real-device evidence from Tobi's iPhone/VPN/PWA flow; keep the local web/PWA model unless a recurring friction point appears.
+7. **Nutrition trend summaries:** gated until at least three comparable, complete `during` logs exist with activity/duration context, carbs and GI comfort. Summarize stable/learning trends and heat/sodium gaps without medical claims only after the gate opens.
+8. **iPhone/PWA field reliability:** gated until real-device evidence from Tobi's iPhone/VPN/PWA flow shows recurring friction. Keep the local web/PWA model unless the field evidence proves otherwise.
 
 Keep each theme as a separate PR-sized slice unless a test-only or docs-only update is required to keep the roadmap coherent.
 
