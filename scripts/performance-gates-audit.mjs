@@ -651,7 +651,7 @@ export function renderPerformanceGatePacket(audit) {
   lines.push('## Manual Safety');
   lines.push('- Fueling GI comfort must come from the real stomach response; do not infer it from notes, route, RPE, g/h, result or pace.');
   lines.push('- Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly.');
-  lines.push('- Real iPhone/PWA field evidence must be recorded against the expected current commit.');
+  lines.push('- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.');
   lines.push('- The server is a GitHub main mirror; do not edit, branch or commit on the server.');
   lines.push(`- Rerun after any manual save or deploy: npm run audit:performance-gates -- --today ${audit.date}`);
 

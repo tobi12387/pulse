@@ -305,6 +305,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /3\. Server deploy mirror/);
   assert.match(packet, /Recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
   assert.match(packet, /Fueling GI comfort must come from the real stomach response/);
+  assert.match(packet, /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
   assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21/);
 });
 
