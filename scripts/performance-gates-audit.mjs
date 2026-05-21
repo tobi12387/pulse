@@ -347,6 +347,28 @@ function summarizeIphone(expectedCommit, runner) {
   };
 }
 
+function iphoneServerReadyAction(expectedCommit) {
+  return `Rerun the real iPhone checklist and record Server commit under test: ${expectedCommit}.`;
+}
+
+function refineIphoneGateForServer(gate, serverGate, expectedCommit) {
+  if (gate.key !== 'iphone_pwa' || gate.ready || !serverGate?.ready) return gate;
+
+  const verifyAction = `Verify the server mirror is on ${expectedCommit}, rerun the real iPhone checklist and record Server commit under test: ${expectedCommit}.`;
+  const action = iphoneServerReadyAction(expectedCommit);
+  const refineGap = gap => {
+    if (gap?.kind !== 'current_commit_evidence' || gap.nextAction !== verifyAction) return gap;
+    return { ...gap, nextAction: action };
+  };
+
+  return {
+    ...gate,
+    nextAction: gate.nextAction === verifyAction ? action : gate.nextAction,
+    serverRecoveryPacketCommand: null,
+    gaps: (gate.gaps ?? []).map(refineGap),
+  };
+}
+
 function resolveExpectedCommit(runner) {
   const result = runner('git', ['rev-parse', '--short', 'HEAD']);
   if (result.status !== 0) return 'unknown';
@@ -510,10 +532,14 @@ function escapeRegExp(value) {
 export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) {
   const today = assertIsoDate(options.today ?? isoDate(new Date()), '--today');
   const expectedCommit = options.expectedCommit ?? resolveExpectedCommit(runner);
+  const fuelingGate = summarizeFueling(today, runner);
+  const rawIphoneGate = summarizeIphone(expectedCommit, runner);
+  const serverGate = options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner);
+  const iphoneGate = refineIphoneGateForServer(rawIphoneGate, serverGate, expectedCommit);
   const gates = [
-    summarizeFueling(today, runner),
-    summarizeIphone(expectedCommit, runner),
-    options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner),
+    fuelingGate,
+    iphoneGate,
+    serverGate,
   ];
   const openGateList = gates.filter(gate => !gate.ready);
 

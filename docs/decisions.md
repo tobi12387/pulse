@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Kombinierter iPhone-Handoff vertraut fertigem Server-Gate
+
+- **Decision:** `npm run audit:performance-gates` kuerzt den iPhone/PWA-Next-Action-Hinweis auf die reale iPhone-Checkliste, wenn der Server-Mirror-Gate im selben kombinierten Audit bereits ready ist; Server-Recovery-Packets werden dann im iPhone-Gate nicht mehr wiederholt.
+- **Why:** Der iPhone/PWA-Gate bleibt manuell, aber nach erfolgreicher Server-Verifikation ist der naechste echte Schritt Field Evidence gegen den erwarteten Commit. Der kombinierte Handoff soll keine bereits erledigte Server-Verifikation als naechste Handlung wiederholen.
+- **Alternatives:** Die Standalone-iPhone-Audit-Ausgabe global kuerzen (zu riskant, wenn ohne Server-Gate-Kontext genutzt); die Server-Recovery-Zeile immer anzeigen (lauter und nicht handlungsnah); den Server-Gate aus der kombinierten Reihenfolge entfernen (verliert Deploy-Sicherheit).
+- **Decided by:** Codex, als iPhone-Handoff-Support-Slice im Branch `codex/iphone-handoff-server-ready`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Server-Verifikation nutzt Alias-Fallback
 
 - **Decision:** `npm run verify:server` behaelt `root@192.168.178.46` als primaeren Standard, versucht aber bei ungesetztem `PULSE_HOST` danach den lokalen SSH-Alias `pulse-server`, bevor der Server-Gate als SSH-blockiert gilt.

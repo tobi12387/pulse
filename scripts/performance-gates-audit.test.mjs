@@ -412,7 +412,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
     key: 'iphone_pwa',
     label: 'iPhone/PWA field',
     command: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234',
-    action: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
+    action: 'Rerun the real iPhone checklist and record Server commit under test: abc1234.',
     detail: '3 open gaps: Current main field evidence: stale, Warning-free certificate trust: needs_followup, Push activation and test push: partial',
     metadata: {
       evidenceChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
@@ -422,19 +422,19 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       serverCommitUnderTest: '9e05189',
       fieldPacketCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet',
       serverVerifyCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server',
-      serverRecoveryPacketCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet',
+      serverRecoveryPacketCommand: null,
       firstGap: {
         kind: 'current_commit_evidence',
         label: 'Current main field evidence',
         status: 'stale',
-        nextAction: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
+        nextAction: 'Rerun the real iPhone checklist and record Server commit under test: abc1234.',
       },
     },
   });
   assert.match(renderNextUnblock(audit), /Command: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
   assert.match(renderNextUnblock(audit), /Evidence checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
-  assert.match(renderNextUnblock(audit), /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
+  assert.doesNotMatch(renderNextUnblock(audit), /Server recovery packet:/);
   assert.match(renderNextUnblock(audit), /Manual safety:/);
   assert.match(renderNextUnblock(audit), /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
   assert.match(renderNextUnblock(audit), /The server is a GitHub main mirror; do not edit, branch or commit on the server/);
