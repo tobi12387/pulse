@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Uebersprungene Server-Gates zaehlen nicht als bereit
+
+- **Decision:** `npm run audit:performance-gates -- --skip-server` markiert den Server-Spiegel als `skipped`, aber nicht als `ready`; der Sammel-Audit bleibt dadurch `gated`, solange die Server-Verifikation ausgelassen wurde.
+- **Why:** Ein Gate-Audit darf fehlende Evidenz nicht als Bereitschaft auslegen. `--skip-server` ist nuetzlich fuer lokale Fueling-/iPhone-Pruefungen, soll aber keine deploy- oder main-spiegelbezogene Entscheidung als bewiesen darstellen.
+- **Alternatives:** Den ausgelassenen Servercheck als bereit zaehlen (zu optimistisch); `--skip-server` entfernen (schlechter fuer lokale, nicht-deployrelevante Gate-Checks); ein drittes Top-Level-Resultat einfuehren (mehr Formatwechsel als fuer diesen Safety-Fix noetig).
+- **Decided by:** Codex, als Gate-Semantik-Fix im Branch `codex/performance-gate-skip-semantics`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-OS-Gates bekommen einen Sammel-Audit
 
 - **Decision:** `npm run audit:performance-gates` fuehrt die bestehenden read-only Audits fuer Fueling, iPhone/PWA und Server-Spiegel in einem Gate-Snapshot zusammen.

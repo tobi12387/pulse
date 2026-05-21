@@ -10,7 +10,7 @@ function usage() {
     '',
     'Options:',
     '  --today YYYY-MM-DD   Anchor date for the Fueling gate audit.',
-    '  --skip-server        Do not run the SSH-backed server mirror verification.',
+    '  --skip-server        Do not run the SSH-backed server mirror verification; leaves that gate unverified.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -230,10 +230,10 @@ function skippedServer(expectedCommit) {
     key: 'server',
     label: 'Server deploy mirror',
     gate: 'skipped',
-    ready: true,
+    ready: false,
     skipped: true,
     command: `PULSE_EXPECTED_COMMIT=${expectedCommit} npm run verify:server`,
-    detail: 'Skipped by --skip-server.',
+    detail: 'Skipped by --skip-server; server mirror readiness is unverified.',
     nextAction: 'Run the server mirror verification before deploy-sensitive decisions.',
     expectedCommit,
     recoveryRunbook: 'docs/ai/checklists/deploy-auth-recovery.md',
@@ -248,8 +248,7 @@ export function buildPerformanceGateAudit(options = {}, runner = defaultRunner) 
     summarizeIphone(runner),
     options.skipServer ? skippedServer(expectedCommit) : summarizeServer(expectedCommit, runner),
   ];
-  const requiredGates = gates.filter(gate => !gate.skipped);
-  const openGates = requiredGates.filter(gate => !gate.ready);
+  const openGates = gates.filter(gate => !gate.ready);
 
   return {
     date: today,
