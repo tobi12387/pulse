@@ -54,6 +54,8 @@ const TRACKS = {
       /^frontend\/src\/pulse\/learning-calibration/,
       /^frontend\/src\/pulse\/fueling-learning/,
       /^frontend\/src\/features\/data\//,
+      /^backend\/src\/pulse\/services\/fueling-outcome-baseline/,
+      /^backend\/src\/pulse\/services\/fueling-recovery-guidance/,
       /^scripts\/data-analysis-action-contracts\.test\.ts$/,
       /^scripts\/resilience-guidance\.test\.ts$/,
     ],

@@ -112,6 +112,55 @@ function comparableCompleteLearningLogs(logs: FuelingOutcomeBaselineLogInput[]):
   return comparableLearningLogs(logs).filter(isComparableCompleteLearningLog);
 }
 
+function countWord(count: number): string {
+  if (count === 1) return 'ein';
+  if (count === 2) return 'zwei';
+  if (count === 3) return 'drei';
+  return String(count);
+}
+
+function plural(count: number, singular: string, pluralValue: string): string {
+  return count === 1 ? singular : pluralValue;
+}
+
+function existingCompletableLogText(count: number, fields: string): string {
+  if (count === 1) return `ein vorhandener langer Log kann durch ${fields} zaehlen`;
+  return `${countWord(count)} vorhandene lange Logs koennen durch ${fields} zaehlen`;
+}
+
+function newLearningLogText(count: number): string {
+  if (count === 1) return 'ein neuer vollstaendiger Lernlog';
+  return `${countWord(count)} neue vollstaendige Lernlogs`;
+}
+
+function comparableLogGapSummary(
+  comparableLogs: FuelingOutcomeBaselineLogInput[],
+  completeLogs: FuelingOutcomeBaselineLogInput[],
+): string {
+  const remaining = Math.max(0, REQUIRED_COMPARABLE_COMPLETE_LOGS - completeLogs.length);
+  const completableExistingLogs = comparableLogs.filter(log =>
+    !isComparableCompleteLearningLog(log)
+    && (log.carbsG != null || log.giComfort != null));
+  const completableNow = Math.min(remaining, completableExistingLogs.length);
+  if (completableNow <= 0) {
+    return `Noch ${countWord(remaining)} vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.`;
+  }
+
+  const giGapCount = completableExistingLogs.filter(log => log.carbsG != null && log.giComfort == null).length;
+  const carbGapCount = completableExistingLogs.filter(log => log.carbsG == null && log.giComfort != null).length;
+  const fieldGaps = [
+    giGapCount > 0 ? 'GI-Komfort' : null,
+    carbGapCount > 0 ? 'Carbs' : null,
+  ].filter((item): item is string => item != null);
+  const existingText = existingCompletableLogText(completableNow, fieldGaps.join(' und '));
+  const remainingAfterCompletion = remaining - completableNow;
+  if (remainingAfterCompletion <= 0) {
+    return `Noch ${countWord(remaining)} vergleichbare ${plural(remaining, 'During-Log fehlt', 'During-Logs fehlen')}: ${existingText}.`;
+  }
+
+  return `Noch ${countWord(remaining)} vergleichbare During-Logs fehlen: ${existingText}; danach ${plural(remainingAfterCompletion, 'fehlt', 'fehlen')} noch ${newLearningLogText(remainingAfterCompletion)}.`;
+}
+
 function learningNextAction(comparableLogs: FuelingOutcomeBaselineLogInput[]): PulseFuelingLearningNextAction {
   const giGapLog = comparableLogs.find(log => log.carbsG != null && log.giComfort == null);
   if (giGapLog) {
@@ -156,7 +205,7 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
   }
 
   const missingEvidence = [
-    `Noch ${completeLogs.length === 0 ? 'drei' : REQUIRED_COMPARABLE_COMPLETE_LOGS - completeLogs.length} vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.`,
+    comparableLogGapSummary(comparableLogs, completeLogs),
     comparableLogs.some(log => log.giComfort == null)
       ? 'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.'
       : null,

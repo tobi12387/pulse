@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-21 — Fueling-Gate nennt vervollstaendigbare Logs
+
+- **Decision:** Die Fueling-Baseline bleibt strikt bei drei vergleichbaren kompletten During-Logs, aber die Readiness-Copy unterscheidet vorhandene lange Logs mit nachtragbarer Evidenz von wirklich neuen Lernlogs.
+- **Why:** Der lokale Datenstand zeigt vier During-Logs, davon zwei lange Aktivitaeten mit Dauer und Carbs, aber ohne strukturierten GI-Komfort; daraus darf noch kein Trend entstehen, aber Pulse soll Tobi nicht so klingen lassen, als muessten alle drei Logs komplett neu gesammelt werden.
+- **Alternatives:** Notes automatisch als GI-Komfort interpretieren (versteckte und fehleranfaellige Ernaehrungs-Inferenz); weiter pauschal `drei Logs fehlen` sagen (verschwendet vorhandene Evidence); Trend-Gate aufweichen (zu wenig vergleichbare Grundlage).
+- **Decided by:** Codex, nach lokalem Nutrition-DB-Audit im Branch `codex/fueling-readiness-gap-copy`.
+- **Status:** active.
+
 ## 2026-05-21 — Home-Lernkalibrierung fuehrt nur aktive Tagesaktionen
 
 - **Decision:** Home darf `Lernkalibrierung` weiter als Tagesaktion fuehren, wenn sie den offenen heutigen Schritt bestimmt; auf abgeschlossenen Review-Tagen bleibt sie aus dem Lead, und signalgetriebene CTA-Overrides muessen auch die sichtbare `Naechster Schritt`-Beschreibung besitzen.

@@ -68,6 +68,21 @@ test('delivery manifest maps Data learning changes to the Lernschleifen gate', (
   assert.ok(manifest.localChecks.includes('npm run verify:lernschleifen:pr'));
 });
 
+test('delivery manifest maps backend fueling learning changes to the Lernschleifen full lane', () => {
+  const manifest = buildDeliveryManifest([
+    'backend/src/pulse/services/fueling-outcome-baseline.ts',
+    'backend/src/pulse/services/fueling-outcome-baseline.test.ts',
+  ]);
+
+  assert.equal(manifest.scope, 'product_package');
+  assert.equal(manifest.track, 'lernschleifen');
+  assert.equal(manifest.deliveryLane, 'full_lane');
+  assert.equal(manifest.autoMergeEligible, false);
+  assert.ok(manifest.localChecks.includes('npm run verify:lernschleifen'));
+  assert.ok(manifest.localChecks.includes('npm run build -w shared && npm run build -w backend'));
+  assert.ok(manifest.localChecks.includes('npm test'));
+});
+
 test('delivery manifest keeps docs-only changes out of deploy and product gates', () => {
   const manifest = buildDeliveryManifest([
     'docs/ai/current-focus.md',

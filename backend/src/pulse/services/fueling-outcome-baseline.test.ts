@@ -24,12 +24,61 @@ describe('summarizeFuelingOutcomeBaseline', () => {
     });
     expect(readiness.missingEvidence.join(' ')).toContain('GI-Komfort');
     expect(readiness.missingEvidence.join(' ')).toContain('drei vergleichbare');
+    expect(readiness.missingEvidence[0]).toContain('ein vorhandener langer Log kann durch GI-Komfort zaehlen');
+    expect(readiness.missingEvidence[0]).toContain('danach fehlen noch zwei neue vollstaendige Lernlogs');
     expect(readiness.nextAction).toMatchObject({
       kind: 'complete_gi_comfort',
       label: 'GI-Komfort ergänzen',
       activityId: 'activity-long-carb-log',
     });
     expect(readiness.nextAction?.detail).toContain('vorhandenen langen During-Log');
+  });
+
+  it('names existing long carb logs that can count after GI comfort is added', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [
+        {
+          date: '2026-05-09',
+          context: 'during',
+          activityId: 'activity-long-ride',
+          activityType: 'bike',
+          durationMin: 398,
+          carbsG: 356,
+          sodiumMg: 1300,
+        },
+        {
+          date: '2026-05-04',
+          context: 'during',
+          activityId: 'activity-z2-ride',
+          activityType: 'bike',
+          durationMin: 80,
+          carbsG: 30,
+        },
+        {
+          date: '2026-05-05',
+          context: 'during',
+          activityId: 'activity-short-ride',
+          activityType: 'bike',
+          durationMin: 31,
+          drinksMl: 250,
+        },
+      ],
+    });
+
+    const readiness = baseline.learningReadiness!;
+    expect(readiness).toMatchObject({
+      comparableCompleteLogs: 0,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+    });
+    expect(readiness.missingEvidence[0]).toBe(
+      'Noch drei vergleichbare During-Logs fehlen: zwei vorhandene lange Logs koennen durch GI-Komfort zaehlen; danach fehlt noch ein neuer vollstaendiger Lernlog.',
+    );
+    expect(readiness.nextAction).toMatchObject({
+      kind: 'complete_gi_comfort',
+      label: 'GI-Komfort ergänzen',
+      activityId: 'activity-long-ride',
+    });
   });
 
   it('marks trend summaries ready after three comparable complete during logs', () => {
