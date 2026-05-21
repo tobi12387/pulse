@@ -35,6 +35,20 @@ const GATED_FUELING = commandResult(0, JSON.stringify({
       comparableLongLogs: 2,
       completableNow: 2,
       newLogsStillNeeded: 1,
+      completionCandidates: [
+        {
+          date: '2026-05-09',
+          status: 'can count after GI comfort',
+          targetPath: '/plan/activity/activity-a#activity-fueling-log',
+          missing: ['GI comfort'],
+        },
+        {
+          date: '2026-05-04',
+          status: 'can count after GI comfort',
+          targetPath: '/plan/activity/activity-b#activity-fueling-log',
+          missing: ['GI comfort'],
+        },
+      ],
       nextAction: {
         label: 'GI-Komfort ergaenzen',
         detail: 'Add structured GI comfort to an existing long carb log.',
@@ -95,6 +109,20 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.equal(audit.openGates, 3);
   assert.deepEqual(audit.gates.map(gate => gate.gate), ['gated', 'gated', 'gated']);
   assert.equal(audit.gates[0].nextAction, 'GI-Komfort ergaenzen - Add structured GI comfort to an existing long carb log. - Path: /plan/activity/activity-a#activity-fueling-log');
+  assert.deepEqual(audit.gates[0].completionCandidates, [
+    {
+      date: '2026-05-09',
+      status: 'can count after GI comfort',
+      targetPath: '/plan/activity/activity-a#activity-fueling-log',
+      missing: ['GI comfort'],
+    },
+    {
+      date: '2026-05-04',
+      status: 'can count after GI comfort',
+      targetPath: '/plan/activity/activity-b#activity-fueling-log',
+      missing: ['GI comfort'],
+    },
+  ]);
   assert.equal(audit.gates[2].expectedCommit, 'abc1234');
   assert.equal(audit.gates[2].recoveryRunbook, 'docs/ai/checklists/deploy-auth-recovery.md');
 
@@ -103,6 +131,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Open gates: 3/);
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /0\/3 comparable complete logs/);
+  assert.match(rendered, /activity-a#activity-fueling-log, \/plan\/activity\/activity-b#activity-fueling-log/);
   assert.match(rendered, /iPhone\/PWA field/);
   assert.match(rendered, /2 open gaps/);
   assert.match(rendered, /Server deploy mirror/);
