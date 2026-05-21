@@ -310,6 +310,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.doesNotMatch(rendered, /Next: .*Path: \/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(rendered, /Next target: 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)/);
   assert.match(rendered, /Next target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(rendered, /Next GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(rendered, /Evidence packet: `npm run audit:fueling-gate -- --today 2026-05-21 --packet`/);

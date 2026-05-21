@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Performance-Gate-Header zeigt Fueling-Optionen direkt
+
+- **Decision:** `npm run audit:performance-gates` rendert im Standard-Header nach `Next target URL` auch die erste passende Optionszeile aus `nextUnblock.metadata`, z.B. die GI-Komfort-Auswahl fuer den naechsten Fueling-Log.
+- **Why:** Der erste manuelle Evidence-Schritt soll nicht nur den Zielort, sondern auch die erlaubten Auswahlwerte direkt sichtbar machen. Das reduziert Fehlinterpretationen beim Fueling-Gate, ohne neue Produktlogik oder Datenannahmen einzufuehren.
+- **Alternatives:** Optionen nur im JSON, Packet oder in der Ziel-UI belassen (korrekt, aber mehr Reibung im Standard-Handoff); freie Textanweisung statt strukturierter Metadaten rendern (riskanter und weniger stabil).
+- **Decided by:** Codex, als Performance-Gate-Handoff-Support-Slice im Branch `codex/performance-next-options`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Performance-Gate-Header zeigt erste Ziel-URL direkt
 
 - **Decision:** `npm run audit:performance-gates` rendert im Standard-Header neben `Next target` auch `Next target URL`, wenn der erste offene Gate eine direkte Ziel-URL aus den vorhandenen `nextUnblock.metadata` hat.

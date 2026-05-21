@@ -660,6 +660,8 @@ export function renderPerformanceGateAudit(audit) {
   if (nextTarget) lines.push(`Next target: ${nextTarget}`);
   const nextTargetUrl = targetUrlValue(audit.nextUnblock?.metadata);
   if (nextTargetUrl) lines.push(`Next target URL: ${nextTargetUrl}`);
+  const nextOptions = optionsLine(audit.nextUnblock?.metadata);
+  if (nextOptions) lines.push(`Next ${nextOptions}`);
   lines.push('');
 
   for (const gate of audit.gates) {
