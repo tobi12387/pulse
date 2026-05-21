@@ -214,6 +214,7 @@ test('performance gate audit summarizes current gated blockers', () => {
       date: '2026-05-09',
       evidenceChecklist: 'docs/ai/checklists/fueling-evidence-capture.md',
       capturePacketCommand: 'npm run audit:fueling-gate -- --today 2026-05-21 --packet',
+      nextPromptCommand: 'npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt',
       newLogChecklistCommand: 'npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist',
       options: [
         { value: 'ok', label: 'Magen ok' },
@@ -311,6 +312,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(rendered, /Fueling learning/);
   assert.match(rendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(rendered, /Evidence packet: `npm run audit:fueling-gate -- --today 2026-05-21 --packet`/);
+  assert.match(rendered, /Next prompt: `npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt`/);
   assert.match(rendered, /New log checklist: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`/);
   assert.match(rendered, /0\/3 comparable complete logs/);
   assert.match(rendered, /Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\) -> \/plan\/activity\/activity-a#activity-fueling-log/);
@@ -346,6 +348,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.equal(exitCodeForTargetUrls(audit), 0);
   assert.match(nextRendered, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(nextRendered, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
+  assert.match(nextRendered, /Next prompt: npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt/);
   assert.match(nextRendered, /New log checklist: npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist/);
   assert.match(nextRendered, /GI-Komfort-Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(nextRendered, /Completion candidates:/);
@@ -366,6 +369,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Target URL: https?:\/\/[^\s]+\/plan\/activity\/activity-a#activity-fueling-log/);
   assert.match(packet, /Evidence checklist: docs\/ai\/checklists\/fueling-evidence-capture\.md/);
   assert.match(packet, /Evidence packet: npm run audit:fueling-gate -- --today 2026-05-21 --packet/);
+  assert.match(packet, /Next prompt: npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt/);
   assert.match(packet, /New log checklist: npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist/);
   assert.match(packet, /Completion candidates:/);
   assert.match(packet, /- 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> \/plan\/activity\/activity-b#activity-fueling-log \| Target URL: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log \(missing: GI comfort\)/);
@@ -391,6 +395,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(checklist, /Choose exactly one real GI comfort value: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(checklist, /After existing candidates, capture 1 new complete long-session log with activity\/duration, during carbs and structured GI comfort together/);
   assert.match(checklist, /Use the future-log scaffold when ready: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`/);
+  assert.match(checklist, /Use the short first-target prompt for a manual capture\/chat handoff: `npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt`/);
   assert.match(checklist, /## 2\. iPhone\/PWA field/);
   assert.match(checklist, /Verify the server mirror before recording current field evidence: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
   assert.match(checklist, /Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold`/);
