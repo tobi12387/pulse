@@ -637,6 +637,8 @@ export function renderPerformanceGatePacket(audit) {
   if (target) lines.push(target);
   const pathOrRunbook = metadataLine(audit.nextUnblock.metadata);
   if (pathOrRunbook) lines.push(pathOrRunbook);
+  const checklist = checklistLine(audit.nextUnblock.metadata);
+  if (checklist) lines.push(checklist);
   const packet = packetLine(audit.nextUnblock.metadata);
   if (packet) lines.push(packet);
   const fieldPacket = fieldPacketLine(audit.nextUnblock.metadata);

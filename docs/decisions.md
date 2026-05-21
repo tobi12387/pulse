@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Performance-Gate-First-Unblock zeigt Checkliste
+
+- **Decision:** `npm run audit:performance-gates -- --packet` rendert im Abschnitt `First Unblock` die passende Evidence-Checkliste direkt vor dem Packet-/Field-/Recovery-Befehl, wenn die Metadaten eine Checkliste liefern.
+- **Why:** Der erste Performance-OS-Unblock ist der wahrscheinlichste manuelle Einstieg. Checkliste und ausfuehrbares Packet gehoeren in denselben Blick, damit Fueling, iPhone/PWA oder Server-Recovery nicht erst im nachgelagerten Ordered-Gates-Abschnitt gesucht werden muessen.
+- **Alternatives:** Die Checkliste nur in Ordered Open Gates belassen (mehr Scrollen beim ersten Handoff); nur `--next-unblock` mit Checkliste ausgeben (uneinheitlich zum kombinierten Packet); Checklisten in Manual Safety duplizieren (weniger strukturiert).
+- **Decided by:** Codex, als Performance-Gate-Handoff-Slice im Branch `codex/performance-packet-checklist`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Gate-Fueling-Action bleibt pfadfrei
 
 - **Decision:** `npm run audit:performance-gates` speichert und rendert die Fueling-`nextAction` ohne angehaengten `Path:`-Suffix; der Activity-Deep-Link bleibt als strukturierter `targetPath`, Target-Zeile und Completion-Candidate-Evidenz erhalten.
