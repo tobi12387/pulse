@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Gate-Open-Package-Seeds bleiben evidenzgebunden
+
+- **Decision:** `docs/ai/next-product-packages.md` beschreibt fuer Nutrition trend summaries und iPhone/PWA field reliability nur Gate-open package seeds; sie sind keine unblocked Product-Cards und duerfen erst nach geoeffnetem Audit- bzw. Field-Evidence-Gate umgesetzt werden.
+- **Why:** Die Performance-OS-Roadmap braucht nach Fueling- oder iPhone-Evidence einen schnellen naechsten PR-Zuschnitt, aber aktuelle Produktarbeit darf die manuellen Gates nicht simulieren oder umgehen. Die Seeds machen den naechsten MacroFactor-/PWA-Schritt startklar, ohne die bestehende Reihenfolge Fueling -> iPhone/PWA -> Produktcode zu verwischen.
+- **Alternatives:** Keine Seeds erfassen (naechster Agent muss nach Gate-Oeffnung neu planen); Nutrition- oder iPhone-Code jetzt starten (Gate bleibt geschlossen); reine Hash-/Status-Docs pflegen (weniger Produktfortschritt).
+- **Decided by:** Codex, als Backlog-Hygiene-Slice im Branch `codex/gate-open-package-seeds`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Audit trennt lokale Planung von Server-Gate
 
 - **Decision:** `npm run audit:performance-gates -- --local-planning` markiert den Server-Mirror als `deferred`, zaehlt ihn nicht als offenen manuellen Gate, nutzt ohne explizites `--expected-commit` `origin/main` als erwarteten Commit und laesst die normale Server-Verifikation fuer Deploy- und aktuelle iPhone-Field-Evidence unveraendert streng.
