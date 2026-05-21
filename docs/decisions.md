@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — iPhone-Field-Packet nennt Server-Verify-Befehl
+
+- **Decision:** Das iPhone/PWA-Field-Packet rendert den exakten `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server`-Befehl und den SSH-Recovery-Runbook-Pfad, bevor neue Real-Device-Evidence aufgenommen wird.
+- **Why:** Aktuelle iPhone/PWA-Evidence ist nur belastbar, wenn der getestete Server-Spiegel wirklich auf dem erwarteten Main-Commit steht. Der Packet-Handoff soll diesen Schritt nicht nur beschreiben, sondern als ausfuehrbaren Befehl zeigen und bei SSH-Preflight-Failure auf den bestehenden sicheren Recovery-Pfad verweisen.
+- **Alternatives:** Den Verify-Schritt nur in Prosa lassen (mehr stale-field Risiko); Server-Verify in die Field-Audit-Logik einkoppeln (vermischt zwei getrennte Gates); SSH-Reparatur automatisieren (ausserhalb Codex-Zugriff und zu riskant).
+- **Decided by:** Codex, als iPhone/PWA-Gate-Support-Slice im Branch `codex/iphone-field-server-verify`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — iPhone-Gate rendert Live-Field-Packet
 
 - **Decision:** `npm run audit:iphone-pwa-gate -- --packet` rendert ein live aus dem aktuellen iPhone/PWA-Feldrecord und dem erwarteten Commit generiertes Field-Evidence-Packet; Performance-Gate-Metadaten geben den Befehl als `fieldPacketCommand` weiter.

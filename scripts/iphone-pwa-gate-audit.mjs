@@ -245,6 +245,10 @@ function statusText(status) {
   return String(status ?? 'missing').replaceAll('_', ' ');
 }
 
+function serverVerifyCommand(expectedCommit) {
+  return `PULSE_EXPECTED_COMMIT=${expectedCommit ?? '<commit>'} npm run verify:server`;
+}
+
 export function renderIphonePwaFieldPacket(audit) {
   const lines = [
     '# iPhone / PWA Field Evidence Packet',
@@ -254,6 +258,8 @@ export function renderIphonePwaFieldPacket(audit) {
     `Expected current commit: ${audit.expectedCommit ?? 'missing'}`,
     `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
     `Field commit status: ${audit.commitStatus}`,
+    `Server verify command: ${serverVerifyCommand(audit.expectedCommit)}`,
+    'Server recovery runbook: docs/ai/checklists/deploy-auth-recovery.md',
     `Device: ${audit.scope.device ?? 'missing'}`,
     `iOS version: ${audit.scope.iosVersion ?? 'missing'}`,
     '',
@@ -273,7 +279,8 @@ export function renderIphonePwaFieldPacket(audit) {
 
   lines.push('');
   lines.push('Manual field run:');
-  lines.push(`- Verify the server mirror is on ${audit.expectedCommit ?? 'the expected current commit'} before recording new current evidence.`);
+  lines.push(`- Verify the server mirror before recording new current evidence: ${serverVerifyCommand(audit.expectedCommit)}.`);
+  lines.push('- If SSH fails before server Git/PM2/health checks, follow docs/ai/checklists/deploy-auth-recovery.md first.');
   lines.push('- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.');
   lines.push('- Open Settings first and record Device, iOS version, PWA mode, Push state and certificate state.');
   lines.push('- Install and trust only frontend/certs/rootCA.pem if warning-free certificate behavior is required; never transfer rootCA-key.pem or any *-key.pem file.');
