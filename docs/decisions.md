@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — Fueling-Packet nennt die naechste Aktion explizit
+
+- **Decision:** `npm run audit:fueling-gate -- --packet` rendert vor Ziel-Log und Zielpfad eine `Next action`-Zeile mit dem Fueling-Action-Label und der Nicht-Ableitungsregel.
+- **Why:** Der fokussierte Fueling-Packet ist der direkteste Einstieg in den ersten Performance-OS-Unblock. Die Handlung muss genauso klar sichtbar sein wie im kombinierten Performance-Gate-Packet, bevor Tobi auf Zielpfad, Kandidaten und Regeln springt.
+- **Alternatives:** Die Handlung nur aus `Next target`, Kandidaten und Manual-Capture-Regeln ableiten lassen (zu indirekt); nur das kombinierte Performance-Packet verwenden (weniger fokussiert); die Zielpfade entfernen (zu wenig ausfuehrbar).
+- **Decided by:** Codex, als Fueling-Handoff-Slice im Branch `codex/fueling-packet-next-action`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Performance-Gate-First-Unblock zeigt Checkliste
 
 - **Decision:** `npm run audit:performance-gates -- --packet` rendert im Abschnitt `First Unblock` die passende Evidence-Checkliste direkt vor dem Packet-/Field-/Recovery-Befehl, wenn die Metadaten eine Checkliste liefern.
