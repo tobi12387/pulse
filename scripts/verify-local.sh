@@ -53,11 +53,25 @@ if [[ ! -f "$ENV_FILE" ]]; then
   ENV_FILE=".env.test.example"
 fi
 
+EXPLICIT_DATABASE_URL="${DATABASE_URL-}"
+EXPLICIT_DATABASE_URL_TEST="${DATABASE_URL_TEST-}"
+EXPLICIT_REDIS_URL="${REDIS_URL-}"
+
 echo "==> loading $ENV_FILE"
 set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
+
+if [[ -n "$EXPLICIT_DATABASE_URL" ]]; then
+  export DATABASE_URL="$EXPLICIT_DATABASE_URL"
+fi
+if [[ -n "$EXPLICIT_DATABASE_URL_TEST" ]]; then
+  export DATABASE_URL_TEST="$EXPLICIT_DATABASE_URL_TEST"
+fi
+if [[ -n "$EXPLICIT_REDIS_URL" ]]; then
+  export REDIS_URL="$EXPLICIT_REDIS_URL"
+fi
 
 export NODE_ENV="${NODE_ENV:-test}"
 
@@ -131,7 +145,15 @@ echo "==> script and frontend logic tests"
 npm run test:scripts
 
 echo "==> test database migrations"
-DATABASE_URL="$DATABASE_URL_TEST" npm run db:migrate -w backend
+if ! DATABASE_URL="$DATABASE_URL_TEST" npm run db:migrate -w backend; then
+  node --input-type=module <<'NODE'
+const url = new URL(process.env.DATABASE_URL_TEST);
+console.error(`Test database migration failed for ${url.host}${url.pathname}.`);
+console.error('If this database already has schema objects but a stale Drizzle ledger, point DATABASE_URL_TEST at a fresh empty test database and rerun this command.');
+console.error('Explicit DATABASE_URL, DATABASE_URL_TEST and REDIS_URL environment values override .env.test(.example) for local recovery runs.');
+NODE
+  exit 1
+fi
 
 echo "==> backend tests"
 npm test

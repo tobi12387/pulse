@@ -72,6 +72,9 @@ test('verify-local prints local service remediation before DB checks', () => {
   assert.match(verifyLocalScript, /start services:/);
   assert.match(verifyLocalScript, /npm run services:up/);
   assert.match(verifyLocalScript, /Docker Desktop/);
+  assert.match(verifyLocalScript, /EXPLICIT_DATABASE_URL_TEST/);
+  assert.match(verifyLocalScript, /environment values override \.env\.test\(\.example\)/);
+  assert.match(verifyLocalScript, /stale Drizzle ledger/);
   assert.match(verifyLocalScript, /npm run test:scripts/);
 });
 

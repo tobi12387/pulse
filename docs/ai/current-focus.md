@@ -39,6 +39,7 @@ Keep this file as a short session snapshot, not a PR archive. If a detail is onl
 - PWA offline fallback has automated service-worker proof, but the real iPhone VPN/network disconnect check remains manual field evidence.
 - Real Garmin calendar/workout writes should not run during generic QA unless the task explicitly requires sync repair/testing.
 - Server deploy currently needs manual SSH/auth repair from Tobi; Codex deploy attempts fail with publickey/password denial until access is restored. `scripts/verify-server.sh` now reports this as an SSH preflight failure before Git/PM2/health checks; use `docs/ai/checklists/deploy-auth-recovery.md` for the safe recovery sequence.
+- Local no-services verification can use reachable direct Postgres/Redis endpoints without Docker Compose. If the default test DB has schema objects but a stale Drizzle ledger, export `DATABASE_URL_TEST` to a fresh empty test database; `scripts/verify-local.sh` preserves explicit DB/Redis env overrides and now prints that recovery hint on migration failure. Verified 2026-05-21 with a fresh throwaway test DB via `npm run verify:local -- --no-services`.
 - Native iOS is evidence-gated; local web/PWA over VPN remains the current access model.
 - New fueling/nutrition logic should stay conservative, educational and tied to workout/recovery evidence rather than medical prescription.
 - Benchmark work may use public TrainerRoad/TrainingPeaks/JOIN/Runna/Intervals/WKO capability patterns, but must not copy proprietary plan or workout content.

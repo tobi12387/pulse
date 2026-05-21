@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-21 — No-Services-Verify nutzt explizite frische Test-DBs
+
+- **Decision:** `scripts/verify-local.sh` respektiert explizit gesetzte `DATABASE_URL`, `DATABASE_URL_TEST` und `REDIS_URL` auch nach dem Laden von `.env.test(.example)`; bei Migrationsfehlern weist es auf eine moegliche stale Drizzle-Ledger-Test-DB und den frischen `DATABASE_URL_TEST`-Recovery-Pfad hin.
+- **Why:** Die aktuelle lokale Default-Test-DB war erreichbar, hatte aber Schemaobjekte aus spaeteren Migrationen, waehrend Drizzles Ledger bei `0002` stoppte. Der nutzbare No-Services-Pfad braucht deshalb eine nicht-destruktive Moeglichkeit, auf eine frische Test-DB auszuweichen, ohne `.env.test` oder produktive DBs anzufassen.
+- **Alternatives:** Die Default-Test-DB automatisch droppen (zu destruktiv fuer lokale Daten); den Drizzle-Fehler unveraendert lassen (liefert keinen hilfreichen Recovery-Hinweis); nur Docker Compose erlauben (blockiert erreichbare direkte DB/Redis-Endpunkte).
+- **Decided by:** Codex, als Local-Verify-Support-Slice im Branch `codex/no-services-verify-evidence`.
+- **Status:** active.
+
+---
+
 ## 2026-05-21 — Pulse-Status unterscheidet Compose-Status von direkten Test-Endpunkten
 
 - **Decision:** `npm run pulse:status` behandelt Docker-Compose-Status und erreichbare `.env.test`-/`.env.test.example`-Endpunkte getrennt: Wenn Compose down ist, aber DB und Redis direkt erreichbar sind, bleibt `local_status=0` und der Output empfiehlt `npm run verify:local -- --no-services`.
