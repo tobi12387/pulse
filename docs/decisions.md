@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Data zeigt Fueling-Capture-Plan vor Trendfreigabe
+
+- **Decision:** Data zeigt bei offener Fueling-Lernschleife einen kompakten `Capture-Plan` mit aktuellem 0/3-Stand, direkt schließbaren bestehenden Logs und danach noch benötigten Long-Session-Logs.
+- **Why:** Nutrition-Trends bleiben korrekt gegated, aber der manuelle Capture-Loop soll wie eine echte Lernschleife lesbar sein. Tobi soll in Data sehen, dass zwei vorhandene Logs nur GI-Komfort brauchen und danach noch ein neuer vollständiger Long-Session-Log fehlt, ohne den Audit im Terminal lesen zu müssen.
+- **Alternatives:** Nur den ersten Ziel-Log anzeigen (zu wenig Orientierung für den gesamten Loop); Nutrition-Trends vor 3/3 anzeigen (verletzt Evidenzgate); GI-Komfort aus Notizen, Route, RPE, g/h oder Ergebnis ableiten (nicht erlaubt).
+- **Decided by:** Codex, als Fueling-Gate-Capture-Support im Branch `codex/fueling-next-candidate`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Settings zeigt iPhone/PWA-Feldnachweis mit App-Stand
 
 - **Decision:** Die iPhone-&-PWA-Karte in Settings zeigt den aktuellen Frontend-Build-Commit als `App-Stand` plus Gerät, iOS-Feld, Startmodus und die weiterhin manuellen Prüfpunkte Zertifikat, Push-Test und Offline.
