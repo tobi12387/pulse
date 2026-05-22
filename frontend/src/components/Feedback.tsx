@@ -13,8 +13,8 @@ const TONE_STYLES: Record<Tone, { color: string; background: string; border: str
   },
   info: {
     color: 'var(--accent)',
-    background: 'rgba(94, 230, 207, 0.07)',
-    border: 'rgba(94, 230, 207, 0.28)',
+    background: 'rgba(47, 102, 208, 0.07)',
+    border: 'rgba(47, 102, 208, 0.28)',
   },
 };
 

@@ -281,7 +281,7 @@ export function DailyDecisionCard({
             background: color,
             border: `1px solid ${color}`,
             borderRadius: 'var(--radius-md)',
-            color: 'var(--bg)',
+            color: 'var(--accent-contrast)',
             fontFamily: 'var(--font-sans)',
             fontSize: 12,
             fontWeight: 750,
@@ -411,6 +411,7 @@ export function DailyDecisionCard({
   return (
     <div
       data-testid="daily-decision-card"
+      className={`daily-decision-card ${inlineActions ? 'daily-decision-card--action-first' : ''}`}
       style={{
         padding: framed ? (compact ? '10px 12px' : '14px 16px') : 0,
         background: framed ? 'var(--surface)' : 'transparent',
@@ -431,14 +432,18 @@ export function DailyDecisionCard({
       <h2 style={{ fontSize: compact ? 15 : 18, color: 'var(--text)', margin: '0 0 7px', fontWeight: 750, lineHeight: 1.25 }}>
         {decision.title}
       </h2>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 4 }}>
+
+      {inlineActions && renderActions(compact ? 8 : 10)}
+
+      <div className="daily-decision-reason-label" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 4, marginTop: inlineActions ? (compact ? 10 : 12) : 0 }}>
         {label(compact ? 'Warum' : 'Warum jetzt', labelCase)}
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: compact ? '0' : '0 0 8px' }}>
+      <p className="daily-decision-reason" style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: compact ? '0' : '0 0 8px' }}>
         {decision.reason}
       </p>
       <div
         data-testid="daily-decision-leading-factor"
+        className="daily-decision-leading-factor"
         style={{
           display: 'grid',
           gap: 3,
@@ -456,9 +461,9 @@ export function DailyDecisionCard({
       </div>
 
       {!compact && (
-        <div data-testid="daily-decision-next-steps" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 13px', background: 'var(--surface-2)' }}>
+        <div data-testid="daily-decision-next-steps" className="daily-decision-next-steps-card" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 13px', background: 'var(--surface-2)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 9 }}>
-            <div>
+            <div className="daily-decision-next-step-summary">
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
                 {label(primarySummary.label, labelCase)}
               </div>
@@ -469,7 +474,7 @@ export function DailyDecisionCard({
                 {primarySummary.detail}
               </div>
             </div>
-            <div data-testid="daily-decision-continuity" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+            <div data-testid="daily-decision-continuity" className="daily-decision-secondary-summary" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
                 {label('Seit letzter Entscheidung', labelCase)}
               </div>
@@ -477,7 +482,7 @@ export function DailyDecisionCard({
                 {decision.contract.continuity}
               </div>
             </div>
-            <div data-testid="daily-decision-safest-option" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
+            <div data-testid="daily-decision-safest-option" className="daily-decision-secondary-summary" style={{ borderTop: '1px solid var(--border)', paddingTop: 9 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.1em', textTransform: labelCase === 'upper' ? 'uppercase' : 'none', marginBottom: 5 }}>
                 {label('Sicherste Option', labelCase)}
               </div>
@@ -496,8 +501,6 @@ export function DailyDecisionCard({
               </div>
             )}
           </div>
-
-          {inlineActions && renderActions(10)}
 
           <button
             type="button"

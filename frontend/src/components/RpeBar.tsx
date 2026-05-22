@@ -26,7 +26,7 @@ export function RpeBar({
                 minWidth: 0,
                 border: `1px solid ${active ? color : 'var(--border)'}`,
                 background: active ? color : 'var(--surface-2)',
-                color: active ? 'var(--bg)' : 'var(--text-2)',
+                color: active ? 'var(--accent-contrast)' : 'var(--text-2)',
                 borderRadius: 5,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 12,

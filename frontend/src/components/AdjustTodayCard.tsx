@@ -132,7 +132,7 @@ export function AdjustTodayCard() {
             disabled={accept.isPending}
             style={{
               flex: 1, padding: '8px 12px',
-              background: 'var(--amber)', color: '#0a0a0a',
+              background: 'var(--amber)', color: 'var(--accent-contrast)',
               border: 'none', borderRadius: 'var(--radius)',
               fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
               letterSpacing: '0.08em', textTransform: 'uppercase',

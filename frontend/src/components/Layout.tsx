@@ -19,11 +19,18 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', key: '1', end: true, icon: Home },
-  { to: '/data', label: 'Data', mobileLabel: 'Data', description: 'Evidenz & Trends', key: '2', end: false, icon: Database },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche & Anpassung', key: '3', end: false, icon: CalendarDays },
-  { to: '/insights', label: 'Insights', mobileLabel: 'Insights', description: 'Analyse & Muster', key: '4', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Settings', mobileLabel: 'Settings', description: 'Geräte & Betrieb', key: '5', end: false, icon: Settings },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheiden', key: '1', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Trainieren', key: '2', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Verstehen', key: '3', end: false, icon: Database },
+  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Lernen', key: '4', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Verbinden', key: '5', end: false, icon: Settings },
+];
+
+const FLOW_STEPS = [
+  { label: 'Heute', detail: 'Entscheidung' },
+  { label: 'Plan', detail: 'Woche' },
+  { label: 'Daten', detail: 'Evidenz' },
+  { label: 'Analyse', detail: 'Muster' },
 ];
 
 export default function Layout() {
@@ -41,8 +48,6 @@ export default function Layout() {
     || location.pathname.startsWith('/settings');
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1180 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
-  const currentNav = NAV_ITEMS.find(item => location.pathname === item.to || (!item.end && location.pathname.startsWith(item.to))) ?? NAV_ITEMS[0];
-
   useEffect(() => {
     function handleCommand(event: globalThis.KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -86,7 +91,7 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
             <div className="pulse-brand-title">Pulse</div>
-            <div className="pulse-brand-subtitle">Performance OS</div>
+            <div className="pulse-brand-subtitle">Private Performance OS</div>
           </div>
         </div>
         <div className="pulse-topbar-context">
@@ -105,7 +110,7 @@ export default function Layout() {
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
           <div className="pulse-sidebar-section-label">
-            Navigation
+            Hauptbereiche
           </div>
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
@@ -126,10 +131,17 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="pulse-sidebar-card" aria-label="Aktueller Fokus">
-          <div className="pulse-sidebar-card-label">Heute zählt</div>
-          <div className="pulse-sidebar-card-title">Eine klare Handlung</div>
-          <p>Plan, Körper, Alltag und Evidenz werden zuerst in eine Entscheidung übersetzt.</p>
+        <div className="pulse-sidebar-card pulse-sidebar-card--flow" aria-label="Pulse Ablauf">
+          <div className="pulse-sidebar-card-label">Command Flow</div>
+          <div className="pulse-flow-steps">
+            {FLOW_STEPS.map((step, index) => (
+              <div key={step.label} className="pulse-flow-step">
+                <span>{index + 1}</span>
+                <strong>{step.label}</strong>
+                <em>{step.detail}</em>
+              </div>
+            ))}
+          </div>
         </div>
 
         <button
@@ -165,9 +177,14 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <span className="pulse-brand-title">Pulse</span>
         </span>
-        <span className="pulse-mobile-route-title">
-          {currentNav.label}
-        </span>
+        <button
+          type="button"
+          className="pulse-icon-button pulse-mobile-command-button"
+          onClick={() => setCoachOpen(true)}
+          aria-label="Coach öffnen"
+        >
+          <Sparkles size={17} aria-hidden="true" />
+        </button>
       </div>
 
       {/* ── Main content ── */}
@@ -238,10 +255,10 @@ function KeyboardHelpDialog({ open, onClose }: { open: boolean; onClose: () => v
 
   const shortcuts = [
     ['1', 'Heute'],
-    ['2', 'Data'],
-    ['3', 'Plan'],
-    ['4', 'Insights'],
-    ['5', 'Settings'],
+    ['2', 'Plan'],
+    ['3', 'Daten'],
+    ['4', 'Analyse'],
+    ['5', 'Setup'],
     ['⌘K', 'Coach'],
     ['?', 'Tastaturhilfe'],
     ['Esc', 'Schließen'],

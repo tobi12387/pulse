@@ -54,7 +54,7 @@ export function TrainingCapabilityCard({
 }) {
   const shellClass = framed ? 'card' : undefined;
   const shellStyle = framed
-    ? { borderColor: 'rgba(94,230,207,0.16)' }
+    ? { borderColor: 'rgba(47,102,208,0.16)' }
     : { border: '1px solid var(--border)', borderRadius: 5, padding: '10px', background: 'var(--surface)' };
 
   if (loading && !summary) {

@@ -121,24 +121,26 @@ test('mobile top-level headers use compact route titles before the work surface'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile header density check');
 
   const routes = [
-    { path: '/data', title: 'Data' },
+    { path: '/data', title: 'Daten' },
     { path: '/plan', title: 'Plan' },
-    { path: '/settings', title: 'Settings' },
+    { path: '/settings', title: 'Setup' },
   ] as const;
 
   for (const route of routes) {
     await page.goto(route.path);
+    await expect(page.getByRole('button', { name: 'Coach öffnen' })).toBeVisible();
     const title = page.locator('main h1').first();
     await expect(title).toBeVisible();
     await expect.poll(async () => title.evaluate((element) => (element as HTMLElement).innerText.trim()))
       .toBe(route.title);
+    await expect(page.locator('.pulse-page-eyebrow')).toBeHidden();
   }
 });
 
 test('Data segmented tabs support arrow-key navigation', async ({ page }) => {
   await page.goto('/data');
 
-  const tablist = page.getByRole('tablist', { name: 'Data Bereiche' });
+  const tablist = page.getByRole('tablist', { name: 'Daten Bereiche' });
   await expect(tablist).toBeVisible();
 
   await page.getByRole('tab', { name: 'Heute relevant' }).focus();
@@ -191,7 +193,7 @@ test('desktop Focus operational routes share the wide shell', async ({ page }, t
   const homeWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
   await page.goto('/data');
-  await expect(page.getByText('Heute, Trends, Qualität & Analyse')).toBeVisible();
+  await expect(page.getByText('Daten, die heute etwas ändern')).toBeVisible();
   const dataWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
   expect(homeWidth).toBeGreaterThanOrEqual(960);

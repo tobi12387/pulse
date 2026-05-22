@@ -76,10 +76,10 @@ function SignalBlock({
         <div
           style={{
             marginTop: 8,
-            border: '1px solid rgba(94,230,207,0.22)',
+            border: '1px solid rgba(47,102,208,0.22)',
             borderRadius: 5,
             padding: '8px 9px',
-            background: 'rgba(94,230,207,0.05)',
+            background: 'rgba(47,102,208,0.05)',
             display: 'grid',
             gap: 7,
           }}
@@ -101,7 +101,7 @@ function SignalBlock({
               background: 'var(--accent)',
               border: 'none',
               borderRadius: 'var(--radius)',
-              color: 'var(--bg)',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -245,7 +245,7 @@ export function AnalysisTranslationCard({
       className="card"
       data-testid="analysis-translation-card"
       aria-label="Analyse Tageswirkung"
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.22)' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(47,102,208,0.22)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>

@@ -18,6 +18,26 @@
 
 ---
 
+## 2026-05-22 — Mobile Topbar wird Command-Zugang statt Routentitel-Dopplung
+
+- **Decision:** Die mobile Topbar zeigt nicht mehr den aktuellen Routennamen neben dem sichtbaren Seiten-H1, sondern eine kompakte Coach-Command-Schaltflaeche; redundante mobile Page-Eyebrows werden ausgeblendet.
+- **Why:** Die frische Redesign-Route-Evidence zeigte auf Mobile noch doppelte Routensignale (`Topbar` + `Eyebrow` + `H1`), bevor die eigentliche Tages-, Daten- oder Planaufgabe beginnt. Eine Coach-Schnellaktion nutzt den knappen Topbar-Platz produktiv, ohne Coach wieder als Haupttab einzufuehren.
+- **Alternatives:** Routentitel in der Topbar behalten (mehr Wiederholung vor der Aufgabe); die H1 im Content entfernen (schwaecher fuer Route-/Screenreader-Struktur); Coach wieder in die Hauptnavigation setzen (widerspricht der aktuellen Fokusnavigation).
+- **Decided by:** Codex, als Mobile-Polish im Redesign-Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
+---
+
+## 2026-05-22 — Redesign nutzt festen Home-Command-Stack und neutrale App-Palette
+
+- **Decision:** Die Home-Oberflaeche rendert nach der Tagesentscheidung einen festen Command-Stack statt eines lokalen Karten-Sortierers; die App-Palette wechselt von teal/gruen gepraegter Shell auf eine neutrale helle Basis mit blauem Accent und getrennten Statusfarben.
+- **Why:** Tobi hat ein klareres, weniger unuebersichtliches Top-App-UI mit frei neu definierbaren Karten verlangt. Ein fester Stack reduziert Sortier- und Konfigurationsrauschen auf der taeglichen Startflaeche, und die neutralere Palette macht Navigation, Evidenz und Status unterscheidbarer.
+- **Alternatives:** Den lokalen Home-Fokus-Umschalter behalten (zu viel UI-Mechanik auf der Hauptflaeche); nur Farben der vorhandenen Karten minimal anpassen (zu schwach fuer den gemeldeten Strukturbruch); weitere Routen splitten (mehr Breaking Change ohne zusaetzlichen Nutzen fuer die aktuelle Friktion).
+- **Decided by:** Tobi + Codex, als weiterer UI/UX-Redesign-Slice im Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Server-Mirror-State-Failures bekommen eigenen Recovery-Hinweis
 
 - **Decision:** `npm run verify:server` gibt bei erfolgreichem SSH, aber falschem Server-Branch, dirty Worktree oder Commit-Mismatch einen eigenen Mirror-Recovery-Hinweis und verweist auf `docs/ai/checklists/server-mirror-recovery.md`.
@@ -54,6 +74,26 @@
 - **Why:** Die reale iPhone/PWA-Evidence soll nach Frontend-, Backend-, PWA- oder Dependency-Aenderungen strikt frisch sein, aber Docs-only PRs duerfen keinen neuen Feldtest erzwingen, wenn sich die getestete App-Runtime nicht geaendert hat. So bleibt der Stale-Guard wirksam, ohne die manuelle iPhone-Schleife durch Hash-Churn zu verlaengern.
 - **Alternatives:** Jeden docs-only `main`-Commit als neue iPhone-Evidence-Pflicht behandeln (zu viel manuelle Reibung); den Commit-Check komplett lockern (zu riskant fuer echte Runtime-Aenderungen); nur Doku-Hinweise pflegen (löst den Audit-Fehlreiz nicht).
 - **Decided by:** Codex, als iPhone/PWA-Gate-Support-Slice im Branch `codex/iphone-runtime-commit-gate`.
+- **Status:** active.
+
+---
+
+## 2026-05-21 — Pulse UI darf route-weit brechen, wenn es der Klarheit dient
+
+- **Decision:** Die UI/UX-Neuausrichtung darf Hauptnavigation, Route-Koepfe, Card-System, mobile Dichte und gemeinsame Chrome-Komponenten route-weit veraendern, auch wenn alte Labels, Hotkeys oder Test-Erwartungen angepasst werden muessen. Das neue Ziel ist eine Top-App-artige Produktoberflaeche mit klarer Prioritaet: Heute entscheidet, Plan steuert, Daten belegen, Analyse lernt, Setup verbindet.
+- **Why:** Tobi hat explizit freigegeben, dass alle Routes angepasst werden duerfen und dass es breaking sein darf, wenn dadurch Struktur und Uebersicht besser werden. Der vorherige Redesign-Slice hat die Shell beruhigt, aber die innere Karten- und Route-Logik blieb noch zu cockpitartig und technisch.
+- **Alternatives:** Nur Farben/Spacing weiter polieren (zu oberflaechlich); jede vorhandene Karte unveraendert lassen (haelt die alte Gleichrangigkeit fest); Navigation/Hotkeys aus Ruecksicht auf bestehende Labels einfrieren (widerspricht der explizit freigegebenen Produktfreiheit).
+- **Decided by:** Tobi + Codex, als route-weites UI/UX-Redesign im Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
+---
+
+## 2026-05-21 — Redesign wird als helle Action-First-App fortgefuehrt
+
+- **Decision:** Die Redesign-PR wechselt von der dunklen Cockpit-Aesthetik auf eine helle, ruhigere Performance-App-Oberflaeche und priorisiert primaere Aktionen vor Detailbegruendungen; mobile Tabs bleiben einzeilig kompakt, der Coach bekommt wieder eine eigene mobile Routetitel-Identitaet, und PWA-Theme-/Offline-Farben folgen der neuen Shell.
+- **Why:** Tobi hat ausdruecklich freigegeben, Karten und Routes breaking neu zu definieren. Die vorherige Redesign-Stufe klaerte IA und Dichte, fuehlte aber visuell noch stark nach technischem Cockpit an; die neue Stufe bringt die erste Handlung frueher in den Blick und naeher an fuehrende Daily-Coaching-Apps.
+- **Alternatives:** Beim dunklen Theme bleiben (zu nah am alten Eindruck); nur mobile Abstaende reduzieren (loest die Cockpit-Anmutung nicht); separate Light/Dark-Themes bauen (mehr Komplexitaet ohne aktuelles Nutzerbeduerfnis).
+- **Decided by:** Tobi + Codex, als Fortsetzung von PR #669 im Branch `codex/full-ui-ux-redesign`.
 - **Status:** active.
 
 ---
