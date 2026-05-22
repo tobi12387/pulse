@@ -1784,12 +1784,12 @@
     }
 
     .pulse-segmented-control {
-      gap: 4px;
-      padding: 0;
+      gap: 3px;
+      padding: 3px;
       width: 100%;
-      background: transparent;
-      border: 0;
-      border-radius: 0;
+      background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+      border-radius: 999px;
     }
 
     .pulse-segmented-control--wrap {
@@ -1801,10 +1801,10 @@
       flex: 1 1 0;
       min-width: 0;
       min-height: 44px;
-      padding: 8px 5px;
-      border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-      border-radius: var(--radius-lg);
-      background: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
+      padding: 8px 4px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
       font-size: 10px;
       line-height: 1.08;
       overflow: hidden;
@@ -1812,10 +1812,9 @@
     }
 
     .pulse-segmented-tab--active {
-      border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
       background: var(--surface);
       color: var(--text);
-      box-shadow: 0 7px 16px rgba(47,102,208,0.09);
+      box-shadow: 0 6px 14px rgba(47,102,208,0.08);
     }
 
     .pulse-coach-route-header {
