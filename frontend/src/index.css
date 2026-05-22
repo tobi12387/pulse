@@ -7,13 +7,13 @@
 
 :root {
   /* Surface */
-  --bg:        #F5F6F8;
+  --bg:        #F7F8FA;
   --surface:   #FFFFFF;
-  --surface-2: #EEF1F5;
-  --surface-raised: #E7EBF1;
-  --surface-elevated: #DDE4EC;
-  --border:    #D3DAE3;
-  --border-hi: #AAB6C4;
+  --surface-2: #F1F4F7;
+  --surface-raised: #EEF2F6;
+  --surface-elevated: #FFFFFF;
+  --border:    #DCE2EA;
+  --border-hi: #B9C4D1;
 
   /* Text */
   --text:      #17202A;
@@ -33,8 +33,8 @@
 
   /* Shape */
   --radius: 8px;
-  --shadow-soft: 0 8px 22px rgba(33,43,54,0.08);
-  --shadow-card: 0 14px 34px rgba(33,43,54,0.09);
+  --shadow-soft: 0 8px 18px rgba(33,43,54,0.055);
+  --shadow-card: 0 12px 28px rgba(33,43,54,0.065);
 
   /* Mobile shell */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -222,14 +222,14 @@
   /* Card shell */
   .card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
     border-radius: var(--radius-lg);
-    padding: 18px;
+    padding: 16px;
     box-shadow: var(--shadow-card);
   }
 
   .card .card {
-    background: rgba(255,255,255,0.58);
+    background: color-mix(in srgb, var(--surface) 74%, var(--surface-2));
     box-shadow: none;
   }
 
@@ -705,8 +705,8 @@
     flex-wrap: nowrap;
     gap: 4px;
     padding: 4px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface-raised) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
     border-radius: var(--radius-lg);
     align-self: flex-start;
     max-width: 100%;
@@ -750,7 +750,7 @@
   .pulse-range-option--active {
     background: var(--surface-elevated);
     color: var(--text);
-    box-shadow: var(--shadow-soft);
+    box-shadow: 0 6px 14px rgba(33,43,54,0.055);
   }
 
   .pulse-range-control {
@@ -931,7 +931,7 @@
 
   .focus-stage-step--active {
     color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
   }
 
   .focus-stage-index {
@@ -1675,9 +1675,12 @@
     }
 
     .pulse-segmented-control {
-      gap: 3px;
-      padding: 3px;
+      gap: 4px;
+      padding: 0;
       width: 100%;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
     }
 
     .pulse-segmented-control--wrap {
@@ -1689,10 +1692,21 @@
       flex: 1 1 0;
       min-width: 0;
       min-height: 34px;
-      padding: 6px 6px;
-      font-size: 10.5px;
+      padding: 6px 5px;
+      border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+      border-radius: var(--radius-lg);
+      background: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
+      font-size: 10px;
+      line-height: 1.08;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .pulse-segmented-tab--active {
+      border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 7px 16px rgba(47,102,208,0.09);
     }
 
     .pulse-home-header {
@@ -1832,20 +1846,21 @@
       justify-self: start;
       max-width: 100%;
       padding: 8px 10px;
-      background: transparent;
-      border: 1px dashed var(--border);
+      background: color-mix(in srgb, var(--surface-2) 64%, transparent);
+      border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
       border-radius: 5px;
       color: var(--text-2);
       cursor: pointer;
-      font-family: var(--font-mono);
-      font-size: 10px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 650;
       letter-spacing: 0;
-      text-transform: uppercase;
+      text-transform: none;
     }
 
     .data-primary-action-mobile-details-toggle[aria-expanded="true"] {
-      background: rgba(47,102,208,0.12);
-      border-color: rgba(47,102,208,0.45);
+      background: rgba(47,102,208,0.08);
+      border-color: rgba(47,102,208,0.34);
       color: var(--accent);
     }
 
@@ -2085,6 +2100,7 @@
     }
 
     .plan-weekly-decision__option-title {
+      display: none !important;
       border: 0 !important;
       clip: rect(0 0 0 0);
       height: 1px;
@@ -2092,12 +2108,15 @@
       overflow: hidden;
       padding: 0 !important;
       position: absolute;
-      white-space: nowrap;
+      overflow-wrap: anywhere !important;
+      word-break: break-all;
+      white-space: normal;
       width: 1px;
     }
 
     .plan-weekly-decision__option-impact,
     .plan-weekly-decision__option-result {
+      display: none !important;
       border: 0 !important;
       clip: rect(0 0 0 0);
       height: 1px;
@@ -2105,6 +2124,8 @@
       overflow: hidden;
       padding: 0 !important;
       position: absolute;
+      overflow-wrap: anywhere !important;
+      word-break: break-all;
       white-space: nowrap;
       width: 1px;
     }
@@ -2145,13 +2166,30 @@
     }
 
     .focus-stage-strip {
-      grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 0.92fr));
+      grid-template-columns: minmax(0, 1.12fr) repeat(2, minmax(0, 0.94fr));
+      gap: 4px;
+      margin: 10px 10px 0;
+      padding: 4px;
+      border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+      border-radius: var(--radius-lg);
+      background: color-mix(in srgb, var(--surface-2) 78%, transparent);
     }
 
     .focus-stage-step {
-      min-height: 34px;
-      padding: 7px 7px;
+      min-height: 32px;
+      padding: 5px 6px;
+      border-right: 0;
+      border-radius: var(--radius-md);
       column-gap: 5px;
+    }
+
+    .focus-stage-step--active {
+      background: var(--surface);
+      box-shadow: 0 5px 12px rgba(47,102,208,0.08);
+    }
+
+    .focus-stage-step:last-child {
+      border-right: 0;
     }
 
     .focus-stage-index {
@@ -2161,11 +2199,11 @@
     }
 
     .focus-stage-label {
-      font-size: 10.5px;
+      font-size: 10px;
     }
 
     .focus-stage-status {
-      font-size: 9px;
+      font-size: 8.5px;
     }
 
     .focus-hero-eyebrow {
@@ -2226,6 +2264,18 @@
 
     .daily-decision-card--action-first .daily-decision-next-steps-card > button {
       margin-top: 0 !important;
+      width: auto !important;
+      min-height: 40px !important;
+      padding: 7px 10px !important;
+      background: color-mix(in srgb, var(--surface-2) 48%, transparent) !important;
+      border-color: color-mix(in srgb, var(--border) 82%, transparent) !important;
+      color: var(--text-2) !important;
+    }
+
+    .daily-decision-card--action-first .daily-decision-next-steps-card > button[aria-expanded="true"] {
+      background: rgba(47,102,208,0.08) !important;
+      border-color: rgba(47,102,208,0.34) !important;
+      color: var(--accent) !important;
     }
 
     .focus-diary-entry {

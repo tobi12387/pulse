@@ -18,7 +18,7 @@ export function FCard({ eyebrow, right, pad = '14px 16px', children, testId, cla
       style={{
         padding: pad,
         background: 'var(--surface)',
-        border: '1px solid var(--border)',
+        border: '1px solid color-mix(in srgb, var(--border) 86%, transparent)',
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-card)',
         ...style,

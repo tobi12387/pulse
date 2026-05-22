@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-05-22 — Mobile Control-Flächen werden leichter als Inhaltskarten
+
+- **Decision:** Pulse behandelt mobile Tabs, Stage-Strips und sekundäre Offenlegen-Buttons als leichte Control-Flächen statt als gleich schwere Inhaltskarten; die Home-Stage wird kompakter, mobile Segmente stehen einzeln statt in einem großen Tab-Rahmen, Data-Sekundäraktionen nutzen Sans-Text und Plan versteckt mobile Optionsdetails visuell, erhält sie aber über `aria-label` im Button-Kontext.
+- **Why:** Die frische Route-Evidence zeigte zwar keinen horizontalen Overflow, aber auf Mobile konkurrierten zu viele gerahmte Flächen mit der eigentlichen Tages- oder Datenaktion. Für eine Top-App-artige Performance-Oberfläche soll die erste Handlung weiterhin dominant bleiben, während Navigation, Details und Lernkontext ruhiger wirken.
+- **Alternatives:** Nur einzelne Route-Karten polieren (zu punktuell für die gemeldete UI/UX-Unübersichtlichkeit); die schweren Segment-/Stage-Rahmen behalten (stabil, aber optisch zu boxed); Plan-Optionsdetails komplett entfernen (weniger zugänglich und schwächer für Tests/Assistive Tech).
+- **Decided by:** Codex, als weiterer UI/UX-Friction-Slice im Branch `codex/performance-ux-friction`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Mobile Deep Links landen auf vollstaendigen Task-Bloecken
 
 - **Decision:** Mobile Deep Links zu handlungsorientierten Evidence-Sections muessen den vollstaendigen Task-Kontext unterhalb der fixen App-Chrome sichtbar machen; die mobile Top- und Bottom-Chrome verwendet dafuer eine solide Surface-Flaeche statt transluzentem Glass.

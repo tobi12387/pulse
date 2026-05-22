@@ -538,11 +538,11 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
             borderRadius: 5,
             color: 'var(--accent-contrast)',
             cursor: 'pointer',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            fontWeight: 700,
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            fontWeight: 750,
             letterSpacing: 0,
-            textTransform: 'uppercase',
+            textTransform: 'none',
             whiteSpace: 'nowrap',
             justifySelf: 'end',
           }}
@@ -585,10 +585,11 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           borderRadius: 5,
           color: secondaryOpen ? 'var(--accent)' : 'var(--text-2)',
           cursor: 'pointer',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
+          fontFamily: 'var(--font-sans)',
+          fontSize: 12,
+          fontWeight: 650,
           letterSpacing: 0,
-          textTransform: 'uppercase',
+          textTransform: 'none',
         }}
       >
         {secondaryOpen ? 'Weitere Datenbereiche ausblenden' : 'Weitere Datenbereiche anzeigen'}
@@ -616,10 +617,11 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
                     borderRadius: 5,
                     color: 'var(--accent)',
                     cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 12,
+                    fontWeight: 650,
                     letterSpacing: 0,
-                    textTransform: 'uppercase',
+                    textTransform: 'none',
                   }}
                 >
                   {card.cta}
@@ -645,11 +647,12 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
                     borderRadius: 5,
                     color: 'var(--text-2)',
                     cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 12,
+                    fontWeight: 650,
                     letterSpacing: 0,
                     textAlign: 'left',
-                    textTransform: 'uppercase',
+                    textTransform: 'none',
                   }}
                   title={item.detail}
                 >
