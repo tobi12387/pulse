@@ -669,7 +669,7 @@ function DataHeuteTab({ onOpen, focus }: { onOpen: (tab: Tab, hash?: string) => 
 
   if (focus === 'mental') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <section id="data-mental" className="evidence-section" tabIndex={-1} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <div className="label-mono" style={{ marginBottom: 3 }}>DATA · HEUTE RELEVANT</div>
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
@@ -679,7 +679,7 @@ function DataHeuteTab({ onOpen, focus }: { onOpen: (tab: Tab, hash?: string) => 
             Subjektive Lage zuerst erfassen; Readiness, Garmin und Plan-Evidenz bleiben als Kontext erreichbar.
           </p>
         </div>
-        <EvidenceSection id="data-mental"><MentalTab /></EvidenceSection>
+        <MentalTab />
         <button
           type="button"
           data-testid="data-mental-context-toggle"
@@ -710,7 +710,7 @@ function DataHeuteTab({ onOpen, focus }: { onOpen: (tab: Tab, hash?: string) => 
             <EvidenceTriage onOpen={onOpen} />
           </div>
         )}
-      </div>
+      </section>
     );
   }
 

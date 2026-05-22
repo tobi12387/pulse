@@ -285,7 +285,7 @@
   .pulse-mobile-topbar {
     height: calc(var(--mobile-topbar-height) + var(--safe-top));
     padding-top: var(--safe-top);
-    background: rgba(255,255,255,0.86);
+    background: var(--surface);
     border-color: var(--border);
     box-shadow: 0 8px 24px rgba(33,43,54,0.08);
     backdrop-filter: blur(20px) saturate(1.25);
@@ -294,7 +294,7 @@
   .pulse-mobile-bottom-nav {
     height: calc(var(--mobile-bottomnav-height) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);
-    background: rgba(255,255,255,0.9);
+    background: var(--surface);
     border-color: var(--border);
     box-shadow: 0 -10px 28px rgba(33,43,54,0.08);
     backdrop-filter: blur(20px) saturate(1.25);
@@ -1636,6 +1636,10 @@
     .pulse-page-shell {
       padding-left: 12px !important;
       padding-right: 12px !important;
+    }
+
+    .evidence-section {
+      scroll-margin-top: 14px;
     }
 
     .pulse-page-header {
