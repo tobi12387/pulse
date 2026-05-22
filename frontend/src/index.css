@@ -302,7 +302,7 @@
 
   .pulse-page-shell {
     padding-top: calc(var(--mobile-topbar-height) + var(--safe-top) + 10px);
-    padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 24px);
+    padding-bottom: calc(var(--mobile-bottomnav-height) + var(--safe-bottom) + 56px);
   }
 
   .pulse-page-title-mobile {

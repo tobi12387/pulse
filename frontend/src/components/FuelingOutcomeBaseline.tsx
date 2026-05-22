@@ -56,10 +56,12 @@ export function fuelingBaselineNextLearningLogText(baseline: PulseFuelingOutcome
 
 export function FuelingOutcomeBaselineBlock({
   baseline,
+  hidePrimaryNextAction = false,
   onOpenNextAction,
   testId = 'fueling-outcome-baseline',
 }: {
   baseline?: PulseFuelingOutcomeBaseline | null;
+  hidePrimaryNextAction?: boolean;
   onOpenNextAction?: (targetPath: string) => void;
   testId?: string;
 }) {
@@ -165,7 +167,7 @@ export function FuelingOutcomeBaselineBlock({
           {nextLearningLog}
         </p>
       )}
-      {nextLearningAction && nextLearningActionTargetPath && onOpenNextAction && (
+      {!hidePrimaryNextAction && nextLearningAction && nextLearningActionTargetPath && onOpenNextAction && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 8 }}>
           <button
             type="button"

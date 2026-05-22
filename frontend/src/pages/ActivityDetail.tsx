@@ -1073,6 +1073,7 @@ function FuelingSection({
 
         <FuelingOutcomeBaselineBlock
           baseline={fuelingOutcomeBaseline}
+          hidePrimaryNextAction={Boolean(giComfortCompletionLogId)}
           onOpenNextAction={targetPath => navigate(targetPath)}
           testId="activity-fueling-baseline"
         />

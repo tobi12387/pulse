@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Activity-Fueling-Deep-Link zeigt nur die primaere GI-Auswahl
+
+- **Decision:** Wenn Activity Detail ueber `#activity-fueling-log` bereits die fokussierte GI-Komfort-Auswahl fuer den aktuellen Log zeigt, rendert die Fueling-Baseline darunter keinen zweiten primaeren `GI-Komfort ergaenzen`-Button mehr.
+- **Why:** Die frische mobile Route-Evidence nach dem Redesign zeigte keinen Overflow, aber eine doppelte Fueling-Aktion am Rand der fixen Bottom-Navigation. Fuer eine ruhige Performance-OS-Oberflaeche soll ein Deep Link genau eine klare Aktion zeigen; die Baseline bleibt als Evidence sichtbar, ohne denselben Klick zu wiederholen.
+- **Alternatives:** Nur den unteren Safe-Area-Abstand vergroessern (schuetzt Touchflaeche, laesst aber die doppelte Entscheidung bestehen); den Baseline-Block komplett aus Activity Detail entfernen (verliert Lernkontext); die Bottom-Nav in diesem Flow ausblenden (zu viel Navigations-Sonderfall).
+- **Decided by:** Codex, als Post-Redesign-Mobile-Friction-Fix im Branch `codex/post-redesign-current-route-evidence`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Performance-Gate akzeptiert docs-only Server-Drift bei gleicher App-Runtime
 
 - **Decision:** `npm run audit:performance-gates` behandelt einen strengen `verify:server`-Commit-Mismatch als server-ready, wenn der Server sauber auf `main` steht und Server-Commit sowie erwarteter Commit denselben letzten App-Runtime-Commit ueber `frontend`, `backend`, `shared`, `package.json` und `package-lock.json` aufloesen.
