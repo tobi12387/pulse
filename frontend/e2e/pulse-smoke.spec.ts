@@ -25,7 +25,7 @@ const routeReadyTimeoutMs = 15_000;
 
 async function expectHealthyPage(page: Page, visibleText: string) {
   await expect(page.getByText('RUNTIME ERROR')).toHaveCount(0);
-  await expect(page.locator('main').getByText(visibleText).first()).toBeVisible({ timeout: routeReadyTimeoutMs });
+  await expect(page.locator('main').getByText(visibleText).filter({ visible: true }).first()).toBeVisible({ timeout: routeReadyTimeoutMs });
 }
 
 async function expectPrimaryNavigationWithoutCoach(page: Page) {

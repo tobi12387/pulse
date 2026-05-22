@@ -279,6 +279,7 @@ npx playwright test frontend/e2e/pulse-usability.spec.ts --grep "Mobile navigati
 npx playwright test frontend/e2e/pulse-smoke.spec.ts --grep "primary navigation exposes Focus routes without Coach tab|PWA manifest and service worker endpoints are available" --project=desktop-chromium --project=mobile-chromium
 PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence-redesign-mobile-command-2026-05-22 npm run qa:ux-evidence
 npm run qa:ux-summary -- test-results/route-evidence-redesign-mobile-command-2026-05-22
+npm run test:e2e:smoke
 npm run verify:lernschleifen
 npm run verify:trainingsanpassung
 npm run verify:tagesentscheidung
@@ -291,4 +292,5 @@ Result:
 - Mobile navigation readability smoke: 1 passed.
 - Primary navigation/PWA smoke: 4 passed.
 - Route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+- Full smoke passed after updating shared visible-text route anchors: 105 passed, 13 skipped.
 - Full track gates passed: `verify:lernschleifen`, `verify:trainingsanpassung`, `verify:tagesentscheidung`.
