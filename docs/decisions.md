@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Settings zeigt iPhone/PWA-Feldnachweis mit App-Stand
+
+- **Decision:** Die iPhone-&-PWA-Karte in Settings zeigt den aktuellen Frontend-Build-Commit als `App-Stand` plus Gerät, iOS-Feld, Startmodus und die weiterhin manuellen Prüfpunkte Zertifikat, Push-Test und Offline.
+- **Why:** Das iPhone/PWA-Gate verlangt aktuelle Real-Device-Evidenz mit `Server commit under test` und Geräte-Metadaten. Diese Angaben sollen im Feldlauf direkt in der App sichtbar sein, ohne Shell- oder Chat-Kontext; Zertifikatsvertrauen, Push-Zustellung und Offline-Verhalten bleiben echte manuelle Prüfungen.
+- **Alternatives:** Commit nur über `npm run audit:iphone-pwa-gate -- --scaffold` erfassen (korrekt, aber nicht auf dem iPhone sichtbar); iOS-Version automatisch als bestanden werten (zu stark, weil Browserdaten unvollständig sein können); das Gate als simulierten WebKit-Test schließen (nicht ausreichend für Real-Device-Feldnachweis).
+- **Decided by:** Codex, als iPhone/PWA-Capture-Support im Branch `codex/iphone-field-settings`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Fueling-GI-Save springt zur primaeren Data-Aktion
 
 - **Decision:** Die Folgeaktion nach einem erfolgreichen GI-Komfort-Save heisst `Nächste Datenlücke prüfen` und springt zu `/data?tab=today#data-primary-action`, also zur aktuell wichtigsten Data-Aktion statt nur zur Data-Route.
