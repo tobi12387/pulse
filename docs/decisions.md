@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — UI/UX-Third-Pass macht Pulse zur ruhigeren Workspace-App
+
+- **Decision:** Pulse bleibt bei den stabilen Haupt-URLs, aber der dritte UI/UX-Pass definiert die App-Chrome und Karten-Grundsprache neu: Desktop nutzt eine kompakte Workspace-Rail, Mobile benennt den aktuellen Workspace in der Topbar, Data/Plan-Header werden zu Toolbar-Flächen, Home verliert den schweren Mobile-Stepper und die dominante Akzentfarbe wechselt von Blau zu einem ruhigeren Performance-Gruen.
+- **Why:** Tobi hat erneut volle Freiheit fuer ein komplettes Redesign gegeben, inklusive Breaking UI-, Route- und Card-Aenderungen. Der naechste groesste Hebel war nicht eine neue Datenfunktion, sondern weniger visuelle Konkurrenz und klarere Orientierung ueber alle Haupt-Routen.
+- **Alternatives:** Alle URLs sofort umbenennen (mehr Deep-Link- und Test-Risiko ohne zusaetzliche Nutzerevidenz); nur einzelne Cards polieren (zu wenig strukturell); die blaue Grundsprache behalten (zu starkes Signalrauschen zwischen CTA, Navigation und Evidence).
+- **Decided by:** Tobi und Codex, als routeweiter UI/UX-Workspace-Redesign-Pass im Branch `codex/ui-ux-redesign-20260522`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — UI/UX-Second-Pass strukturiert Pulse als Arbeitsflächen-System
 
 - **Decision:** Pulse behält die stabilen Haupt-URLs (`/`, `/plan`, `/data`, `/insights`, `/settings`) vorerst bei, ordnet die Oberfläche aber stärker als Arbeitsflächen-System: Command-Center-Navigation, Topbar mit aktiver Route/Absicht, einheitliche PageHeader, flachere Action-Panels und Home als Tagesarbeitsfläche mit optionaler Seiten-Queue statt reiner Kartenliste.

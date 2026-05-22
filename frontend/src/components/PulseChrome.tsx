@@ -29,7 +29,7 @@ export function PageHeader({ eyebrow, title, mobileTitle, description, action }:
   const visibleTitle = mobileTitle && isMobile ? mobileTitle : title;
 
   return (
-    <header className="pulse-page-header">
+    <header className={`pulse-page-header ${action ? 'pulse-page-header--with-action' : ''}`}>
       <div className="pulse-page-header-copy">
         {(eyebrow || description) && (
           <div className="pulse-page-kicker">

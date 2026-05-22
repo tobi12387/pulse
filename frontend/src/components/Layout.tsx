@@ -19,18 +19,11 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', intent: 'eine Antwort', key: '1', end: true, icon: Home },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche steuern', intent: 'bewusst ändern', key: '2', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz schließen', intent: 'Lücken klären', key: '3', end: false, icon: Database },
-  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Muster prüfen', intent: 'Lernen ordnen', key: '4', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Bereitschaft sichern', intent: 'System stabil', key: '5', end: false, icon: Settings },
-];
-
-const WORKFLOW_STEPS = [
-  { label: 'Entscheiden', detail: 'Heute' },
-  { label: 'Ausführen', detail: 'Plan' },
-  { label: 'Belegen', detail: 'Daten' },
-  { label: 'Lernen', detail: 'Analyse' },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheiden', intent: 'eine Antwort', key: '01', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuern', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Erfassen', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
+  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Lernen', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Bereitmachen', intent: 'System stabil', key: '05', end: false, icon: Settings },
 ];
 
 export default function Layout() {
@@ -94,7 +87,7 @@ export default function Layout() {
           </div>
         </div>
         <div className="pulse-topbar-command" aria-label="Aktueller Arbeitsmodus">
-          <span>{activeNavItem.label}</span>
+          <span>{activeNavItem.key}</span>
           <strong>{activeNavItem.description}</strong>
           <em>{activeNavItem.intent}</em>
         </div>
@@ -113,7 +106,7 @@ export default function Layout() {
       >
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
-          <div className="pulse-sidebar-section-label">Command Center</div>
+          <div className="pulse-sidebar-section-label">Workspaces</div>
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
               key={to}
@@ -133,17 +126,10 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="pulse-sidebar-card pulse-sidebar-card--flow" aria-label="Pulse Ablauf">
-          <div className="pulse-sidebar-card-label">Tageslogik</div>
-          <div className="pulse-flow-steps">
-            {WORKFLOW_STEPS.map((step, index) => (
-              <div key={step.label} className="pulse-flow-step">
-                <span>{index + 1}</span>
-                <strong>{step.label}</strong>
-                <em>{step.detail}</em>
-              </div>
-            ))}
-          </div>
+        <div className="pulse-sidebar-card pulse-sidebar-card--handoff" aria-label="Aktueller Workspace">
+          <div className="pulse-sidebar-card-label">Jetzt</div>
+          <div className="pulse-sidebar-card-title">{activeNavItem.description}</div>
+          <p>{activeNavItem.label} zeigt nur den nächsten sinnvollen Schritt; Details liegen eine Ebene tiefer.</p>
         </div>
 
         <button
@@ -152,7 +138,7 @@ export default function Layout() {
           className="pulse-coach-command"
         >
           <Command size={15} aria-hidden="true" />
-          Coach öffnen
+          Coach
         </button>
 
         <div
@@ -178,8 +164,8 @@ export default function Layout() {
         <span className="pulse-brand-lockup pulse-brand-lockup--mobile">
           <span className="pulse-brand-mark" aria-hidden="true" />
           <span className="pulse-mobile-route-copy">
-            <span className="pulse-mobile-route-title">Pulse</span>
-            <span className="pulse-mobile-route-subtitle">{activeNavItem.mobileLabel ?? activeNavItem.label} · {activeNavItem.intent}</span>
+            <span className="pulse-mobile-route-title">{activeNavItem.mobileLabel ?? activeNavItem.label}</span>
+            <span className="pulse-mobile-route-subtitle">Pulse · {activeNavItem.intent}</span>
           </span>
         </span>
         <button
