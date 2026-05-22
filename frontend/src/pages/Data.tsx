@@ -10,6 +10,7 @@ import {
   fuelingLearningActionTargetPath,
   fuelingLearningCapturePlan,
   fuelingLearningGapSummary,
+  fuelingLearningNewLogChecklist,
   fuelingTrendEvidenceLabel,
   isFuelingTrendReady,
 } from '@/pulse/fueling-learning';
@@ -28,6 +29,7 @@ type DataPrimaryAction = {
   optionHint?: string | null;
   capturePlan?: string | null;
   candidateLogs?: DataPrimaryActionCandidateLog[];
+  newLogChecklist?: string[] | null;
 };
 
 type DataPrimaryActionCandidateLog = {
@@ -353,6 +355,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   const fuelingTargetLog = fuelingPrimaryCompletionCandidateText(fuelingBaseline);
   const fuelingCapturePlan = fuelingLearningCapturePlan(fuelingBaseline);
   const fuelingCandidateLogs = fuelingCompletionCandidateRows(fuelingBaseline, navigate);
+  const fuelingNewLogChecklist = fuelingLearningNewLogChecklist(fuelingBaseline);
   const fuelingAction: DataPrimaryAction | null = fuelingTargetPath && fuelingGapSummary
     ? {
       title: 'Fueling-Evidenz schließen',
@@ -363,6 +366,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       optionHint: 'GI-Komfort: Magen ok · Magen leicht unruhig · Magenprobleme',
       capturePlan: fuelingCapturePlan,
       candidateLogs: fuelingCandidateLogs,
+      newLogChecklist: fuelingNewLogChecklist,
       run: () => navigate(fuelingTargetPath),
     }
     : null;
@@ -586,6 +590,22 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          {primaryAction.newLogChecklist && primaryAction.newLogChecklist.length > 0 && (
+            <div
+              data-testid="data-primary-action-new-log"
+              className="data-primary-action-new-log"
+            >
+              <div className="data-primary-action-new-log__head">
+                <span className="label-mono">Danach neu erfassen</span>
+                <span>Trend bleibt gegated</span>
+              </div>
+              <ul className="data-primary-action-new-log__list">
+                {primaryAction.newLogChecklist.map(item => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
             </div>
           )}
           <div

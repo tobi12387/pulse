@@ -19,18 +19,18 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Antwort', key: '1', end: true, icon: Home },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche steuern', key: '2', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', key: '3', end: false, icon: Database },
-  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Muster', key: '4', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Bereitschaft', key: '5', end: false, icon: Settings },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', intent: 'eine Antwort', key: '1', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche steuern', intent: 'bewusst ändern', key: '2', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz schließen', intent: 'Lücken klären', key: '3', end: false, icon: Database },
+  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Muster prüfen', intent: 'Lernen ordnen', key: '4', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Bereitschaft sichern', intent: 'System stabil', key: '5', end: false, icon: Settings },
 ];
 
-const FLOW_STEPS = [
-  { label: 'Antwort', detail: 'heute' },
-  { label: 'Training', detail: 'bewusst' },
-  { label: 'Evidenz', detail: 'schliessen' },
-  { label: 'Lernen', detail: 'kalibrieren' },
+const WORKFLOW_STEPS = [
+  { label: 'Entscheiden', detail: 'Heute' },
+  { label: 'Ausführen', detail: 'Plan' },
+  { label: 'Belegen', detail: 'Daten' },
+  { label: 'Lernen', detail: 'Analyse' },
 ];
 
 export default function Layout() {
@@ -47,7 +47,7 @@ export default function Layout() {
     || location.pathname.startsWith('/insights')
     || location.pathname.startsWith('/settings');
   const activeNavItem = NAV_ITEMS.find(item => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)) ?? NAV_ITEMS[0];
-  const pageShellStyle = isOperationalRoute ? { maxWidth: 1180 } : undefined;
+  const pageShellStyle = isOperationalRoute ? { maxWidth: 1220 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
   useEffect(() => {
     function handleCommand(event: globalThis.KeyboardEvent) {
@@ -85,9 +85,7 @@ export default function Layout() {
   return (
     <div className="pulse-app-shell flex flex-col overflow-hidden" style={focusCssVars as CSSProperties}>
 
-      <header
-        className="pulse-shell-topbar hidden md:flex items-center justify-between border-b"
-      >
+      <header className="pulse-shell-topbar hidden md:grid border-b">
         <div className="pulse-brand-lockup">
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
@@ -96,9 +94,9 @@ export default function Layout() {
           </div>
         </div>
         <div className="pulse-topbar-command" aria-label="Aktueller Arbeitsmodus">
-          <span>Fokus</span>
-          <strong>{activeNavItem.label}</strong>
-          <em>{activeNavItem.description}</em>
+          <span>{activeNavItem.label}</span>
+          <strong>{activeNavItem.description}</strong>
+          <em>{activeNavItem.intent}</em>
         </div>
         <div className="pulse-topbar-context">
           <span className="pulse-status-chip"><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
@@ -115,9 +113,7 @@ export default function Layout() {
       >
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
-          <div className="pulse-sidebar-section-label">
-            Arbeitsflächen
-          </div>
+          <div className="pulse-sidebar-section-label">Command Center</div>
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
               key={to}
@@ -138,9 +134,9 @@ export default function Layout() {
         </nav>
 
         <div className="pulse-sidebar-card pulse-sidebar-card--flow" aria-label="Pulse Ablauf">
-          <div className="pulse-sidebar-card-label">Performance Loop</div>
+          <div className="pulse-sidebar-card-label">Tageslogik</div>
           <div className="pulse-flow-steps">
-            {FLOW_STEPS.map((step, index) => (
+            {WORKFLOW_STEPS.map((step, index) => (
               <div key={step.label} className="pulse-flow-step">
                 <span>{index + 1}</span>
                 <strong>{step.label}</strong>
@@ -183,7 +179,7 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <span className="pulse-mobile-route-copy">
             <span className="pulse-mobile-route-title">Pulse</span>
-            <span className="pulse-mobile-route-subtitle">{activeNavItem.mobileLabel ?? activeNavItem.label} · {activeNavItem.description}</span>
+            <span className="pulse-mobile-route-subtitle">{activeNavItem.mobileLabel ?? activeNavItem.label} · {activeNavItem.intent}</span>
           </span>
         </span>
         <button

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — UI/UX-Second-Pass strukturiert Pulse als Arbeitsflächen-System
+
+- **Decision:** Pulse behält die stabilen Haupt-URLs (`/`, `/plan`, `/data`, `/insights`, `/settings`) vorerst bei, ordnet die Oberfläche aber stärker als Arbeitsflächen-System: Command-Center-Navigation, Topbar mit aktiver Route/Absicht, einheitliche PageHeader, flachere Action-Panels und Home als Tagesarbeitsfläche mit optionaler Seiten-Queue statt reiner Kartenliste.
+- **Why:** Tobi hat nach dem ersten Redesign erneut bestätigt, dass die UI/UX noch zu unübersichtlich und wenig strukturiert ist, und explizit volle Freiheit für Breaking UI-/Card-/Route-Änderungen gegeben. Der zweite Pass priorisiert deshalb Orientierung und tägliche Entscheidungsdichte, ohne Deep Links unnötig zu brechen.
+- **Alternatives:** Alle Routen sofort umbenennen oder entfernen (mehr Risiko als Nutzen ohne neue Nutzungsdaten); nur Farben/Spacing ändern (zu wenig strukturell); Coach wieder als Haupttab aufnehmen (widerspricht der Fokusnavigation).
+- **Decided by:** Tobi und Codex, als routeweites UI/UX-Second-Pass-Paket im Branch `codex/top-app-ui-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — UI/UX-Grundsprache wird zur ruhigen Performance-App
 
 - **Decision:** Pulse nutzt fuer die Hauptoberflaeche eine neue routeweite UI-Grundsprache: Arbeitsflaechen statt schwerer Hauptbereiche, ein sichtbarer Performance Loop in der Navigation, eine kompaktere Mobile-Chrome, flachere Panels und eine konkrete Data-Fueling-Queue fuer direkt schliessbare Logs.

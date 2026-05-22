@@ -31,9 +31,18 @@ export function PageHeader({ eyebrow, title, mobileTitle, description, action }:
   return (
     <header className="pulse-page-header">
       <div className="pulse-page-header-copy">
-        {eyebrow && (
-          <div className="label-mono pulse-page-eyebrow">
-            {eyebrow}
+        {(eyebrow || description) && (
+          <div className="pulse-page-kicker">
+            {eyebrow && (
+              <span className="label-mono pulse-page-eyebrow">
+                {eyebrow}
+              </span>
+            )}
+            {description && (
+              <span className="pulse-page-mode">
+                Arbeitsfläche
+              </span>
+            )}
           </div>
         )}
         <h1 className="pulse-page-heading">
@@ -45,7 +54,7 @@ export function PageHeader({ eyebrow, title, mobileTitle, description, action }:
           </p>
         )}
       </div>
-      {action && <div className="pulse-page-header-action">{action}</div>}
+      {action && <div className="pulse-page-header-action" aria-label="Ansicht wechseln">{action}</div>}
     </header>
   );
 }
