@@ -444,14 +444,17 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         </p>
       </div>
       <section
+        id="data-primary-action"
         className="card data-primary-action-card"
         data-testid="data-primary-action"
+        tabIndex={-1}
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
           gap: 14,
           alignItems: 'start',
           borderColor: 'rgba(47,102,208,0.26)',
+          scrollMarginTop: 88,
         }}
       >
         <div className="data-primary-action-copy" style={{ minWidth: 0 }}>

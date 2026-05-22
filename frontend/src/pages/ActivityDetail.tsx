@@ -967,7 +967,7 @@ function FuelingSection({
                         giComfortCompletionLogId,
                         { giComfort: option.value },
                         'GI-Komfort gespeichert. Dieser Log kann jetzt in die Fueling-Evidence einfließen; Plan und Garmin bleiben unverändert.',
-                        { label: 'Nächste Fueling-Lücke prüfen', path: '/data?tab=today' },
+                        { label: 'Nächste Datenlücke prüfen', path: '/data?tab=today#data-primary-action' },
                       )}
                       disabled={updateNutrition.isPending}
                       style={{
