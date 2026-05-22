@@ -7,7 +7,7 @@ import { TodayOptionsCard } from '@/components/TodayOptionsCard';
 import { InlineFeedback } from '@/components/Feedback';
 import { errorMessage } from '@/components/feedback-utils';
 import { coachPromptPath } from '@/pulse/coach-link';
-import { resolveDailyCommand } from '@/pulse/daily-command';
+import { dailyCommandAllowsTodayOptions, resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { mentalImpact } from '@/features/mental/mental-impact';
 import { DecisionHero } from '@/features/today/DecisionHero';
@@ -974,6 +974,7 @@ export default function Home() {
     }
 
     if (slot === 'todayOptions') {
+      if (!todaysOptions || !dailyCommandAllowsTodayOptions(dailyCommand)) return null;
       return (
         <div key={slot} data-testid="home-focus-item-todayOptions">
           <TodayOptionsCard variant="compact" commandKind={dailyCommand} onNavigate={navigate} />
@@ -1213,38 +1214,58 @@ export default function Home() {
       )}
 
       {dailyDecision && (
-        <DecisionHero
-          date={data.date}
-          decision={dailyDecision}
-          readiness={readiness}
-          fitnessLoad={fl}
-          recovery={data.recovery}
-          todayWorkout={data.todayWorkout}
-          nextWorkout={nw}
-          todayActivities={data.todayActivities ?? []}
-          recentActivities={data.recentActivities}
-          readinessLabel={<Tooltip id="READINESS">READINESS</Tooltip>}
-          onActivate={handleDailyDecisionActivate}
-          onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
-        />
+        <section
+          className={`home-command-layout ${commandItems.length === 0 ? 'home-command-layout--single' : ''}`}
+          aria-label="Tagesarbeitsfläche"
+        >
+          <div className="home-command-primary">
+            <DecisionHero
+              date={data.date}
+              decision={dailyDecision}
+              readiness={readiness}
+              fitnessLoad={fl}
+              recovery={data.recovery}
+              todayWorkout={data.todayWorkout}
+              nextWorkout={nw}
+              todayActivities={data.todayActivities ?? []}
+              recentActivities={data.recentActivities}
+              readinessLabel={<Tooltip id="READINESS">READINESS</Tooltip>}
+              onActivate={handleDailyDecisionActivate}
+              onPrompt={() => navigate(coachPromptPath(dailyDecision.prompt, 'daily'))}
+            />
+
+            <DayDiary
+              data={data}
+              decision={dailyDecision}
+              hasMentalCheckin={hasMentalCheckin}
+              latestDeltaTitle={latestDelta?.title}
+              latestOutcomeTitle={latestOutcome?.title}
+              adaptationSummary={primaryAdaptationEvent?.summary}
+            />
+          </div>
+
+          {commandItems.length > 0 && (
+            <aside className="home-command-stack home-command-stack--rail" data-testid="home-command-stack" aria-label="Offene Tagespunkte">
+              <div className="home-command-stack__header">
+                <div>
+                  <div className="label-mono">Nächste Ebene</div>
+                  <h2>Nur was offen ist</h2>
+                </div>
+                <span>{commandItems.length} aktiv</span>
+              </div>
+              <div className="home-command-grid">
+                {commandItems}
+              </div>
+            </aside>
+          )}
+        </section>
       )}
 
-      {dailyDecision && (
-        <DayDiary
-          data={data}
-          decision={dailyDecision}
-          hasMentalCheckin={hasMentalCheckin}
-          latestDeltaTitle={latestDelta?.title}
-          latestOutcomeTitle={latestOutcome?.title}
-          adaptationSummary={primaryAdaptationEvent?.summary}
-        />
-      )}
-
-      {commandItems.length > 0 && (
+      {!dailyDecision && commandItems.length > 0 && (
         <section className="home-command-stack" data-testid="home-command-stack">
           <div className="home-command-stack__header">
             <div>
-              <div className="label-mono">Naechste Ebene</div>
+              <div className="label-mono">Nächste Ebene</div>
               <h2>Nur was heute noch offen ist</h2>
             </div>
             <span>{commandItems.length} aktiv</span>

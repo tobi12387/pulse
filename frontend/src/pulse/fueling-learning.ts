@@ -23,10 +23,10 @@ export function fuelingLearningCapturePlan(baseline: PulseFuelingOutcomeBaseline
   const readiness = baseline?.learningReadiness ?? null;
   if (!baseline || !readiness || isFuelingTrendReady(baseline)) return null;
 
+  const newLogsNeeded = fuelingLearningNewLongSessionLogsNeeded(baseline);
   const required = requiredComparableFuelingLogs(baseline);
   const comparable = readiness.comparableCompleteLogs;
   const candidates = readiness.completionCandidates?.length ?? 0;
-  const newLogsNeeded = Math.max(required - comparable - candidates, 0);
   const candidateText = candidates === 1
     ? '1 vorhandener Log direkt schließbar'
     : `${candidates} vorhandene Logs direkt schließbar`;
@@ -37,6 +37,32 @@ export function fuelingLearningCapturePlan(baseline: PulseFuelingOutcomeBaseline
       : `danach ${newLogsNeeded} neue Long-Session-Logs`;
 
   return `${comparable}/${required} komplett · ${candidateText} · ${newLogText}. GI-Komfort bleibt echte Auswahl.`;
+}
+
+export function fuelingLearningNewLongSessionLogsNeeded(baseline: PulseFuelingOutcomeBaseline | null | undefined): number {
+  const readiness = baseline?.learningReadiness ?? null;
+  if (!baseline || !readiness || isFuelingTrendReady(baseline)) return 0;
+
+  const required = requiredComparableFuelingLogs(baseline);
+  const comparable = readiness.comparableCompleteLogs;
+  const candidates = readiness.completionCandidates?.length ?? 0;
+  return Math.max(required - comparable - candidates, 0);
+}
+
+export function fuelingLearningNewLogChecklist(baseline: PulseFuelingOutcomeBaseline | null | undefined): string[] | null {
+  const needed = fuelingLearningNewLongSessionLogsNeeded(baseline);
+  if (needed <= 0) return null;
+
+  const logText = needed === 1
+    ? '1 neuer kompletter Long-Session-Log'
+    : `${needed} neue komplette Long-Session-Logs`;
+
+  return [
+    `Nach den vorhandenen Kandidaten fehlt ${logText}.`,
+    'Beim nächsten Ausdauer-Log ab 75 min zusammen erfassen: Aktivität/Dauer, During-Carbs und GI-Komfort.',
+    'Optional nur wenn gemessen: Flaschen/Pulver, Sodium, Hitze oder Sweat-Rate.',
+    'GI-Komfort nicht aus Notizen, Route, RPE, g/h oder Ergebnis ableiten.',
+  ];
 }
 
 export function isFuelingTrendReady(baseline: PulseFuelingOutcomeBaseline | null | undefined): boolean {
