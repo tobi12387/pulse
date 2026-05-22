@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Fueling-GI-Save springt zur primaeren Data-Aktion
+
+- **Decision:** Die Folgeaktion nach einem erfolgreichen GI-Komfort-Save heisst `Nächste Datenlücke prüfen` und springt zu `/data?tab=today#data-primary-action`, also zur aktuell wichtigsten Data-Aktion statt nur zur Data-Route.
+- **Why:** Data besitzt bewusst die Priorisierung der naechsten Evidenzaufgabe; diese kann nach Mental-, Garmin- oder Fueling-Status wechseln. Der Activity-Follow-up muss deshalb die Queue klar oeffnen, ohne im Button zu versprechen, dass immer Fueling als naechstes kommt.
+- **Alternatives:** Die alte Fueling-spezifische Beschriftung behalten (zu eng und potentiell irrefuehrend); direkt zur naechsten Activity URL springen (umgeht die Data-Priorisierung); automatisch nach dem Save navigieren (zu aggressiv fuer manuelle Evidence-Capture).
+- **Decided by:** Codex, als Fueling-Handoff-UI-Fix im Branch `codex/fueling-handoff-status`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Fueling-GI-Save fuehrt zur Data-Evidence-Queue zurueck
 
 - **Decision:** Nach einem erfolgreichen strukturierten GI-Komfort-Save zeigt Activity Detail eine kleine Folgeaktion `Nächste Fueling-Lücke prüfen`, die zur Data-Heute-Queue fuehrt.
