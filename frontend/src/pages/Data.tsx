@@ -6,6 +6,7 @@ import { MentalTab } from '@/features/data/mental/mental-components';
 import { GewichtTab, MetrikenTab, SchlafTab } from '@/features/data/recovery/recovery-components';
 import { DataAnalysenTab } from '@/pages/Insights';
 import {
+  fuelingCompletionCandidateTargetPath,
   fuelingLearningActionTargetPath,
   fuelingLearningCapturePlan,
   fuelingLearningGapSummary,
@@ -13,7 +14,7 @@ import {
   isFuelingTrendReady,
 } from '@/pulse/fueling-learning';
 import { useCheckinToday, useFuelingDebt, usePulseHome } from '@/pulse/hooks';
-import type { PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
+import type { PulseFuelingLearningCompletionCandidate, PulseFuelingOutcomeBaseline } from '@coaching-os/shared/pulse';
 
 type Tab = 'heute' | 'trends' | 'qualitaet' | 'analyse';
 type DataFocus = 'mental' | 'recovery' | 'sleep' | 'weight' | null;
@@ -26,6 +27,15 @@ type DataPrimaryAction = {
   targetLog?: string | null;
   optionHint?: string | null;
   capturePlan?: string | null;
+  candidateLogs?: DataPrimaryActionCandidateLog[];
+};
+
+type DataPrimaryActionCandidateLog = {
+  id: string;
+  summary: string;
+  missing: string;
+  date: string;
+  run: () => void;
 };
 
 const TABS = [
@@ -160,6 +170,33 @@ function fuelingPrimaryCompletionCandidateText(baseline: PulseFuelingOutcomeBase
     ? ` · offen: ${candidate.missingEvidence.join(', ')}`
     : '';
   return `${candidate.summary}${missing}`;
+}
+
+function candidateMissingText(candidate: PulseFuelingLearningCompletionCandidate): string {
+  return candidate.missingEvidence.length > 0
+    ? candidate.missingEvidence.join(', ')
+    : 'vollständig';
+}
+
+function fuelingCompletionCandidateRows(
+  baseline: PulseFuelingOutcomeBaseline | null | undefined,
+  navigate: (path: string) => void,
+): DataPrimaryActionCandidateLog[] {
+  const candidates = baseline?.learningReadiness?.completionCandidates ?? [];
+  return candidates
+    .map(candidate => {
+      const targetPath = fuelingCompletionCandidateTargetPath(candidate);
+      if (!targetPath) return null;
+      return {
+        id: `${candidate.kind}-${candidate.activityId ?? candidate.date}`,
+        summary: candidate.summary,
+        missing: candidateMissingText(candidate),
+        date: candidate.date,
+        run: () => navigate(targetPath),
+      };
+    })
+    .filter((candidate): candidate is DataPrimaryActionCandidateLog => candidate != null)
+    .slice(0, 3);
 }
 
 function EvidenceTriage({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void }) {
@@ -315,6 +352,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   const fuelingNextActionLabel = fuelingBaseline?.learningReadiness?.nextAction?.label ?? 'Fueling-Evidenz schließen';
   const fuelingTargetLog = fuelingPrimaryCompletionCandidateText(fuelingBaseline);
   const fuelingCapturePlan = fuelingLearningCapturePlan(fuelingBaseline);
+  const fuelingCandidateLogs = fuelingCompletionCandidateRows(fuelingBaseline, navigate);
   const fuelingAction: DataPrimaryAction | null = fuelingTargetPath && fuelingGapSummary
     ? {
       title: 'Fueling-Evidenz schließen',
@@ -324,6 +362,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       targetLog: fuelingTargetLog,
       optionHint: 'GI-Komfort: Magen ok · Magen leicht unruhig · Magenprobleme',
       capturePlan: fuelingCapturePlan,
+      candidateLogs: fuelingCandidateLogs,
       run: () => navigate(fuelingTargetPath),
     }
     : null;
@@ -523,6 +562,30 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text-2)' }}>
                 {primaryAction.capturePlan}
               </span>
+            </div>
+          )}
+          {primaryAction.candidateLogs && primaryAction.candidateLogs.length > 1 && (
+            <div
+              data-testid="data-primary-action-candidate-logs"
+              className="data-primary-action-candidates"
+            >
+              <div className="data-primary-action-candidates__head">
+                <span className="label-mono">Schließbare Logs</span>
+                <span>{primaryAction.candidateLogs.length} direkt</span>
+              </div>
+              <div className="data-primary-action-candidates__list">
+                {primaryAction.candidateLogs.map(candidate => (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    className="data-primary-action-candidate"
+                    onClick={candidate.run}
+                  >
+                    <span>{candidate.summary}</span>
+                    <span>{candidate.date} · offen: {candidate.missing}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           <div
@@ -833,7 +896,7 @@ export default function Data() {
         eyebrow="Daten"
         title="Daten, die heute etwas ändern"
         mobileTitle="Daten"
-        description="Der erste Block zeigt nur die nächste relevante Datenaufgabe. Trends, Qualität und Analyse bleiben erreichbar, aber nachrangig."
+        description="Der erste Block zeigt die nächste Datenaufgabe. Trends, Qualität und Analyse bleiben erreichbar, aber klar nachrangig."
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Daten Bereiche" idPrefix="data" wrap />}
       />
       {tab === 'heute' && <TabPanel tab="heute"><DataHeuteTab onOpen={setTab} focus={focus} /></TabPanel>}

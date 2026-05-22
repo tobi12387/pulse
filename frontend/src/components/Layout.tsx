@@ -19,18 +19,18 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheiden', key: '1', end: true, icon: Home },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Trainieren', key: '2', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Verstehen', key: '3', end: false, icon: Database },
-  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Lernen', key: '4', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Verbinden', key: '5', end: false, icon: Settings },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Antwort', key: '1', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Woche steuern', key: '2', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', key: '3', end: false, icon: Database },
+  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Muster', key: '4', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Bereitschaft', key: '5', end: false, icon: Settings },
 ];
 
 const FLOW_STEPS = [
-  { label: 'Heute', detail: 'Entscheidung' },
-  { label: 'Plan', detail: 'Woche' },
-  { label: 'Daten', detail: 'Evidenz' },
-  { label: 'Analyse', detail: 'Muster' },
+  { label: 'Antwort', detail: 'heute' },
+  { label: 'Training', detail: 'bewusst' },
+  { label: 'Evidenz', detail: 'schliessen' },
+  { label: 'Lernen', detail: 'kalibrieren' },
 ];
 
 export default function Layout() {
@@ -46,6 +46,7 @@ export default function Layout() {
     || location.pathname.startsWith('/plan')
     || location.pathname.startsWith('/insights')
     || location.pathname.startsWith('/settings');
+  const activeNavItem = NAV_ITEMS.find(item => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)) ?? NAV_ITEMS[0];
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1180 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
   useEffect(() => {
@@ -94,6 +95,11 @@ export default function Layout() {
             <div className="pulse-brand-subtitle">Private Performance OS</div>
           </div>
         </div>
+        <div className="pulse-topbar-command" aria-label="Aktueller Arbeitsmodus">
+          <span>Fokus</span>
+          <strong>{activeNavItem.label}</strong>
+          <em>{activeNavItem.description}</em>
+        </div>
         <div className="pulse-topbar-context">
           <span className="pulse-status-chip"><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
           <span>{today}</span>
@@ -110,7 +116,7 @@ export default function Layout() {
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
           <div className="pulse-sidebar-section-label">
-            Hauptbereiche
+            Arbeitsflächen
           </div>
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
@@ -132,7 +138,7 @@ export default function Layout() {
         </nav>
 
         <div className="pulse-sidebar-card pulse-sidebar-card--flow" aria-label="Pulse Ablauf">
-          <div className="pulse-sidebar-card-label">Command Flow</div>
+          <div className="pulse-sidebar-card-label">Performance Loop</div>
           <div className="pulse-flow-steps">
             {FLOW_STEPS.map((step, index) => (
               <div key={step.label} className="pulse-flow-step">
@@ -175,7 +181,10 @@ export default function Layout() {
       >
         <span className="pulse-brand-lockup pulse-brand-lockup--mobile">
           <span className="pulse-brand-mark" aria-hidden="true" />
-          <span className="pulse-brand-title">Pulse</span>
+          <span className="pulse-mobile-route-copy">
+            <span className="pulse-mobile-route-title">Pulse</span>
+            <span className="pulse-mobile-route-subtitle">{activeNavItem.mobileLabel ?? activeNavItem.label} · {activeNavItem.description}</span>
+          </span>
         </span>
         <button
           type="button"

@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-05-22 — UI/UX-Grundsprache wird zur ruhigen Performance-App
+
+- **Decision:** Pulse nutzt fuer die Hauptoberflaeche eine neue routeweite UI-Grundsprache: Arbeitsflaechen statt schwerer Hauptbereiche, ein sichtbarer Performance Loop in der Navigation, eine kompaktere Mobile-Chrome, flachere Panels und eine konkrete Data-Fueling-Queue fuer direkt schliessbare Logs.
+- **Why:** Tobi hat die bisherige Oberflaeche als unuebersichtlich und wenig strukturiert bewertet und explizit volle Freiheit fuer Breaking UI-/Route-/Card-Aenderungen gegeben. Die neue Richtung orientiert sich an Top-App-Mustern: klare Arbeitsflaechen, ein primaerer Job pro Viewport, weniger Kartenrauschen und konkrete Aufgabenlisten statt generischer Uebersichten.
+- **Alternatives:** Nur Farben/Abstaende polieren (zu wenig strukturelle Wirkung); alle Routen sofort umbenennen oder entfernen (hohes Deep-Link-/Test-Risiko ohne zusaetzlichen Nutzen in diesem PR); Fueling-Trends vor 3/3 Evidence freischalten (verletzt das Evidenzgate).
+- **Decided by:** Tobi und Codex, als routeweites UI/UX-Redesign im Branch `codex/top-app-redesign`.
+- **Status:** active.
+
 ## 2026-05-22 — Data zeigt Fueling-Capture-Plan vor Trendfreigabe
 
 - **Decision:** Data zeigt bei offener Fueling-Lernschleife einen kompakten `Capture-Plan` mit aktuellem 0/3-Stand, direkt schließbaren bestehenden Logs und danach noch benötigten Long-Session-Logs.

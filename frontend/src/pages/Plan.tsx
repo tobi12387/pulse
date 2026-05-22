@@ -3933,7 +3933,7 @@ export default function Plan() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
         eyebrow="Plan"
-        title="Woche steuern, nichts versteckt schreiben"
+        title="Plan: Woche bewusst steuern"
         mobileTitle="Plan"
         description="Training, Garmin und Ziele laufen in eine bewusste Wochenentscheidung. Vorschau bleibt Vorschau, Apply bleibt explizit."
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}

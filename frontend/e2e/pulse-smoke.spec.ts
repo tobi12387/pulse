@@ -757,6 +757,10 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('2 vorhandene Logs direkt schließbar');
   await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('danach 1 neuer Long-Session-Log');
   await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('GI-Komfort bleibt echte Auswahl');
+  const candidateLogs = action.getByTestId('data-primary-action-candidate-logs');
+  await expect(candidateLogs).toContainText('Long Fueling Check · 240 min · 120 g Carbs');
+  await expect(candidateLogs).toContainText('Second Long Fueling Check · 180 min · 90 g Carbs');
+  await expect(candidateLogs).toContainText('offen: GI-Komfort');
   await expect(action).toContainText('Trend-Evidenz 0/3');
   await expect(action).toContainText('GI-Komfort ergänzen');
 
