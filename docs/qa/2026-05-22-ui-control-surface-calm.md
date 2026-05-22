@@ -19,6 +19,7 @@ Manual review of the before screenshots found no hard layout break, but a real m
 - Kept mobile Plan option detail accessible through explicit `aria-label` while removing the visually hidden 1px text blocks from overflow checks.
 - Follow-up: changed Settings diagnostics from a nested card-like matrix into a flatter readiness surface with calmer shared action buttons and opt-in diagnostic detail.
 - Follow-up: compacted the Coach compatibility route on mobile and restored 44px touch targets for mobile Data tabs and Plan week navigation.
+- Review hardening: increased mobile Coach metric label/value size after review so the compact context strip stays readable without reintroducing horizontal overflow.
 
 ## After Evidence
 
@@ -58,6 +59,13 @@ Focused screenshots reviewed:
 - Mobile Data: `/tmp/pulse-2026-05-22-ux-coach-command/2026-05-22-3c462a1/mobile-chromium/03-data.png`
 - Mobile Plan: `/tmp/pulse-2026-05-22-ux-coach-command/2026-05-22-3c462a1/mobile-chromium/06-plan.png`
 
+## PR Review Hardening Evidence
+
+- Evidence root: `/tmp/pulse-2026-05-22-ux-pr683-readability/2026-05-22-4081fd4/`
+- Summary:
+  - desktop-chromium: 9 screenshots, 0 overflow
+  - mobile-chromium: 17 screenshots, 0 overflow
+
 ## Verification
 
 - `git diff --check`
@@ -72,3 +80,5 @@ Focused screenshots reviewed:
 - `npm run qa:ux-summary -- /tmp/pulse-2026-05-22-ux-settings-readiness`
 - `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-2026-05-22-ux-coach-command npm run qa:ux-evidence`
 - `npm run qa:ux-summary -- /tmp/pulse-2026-05-22-ux-coach-command`
+- `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-2026-05-22-ux-pr683-readability npm run qa:ux-evidence`
+- `npm run qa:ux-summary -- /tmp/pulse-2026-05-22-ux-pr683-readability`
