@@ -19,6 +19,26 @@ export function fuelingTrendEvidenceLabel(baseline: PulseFuelingOutcomeBaseline 
   return `Trend-Evidenz ${comparable}/${requiredComparableFuelingLogs(baseline)}`;
 }
 
+export function fuelingLearningCapturePlan(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
+  const readiness = baseline?.learningReadiness ?? null;
+  if (!baseline || !readiness || isFuelingTrendReady(baseline)) return null;
+
+  const required = requiredComparableFuelingLogs(baseline);
+  const comparable = readiness.comparableCompleteLogs;
+  const candidates = readiness.completionCandidates?.length ?? 0;
+  const newLogsNeeded = Math.max(required - comparable - candidates, 0);
+  const candidateText = candidates === 1
+    ? '1 vorhandener Log direkt schließbar'
+    : `${candidates} vorhandene Logs direkt schließbar`;
+  const newLogText = newLogsNeeded === 0
+    ? 'danach kein neuer Long-Session-Log nötig'
+    : newLogsNeeded === 1
+      ? 'danach 1 neuer Long-Session-Log'
+      : `danach ${newLogsNeeded} neue Long-Session-Logs`;
+
+  return `${comparable}/${required} komplett · ${candidateText} · ${newLogText}. GI-Komfort bleibt echte Auswahl.`;
+}
+
 export function isFuelingTrendReady(baseline: PulseFuelingOutcomeBaseline | null | undefined): boolean {
   const readiness = baseline?.learningReadiness ?? null;
   if (!readiness?.readyForTrendSummary) return false;

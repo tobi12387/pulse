@@ -7,6 +7,7 @@ import { GewichtTab, MetrikenTab, SchlafTab } from '@/features/data/recovery/rec
 import { DataAnalysenTab } from '@/pages/Insights';
 import {
   fuelingLearningActionTargetPath,
+  fuelingLearningCapturePlan,
   fuelingLearningGapSummary,
   fuelingTrendEvidenceLabel,
   isFuelingTrendReady,
@@ -24,6 +25,7 @@ type DataPrimaryAction = {
   run: () => void;
   targetLog?: string | null;
   optionHint?: string | null;
+  capturePlan?: string | null;
 };
 
 const TABS = [
@@ -312,6 +314,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   const fuelingGapSummary = fuelingLearningGapSummary(fuelingBaseline);
   const fuelingNextActionLabel = fuelingBaseline?.learningReadiness?.nextAction?.label ?? 'Fueling-Evidenz schließen';
   const fuelingTargetLog = fuelingPrimaryCompletionCandidateText(fuelingBaseline);
+  const fuelingCapturePlan = fuelingLearningCapturePlan(fuelingBaseline);
   const fuelingAction: DataPrimaryAction | null = fuelingTargetPath && fuelingGapSummary
     ? {
       title: 'Fueling-Evidenz schließen',
@@ -320,6 +323,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       cta: fuelingNextActionLabel,
       targetLog: fuelingTargetLog,
       optionHint: 'GI-Komfort: Magen ok · Magen leicht unruhig · Magenprobleme',
+      capturePlan: fuelingCapturePlan,
       run: () => navigate(fuelingTargetPath),
     }
     : null;
@@ -499,6 +503,25 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               <span className="label-mono" style={{ color: 'var(--accent)' }}>Erlaubte Auswahl</span>
               <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text)' }}>
                 {primaryAction.optionHint}
+              </span>
+            </div>
+          )}
+          {primaryAction.capturePlan && (
+            <div
+              data-testid="data-primary-action-capture-plan"
+              style={{
+                display: 'grid',
+                gap: 4,
+                marginTop: 8,
+                padding: '8px 9px',
+                border: '1px solid rgba(47,102,208,0.22)',
+                borderRadius: 5,
+                background: 'rgba(47,102,208,0.05)',
+              }}
+            >
+              <span className="label-mono" style={{ color: 'var(--accent)' }}>Capture-Plan</span>
+              <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text-2)' }}>
+                {primaryAction.capturePlan}
               </span>
             </div>
           )}

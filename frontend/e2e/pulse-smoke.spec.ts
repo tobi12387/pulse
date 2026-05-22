@@ -609,6 +609,14 @@ test('Data analysis keeps learning calibration gated until comparable fueling ev
           date: '2026-04-30',
           summary: 'Long Fueling Check · 240 min · 120 g Carbs',
           missingEvidence: ['GI-Komfort'],
+        }, {
+          kind: 'complete_gi_comfort',
+          label: 'GI-Komfort ergänzen',
+          detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+          activityId: 'activity-fueling-gap-2',
+          date: '2026-04-27',
+          summary: 'Second Long Fueling Check · 180 min · 90 g Carbs',
+          missingEvidence: ['GI-Komfort'],
         }],
       },
     },
@@ -724,6 +732,14 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
           date: '2026-04-30',
           summary: 'Long Fueling Check · 240 min · 120 g Carbs',
           missingEvidence: ['GI-Komfort'],
+        }, {
+          kind: 'complete_gi_comfort',
+          label: 'GI-Komfort ergänzen',
+          detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+          activityId: 'activity-fueling-gap-2',
+          date: '2026-04-27',
+          summary: 'Second Long Fueling Check · 180 min · 90 g Carbs',
+          missingEvidence: ['GI-Komfort'],
         }],
       },
     },
@@ -737,6 +753,10 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await expect(action.getByTestId('data-primary-action-options')).toContainText('Magen ok');
   await expect(action.getByTestId('data-primary-action-options')).toContainText('Magen leicht unruhig');
   await expect(action.getByTestId('data-primary-action-options')).toContainText('Magenprobleme');
+  await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('0/3 komplett');
+  await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('2 vorhandene Logs direkt schließbar');
+  await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('danach 1 neuer Long-Session-Log');
+  await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('GI-Komfort bleibt echte Auswahl');
   await expect(action).toContainText('Trend-Evidenz 0/3');
   await expect(action).toContainText('GI-Komfort ergänzen');
 
