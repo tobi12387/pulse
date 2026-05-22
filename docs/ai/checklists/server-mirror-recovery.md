@@ -39,6 +39,14 @@ mirror_recovery_runbook=docs/ai/checklists/server-mirror-recovery.md
 ERROR: server commit old1234 != expected abc1234
 ```
 
+The standalone `npm run verify:server` command is intentionally exact about
+`PULSE_EXPECTED_COMMIT`. The combined `npm run audit:performance-gates` command
+may still mark the server gate ready when that exact mismatch is only a clean
+`main` docs/tooling commit and both commits resolve to the same app-runtime
+commit across `frontend`, `backend`, `shared`, `package.json` and
+`package-lock.json`. Wrong branch and dirty mirror states are never accepted as
+runtime-equivalent.
+
 ## Recover A Clean Mirror
 
 Only use this when `dirty=0`.
