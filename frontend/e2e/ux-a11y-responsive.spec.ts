@@ -128,10 +128,12 @@ test('mobile top-level headers use compact route titles before the work surface'
 
   for (const route of routes) {
     await page.goto(route.path);
+    await expect(page.getByRole('button', { name: 'Coach öffnen' })).toBeVisible();
     const title = page.locator('main h1').first();
     await expect(title).toBeVisible();
     await expect.poll(async () => title.evaluate((element) => (element as HTMLElement).innerText.trim()))
       .toBe(route.title);
+    await expect(page.locator('.pulse-page-eyebrow')).toBeHidden();
   }
 });
 

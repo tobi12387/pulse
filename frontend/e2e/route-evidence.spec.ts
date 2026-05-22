@@ -204,7 +204,7 @@ test.describe('Route evidence screenshot pack', () => {
     ) {
       await resetRouteScroll(page);
       await page.goto(route.path);
-      await expect(page.locator('main').getByText(route.visibleText).first()).toBeVisible();
+      await expect(page.locator('main').getByText(route.visibleText).filter({ visible: true }).first()).toBeVisible();
       await verify?.();
       if (!route.path.includes('#')) await resetRouteScroll(page);
       const overflow = await overflowSummary(page);

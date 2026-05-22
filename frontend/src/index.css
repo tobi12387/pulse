@@ -606,10 +606,12 @@
     background: rgba(20,32,30,0.04);
   }
 
-  .pulse-mobile-route-title {
-    color: var(--text-2);
-    font-size: 13px;
-    font-weight: 720;
+  .pulse-mobile-command-button {
+    min-width: 40px;
+    min-height: 40px;
+    border-color: rgba(47,102,208,0.28);
+    background: rgba(47,102,208,0.08);
+    color: var(--accent);
   }
 
   .pulse-mobile-nav-link {
@@ -1648,11 +1650,7 @@
     }
 
     .pulse-page-eyebrow {
-      color: var(--text-3);
-      font-size: 9.5px;
-      letter-spacing: 0;
-      line-height: 1;
-      text-transform: none;
+      display: none;
     }
 
     .pulse-page-heading {

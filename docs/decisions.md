@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Mobile Topbar wird Command-Zugang statt Routentitel-Dopplung
+
+- **Decision:** Die mobile Topbar zeigt nicht mehr den aktuellen Routennamen neben dem sichtbaren Seiten-H1, sondern eine kompakte Coach-Command-Schaltflaeche; redundante mobile Page-Eyebrows werden ausgeblendet.
+- **Why:** Die frische Redesign-Route-Evidence zeigte auf Mobile noch doppelte Routensignale (`Topbar` + `Eyebrow` + `H1`), bevor die eigentliche Tages-, Daten- oder Planaufgabe beginnt. Eine Coach-Schnellaktion nutzt den knappen Topbar-Platz produktiv, ohne Coach wieder als Haupttab einzufuehren.
+- **Alternatives:** Routentitel in der Topbar behalten (mehr Wiederholung vor der Aufgabe); die H1 im Content entfernen (schwaecher fuer Route-/Screenreader-Struktur); Coach wieder in die Hauptnavigation setzen (widerspricht der aktuellen Fokusnavigation).
+- **Decided by:** Codex, als Mobile-Polish im Redesign-Branch `codex/full-ui-ux-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Redesign nutzt festen Home-Command-Stack und neutrale App-Palette
 
 - **Decision:** Die Home-Oberflaeche rendert nach der Tagesentscheidung einen festen Command-Stack statt eines lokalen Karten-Sortierers; die App-Palette wechselt von teal/gruen gepraegter Shell auf eine neutrale helle Basis mit blauem Accent und getrennten Statusfarben.

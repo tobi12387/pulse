@@ -258,3 +258,37 @@ Result:
 - Focused Data-to-Activity Fueling smoke: 2 passed.
 - Route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
 - `verify:lernschleifen:pr` passed with 55 contract/golden tests and frontend build.
+
+## Addendum — Mobile Topbar Command Polish
+
+Fresh route evidence on the resumed redesign branch showed no overflow, but mobile top-level pages still repeated route identity before the actual work surface: the topbar route title, PageHeader eyebrow and H1 all said the same thing on Data/Plan/Setup-style routes.
+
+This pass keeps the primary navigation order and visible page H1s, but makes the mobile chrome more task-first:
+
+- The mobile topbar now uses the right side for a compact Coach command button instead of repeating the current route title.
+- Mobile PageHeader eyebrows are hidden, so Data/Plan/Setup start with one clear route title and then the tabs or work surface.
+- Route-evidence capture now anchors on visible text only, so hidden responsive labels do not create false screenshot failures.
+
+Additional verification:
+
+```bash
+git diff --check
+npm --prefix frontend run build
+npx playwright test frontend/e2e/ux-a11y-responsive.spec.ts --grep "mobile top-level headers|Mobile navigation and tabs keep core labels readable|primary navigation exposes Focus routes without Coach tab" --project=mobile-chromium --project=desktop-chromium
+npx playwright test frontend/e2e/pulse-usability.spec.ts --grep "Mobile navigation and tabs keep core labels readable" --project=mobile-chromium
+npx playwright test frontend/e2e/pulse-smoke.spec.ts --grep "primary navigation exposes Focus routes without Coach tab|PWA manifest and service worker endpoints are available" --project=desktop-chromium --project=mobile-chromium
+PULSE_ROUTE_EVIDENCE_DIR=test-results/route-evidence-redesign-mobile-command-2026-05-22 npm run qa:ux-evidence
+npm run qa:ux-summary -- test-results/route-evidence-redesign-mobile-command-2026-05-22
+npm run verify:lernschleifen
+npm run verify:trainingsanpassung
+npm run verify:tagesentscheidung
+```
+
+Result:
+
+- Frontend build passed.
+- Mobile top-level header smoke: 1 passed, 1 desktop skip.
+- Mobile navigation readability smoke: 1 passed.
+- Primary navigation/PWA smoke: 4 passed.
+- Route evidence: Desktop Chromium 9 screenshots and Mobile Chromium 17 screenshots, 0 horizontal overflow.
+- Full track gates passed: `verify:lernschleifen`, `verify:trainingsanpassung`, `verify:tagesentscheidung`.
