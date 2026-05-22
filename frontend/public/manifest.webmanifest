@@ -2,13 +2,13 @@
   "id": "/",
   "name": "Pulse",
   "short_name": "Pulse",
-  "description": "Lokales Coaching-Cockpit für Training, Garmin-Daten, Readiness und Tagesentscheidungen.",
+  "description": "Privates Performance OS fuer Training, Readiness, Evidenz und Tagesentscheidungen.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0b0d",
-  "theme_color": "#0a0b0d",
+  "background_color": "#f5f6f8",
+  "theme_color": "#f5f6f8",
   "categories": ["health", "fitness", "productivity"],
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }

@@ -197,7 +197,7 @@ function DecisionQualityEvidenceCard({
       data-testid={testId}
       aria-label="Entscheidungsqualität"
       tabIndex={-1}
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(47,102,208,0.18)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
@@ -330,7 +330,7 @@ function PowerDurationSummaryCard({ summary }: { summary: PulsePowerDurationSumm
       data-testid="power-duration-summary"
       aria-label="Power und Durability"
       tabIndex={-1}
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(94,230,207,0.18)' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'rgba(47,102,208,0.18)' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
@@ -583,8 +583,8 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow={mode === 'insights' ? 'INSIGHTS · 90D' : 'DATA · ANALYSEN'}
-        title={mode === 'insights' ? 'Insights' : 'Analysen'}
+        eyebrow={mode === 'insights' ? 'ANALYSE · 90T' : 'DATEN · ANALYSEN'}
+        title={mode === 'insights' ? 'Analyse' : 'Analysen'}
         description={mode === 'insights'
           ? 'Trends, Korrelationen und belastbare Muster aus deinen Pulse-Daten.'
           : 'Öffne eine Karte, um die Analyse gezielt zu laden.'}
@@ -761,9 +761,10 @@ function InsightsSynthesis() {
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow="INSIGHTS · SYNTHESE"
-        title="Insights"
-        description="Die wichtigsten Muster zuerst. Tiefe Evidenz bleibt erreichbar, aber sie steht nicht mehr im Weg."
+        eyebrow="Analyse"
+        title="Analyse: Muster, nicht mehr Lärm"
+        mobileTitle="Analyse"
+        description="Pulse zeigt zuerst die eine lernende Aussage, die Plan oder Alltag wirklich verändern kann. Tiefe Analyse bleibt bewusst hinter Disclosure."
       />
 
       <section
@@ -774,7 +775,7 @@ function InsightsSynthesis() {
           flexWrap: 'wrap',
           gap: 18,
           alignItems: 'end',
-          borderColor: 'rgba(94,230,207,0.24)',
+          borderColor: 'rgba(47,102,208,0.24)',
           background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))',
         }}
       >
@@ -799,7 +800,7 @@ function InsightsSynthesis() {
               padding: '9px 12px',
               border: '1px solid var(--accent)',
               borderRadius: 4,
-              background: 'rgba(94,230,207,0.12)',
+              background: 'rgba(47,102,208,0.12)',
               color: 'var(--accent)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
@@ -870,7 +871,7 @@ function InsightsSynthesis() {
               padding: '7px 10px',
               border: '1px solid var(--border)',
               borderRadius: 4,
-              background: nextChecksOpen ? 'rgba(94,230,207,0.12)' : 'transparent',
+              background: nextChecksOpen ? 'rgba(47,102,208,0.12)' : 'transparent',
               color: nextChecksOpen ? 'var(--accent)' : 'var(--text-2)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
@@ -905,7 +906,7 @@ function InsightsSynthesis() {
               padding: '8px 12px',
               border: '1px solid var(--border)',
               borderRadius: 4,
-              background: signalsOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+              background: signalsOpen ? 'rgba(47,102,208,0.12)' : 'var(--surface-2)',
               color: signalsOpen ? 'var(--accent)' : 'var(--text-2)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
@@ -969,7 +970,7 @@ function InsightsSynthesis() {
               padding: '8px 12px',
               border: '1px solid var(--border)',
               borderRadius: 4,
-              background: deepOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
+              background: deepOpen ? 'rgba(47,102,208,0.12)' : 'var(--surface-2)',
               color: deepOpen ? 'var(--accent)' : 'var(--text-2)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',

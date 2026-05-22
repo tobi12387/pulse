@@ -223,7 +223,12 @@ export default function Settings() {
 
   return (
     <div className="settings-layout">
-      <PageHeader eyebrow="SETTINGS" title="Profil, Garmin & Geräte" mobileTitle="Settings" />
+      <PageHeader
+        eyebrow="Setup"
+        title="Geräte, Profil und Bereitschaft"
+        mobileTitle="Setup"
+        description="Alles, was die tägliche Entscheidung verlässlich macht: Garmin, PWA, Push, Profil und Health-State."
+      />
 
       <div className="settings-primary-grid">
         <SettingsDiagnosticsMatrix
@@ -630,10 +635,10 @@ function SettingsDiagnosticsMatrix({
   const statusPill = ready ? (hasOptionalSetup ? 'OPTIONAL' : 'BEREIT') : 'PRÜFEN';
   const statusColor = ready ? (hasOptionalSetup ? 'var(--accent)' : 'var(--green)') : 'var(--amber)';
   const statusBorder = ready
-    ? (hasOptionalSetup ? 'rgba(94,230,207,0.3)' : 'rgba(74,222,128,0.28)')
+    ? (hasOptionalSetup ? 'rgba(47,102,208,0.3)' : 'rgba(74,222,128,0.28)')
     : 'rgba(245,158,11,0.34)';
   const statusBackground = ready
-    ? (hasOptionalSetup ? 'rgba(94,230,207,0.05)' : 'rgba(74,222,128,0.05)')
+    ? (hasOptionalSetup ? 'rgba(47,102,208,0.05)' : 'rgba(74,222,128,0.05)')
     : 'rgba(245,158,11,0.06)';
 
   const shortcuts: Array<{ label: string; path: string }> = [
@@ -648,7 +653,7 @@ function SettingsDiagnosticsMatrix({
     <section
       className="card"
       data-testid="settings-diagnostics-matrix"
-      style={{ display: 'flex', flexDirection: 'column', gap: 12, borderColor: 'rgba(94,230,207,0.22)' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 12, borderColor: 'rgba(47,102,208,0.22)' }}
     >
       <div
         data-testid="settings-status-summary"
@@ -665,7 +670,7 @@ function SettingsDiagnosticsMatrix({
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
           <div>
             <div className="label-mono" style={{ color: statusColor, marginBottom: 4 }}>
-              SETTINGS STATUS
+              SETUP STATUS
             </div>
             <h2 style={{ margin: 0, fontSize: 18, color: 'var(--text)', fontWeight: 650 }}>
               {statusTitle}
@@ -777,7 +782,7 @@ function SettingsDiagnosticsMatrix({
                           minHeight: 44,
                           padding: '6px 9px',
                           background: 'transparent',
-                          border: '1px solid rgba(94,230,207,0.3)',
+                          border: '1px solid rgba(47,102,208,0.3)',
                           borderRadius: 4,
                           color: 'var(--accent)',
                           cursor: 'pointer',
@@ -815,8 +820,8 @@ function SettingsDiagnosticsMatrix({
             minWidth: 44,
             minHeight: 44,
             padding: '7px 10px',
-            background: diagnosticsOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
-            border: `1px solid ${diagnosticsOpen ? 'rgba(94,230,207,0.38)' : 'var(--border)'}`,
+            background: diagnosticsOpen ? 'rgba(47,102,208,0.12)' : 'var(--surface-2)',
+            border: `1px solid ${diagnosticsOpen ? 'rgba(47,102,208,0.38)' : 'var(--border)'}`,
             borderRadius: 4,
             color: diagnosticsOpen ? 'var(--accent)' : 'var(--text-2)',
             cursor: 'pointer',
@@ -910,7 +915,7 @@ function SettingsDiagnosticsMatrix({
                         minHeight: 44,
                         padding: '6px 9px',
                         background: 'transparent',
-                        border: '1px solid rgba(94,230,207,0.3)',
+                        border: '1px solid rgba(47,102,208,0.3)',
                         borderRadius: 4,
                         color: 'var(--accent)',
                         cursor: 'pointer',
@@ -953,7 +958,7 @@ function SettingsGroup({ sectionId, active = false, title, description, children
         flexDirection: 'column',
         gap: 8,
         scrollMarginTop: 88,
-        outline: active ? '1px solid rgba(94,230,207,0.32)' : 'none',
+        outline: active ? '1px solid rgba(47,102,208,0.32)' : 'none',
         outlineOffset: 8,
         borderRadius: 6,
       }}

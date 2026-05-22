@@ -119,7 +119,7 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
       className="card"
       data-testid="everyday-adaptation-inbox"
       tabIndex={-1}
-      style={{ borderColor: 'rgba(94,230,207,0.22)', scrollMarginTop: 12 }}
+      style={{ borderColor: 'rgba(47,102,208,0.22)', scrollMarginTop: 12 }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Heute anders?</span>
@@ -129,9 +129,9 @@ export function EverydayAdaptationInboxCard({ onNavigate, offPlanActivityContext
         <div
           data-testid="plan-offplan-activity-context"
           style={{
-            border: '1px solid rgba(94,230,207,0.28)',
+            border: '1px solid rgba(47,102,208,0.28)',
             borderRadius: 5,
-            background: 'rgba(94,230,207,0.055)',
+            background: 'rgba(47,102,208,0.055)',
             padding: '10px 11px',
             marginBottom: 11,
             display: 'grid',

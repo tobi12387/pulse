@@ -2060,7 +2060,7 @@ test('Home completes a compact mental check-in without opening Data', async ({ p
   expect(String((submitted as { notes?: string }).notes)).toContain('Home Quick: Schützen');
 });
 
-test('Daily Surface focus mode is local and read-only', async ({ page }) => {
+test('Daily command stack is fixed, compact and read-only', async ({ page }) => {
   const writes: string[] = [];
   page.on('request', request => {
     if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method())) {
@@ -2085,22 +2085,16 @@ test('Daily Surface focus mode is local and read-only', async ({ page }) => {
 
   await page.goto('/');
 
-  await expect(page.getByTestId('home-surface-focus-card')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Standard/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('home-command-stack')).toBeVisible();
+  await expect(page.getByTestId('home-surface-focus-card')).toHaveCount(0);
   await expect(page.getByTestId('daily-delta-card')).toBeVisible();
   await expect(page.getByTestId('today-options-card')).toBeVisible();
-  const focusBox = await page.getByTestId('home-surface-focus-card').boundingBox();
-  expect(focusBox).not.toBeNull();
-  expect(focusBox!.height).toBeLessThanOrEqual(125);
 
-  await page.getByRole('button', { name: /Training/i }).click();
-
-  await expect(page.getByRole('button', { name: /Training/i })).toHaveAttribute('aria-pressed', 'true');
-  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBe('training');
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBeNull();
   expect(writes).toEqual([]);
 });
 
-test('Daily Surface can put the mental check-in before training options', async ({ page }) => {
+test('Daily command stack puts the mental check-in before training options', async ({ page }) => {
   await mockPulseApi(page, {
     checkinToday: { checkin: null },
     todayOptionsState: 'unplanned_trainable',
@@ -2126,48 +2120,11 @@ test('Daily Surface can put the mental check-in before training options', async 
 
   await expect(page.getByTestId('home-mental-checkin-card')).toBeVisible();
   await expect(page.getByTestId('today-options-card')).toBeVisible();
-  await page.getByRole('button', { name: /Mental/i }).click();
 
-  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBe('mental');
-  const mentalBox = await page.getByTestId('home-focus-item-mental').boundingBox();
-  const optionsBox = await page.getByTestId('home-focus-item-todayOptions').boundingBox();
-  expect(mentalBox).not.toBeNull();
-  expect(optionsBox).not.toBeNull();
-  expect(mentalBox!.y).toBeLessThan(optionsBox!.y);
-});
-
-test('Daily Surface resets to the safe default order', async ({ page }) => {
-  await page.addInitScript(() => {
-    window.localStorage.setItem('pulse.home.surface.focus.v1', 'review');
-  });
-  await mockPulseApi(page, {
-    todayOptionsState: 'unplanned_trainable',
-    dailyDelta: [{
-      date: '2026-05-01',
-      status: 'matched',
-      title: 'Plan und Ausführung passen zusammen',
-      summary: 'Die geplante Einheit wurde mit Garmin-Ausführung abgeglichen.',
-      score: 92,
-      loadDeltaTss: 4,
-      recoveryDelta: null,
-      nextPlanEffect: 'Plan kann diesen Reiz als erledigt behandeln.',
-      evidence: ['Geplant: Rad 75 min', 'Garmin: Rad 77 min'],
-      targetPath: '/plan/activity/activity-done',
-    }],
-  });
-
-  await page.goto('/');
-
-  await expect(page.getByRole('button', { name: /Rueckblick/i })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: /Standard/i }).click();
-
-  await expect(page.getByRole('button', { name: /Standard/i })).toHaveAttribute('aria-pressed', 'true');
-  await expect.poll(() => page.evaluate(() => window.localStorage.getItem('pulse.home.surface.focus.v1'))).toBeNull();
-  const deltaBox = await page.getByTestId('home-focus-item-delta').boundingBox();
-  const optionsBox = await page.getByTestId('home-focus-item-todayOptions').boundingBox();
-  expect(deltaBox).not.toBeNull();
-  expect(optionsBox).not.toBeNull();
-  expect(deltaBox!.y).toBeLessThan(optionsBox!.y);
+  const commandOrder = await page.getByTestId('home-command-stack')
+    .locator('[data-testid^="home-focus-item-"]')
+    .evaluateAll(nodes => nodes.map(node => node.getAttribute('data-testid')));
+  expect(commandOrder.indexOf('home-focus-item-mental')).toBeLessThan(commandOrder.indexOf('home-focus-item-todayOptions'));
 });
 
 test('Data shows Garmin recovery depth signals without exposing raw payloads', async ({ page }) => {
@@ -2672,6 +2629,35 @@ test('Data mobile keeps the missing-check-in action before optional detail copy'
 
   await action.getByRole('button', { name: 'Warum diese Aufgabe?' }).click();
   await expect(action.getByTestId('data-primary-action-mobile-contract')).toContainText('Nach dem Klick');
+});
+
+test('Home mobile puts the daily action before evidence copy', async ({ page }) => {
+  const viewport = page.viewportSize();
+  test.skip(!viewport || viewport.width > 600, 'mobile action-first check');
+
+  await mockPulseApi(page);
+
+  await page.goto('/');
+  const decision = page.getByTestId('daily-decision-card');
+  const primaryAction = decision.getByRole('button').first();
+  const reason = decision.locator('.daily-decision-reason');
+  const leadingFactor = decision.getByTestId('daily-decision-leading-factor');
+
+  await expect(primaryAction).toBeInViewport();
+  await expect(reason).toBeVisible();
+  await expect(leadingFactor).toBeVisible();
+
+  const actionBox = await primaryAction.boundingBox();
+  const reasonBox = await reason.boundingBox();
+  const leadingBox = await leadingFactor.boundingBox();
+  expect(actionBox).not.toBeNull();
+  expect(reasonBox).not.toBeNull();
+  expect(leadingBox).not.toBeNull();
+  expect(actionBox!.y).toBeLessThan(reasonBox!.y);
+  expect(actionBox!.y).toBeLessThan(leadingBox!.y);
+  await expect(decision.locator('.daily-decision-next-step-summary')).toBeHidden();
+  await expect(decision.getByRole('button', { name: 'Details & Evidenz anzeigen' })).toBeVisible();
+  await expect(decision.getByTestId('daily-decision-safest-option')).toBeHidden();
 });
 
 test('Data Plan Load triage hands off to the shared Plan weekly decision', async ({ page }) => {
@@ -6039,7 +6025,7 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   await page.goto('/');
   const activeStage = page.getByTestId('stage-strip-decide');
   const activeStageStatus = page.getByTestId('stage-strip-active-status');
-  await expect(activeStage).toContainText('JETZT');
+  await expect(activeStage).toContainText('Jetzt');
   const activeStageBox = await activeStage.boundingBox();
   const activeStageStatusBox = await activeStageStatus.boundingBox();
   expect(activeStageBox).not.toBeNull();
@@ -6048,8 +6034,8 @@ test('Mobile navigation and tabs keep core labels readable', async ({ page }) =>
   expect(activeStageStatusBox!.x + activeStageStatusBox!.width).toBeLessThanOrEqual(activeStageBox!.x + activeStageBox!.width + 1);
 
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
-  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Insights');
-  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Settings');
+  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Analyse');
+  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Setup');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);

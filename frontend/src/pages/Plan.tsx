@@ -408,7 +408,7 @@ function NextTrainingDecisionCard({
 
   if (!nextWorkout) {
     return (
-      <div id="next-training-decision" tabIndex={-1} className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+      <div id="next-training-decision" tabIndex={-1} className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(47,102,208,0.18)' }}>
         <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 7 }}>
           NÄCHSTE TRAININGSENTSCHEIDUNG
         </div>
@@ -423,9 +423,9 @@ function NextTrainingDecisionCard({
           style={{
             marginTop: 12,
             padding: '10px 11px',
-            border: '1px solid rgba(94,230,207,0.26)',
+            border: '1px solid rgba(47,102,208,0.26)',
             borderRadius: 6,
-            background: 'rgba(94,230,207,0.05)',
+            background: 'rgba(47,102,208,0.05)',
           }}
         >
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Plan-Aktion</div>
@@ -475,7 +475,7 @@ function NextTrainingDecisionCard({
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              color: '#04110f',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -656,7 +656,7 @@ function NextTrainingDecisionCard({
   }
 
   return (
-    <div id="next-training-decision" tabIndex={-1} className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+    <div id="next-training-decision" tabIndex={-1} className="card" data-testid="next-training-decision" style={{ borderColor: 'rgba(47,102,208,0.24)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>
           NÄCHSTE TRAININGSENTSCHEIDUNG
@@ -774,9 +774,9 @@ function NextTrainingDecisionCard({
         style={{
           marginBottom: 12,
           padding: '10px 11px',
-          border: '1px solid rgba(94,230,207,0.26)',
+          border: '1px solid rgba(47,102,208,0.26)',
           borderRadius: 6,
-          background: 'rgba(94,230,207,0.05)',
+          background: 'rgba(47,102,208,0.05)',
         }}
       >
         <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Plan-Aktion</div>
@@ -827,7 +827,7 @@ function NextTrainingDecisionCard({
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              color: '#04110f',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -1013,7 +1013,7 @@ function NextTrainingDecisionCard({
               minHeight: 58,
               textAlign: 'left',
               background: option.id === 'rest' ? 'transparent' : 'var(--surface)',
-              border: `1px solid ${option.id === 'rest' ? 'var(--border)' : 'rgba(94,230,207,0.28)'}`,
+              border: `1px solid ${option.id === 'rest' ? 'var(--border)' : 'rgba(47,102,208,0.28)'}`,
               borderRadius: 5,
               color: 'var(--text)',
               cursor: update.isPending ? 'wait' : 'pointer',
@@ -1177,7 +1177,7 @@ function AvailabilityEditor({
                   {isDirty && (
                     <button onClick={() => void handleSave(weekStart)} disabled={isSaving || cur.availableDays.length === 0} style={{
                       fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase',
-                      background: 'var(--accent)', color: 'var(--bg)', border: 'none',
+                      background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none',
                       borderRadius: 3, padding: '4px 10px', cursor: 'pointer',
                     }}>
                       {isSaving ? '…' : '⇪ Speichern & regenerieren'}
@@ -1293,7 +1293,7 @@ function CustomWorkoutForm({
   }
 
   return (
-    <form data-testid="custom-workout-form" className="card" onSubmit={handleSubmit} style={{ borderColor: 'rgba(94,230,207,0.22)' }}>
+    <form data-testid="custom-workout-form" className="card" onSubmit={handleSubmit} style={{ borderColor: 'rgba(47,102,208,0.22)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 12 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Eigene Einheit</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
@@ -1501,7 +1501,7 @@ function PlanRefreshPreviewCard({ weekStart }: { weekStart: string }) {
   if (!preview) return null;
 
   return (
-    <section id="plan-refresh-preview-card" tabIndex={-1} className="card evidence-section" data-testid="plan-refresh-preview-card" style={{ borderColor: 'rgba(94,230,207,0.26)' }}>
+    <section id="plan-refresh-preview-card" tabIndex={-1} className="card evidence-section" data-testid="plan-refresh-preview-card" style={{ borderColor: 'rgba(47,102,208,0.26)' }}>
       <div style={{ display: 'grid', gap: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'start', flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0, flex: '1 1 240px' }}>
@@ -1517,7 +1517,7 @@ function PlanRefreshPreviewCard({ weekStart }: { weekStart: string }) {
               minWidth: 44,
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              background: refreshPreview.isFetching ? 'var(--surface-2)' : 'rgba(94,230,207,0.08)',
+              background: refreshPreview.isFetching ? 'var(--surface-2)' : 'rgba(47,102,208,0.08)',
               color: 'var(--accent)',
               cursor: refreshPreview.isFetching ? 'wait' : 'pointer',
               fontFamily: 'var(--font-mono)',
@@ -1900,7 +1900,7 @@ function PlanScenarioPreviewCard({
             minHeight: 44,
             minWidth: 44,
             background: actionActive ? 'var(--accent)' : 'var(--surface-2)',
-            color: actionActive ? 'var(--bg)' : 'var(--text-3)',
+            color: actionActive ? 'var(--accent-contrast)' : 'var(--text-3)',
             border: actionActive ? 'none' : '1px solid var(--border)',
             borderRadius: 'var(--radius)',
             cursor: actionActive ? 'pointer' : 'default',
@@ -1965,9 +1965,9 @@ function PlanScenarioPreviewCard({
         style={{
           display: 'grid',
           gap: 6,
-          border: '1px solid rgba(94,230,207,0.22)',
+          border: '1px solid rgba(47,102,208,0.22)',
           borderRadius: 6,
-          background: 'rgba(94,230,207,0.05)',
+          background: 'rgba(47,102,208,0.05)',
           padding: '9px 10px',
         }}
       >
@@ -2132,7 +2132,7 @@ function PlanScenarioPreviewCard({
   }
 
   return (
-    <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+    <section id="plan-scenario-preview" tabIndex={-1} className="card evidence-section" data-testid="plan-scenario-preview-card" style={{ borderColor: 'rgba(47,102,208,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', marginBottom: 12 }}>
         <div>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 5 }}>Szenario-Vorschau</div>
@@ -2151,9 +2151,9 @@ function PlanScenarioPreviewCard({
           style={{
             margin: '0 0 10px',
             padding: '8px 10px',
-            border: '1px solid rgba(94,230,207,0.24)',
+            border: '1px solid rgba(47,102,208,0.24)',
             borderRadius: 5,
-            background: 'rgba(94,230,207,0.07)',
+            background: 'rgba(47,102,208,0.07)',
             color: 'var(--text-2)',
             fontSize: 11.5,
             lineHeight: 1.45,
@@ -2168,9 +2168,9 @@ function PlanScenarioPreviewCard({
           style={{
             margin: '0 0 10px',
             padding: '8px 10px',
-            border: '1px solid rgba(94,230,207,0.24)',
+            border: '1px solid rgba(47,102,208,0.24)',
             borderRadius: 5,
-            background: 'rgba(94,230,207,0.07)',
+            background: 'rgba(47,102,208,0.07)',
             color: 'var(--text-2)',
             fontSize: 11.5,
             lineHeight: 1.45,
@@ -2185,9 +2185,9 @@ function PlanScenarioPreviewCard({
           style={{
             margin: '0 0 10px',
             padding: '8px 10px',
-            border: '1px solid rgba(94,230,207,0.24)',
+            border: '1px solid rgba(47,102,208,0.24)',
             borderRadius: 5,
-            background: 'rgba(94,230,207,0.07)',
+            background: 'rgba(47,102,208,0.07)',
             color: 'var(--text-2)',
             fontSize: 11.5,
             lineHeight: 1.45,
@@ -2202,9 +2202,9 @@ function PlanScenarioPreviewCard({
           style={{
             margin: '0 0 10px',
             padding: '8px 10px',
-            border: '1px solid rgba(94,230,207,0.24)',
+            border: '1px solid rgba(47,102,208,0.24)',
             borderRadius: 5,
-            background: 'rgba(94,230,207,0.07)',
+            background: 'rgba(47,102,208,0.07)',
             color: 'var(--text-2)',
             fontSize: 11.5,
             lineHeight: 1.45,
@@ -2219,9 +2219,9 @@ function PlanScenarioPreviewCard({
           style={{
             margin: '0 0 10px',
             padding: '8px 10px',
-            border: '1px solid rgba(94,230,207,0.24)',
+            border: '1px solid rgba(47,102,208,0.24)',
             borderRadius: 5,
-            background: 'rgba(94,230,207,0.07)',
+            background: 'rgba(47,102,208,0.07)',
             color: 'var(--text-2)',
             fontSize: 11.5,
             lineHeight: 1.45,
@@ -2317,7 +2317,7 @@ function PlanScenarioPreviewCard({
                 minWidth: 44,
                 border: `1px solid ${mode === id ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 'var(--radius)',
-                background: mode === id ? 'rgba(94,230,207,0.08)' : 'var(--surface-2)',
+                background: mode === id ? 'rgba(47,102,208,0.08)' : 'var(--surface-2)',
                 color: mode === id ? 'var(--accent)' : 'var(--text-2)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-mono)',
@@ -2566,7 +2566,7 @@ function PlanAdaptationEventsCard({
   }
 
   return (
-    <section className="card" data-testid="plan-adaptation-events" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+    <section className="card" data-testid="plan-adaptation-events" style={{ borderColor: 'rgba(47,102,208,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Adaptionshinweise</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
@@ -2949,7 +2949,7 @@ function TrainingTab({
       )}
 
       {showConfig && (
-        <div className="card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+        <div className="card" style={{ borderColor: 'rgba(47,102,208,0.2)' }}>
           <div className="label-mono" style={{ marginBottom: 8, color: 'var(--accent)' }}>Plan generieren</div>
           <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6, margin: '0 0 12px' }}>
             Erstellt einen wissenschaftlich fundierten Wochenplan auf Basis von CTL/ATL/TSB, deiner eingetragenen Verfügbarkeit und aktiven Zielen.
@@ -3932,9 +3932,10 @@ export default function Plan() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        eyebrow="PLAN"
-        title="Training, Ziele & Statistik"
+        eyebrow="Plan"
+        title="Woche steuern, nichts versteckt schreiben"
         mobileTitle="Plan"
+        description="Training, Garmin und Ziele laufen in eine bewusste Wochenentscheidung. Vorschau bleibt Vorschau, Apply bleibt explizit."
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
       {tab === 'training' && (

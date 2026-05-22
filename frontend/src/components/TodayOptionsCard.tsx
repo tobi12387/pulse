@@ -43,7 +43,7 @@ function optionMeta(option: PulseTodayOption): string | null {
 }
 
 function optionTone(option: PulseTodayOption): string {
-  if (option.priority === 'primary') return 'rgba(94,230,207,0.28)';
+  if (option.priority === 'primary') return 'rgba(47,102,208,0.28)';
   if (option.kind === 'rest' || option.kind === 'recovery') return 'rgba(74,222,128,0.22)';
   return 'var(--border)';
 }
@@ -52,7 +52,7 @@ function signalToneStyle(tone: NonNullable<PulseTodayOption['signalLabels']>[num
   if (tone === 'green') return { color: 'var(--green)', borderColor: 'rgba(74,222,128,0.32)', background: 'rgba(74,222,128,0.08)' };
   if (tone === 'amber') return { color: 'var(--amber)', borderColor: 'rgba(251,191,36,0.34)', background: 'rgba(251,191,36,0.08)' };
   if (tone === 'rose') return { color: 'var(--rose)', borderColor: 'rgba(248,113,113,0.34)', background: 'rgba(248,113,113,0.08)' };
-  return { color: 'var(--accent)', borderColor: 'rgba(94,230,207,0.34)', background: 'rgba(94,230,207,0.08)' };
+  return { color: 'var(--accent)', borderColor: 'rgba(47,102,208,0.34)', background: 'rgba(47,102,208,0.08)' };
 }
 
 function optionPurpose(option: PulseTodayOption): string {
@@ -179,7 +179,7 @@ export function TodayOptionsCard({
       data-testid={variant === 'compact' ? 'today-options-card' : 'today-options-card-full'}
       style={{
         padding: variant === 'compact' ? 12 : 14,
-        borderColor: data.state === 'recovery_protect' ? 'rgba(74,222,128,0.26)' : 'rgba(94,230,207,0.18)',
+        borderColor: data.state === 'recovery_protect' ? 'rgba(74,222,128,0.26)' : 'rgba(47,102,208,0.18)',
       }}
     >
       <div className="today-options-card__header" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
@@ -256,9 +256,9 @@ export function TodayOptionsCard({
             gap: 7,
             marginBottom: visibleOptions.length > 0 ? 10 : 0,
             padding: '10px 11px',
-            border: '1px solid rgba(94,230,207,0.26)',
+            border: '1px solid rgba(47,102,208,0.26)',
             borderRadius: 6,
-            background: 'rgba(94,230,207,0.05)',
+            background: 'rgba(47,102,208,0.05)',
           }}
         >
           <div className="plan-primary-action-copy">
@@ -308,7 +308,7 @@ export function TodayOptionsCard({
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 'var(--radius)',
-              color: '#04110f',
+              color: 'var(--accent-contrast)',
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
@@ -329,9 +329,9 @@ export function TodayOptionsCard({
           style={{
             display: 'grid',
             gap: 8,
-            border: '1px solid rgba(94,230,207,0.22)',
+            border: '1px solid rgba(47,102,208,0.22)',
             borderRadius: 'var(--radius)',
-            background: 'rgba(94,230,207,0.05)',
+            background: 'rgba(47,102,208,0.05)',
             padding: 10,
           }}
         >
@@ -353,7 +353,7 @@ export function TodayOptionsCard({
                   minWidth: 44,
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius)',
-                  background: option.id === 'none' ? 'var(--surface-2)' : 'rgba(94,230,207,0.08)',
+                  background: option.id === 'none' ? 'var(--surface-2)' : 'rgba(47,102,208,0.08)',
                   color: option.id === 'none' ? 'var(--text-2)' : 'var(--accent)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-mono)',
@@ -377,9 +377,9 @@ export function TodayOptionsCard({
                 gap: 6,
                 marginBottom: 8,
                 padding: '9px 10px',
-                border: '1px solid rgba(94,230,207,0.2)',
+                border: '1px solid rgba(47,102,208,0.2)',
                 borderRadius: 6,
-                background: 'rgba(94,230,207,0.04)',
+                background: 'rgba(47,102,208,0.04)',
               }}
             >
               <div className="label-mono" style={{ color: 'var(--accent)' }}>Ausweichoptionen</div>
@@ -406,7 +406,7 @@ export function TodayOptionsCard({
                   style={{
                     textAlign: 'left',
                     border: `1px solid ${optionTone(option)}`,
-                    background: option.priority === 'primary' ? 'rgba(94,230,207,0.06)' : 'var(--surface-2)',
+                    background: option.priority === 'primary' ? 'rgba(47,102,208,0.06)' : 'var(--surface-2)',
                     borderRadius: 'var(--radius)',
                     padding: 10,
                     minHeight: variant === 'full' ? 122 : 78,

@@ -741,7 +741,7 @@ export function CoverageTab() {
               background: candidateCount === 0 ? 'var(--surface-2)' : 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: 5,
-              color: candidateCount === 0 ? 'var(--text-3)' : 'var(--bg)',
+              color: candidateCount === 0 ? 'var(--text-3)' : 'var(--accent-contrast)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.12em',

@@ -90,7 +90,7 @@ function VoiceCardDisplay({ card, onDismiss }: { card: VoiceCard; onDismiss: () 
                   style={{
                     fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
                     textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3,
-                    border: '1px solid rgba(94,230,207,0.3)', color: 'var(--accent)',
+                    border: '1px solid rgba(47,102,208,0.3)', color: 'var(--accent)',
                   }}
                 >
                   {t}
@@ -309,7 +309,7 @@ function DailyOutcomeContext({ outcome, onPrompt }: {
   if (!outcome) return null;
 
   return (
-    <div className="card" style={{ padding: '12px 14px', borderColor: 'rgba(94,230,207,0.18)' }}>
+    <div className="card" style={{ padding: '12px 14px', borderColor: 'rgba(47,102,208,0.18)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 7 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           GELERNT AUS GESTERN
@@ -424,7 +424,7 @@ function MentalContextSummary({
         marginTop: 10,
         padding: '10px 11px',
         background: 'var(--surface-2)',
-        border: '1px solid rgba(94,230,207,0.2)',
+        border: '1px solid rgba(47,102,208,0.2)',
         borderRadius: 5,
         display: 'flex',
         flexDirection: 'column',
@@ -452,8 +452,8 @@ function MentalContextSummary({
           width: '100%',
           minHeight: 38,
           padding: '8px 9px',
-          background: 'rgba(94,230,207,0.12)',
-          border: '1px solid rgba(94,230,207,0.28)',
+          background: 'rgba(47,102,208,0.12)',
+          border: '1px solid rgba(47,102,208,0.28)',
           borderRadius: 5,
           color: 'var(--accent)',
           fontFamily: 'var(--font-mono)',
@@ -512,7 +512,7 @@ function DailyBriefingGuide({
 
   return (
     <div style={{ alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)', padding: '12px 14px' }}>
+      <div className="card" style={{ borderColor: 'rgba(47,102,208,0.18)', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             TAGESBRIEFING
@@ -811,6 +811,12 @@ export default function Coach() {
   return (
     <div className="pulse-coach-shell" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
+      <header className="pulse-coach-route-header">
+        <div className="label-mono" style={{ color: 'var(--accent)' }}>Coach</div>
+        <h1>Frage klären, Kontext behalten</h1>
+        <p>Der Coach ist jetzt eine fokussierte Klärfläche: Home entscheidet, Coach hilft beim Verstehen, Formulieren und Einordnen.</p>
+      </header>
+
       {/* Context strip */}
       <div style={{
         display: 'flex', gap: 16, padding: '8px 0 10px', borderBottom: '1px solid var(--border)',
@@ -876,7 +882,7 @@ export default function Coach() {
             style={{
               maxWidth: '82%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
               background: msg.role === 'user' ? 'var(--surface-2)' : 'var(--surface)',
-              border: `1px solid ${msg.role === 'user' ? 'var(--border)' : 'rgba(94,230,207,0.2)'}`,
+              border: `1px solid ${msg.role === 'user' ? 'var(--border)' : 'rgba(47,102,208,0.2)'}`,
               borderRadius: 'var(--radius)', padding: '8px 12px',
               fontSize: 12, color: 'var(--text)', lineHeight: 1.6,
             }}
@@ -914,7 +920,7 @@ export default function Coach() {
         {sendMessage.isPending && (
           <div style={{ alignSelf: 'flex-start' }}>
             <div style={{
-              background: 'var(--surface)', border: '1px solid rgba(94,230,207,0.2)',
+              background: 'var(--surface)', border: '1px solid rgba(47,102,208,0.2)',
               borderRadius: 'var(--radius)', padding: '8px 14px',
               fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)',
               letterSpacing: '0.12em',
@@ -953,7 +959,7 @@ export default function Coach() {
             style={{
               width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
               background: input.trim() ? 'var(--accent)' : 'var(--surface-2)',
-              color: input.trim() ? '#0A0B0D' : 'var(--text-3)',
+              color: input.trim() ? 'var(--accent-contrast)' : 'var(--text-3)',
               fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600,
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               alignSelf: 'flex-end', transition: 'background 0.15s',

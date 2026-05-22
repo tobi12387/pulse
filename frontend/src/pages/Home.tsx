@@ -10,14 +10,21 @@ import { coachPromptPath } from '@/pulse/coach-link';
 import { resolveDailyCommand } from '@/pulse/daily-command';
 import { deriveDailyDecision } from '@/pulse/daily-decision';
 import { mentalImpact } from '@/features/mental/mental-impact';
-import { HomeSurfaceFocusCard } from '@/features/home/home-surface-preferences';
-import { type HomeFocusSlot } from '@/features/home/home-surface-preferences-model';
-import { useHomeSurfaceFocus } from '@/features/home/use-home-surface-focus';
 import { DecisionHero } from '@/features/today/DecisionHero';
 import { DayDiary } from '@/features/today/DayDiary';
 import type { PulseActionState, PulseAdaptationEvent, PulseDailyDeltaItem, PulseDailyOutcomeLearningItem, PulseNextBestAction, PulseRecentActionDecision, PulseSuppressedActionState } from '@coaching-os/shared/pulse';
-import { TSB_BUCKETS, bucketize, type Bucket } from '@coaching-os/shared/pulse-thresholds';
+import { type Bucket } from '@coaching-os/shared/pulse-thresholds';
 import { bucketTooltip, colorOf, formatBucketMin } from '@/lib/thresholds';
+
+type HomeFocusSlot =
+  | 'delta'
+  | 'todayOptions'
+  | 'adaptation'
+  | 'mental'
+  | 'action'
+  | 'history'
+  | 'learning'
+  | 'followUps';
 
 function fmt(v: number | null | undefined, dec = 0): string {
   return v == null ? '–' : v.toFixed(dec);
@@ -611,7 +618,7 @@ function ActionClosureCard({
               background: isPending ? 'var(--surface-2)' : 'var(--green)',
               border: 'none',
               borderRadius: 5,
-              color: isPending ? 'var(--text-3)' : 'var(--bg)',
+              color: isPending ? 'var(--text-3)' : 'var(--accent-contrast)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '.1em',
@@ -714,7 +721,7 @@ function HomeMentalCheckinCard({
   const preset = HOME_MENTAL_PRESETS.find(candidate => candidate.id === selected) ?? HOME_MENTAL_PRESETS[1]!;
 
   return (
-    <div className="card" data-testid="home-mental-checkin-card" style={{ borderColor: 'rgba(94,230,207,0.24)' }}>
+    <div className="card" data-testid="home-mental-checkin-card" style={{ borderColor: 'rgba(47,102,208,0.24)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', marginBottom: 9 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Mental Check-in</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)' }}>Home Quick</span>
@@ -734,7 +741,7 @@ function HomeMentalCheckinCard({
               style={{
                 minHeight: 58,
                 padding: '8px 7px',
-                background: active ? 'rgba(94,230,207,0.14)' : 'var(--surface-2)',
+                background: active ? 'rgba(47,102,208,0.14)' : 'var(--surface-2)',
                 border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 5,
                 color: active ? 'var(--text)' : 'var(--text-2)',
@@ -770,7 +777,7 @@ function HomeMentalCheckinCard({
           background: isPending ? 'var(--surface-2)' : 'var(--accent)',
           border: 'none',
           borderRadius: 5,
-          color: isPending ? 'var(--text-3)' : 'var(--bg)',
+          color: isPending ? 'var(--text-3)' : 'var(--accent-contrast)',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
           fontWeight: 700,
@@ -870,7 +877,6 @@ export default function Home() {
   const todayOptionsQuery = useTodayOptions();
   const navigate = useNavigate();
   const [homeCheckinSubmitted, setHomeCheckinSubmitted] = useState(false);
-  const homeSurface = useHomeSurfaceFocus();
 
   if (isLoading) {
     return (
@@ -957,10 +963,6 @@ export default function Home() {
     navigate(path);
   }
 
-  const readinessColor = colorOf(readiness.color);
-  const tsbBucket = bucketize(fl.tsb, TSB_BUCKETS);
-  const tsbColor = colorOf(tsbBucket.color);
-
   function renderFocusSlot(slot: HomeFocusSlot) {
     if (slot === 'delta') {
       if (!latestDelta) return null;
@@ -1000,7 +1002,7 @@ export default function Home() {
                 margin: '-4px 0 0',
                 padding: '9px 10px',
                 background: 'var(--surface-2)',
-                border: '1px solid rgba(94,230,207,0.18)',
+                border: '1px solid rgba(47,102,208,0.18)',
                 borderRadius: 5,
                 color: 'var(--text-2)',
                 fontSize: 12,
@@ -1087,8 +1089,23 @@ export default function Home() {
     return null;
   }
 
+  const commandStack: HomeFocusSlot[] = [
+    'mental',
+    'action',
+    'todayOptions',
+    'adaptation',
+    'delta',
+    'learning',
+    'history',
+    'followUps',
+  ];
+  const commandItems = commandStack.flatMap((slot) => {
+    const item = renderFocusSlot(slot);
+    return item ? [item] : [];
+  });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 80 }}>
+    <div className="home-command-route">
 
       <div className="pulse-home-header">
         <div>
@@ -1098,6 +1115,14 @@ export default function Home() {
           <h1 className="pulse-page-heading" style={{ margin: 0 }}>
             Heute
           </h1>
+          <p className="pulse-home-subtitle">
+            Eine ruhige Entscheidung aus Körper, Plan, Alltag und Evidenz. Alles Weitere ist Kontext.
+          </p>
+          <div className="pulse-home-context-pills" aria-label="Tageskontext">
+            <span className="pulse-context-pill">Readiness <strong>{readiness.score}/100</strong></span>
+            <span className="pulse-context-pill">TSB <strong>{fmtSigned(fl.tsb)}</strong></span>
+            <span className="pulse-context-pill">Recovery <strong>{data.recovery?.recoveryScore ?? 'offen'}</strong></span>
+          </div>
         </div>
         <div className="pulse-home-status-chip">
           Trainingsfenster <span>offen</span>
@@ -1163,7 +1188,7 @@ export default function Home() {
               flexShrink: 0,
               padding: '9px 11px',
               background: garminSync.isPending ? 'var(--surface-2)' : 'var(--amber)',
-              color: garminSync.isPending ? 'var(--text-3)' : 'var(--bg)',
+              color: garminSync.isPending ? 'var(--text-3)' : 'var(--accent-contrast)',
               border: 'none',
               borderRadius: 5,
               fontFamily: 'var(--font-mono)',
@@ -1215,40 +1240,20 @@ export default function Home() {
         />
       )}
 
-      <div
-        data-testid="home-command-summary"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: 6,
-        }}
-      >
-        {[
-          { label: 'Readiness', value: readiness.score, suffix: '/100', color: readinessColor },
-          { label: 'TSB', value: fmtSigned(fl.tsb), suffix: '', color: tsbColor },
-          { label: 'Recovery', value: data.recovery?.recoveryScore ?? '–', suffix: typeof data.recovery?.recoveryScore === 'number' ? '/100' : '', color: 'var(--text)' },
-        ].map(item => (
-          <div
-            key={item.label}
-            style={{
-              padding: '8px 9px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              minWidth: 0,
-            }}
-          >
-            <div className="label-mono" style={{ fontSize: 8.5, color: 'var(--text-3)', marginBottom: 3 }}>{item.label}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: item.color }}>
-              {item.value}{item.suffix}
+      {commandItems.length > 0 && (
+        <section className="home-command-stack" data-testid="home-command-stack">
+          <div className="home-command-stack__header">
+            <div>
+              <div className="label-mono">Naechste Ebene</div>
+              <h2>Nur was heute noch offen ist</h2>
             </div>
+            <span>{commandItems.length} aktiv</span>
           </div>
-        ))}
-      </div>
-
-      <HomeSurfaceFocusCard focus={homeSurface.focus} onFocusChange={homeSurface.setFocus} />
-
-      {homeSurface.order.map(slot => renderFocusSlot(slot))}
+          <div className="home-command-grid">
+            {commandItems}
+          </div>
+        </section>
+      )}
 
     </div>
   );

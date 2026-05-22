@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pulseApi } from '@/pulse/api-client';
-import type { ActivityAnalytics, NutritionLog } from '@/pulse/api-client';
+import type { ActivityAnalytics, NutritionLog, NutritionLogPatch } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
 import {
   useActivityFeedback,
@@ -286,7 +286,7 @@ function RpeFeedbackSheet({
               width: '100%',
               padding: '12px',
               background: save.isPending ? 'var(--surface-2)' : 'var(--accent)',
-              color: save.isPending ? 'var(--text-3)' : 'var(--bg)',
+              color: save.isPending ? 'var(--text-3)' : 'var(--accent-contrast)',
               border: 'none',
               borderRadius: 5,
               fontFamily: 'var(--font-mono)',
@@ -360,7 +360,7 @@ function RpeFeedbackCard({
             flexShrink: 0,
             padding: '8px 10px',
             background: hasRpe ? 'transparent' : 'var(--accent)',
-            color: hasRpe ? 'var(--accent)' : 'var(--bg)',
+            color: hasRpe ? 'var(--accent)' : 'var(--accent-contrast)',
             border: `1px solid ${hasRpe ? 'var(--border)' : 'var(--accent)'}`,
             borderRadius: 5,
             fontFamily: 'var(--font-mono)',
@@ -683,6 +683,7 @@ function FuelingSection({
   onOpenFeedback: () => void;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [fuelingSaveNotice, setFuelingSaveNotice] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = useNutritionLogs(null, activityId);
@@ -709,12 +710,51 @@ function FuelingSection({
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
     : 'other';
-  const giComfortOptions: Array<{ value: NonNullable<NutritionLog['giComfort']>; label: string }> = [
-    { value: 'ok', label: GI_COMFORT_LABELS.ok },
-    { value: 'mild_issue', label: GI_COMFORT_LABELS.mild_issue },
-    { value: 'issue', label: GI_COMFORT_LABELS.issue },
+  const giComfortOptions: Array<{
+    value: NonNullable<NutritionLog['giComfort']>;
+    label: string;
+    hint: string;
+    color: string;
+    border: string;
+    background: string;
+  }> = [
+    {
+      value: 'ok',
+      label: GI_COMFORT_LABELS.ok,
+      hint: 'ruhig',
+      color: 'var(--green)',
+      border: 'rgba(22,163,74,0.36)',
+      background: 'rgba(22,163,74,0.08)',
+    },
+    {
+      value: 'mild_issue',
+      label: GI_COMFORT_LABELS.mild_issue,
+      hint: 'leicht',
+      color: 'var(--amber)',
+      border: 'rgba(217,119,6,0.38)',
+      background: 'rgba(217,119,6,0.08)',
+    },
+    {
+      value: 'issue',
+      label: GI_COMFORT_LABELS.issue,
+      hint: 'Problem',
+      color: 'var(--rose)',
+      border: 'rgba(225,29,72,0.34)',
+      background: 'rgba(225,29,72,0.07)',
+    },
   ];
   const routeHash = hashFromLocation(location.hash);
+
+  function saveFuelingEvidence(id: string, data: NutritionLogPatch, successNotice: string) {
+    setFuelingSaveNotice(null);
+    updateNutrition.mutate(
+      { id, data },
+      {
+        onSuccess: () => setFuelingSaveNotice(successNotice),
+        onError: () => setFuelingSaveNotice('Fueling-Evidence konnte nicht gespeichert werden. Bitte erneut versuchen.'),
+      },
+    );
+  }
 
   useEffect(() => {
     if (routeHash !== 'activity-fueling-log' || !evidenceQuality) return;
@@ -897,32 +937,70 @@ function FuelingSection({
                     {evidenceQuality.giComfortCompletionDetail}
                   </p>
                 )}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div
+                  data-testid="activity-gi-comfort-options"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
+                    gap: 8,
+                  }}
+                >
                   {giComfortOptions.map(option => (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => updateNutrition.mutate({
-                        id: giComfortCompletionLogId,
-                        data: { giComfort: option.value },
-                      })}
+                      aria-label={option.label}
+                      onClick={() => saveFuelingEvidence(
+                        giComfortCompletionLogId,
+                        { giComfort: option.value },
+                        'GI-Komfort gespeichert. Dieser Log kann jetzt in die Fueling-Evidence einfließen; Plan und Garmin bleiben unverändert.',
+                      )}
                       disabled={updateNutrition.isPending}
                       style={{
-                        minHeight: 44,
-                        background: 'rgba(0,0,0,0.18)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 4,
-                        padding: '6px 9px',
+                        minHeight: 52,
+                        display: 'grid',
+                        alignContent: 'center',
+                        gap: 3,
+                        background: updateNutrition.isPending ? 'var(--surface-2)' : option.background,
+                        border: `1.5px solid ${option.border}`,
+                        borderRadius: 6,
+                        padding: '8px 10px',
                         fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        color: 'var(--text-2)',
+                        fontSize: 10.5,
+                        color: option.color,
                         cursor: updateNutrition.isPending ? 'wait' : 'pointer',
+                        textAlign: 'left',
+                        boxShadow: '0 8px 22px rgba(15,23,42,0.06)',
+                        opacity: updateNutrition.isPending ? 0.66 : 1,
                       }}
                     >
-                      {option.label}
+                      <span>{option.label}</span>
+                      <span aria-hidden="true" style={{ fontSize: 8.5, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                        {option.hint}
+                      </span>
                     </button>
                   ))}
                 </div>
+                {fuelingSaveNotice && (
+                  <div
+                    data-testid="activity-fueling-save-notice"
+                    role="status"
+                    aria-live="polite"
+                    style={{
+                      marginTop: 8,
+                      padding: '6px 8px',
+                      borderRadius: 4,
+                      border: `1px solid ${fuelingSaveNotice.includes('konnte nicht') ? 'rgba(248,113,113,0.35)' : 'rgba(74,222,128,0.32)'}`,
+                      background: fuelingSaveNotice.includes('konnte nicht') ? 'rgba(248,113,113,0.06)' : 'rgba(74,222,128,0.06)',
+                      color: fuelingSaveNotice.includes('konnte nicht') ? 'var(--rose)' : 'var(--green)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9.5,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {fuelingSaveNotice}
+                  </div>
+                )}
               </div>
             )}
             {detailCompletionLogId && evidenceQuality.detailCompletions.length > 0 && (
@@ -941,10 +1019,11 @@ function FuelingSection({
                   {detailCompletionPatch && evidenceQuality.detailCompletions.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => updateNutrition.mutate({
-                        id: detailCompletionLogId,
-                        data: detailCompletionPatch,
-                      })}
+                      onClick={() => saveFuelingEvidence(
+                        detailCompletionLogId,
+                        detailCompletionPatch,
+                        'Fueling-Details gespeichert. Pulse bewertet die Evidence neu; Plan und Garmin bleiben unverändert.',
+                      )}
                       disabled={updateNutrition.isPending}
                       style={{
                         minHeight: 44,
@@ -965,10 +1044,11 @@ function FuelingSection({
                     <button
                       key={completion.label}
                       type="button"
-                      onClick={() => updateNutrition.mutate({
-                        id: detailCompletionLogId,
-                        data: completion.patch,
-                      })}
+                      onClick={() => saveFuelingEvidence(
+                        detailCompletionLogId,
+                        completion.patch,
+                        'Fueling-Detail gespeichert. Pulse bewertet die Evidence neu; Plan und Garmin bleiben unverändert.',
+                      )}
                       disabled={updateNutrition.isPending}
                       style={{
                         minHeight: 44,
@@ -1004,8 +1084,8 @@ function FuelingSection({
               marginTop: 10,
               padding: 10,
               borderRadius: 'var(--radius)',
-              border: '1px solid rgba(94,230,207,0.28)',
-              background: 'rgba(94,230,207,0.055)',
+              border: '1px solid rgba(47,102,208,0.28)',
+              background: 'rgba(47,102,208,0.055)',
             }}
           >
             <div style={{
@@ -1061,10 +1141,10 @@ function FuelingSection({
                 onClick={() => navigate(offPlanFuelingPlanFollowUpTarget(activityId))}
                 style={{
                   minHeight: 44,
-                  border: '1px solid rgba(94,230,207,0.46)',
+                  border: '1px solid rgba(47,102,208,0.46)',
                   borderRadius: 4,
                   padding: '7px 10px',
-                  background: 'rgba(94,230,207,0.08)',
+                  background: 'rgba(47,102,208,0.08)',
                   color: 'var(--accent)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
@@ -1300,28 +1380,37 @@ export default function ActivityDetail() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* Back + Title */}
-      <div>
+      <header className="pulse-activity-header">
+        <div>
+          <div className="label-mono" style={{ marginBottom: 5 }}>{dateStr}</div>
+          <h1 className="pulse-activity-title">
+            {a.name ?? a.activityType}
+          </h1>
+        </div>
         <button
+          type="button"
           onClick={() => navigate(-1)}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
-            color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 8, padding: 0,
+            minWidth: 44,
+            minHeight: 44,
+            padding: '8px 12px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            color: 'var(--text-2)',
+            fontSize: 12,
+            fontWeight: 700,
           }}
         >
-          ← Zurück
+          Zurück
         </button>
-        <div className="label-mono" style={{ marginBottom: 4 }}>{dateStr}</div>
-        <h1 style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>
-          {a.name ?? a.activityType}
-        </h1>
-      </div>
+      </header>
 
       <RpeFeedbackCard activity={a} nowMs={nowMs} onOpen={() => setRpeOpen(true)} />
 
       {/* KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div className="pulse-kpi-grid">
         <KpiItem label="Dauer" value={fmtDuration(a.durationSec)} />
         <KpiItem label="Distanz" value={a.distanceM ? (a.distanceM / 1000).toFixed(1) : '–'} unit="km" />
         <KpiItem label="TSS" value={fmt(a.tss, 0)} />

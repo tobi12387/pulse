@@ -49,7 +49,7 @@ export function PlanDecisionCard({
   const evidence = buildPlanDecisionEvidence(decision);
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+    <div className="card" style={{ borderColor: 'rgba(47,102,208,0.18)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Warum diese Woche so?</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', maxWidth: '100%', overflowWrap: 'anywhere' }}>
@@ -61,7 +61,7 @@ export function PlanDecisionCard({
         {decision.selectedDays.map(day => (
           <span key={`sel-${day}`} style={{
             fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)',
-            border: '1px solid rgba(94,230,207,0.35)', borderRadius: 4, padding: '3px 7px',
+            border: '1px solid rgba(47,102,208,0.35)', borderRadius: 4, padding: '3px 7px',
           }}>
             {dayLabels[day] ?? day} Training
           </span>
@@ -113,7 +113,7 @@ export function PlanDecisionCard({
 export function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | null; isLoading: boolean }) {
   if (isLoading && !trace) {
     return (
-      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.14)' }}>
+      <div className="card" style={{ borderColor: 'rgba(47,102,208,0.14)' }}>
         <Skeleton height={10} width="34%" />
         <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
           <Skeleton height={42} />
@@ -136,7 +136,7 @@ export function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | nu
   const goalLimiter = trace.inputSnapshot.goalLimiter ?? null;
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(94,230,207,0.18)' }}>
+    <div className="card" style={{ borderColor: 'rgba(47,102,208,0.18)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
         <span className="label-mono" style={{ color: 'var(--accent)' }}>Einbezogene Daten</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
@@ -210,7 +210,7 @@ export function PlanTraceCard({ trace, isLoading }: { trace: PulsePlanTrace | nu
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         {(goalNames.length > 0 ? goalNames : ['Kein aktives Ziel']).map(goal => (
-          <span key={`goal-${goal}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', border: '1px solid rgba(94,230,207,0.35)', borderRadius: 4, padding: '3px 7px' }}>
+          <span key={`goal-${goal}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', border: '1px solid rgba(47,102,208,0.35)', borderRadius: 4, padding: '3px 7px' }}>
             Ziel: {goal}
           </span>
         ))}
@@ -596,7 +596,7 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
 
   if (isLoading && !strategy) {
     return (
-      <div className="card" style={{ borderColor: 'rgba(94,230,207,0.16)' }}>
+      <div className="card" style={{ borderColor: 'rgba(47,102,208,0.16)' }}>
         <Skeleton height={10} width="26%" />
         <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
           <Skeleton height={48} />
@@ -615,7 +615,7 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
   const loadModel = (strategy as PulseSeasonStrategy & { loadModel?: PulseSeasonStrategy['loadModel'] }).loadModel ?? null;
 
   return (
-    <div className="card" data-testid="plan-season-strategy-card" style={{ borderColor: 'rgba(94,230,207,0.2)' }}>
+    <div className="card" data-testid="plan-season-strategy-card" style={{ borderColor: 'rgba(47,102,208,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span className="label-mono" style={{ color: 'var(--accent)' }}>Saisonlinie</span>
@@ -631,8 +631,8 @@ export function SeasonStrategyCard({ strategy, isLoading }: { strategy: PulseSea
             minWidth: 44,
             minHeight: 44,
             padding: '7px 10px',
-            background: detailsOpen ? 'rgba(94,230,207,0.12)' : 'var(--surface-2)',
-            border: `1px solid ${detailsOpen ? 'rgba(94,230,207,0.38)' : 'var(--border)'}`,
+            background: detailsOpen ? 'rgba(47,102,208,0.12)' : 'var(--surface-2)',
+            border: `1px solid ${detailsOpen ? 'rgba(47,102,208,0.38)' : 'var(--border)'}`,
             borderRadius: 4,
             color: detailsOpen ? 'var(--accent)' : 'var(--text-2)',
             cursor: 'pointer',

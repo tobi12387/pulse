@@ -6,13 +6,15 @@ type FCardProps = {
   pad?: string;
   children: ReactNode;
   testId?: string;
+  className?: string;
   style?: CSSProperties;
 };
 
-export function FCard({ eyebrow, right, pad = '14px 16px', children, testId, style }: FCardProps) {
+export function FCard({ eyebrow, right, pad = '14px 16px', children, testId, className, style }: FCardProps) {
   return (
     <section
       data-testid={testId}
+      className={className}
       style={{
         padding: pad,
         background: 'var(--surface)',
@@ -58,14 +60,14 @@ export function FButton({ children, onClick, variant = 'secondary', disabled, ar
         minHeight: 44,
         padding: '12px 18px',
         background: primary ? 'var(--accent)' : 'transparent',
-        color: primary ? 'var(--bg)' : 'var(--text-2)',
+        color: primary ? 'var(--accent-contrast)' : 'var(--text-2)',
         border: primary ? 'none' : `1px ${ghost ? 'dashed' : 'solid'} ${ghost ? 'var(--accent)' : 'var(--border)'}`,
         borderRadius: 'var(--radius-md)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 11,
-        fontWeight: 500,
+        fontFamily: 'var(--font-sans)',
+        fontSize: 12,
+        fontWeight: 700,
         letterSpacing: 0,
-        textTransform: 'uppercase',
+        textTransform: 'none',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.6 : 1,
         whiteSpace: 'nowrap',
@@ -94,20 +96,12 @@ export function FPill({ children, tone = 'muted', filled = false }: FPillProps) 
   const color = TONE_VAR[tone];
   return (
     <span
+      className={`focus-pill focus-pill--${tone}${filled ? ' focus-pill--filled' : ''}`}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        minHeight: 18,
-        padding: '2px 7px',
         border: filled ? 'none' : `1px solid ${color}`,
         borderRadius: 'var(--radius-sm)',
         background: filled ? (tone === 'accent' ? 'var(--accent-dim)' : `color-mix(in srgb, ${color} 16%, transparent)`) : 'transparent',
         color,
-        fontFamily: 'var(--font-mono)',
-        fontSize: 9,
-        letterSpacing: 0,
-        textTransform: 'uppercase',
-        whiteSpace: 'nowrap',
       }}
     >
       {children}
@@ -125,7 +119,7 @@ export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW'
   return (
     <div
       data-testid="stage-strip"
-      style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', borderBottom: '1px solid var(--border)' }}
+      className="focus-stage-strip"
     >
       {stages.map((stage, index) => {
         const isActive = stage === active;
@@ -133,38 +127,18 @@ export function StageStrip({ active }: { active: 'DECIDE' | 'EXECUTE' | 'REVIEW'
           <div
             key={stage}
             data-testid={`stage-strip-${stage.toLowerCase()}`}
-            style={{
-              minHeight: 42,
-              padding: '11px 14px',
-              borderRight: index < stages.length - 1 ? '1px solid var(--border)' : 'none',
-              background: isActive ? 'var(--surface-raised)' : 'transparent',
-              color: isActive ? 'var(--accent)' : index < stages.indexOf(active) ? 'var(--text-2)' : 'var(--text-3)',
-              display: 'flex',
-              alignItems: 'center',
-              columnGap: 7,
-              rowGap: 2,
-              flexWrap: 'wrap',
-              minWidth: 0,
-            }}
+            className={`focus-stage-step${isActive ? ' focus-stage-step--active' : ''}${index < stages.indexOf(active) ? ' focus-stage-step--done' : ''}`}
           >
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.16em', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+            <span className="focus-stage-index">
               {String(index + 1).padStart(2, '0')}
             </span>
-            <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 650, letterSpacing: 0, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+            <span className="focus-stage-label">
               {stageLabel[stage]}
             </span>
             {isActive && (
               <span
                 data-testid="stage-strip-active-status"
-                style={{
-                  flexBasis: '100%',
-                  marginLeft: 22,
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: 0,
-                  lineHeight: 1.2,
-                  whiteSpace: 'nowrap',
-                }}
+                className="focus-stage-status"
               >
                 Jetzt
               </span>
