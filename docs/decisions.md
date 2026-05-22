@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Mobile Route-Tabs werden zur leichten Navigations-Rail
+
+- **Decision:** Data und Plan rendern ihre mobilen Bereichs-Tabs als eine gemeinsame leichte Pill-Rail mit nur einer aktiven Surface statt als mehrere gleich schwere Mini-Karten.
+- **Why:** Die frische Post-Redesign-Route-Evidence zeigte zwar keinen Overflow, aber die Tab-Zeile konkurrierte auf Mobile noch visuell mit der ersten Data-Aktion und der Wochenentscheidung. Fuer eine Top-App-artige Performance-OS-Oberflaeche soll Route-Navigation Orientierung geben, ohne wie Inhalt oder eine weitere Entscheidung zu wirken.
+- **Alternatives:** Die vorhandenen boxed Tabs behalten (stabil, aber weiterhin schwer); die Tabs in ein verstecktes Menue verschieben (mehr Reibung und schlechter fuer schnelle Route-Wechsel); Touch-Ziele verkleinern (widerspricht der iPhone/PWA-Nutzung).
+- **Decided by:** Codex, als UI/UX-Friction-Follow-up im Branch `codex/performance-ux-friction-2`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Activity-Fueling-Deep-Link zeigt nur die primaere GI-Auswahl
 
 - **Decision:** Wenn Activity Detail ueber `#activity-fueling-log` bereits die fokussierte GI-Komfort-Auswahl fuer den aktuellen Log zeigt, rendert die Fueling-Baseline darunter keinen zweiten primaeren `GI-Komfort ergaenzen`-Button mehr.

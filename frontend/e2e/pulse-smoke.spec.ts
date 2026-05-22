@@ -41,6 +41,19 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
 
+async function expectTabsVisibleWithinViewport(page: Page, labels: string[]) {
+  const viewportWidth = page.viewportSize()?.width ?? 0;
+
+  for (const label of labels) {
+    const tab = page.getByRole('tab', { name: label });
+    await tab.scrollIntoViewIfNeeded();
+    const box = await tab.boundingBox();
+    expect(box, `${label} tab has a visible box`).not.toBeNull();
+    expect(box!.x, `${label} tab left edge`).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width, `${label} tab right edge`).toBeLessThanOrEqual(viewportWidth);
+  }
+}
+
 function localIsoDate(daysFromToday = 0) {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
@@ -2355,17 +2368,7 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   await page.goto('/data');
   await expectHealthyPage(page, 'Daten');
 
-  const viewportWidth = page.viewportSize()?.width ?? 0;
-  const labels = ['Heute relevant', 'Trends', 'Datenqualität', 'Analyse'];
-
-  for (const label of labels) {
-    const tab = page.getByRole('tab', { name: label });
-    await tab.scrollIntoViewIfNeeded();
-    const box = await tab.boundingBox();
-    expect(box, `${label} tab has a visible box`).not.toBeNull();
-    expect(box!.x, `${label} tab left edge`).toBeGreaterThanOrEqual(0);
-    expect(box!.x + box!.width, `${label} tab right edge`).toBeLessThanOrEqual(viewportWidth);
-  }
+  await expectTabsVisibleWithinViewport(page, ['Heute relevant', 'Trends', 'Datenqualität', 'Analyse']);
 });
 
 test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo) => {
@@ -2389,6 +2392,15 @@ test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo
   });
 
   expect(overflow).toEqual([]);
+});
+
+test('Plan mobile subnavigation keeps every section tab in the visible viewport', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
+
+  await page.goto('/plan');
+  await expectHealthyPage(page, 'Plan');
+
+  await expectTabsVisibleWithinViewport(page, ['Training', 'Ausführung', 'Ziele', 'Review', 'Statistik']);
 });
 
 test('Plan mobile week strip fits seven days without hidden horizontal scrolling', async ({ page }, testInfo) => {
