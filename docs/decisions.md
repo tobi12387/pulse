@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Performance-Gate akzeptiert docs-only Server-Drift bei gleicher App-Runtime
+
+- **Decision:** `npm run audit:performance-gates` behandelt einen strengen `verify:server`-Commit-Mismatch als server-ready, wenn der Server sauber auf `main` steht und Server-Commit sowie erwarteter Commit denselben letzten App-Runtime-Commit ueber `frontend`, `backend`, `shared`, `package.json` und `package-lock.json` aufloesen.
+- **Why:** Docs- und Tooling-PRs duerfen die echten Performance-OS-Feldgates nicht kuenstlich als Deploy-/Server-Blocker erscheinen lassen. Der strenge `verify:server`-Check bleibt fuer exakte Mirror-Pruefung erhalten, aber die kombinierte Gate-Handoff-Sicht soll auf echte Runtime-Aenderungen fokussieren.
+- **Alternatives:** Nach jedem docs-only PR den erwarteten Server-Commit in Fokusdocs hochziehen (Endlos-Churn); `verify:server` selbst lockern (schwaecher fuer Deploy-Sicherheit); Server-Gate in Feature- und Field-Handoffs komplett skippen (zu wenig Schutz vor echten Mirror-Problemen).
+- **Decided by:** Codex, als Performance-OS-Gate-Tooling-Slice im Branch `codex/server-runtime-drift-gate`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Fueling-Gate bekommt fokussierte Capture-Checklist
 
 - **Decision:** `npm run audit:fueling-gate` bekommt ein fokussiertes `--capture-checklist`-Format, das alle aktuellen Fueling-Completion-Kandidaten, die erlaubten GI-Komfort-Werte, Save-/Rerun-Schritte und den verbleibenden Future-Long-Session-Schritt als Checkboxen rendert.

@@ -50,7 +50,7 @@ function withPulseUrl(url, fn) {
   }
 }
 
-function makeRunner({ fueling, iphone, server, commit = 'abc1234', mainCommit = commit, branch = 'main' }) {
+function makeRunner({ fueling, iphone, server, commit = 'abc1234', mainCommit = commit, branch = 'main', runtimeCommits = {} }) {
   return (command, args) => {
     if (command === 'git' && args.join(' ') === 'rev-parse --short HEAD') {
       return commandResult(0, `${commit}\n`);
@@ -60,6 +60,11 @@ function makeRunner({ fueling, iphone, server, commit = 'abc1234', mainCommit = 
     }
     if (command === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') {
       return commandResult(0, `${branch}\n`);
+    }
+    if (command === 'git' && args[0] === 'log' && args[1] === '-1' && args[2] === '--format=%h') {
+      const ref = args[3];
+      const runtimeCommit = runtimeCommits[ref];
+      return runtimeCommit ? commandResult(0, `${runtimeCommit}\n`) : commandResult(1, '', `unknown ref ${ref}`);
     }
     if (args[0] === 'scripts/fueling-gate-audit.mjs') return fueling;
     if (args[0] === 'scripts/iphone-pwa-gate-audit.mjs') return iphone;
@@ -592,6 +597,36 @@ test('performance gate audit distinguishes server mirror state failures from SSH
   assert.equal(audit.gates[2].recoveryPacketCommand, null);
   assert.doesNotMatch(renderNextUnblock(audit), /deploy-auth-recovery/);
   assert.match(renderNextUnblock(audit), /server-mirror-recovery/);
+});
+
+test('performance gate audit accepts docs-only server drift when app runtime matches', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21', expectedCommit: 'abc1234' }, makeRunner({
+    fueling: READY_FUELING,
+    iphone: GATED_IPHONE,
+    server: commandResult(1, [
+      '==> ssh access',
+      'ssh=ok',
+      'ssh_target=pulse-server',
+      '==> server git status',
+      'branch=main commit=docsnew dirty=0',
+    ].join('\n'), 'ERROR: server commit docsnew != expected abc1234\n'),
+    runtimeCommits: {
+      abc1234: 'runtime1',
+      docsnew: 'runtime1',
+    },
+  }));
+
+  assert.equal(audit.openGates, 1);
+  assert.equal(audit.nextUnblock.key, 'iphone_pwa');
+  assert.equal(audit.gates[1].serverRecoveryPacketCommand, null);
+  assert.equal(audit.gates[1].nextAction, 'Rerun the real iPhone checklist and record Server commit under test: abc1234.');
+  assert.equal(audit.gates[2].gate, 'ready');
+  assert.equal(audit.gates[2].commitStatus, 'current_runtime');
+  assert.equal(audit.gates[2].serverCommit, 'docsnew');
+  assert.equal(audit.gates[2].expectedRuntimeCommit, 'runtime1');
+  assert.equal(audit.gates[2].serverRuntimeCommit, 'runtime1');
+  assert.match(audit.gates[2].detail, /app runtime matches expected abc1234 via runtime commit runtime1/);
+  assert.match(renderPerformanceGateAudit(audit), /docs\/tooling-only drift does not change the deployed app runtime/);
 });
 
 test('performance gate audit CLI args accept an explicit expected commit', () => {

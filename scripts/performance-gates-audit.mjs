@@ -5,6 +5,13 @@ import { pathToFileURL } from 'node:url';
 const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const IPHONE_FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
 const DEFAULT_PULSE_URL = 'https://192.168.178.46:5175';
+const APP_RUNTIME_PATHS = [
+  'frontend',
+  'backend',
+  'shared',
+  'package.json',
+  'package-lock.json',
+];
 
 function shellEnvValue(value) {
   const text = String(value ?? '').trim();
@@ -392,6 +399,25 @@ function resolveGitCommit(runner, ref) {
   return result.stdout.trim() || 'unknown';
 }
 
+function commitsMatch(left, right) {
+  if (!left || !right || left === 'unknown' || right === 'unknown') return false;
+  return left === right || left.startsWith(right) || right.startsWith(left);
+}
+
+function resolveAppRuntimeCommit(runner, ref) {
+  if (!ref || ref === 'unknown') return null;
+  const result = runner('git', [
+    'log',
+    '-1',
+    '--format=%h',
+    ref,
+    '--',
+    ...APP_RUNTIME_PATHS,
+  ]);
+  if (result.status !== 0) return null;
+  return result.stdout.trim() || null;
+}
+
 function resolveExpectedCommit(runner) {
   return resolveGitCommit(runner, 'HEAD');
 }
@@ -441,6 +467,20 @@ function serverNextAction(issueKind, recoveryRunbook, command, expectedCommit) {
   return `Restore non-interactive SSH auth using ${recoveryRunbook}, then rerun ${command}.`;
 }
 
+function cleanMainServerCommit(output) {
+  return firstMatch(output, /branch=main\s+commit=([^\s]+)\s+dirty=0/);
+}
+
+function runtimeEquivalentServer(expectedCommit, serverCommit, runner) {
+  const expectedRuntimeCommit = resolveAppRuntimeCommit(runner, expectedCommit);
+  const serverRuntimeCommit = resolveAppRuntimeCommit(runner, serverCommit);
+  if (!commitsMatch(expectedRuntimeCommit, serverRuntimeCommit)) return null;
+  return {
+    expectedRuntimeCommit,
+    serverRuntimeCommit,
+  };
+}
+
 function summarizeServer(expectedCommit, runner) {
   const command = serverVerifyCommand(expectedCommit);
   const recoveryPacketCommand = serverRecoveryPacketCommand(expectedCommit);
@@ -459,6 +499,29 @@ function summarizeServer(expectedCommit, runner) {
     ? `Server mirror verified against expected commit ${expectedCommit}.`
     : compactCommandError(result);
   const issueKind = ready ? null : serverIssueKind(detail);
+  const serverCommit = ready ? expectedCommit : cleanMainServerCommit(combinedOutput);
+  const runtimeEquivalence = !ready && issueKind === 'mirror_state' && /server commit .* != expected/i.test(detail)
+    ? runtimeEquivalentServer(expectedCommit, serverCommit, runner)
+    : null;
+
+  if (runtimeEquivalence) {
+    return {
+      key: 'server',
+      label: 'Server deploy mirror',
+      gate: 'ready',
+      ready: true,
+      command,
+      detail: `Server mirror is clean main at ${serverCommit}; app runtime matches expected ${expectedCommit} via runtime commit ${runtimeEquivalence.expectedRuntimeCommit}.`,
+      nextAction: 'No server mirror action needed; docs/tooling-only drift does not change the deployed app runtime.',
+      expectedCommit: outputCommit,
+      serverCommit,
+      commitStatus: 'current_runtime',
+      expectedRuntimeCommit: runtimeEquivalence.expectedRuntimeCommit,
+      serverRuntimeCommit: runtimeEquivalence.serverRuntimeCommit,
+      recoveryRunbook: null,
+      recoveryPacketCommand: null,
+    };
+  }
 
   return {
     key: 'server',
