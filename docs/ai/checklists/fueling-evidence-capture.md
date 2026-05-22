@@ -75,6 +75,13 @@ For the shortest first-target prompt to use in a manual capture/chat handoff, ru
 npm run audit:fueling-gate -- --today <YYYY-MM-DD> --next-prompt
 ```
 
+For a focused checkbox checklist that walks every current Fueling completion
+candidate plus the remaining future long-session capture step, run:
+
+```bash
+npm run audit:fueling-gate -- --today <YYYY-MM-DD> --capture-checklist
+```
+
 For clipboard/script use across all existing completion candidates, print one
 candidate URL per line:
 

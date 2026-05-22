@@ -3,13 +3,16 @@ import test from 'node:test';
 import {
   buildFuelingGateAudit,
   exitCodeForFuelingCandidateUrls,
+  exitCodeForFuelingCaptureChecklist,
   exitCodeForFuelingNewLogChecklist,
   exitCodeForFuelingNextPrompt,
+  fuelingCaptureChecklistNeeded,
   fuelingCandidateUrls,
   fuelingNewLogChecklistUsers,
   fuelingNextPromptUser,
   parseArgs,
   renderFuelingCandidateUrls,
+  renderFuelingCaptureChecklist,
   renderFuelingEvidencePacket,
   renderFuelingGateAudit,
   renderFuelingNewLogChecklist,
@@ -113,6 +116,8 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.equal(exitCodeForFuelingNewLogChecklist(audit), 0);
   assert.equal(fuelingNextPromptUser(audit), audit.users[0]);
   assert.equal(exitCodeForFuelingNextPrompt(audit), 0);
+  assert.equal(fuelingCaptureChecklistNeeded(audit), true);
+  assert.equal(exitCodeForFuelingCaptureChecklist(audit), 0);
 
   const rendered = renderFuelingGateAudit(audit);
   assert.match(rendered, /Comparable complete logs: 0\/3/);
@@ -170,6 +175,19 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(nextPrompt, /After saving this target, another existing completion candidate remains: 1/);
   assert.match(nextPrompt, /Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward/);
   assert.match(nextPrompt, /Rerun after save: npm run audit:fueling-gate -- --today 2026-05-21/);
+
+  const captureChecklist = renderFuelingCaptureChecklist(audit);
+  assert.match(captureChecklist, /# Fueling Capture Checklist/);
+  assert.match(captureChecklist, /Comparable complete logs: 0\/3/);
+  assert.match(captureChecklist, /Existing logs completable now: 2/);
+  assert.match(captureChecklist, /Open https?:\/\/[^\s]+\/plan\/activity\/activity-long-ride#activity-fueling-log for 2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\)\./);
+  assert.match(captureChecklist, /Confirm activity\/date\/duration\/carbs match the audit target; missing evidence: GI comfort\./);
+  assert.match(captureChecklist, /Choose exactly one real GI comfort value: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme\./);
+  assert.match(captureChecklist, /Do not infer GI comfort from notes, route, RPE, g\/h, result, pace or how the workout looks afterward\./);
+  assert.match(captureChecklist, /Save through the Activity Fueling UI; do not edit database rows directly\./);
+  assert.match(captureChecklist, /Rerun after this save: `npm run audit:fueling-gate -- --today 2026-05-21`\./);
+  assert.match(captureChecklist, /After existing candidates, capture 1 complete long-session log with activity\/duration, during carbs and structured GI comfort together\./);
+  assert.match(captureChecklist, /Use the future-log scaffold when ready: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`\./);
 });
 
 test('fueling gate packet respects a configured Pulse URL', () => {
@@ -219,8 +237,11 @@ test('fueling gate audit opens after three comparable complete logs', () => {
   assert.equal(exitCodeForFuelingNewLogChecklist(audit), 1);
   assert.equal(fuelingNextPromptUser(audit), null);
   assert.equal(exitCodeForFuelingNextPrompt(audit), 1);
+  assert.equal(fuelingCaptureChecklistNeeded(audit), false);
+  assert.equal(exitCodeForFuelingCaptureChecklist(audit), 1);
   assert.match(renderFuelingNewLogChecklist(audit), /No new complete long-session log is currently needed/);
   assert.match(renderFuelingNextPrompt(audit), /Fueling evidence is ready; no manual next prompt is needed/);
+  assert.match(renderFuelingCaptureChecklist(audit), /Fueling evidence is ready; no manual capture checklist is needed/);
   assert.match(renderFuelingGateAudit(audit), /trend summaries can be enabled/);
 });
 
@@ -231,6 +252,7 @@ test('fueling gate audit CLI args accept handoff-only modes', () => {
     '--today',
     '2026-05-21',
     '--next-prompt',
+    '--capture-checklist',
     '--candidate-urls',
     '--new-log-checklist',
   ]), {
@@ -241,6 +263,7 @@ test('fueling gate audit CLI args accept handoff-only modes', () => {
     envFile: null,
     packet: false,
     nextPrompt: true,
+    captureChecklist: true,
     candidateUrls: true,
     newLogChecklist: true,
     json: false,

@@ -47,6 +47,7 @@ function usage() {
     '  --env-file <path>         Env file to load before .env/.env.test fallbacks.',
     '  --packet                  Print a manual evidence-capture packet instead of the audit table.',
     '  --next-prompt             Print a short first-target prompt for manual evidence capture; exits 1 if no prompt is available.',
+    '  --capture-checklist       Print a concise checkbox checklist for the current Fueling capture session; exits 1 if no capture is needed.',
     '  --candidate-urls          Print only existing completion candidate URLs; exits 1 if none.',
     '  --new-log-checklist       Print only the future long-session log checklist; exits 1 if none needed.',
     '  --json                    Print machine-readable JSON.',
@@ -602,6 +603,88 @@ export function exitCodeForFuelingNextPrompt(audit) {
   return fuelingNextPromptUser(audit) ? 0 : 1;
 }
 
+function checkbox(text) {
+  return `- [ ] ${text}`;
+}
+
+function commandText(command) {
+  return `\`${command}\``;
+}
+
+export function fuelingCaptureChecklistNeeded(audit) {
+  const users = audit.users ?? [];
+  return users.length === 0 || users.some(user => user.gate !== 'ready');
+}
+
+export function renderFuelingCaptureChecklist(audit) {
+  const lines = [
+    '# Fueling Capture Checklist',
+    '',
+    `Window: ${audit.since}..${audit.today}`,
+    `Required comparable complete logs: ${audit.requiredCompleteLogs}`,
+    `Evidence checklist: ${EVIDENCE_CHECKLIST}`,
+    '',
+  ];
+
+  if ((audit.users ?? []).length === 0) {
+    lines.push('No during nutrition logs found in the audit window.');
+    lines.push(checkbox('Capture complete long-session Fueling logs with activity/duration, during carbs and structured GI comfort together.'));
+    lines.push(checkbox(`Rerun after capture: ${commandText(`npm run audit:fueling-gate -- --today ${audit.today}`)}.`));
+    return lines.join('\n');
+  }
+
+  const gatedUsers = audit.users.filter(user => user.gate !== 'ready');
+  if (gatedUsers.length === 0) {
+    lines.push('Fueling evidence is ready; no manual capture checklist is needed.');
+    lines.push(checkbox(`Rerun before enabling new nutrition trend behavior: ${commandText(`npm run audit:fueling-gate -- --today ${audit.today}`)}.`));
+    return lines.join('\n');
+  }
+
+  gatedUsers.forEach((user, userIndex) => {
+    if (userIndex > 0) lines.push('');
+    lines.push(`## User ${shortId(user.userId)}`);
+    lines.push(`Comparable complete logs: ${user.comparableCompleteLogs}/${user.requiredComparableCompleteLogs}`);
+    lines.push(`Existing logs completable now: ${user.completableNow}`);
+    lines.push(`New complete long-session logs still needed after candidates: ${user.newLogsStillNeeded}`);
+    lines.push('');
+
+    const candidates = user.completionCandidates ?? [];
+    if (candidates.length > 0) {
+      candidates.forEach((candidate, index) => {
+        const target = candidate.targetUrl ?? pulseTargetUrl(candidate.targetPath) ?? candidate.targetPath;
+        const summary = candidate.summary ?? candidateSummary(candidate) ?? `Candidate ${index + 1}`;
+        const missing = candidateMissingText(candidate);
+        lines.push(checkbox(target ? `Open ${target} for ${summary}.` : `Open the Activity Fueling target for ${summary}.`));
+        lines.push(checkbox(`Confirm activity/date/duration/carbs match the audit target; missing evidence: ${missing}.`));
+        if ((candidate.missing ?? []).includes('GI comfort')) {
+          lines.push(checkbox(`Choose exactly one real GI comfort value: ${structuredGiComfortOptionsText()}.`));
+          lines.push(checkbox('Do not infer GI comfort from notes, route, RPE, g/h, result, pace or how the workout looks afterward.'));
+        }
+        if ((candidate.missing ?? []).includes('carbs')) {
+          lines.push(checkbox('Enter only the actual during-activity carbs from that session.'));
+        }
+        lines.push(checkbox('Save through the Activity Fueling UI; do not edit database rows directly.'));
+        lines.push(checkbox(`Rerun after this save: ${commandText(`npm run audit:fueling-gate -- --today ${audit.today}`)}.`));
+      });
+    } else {
+      lines.push(checkbox('No existing completion candidate is currently available; use the next long-session capture step below.'));
+    }
+
+    if (Number(user.newLogsStillNeeded ?? 0) > 0) {
+      lines.push('');
+      lines.push(checkbox(`After existing candidates, capture ${pluralLog(user.newLogsStillNeeded)} with activity/duration, during carbs and structured GI comfort together.`));
+      lines.push(checkbox(`Use the future-log scaffold when ready: ${commandText(`npm run audit:fueling-gate -- --today ${audit.today} --new-log-checklist`)}.`));
+      lines.push(checkbox('Keep sodium, heat and sweat-rate as evidence gaps unless they were explicitly measured.'));
+    }
+  });
+
+  return lines.join('\n').trimEnd();
+}
+
+export function exitCodeForFuelingCaptureChecklist(audit) {
+  return fuelingCaptureChecklistNeeded(audit) ? 0 : 1;
+}
+
 export function fuelingCandidateUrls(audit) {
   return audit.users
     .flatMap(user => user.completionCandidates ?? [])
@@ -626,6 +709,7 @@ export function parseArgs(argv) {
     envFile: null,
     packet: false,
     nextPrompt: false,
+    captureChecklist: false,
     candidateUrls: false,
     newLogChecklist: false,
     json: false,
@@ -643,6 +727,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--next-prompt') {
       result.nextPrompt = true;
+      continue;
+    }
+    if (arg === '--capture-checklist') {
+      result.captureChecklist = true;
       continue;
     }
     if (arg === '--candidate-urls') {
@@ -806,6 +894,13 @@ async function main(argv) {
     const checklist = renderFuelingNewLogChecklist(output);
     console.log(checklist);
     process.exitCode = exitCodeForFuelingNewLogChecklist(output);
+    return;
+  }
+
+  if (args.captureChecklist) {
+    const checklist = renderFuelingCaptureChecklist(output);
+    console.log(checklist);
+    process.exitCode = exitCodeForFuelingCaptureChecklist(output);
     return;
   }
 

@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Fueling-Gate bekommt fokussierte Capture-Checklist
+
+- **Decision:** `npm run audit:fueling-gate` bekommt ein fokussiertes `--capture-checklist`-Format, das alle aktuellen Fueling-Completion-Kandidaten, die erlaubten GI-Komfort-Werte, Save-/Rerun-Schritte und den verbleibenden Future-Long-Session-Schritt als Checkboxen rendert.
+- **Why:** Der erste offene Performance-OS-Unblock ist Fueling-Evidence, aber der normale Packet-Output ist fuer eine schnelle manuelle Capture-Session zu ausfuehrlich. Eine kompakte Checkliste reduziert Reibung, ohne GI-Komfort zu inferieren oder Nutrition-Trends vor dem 3/3-Gate freizuschalten.
+- **Alternatives:** Nur `--packet` und `--next-prompt` behalten (korrekt, aber entweder zu lang oder nur erster Kandidat); Produktlogik fuer Trends vorziehen (gated); Datenbank direkt patchen (verboten fuer normale Evidence-Capture).
+- **Decided by:** Codex, als Fueling-Evidence-Support-Slice im Branch `codex/fueling-capture-checklist`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Mobile Deep Links landen auf vollstaendigen Task-Bloecken
 
 - **Decision:** Mobile Deep Links zu handlungsorientierten Evidence-Sections muessen den vollstaendigen Task-Kontext unterhalb der fixen App-Chrome sichtbar machen; die mobile Top- und Bottom-Chrome verwendet dafuer eine solide Surface-Flaeche statt transluzentem Glass.
