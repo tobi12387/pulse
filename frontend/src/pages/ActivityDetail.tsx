@@ -684,6 +684,7 @@ function FuelingSection({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [fuelingSaveNotice, setFuelingSaveNotice] = useState<string | null>(null);
+  const [fuelingSaveNextAction, setFuelingSaveNextAction] = useState<{ label: string; path: string } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = useNutritionLogs(null, activityId);
@@ -745,13 +746,25 @@ function FuelingSection({
   ];
   const routeHash = hashFromLocation(location.hash);
 
-  function saveFuelingEvidence(id: string, data: NutritionLogPatch, successNotice: string) {
+  function saveFuelingEvidence(
+    id: string,
+    data: NutritionLogPatch,
+    successNotice: string,
+    nextAction?: { label: string; path: string },
+  ) {
     setFuelingSaveNotice(null);
+    setFuelingSaveNextAction(null);
     updateNutrition.mutate(
       { id, data },
       {
-        onSuccess: () => setFuelingSaveNotice(successNotice),
-        onError: () => setFuelingSaveNotice('Fueling-Evidence konnte nicht gespeichert werden. Bitte erneut versuchen.'),
+        onSuccess: () => {
+          setFuelingSaveNotice(successNotice);
+          setFuelingSaveNextAction(nextAction ?? null);
+        },
+        onError: () => {
+          setFuelingSaveNotice('Fueling-Evidence konnte nicht gespeichert werden. Bitte erneut versuchen.');
+          setFuelingSaveNextAction(null);
+        },
       },
     );
   }
@@ -954,6 +967,7 @@ function FuelingSection({
                         giComfortCompletionLogId,
                         { giComfort: option.value },
                         'GI-Komfort gespeichert. Dieser Log kann jetzt in die Fueling-Evidence einfließen; Plan und Garmin bleiben unverändert.',
+                        { label: 'Nächste Fueling-Lücke prüfen', path: '/data?tab=today' },
                       )}
                       disabled={updateNutrition.isPending}
                       style={{
@@ -996,9 +1010,35 @@ function FuelingSection({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 9.5,
                       lineHeight: 1.45,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 6,
                     }}
                   >
-                    {fuelingSaveNotice}
+                    <span>{fuelingSaveNotice}</span>
+                    {fuelingSaveNextAction && !fuelingSaveNotice.includes('konnte nicht') && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(fuelingSaveNextAction.path)}
+                        style={{
+                          minHeight: 34,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid rgba(74,222,128,0.36)',
+                          borderRadius: 4,
+                          background: 'rgba(74,222,128,0.08)',
+                          color: 'var(--green)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {fuelingSaveNextAction.label}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
