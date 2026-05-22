@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -174,6 +174,14 @@ async function resetRouteScroll(page: Page) {
   });
 }
 
+async function expectBelowMobileChrome(page: Page, locator: Locator) {
+  const topbar = await page.locator('.pulse-mobile-topbar').boundingBox();
+  const target = await locator.boundingBox();
+  expect(topbar).not.toBeNull();
+  expect(target).not.toBeNull();
+  expect(target!.y).toBeGreaterThanOrEqual(topbar!.y + topbar!.height + 8);
+}
+
 test.describe('Route evidence screenshot pack', () => {
   test.skip(process.env.PULSE_ROUTE_EVIDENCE !== 'true', 'set PULSE_ROUTE_EVIDENCE=true to capture route screenshots');
   test.setTimeout(60_000);
@@ -336,6 +344,7 @@ test.describe('Route evidence screenshot pack', () => {
       await capture(
         { path: '/data?tab=today#data-mental', label: 'data-mental-first-viewport', visibleText: 'Quick Check-in' },
         async () => {
+          await expectBelowMobileChrome(page, page.getByRole('heading', { name: 'Mental Check-in' }));
           await expect(page.getByRole('button', { name: 'Heute speichern' })).toBeInViewport();
           await expect(page.getByRole('button', { name: 'Mehr beschreiben' })).toBeVisible();
           await expect(page.getByRole('radio', { name: 'Kopf: klar' })).toHaveCount(0);

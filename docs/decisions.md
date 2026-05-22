@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Mobile Deep Links landen auf vollstaendigen Task-Bloecken
+
+- **Decision:** Mobile Deep Links zu handlungsorientierten Evidence-Sections muessen den vollstaendigen Task-Kontext unterhalb der fixen App-Chrome sichtbar machen; die mobile Top- und Bottom-Chrome verwendet dafuer eine solide Surface-Flaeche statt transluzentem Glass.
+- **Why:** Die post-Redesign-Route-Evidence zeigte, dass `#data-mental` zwar die Quick-Check-in-Karte erreichte, aber die erklaerende `Mental Check-in`-Ueberschrift oberhalb der Topbar angeschnitten blieb. Fuer eine Top-App-artige Handoff-Erfahrung soll ein Link direkt bei der Aufgabe landen, ohne alte Route-Inhalte durch die Chrome lesen zu lassen.
+- **Alternatives:** Den inneren Kartenanker behalten (zu wenig Kontext beim Landen); nur mehr Scroll-Margin nutzen (mehr alte Inhalte im ersten Viewport); die transparente Mobile-Chrome beibehalten (visuell weicher, aber weniger klar bei Anchor-Spruengen).
+- **Decided by:** Codex, als Post-Redesign-Mobile-Anchor-Fix im Branch `codex/post-redesign-route-evidence`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Mobile Topbar wird Command-Zugang statt Routentitel-Dopplung
 
 - **Decision:** Die mobile Topbar zeigt nicht mehr den aktuellen Routennamen neben dem sichtbaren Seiten-H1, sondern eine kompakte Coach-Command-Schaltflaeche; redundante mobile Page-Eyebrows werden ausgeblendet.
