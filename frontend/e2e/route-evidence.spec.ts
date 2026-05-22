@@ -9,7 +9,7 @@ const routes = [
   { path: '/coach', label: 'coach', visibleText: 'Frage klären' },
   { path: '/data', label: 'data', visibleText: 'Daten' },
   { path: '/data?tab=today#data-mental', label: 'data-mental', visibleText: 'Quick Check-in' },
-  { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analysen' },
+  { path: '/data?tab=analysis', label: 'data-analysis', visibleText: 'Analyse' },
   { path: '/plan', label: 'plan', visibleText: 'Plan' },
   { path: '/plan/activity/activity-detail', label: 'activity-detail', visibleText: 'Rennrad Tour' },
   { path: '/insights', label: 'insights', visibleText: 'Analyse' },
