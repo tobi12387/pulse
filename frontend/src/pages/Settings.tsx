@@ -651,38 +651,33 @@ function SettingsDiagnosticsMatrix({
 
   return (
     <section
-      className="card"
+      className="settings-diagnostics-shell"
       data-testid="settings-diagnostics-matrix"
-      style={{ display: 'flex', flexDirection: 'column', gap: 12, borderColor: 'rgba(47,102,208,0.22)' }}
     >
       <div
         data-testid="settings-status-summary"
+        className="settings-status-summary"
         style={{
           border: `1px solid ${statusBorder}`,
-          borderRadius: 6,
           background: statusBackground,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          padding: '12px 13px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+        <div className="settings-status-summary__head">
           <div>
             <div className="label-mono" style={{ color: statusColor, marginBottom: 4 }}>
               SETUP STATUS
             </div>
-            <h2 style={{ margin: 0, fontSize: 18, color: 'var(--text)', fontWeight: 650 }}>
+            <h2 className="settings-status-summary__title">
               {statusTitle}
             </h2>
           </div>
           <Pill color={statusColor}>{statusPill}</Pill>
         </div>
-        <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        <p className="settings-status-summary__detail">
           {statusDetail}
         </p>
         {summaryActions.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
+          <div className="settings-status-summary__actions">
             {summaryActions.map(row => {
               if (row.optionalSetup) {
                 return (
@@ -691,8 +686,6 @@ function SettingsDiagnosticsMatrix({
                     className="settings-optional-summary-row"
                     data-testid="settings-optional-summary-row"
                     style={{
-                      borderTop: '1px solid var(--border)',
-                      paddingTop: 8,
                       gridColumn: '1 / -1',
                     }}
                   >
@@ -710,20 +703,6 @@ function SettingsDiagnosticsMatrix({
                         type="button"
                         className="settings-optional-summary-action"
                         onClick={() => onNavigate(row.action.path)}
-                        style={{
-                          minWidth: 44,
-                          minHeight: 44,
-                          padding: '6px 9px',
-                          background: 'var(--surface-2)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 4,
-                          color: 'var(--text-2)',
-                          cursor: 'pointer',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          letterSpacing: 0,
-                          textTransform: 'uppercase',
-                        }}
                       >
                         {row.action.label}
                       </button>
@@ -737,7 +716,7 @@ function SettingsDiagnosticsMatrix({
                   key={row.key}
                   style={{
                     border: '1px solid var(--border)',
-                    borderRadius: 5,
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--surface)',
                     padding: '9px 10px',
                     display: 'flex',
@@ -755,42 +734,16 @@ function SettingsDiagnosticsMatrix({
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     <button
                       type="button"
+                      className="settings-diagnostic-action"
                       onClick={() => onNavigate(row.action.path)}
-                      style={{
-                        minWidth: 44,
-                        minHeight: 44,
-                        padding: '6px 9px',
-                        background: 'var(--surface-2)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 4,
-                        color: 'var(--text-2)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 9,
-                        letterSpacing: 0,
-                        textTransform: 'uppercase',
-                      }}
                     >
                       {row.action.label}
                     </button>
                     {row.secondaryAction && (
                       <button
                         type="button"
+                        className="settings-diagnostic-action settings-diagnostic-action--accent"
                         onClick={() => onNavigate(row.secondaryAction!.path)}
-                        style={{
-                          minWidth: 44,
-                          minHeight: 44,
-                          padding: '6px 9px',
-                          background: 'transparent',
-                          border: '1px solid rgba(47,102,208,0.3)',
-                          borderRadius: 4,
-                          color: 'var(--accent)',
-                          cursor: 'pointer',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          letterSpacing: 0,
-                          textTransform: 'uppercase',
-                        }}
                       >
                         {row.secondaryAction.label}
                       </button>
@@ -803,12 +756,12 @@ function SettingsDiagnosticsMatrix({
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+      <div className="settings-diagnostics-header">
         <div>
           <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 4 }}>
             DIAGNOSE
           </div>
-          <h2 style={{ margin: 0, fontSize: 16, color: 'var(--text)', fontWeight: 600 }}>
+          <h2 className="settings-diagnostics-title">
             Zugriff, PWA, Push & Garmin
           </h2>
         </div>
@@ -816,20 +769,11 @@ function SettingsDiagnosticsMatrix({
           type="button"
           aria-expanded={diagnosticsOpen}
           onClick={() => setDiagnosticsOpen(open => !open)}
+          className="settings-diagnostic-action"
           style={{
-            minWidth: 44,
-            minHeight: 44,
-            padding: '7px 10px',
             background: diagnosticsOpen ? 'rgba(47,102,208,0.12)' : 'var(--surface-2)',
             border: `1px solid ${diagnosticsOpen ? 'rgba(47,102,208,0.38)' : 'var(--border)'}`,
-            borderRadius: 4,
             color: diagnosticsOpen ? 'var(--accent)' : 'var(--text-2)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            letterSpacing: 0,
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
           }}
         >
           {diagnosticsOpen ? 'Diagnose ausblenden' : 'Diagnose anzeigen'}
@@ -843,21 +787,8 @@ function SettingsDiagnosticsMatrix({
               <button
                 key={shortcut.path}
                 type="button"
+                className="settings-diagnostic-action"
                 onClick={() => onNavigate(shortcut.path)}
-                style={{
-                  minWidth: 44,
-                  minHeight: 44,
-                  padding: '7px 10px',
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 4,
-                  color: 'var(--text-2)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: 0,
-                  textTransform: 'uppercase',
-                }}
               >
                 {shortcut.label}
               </button>
@@ -888,42 +819,16 @@ function SettingsDiagnosticsMatrix({
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto' }}>
                   <button
                     type="button"
+                    className="settings-diagnostic-action"
                     onClick={() => onNavigate(row.action.path)}
-                    style={{
-                      minWidth: 44,
-                      minHeight: 44,
-                      padding: '6px 9px',
-                      background: 'transparent',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      color: 'var(--text-2)',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
-                      letterSpacing: 0,
-                      textTransform: 'uppercase',
-                    }}
                   >
                     {row.action.label}
                   </button>
                   {row.secondaryAction && (
                     <button
                       type="button"
+                      className="settings-diagnostic-action settings-diagnostic-action--accent"
                       onClick={() => onNavigate(row.secondaryAction!.path)}
-                      style={{
-                        minWidth: 44,
-                        minHeight: 44,
-                        padding: '6px 9px',
-                        background: 'transparent',
-                        border: '1px solid rgba(47,102,208,0.3)',
-                        borderRadius: 4,
-                        color: 'var(--accent)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 9,
-                        letterSpacing: 0,
-                        textTransform: 'uppercase',
-                      }}
                     >
                       {row.secondaryAction.label}
                     </button>

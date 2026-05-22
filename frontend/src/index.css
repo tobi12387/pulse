@@ -1543,6 +1543,55 @@
     align-items: start;
   }
 
+  .settings-diagnostics-shell {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .settings-status-summary {
+    display: grid;
+    gap: 10px;
+    padding: 14px 15px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  .settings-status-summary__head,
+  .settings-diagnostics-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .settings-status-summary__title,
+  .settings-diagnostics-title {
+    margin: 0;
+    color: var(--text);
+    letter-spacing: 0;
+  }
+
+  .settings-status-summary__title {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.16;
+  }
+
+  .settings-status-summary__detail {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.48;
+  }
+
+  .settings-status-summary__actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 8px;
+  }
+
   .settings-optional-summary-row {
     display: grid;
     grid-template-areas: "copy actions";
@@ -1550,6 +1599,8 @@
     gap: 8px 10px;
     align-items: center;
     min-width: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+    padding-top: 9px;
   }
 
   .settings-optional-summary-copy {
@@ -1564,6 +1615,44 @@
     justify-content: flex-end;
     gap: 8px;
     min-width: 0;
+  }
+
+  .settings-optional-summary-action,
+  .settings-diagnostic-action {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.1;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .settings-diagnostic-action--accent {
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    color: var(--accent);
+  }
+
+  .settings-diagnostics-header {
+    padding: 2px 2px 0;
+  }
+
+  .settings-diagnostics-title {
+    font-size: 17px;
+    font-weight: 680;
+    line-height: 1.2;
   }
 
   .data-primary-action-mobile-details {

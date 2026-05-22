@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-05-22 — Settings-Diagnostik wird flache Readiness-Flaeche
+
+- **Decision:** Settings zeigt den Setup-Status als eigenstaendige Readiness-Flaeche statt als verschachtelte Karte in einer Karte; optionale Push-/Geraete-Aktionen und Diagnose-Shortcuts nutzen gemeinsame ruhige Sans-Buttons, waehrend Detaildiagnosen erst nach explizitem Oeffnen erscheinen.
+- **Why:** Die mobile Route-Evidence nach dem Control-Surface-Slice zeigte in Settings weiterhin eine stark gerahmte Wartungsoptik. Fuer eine Top-App-artige Performance-OS-Oberflaeche soll Setup zuerst beantworten, ob der Kern bereit ist, und erst danach in Geraete-, PWA-, Push- oder Garmin-Details gehen.
+- **Alternatives:** Die bestehende Matrix nur farblich polieren (laesst das Nested-Card-Problem bestehen); alle Diagnosedetails dauerhaft sichtbar machen (zu viel Wartungsrauschen vor der Profilflaeche); Settings komplett neu routen (zu breit fuer diesen PR, solange die bestehende Informationsarchitektur funktioniert).
+- **Decided by:** Codex, als Fortsetzung des UI/UX-Friction-PRs `codex/performance-ux-friction`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Mobile Control-Flächen werden leichter als Inhaltskarten
 
 - **Decision:** Pulse behandelt mobile Tabs, Stage-Strips und sekundäre Offenlegen-Buttons als leichte Control-Flächen statt als gleich schwere Inhaltskarten; die Home-Stage wird kompakter, mobile Segmente stehen einzeln statt in einem großen Tab-Rahmen, Data-Sekundäraktionen nutzen Sans-Text und Plan versteckt mobile Optionsdetails visuell, erhält sie aber über `aria-label` im Button-Kontext.
