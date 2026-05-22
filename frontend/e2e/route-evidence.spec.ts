@@ -182,6 +182,14 @@ async function expectBelowMobileChrome(page: Page, locator: Locator) {
   expect(target!.y).toBeGreaterThanOrEqual(topbar!.y + topbar!.height + 8);
 }
 
+async function expectAboveMobileBottomNav(page: Page, locator: Locator) {
+  const bottomNav = await page.locator('.pulse-mobile-bottom-nav').boundingBox();
+  const target = await locator.boundingBox();
+  expect(bottomNav).not.toBeNull();
+  expect(target).not.toBeNull();
+  expect(target!.y + target!.height).toBeLessThanOrEqual(bottomNav!.y - 8);
+}
+
 test.describe('Route evidence screenshot pack', () => {
   test.skip(process.env.PULSE_ROUTE_EVIDENCE !== 'true', 'set PULSE_ROUTE_EVIDENCE=true to capture route screenshots');
   test.setTimeout(60_000);
@@ -382,7 +390,10 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(giComfortAction.getByTestId('activity-gi-comfort-options')).toBeInViewport();
           await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
           await expect(giComfortAction.getByRole('button', { name: 'Magen leicht unruhig' })).toBeInViewport();
-          await expect(giComfortAction.getByRole('button', { name: 'Magenprobleme' })).toBeInViewport();
+          const finalGiOption = giComfortAction.getByRole('button', { name: 'Magenprobleme' });
+          await expect(finalGiOption).toBeInViewport();
+          await expectAboveMobileBottomNav(page, finalGiOption);
+          await expect(page.getByTestId('activity-fueling-baseline').getByRole('button', { name: 'GI-Komfort ergänzen' })).toHaveCount(0);
         },
       );
 
