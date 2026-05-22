@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-22 — Fueling-GI-Save fuehrt zur Data-Evidence-Queue zurueck
+
+- **Decision:** Nach einem erfolgreichen strukturierten GI-Komfort-Save zeigt Activity Detail eine kleine Folgeaktion `Nächste Fueling-Lücke prüfen`, die zur Data-Heute-Queue fuehrt.
+- **Why:** Der erste Performance-OS-Unblock bleibt manuelle Fueling-Evidence. Nach dem Speichern eines echten GI-Werts soll Pulse den Capture-Loop weiterfuehren, statt Tobi auf der abgeschlossenen Activity stehen zu lassen; dabei bleibt der Write auf `giComfort` begrenzt und Plan/Garmin bleiben unveraendert.
+- **Alternatives:** Nur den Erfolgstext belassen (korrekt, aber ohne naechsten Schritt); automatisch zur naechsten Activity springen (zu viel implizite Navigation und riskant, solange Data die Queue besitzt); GI-Komfort aus Notizen oder Ergebnis ableiten (nicht erlaubt).
+- **Decided by:** Codex, als Fueling-Capture-Support im Branch `codex/fueling-capture-followup`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Mobile Route-Tabs werden zur leichten Navigations-Rail
 
 - **Decision:** Data und Plan rendern ihre mobilen Bereichs-Tabs als eine gemeinsame leichte Pill-Rail mit nur einer aktiven Surface statt als mehrere gleich schwere Mini-Karten.
