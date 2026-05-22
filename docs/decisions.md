@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-05-22 — Coach bleibt kompakte Klaerflaeche mit echten Mobile-Touchzielen
+
+- **Decision:** Die Coach-Route bleibt eine Kompatibilitaets- und Klaerflaeche statt ein Hauptbereich, wird auf Mobile aber kompakter: Header-Erklaertext wird ausgeblendet, Tagesmetriken erscheinen als ruhige Kontrollchips, das Briefing stapelt dichter, und wiederkehrende mobile Tabs/Wochenpfeile muessen echte 44px-Touchziele behalten.
+- **Why:** Die Route-Evidence zeigte, dass Coach nach dem Redesign noch wie eine zweite schwere Home-Seite startete, obwohl Home die Entscheidung besitzen soll. Beim fokussierten Mobile-Test wurden ausserdem zu kleine Data-Tabs und Plan-Wochenpfeile sichtbar; eine Top-App darf Kernkontrollen nicht unter Touch-Zielgroesse fallen lassen.
+- **Alternatives:** Coach aus der Route entfernen (bricht Deep Links und vorbereitete Prompts); Coach wieder als Haupttab behandeln (widerspricht der Fokusnavigation); die zu kleinen Touchziele als Dichte-Tradeoff belassen (schlechter fuer iPhone/PWA-Nutzung).
+- **Decided by:** Codex, als weiterer UI/UX-Friction-Follow-up im PR `codex/performance-ux-friction`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Settings-Diagnostik wird flache Readiness-Flaeche
 
 - **Decision:** Settings zeigt den Setup-Status als eigenstaendige Readiness-Flaeche statt als verschachtelte Karte in einer Karte; optionale Push-/Geraete-Aktionen und Diagnose-Shortcuts nutzen gemeinsame ruhige Sans-Buttons, waehrend Detaildiagnosen erst nach explizitem Oeffnen erscheinen.

@@ -18,6 +18,7 @@ Manual review of the before screenshots found no hard layout break, but a real m
 - Reduced visual weight of action-detail buttons and Data secondary actions.
 - Kept mobile Plan option detail accessible through explicit `aria-label` while removing the visually hidden 1px text blocks from overflow checks.
 - Follow-up: changed Settings diagnostics from a nested card-like matrix into a flatter readiness surface with calmer shared action buttons and opt-in diagnostic detail.
+- Follow-up: compacted the Coach compatibility route on mobile and restored 44px touch targets for mobile Data tabs and Plan week navigation.
 
 ## After Evidence
 
@@ -44,6 +45,19 @@ Focused screenshots reviewed:
 - Mobile Settings: `/tmp/pulse-2026-05-22-ux-settings-readiness/2026-05-22-35f1452/mobile-chromium/09-settings.png`
 - Desktop Settings: `/tmp/pulse-2026-05-22-ux-settings-readiness/2026-05-22-35f1452/desktop-chromium/09-settings.png`
 
+## Coach Follow-Up Evidence
+
+- Evidence root: `/tmp/pulse-2026-05-22-ux-coach-command/2026-05-22-3c462a1/`
+- Summary:
+  - desktop-chromium: 9 screenshots, 0 overflow
+  - mobile-chromium: 17 screenshots, 0 overflow
+
+Focused screenshots reviewed:
+
+- Mobile Coach: `/tmp/pulse-2026-05-22-ux-coach-command/2026-05-22-3c462a1/mobile-chromium/02-coach.png`
+- Mobile Data: `/tmp/pulse-2026-05-22-ux-coach-command/2026-05-22-3c462a1/mobile-chromium/03-data.png`
+- Mobile Plan: `/tmp/pulse-2026-05-22-ux-coach-command/2026-05-22-3c462a1/mobile-chromium/06-plan.png`
+
 ## Verification
 
 - `git diff --check`
@@ -51,7 +65,10 @@ Focused screenshots reviewed:
 - `npm run verify:lernschleifen`
 - `npm run test:e2e -- frontend/e2e/pulse-usability.spec.ts -g "Mobile navigation and tabs keep core labels readable|Mobile routes avoid unintended horizontal overflow" --project=mobile-chromium`
 - `npm run test:e2e -- frontend/e2e/ux-auth-settings.spec.ts frontend/e2e/pulse-usability.spec.ts -g "Settings diagnostics matrix|Settings uses desktop width|Settings treats blocked push|Settings diagnostics matrix separates|Settings groups actions|Mobile navigation and tabs keep core labels readable" --project=mobile-chromium --project=desktop-chromium`
+- `npm run test:e2e -- frontend/e2e/pulse-usability.spec.ts -g "Coach daily briefing guides the first conversation without auto-send|Coach quick prompts prepare a question without sending it|Coach prompt deep links prepare a draft without sending it|Coach action deep links remain compatible without a prompt|Daily loop keeps context from Home to Coach, Plan and evidence tabs|Mobile routes avoid unintended horizontal overflow|Mobile repeated controls have reliable touch targets" --project=mobile-chromium --project=desktop-chromium`
 - `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-2026-05-22-ux-friction-final2 npm run qa:ux-evidence`
 - `npm run qa:ux-summary -- /tmp/pulse-2026-05-22-ux-friction-final2`
 - `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-2026-05-22-ux-settings-readiness npm run qa:ux-evidence`
 - `npm run qa:ux-summary -- /tmp/pulse-2026-05-22-ux-settings-readiness`
+- `PULSE_ROUTE_EVIDENCE_DIR=/tmp/pulse-2026-05-22-ux-coach-command npm run qa:ux-evidence`
+- `npm run qa:ux-summary -- /tmp/pulse-2026-05-22-ux-coach-command`
