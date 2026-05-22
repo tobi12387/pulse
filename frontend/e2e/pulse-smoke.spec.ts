@@ -1538,6 +1538,34 @@ test('Settings section deep links land near the target section', async ({ page }
   expect(box!.y).toBeLessThan(260);
 });
 
+test('Settings PWA field proof exposes the current manual evidence scope', async ({ page }) => {
+  await page.goto('/settings?section=device');
+  await expectHealthyPage(page, 'Setup');
+
+  const fieldProof = page.getByTestId('pwa-field-evidence');
+  await expect(fieldProof).toBeVisible();
+  await expect(fieldProof).toContainText('Feldnachweis');
+  await expect(fieldProof).toContainText('App-Stand');
+  await expect(fieldProof).toContainText('Gerät');
+  await expect(fieldProof).toContainText('iOS');
+  await expect(fieldProof).toContainText('Startmodus');
+  await expect(fieldProof).toContainText('Noch manuell');
+  await expect(fieldProof).toContainText('Zertifikat, Push-Test, Offline');
+  await expect(fieldProof).toBeInViewport();
+
+  const overflow = await fieldProof.evaluate((element) => {
+    return Array.from(element.querySelectorAll<HTMLElement>('*'))
+      .map((node) => ({
+        text: (node.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
+        scrollWidth: node.scrollWidth,
+        clientWidth: node.clientWidth,
+      }))
+      .filter(item => item.scrollWidth > item.clientWidth + 1);
+  });
+
+  expect(overflow).toEqual([]);
+});
+
 test('daily training surfaces use localized activity labels', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-05-01T08:00:00+02:00'));
   const runWorkout = {

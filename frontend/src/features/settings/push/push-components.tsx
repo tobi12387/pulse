@@ -57,9 +57,21 @@ function isIosSafariWithoutStandalone(): boolean {
   return isIos && !isStandalone;
 }
 
+function buildCommitLabel(): string {
+  return __PULSE_BUILD_COMMIT__ && __PULSE_BUILD_COMMIT__ !== 'unknown'
+    ? __PULSE_BUILD_COMMIT__
+    : 'unbekannt';
+}
+
 function deviceLabel(): string {
   if (typeof navigator === 'undefined') return 'Browser';
   return (navigator.platform || 'Browser').slice(0, 64);
+}
+
+function iosVersionLabel(): string {
+  if (typeof navigator === 'undefined') return 'manuell erfassen';
+  const match = /(?:CPU(?: iPhone)? OS|CPU OS) ([0-9_]+)/.exec(navigator.userAgent);
+  return match ? match[1].replaceAll('_', '.') : 'manuell erfassen';
 }
 
 function maskPushEndpoint(endpoint: string): string {
@@ -94,6 +106,8 @@ function pwaReadiness() {
 
 export function PwaDeviceCard() {
   const status = pwaReadiness();
+  const commit = buildCommitLabel();
+  const launchMode = status.standalone ? 'Home Screen' : 'Browser';
 
   return (
     <div className="card">
@@ -137,6 +151,54 @@ export function PwaDeviceCard() {
         <Row label="Zertifikat">
           <Val>{status.secure ? 'manuell prüfen' : 'nicht sicher'}</Val>
         </Row>
+      </div>
+
+      <div
+        data-testid="pwa-field-evidence"
+        style={{
+          border: '1px solid rgba(47,102,208,0.24)',
+          borderRadius: 6,
+          background: 'rgba(47,102,208,0.04)',
+          marginTop: 14,
+          padding: '10px 11px',
+          display: 'grid',
+          gap: 9,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+          <span className="label-mono" style={{ color: 'var(--accent)' }}>Feldnachweis</span>
+          <Pill color={status.secure && status.serviceWorker ? 'var(--green)' : 'var(--amber)'}>
+            {commit}
+          </Pill>
+        </div>
+        <div style={{ display: 'grid', gap: 7 }}>
+          <Row label="App-Stand">
+            <Val>{commit}</Val>
+          </Row>
+          <Row label="Gerät">
+            <Val>{deviceLabel()}</Val>
+          </Row>
+          <Row label="iOS">
+            <Val>{iosVersionLabel()}</Val>
+          </Row>
+          <Row label="Startmodus">
+            <Val>{launchMode}</Val>
+          </Row>
+          <Row label="Noch manuell">
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              color: 'var(--text-2)',
+              textAlign: 'right',
+              overflowWrap: 'anywhere',
+              minWidth: 0,
+              maxWidth: '62%',
+              lineHeight: 1.35,
+            }}>
+              Zertifikat, Push-Test, Offline
+            </span>
+          </Row>
+        </div>
       </div>
 
       <p style={{ margin: '12px 0 0', fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.45 }}>

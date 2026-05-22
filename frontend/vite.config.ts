@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { execFileSync } from 'node:child_process';
 import path from 'path';
 import fs from 'fs';
 
@@ -18,6 +19,15 @@ function localHttpsConfig() {
 
 const https = localHttpsConfig();
 
+function buildCommit() {
+  if (process.env.PULSE_BUILD_COMMIT) return process.env.PULSE_BUILD_COMMIT;
+  try {
+    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -27,6 +37,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  define: {
+    __PULSE_BUILD_COMMIT__: JSON.stringify(buildCommit()),
   },
   server: {
     host: '0.0.0.0',
