@@ -140,6 +140,7 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
               data-testid={`plan-weekly-decision-option-${option.kind}`}
               className="plan-weekly-decision__option"
               aria-pressed={active}
+              aria-label={`${option.label}: ${option.title}. ${option.weekImpact}. Nach dem Klick: ${option.resultPreview}`}
               onClick={() => chooseOption(option)}
               style={{
                 border: `1px solid ${active ? tone : 'var(--border)'}`,

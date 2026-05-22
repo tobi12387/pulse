@@ -511,9 +511,9 @@ function DailyBriefingGuide({
     ?? 'Mentale Last wird als Alltagssignal einbezogen, nicht als Diagnose.';
 
   return (
-    <div style={{ alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div className="card" style={{ borderColor: 'rgba(47,102,208,0.18)', padding: '12px 14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+    <div className="coach-daily-briefing-stack" style={{ alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="card coach-daily-briefing-card" style={{ borderColor: 'rgba(47,102,208,0.18)', padding: '12px 14px' }}>
+        <div className="coach-daily-briefing-card__head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             TAGESBRIEFING
           </span>
@@ -521,7 +521,7 @@ function DailyBriefingGuide({
             {home?.date ?? new Date().toISOString().slice(0, 10)}
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+        <div className="coach-daily-briefing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Lage
@@ -560,6 +560,7 @@ function DailyBriefingGuide({
         {!mentalCheckin && primaryQuestion && (
           <button
             type="button"
+            className="coach-primary-question-button"
             onClick={() => onPrompt(primaryQuestion.label)}
             style={{
               width: '100%',
@@ -582,9 +583,9 @@ function DailyBriefingGuide({
           </button>
         )}
         {!compact && briefingLoading ? (
-          <p style={{ fontSize: 11, color: 'var(--text-3)', margin: '10px 0 0' }}>Briefing wird geladen…</p>
+          <p className="coach-briefing-note" style={{ fontSize: 11, color: 'var(--text-3)', margin: '10px 0 0' }}>Briefing wird geladen…</p>
         ) : !compact && briefing ? (
-          <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '10px 0 0' }}>
+          <p className="coach-briefing-note" style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, margin: '10px 0 0' }}>
             {briefing}
           </p>
         ) : null}
@@ -818,10 +819,7 @@ export default function Coach() {
       </header>
 
       {/* Context strip */}
-      <div style={{
-        display: 'flex', gap: 16, padding: '8px 0 10px', borderBottom: '1px solid var(--border)',
-        overflowX: 'auto', flexShrink: 0,
-      }}>
+      <div className="pulse-coach-context-strip">
         {[
           ['Schlaf', m?.sleepHours != null ? `${m.sleepHours.toFixed(1)}h` : '–'],
           ['HRV',    m?.hrvRmssd   != null ? `${m.hrvRmssd.toFixed(0)} ms` : '–'],
@@ -829,11 +827,11 @@ export default function Coach() {
           ['Steps',  m?.steps != null ? `${(m.steps / 1000).toFixed(1)}k` : '–'],
           ['Qual.',  decisionQuality ? `${decisionQuality.qualityScore}/100` : '–'],
         ].map(([label, val]) => (
-          <div key={label} style={{ flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--text-3)', textTransform: 'uppercase' }}>
+          <div key={label} className="pulse-coach-metric" style={{ flexShrink: 0 }}>
+            <div className="pulse-coach-metric-label" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--text-3)', textTransform: 'uppercase' }}>
               {label}
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+            <div className="pulse-coach-metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
               {val}
             </div>
           </div>
@@ -841,7 +839,7 @@ export default function Coach() {
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 0 4px' }}>
+      <div className="pulse-coach-message-stack" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 0 4px' }}>
         {isLoading && (
           <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>Lade…</p>
         )}
@@ -934,7 +932,7 @@ export default function Coach() {
       </div>
 
       {/* Input bar */}
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+      <div className="pulse-coach-input-bar" style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <MicButton micState={micState} onDone={handleMicDone} />
           <textarea

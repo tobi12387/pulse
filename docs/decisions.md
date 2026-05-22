@@ -28,6 +28,36 @@
 
 ---
 
+## 2026-05-22 — Coach bleibt kompakte Klaerflaeche mit echten Mobile-Touchzielen
+
+- **Decision:** Die Coach-Route bleibt eine Kompatibilitaets- und Klaerflaeche statt ein Hauptbereich, wird auf Mobile aber kompakter: Header-Erklaertext wird ausgeblendet, Tagesmetriken erscheinen als ruhige Kontrollchips, das Briefing stapelt dichter, und wiederkehrende mobile Tabs/Wochenpfeile muessen echte 44px-Touchziele behalten.
+- **Why:** Die Route-Evidence zeigte, dass Coach nach dem Redesign noch wie eine zweite schwere Home-Seite startete, obwohl Home die Entscheidung besitzen soll. Beim fokussierten Mobile-Test wurden ausserdem zu kleine Data-Tabs und Plan-Wochenpfeile sichtbar; eine Top-App darf Kernkontrollen nicht unter Touch-Zielgroesse fallen lassen.
+- **Alternatives:** Coach aus der Route entfernen (bricht Deep Links und vorbereitete Prompts); Coach wieder als Haupttab behandeln (widerspricht der Fokusnavigation); die zu kleinen Touchziele als Dichte-Tradeoff belassen (schlechter fuer iPhone/PWA-Nutzung).
+- **Decided by:** Codex, als weiterer UI/UX-Friction-Follow-up im PR `codex/performance-ux-friction`.
+- **Status:** active.
+
+---
+
+## 2026-05-22 — Settings-Diagnostik wird flache Readiness-Flaeche
+
+- **Decision:** Settings zeigt den Setup-Status als eigenstaendige Readiness-Flaeche statt als verschachtelte Karte in einer Karte; optionale Push-/Geraete-Aktionen und Diagnose-Shortcuts nutzen gemeinsame ruhige Sans-Buttons, waehrend Detaildiagnosen erst nach explizitem Oeffnen erscheinen.
+- **Why:** Die mobile Route-Evidence nach dem Control-Surface-Slice zeigte in Settings weiterhin eine stark gerahmte Wartungsoptik. Fuer eine Top-App-artige Performance-OS-Oberflaeche soll Setup zuerst beantworten, ob der Kern bereit ist, und erst danach in Geraete-, PWA-, Push- oder Garmin-Details gehen.
+- **Alternatives:** Die bestehende Matrix nur farblich polieren (laesst das Nested-Card-Problem bestehen); alle Diagnosedetails dauerhaft sichtbar machen (zu viel Wartungsrauschen vor der Profilflaeche); Settings komplett neu routen (zu breit fuer diesen PR, solange die bestehende Informationsarchitektur funktioniert).
+- **Decided by:** Codex, als Fortsetzung des UI/UX-Friction-PRs `codex/performance-ux-friction`.
+- **Status:** active.
+
+---
+
+## 2026-05-22 — Mobile Control-Flächen werden leichter als Inhaltskarten
+
+- **Decision:** Pulse behandelt mobile Tabs, Stage-Strips und sekundäre Offenlegen-Buttons als leichte Control-Flächen statt als gleich schwere Inhaltskarten; die Home-Stage wird kompakter, mobile Segmente stehen einzeln statt in einem großen Tab-Rahmen, Data-Sekundäraktionen nutzen Sans-Text und Plan versteckt mobile Optionsdetails visuell, erhält sie aber über `aria-label` im Button-Kontext.
+- **Why:** Die frische Route-Evidence zeigte zwar keinen horizontalen Overflow, aber auf Mobile konkurrierten zu viele gerahmte Flächen mit der eigentlichen Tages- oder Datenaktion. Für eine Top-App-artige Performance-Oberfläche soll die erste Handlung weiterhin dominant bleiben, während Navigation, Details und Lernkontext ruhiger wirken.
+- **Alternatives:** Nur einzelne Route-Karten polieren (zu punktuell für die gemeldete UI/UX-Unübersichtlichkeit); die schweren Segment-/Stage-Rahmen behalten (stabil, aber optisch zu boxed); Plan-Optionsdetails komplett entfernen (weniger zugänglich und schwächer für Tests/Assistive Tech).
+- **Decided by:** Codex, als weiterer UI/UX-Friction-Slice im Branch `codex/performance-ux-friction`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — Mobile Deep Links landen auf vollstaendigen Task-Bloecken
 
 - **Decision:** Mobile Deep Links zu handlungsorientierten Evidence-Sections muessen den vollstaendigen Task-Kontext unterhalb der fixen App-Chrome sichtbar machen; die mobile Top- und Bottom-Chrome verwendet dafuer eine solide Surface-Flaeche statt transluzentem Glass.
