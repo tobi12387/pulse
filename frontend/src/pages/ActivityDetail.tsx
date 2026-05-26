@@ -26,6 +26,7 @@ import {
   mergeFuelingEvidenceCompletionPatches,
   type FuelingEvidenceQuality,
 } from '@/features/activity/activity-closure-evidence';
+import { fuelingNextCompletionCandidateAfter } from '@/pulse/fueling-learning';
 import { RPE_SORENESS_AREAS, type PulseActivityType, type RpeSorenessArea } from '@coaching-os/shared/pulse';
 
 function fmt(v: number | null | undefined, decimals = 0, suffix = ''): string {
@@ -684,7 +685,7 @@ function FuelingSection({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [fuelingSaveNotice, setFuelingSaveNotice] = useState<string | null>(null);
-  const [fuelingSaveNextAction, setFuelingSaveNextAction] = useState<{ label: string; path: string } | null>(null);
+  const [fuelingSaveNextAction, setFuelingSaveNextAction] = useState<{ label: string; path: string; detail?: string } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { data } = useNutritionLogs(null, activityId);
@@ -707,6 +708,14 @@ function FuelingSection({
     ? mergeFuelingEvidenceCompletionPatches(evidenceQuality.detailCompletions)
     : null;
   const showOffPlanFuelingPlanFollowUp = shouldShowOffPlanFuelingPlanFollowUp(logs, activityId, workoutId, evidenceQuality);
+  const nextFuelingCompletionCandidate = fuelingNextCompletionCandidateAfter(fuelingOutcomeBaseline, activityId);
+  const giComfortSaveNextAction = nextFuelingCompletionCandidate
+    ? {
+        label: 'Nächsten Fueling-Log öffnen',
+        path: nextFuelingCompletionCandidate.targetPath,
+        detail: `${nextFuelingCompletionCandidate.date}: ${nextFuelingCompletionCandidate.summary}`,
+      }
+    : { label: 'Nächste Datenlücke prüfen', path: '/data?tab=today#data-primary-action' };
 
   const safeType = ['run','bike','swim','strength','hike'].includes(activityType)
     ? (activityType as 'run'|'bike'|'swim'|'strength'|'hike')
@@ -750,7 +759,7 @@ function FuelingSection({
     id: string,
     data: NutritionLogPatch,
     successNotice: string,
-    nextAction?: { label: string; path: string },
+    nextAction?: { label: string; path: string; detail?: string },
   ) {
     setFuelingSaveNotice(null);
     setFuelingSaveNextAction(null);
@@ -967,7 +976,7 @@ function FuelingSection({
                         giComfortCompletionLogId,
                         { giComfort: option.value },
                         'GI-Komfort gespeichert. Dieser Log kann jetzt in die Fueling-Evidence einfließen; Plan und Garmin bleiben unverändert.',
-                        { label: 'Nächste Datenlücke prüfen', path: '/data?tab=today#data-primary-action' },
+                        giComfortSaveNextAction,
                       )}
                       disabled={updateNutrition.isPending}
                       style={{
@@ -1018,26 +1027,33 @@ function FuelingSection({
                   >
                     <span>{fuelingSaveNotice}</span>
                     {fuelingSaveNextAction && !fuelingSaveNotice.includes('konnte nicht') && (
-                      <button
-                        type="button"
-                        onClick={() => navigate(fuelingSaveNextAction.path)}
-                        style={{
-                          minHeight: 34,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: '1px solid rgba(74,222,128,0.36)',
-                          borderRadius: 4,
-                          background: 'rgba(74,222,128,0.08)',
-                          color: 'var(--green)',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {fuelingSaveNextAction.label}
-                      </button>
+                      <span style={{ display: 'grid', gap: 4 }}>
+                        {fuelingSaveNextAction.detail && (
+                          <span style={{ color: 'var(--text-2)' }}>
+                            {fuelingSaveNextAction.detail}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => navigate(fuelingSaveNextAction.path)}
+                          style={{
+                            minHeight: 34,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid rgba(74,222,128,0.36)',
+                            borderRadius: 4,
+                            background: 'rgba(74,222,128,0.08)',
+                            color: 'var(--green)',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {fuelingSaveNextAction.label}
+                        </button>
+                      </span>
                     )}
                   </div>
                 )}
