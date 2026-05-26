@@ -753,6 +753,8 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await expect(action.getByTestId('data-primary-action-options')).toContainText('Magen ok');
   await expect(action.getByTestId('data-primary-action-options')).toContainText('Magen leicht unruhig');
   await expect(action.getByTestId('data-primary-action-options')).toContainText('Magenprobleme');
+  await expect(action.getByTestId('data-primary-action-manual-safety')).toContainText('echten Magenreaktion');
+  await expect(action.getByTestId('data-primary-action-manual-safety')).toContainText('nicht aus Notizen, Route, RPE, g/h');
   await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('0/3 komplett');
   await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('2 vorhandene Logs direkt schließbar');
   await expect(action.getByTestId('data-primary-action-capture-plan')).toContainText('danach 1 neuer Long-Session-Log');
@@ -782,6 +784,8 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   await expect(fuelingLog).toContainText('GI-Komfort ergänzen');
   const giComfortAction = page.getByTestId('activity-gi-comfort-action');
   await expect(giComfortAction).toBeFocused();
+  await expect(giComfortAction.getByTestId('activity-gi-comfort-manual-safety')).toContainText('echte Magenreaktion');
+  await expect(giComfortAction.getByTestId('activity-gi-comfort-manual-safety')).toContainText('nicht aus Notizen, Route, RPE, g/h');
   await expect(giComfortAction.getByTestId('activity-gi-comfort-options')).toBeInViewport();
   await expect(giComfortAction.getByRole('button', { name: 'Magen ok' })).toBeInViewport();
   await expect(giComfortAction.getByRole('button', { name: 'Magen leicht unruhig' })).toBeInViewport();

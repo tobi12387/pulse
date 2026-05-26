@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Data und Activity wiederholen die Fueling-GI-Manuellregel
+
+- **Decision:** Data zeigt bei der primären Fueling-Evidenzaktion und Activity Detail direkt vor der GI-Komfort-Auswahl dieselbe Manuellregel: GI-Komfort wird nur aus der echten Magenreaktion gewählt und nicht aus Notizen, Route, RPE, g/h, Ergebnis oder Pace abgeleitet.
+- **Why:** Der erste Performance-OS-Unblock ist ein echter manueller Evidence-Capture-Schritt. Die App soll Tobi genau am Entscheidungspunkt schützen, damit ein schneller Klick nicht versehentlich aus indirekten Leistungs- oder Notizsignalen eine nicht gemessene Magenreaktion macht.
+- **Alternatives:** Die Regel nur im Terminal-Audit belassen (korrekt, aber beim mobilen Klickpfad leicht zu übersehen); Trendfreigabe oder GI-Komfort aus vorhandenen Daten ableiten (verletzt das Evidenzgate); nur Data zeigen und Activity still lassen (schwächer, weil Activity der eigentliche Save-Ort ist).
+- **Decided by:** Codex, als Fueling-Evidence-Safety-Support im Branch `codex/fueling-manual-safety`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Settings zeigt den iPhone/PWA-Feldlauf als Geräte-Runbook
 
 - **Decision:** Die iPhone-&-PWA-Karte in Settings zeigt zusätzlich zum Feldnachweis eine kompakte Prüfreihenfolge für Server-Stand, Safari/Zertifikat, Home-Screen-Start, Push-Test und Offline-Fallback.
