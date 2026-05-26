@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Data Fueling-Gate-Handoff fuehrt zuerst zur GI-Auswahl
+
+- **Decision:** Data zeigt beim Fueling-Gate das Ziel-Log und die CTA `GI-Komfort ergänzen` vor der Detailerklaerung; die erlaubten GI-Optionen werden als kompakte Auswahlchips gezeigt, waehrend die eigentliche Auswahl weiter erst in Activity Detail geschrieben wird.
+- **Why:** Der Live-Gate-Audit nennt Fueling learning als ersten unblockenden Schritt, und frische Mobile-Route-Evidence zeigte, dass Data zwar korrekt war, aber die eine manuelle Aufgabe zwischen Ziel, Regeln und Capture-Plan zu viel visuelles Gewicht verlor. Der Handoff soll schneller zur echten GI-Auswahl fuehren, ohne die Sicherheitsregel oder den no-hidden-write-Vertrag zu schwaechen.
+- **Alternatives:** GI-Komfort direkt in Data schreiben (verworfen, weil Activity Detail der explizite Evidence-Write-Ort bleibt); nur CSS-Abstaende reduzieren (zu wenig Hierarchiegewinn); Safety/Capture-Plan ausblenden (zu riskant fuer evidenzbasierte, nicht abgeleitete GI-Komfort-Auswahl).
+- **Decided by:** Codex, als Data-Fueling-Gate-Handoff-Density im Branch `codex/data-fueling-gate-handoff-density`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Activity Detail startet mit Abschluss statt Metrikdump
 
 - **Decision:** Activity Detail fasst RPE, Kernmetriken, Fueling-Pruefung und den `Plan/Garmin unverändert`-Vertrag in einer ersten `Aktivitätsabschluss`-Flaeche zusammen; der alte lose RPE-Block plus KPI-Raster wird ersetzt.

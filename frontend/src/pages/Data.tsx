@@ -357,6 +357,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
   const fuelingCapturePlan = fuelingLearningCapturePlan(fuelingBaseline);
   const fuelingCandidateLogs = fuelingCompletionCandidateRows(fuelingBaseline, navigate);
   const fuelingNewLogChecklist = fuelingLearningNewLogChecklist(fuelingBaseline);
+  const fuelingOptionChoices = ['Magen ok', 'Magen leicht unruhig', 'Magenprobleme'];
   const fuelingAction: DataPrimaryAction | null = fuelingTargetPath && fuelingGapSummary
     ? {
       title: 'Fueling-Evidenz schließen',
@@ -541,6 +542,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           {primaryAction.targetLog && (
             <div
               data-testid="data-primary-action-target"
+              className="data-primary-action-gate-block data-primary-action-target"
               style={{
                 display: 'grid',
                 gap: 4,
@@ -557,28 +559,26 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               </span>
             </div>
           )}
+          <div className="data-primary-action-cta">
+            {actionButton}
+          </div>
           {primaryAction.optionHint && (
-            <div
-              data-testid="data-primary-action-options"
-              style={{
-                display: 'grid',
-                gap: 4,
-                marginTop: 8,
-                padding: '8px 9px',
-                border: '1px solid rgba(47,102,208,0.26)',
-                borderRadius: 5,
-                background: 'rgba(47,102,208,0.07)',
-              }}
-            >
-              <span className="label-mono" style={{ color: 'var(--accent)' }}>Erlaubte Auswahl</span>
-              <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text)' }}>
-                {primaryAction.optionHint}
-              </span>
+            <div data-testid="data-primary-action-options" className="data-primary-action-gate-block data-primary-action-options">
+              <div className="data-primary-action-gate-block__head">
+                <span className="label-mono" style={{ color: 'var(--accent)' }}>Erlaubte Auswahl</span>
+                <span>in Aktivität wählen</span>
+              </div>
+              <div className="data-primary-action-option-row" aria-label={primaryAction.optionHint}>
+                {fuelingOptionChoices.map(choice => (
+                  <span key={choice}>{choice}</span>
+                ))}
+              </div>
             </div>
           )}
           {primaryAction.manualSafety && (
             <div
               data-testid="data-primary-action-manual-safety"
+              className="data-primary-action-gate-block data-primary-action-manual-safety"
               style={{
                 display: 'grid',
                 gap: 4,
@@ -598,6 +598,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           {primaryAction.capturePlan && (
             <div
               data-testid="data-primary-action-capture-plan"
+              className="data-primary-action-gate-block data-primary-action-capture-plan"
               style={{
                 display: 'grid',
                 gap: 4,
@@ -614,9 +615,6 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               </span>
             </div>
           )}
-          <div className="data-primary-action-cta">
-            {actionButton}
-          </div>
           {primaryAction.candidateLogs && primaryAction.candidateLogs.length > 1 && (
             <div
               data-testid="data-primary-action-candidate-logs"
