@@ -76,37 +76,23 @@ export default function Layout() {
   }
 
   return (
-    <div className="pulse-app-shell flex flex-col overflow-hidden" style={focusCssVars as CSSProperties}>
+    <div className="pulse-app-shell flex overflow-hidden" style={focusCssVars as CSSProperties}>
 
-      <header className="pulse-shell-topbar hidden md:grid border-b">
-        <div className="pulse-brand-lockup">
+      {/* ── Sidebar (desktop) ── */}
+      <aside
+        className="pulse-focus-sidebar hidden md:flex flex-col shrink-0 border-r"
+      >
+        <div className="pulse-sidebar-brand">
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
             <div className="pulse-brand-title">Pulse</div>
             <div className="pulse-brand-subtitle">Private Performance OS</div>
           </div>
         </div>
-        <div className="pulse-topbar-command" aria-label="Aktueller Arbeitsmodus">
-          <span>{activeNavItem.key}</span>
-          <strong>{activeNavItem.label}</strong>
-          <em>{activeNavItem.intent}</em>
-        </div>
-        <div className="pulse-topbar-context">
-          <span className="pulse-status-chip"><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
-          <span>{today}</span>
-          <span>{user?.name ?? 'Tobi'}</span>
-        </div>
-      </header>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-
-      {/* ── Sidebar (desktop) ── */}
-      <aside
-        className="pulse-focus-sidebar hidden md:flex flex-col shrink-0 border-r"
-      >
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px" aria-label="Hauptbereiche">
-          {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label, description, intent, key, end, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -119,35 +105,44 @@ export default function Layout() {
               <span className="pulse-nav-icon" aria-hidden="true"><Icon size={17} strokeWidth={1.8} /></span>
               <span className="pulse-nav-copy">
                 <span className="pulse-nav-label">{label}</span>
-                <span className="pulse-nav-description">{description}</span>
+                <span className="pulse-nav-description">{description} · {intent}</span>
               </span>
               <span className="pulse-nav-key">{key}</span>
             </NavLink>
           ))}
         </nav>
 
-        <button
-          type="button"
-          onClick={() => setCoachOpen(true)}
-          className="pulse-coach-command"
-        >
-          <Command size={15} aria-hidden="true" />
-          Coach
-        </button>
-
-        <div
-          className="pulse-user-strip"
-        >
-          <span>
-            {user?.name ?? 'Tobi'}
-          </span>
+        <div className="pulse-sidebar-utilities">
           <button
-            onClick={handleLogout}
-            className="pulse-icon-button"
-            aria-label="Abmelden"
+            type="button"
+            onClick={() => setCoachOpen(true)}
+            className="pulse-coach-command"
           >
-            <LogOut size={15} aria-hidden="true" />
+            <span className="pulse-coach-command-icon" aria-hidden="true">
+              <Command size={15} />
+            </span>
+            <span>
+              <strong>Coach</strong>
+              <em>Frage oder Check-in</em>
+            </span>
           </button>
+
+          <div
+            className="pulse-user-strip"
+          >
+            <span className="pulse-status-chip"><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
+            <span className="pulse-user-copy">
+              <strong>{user?.name ?? 'Tobi'}</strong>
+              <em>{today}</em>
+            </span>
+            <button
+              onClick={handleLogout}
+              className="pulse-icon-button"
+              aria-label="Abmelden"
+            >
+              <LogOut size={15} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -218,7 +213,6 @@ export default function Layout() {
         }}
       />
       <KeyboardHelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
-      </div>
     </div>
   );
 }
