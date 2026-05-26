@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft } from 'lucide-react';
 import { pulseApi } from '@/pulse/api-client';
 import type { ActivityAnalytics, NutritionLog, NutritionLogPatch } from '@/pulse/api-client';
 import { Skeleton } from '@/components/Skeleton';
@@ -305,12 +306,28 @@ function RpeFeedbackSheet({
   );
 }
 
-function RpeFeedbackCard({
+function scrollToActivitySection(id: string) {
+  const target = document.getElementById(id);
+  target?.scrollIntoView({ block: 'start' });
+  target?.focus({ preventScroll: true });
+}
+
+function ActivityClosureSurface({
   activity,
   nowMs,
   onOpen,
 }: {
   activity: {
+    activityType: string;
+    durationSec: number | null;
+    distanceM: number | null;
+    tss: number | null;
+    avgHr: number | null;
+    maxHr: number | null;
+    elevationGainM: number | null;
+    avgPowerW: number | null;
+    normalizedPowerW: number | null;
+    calories: number | null;
     startTime: string;
     rpe: number | null;
     rpeNote: string | null;
@@ -322,58 +339,77 @@ function RpeFeedbackCard({
   const hasRpe = activity.rpe != null;
   const isRecent = nowMs - new Date(activity.startTime).getTime() < 24 * 60 * 60 * 1000;
   const color = hasRpe ? rpeColor(activity.rpe!) : 'var(--accent)';
+  const durationMin = activity.durationSec ? Math.round(activity.durationSec / 60) : null;
+  const isLongFuelingActivity = ['bike', 'run', 'hike'].includes(activity.activityType) && (durationMin ?? 0) >= 75;
+  const feedbackText = hasRpe
+    ? 'Subjektive Belastung liegt vor; Fueling und Folge-Evidence bleiben prüfbar.'
+    : isRecent
+      ? 'Noch kein subjektives Feedback. Erst RPE schließen, dann Fueling oder Planwirkung prüfen.'
+      : 'Noch kein subjektives Feedback für diese Einheit.';
+  const fuelingText = isLongFuelingActivity ? 'Fueling prüfen' : 'Fueling optional';
 
   return (
-    <div id="activity-feedback" className="card" data-testid="activity-feedback-card" style={{ padding: '12px 14px', scrollMarginTop: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 5 }}>
-            RPE Feedback
-          </div>
-          {hasRpe ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: activity.rpeNote ? 5 : 0 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, color }}>{activity.rpe}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>/ 10</span>
-              </div>
-              {activity.rpeNote && (
-                <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>{activity.rpeNote}</div>
-              )}
-              {activity.sorenessAreas?.length ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
-                  {activity.sorenessAreas.map(area => (
-                    <span key={area} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)' }}>
-                      {SORENESS_LABELS[area]}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              {isRecent ? 'Kurzer Check nach der Einheit: subjektive Belastung eintragen.' : 'Noch kein subjektives Feedback für diese Einheit.'}
-            </div>
-          )}
+    <section
+      id="activity-feedback"
+      className="card activity-closure-card"
+      data-testid="activity-feedback-card"
+      tabIndex={-1}
+    >
+      <div className="activity-closure-card__copy">
+        <div className="activity-closure-card__eyebrow">Aktivitätsabschluss</div>
+        <div className="activity-closure-card__heading-row">
+          <h2>{hasRpe ? 'Belastung ist erfasst.' : 'Feedback zuerst schließen.'}</h2>
+          <span className="activity-closure-card__status" style={{ color }}>
+            {hasRpe ? `RPE ${activity.rpe}/10` : 'RPE offen'}
+          </span>
         </div>
+        <p>{feedbackText} Plan und Garmin bleiben unverändert.</p>
+      </div>
+
+      <div className="activity-closure-card__metrics" aria-label="Aktivitätsmetriken">
+        <KpiItem label="Dauer" value={fmtDuration(activity.durationSec)} />
+        <KpiItem label="Distanz" value={activity.distanceM ? (activity.distanceM / 1000).toFixed(1) : '–'} unit="km" />
+        <KpiItem label="TSS" value={fmt(activity.tss, 0)} />
+        <KpiItem label="Ø HR" value={fmt(activity.avgHr)} unit="bpm" />
+        <KpiItem label="Max HR" value={fmt(activity.maxHr)} unit="bpm" />
+        <KpiItem label="Elevation" value={fmt(activity.elevationGainM, 0)} unit="m" />
+        {activity.avgPowerW && <KpiItem label="Ø Watt" value={fmt(activity.avgPowerW)} unit="W" />}
+        {activity.normalizedPowerW && <KpiItem label="NP" value={fmt(activity.normalizedPowerW)} unit="W" />}
+        <KpiItem label="kcal" value={fmt(activity.calories, 0)} />
+      </div>
+
+      {hasRpe && (activity.rpeNote || activity.sorenessAreas?.length) ? (
+        <div className="activity-closure-card__feedback-note">
+          {activity.rpeNote && <span>{activity.rpeNote}</span>}
+          {activity.sorenessAreas?.length ? (
+            <span>{activity.sorenessAreas.map(area => SORENESS_LABELS[area]).join(' · ')}</span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="activity-closure-card__actions">
         <button
+          type="button"
           onClick={onOpen}
-          style={{
-            flexShrink: 0,
-            padding: '8px 10px',
-            background: hasRpe ? 'transparent' : 'var(--accent)',
-            color: hasRpe ? 'var(--accent)' : 'var(--accent-contrast)',
-            border: `1px solid ${hasRpe ? 'var(--border)' : 'var(--accent)'}`,
-            borderRadius: 5,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '.12em',
-            cursor: 'pointer',
-          }}
+          className="activity-closure-card__primary-action"
         >
-          {hasRpe ? 'BEARBEITEN' : 'EINTRAGEN'}
+          {hasRpe ? 'RPE bearbeiten' : 'RPE eintragen'}
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollToActivitySection('activity-fueling-log')}
+          className="activity-closure-card__secondary-action"
+        >
+          {fuelingText}
         </button>
       </div>
-    </div>
+
+      <div className="activity-closure-card__rail" aria-label="Abschlussstatus">
+        <span>{hasRpe ? 'RPE erfasst' : 'RPE fehlt'}</span>
+        <span>{fuelingText}</span>
+        <span>Plan/Garmin unverändert</span>
+      </div>
+    </section>
   );
 }
 
@@ -1462,37 +1498,15 @@ export default function ActivityDetail() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          style={{
-            minWidth: 44,
-            minHeight: 44,
-            padding: '8px 12px',
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            cursor: 'pointer',
-            color: 'var(--text-2)',
-            fontSize: 12,
-            fontWeight: 700,
-          }}
+          className="pulse-activity-back-button"
+          aria-label="Zurück"
         >
-          Zurück
+          <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
+          <span>Zurück</span>
         </button>
       </header>
 
-      <RpeFeedbackCard activity={a} nowMs={nowMs} onOpen={() => setRpeOpen(true)} />
-
-      {/* KPI Grid */}
-      <div className="pulse-kpi-grid">
-        <KpiItem label="Dauer" value={fmtDuration(a.durationSec)} />
-        <KpiItem label="Distanz" value={a.distanceM ? (a.distanceM / 1000).toFixed(1) : '–'} unit="km" />
-        <KpiItem label="TSS" value={fmt(a.tss, 0)} />
-        <KpiItem label="Ø HR" value={fmt(a.avgHr)} unit="bpm" />
-        <KpiItem label="Max HR" value={fmt(a.maxHr)} unit="bpm" />
-        <KpiItem label="Elevation" value={fmt(a.elevationGainM, 0)} unit="m" />
-        {a.avgPowerW && <KpiItem label="Ø Watt" value={fmt(a.avgPowerW)} unit="W" />}
-        {a.normalizedPowerW && <KpiItem label="NP" value={fmt(a.normalizedPowerW)} unit="W" />}
-        {a.calories && <KpiItem label="kcal" value={fmt(a.calories, 0)} />}
-      </div>
+      <ActivityClosureSurface activity={a} nowMs={nowMs} onOpen={() => setRpeOpen(true)} />
 
       <ActivityEquipmentSection activity={a} />
 

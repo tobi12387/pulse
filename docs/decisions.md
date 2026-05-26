@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Activity Detail startet mit Abschluss statt Metrikdump
+
+- **Decision:** Activity Detail fasst RPE, Kernmetriken, Fueling-Pruefung und den `Plan/Garmin unverändert`-Vertrag in einer ersten `Aktivitätsabschluss`-Flaeche zusammen; der alte lose RPE-Block plus KPI-Raster wird ersetzt.
+- **Why:** Frische Route-Evidence nach den Top-App-UI-Paessen zeigte 0 Overflow, aber die mobile Activity-Detail-Route blieb der groesste Abschluss-Bruch: Sie fuehrte zuerst wie ein Aktivitaetsreport statt wie der Lern-/Evidence-Workflow, in den Home/Data/Plan schicken. Fuer das Performance-OS muss die abgeschlossene Einheit unmittelbar sagen, welche Evidenz jetzt zaehlt und was unverändert bleibt.
+- **Alternatives:** Nur Abstaende im alten Metrics-Layout reduzieren (verbessert nicht die Workflow-Hierarchie); Fueling-Logik oder Planwirkung vorziehen (wuerde Gates und Schreibvertraege beruehren); Activity Detail als reinen Report belassen (zu schwach fuer completed-day learning).
+- **Decided by:** Codex, als Activity-Detail-Closure-Surface im Branch `codex/activity-detail-closure-surface`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Plan-Wochenleiste wird auf Mobile zum kompakten Kontext
 
 - **Decision:** Pulse macht die mobile Plan-Wochenleiste zu einem kompakten Kontextstreifen: kleinere vorige/naechste Controls, ein gemeinsamer Tagesstreifen statt sieben schwerer Mini-Karten und keine wiederholten visuellen `frei`-Labels auf leeren Tagen.
