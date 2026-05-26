@@ -73,7 +73,7 @@ If this reports a commit mismatch and there are merged runtime changes waiting, 
 
 ## Deploy After Auth Repair
 
-Run the standard deploy command only after the relevant PR is merged to `main`:
+Run the standard remote deploy command only after the relevant PR is merged to `main`:
 
 ```bash
 ssh root@192.168.178.46 "cd /root/pulse && bash scripts/deploy.sh"
@@ -85,6 +85,17 @@ without changing server files:
 ```bash
 ssh pulse-server "cd /root/pulse && bash scripts/deploy.sh"
 ```
+
+If the Codex session is already running on the Pulse server host and `/root/pulse`
+is a clean `main` mirror, running the script directly is also valid as a deploy
+operation after merge:
+
+```bash
+cd /root/pulse && bash scripts/deploy.sh
+```
+
+This does not permit manual patches on the server. The deploy script pulls from
+GitHub `main`, refuses dirty trees and refuses non-`main` branches.
 
 Then verify the deployed mirror:
 

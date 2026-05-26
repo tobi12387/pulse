@@ -100,7 +100,24 @@ print_mirror_state_recovery_hint() {
   } >&2
 }
 
+first_host_fallback() {
+  local fallback_list="${HOST_FALLBACKS//,/ }"
+  local candidate
+
+  for candidate in $fallback_list; do
+    [[ -n "$candidate" ]] || continue
+    [[ "$candidate" == "$HOST" ]] && continue
+    printf '%s\n' "$candidate"
+    return 0
+  done
+
+  return 1
+}
+
 render_recovery_packet() {
+  local first_fallback=""
+  first_fallback="$(first_host_fallback || true)"
+
   cat <<PACKET
 # Server Deploy Mirror Recovery Packet
 
@@ -135,6 +152,16 @@ Mirror verification:
 Deploy boundary:
 - Deploy only after the relevant PR is merged to GitHub main:
   ssh $HOST "cd $APP_PATH && bash scripts/deploy.sh"
+PACKET
+  if [[ -n "$first_fallback" ]]; then
+    cat <<PACKET
+- If direct host auth fails but the fallback target is verified:
+  ssh $first_fallback "cd $APP_PATH && bash scripts/deploy.sh"
+PACKET
+  fi
+  cat <<PACKET
+- If this Codex session is already on the Pulse server host and $APP_PATH is a clean main mirror:
+  cd $APP_PATH && bash scripts/deploy.sh
 - Then verify:
   PULSE_EXPECTED_COMMIT=$EXPECTED_COMMIT npm run verify:server
 - Do not edit, branch, commit or patch files directly on the server.

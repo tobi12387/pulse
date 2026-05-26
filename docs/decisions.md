@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Server-Host-Deploy darf das Skript direkt ausfuehren
+
+- **Decision:** In Codex-Sessions, die bereits auf dem Pulse-Server-Host laufen, darf ein gemergter Runtime-Deploy durch `cd /root/pulse && bash scripts/deploy.sh` direkt ausgefuehrt werden; Remote-Deploy bleibt bevorzugt `ssh root@192.168.178.46 ...` oder bei Auth-Failure der verifizierte Alias `ssh pulse-server ...`.
+- **Why:** Der direkte IP-SSH-Pfad kann in dieser Workspace-Umgebung an Auth scheitern, obwohl `/root/pulse` der saubere Main-Mirror ist und das Deploy-Skript selbst Dirty-Tree- und Branch-Schutz erzwingt. Der direkte Skriptlauf ist ein Deploy aus GitHub `main`, keine Erlaubnis fuer Server-Patches.
+- **Alternatives:** Nur die direkte IP-SSH-Zeile dokumentieren (wiederholt einen bekannten Auth-Fehler); immer den Alias erzwingen (unnötig, wenn die Session schon auf dem Server ist); manuelle Server-Fixes zulassen (verletzt den Main-Mirror-Vertrag).
+- **Decided by:** Codex, als Deploy-Path-Clarity im Branch `codex/deploy-path-clarity`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Performance-OS-Redesign reduziert Chrome statt neue Karten zu addieren
 
 - **Decision:** Pulse nutzt fuer den neuen UI/UX-Pass eine kompakte Workspace-Rail, weniger doppelte Route-Status-Chrome, eine neutralere Grundflaeche mit blauem Produktakzent und eine dichtere mobile Readiness-Gruppe; die stabilen Haupt-URLs bleiben erhalten, waehrend `/insights` in der Navigation als `Lernen` erscheint.
