@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — iPhone-Gate lehnt unreplaced App-Stand-Platzhalter ab
+
+- **Decision:** `npm run audit:iphone-pwa-gate` behandelt den Scaffold-Platzhalter fuer `App runtime commit under test` als offenen Evidence-Gap statt als beobachteten Runtime-Commit.
+- **Why:** Ein kopierter Platzhalter beweist nicht, welche App-Version das echte iPhone geladen hat. Das Gate soll die Feldrunde erst oeffnen, wenn der beobachtete Settings-`App-Stand` oder ein anderer echter Runtime-Nachweis eingetragen ist.
+- **Alternatives:** Den Platzhalter als String akzeptieren (falsche Sicherheit); das Feld komplett optional lassen (weniger Schutz fuer neue Scaffolds); jeden fehlenden Runtime-Wert hart blockieren (zu streng fuer historische Records ohne App-Stand-Feld).
+- **Decided by:** Codex, als iPhone-App-Stand-Placeholder-Gate im Branch `codex/iphone-appstand-placeholder-gate`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — iPhone-Scaffold trennt erwartete Runtime von beobachtetem App-Stand
 
 - **Decision:** Der iPhone/PWA-Feldlauf-Scaffold nennt den erwarteten App-Runtime-Commit nur als Orientierung und laesst `App runtime commit under test` als Platzhalter fuer den beobachteten Settings-`App-Stand`.
