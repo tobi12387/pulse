@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Current-Focus pinnt keine Feldlauf-Server-Commits
+
+- **Decision:** `docs/ai/current-focus.md` beschreibt die aktuelle Gate-Logik und den manuellen Unblock, kopiert aber keinen statischen erwarteten Server-Commit mehr als Feldlauf-Wahrheit; exakte iPhone/PWA-Field-Run-Commits kommen aus dem Live-Audit auf clean `main`.
+- **Why:** Docs-only Context-PRs bewegen `main` selbst weiter und machen einen gerade dokumentierten erwarteten Server-Commit sofort wieder stale. Der Live-Audit bleibt die autoritative Quelle, waehrend `current-focus.md` nur die dauerhafte Handlungslogik und Runtime-Drift-Regel halten soll.
+- **Alternatives:** Nach jedem Docs-PR erneut denselben Hash aktualisieren (selbst-stale Schleife); statische Hashes im Field-Run verwenden (zu fehleranfaellig); gar keinen Gate-Snapshot pflegen (schlechter fuer AI-Session-Start).
+- **Decided by:** Codex, als Live-Gate-Focus-Refresh im Branch `codex/live-gate-focus-20260526`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — iPhone-Feldlauf notiert den App-Runtime-Stand
 
 - **Decision:** iPhone/PWA-Feldlauf-Scaffolds und aufgezeichnete Feldnachweise enthalten neben dem Server-Commit auch `App runtime commit under test`, abgelesen aus Settings `App-Stand`.
