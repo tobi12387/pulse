@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Route-Evidence baut Shared vor Screenshot-Capture
+
+- **Decision:** `npm run qa:ux-evidence` und `npm run qa:ux-evidence:iphone` bauen den `shared`-Workspace vor dem Playwright-Screenshot-Pack.
+- **Why:** Frische Codex-Worktrees haben nach `npm ci` noch keine `shared/dist`-Exports; Vite kann dann `@coaching-os/shared/*` nicht aufloesen und der Evidence-Lauf scheitert vor jeder UI-Bewertung. Das QA-Kommando soll als eigenstaendiger Route-Evidence-Einstieg funktionieren.
+- **Alternatives:** In jedem QA-Record manuell `npm run build -w shared` davor ausfuehren (leicht zu vergessen); die Fehler als lokale Setup-Probleme ignorieren (schwaecht Route-Evidence als Produktentscheidungsbasis); den gesamten Build erzwingen (langsamer als fuer diese Importkante noetig).
+- **Decided by:** Codex, als Route-Evidence-Refresh im Branch `codex/route-evidence-refresh-20260526`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Current-Focus pinnt keine Feldlauf-Server-Commits
 
 - **Decision:** `docs/ai/current-focus.md` beschreibt die aktuelle Gate-Logik und den manuellen Unblock, kopiert aber keinen statischen erwarteten Server-Commit mehr als Feldlauf-Wahrheit; exakte iPhone/PWA-Field-Run-Commits kommen aus dem Live-Audit auf clean `main`.
