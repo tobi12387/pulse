@@ -9,6 +9,9 @@ The checklist is for evidence capture only. Do not infer GI comfort from notes, 
 - Nutrition trend summaries stay gated until three comparable complete `during` logs exist.
 - A comparable complete log needs activity/duration context, carbs and structured GI comfort.
 - Accepted GI comfort values are `ok`, `mild_issue` and `issue`.
+- Free-text, legacy or placeholder GI comfort values do not count as structured
+  evidence; the app and audit keep the Fueling trend gate closed until one of
+  the accepted values is recorded from the real stomach response.
 - Do not edit database rows directly for normal evidence capture.
 - Do not invent GI comfort; Tobi must choose the value from actual experience.
 - Sodium, heat and sweat-rate remain measured-only evidence gaps until they are explicitly recorded.

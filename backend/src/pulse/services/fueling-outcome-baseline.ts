@@ -11,6 +11,7 @@ import { db } from '../../lib/db.js';
 
 type FuelingActivityType = 'run' | 'bike' | 'swim' | 'strength' | 'hike' | 'other';
 const REQUIRED_COMPARABLE_COMPLETE_LOGS = 3;
+const STRUCTURED_GI_COMFORT_VALUES = new Set(['ok', 'mild_issue', 'issue']);
 
 export interface FuelingOutcomeBaselineLogInput {
   date: string;
@@ -46,6 +47,10 @@ function isEnduranceFuelingSport(activityType: string | null | undefined): boole
 
 function isGiIssue(log: FuelingOutcomeBaselineLogInput): boolean {
   return log.giComfort === 'mild_issue' || log.giComfort === 'issue';
+}
+
+function hasStructuredGiComfort(log: FuelingOutcomeBaselineLogInput): boolean {
+  return STRUCTURED_GI_COMFORT_VALUES.has(String(log.giComfort ?? '').trim());
 }
 
 function roundToFive(value: number): number {
@@ -107,7 +112,7 @@ function comparableLearningLogs(logs: FuelingOutcomeBaselineLogInput[]): Fueling
 }
 
 function isComparableCompleteLearningLog(log: FuelingOutcomeBaselineLogInput): boolean {
-  return log.carbsG != null && log.giComfort != null;
+  return log.carbsG != null && hasStructuredGiComfort(log);
 }
 
 function comparableCompleteLearningLogs(logs: FuelingOutcomeBaselineLogInput[]): FuelingOutcomeBaselineLogInput[] {
@@ -142,14 +147,14 @@ function comparableLogGapSummary(
   const remaining = Math.max(0, REQUIRED_COMPARABLE_COMPLETE_LOGS - completeLogs.length);
   const completableExistingLogs = comparableLogs.filter(log =>
     !isComparableCompleteLearningLog(log)
-    && (log.carbsG != null || log.giComfort != null));
+    && (log.carbsG != null || hasStructuredGiComfort(log)));
   const completableNow = Math.min(remaining, completableExistingLogs.length);
   if (completableNow <= 0) {
     return `Noch ${countWord(remaining)} vergleichbare During-Logs mit Dauer, Carbs und GI-Komfort fehlen.`;
   }
 
-  const giGapCount = completableExistingLogs.filter(log => log.carbsG != null && log.giComfort == null).length;
-  const carbGapCount = completableExistingLogs.filter(log => log.carbsG == null && log.giComfort != null).length;
+  const giGapCount = completableExistingLogs.filter(log => log.carbsG != null && !hasStructuredGiComfort(log)).length;
+  const carbGapCount = completableExistingLogs.filter(log => log.carbsG == null && hasStructuredGiComfort(log)).length;
   const fieldGaps = [
     giGapCount > 0 ? 'GI-Komfort' : null,
     carbGapCount > 0 ? 'Carbs' : null,
@@ -179,7 +184,7 @@ function completionCandidateSummary(log: FuelingOutcomeBaselineLogInput): string
 
 function completionCandidateForLog(log: FuelingOutcomeBaselineLogInput): PulseFuelingLearningCompletionCandidate | null {
   if (isComparableCompleteLearningLog(log)) return null;
-  if (log.carbsG != null && log.giComfort == null) {
+  if (log.carbsG != null && !hasStructuredGiComfort(log)) {
     return {
       kind: 'complete_gi_comfort',
       label: 'GI-Komfort ergänzen',
@@ -191,7 +196,7 @@ function completionCandidateForLog(log: FuelingOutcomeBaselineLogInput): PulseFu
     };
   }
 
-  if (log.carbsG == null && log.giComfort != null) {
+  if (log.carbsG == null && hasStructuredGiComfort(log)) {
     return {
       kind: 'complete_carbs',
       label: 'Carbs ergänzen',
@@ -255,7 +260,7 @@ function summarizeLearningReadiness(logs: FuelingOutcomeBaselineLogInput[]): Pul
 
   const missingEvidence = [
     comparableLogGapSummary(comparableLogs, completeLogs),
-    comparableLogs.some(log => log.giComfort == null)
+    comparableLogs.some(log => !hasStructuredGiComfort(log))
       ? 'GI-Komfort fehlt strukturiert fuer mindestens einen langen During-Log.'
       : null,
     comparableLogs.some(log => log.carbsG == null)

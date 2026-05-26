@@ -119,6 +119,34 @@ describe('summarizeFuelingOutcomeBaseline', () => {
     );
   });
 
+  it('keeps trend summaries gated when a GI comfort value is not structured', () => {
+    const baseline = summarizeFuelingOutcomeBaseline({
+      logs: [
+        { date: '2026-05-13', context: 'during', activityType: 'bike', durationMin: 130, carbsG: 125, giComfort: 'ok' },
+        { date: '2026-05-10', context: 'during', activityType: 'bike', durationMin: 115, carbsG: 105, giComfort: 'mild_issue' },
+        { date: '2026-05-04', context: 'during', activityId: 'legacy-free-text', activityType: 'run', durationMin: 80, carbsG: 50, giComfort: 'minor_issues' },
+      ],
+    });
+
+    const readiness = baseline.learningReadiness!;
+    expect(readiness).toMatchObject({
+      comparableCompleteLogs: 2,
+      requiredComparableCompleteLogs: 3,
+      readyForTrendSummary: false,
+      nextAction: {
+        kind: 'complete_gi_comfort',
+        activityId: 'legacy-free-text',
+      },
+    });
+    expect(readiness.missingEvidence.join(' ')).toContain('GI-Komfort fehlt strukturiert');
+    expect(readiness.completionCandidates?.[0]).toMatchObject({
+      kind: 'complete_gi_comfort',
+      activityId: 'legacy-free-text',
+      missingEvidence: ['GI-Komfort'],
+    });
+    expect(baseline.trendSummary).toBeNull();
+  });
+
   it('turns a low-intake GI long ride into a controlled next target with evidence gaps', () => {
     const baseline = summarizeFuelingOutcomeBaseline({
       logs: [{

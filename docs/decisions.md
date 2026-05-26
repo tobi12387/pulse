@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Fueling-Trends zaehlen nur strukturierte GI-Komfort-Werte
+
+- **Decision:** Fueling-Lernbereitschaft in App und `npm run audit:fueling-gate` zaehlt einen langen During-Log nur dann als vergleichbar komplett, wenn `giComfort` einer der strukturierten Werte `ok`, `mild_issue` oder `issue` ist.
+- **Why:** Freitext-, Legacy- oder Platzhalterwerte beweisen keine der drei auswertbaren Magenreaktionen. Nutrition-Trends sollen erst freigeschaltet werden, wenn Carbs plus echte strukturierte GI-Komfort-Evidence vorliegen.
+- **Alternatives:** Jeden nicht-leeren GI-Wert als komplett zaehlen (falsche Trendfreigabe); nur API-Writes validieren und historische Werte akzeptieren (uneinheitlich zwischen Datenbank und Gate); DB-Constraint nachtraeglich erzwingen (riskanter, weil bestehende Legacy-Daten migriert werden muessten).
+- **Decided by:** Codex, als Fueling-Structured-GI-Gate im Branch `codex/fueling-structured-gi-gate`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — iPhone-Gate lehnt Device/iOS-Platzhalter ab
 
 - **Decision:** `npm run audit:iphone-pwa-gate` behandelt unreplaced Scaffold-Werte fuer `Device` und `iOS version` als fehlende Feldmetadaten.
