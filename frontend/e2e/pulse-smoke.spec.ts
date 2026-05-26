@@ -1582,6 +1582,11 @@ test('Settings PWA field proof exposes the current manual evidence scope', async
   await expect(fieldProof).toContainText('Startmodus');
   await expect(fieldProof).toContainText('Noch manuell');
   await expect(fieldProof).toContainText('Zertifikat, Push-Test, Offline');
+  await expect(fieldProof).toContainText('Feldlauf');
+  await expect(fieldProof).toContainText('Server-Stand');
+  await expect(fieldProof).toContainText('Safari');
+  await expect(fieldProof).toContainText('Home Screen');
+  await expect(fieldProof).toContainText('VPN/Netz trennen');
   await expect(fieldProof).toBeInViewport();
 
   const overflow = await fieldProof.evaluate((element) => {

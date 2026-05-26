@@ -108,6 +108,33 @@ export function PwaDeviceCard() {
   const status = pwaReadiness();
   const commit = buildCommitLabel();
   const launchMode = status.standalone ? 'Home Screen' : 'Browser';
+  const fieldRunbook = [
+    {
+      label: 'Server-Stand',
+      value: commit,
+      detail: 'Diesen Stand im Feldnachweis verwenden.',
+    },
+    {
+      label: 'Safari',
+      value: status.secure ? 'ohne Warnung bestätigen' : 'HTTPS zuerst reparieren',
+      detail: 'Zertifikatvertrauen bleibt echte iOS-Prüfung.',
+    },
+    {
+      label: 'Home Screen',
+      value: launchMode,
+      detail: status.standalone ? 'PWA-Modus ist aktiv.' : 'Aus Safari zum Home Screen starten.',
+    },
+    {
+      label: 'Push-Test',
+      value: status.push ? 'bei Bedarf senden' : 'nicht verfügbar',
+      detail: 'Nur bewusst testen, wenn dieses Gerät registriert wird.',
+    },
+    {
+      label: 'Offline',
+      value: 'VPN/Netz trennen',
+      detail: 'Fallback nach Neustart aus Home Screen prüfen.',
+    },
+  ];
 
   return (
     <div className="card">
@@ -198,6 +225,60 @@ export function PwaDeviceCard() {
               Zertifikat, Push-Test, Offline
             </span>
           </Row>
+        </div>
+
+        <div
+          data-testid="pwa-field-runbook"
+          style={{
+            borderTop: '1px solid rgba(47,102,208,0.18)',
+            paddingTop: 9,
+            display: 'grid',
+            gap: 7,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+            <span className="label-mono" style={{ color: 'var(--accent)' }}>Feldlauf</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+              Reihenfolge
+            </span>
+          </div>
+          <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 6 }}>
+            {fieldRunbook.map((step, index) => (
+              <li
+                key={step.label}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '28px minmax(0, 1fr)',
+                  gap: 7,
+                  alignItems: 'start',
+                }}
+              >
+                <span style={{
+                  width: 22,
+                  minHeight: 22,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(47,102,208,0.28)',
+                  borderRadius: 3,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  color: 'var(--accent)',
+                  background: 'rgba(47,102,208,0.06)',
+                }}>
+                  {index + 1}
+                </span>
+                <span style={{ display: 'grid', gap: 2, minWidth: 0 }}>
+                  <span style={{ fontSize: 11.5, color: 'var(--text)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>
+                    <strong>{step.label}:</strong> {step.value}
+                  </span>
+                  <span style={{ fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>
+                    {step.detail}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
 

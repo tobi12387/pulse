@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Settings zeigt den iPhone/PWA-Feldlauf als Geräte-Runbook
+
+- **Decision:** Die iPhone-&-PWA-Karte in Settings zeigt zusätzlich zum Feldnachweis eine kompakte Prüfreihenfolge für Server-Stand, Safari/Zertifikat, Home-Screen-Start, Push-Test und Offline-Fallback.
+- **Why:** Das iPhone/PWA-Gate bleibt echte Real-Device-Evidence, aber Tobi soll die nötigen Feldpunkte direkt auf dem Gerät sehen können, ohne Terminal- oder Chat-Kontext daneben offen zu halten. Die App darf den manuellen Nachweis nicht als bestanden ausgeben, sondern nur die Ausführung reibungsärmer machen.
+- **Alternatives:** Nur die Terminal-Scaffold-Kommandos verwenden (korrekt, aber auf dem iPhone unpraktisch); das Gate automatisch aus Browser-Signalen schließen (zu stark, weil Zertifikatvertrauen, Push-Test und Offline echte Feldprüfungen bleiben); native/wrapper Scope starten (weiterhin evidence-gated).
+- **Decided by:** Codex, als iPhone/PWA-Evidence-Support im Branch `codex/iphone-field-runbook`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Fueling-GI-Save kettet direkt zum nächsten Completion-Kandidaten
 
 - **Decision:** Nach einem erfolgreichen GI-Komfort-Save öffnet Activity Detail als Folgeaktion den nächsten vorhandenen Fueling-Completion-Kandidaten, wenn einer existiert; erst ohne weiteren Kandidaten fällt der Flow auf `/data?tab=today#data-primary-action` zurück.
