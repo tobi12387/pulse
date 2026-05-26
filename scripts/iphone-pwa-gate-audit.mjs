@@ -346,6 +346,11 @@ function scaffoldValue(value, fallback) {
   return value ?? fallback;
 }
 
+function observedRuntimePlaceholder(audit) {
+  const expected = audit.expectedRuntimeCommit ? `; expected ${audit.expectedRuntimeCommit}` : '';
+  return `<copy observed Settings App-Stand${expected}>`;
+}
+
 function scaffoldGapLines(audit) {
   if (audit.gaps.length === 0) {
     return ['- Current audit has no open field gaps for the expected commit.'];
@@ -367,6 +372,9 @@ export function renderIphonePwaFieldScaffold(audit) {
     '- Install and trust only `frontend/certs/rootCA.pem` if warning-free certificate behavior is required; never transfer `rootCA-key.pem` or any `*-key.pem` file.',
     '- Deliberately enable Push and send a test push only when testing notifications.',
     '- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.',
+    ...(audit.expectedRuntimeCommit
+      ? [`- Expected app-runtime commit for this audit: \`${audit.expectedRuntimeCommit}\`; record the observed Settings \`App-Stand\` in Scope.`]
+      : []),
     `- Append this field run to ${scaffoldValue(audit.evidenceFile, 'docs/qa/2026-05-02-iphone-pwa-real-device.md')}.`,
     `- After recording, rerun: \`${iphonePwaGateAuditCommand(audit.expectedCommit)}\`.`,
     '',
@@ -382,7 +390,7 @@ export function renderIphonePwaFieldScaffold(audit) {
     `- Pulse URL: \`${scaffoldValue(audit.scope.pulseUrl, 'https://192.168.178.46:5175')}\``,
     `- Server commit under test: \`${expectedCommit}\``,
     ...(audit.expectedRuntimeCommit
-      ? [`- App runtime commit under test: \`${audit.expectedRuntimeCommit}\``]
+      ? [`- App runtime commit under test: ${observedRuntimePlaceholder(audit)}`]
       : []),
     '',
     '## Results',
@@ -446,7 +454,7 @@ export function renderIphonePwaFieldPacket(audit) {
   lines.push('- Install and trust only frontend/certs/rootCA.pem if warning-free certificate behavior is required; never transfer rootCA-key.pem or any *-key.pem file.');
   lines.push('- Deliberately enable Push and send a test push only when testing notifications.');
   lines.push('- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.');
-  lines.push(`- Record the run in ${audit.evidenceFile}, including Server commit under test: ${audit.expectedCommit ?? '<commit>'}${audit.expectedRuntimeCommit ? ` and App runtime commit under test: ${audit.expectedRuntimeCommit}` : ''}.`);
+  lines.push(`- Record the run in ${audit.evidenceFile}, including Server commit under test: ${audit.expectedCommit ?? '<commit>'}${audit.expectedRuntimeCommit ? ` and observed Settings App-Stand as App runtime commit under test (expected ${audit.expectedRuntimeCommit})` : ''}.`);
   lines.push(`- Rerun after recording: ${iphonePwaGateAuditCommand(audit.expectedCommit)}`);
   lines.push('');
   lines.push('Evidence record scaffold:');
@@ -480,7 +488,7 @@ export function renderIphonePwaNextPrompt(audit) {
   lines.push(`Next action: ${firstGap.nextAction}`);
   lines.push('');
   lines.push('Prompt:');
-  lines.push(`Run a real iPhone/PWA field check for Server commit under test: ${expectedCommit}${audit.expectedRuntimeCommit ? ` and App runtime commit under test: ${audit.expectedRuntimeCommit}` : ''}. Start with the first open gap above, then use the scaffold if the run needs a full evidence record.`);
+  lines.push(`Run a real iPhone/PWA field check for Server commit under test: ${expectedCommit}${audit.expectedRuntimeCommit ? ` and expected app runtime commit: ${audit.expectedRuntimeCommit}` : ''}. Record the observed Settings App-Stand as App runtime commit under test, then use the scaffold if the run needs a full evidence record.`);
   lines.push('');
   lines.push('Commands:');
   lines.push(`- Verify server mirror first: ${serverVerifyCommand(audit.expectedCommit)}`);
@@ -490,7 +498,7 @@ export function renderIphonePwaNextPrompt(audit) {
   lines.push('');
   lines.push('Rules:');
   lines.push('- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.');
-  lines.push('- Record Device, iOS version, Server commit under test and App runtime commit under test in the Scope section when App-Stand is available.');
+  lines.push('- Record Device, iOS version, Server commit under test and observed Settings App-Stand as App runtime commit under test in the Scope section when App-Stand is available.');
   lines.push('- Never transfer rootCA-key.pem or any *-key.pem file to the phone.');
   lines.push(`- Append the field run to ${audit.evidenceFile}.`);
 

@@ -245,6 +245,30 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
 });
 
+test('iphone pwa field handoffs treat app runtime as observed Settings App-Stand', () => {
+  const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'abc1234',
+    expectedRuntimeCommit: 'runtime1',
+  });
+
+  assert.equal(audit.expectedRuntimeCommit, 'runtime1');
+
+  const scaffold = renderIphonePwaFieldScaffold(audit);
+  assert.match(scaffold, /Expected app-runtime commit for this audit: `runtime1`; record the observed Settings `App-Stand` in Scope\./);
+  assert.match(scaffold, /- App runtime commit under test: <copy observed Settings App-Stand; expected runtime1>/);
+  assert.doesNotMatch(scaffold, /- App runtime commit under test: `runtime1`/);
+
+  const packet = renderIphonePwaFieldPacket(audit);
+  assert.match(packet, /Expected app runtime commit: runtime1/);
+  assert.match(packet, /Record the run in field\.md, including Server commit under test: abc1234 and observed Settings App-Stand as App runtime commit under test \(expected runtime1\)\./);
+
+  const nextPrompt = renderIphonePwaNextPrompt(audit);
+  assert.match(nextPrompt, /expected app runtime commit: runtime1/);
+  assert.match(nextPrompt, /Record the observed Settings App-Stand as App runtime commit under test/);
+  assert.match(nextPrompt, /Record Device, iOS version, Server commit under test and observed Settings App-Stand as App runtime commit under test/);
+});
+
 test('iphone pwa gate audit evaluates the latest appended field run as one record', () => {
   const audit = buildIphonePwaGateAudit(APPENDED_FRESH_FIELD_RECORD, {
     evidenceFile: 'field.md',
@@ -294,7 +318,7 @@ test('iphone pwa gate audit accepts docs-only server drift when app runtime matc
   assert.match(packet, /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
 
   const scaffold = renderIphonePwaFieldScaffold(audit);
-  assert.match(scaffold, /- App runtime commit under test: `runtime1`/);
+  assert.match(scaffold, /- App runtime commit under test: <copy observed Settings App-Stand; expected runtime1>/);
 
   const nextPrompt = renderIphonePwaNextPrompt(audit);
   assert.match(nextPrompt, /Expected app runtime commit: runtime1/);
