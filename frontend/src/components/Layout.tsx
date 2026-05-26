@@ -22,7 +22,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
   { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
   { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
-  { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Lernen', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
+  { to: '/insights', label: 'Lernen', mobileLabel: 'Lernen', description: 'Analyse', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
   { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'System', intent: 'bereit halten', key: '05', end: false, icon: Settings },
 ];
 
@@ -88,7 +88,7 @@ export default function Layout() {
         </div>
         <div className="pulse-topbar-command" aria-label="Aktueller Arbeitsmodus">
           <span>{activeNavItem.key}</span>
-          <strong>{activeNavItem.description}</strong>
+          <strong>{activeNavItem.label}</strong>
           <em>{activeNavItem.intent}</em>
         </div>
         <div className="pulse-topbar-context">
@@ -105,8 +105,7 @@ export default function Layout() {
         className="pulse-focus-sidebar hidden md:flex flex-col shrink-0 border-r"
       >
         {/* Nav */}
-        <nav className="flex-1 flex flex-col gap-px">
-          <div className="pulse-sidebar-section-label">Bereiche</div>
+        <nav className="flex-1 flex flex-col gap-px" aria-label="Hauptbereiche">
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
               key={to}
@@ -115,6 +114,7 @@ export default function Layout() {
               className={({ isActive }) =>
                 `pulse-nav-link ${isActive ? 'pulse-nav-link--active' : ''}`
               }
+              aria-label={`${label}: ${description}`}
             >
               <span className="pulse-nav-icon" aria-hidden="true"><Icon size={17} strokeWidth={1.8} /></span>
               <span className="pulse-nav-copy">
@@ -125,12 +125,6 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="pulse-sidebar-status" aria-label="Aktueller Workspace">
-          <span>{activeNavItem.key}</span>
-          <strong>{activeNavItem.description}</strong>
-          <em>{activeNavItem.intent}</em>
-        </div>
 
         <button
           type="button"

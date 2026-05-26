@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Performance-OS-Redesign reduziert Chrome statt neue Karten zu addieren
+
+- **Decision:** Pulse nutzt fuer den neuen UI/UX-Pass eine kompakte Workspace-Rail, weniger doppelte Route-Status-Chrome, eine neutralere Grundflaeche mit blauem Produktakzent und eine dichtere mobile Readiness-Gruppe; die stabilen Haupt-URLs bleiben erhalten, waehrend `/insights` in der Navigation als `Lernen` erscheint.
+- **Why:** Tobi hat die App erneut als unuebersichtlich und wenig strukturiert bewertet und volle Freiheit fuer Breaking UI/UX gegeben. Die frische Route-Evidence zeigte keinen Overflow, aber zu viel kognitive Last durch wiederholte Arbeitsmodus-Texte, schwere Kartenrahmen und eine einfarbig-gruene Signalsprache.
+- **Alternatives:** Weitere Info-Karten hinzufuegen (mehr Unruhe); alle URLs sofort brechen (hohes Deep-Link- und Test-Risiko ohne klaren Strukturgewinn); nur Farben polieren (zu wenig UX-Wirkung); Produktlogik in das Redesign mischen (wuerde Gates und UI-Auftrag vermengen).
+- **Decided by:** Tobi und Codex, als Performance-OS-Redesign im Branch `codex/performance-os-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Fueling-Trends zaehlen nur strukturierte GI-Komfort-Werte
 
 - **Decision:** Fueling-Lernbereitschaft in App und `npm run audit:fueling-gate` zaehlt einen langen During-Log nur dann als vergleichbar komplett, wenn `giComfort` einer der strukturierten Werte `ok`, `mild_issue` oder `issue` ist.

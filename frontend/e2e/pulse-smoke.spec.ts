@@ -9,7 +9,7 @@ const routes = [
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'Frage klären' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
   { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
-  { path: '/insights', label: 'Analyse', navHref: '/insights', visibleText: 'Analyse' },
+  { path: '/insights', label: 'Lernen', navHref: '/insights', visibleText: 'Analyse' },
   { path: '/settings', label: 'Setup', navHref: '/settings', visibleText: 'Setup' },
 ] as const;
 
@@ -17,7 +17,7 @@ const primaryNavRoutes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
   { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
-  { path: '/insights', label: 'Analyse', navHref: '/insights', visibleText: 'Analyse' },
+  { path: '/insights', label: 'Lernen', navHref: '/insights', visibleText: 'Analyse' },
   { path: '/settings', label: 'Setup', navHref: '/settings', visibleText: 'Setup' },
 ] as const;
 
@@ -35,7 +35,7 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.locator('a[href="/"]')).toContainText('Heute');
   await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
   await expect(primaryNav.locator('a[href="/data"]')).toContainText('Daten');
-  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Analyse');
+  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Lernen');
   await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Setup');
   await expect(primaryNav.locator('a[href="/coach"]')).toHaveCount(0);
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
