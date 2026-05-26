@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Settings zeigt iPhone-Feldnachweis als optionale Readiness-Aufgabe
+
+- **Decision:** Settings zeigt den iPhone/PWA-Feldnachweis im ersten Setup-Status als optionale Aufgabe mit direktem Sprung zur Geraetesektion, statt ihn nur im Diagnose- oder Detailbereich sichtbar zu machen.
+- **Why:** Der Performance-OS-Gate-Audit haelt iPhone/PWA-Feldevidence weiter offen, waehrend die Settings-Route im ersten Viewport `Kern bereit` meldete und den Feldnachweis erst weiter unten zeigte. Das soll nicht als harter App-Blocker wirken, aber als aktueller manueller Feldlauf sichtbar bleiben.
+- **Alternatives:** Feldnachweis weiter nur im Geraetebereich zeigen (zu leicht zu uebersehen); iPhone/PWA als harten Setup-Blocker werten (zu streng, weil Web/PWA lokal nutzbar bleibt); Gate-Logik im Frontend nachbauen (dupliziert Audit-Wahrheit).
+- **Decided by:** Codex, als Settings-Field-Proof-Status im Branch `codex/settings-field-proof-status`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Server-Host-Deploy darf das Skript direkt ausfuehren
 
 - **Decision:** In Codex-Sessions, die bereits auf dem Pulse-Server-Host laufen, darf ein gemergter Runtime-Deploy durch `cd /root/pulse && bash scripts/deploy.sh` direkt ausgefuehrt werden; Remote-Deploy bleibt bevorzugt `ssh root@192.168.178.46 ...` oder bei Auth-Failure der verifizierte Alias `ssh pulse-server ...`.

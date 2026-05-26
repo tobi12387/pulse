@@ -49,6 +49,7 @@ type SettingsDiagnosticRow = {
   secondaryAction?: SettingsDiagnosticAction;
   blocksReadiness: boolean;
   optionalSetup?: boolean;
+  summaryDetail?: string;
 };
 
 const BACKFILL_LAST_STORAGE_KEY = 'pulse-garmin-backfill-last';
@@ -580,6 +581,17 @@ function SettingsDiagnosticsMatrix({
       blocksReadiness: !device.serviceWorker,
     },
     {
+      key: 'field-proof',
+      label: 'iPhone-Feldnachweis',
+      value: 'Manuell',
+      color: 'var(--amber)',
+      detail: 'Aktuellen App-Stand, Gerät/iOS, Zertifikat, Push-Test und Offline-Fallback im Feldlauf notieren.',
+      action: { label: 'Feldnachweis öffnen', path: '/settings?section=device' },
+      blocksReadiness: false,
+      optionalSetup: true,
+      summaryDetail: 'App-Stand, Gerät/iOS und Offline/Push im Feldlauf notieren.',
+    },
+    {
       key: 'push',
       label: 'Push',
       value: pushLabel,
@@ -623,13 +635,13 @@ function SettingsDiagnosticsMatrix({
   ];
   const readinessProblems = rows.filter(row => row.blocksReadiness);
   const optionalActions = rows.filter(row => row.optionalSetup);
-  const summaryActions = readinessProblems.length > 0 ? readinessProblems.slice(0, 3) : optionalActions.slice(0, 1);
+  const summaryActions = readinessProblems.length > 0 ? readinessProblems.slice(0, 3) : optionalActions.slice(0, 2);
   const ready = readinessProblems.length === 0;
   const hasOptionalSetup = optionalActions.length > 0;
   const statusTitle = ready ? (hasOptionalSetup ? 'Kern bereit' : 'Alles bereit') : 'Problem beheben';
   const statusDetail = ready
     ? (hasOptionalSetup
-      ? 'Keine harten Blocker erkannt. Geräte- oder Push-Schritte bleiben optional offen.'
+      ? `Keine harten Blocker erkannt. Optional offen: ${optionalActions.map(row => row.label).join(', ')}.`
       : 'Zugriff, Garmin, Push-Basis und Gerätefähigkeit sind aktuell nutzbar.')
     : `${readinessProblems.length} ${readinessProblems.length === 1 ? 'Punkt' : 'Punkte'} prüfen: ${readinessProblems.map(row => row.label).join(', ')}.`;
   const statusPill = ready ? (hasOptionalSetup ? 'OPTIONAL' : 'BEREIT') : 'PRÜFEN';
@@ -694,7 +706,7 @@ function SettingsDiagnosticsMatrix({
                         {row.label}
                       </div>
                       <div style={{ marginTop: 2, fontSize: 10.5, color: 'var(--text-3)', lineHeight: 1.35 }}>
-                        Optional pro Gerät aktivieren.
+                        {row.summaryDetail ?? 'Optional pro Gerät aktivieren.'}
                       </div>
                     </div>
                     <div className="settings-optional-summary-actions">
