@@ -1775,6 +1775,12 @@
     gap: 4px;
   }
 
+  .data-primary-action-cta {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
   .data-primary-action-candidates {
     display: grid;
     gap: 8px;
@@ -2208,6 +2214,11 @@
     .data-primary-action-card {
       padding: 12px !important;
       gap: 10px !important;
+    }
+
+    .data-primary-action-cta {
+      justify-content: flex-start;
+      margin-top: 9px;
     }
 
     .data-primary-action-copy h3 {
