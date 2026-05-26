@@ -249,6 +249,7 @@ export function DailyDecisionCard({
   const renderSupportAction = () => (
     <button
       type="button"
+      className="daily-decision-support-action"
       onClick={runSupportAction}
       style={{
         minHeight: 44,
@@ -270,10 +271,11 @@ export function DailyDecisionCard({
   );
 
   const renderActions = (marginTop: number) => (
-    <div style={{ display: 'grid', gridTemplateColumns: actionColumns, gap: 8, marginTop }}>
+    <div className="daily-decision-actions" style={{ display: 'grid', gridTemplateColumns: actionColumns, gap: 8, marginTop }}>
       {primaryAction && (
         <button
           type="button"
+          className="daily-decision-primary-action"
           onClick={primaryAction}
           style={{
             minHeight: 44,
@@ -296,6 +298,7 @@ export function DailyDecisionCard({
       {showPromptAction && (
         <button
           type="button"
+          className="daily-decision-support-action"
           onClick={onPrompt}
           style={{
             minHeight: 44,
