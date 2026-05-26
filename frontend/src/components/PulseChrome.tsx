@@ -31,18 +31,11 @@ export function PageHeader({ eyebrow, title, mobileTitle, description, action }:
   return (
     <header className={`pulse-page-header ${action ? 'pulse-page-header--with-action' : ''}`}>
       <div className="pulse-page-header-copy">
-        {(eyebrow || description) && (
+        {eyebrow && (
           <div className="pulse-page-kicker">
-            {eyebrow && (
-              <span className="label-mono pulse-page-eyebrow">
-                {eyebrow}
-              </span>
-            )}
-            {description && (
-              <span className="pulse-page-mode">
-                Arbeitsfläche
-              </span>
-            )}
+            <span className="label-mono pulse-page-eyebrow">
+              {eyebrow}
+            </span>
           </div>
         )}
         <h1 className="pulse-page-heading">

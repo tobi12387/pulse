@@ -19,11 +19,11 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheiden', intent: 'eine Antwort', key: '01', end: true, icon: Home },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuern', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Erfassen', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
   { to: '/insights', label: 'Analyse', mobileLabel: 'Analyse', description: 'Lernen', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'Bereitmachen', intent: 'System stabil', key: '05', end: false, icon: Settings },
+  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'System', intent: 'bereit halten', key: '05', end: false, icon: Settings },
 ];
 
 export default function Layout() {
@@ -106,7 +106,7 @@ export default function Layout() {
       >
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px">
-          <div className="pulse-sidebar-section-label">Workspaces</div>
+          <div className="pulse-sidebar-section-label">Bereiche</div>
           {NAV_ITEMS.map(({ to, label, description, key, end, icon: Icon }) => (
             <NavLink
               key={to}
@@ -126,10 +126,10 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="pulse-sidebar-card pulse-sidebar-card--handoff" aria-label="Aktueller Workspace">
-          <div className="pulse-sidebar-card-label">Jetzt</div>
-          <div className="pulse-sidebar-card-title">{activeNavItem.description}</div>
-          <p>{activeNavItem.label} zeigt nur den nächsten sinnvollen Schritt; Details liegen eine Ebene tiefer.</p>
+        <div className="pulse-sidebar-status" aria-label="Aktueller Workspace">
+          <span>{activeNavItem.key}</span>
+          <strong>{activeNavItem.description}</strong>
+          <em>{activeNavItem.intent}</em>
         </div>
 
         <button
