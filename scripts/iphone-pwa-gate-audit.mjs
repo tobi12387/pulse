@@ -96,6 +96,18 @@ function isAppRuntimePlaceholder(value) {
   return /^<copy observed settings app-stand/i.test(String(value ?? '').trim());
 }
 
+function isScaffoldPlaceholder(value, placeholder) {
+  return String(value ?? '').trim().toLowerCase() === placeholder.toLowerCase();
+}
+
+function isDevicePlaceholder(value) {
+  return isScaffoldPlaceholder(value, '<iPhone model>');
+}
+
+function isIosVersionPlaceholder(value) {
+  return isScaffoldPlaceholder(value, '<iOS version>');
+}
+
 function commitStatus(serverCommit, expectedCommit, runtime = {}) {
   if (!expectedCommit) return 'unknown';
   if (!serverCommit) return 'missing';
@@ -212,8 +224,8 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
   }));
   const issues = parseMarkdownTable(evidenceRecord, '## Issues Found');
   const missingMetadata = [
-    scope.device ? null : 'Device',
-    scope.iosVersion ? null : 'iOS version',
+    scope.device && !isDevicePlaceholder(scope.device) ? null : 'Device',
+    scope.iosVersion && !isIosVersionPlaceholder(scope.iosVersion) ? null : 'iOS version',
   ].filter(Boolean);
 
   const coreMissing = CORE_PASS_AREAS

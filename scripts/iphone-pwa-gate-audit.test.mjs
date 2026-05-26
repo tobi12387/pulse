@@ -296,6 +296,29 @@ test('iphone pwa gate audit rejects unreplaced App-Stand scaffold placeholders',
   assert.doesNotMatch(rendered, /Field app runtime commit: <copy observed/);
 });
 
+test('iphone pwa gate audit rejects unreplaced device metadata placeholders', () => {
+  const fieldRecord = COMPLETE_FIELD_RECORD
+    .replace('Device: iPhone 15 Pro', 'Device: <iPhone model>')
+    .replace('iOS version: 18.5', 'iOS version: <iOS version>');
+  const audit = buildIphonePwaGateAudit(fieldRecord, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'abcdef0',
+  });
+
+  assert.equal(audit.gate, 'gated');
+  assert.equal(audit.commitStatus, 'current');
+  assert.equal(audit.scope.device, '<iPhone model>');
+  assert.equal(audit.scope.iosVersion, '<iOS version>');
+  assert.deepEqual(audit.gaps.map(gap => gap.kind), ['device_metadata']);
+  assert.match(audit.gaps[0].detail, /Missing metadata: Device, iOS version/);
+  assert.match(audit.gaps[0].nextAction, /Record the iPhone model and iOS version/);
+
+  const rendered = renderIphonePwaGateAudit(audit);
+  assert.match(rendered, /Device: <iPhone model>/);
+  assert.match(rendered, /iOS version: <iOS version>/);
+  assert.match(rendered, /Device and iOS metadata: missing/);
+});
+
 test('iphone pwa gate audit evaluates the latest appended field run as one record', () => {
   const audit = buildIphonePwaGateAudit(APPENDED_FRESH_FIELD_RECORD, {
     evidenceFile: 'field.md',

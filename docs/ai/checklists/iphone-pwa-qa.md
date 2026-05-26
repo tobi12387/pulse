@@ -22,7 +22,10 @@ When the scaffold prints an expected app-runtime commit, replace the
 `App runtime commit under test` placeholder with the observed Settings
 `App-Stand`. This lets docs/tooling-only server commits stay auditable without
 pretending an old app runtime was newly tested.
-The audit keeps the field gate open if that placeholder is still present.
+The audit keeps the field gate open if that placeholder is still present. The
+same applies to the scaffold placeholders for `Device` and `iOS version`: they
+must be replaced with the real tested iPhone model and iOS version before the
+field evidence can close the gate.
 The packet prints the exact `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server`
 command to run before recording new current real-device evidence, including
 `PULSE_HOST=<ssh-host>` when the workspace is using an SSH alias such as
