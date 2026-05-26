@@ -292,6 +292,40 @@ test('iphone pwa gate audit accepts docs-only server drift when app runtime matc
   assert.match(packet, /Expected app runtime commit: runtime1/);
   assert.match(packet, /Field app runtime commit: runtime1/);
   assert.match(packet, /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
+
+  const scaffold = renderIphonePwaFieldScaffold(audit);
+  assert.match(scaffold, /- App runtime commit under test: `runtime1`/);
+
+  const nextPrompt = renderIphonePwaNextPrompt(audit);
+  assert.match(nextPrompt, /Expected app runtime commit: runtime1/);
+  assert.match(nextPrompt, /Field app runtime commit: runtime1/);
+});
+
+test('iphone pwa gate audit reads an explicit field app runtime commit from Scope', () => {
+  const fieldRecord = COMPLETE_FIELD_RECORD.replace(
+    'Server commit under test: `abcdef0`',
+    [
+      'Server commit under test: `docsold`',
+      'App runtime commit under test: `runtime1`',
+    ].join('\n- '),
+  );
+  const audit = buildIphonePwaGateAudit(fieldRecord, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'docsnew',
+    expectedRuntimeCommit: 'runtime1',
+  });
+
+  assert.equal(audit.gate, 'ready');
+  assert.equal(audit.commitStatus, 'current_runtime');
+  assert.equal(audit.scope.serverCommit, 'docsold');
+  assert.equal(audit.scope.appRuntimeCommit, 'runtime1');
+  assert.equal(audit.expectedRuntimeCommit, 'runtime1');
+  assert.equal(audit.fieldRuntimeCommit, 'runtime1');
+  assert.deepEqual(audit.gaps, []);
+
+  const rendered = renderIphonePwaGateAudit(audit);
+  assert.match(rendered, /Expected app runtime commit: runtime1/);
+  assert.match(rendered, /Field app runtime commit: runtime1/);
 });
 
 test('iphone pwa gate audit preserves configured server SSH host in handoff commands', () => {

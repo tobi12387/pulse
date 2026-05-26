@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — iPhone-Feldlauf notiert den App-Runtime-Stand
+
+- **Decision:** iPhone/PWA-Feldlauf-Scaffolds und aufgezeichnete Feldnachweise enthalten neben dem Server-Commit auch `App runtime commit under test`, abgelesen aus Settings `App-Stand`.
+- **Why:** Docs- oder Tooling-only Deploys koennen den Server-Mirror weiterdrehen, ohne die auf dem iPhone getestete App-Runtime zu veraendern. Das Gate soll echte Runtime-Drift von ungefaehrlichem Nachweis-/Tooling-Drift unterscheiden, statt gute Feldlaeufe unnoetig stale zu machen.
+- **Alternatives:** Weiter nur den Server-Commit pinnen (zu grob fuer docs/tooling-only Drift); jeden Server-Commit-Wechsel als neuen Feldlauf erzwingen (mehr manuelle Reibung ohne Runtime-Gewinn); das Gate ohne Commit-Bezug oeffnen (zu schwach fuer Real-Device-Evidence).
+- **Decided by:** Codex, als iPhone-Feldlauf-Runtime-Clarity im Branch `codex/iphone-field-runtime-clarity`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Routeweiter UI/UX-Pass reduziert Chrome-Rauschen
 
 - **Decision:** Pulse behält die stabilen Haupt-URLs, richtet die Hauptoberfläche aber stärker als ruhige Command-App aus: keine wiederholten `Arbeitsfläche`-Headerchips, kompakter aktiver Sidebar-Status, klarere Workspace-Rollen, mobile Tabs als leichte Unterstrich-Rail, Home-Offenpunkte als Liste statt zweiter Kartenwand und eine weniger einfarbig-grüne Grundpalette.
