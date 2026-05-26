@@ -959,6 +959,21 @@ function FuelingSection({
                     {evidenceQuality.giComfortCompletionDetail}
                   </p>
                 )}
+                <p
+                  data-testid="activity-gi-comfort-manual-safety"
+                  style={{
+                    margin: '0 0 8px',
+                    padding: '7px 8px',
+                    border: '1px solid rgba(251,191,36,0.28)',
+                    borderRadius: 5,
+                    background: 'rgba(251,191,36,0.06)',
+                    fontSize: 10.5,
+                    lineHeight: 1.45,
+                    color: 'var(--text-2)',
+                  }}
+                >
+                  Manuelle Regel: Wähle die echte Magenreaktion; nicht aus Notizen, Route, RPE, g/h, Ergebnis oder Pace ableiten.
+                </p>
                 <div
                   data-testid="activity-gi-comfort-options"
                   style={{

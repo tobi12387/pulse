@@ -27,6 +27,7 @@ type DataPrimaryAction = {
   run: () => void;
   targetLog?: string | null;
   optionHint?: string | null;
+  manualSafety?: string | null;
   capturePlan?: string | null;
   candidateLogs?: DataPrimaryActionCandidateLog[];
   newLogChecklist?: string[] | null;
@@ -364,6 +365,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       cta: fuelingNextActionLabel,
       targetLog: fuelingTargetLog,
       optionHint: 'GI-Komfort: Magen ok · Magen leicht unruhig · Magenprobleme',
+      manualSafety: 'Manuelle Regel: GI-Komfort nur aus der echten Magenreaktion wählen; nicht aus Notizen, Route, RPE, g/h, Ergebnis oder Pace ableiten.',
       capturePlan: fuelingCapturePlan,
       candidateLogs: fuelingCandidateLogs,
       newLogChecklist: fuelingNewLogChecklist,
@@ -546,6 +548,25 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               <span className="label-mono" style={{ color: 'var(--accent)' }}>Erlaubte Auswahl</span>
               <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text)' }}>
                 {primaryAction.optionHint}
+              </span>
+            </div>
+          )}
+          {primaryAction.manualSafety && (
+            <div
+              data-testid="data-primary-action-manual-safety"
+              style={{
+                display: 'grid',
+                gap: 4,
+                marginTop: 8,
+                padding: '8px 9px',
+                border: '1px solid rgba(251,191,36,0.3)',
+                borderRadius: 5,
+                background: 'rgba(251,191,36,0.06)',
+              }}
+            >
+              <span className="label-mono" style={{ color: 'var(--amber)' }}>Manuelle Regel</span>
+              <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text-2)' }}>
+                {primaryAction.manualSafety}
               </span>
             </div>
           )}
