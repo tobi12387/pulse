@@ -5829,6 +5829,9 @@ test('Settings diagnostics matrix is visible first and routes to support section
   await expect(matrix).toBeVisible();
   await expect(summary).toContainText('Kern bereit');
   await expect(summary).toContainText('Optional');
+  await expect(summary).toContainText('iPhone-Feldnachweis');
+  await expect(summary).toContainText('App-Stand, Gerät/iOS und Offline/Push im Feldlauf notieren.');
+  await expect(summary.getByRole('button', { name: 'Feldnachweis öffnen' })).toBeVisible();
   await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
   await expect(matrix).toContainText('DIAGNOSE');
   await expect(matrix).toContainText('Zugriff');
@@ -5841,6 +5844,10 @@ test('Settings diagnostics matrix is visible first and routes to support section
   expect(profileBox).not.toBeNull();
   expect(matrixBox!.y).toBeLessThanOrEqual(profileBox!.y + 4);
 
+  await summary.getByRole('button', { name: 'Feldnachweis öffnen' }).click();
+  await expect(page).toHaveURL('/settings?section=device');
+
+  await page.goto('/settings');
   await summary.getByRole('button', { name: 'Push öffnen' }).click();
   await expect(page).toHaveURL('/settings?section=push');
 
@@ -5900,9 +5907,12 @@ test('Settings treats blocked push as optional when core access is ready', async
   const summary = page.getByTestId('settings-status-summary');
   await expect(summary).toContainText('Kern bereit');
   await expect(summary).toContainText('Optional');
+  await expect(summary).toContainText('iPhone-Feldnachweis');
   await expect(summary).toContainText('Push');
   await expect(summary).not.toContainText('Problem beheben');
-  const optionalRow = summary.getByTestId('settings-optional-summary-row');
+  const optionalRow = summary.getByTestId('settings-optional-summary-row').filter({
+    has: page.getByText('Push', { exact: true }),
+  });
   await expect(optionalRow).toContainText('Push');
   await expect(optionalRow).toContainText(/Browser (blockiert|nicht unterstützt)/);
   await expect(summary.getByRole('button', { name: 'Push öffnen' })).toBeVisible();
