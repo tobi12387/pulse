@@ -123,10 +123,10 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
           {contract.primaryOption === 'adapt_week' ? 'Vorschau zuerst' : 'Ausfuehren'}
         </span>
       </div>
-      <h2 style={{ margin: '0 0 6px', color: 'var(--text)', fontSize: 15, fontWeight: 600 }}>
+      <h2 className="plan-weekly-decision__title" style={{ margin: '0 0 6px', color: 'var(--text)', fontSize: 15, fontWeight: 600 }}>
         {contract.title}
       </h2>
-      <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 12, lineHeight: 1.5 }}>
+      <p className="plan-weekly-decision__summary" style={{ margin: 0, color: 'var(--text-2)', fontSize: 12, lineHeight: 1.5 }}>
         {contract.summary}
       </p>
 
@@ -193,36 +193,40 @@ export function PlanWeeklyDecisionContractPanel({ contract, variant = 'embedded'
           <div style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600, lineHeight: 1.35, marginBottom: 4 }}>
             {selectedOption.title}
           </div>
-          <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
-            {selectedOption.weekImpact}
-          </p>
-          <p style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
-            Nach dem Klick: {selectedOption.resultPreview}
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 6, marginTop: 9 }}>
-            <button
-              type="button"
-              data-testid="plan-weekly-decision-remember"
-              onClick={rememberDecision}
-              style={{
-                minHeight: 40,
-                border: `1px solid ${tone}`,
-                borderRadius: 5,
-                background: `color-mix(in srgb, ${tone} 8%, transparent)`,
-                color: tone,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 0,
-                textTransform: 'uppercase',
-              }}
-            >
-              Entscheidung merken
-            </button>
-            <span style={{ color: 'var(--text-3)', fontSize: 10.5, lineHeight: 1.4 }}>
-              Speichert nur einen lokalen Entscheidungsbeleg; Plan und Garmin bleiben unverändert.
-            </span>
+          <div className="plan-weekly-decision__active-body">
+            <div className="plan-weekly-decision__active-copy">
+              <p className="plan-weekly-decision__active-impact" style={{ margin: 0, color: 'var(--text-2)', fontSize: 11.2, lineHeight: 1.45 }}>
+                {selectedOption.weekImpact}
+              </p>
+              <p className="plan-weekly-decision__active-result" style={{ margin: '5px 0 0', color: 'var(--text-3)', fontSize: 10.8, lineHeight: 1.45 }}>
+                Nach dem Klick: {selectedOption.resultPreview}
+              </p>
+            </div>
+            <div className="plan-weekly-decision__active-action" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 6 }}>
+              <button
+                type="button"
+                data-testid="plan-weekly-decision-remember"
+                onClick={rememberDecision}
+                style={{
+                  minHeight: 40,
+                  border: `1px solid ${tone}`,
+                  borderRadius: 5,
+                  background: `color-mix(in srgb, ${tone} 8%, transparent)`,
+                  color: tone,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Entscheidung merken
+              </button>
+              <span style={{ color: 'var(--text-3)', fontSize: 10.5, lineHeight: 1.4 }}>
+                Speichert nur einen lokalen Entscheidungsbeleg; Plan und Garmin bleiben unverändert.
+              </span>
+            </div>
           </div>
         </div>
       )}

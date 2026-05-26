@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Top-App-Command-Surfaces ersetzen schwere Kartenhierarchie
+
+- **Decision:** Pulse verdichtet Home-, Data- und Plan-Command-Surfaces als flache Arbeitsflaechen: weniger Card-Schatten, kompaktere mobile Aktionen, weniger doppelte Plan-Vorschau und Zeilen statt weiterer Sekundaerkarten fuer Plan-Evidence.
+- **Why:** Nach dem Shell-Redesign zeigte frische Route-Evidence weiter dieselbe UX-Reibung in den eigentlichen Entscheidungskarten: Home, Data und Plan waren technisch korrekt, aber die naechste Handlung, Begruendung und Belege hatten noch zu aehnliches Gewicht. Top-App-UX braucht hier eine ruhigere Hierarchie statt weiterer Erklaerkarten.
+- **Alternatives:** Nur globale Abstaende reduzieren (zu unspezifisch); Produktlogik oder Routen aendern (nicht noetig fuer diesen UI-Hebel); alle Detailbelege entfernen (zu riskant fuer das evidenzbasierte Performance-OS).
+- **Decided by:** Tobi und Codex, als Top-App-Command-Surfaces im Branch `codex/top-app-command-surfaces`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Top-App-Shell macht Navigation lesbar und trennt Produktakzent von Semantik
 
 - **Decision:** Pulse entfernt die doppelte Desktop-Kopfleiste, nutzt eine breitere Workspace-Sidebar mit Route, Rolle und Shortcut-Nummer und trennt den blauen Produkt-/Aktionsakzent von gruenen positiven Health-/Readiness-Signalen.

@@ -224,15 +224,15 @@
   /* Card shell */
   .card {
     background: var(--surface);
-    border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
     border-radius: var(--radius-lg);
     padding: 14px;
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
   }
 
   .card .card {
-    background: color-mix(in srgb, var(--surface) 72%, var(--surface-2));
-    border-color: color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--surface) 84%, var(--surface-2));
+    border-color: color-mix(in srgb, var(--border) 62%, transparent);
     box-shadow: none;
   }
 
@@ -1010,10 +1010,28 @@
     min-width: 0;
   }
 
+  .daily-decision-actions {
+    align-items: stretch;
+  }
+
+  .daily-decision-primary-action,
+  .daily-decision-support-action,
+  .data-primary-action-button,
+  .plan-weekly-decision__active-action button {
+    min-height: 40px !important;
+  }
+
+  .daily-decision-card--action-first .daily-decision-leading-factor > div:last-child {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
   .focus-decision-hero {
     position: relative;
-    border-color: color-mix(in srgb, var(--accent) 14%, var(--border));
-    background: var(--surface);
+    border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
+    background: color-mix(in srgb, var(--surface) 92%, var(--bg));
     box-shadow: none;
   }
 
@@ -1550,9 +1568,49 @@
     min-width: 0;
   }
 
+  .plan-weekly-decision--card {
+    background: color-mix(in srgb, var(--surface) 92%, var(--bg)) !important;
+    box-shadow: none;
+  }
+
+  .plan-weekly-decision__active-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.34fr);
+    gap: 12px;
+    align-items: end;
+    margin-top: 6px;
+  }
+
+  .plan-weekly-decision__active-preview {
+    background: color-mix(in srgb, var(--surface-2) 46%, transparent) !important;
+  }
+
+  .plan-weekly-decision__section {
+    background: transparent !important;
+    border-width: 1px 0 0 !important;
+    border-radius: 0 !important;
+    padding: 8px 0 !important;
+  }
+
   .plan-weekly-decision__option-title,
+  .plan-weekly-decision__title,
   .plan-weekly-decision__section-title {
     overflow-wrap: anywhere;
+  }
+
+  .plan-weekly-decision__summary {
+    overflow-wrap: anywhere;
+  }
+
+  .plan-weekly-decision__option-impact {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .plan-weekly-decision__option-result {
+    display: none;
   }
 
   .plan-weekly-decision__option-impact,
@@ -1794,9 +1852,9 @@
   .data-primary-action-card {
     position: relative;
     overflow: hidden;
-    background: var(--surface);
-    border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
-    box-shadow: var(--shadow-soft);
+    background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+    border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
+    box-shadow: none;
   }
 
   .data-primary-action-card::before {
@@ -1804,7 +1862,7 @@
     position: absolute;
     inset: 0 auto 0 0;
     width: 2px;
-    background: linear-gradient(180deg, var(--accent), var(--green));
+    background: var(--accent);
   }
 
   .data-today-intro {
@@ -1815,7 +1873,15 @@
   .data-primary-action-cta {
     display: flex;
     justify-content: flex-end;
-    margin-top: 10px;
+    margin-top: 9px;
+  }
+
+  .data-primary-action-card [data-testid="data-primary-action-target"],
+  .data-primary-action-card [data-testid="data-primary-action-options"],
+  .data-primary-action-card [data-testid="data-primary-action-manual-safety"],
+  .data-primary-action-card [data-testid="data-primary-action-capture-plan"] {
+    margin-top: 7px !important;
+    padding: 7px 8px !important;
   }
 
   .data-primary-action-candidates {
@@ -2274,8 +2340,8 @@
     }
 
     .data-primary-action-card {
-      padding: 11px 12px !important;
-      gap: 9px !important;
+      padding: 10px 11px !important;
+      gap: 8px !important;
     }
 
     .data-primary-action-cta {
@@ -2284,7 +2350,7 @@
     }
 
     .data-primary-action-copy h3 {
-      font-size: 15px !important;
+      font-size: 14.5px !important;
       line-height: 1.2;
     }
 
@@ -2318,7 +2384,7 @@
     .data-primary-action-button {
       width: 100%;
       justify-self: stretch !important;
-      min-height: 44px !important;
+      min-height: 40px !important;
     }
 
     .data-primary-action-contract--desktop {
@@ -2332,10 +2398,10 @@
 
     .data-primary-action-mobile-details-toggle {
       min-width: 44px;
-      min-height: 44px;
+      min-height: 38px;
       justify-self: start;
       max-width: 100%;
-      padding: 8px 10px;
+      padding: 7px 10px;
       background: color-mix(in srgb, var(--surface-2) 64%, transparent);
       border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
       border-radius: 5px;
@@ -2562,7 +2628,14 @@
     }
 
     .plan-weekly-decision--card {
-      padding: 14px !important;
+      padding: 11px 12px !important;
+    }
+
+    .plan-weekly-decision__summary {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
     }
 
     .plan-weekly-decision__options {
@@ -2621,7 +2694,41 @@
     }
 
     .plan-weekly-decision__active-preview {
-      padding: 8px 9px !important;
+      padding: 7px 8px !important;
+    }
+
+    .plan-weekly-decision__active-body {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 7px !important;
+      margin-top: 5px !important;
+    }
+
+    .plan-weekly-decision__active-impact {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      overflow: hidden;
+      font-size: 10.8px !important;
+    }
+
+    .plan-weekly-decision__active-result {
+      margin-top: 3px !important;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      overflow: hidden;
+      font-size: 10.5px !important;
+    }
+
+    .plan-weekly-decision__active-action button {
+      min-height: 38px !important;
+    }
+
+    .plan-weekly-decision__active-action > span {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
     }
 
     .plan-weekly-decision__sections {
@@ -2631,7 +2738,7 @@
     }
 
     .plan-weekly-decision__section {
-      padding: 8px 9px !important;
+      padding: 7px 0 !important;
     }
 
     .plan-weekly-decision__section-label {
@@ -2650,9 +2757,9 @@
     }
 
     .focus-decision-body {
-      padding: 13px 13px 14px;
+      padding: 10px 11px 11px;
       grid-template-columns: minmax(0, 1fr);
-      gap: 13px;
+      gap: 10px;
     }
 
     .focus-stage-strip {
@@ -2691,7 +2798,7 @@
     }
 
     .focus-hero-eyebrow {
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       font-size: 10.5px;
     }
 
@@ -2717,11 +2824,11 @@
     .focus-recovery-panel {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
-      gap: 8px 12px;
+      gap: 6px 10px;
       border-left: none;
       border-top: 1px solid var(--border);
       padding-left: 0;
-      padding-top: 10px;
+      padding-top: 8px;
     }
 
     .focus-recovery-label {
@@ -2735,7 +2842,7 @@
     }
 
     .focus-readiness-score span:first-child {
-      font-size: 30px;
+      font-size: 28px;
     }
 
     .focus-recovery-panel > .focus-pill {
@@ -2753,15 +2860,15 @@
 
     .focus-factor-row {
       display: grid;
-      gap: 4px;
-      padding: 7px 8px;
+      gap: 3px;
+      padding: 6px 7px;
       border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
       border-radius: var(--radius-md);
       background: color-mix(in srgb, var(--surface-2) 50%, transparent);
     }
 
     .focus-factor-row > span:first-child {
-      font-size: 10px;
+      font-size: 9.5px;
       line-height: 1.15;
     }
 
@@ -2771,7 +2878,7 @@
     }
 
     .focus-factor-row > span:last-child > span:first-child {
-      font-size: 11px;
+      font-size: 10.5px;
     }
 
     .focus-hero-actions {
@@ -2784,7 +2891,7 @@
     }
 
     .daily-decision-card--action-first .daily-decision-reason-label {
-      margin-top: 9px !important;
+      display: none;
     }
 
     .daily-decision-card--action-first .daily-decision-reason {
@@ -2792,10 +2899,11 @@
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
       overflow: hidden;
+      margin-top: 8px !important;
     }
 
     .daily-decision-card--action-first .daily-decision-leading-factor {
-      margin-top: 8px !important;
+      margin-top: 7px !important;
     }
 
     .daily-decision-card--action-first .daily-decision-next-steps-card {
@@ -2811,7 +2919,7 @@
     .daily-decision-card--action-first .daily-decision-next-steps-card > button {
       margin-top: 0 !important;
       width: auto !important;
-      min-height: 40px !important;
+      min-height: 38px !important;
       padding: 7px 10px !important;
       background: color-mix(in srgb, var(--surface-2) 48%, transparent) !important;
       border-color: color-mix(in srgb, var(--border) 82%, transparent) !important;
@@ -2825,9 +2933,9 @@
     }
 
     .daily-decision-card > h2 {
-      font-size: 16.5px !important;
+      font-size: 15.5px !important;
       line-height: 1.18 !important;
-      margin-bottom: 6px !important;
+      margin-bottom: 5px !important;
     }
 
     .daily-decision-card button {
@@ -2835,8 +2943,8 @@
     }
 
     .daily-decision-card--action-first .daily-decision-reason {
-      font-size: 11.5px !important;
-      line-height: 1.42 !important;
+      font-size: 11.2px !important;
+      line-height: 1.38 !important;
     }
 
     .daily-decision-card--action-first .daily-decision-leading-factor {
