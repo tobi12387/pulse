@@ -20,7 +20,7 @@ Use this skill before substantial Pulse work.
    - `git fetch --all --prune`
    - `git status --short --branch`
 3. If the tree is dirty, stop and inspect before editing. Do not stash, delete, or revert user/other-agent work.
-4. Create a fresh feature branch from `origin/main`: `git switch -c codex/<topic> origin/main`. Codex branches use `codex/<topic>`. Never work directly on `main`.
+4. Create a fresh Codex branch from `origin/main`. If the session is running on the Pulse server host and `/root/pulse` is the deploy mirror, keep `/root/pulse` on clean `main` and run `node scripts/codex-worktree.mjs <topic>`, then work from the printed `/tmp/pulse-codex-<topic>` directory. Use `git switch -c codex/<topic> origin/main` only from a non-server checkout where switching branches cannot move the deploy mirror. Codex branches use `codex/<topic>`. Never work directly on `main`.
 
 ## During Work
 

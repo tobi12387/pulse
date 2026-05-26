@@ -59,6 +59,23 @@ PULSE_EXPECTED_COMMIT="$(git rev-parse --short HEAD)" npm run verify:server
 
 Use `root@192.168.178.46` instead of `pulse-server` only when that direct SSH target is the verified working path.
 
+## Prevent Recurrence
+
+On the Pulse server host, `/root/pulse` is the deploy mirror. Do not create or
+switch Codex feature branches there. Keep it on clean `main` and create an
+isolated worktree for implementation work instead:
+
+```bash
+cd /root/pulse
+git fetch --all --prune
+git status --short --branch
+node scripts/codex-worktree.mjs <topic>
+cd /tmp/pulse-codex-<topic>
+```
+
+When work is complete, merge through GitHub, then return to `/root/pulse` only
+for mirror verification or deploy from `main`.
+
 ## If The Server Is Dirty
 
 Stop and inspect before changing branch or running deploy:

@@ -8,6 +8,7 @@ This is the compact working set for AI sessions. `docs/decisions.md` remains the
 - Mac and server are consumers. Never edit code directly on the server.
 - Every session uses a feature branch and PR.
 - Codex branches use `codex/<topic>`.
+- On the Pulse server host, create Codex branches in isolated worktrees; keep `/root/pulse` on clean `main` as the deploy mirror.
 - Never commit directly to `main`.
 - Never use `git add .`; stage explicit files only.
 - Push immediately after every meaningful commit.

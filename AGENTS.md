@@ -95,6 +95,21 @@ These rules complement, but do not replace, the Pulse hard rules above. When the
 
 ## Pre-session ritual (run every time before starting work)
 
+When this Codex session runs on the server host where `/root/pulse` is also the
+deploy mirror, keep `/root/pulse` on clean `main` and create the Codex branch in
+an isolated worktree instead of switching the mirror itself:
+
+```bash
+cd /root/pulse
+git fetch --all --prune
+git status                            # MUST be clean on main
+node scripts/codex-worktree.mjs <topic>
+cd /tmp/pulse-codex-<topic>
+```
+
+Use the direct branch ritual only from a non-server development checkout where
+switching branches cannot move the deployed mirror away from `main`:
+
 ```bash
 git fetch --all --prune
 git status                            # MUST be clean — if not, stop and resolve
