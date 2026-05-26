@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Codex arbeitet auf Server-Host in isolierten Worktrees
+
+- **Decision:** Wenn Codex auf dem Pulse-Server-Host laeuft, bleibt `/root/pulse` als Deploy-Mirror auf sauberem `main`; Implementierungsbranches werden mit `node scripts/codex-worktree.mjs <topic>` in isolierten `/tmp/pulse-codex-*`-Worktrees angelegt.
+- **Why:** Die bisherige direkte Branch-Ritual-Anweisung konnte den Server-Mirror selbst auf `codex/<topic>` schalten und dadurch den Performance-/iPhone-Gate unnoetig blockieren. Ein separater Worktree erhaelt Branch+PR-Hygiene, ohne den laufenden Mirror von `main` wegzubewegen.
+- **Alternatives:** Weiter direkt in `/root/pulse` branchen (verletzt die Mirror-Regel auf diesem Host); jedes Mal nachtraeglich Server-Recovery ausfuehren (reaktiv und fehleranfaellig); Branch-Arbeit ganz ohne Feature-Branch machen (verletzt die PR-Regel).
+- **Decided by:** Codex, als Server-Mirror-Worktree-Ritual im Branch `codex/server-mirror-worktree-ritual`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Data-Fueling zeigt den naechsten Klick vor Folgedetails
 
 - **Decision:** Die primäre Data-Fueling-Aktion zeigt den CTA direkt nach Ziel-Log, erlaubter GI-Auswahl, Manuellregel und Capture-Plan; lange Kandidaten- und Neulog-Details stehen danach.

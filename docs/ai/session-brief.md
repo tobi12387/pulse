@@ -18,6 +18,10 @@ Do not read `docs/superpowers/plans/completed/` unless the task is explicitly ab
 ## Workflow
 
 - Start every coding session from a clean tree and a fresh `codex/<topic>` branch.
+  On the Pulse server host, keep `/root/pulse` on clean `main` and create that
+  branch in an isolated worktree with `node scripts/codex-worktree.mjs <topic>`.
+  The direct `git switch -c codex/<topic> origin/main` ritual is only for
+  non-server checkouts where branch switching cannot move the deploy mirror.
 - Search before reading whole files. Prefer `rg` anchors and small excerpts.
 - Keep PRs package-shaped by default: one Performance-OS backlog track, usually 3-5 related changes that share one outcome and verification surface. Use micro-slices for urgent fixes, regressions, CI/deploy repair, docs-only updates, or clearly separate ownership boundaries.
 - Every product PR should name its track from `docs/ai/next-product-packages.md`: `Tagesentscheidung`, `Trainingsanpassung` or `Lernschleifen`.

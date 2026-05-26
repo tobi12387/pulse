@@ -20,6 +20,7 @@ Use this map to load the smallest useful context for a task.
 | Repo-local Codex skills | `.codex/skills/` |
 | Docs/rule CI | `.github/workflows/docs-sync.yml` |
 | PR delivery gates | `npm run delivery:manifest`, `docs/ai/checklists/delivery-manifest.md` |
+| Server-host Codex branch setup | `node scripts/codex-worktree.mjs <topic>`, `docs/ai/checklists/server-mirror-recovery.md` |
 
 Do not read historical archives by default. Use `docs/superpowers/plans/completed/` only for regression comparison or when the user asks about history.
 
