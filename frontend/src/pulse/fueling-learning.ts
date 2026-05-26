@@ -88,6 +88,21 @@ export function fuelingCompletionCandidateTargetPath(candidate: PulseFuelingLear
   return `/plan/activity/${candidate.activityId}#activity-fueling-log`;
 }
 
+export function fuelingNextCompletionCandidateAfter(
+  baseline: PulseFuelingOutcomeBaseline | null | undefined,
+  currentActivityId: string | null | undefined,
+): (PulseFuelingLearningCompletionCandidate & { targetPath: string }) | null {
+  const candidates = baseline?.learningReadiness?.completionCandidates ?? [];
+  const current = clean(currentActivityId);
+  for (const candidate of candidates) {
+    const targetPath = fuelingCompletionCandidateTargetPath(candidate);
+    if (!targetPath) continue;
+    if (current && candidate.activityId === current) continue;
+    return { ...candidate, targetPath };
+  }
+  return null;
+}
+
 export function fuelingLearningGapSummary(baseline: PulseFuelingOutcomeBaseline | null | undefined): string | null {
   const readiness = baseline?.learningReadiness ?? null;
   if (!baseline || !readiness || isFuelingTrendReady(baseline)) return null;

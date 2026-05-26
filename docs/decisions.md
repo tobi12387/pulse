@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Fueling-GI-Save kettet direkt zum nächsten Completion-Kandidaten
+
+- **Decision:** Nach einem erfolgreichen GI-Komfort-Save öffnet Activity Detail als Folgeaktion den nächsten vorhandenen Fueling-Completion-Kandidaten, wenn einer existiert; erst ohne weiteren Kandidaten fällt der Flow auf `/data?tab=today#data-primary-action` zurück.
+- **Why:** Der erste Performance-OS-Unblock ist weiterhin manuelle Fueling-Evidence. Wenn mehrere bestehende Logs nur noch echten GI-Komfort brauchen, soll Pulse den Capture-Loop ohne Umweg durch die Data-Queue fortsetzen und Tobi den nächsten konkreten Log zeigen.
+- **Alternatives:** Immer zurück zur Data-Queue springen (stabil, aber unnötige Reibung bei mehreren Kandidaten); automatisch navigieren (zu aggressiv nach einem manuellen Save); GI-Komfort aus Notizen, Route, RPE, g/h oder Ergebnis ableiten (nicht erlaubt).
+- **Decided by:** Codex, als Fueling-Candidate-Chain im Branch `codex/fueling-candidate-chain`.
+- **Status:** active.
+
+---
+
 ## 2026-05-22 — UI/UX-Third-Pass macht Pulse zur ruhigeren Workspace-App
 
 - **Decision:** Pulse bleibt bei den stabilen Haupt-URLs, aber der dritte UI/UX-Pass definiert die App-Chrome und Karten-Grundsprache neu: Desktop nutzt eine kompakte Workspace-Rail, Mobile benennt den aktuellen Workspace in der Topbar, Data/Plan-Header werden zu Toolbar-Flächen, Home verliert den schweren Mobile-Stepper und die dominante Akzentfarbe wechselt von Blau zu einem ruhigeren Performance-Gruen.

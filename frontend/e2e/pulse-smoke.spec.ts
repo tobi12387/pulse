@@ -791,16 +791,16 @@ test('Data today promotes actionable fueling learning gaps', async ({ page }) =>
   const saveNotice = page.getByTestId('activity-fueling-save-notice');
   await expect(saveNotice).toContainText('GI-Komfort gespeichert');
   await expect(saveNotice).toContainText('Plan und Garmin bleiben unverändert');
-  const queueButton = saveNotice.getByRole('button', { name: 'Nächste Datenlücke prüfen' });
-  await expect(queueButton).toBeVisible();
+  await expect(saveNotice).toContainText('2026-04-27: Second Long Fueling Check');
+  const nextCandidateButton = saveNotice.getByRole('button', { name: 'Nächsten Fueling-Log öffnen' });
+  await expect(nextCandidateButton).toBeVisible();
   expect(nutritionPatch).toEqual({
     id: 'nutrition-fueling-gap',
     body: { giComfort: 'ok' },
   });
 
-  await queueButton.click();
-  await expect(page).toHaveURL('/data?tab=today#data-primary-action');
-  await expect(page.getByTestId('data-primary-action')).toBeInViewport();
+  await nextCandidateButton.click();
+  await expect(page).toHaveURL('/plan/activity/activity-fueling-gap-2#activity-fueling-log');
 });
 
 test('Data analysis opens personal response evidence from the watch response signal', async ({ page }) => {
