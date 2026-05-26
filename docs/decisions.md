@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — iPhone-Gate lehnt Device/iOS-Platzhalter ab
+
+- **Decision:** `npm run audit:iphone-pwa-gate` behandelt unreplaced Scaffold-Werte fuer `Device` und `iOS version` als fehlende Feldmetadaten.
+- **Why:** Ein kopierter Platzhalter beweist nicht, welches reale iPhone und welche iOS-Version getestet wurden. Das Gate soll Real-Device-Evidence nur akzeptieren, wenn diese Basisdaten aus der Feldrunde stammen.
+- **Alternatives:** Platzhalterstrings als Feldwerte akzeptieren (falsche Sicherheit); nur Checklist-Text ohne Audit-Guard nutzen (leicht zu uebersehen); weitere Metadatenfelder hart erzwingen (mehr Reibung ohne aktuellen Gate-Gewinn).
+- **Decided by:** Codex, als iPhone-Metadata-Placeholder-Gate im Branch `codex/iphone-metadata-placeholder-gate`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — iPhone-Gate lehnt unreplaced App-Stand-Platzhalter ab
 
 - **Decision:** `npm run audit:iphone-pwa-gate` behandelt den Scaffold-Platzhalter fuer `App runtime commit under test` als offenen Evidence-Gap statt als beobachteten Runtime-Commit.
