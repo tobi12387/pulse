@@ -42,15 +42,26 @@ const fuelingLearningOutcomeBaseline = {
       detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
       activityId: 'activity-fueling-gap',
     },
-    completionCandidates: [{
-      kind: 'complete_gi_comfort',
-      label: 'GI-Komfort ergänzen',
-      detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
-      activityId: 'activity-fueling-gap',
-      date: '2026-04-30',
-      summary: 'Long Fueling Check · 240 min · 120 g Carbs',
-      missingEvidence: ['GI-Komfort'],
-    }],
+    completionCandidates: [
+      {
+        kind: 'complete_gi_comfort',
+        label: 'GI-Komfort ergänzen',
+        detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+        activityId: 'activity-fueling-gap',
+        date: '2026-04-30',
+        summary: 'Long Fueling Check · 240 min · 120 g Carbs',
+        missingEvidence: ['GI-Komfort'],
+      },
+      {
+        kind: 'complete_gi_comfort',
+        label: 'GI-Komfort ergänzen',
+        detail: 'GI-Komfort am vorhandenen langen During-Log ergänzen.',
+        activityId: 'activity-fueling-gap-2',
+        date: '2026-04-25',
+        summary: 'Z2 Endurance Fueling · 95 min · 38 g Carbs',
+        missingEvidence: ['GI-Komfort'],
+      },
+    ],
   },
 };
 
@@ -374,6 +385,8 @@ test.describe('Route evidence screenshot pack', () => {
           await expect(action).toContainText('Fueling-Evidenz schließen');
           await expect(action.getByTestId('data-primary-action-target')).toContainText('Long Fueling Check');
           await expect(action).toContainText('Trend-Evidenz 0/3');
+          await expect(action).toContainText('2 vorhandene Logs direkt schließbar');
+          await expect(action).toContainText('danach 1 neuer Long-Session-Log');
           await expect(action.getByRole('button', { name: 'GI-Komfort ergänzen' })).toBeInViewport();
         },
       );
