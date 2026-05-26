@@ -146,7 +146,9 @@ Update `docs/ai/current-focus.md` only when the durable work queue, manual gates
 ## Server / deploy
 
 - Server is a **read-only mirror** of `origin/main`. Never `git commit` or `git checkout -b` on the server.
-- Deploy: `ssh root@192.168.178.46 "cd /root/pulse && bash scripts/deploy.sh"`. The script refuses to run on a dirty tree or off `main`.
+- Deploy after the relevant PR is merged to `main`. Preferred remote command: `ssh root@192.168.178.46 "cd /root/pulse && bash scripts/deploy.sh"`.
+- If direct host auth fails but the configured alias works, use `ssh pulse-server "cd /root/pulse && bash scripts/deploy.sh"`.
+- If Codex is already running on the Pulse server host, it may run `cd /root/pulse && bash scripts/deploy.sh` directly as a deploy operation. Do not edit, branch or commit in `/root/pulse`; the script refuses dirty trees and non-`main` branches.
 - Backend: PM2 process `pulse`, runs `/root/pulse/backend/dist/server.js` on port 3000.
 - Frontend dev server: PM2 process `pulse-frontend` (Vite), proxies `/api` → `http://localhost:3000`.
 - DB: PostgreSQL on port 5433, database `coaching_os_v2`, connection `postgresql://postgres:postgres@localhost:5433/coaching_os_v2`.

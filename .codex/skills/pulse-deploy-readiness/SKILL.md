@@ -44,10 +44,23 @@ Before pushing or opening a PR:
 
 Docs-only and planning-only PRs normally do not require server deploy. Deploy runtime changes only after the PR is merged to `main`.
 
-Deploy command:
+Preferred remote deploy command:
 
 ```bash
 ssh root@192.168.178.46 "cd /root/pulse && bash scripts/deploy.sh"
+```
+
+If direct host auth fails but the configured alias is verified, use:
+
+```bash
+ssh pulse-server "cd /root/pulse && bash scripts/deploy.sh"
+```
+
+If Codex is already running on the Pulse server host, running the script directly
+from `/root/pulse` is allowed only as a deploy operation after merge:
+
+```bash
+cd /root/pulse && bash scripts/deploy.sh
 ```
 
 The script should refuse dirty trees and non-`main` branches. If deployment fails, inspect logs/status through the Pulse Ops workflow rather than editing server files.
