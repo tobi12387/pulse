@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Data-Fueling zeigt den naechsten Klick vor Folgedetails
+
+- **Decision:** Die primäre Data-Fueling-Aktion zeigt den CTA direkt nach Ziel-Log, erlaubter GI-Auswahl, Manuellregel und Capture-Plan; lange Kandidaten- und Neulog-Details stehen danach.
+- **Why:** Die frische Route-Evidence auf `251bf85` zeigte, dass der Mobile-Button `GI-Komfort ergänzen` durch die zusätzlichen Sicherheits- und Capture-Details aus dem ersten Viewport rutschte. Die Regel bleibt sichtbar, aber der nächste manuelle Schritt muss wie in einer Top-App vor sekundärem Erklärtext erreichbar bleiben.
+- **Alternatives:** Die neuen Sicherheitsdetails wieder entfernen (zu riskant für echte GI-Evidence); nur den Test lockern (würde die mobile UX-Regression verstecken); alle Fueling-Details in ein Accordion verschieben (mehr Interaktionskosten fuer Tobi beim eigentlichen Evidence-Capture).
+- **Decided by:** Codex, als Data-Fueling-Mobile-CTA-Fix im Branch `codex/current-route-evidence-251bf85`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Data und Activity wiederholen die Fueling-GI-Manuellregel
 
 - **Decision:** Data zeigt bei der primären Fueling-Evidenzaktion und Activity Detail direkt vor der GI-Komfort-Auswahl dieselbe Manuellregel: GI-Komfort wird nur aus der echten Magenreaktion gewählt und nicht aus Notizen, Route, RPE, g/h, Ergebnis oder Pace abgeleitet.

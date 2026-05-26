@@ -365,7 +365,7 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
       cta: fuelingNextActionLabel,
       targetLog: fuelingTargetLog,
       optionHint: 'GI-Komfort: Magen ok · Magen leicht unruhig · Magenprobleme',
-      manualSafety: 'Manuelle Regel: GI-Komfort nur aus der echten Magenreaktion wählen; nicht aus Notizen, Route, RPE, g/h, Ergebnis oder Pace ableiten.',
+      manualSafety: 'GI-Komfort nur aus der echten Magenreaktion wählen; nicht aus Notizen, Route, RPE, g/h, Ergebnis oder Pace ableiten.',
       capturePlan: fuelingCapturePlan,
       candidateLogs: fuelingCandidateLogs,
       newLogChecklist: fuelingNewLogChecklist,
@@ -469,6 +469,31 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
         </p>
       </div>
     </>
+  );
+  const actionButton = (
+    <button
+      type="button"
+      className="data-primary-action-button"
+      onClick={primaryAction.run}
+      style={{
+        minWidth: 44,
+        minHeight: 44,
+        padding: '9px 12px',
+        background: 'var(--accent)',
+        border: '1px solid var(--accent)',
+        borderRadius: 5,
+        color: 'var(--accent-contrast)',
+        cursor: 'pointer',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 12,
+        fontWeight: 750,
+        letterSpacing: 0,
+        textTransform: 'none',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {primaryAction.cta}
+    </button>
   );
 
   return (
@@ -589,6 +614,9 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
               </span>
             </div>
           )}
+          <div className="data-primary-action-cta">
+            {actionButton}
+          </div>
           {primaryAction.candidateLogs && primaryAction.candidateLogs.length > 1 && (
             <div
               data-testid="data-primary-action-candidate-logs"
@@ -655,30 +683,6 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
             ))}
           </div>
         </div>
-        <button
-          type="button"
-          className="data-primary-action-button"
-          onClick={primaryAction.run}
-          style={{
-            minWidth: 44,
-            minHeight: 44,
-            padding: '9px 12px',
-            background: 'var(--accent)',
-            border: '1px solid var(--accent)',
-            borderRadius: 5,
-            color: 'var(--accent-contrast)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 12,
-            fontWeight: 750,
-            letterSpacing: 0,
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            justifySelf: 'end',
-          }}
-        >
-          {primaryAction.cta}
-        </button>
         <div className="data-primary-action-mobile-details">
           <button
             type="button"
