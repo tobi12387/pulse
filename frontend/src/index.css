@@ -2019,6 +2019,44 @@
     margin-top: 9px;
   }
 
+  .data-primary-action-gate-block {
+    min-width: 0;
+  }
+
+  .data-primary-action-gate-block__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .data-primary-action-gate-block__head > span:last-child {
+    color: var(--text-3);
+    font-size: 10.5px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .data-primary-action-option-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .data-primary-action-option-row span {
+    min-height: 25px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 7px;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    color: var(--text);
+    font-size: 11.5px;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
   .data-primary-action-card [data-testid="data-primary-action-target"],
   .data-primary-action-card [data-testid="data-primary-action-options"],
   .data-primary-action-card [data-testid="data-primary-action-manual-safety"],
@@ -2549,12 +2587,48 @@
 
     .data-primary-action-cta {
       justify-content: flex-start;
-      margin-top: 9px;
+      margin-top: 8px;
     }
 
     .data-primary-action-copy h3 {
       font-size: 14.5px !important;
       line-height: 1.2;
+    }
+
+    .data-primary-action-card [data-testid="data-primary-action-target"],
+    .data-primary-action-card [data-testid="data-primary-action-options"],
+    .data-primary-action-card [data-testid="data-primary-action-manual-safety"],
+    .data-primary-action-card [data-testid="data-primary-action-capture-plan"] {
+      margin-top: 6px !important;
+      padding: 7px 8px !important;
+    }
+
+    .data-primary-action-card [data-testid="data-primary-action-target"] {
+      grid-template-columns: 74px minmax(0, 1fr);
+      align-items: baseline;
+      gap: 7px !important;
+    }
+
+    .data-primary-action-card [data-testid="data-primary-action-target"] .label-mono {
+      margin-bottom: 0 !important;
+    }
+
+    .data-primary-action-options {
+      gap: 6px !important;
+    }
+
+    .data-primary-action-gate-block__head > span:last-child {
+      font-size: 10px;
+    }
+
+    .data-primary-action-option-row {
+      gap: 4px;
+    }
+
+    .data-primary-action-option-row span {
+      min-height: 24px;
+      padding: 0 6px;
+      font-size: 10.8px;
     }
 
     .data-primary-action-contract {
