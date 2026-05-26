@@ -45,6 +45,7 @@
     "audit:iphone-pwa-gate": "node scripts/iphone-pwa-gate-audit.mjs",
     "audit:performance-gates": "node scripts/performance-gates-audit.mjs",
     "audit:performance-checklist": "node scripts/performance-gates-audit.mjs --manual-checklist",
+    "audit:performance-session": "node scripts/performance-gates-audit.mjs --session-card",
     "audit:performance-next": "node scripts/performance-gates-audit.mjs --next-unblock",
     "verify:server": "bash scripts/verify-server.sh",
     "pulse:status": "bash scripts/pulse-status.sh",
