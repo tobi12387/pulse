@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Top-App-Shell macht Navigation lesbar und trennt Produktakzent von Semantik
+
+- **Decision:** Pulse entfernt die doppelte Desktop-Kopfleiste, nutzt eine breitere Workspace-Sidebar mit Route, Rolle und Shortcut-Nummer und trennt den blauen Produkt-/Aktionsakzent von gruenen positiven Health-/Readiness-Signalen.
+- **Why:** Tobi hat das UI/UX erneut als unuebersichtlich beschrieben und volle Freiheit fuer Breaking UI/UX gegeben. Die frische Route-Evidence zeigte keinen Overflow, aber eine unklare Informationsarchitektur: schmale Icon-Rail plus Topbar-Modus duplizierten Kontext, waehrend der Teal-Akzent Produktaktionen und positive Semantik vermischte.
+- **Alternatives:** Nur einzelne Karten verdichten (beseitigt nicht die gemeinsame Strukturursache); weitere Routen umbenennen (mehr Deep-Link- und Test-Risiko ohne noetigen Gewinn); Teal als Hauptakzent behalten (bleibt visuell zu nah an positiven Readiness-Zustaenden).
+- **Decided by:** Tobi und Codex, als Top-App-Shell-Redesign im Branch `codex/top-app-shell-redesign`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Settings zeigt iPhone-Feldnachweis als optionale Readiness-Aufgabe
 
 - **Decision:** Settings zeigt den iPhone/PWA-Feldnachweis im ersten Setup-Status als optionale Aufgabe mit direktem Sprung zur Geraetesektion, statt ihn nur im Diagnose- oder Detailbereich sichtbar zu machen.

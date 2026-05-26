@@ -282,7 +282,8 @@
     height: 100vh;
     height: 100dvh;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0) 230px),
+      linear-gradient(135deg, rgba(47,102,208,0.055), rgba(255,255,255,0) 270px),
+      linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0) 230px),
       var(--bg);
     color: var(--text);
   }
@@ -326,12 +327,22 @@
   }
 
   .pulse-focus-sidebar {
-    width: 92px;
+    width: 226px;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.92), rgba(239,243,247,0.68)),
+      linear-gradient(180deg, rgba(255,255,255,0.96), rgba(239,243,247,0.76)),
       rgba(250,251,253,0.92);
     border-color: var(--border);
-    padding: 12px 8px 10px;
+    padding: 16px 12px 12px;
+    gap: 12px;
+  }
+
+  .pulse-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 0 6px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   }
 
   .pulse-brand-mark {
@@ -390,7 +401,7 @@
   }
 
   .pulse-brand-title {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 760;
     line-height: 1.05;
     color: var(--text);
@@ -399,7 +410,7 @@
 
   .pulse-brand-subtitle {
     margin-top: 2px;
-    font-size: 10.5px;
+    font-size: 11px;
     line-height: 1.1;
     color: var(--text-3);
   }
@@ -475,13 +486,13 @@
   }
 
   .pulse-nav-link {
-    min-height: 64px;
+    min-height: 54px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-    gap: 6px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    justify-items: stretch;
+    gap: 10px;
     align-items: center;
-    padding: 8px 5px;
+    padding: 9px 10px;
     border: 1px solid transparent;
     border-radius: var(--radius-lg);
     color: var(--text-2);
@@ -501,7 +512,7 @@
   }
 
   .pulse-nav-icon {
-    width: 34px;
+    width: 32px;
     height: 32px;
     display: inline-flex;
     align-items: center;
@@ -519,20 +530,20 @@
   .pulse-nav-copy {
     display: grid;
     min-width: 0;
-    gap: 0;
-    justify-items: center;
-    text-align: center;
+    gap: 2px;
+    justify-items: stretch;
+    text-align: left;
   }
 
   .pulse-nav-label {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 760;
     line-height: 1.2;
   }
 
   .pulse-nav-description {
-    display: none;
-    font-size: 10.5px;
+    display: block;
+    font-size: 11px;
     color: var(--text-3);
     line-height: 1.25;
     overflow: hidden;
@@ -541,7 +552,8 @@
   }
 
   .pulse-nav-key {
-    display: none;
+    display: inline-flex;
+    justify-content: flex-end;
     font-family: var(--font-sans);
     font-size: 9.5px;
     font-weight: 700;
@@ -549,85 +561,90 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .pulse-sidebar-status {
-    margin: 12px 0;
-    min-height: 46px;
+  .pulse-sidebar-utilities {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 9px;
-    row-gap: 1px;
-    align-items: center;
-    padding: 9px 10px;
-    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
-    border-radius: var(--radius-lg);
-    background: color-mix(in srgb, var(--surface) 72%, var(--accent-dim));
-  }
-
-  .pulse-sidebar-status span {
-    grid-row: span 2;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-md);
-    display: inline-grid;
-    place-items: center;
-    background: var(--accent);
-    color: var(--accent-contrast);
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 780;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .pulse-sidebar-status strong {
-    min-width: 0;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 760;
-    line-height: 1.15;
-  }
-
-  .pulse-sidebar-status em {
-    min-width: 0;
-    color: var(--text-2);
-    font-size: 10.5px;
-    font-style: normal;
-    line-height: 1.15;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    gap: 10px;
   }
 
   .pulse-coach-command {
     min-height: 52px;
-    flex-direction: column;
+    width: 100%;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 7px 6px;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px;
     border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
     border-radius: var(--radius-lg);
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
     color: var(--accent);
-    font-size: 11px;
+    text-align: left;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
   }
 
+  .pulse-coach-command-icon {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    flex-shrink: 0;
+  }
+
+  .pulse-coach-command strong,
+  .pulse-coach-command em {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .pulse-coach-command em {
+    margin-top: 2px;
+    color: var(--text-2);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 650;
+  }
+
   .pulse-user-strip {
-    margin-top: 8px;
-    padding: 9px 0 0;
+    margin-top: 0;
+    padding: 10px 0 0;
     border-top: 1px solid var(--border);
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 8px 10px;
     color: var(--text-3);
     font-size: 10.5px;
   }
 
   .pulse-user-strip > span {
-    display: none;
+    min-width: 0;
+  }
+
+  .pulse-user-strip .pulse-status-chip {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .pulse-user-copy {
+    display: grid;
+    gap: 1px;
+  }
+
+  .pulse-user-copy strong {
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .pulse-user-copy em {
+    color: var(--text-3);
+    font-size: 10.5px;
+    font-style: normal;
+    line-height: 1.15;
   }
 
   .pulse-icon-button {
@@ -651,8 +668,8 @@
   }
 
   .pulse-mobile-command-button {
-    min-width: 38px;
-    min-height: 38px;
+    min-width: 34px;
+    min-height: 34px;
     border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
     background: color-mix(in srgb, var(--accent) 8%, transparent);
     color: var(--accent);
@@ -664,15 +681,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     position: relative;
     color: var(--text-3);
     text-decoration: none;
   }
 
   .pulse-mobile-nav-icon {
-    width: 28px;
-    height: 26px;
+    width: 26px;
+    height: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -691,7 +708,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--text-3);
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 720;
     line-height: 1.1;
     transition: color 0.14s;
@@ -1953,7 +1970,7 @@
     }
 
     :root {
-      --mobile-topbar-height: 42px;
+      --mobile-topbar-height: 40px;
       --mobile-bottomnav-height: 52px;
     }
 
@@ -1966,8 +1983,31 @@
     }
 
     .pulse-page-shell {
-      padding-left: 14px !important;
-      padding-right: 14px !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+
+    .pulse-mobile-topbar {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+
+    .pulse-brand-lockup--mobile .pulse-brand-mark {
+      width: 20px;
+      height: 20px;
+    }
+
+    .pulse-brand-lockup--mobile .pulse-brand-mark::after {
+      width: 7px;
+      height: 7px;
+    }
+
+    .pulse-mobile-route-title {
+      font-size: 12px;
+    }
+
+    .pulse-mobile-route-subtitle {
+      font-size: 9px;
     }
 
     .evidence-section {
@@ -1992,7 +2032,7 @@
     }
 
     .pulse-page-heading {
-      font-size: 19px;
+      font-size: 18px;
       line-height: 1.08;
     }
 
@@ -2009,7 +2049,7 @@
     }
 
     .card {
-      padding: 10px;
+      padding: 9px;
       box-shadow: none;
     }
 
