@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — iPhone-Scaffold trennt erwartete Runtime von beobachtetem App-Stand
+
+- **Decision:** Der iPhone/PWA-Feldlauf-Scaffold nennt den erwarteten App-Runtime-Commit nur als Orientierung und laesst `App runtime commit under test` als Platzhalter fuer den beobachteten Settings-`App-Stand`.
+- **Why:** Die Feldrunde soll beweisen, welche App-Version das iPhone wirklich geladen hat. Ein vorbefuellter Runtime-Hash aus Git kann korrekt erwartet sein, darf aber nicht als beobachtete Real-Device-Evidence gelten.
+- **Alternatives:** Den erwarteten Runtime-Commit direkt ins Evidence-Feld schreiben (zu leicht als ungepruefter Nachweis zu kopieren); den Runtime-Commit gar nicht anzeigen (weniger hilfreich bei docs-only Drift); App-Stand zwingend als neues Gate erzwingen (mehr manuelle Reibung, ohne aktuelle Server-Commit-Pruefung zu verbessern).
+- **Decided by:** Codex, als iPhone-Field-App-Stand-Scaffold im Branch `codex/iphone-field-appstand-observed`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Route-Evidence baut Shared vor Screenshot-Capture
 
 - **Decision:** `npm run qa:ux-evidence` und `npm run qa:ux-evidence:iphone` bauen den `shared`-Workspace vor dem Playwright-Screenshot-Pack.

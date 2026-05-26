@@ -18,9 +18,10 @@ handoff, run `npm run audit:iphone-pwa-gate -- --next-prompt`.
 For paste-ready Markdown for a new field run, including the server preflight and
 the current open gap targets before the `## Scope` record, run
 `npm run audit:iphone-pwa-gate -- --scaffold`.
-When the scaffold prints `App runtime commit under test`, copy it from Settings
-`App-Stand` into the field record. This lets docs/tooling-only server commits
-stay auditable without pretending an old app runtime was newly tested.
+When the scaffold prints an expected app-runtime commit, replace the
+`App runtime commit under test` placeholder with the observed Settings
+`App-Stand`. This lets docs/tooling-only server commits stay auditable without
+pretending an old app runtime was newly tested.
 The packet prints the exact `PULSE_EXPECTED_COMMIT=<commit> npm run verify:server`
 command to run before recording new current real-device evidence, including
 `PULSE_HOST=<ssh-host>` when the workspace is using an SSH alias such as
