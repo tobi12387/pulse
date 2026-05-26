@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-26 — Routeweiter UI/UX-Pass reduziert Chrome-Rauschen
+
+- **Decision:** Pulse behält die stabilen Haupt-URLs, richtet die Hauptoberfläche aber stärker als ruhige Command-App aus: keine wiederholten `Arbeitsfläche`-Headerchips, kompakter aktiver Sidebar-Status, klarere Workspace-Rollen, mobile Tabs als leichte Unterstrich-Rail, Home-Offenpunkte als Liste statt zweiter Kartenwand und eine weniger einfarbig-grüne Grundpalette.
+- **Why:** Tobi hat erneut volle Freiheit für ein vollständiges UI/UX-Redesign gegeben und die App als weiterhin zu unübersichtlich bewertet. Die frische Route-Evidence zeigte keine Overflow-Regression, aber strukturelles Rauschen durch doppelte Chrome-Erklärungen, schwere mobile Surface-Wechsel und sekundäre Kartenwände.
+- **Alternatives:** Routen vollständig umbenennen oder entfernen (mehr Deep-Link-/Test-Risiko ohne klare neue Informationsarchitektur); nur Farben ändern (zu wenig Strukturwirkung); weitere Produktlogik hinzufügen (würde den UI/UX-Auftrag mit gated Performance-OS-Features vermischen).
+- **Decided by:** Tobi und Codex, als Top-App-UX-Redesign-Pass im Branch `codex/top-app-ux-redesign-20260526`.
+- **Status:** active.
+
+---
+
 ## 2026-05-26 — Codex arbeitet auf Server-Host in isolierten Worktrees
 
 - **Decision:** Wenn Codex auf dem Pulse-Server-Host laeuft, bleibt `/root/pulse` als Deploy-Mirror auf sauberem `main`; Implementierungsbranches werden mit `node scripts/codex-worktree.mjs <topic>` in isolierten `/tmp/pulse-codex-*`-Worktrees angelegt.

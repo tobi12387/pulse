@@ -1114,10 +1114,10 @@ export default function Home() {
             {fmtDate(data.date)}
           </div>
           <h1 className="pulse-page-heading" style={{ margin: 0 }}>
-            Heute
+            Tagesentscheidung
           </h1>
           <p className="pulse-home-subtitle">
-            Eine ruhige Entscheidung aus Körper, Plan, Alltag und Evidenz. Alles Weitere ist Kontext.
+            Ein führender Schritt aus Körper, Plan, Alltag und Evidenz; offene Punkte bleiben sekundär.
           </p>
           <div className="pulse-home-context-pills" aria-label="Tageskontext">
             <span className="pulse-context-pill">Readiness <strong>{readiness.score}/100</strong></span>

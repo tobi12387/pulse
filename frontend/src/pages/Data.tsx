@@ -504,17 +504,17 @@ function DataOverviewTab({ onOpen }: { onOpen: (tab: Tab, hash?: string) => void
           data-testid="data-today-intro-eyebrow"
           style={{ marginBottom: 3 }}
         >
-          DATA · HEUTE RELEVANT
+          Evidenz heute
         </div>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
-          Heute relevant
+          Nächste Datenlücke
         </h2>
         <p
           className="data-today-intro-summary"
           data-testid="data-today-intro-summary"
           style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}
         >
-          Starte mit einer Daten-Aufgabe. Details bleiben verfügbar, wenn sie die Tagesentscheidung erklären.
+          Ein sauberer Capture-Schritt zuerst; Verlauf, Qualität und Analyse bleiben darunter erreichbar.
         </p>
       </div>
       <section
@@ -939,9 +939,9 @@ export default function Data() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
         eyebrow="Daten"
-        title="Daten, die heute etwas ändern"
+        title="Evidenz-Queue"
         mobileTitle="Daten"
-        description="Der erste Block zeigt die nächste Datenaufgabe. Trends, Qualität und Analyse bleiben erreichbar, aber klar nachrangig."
+        description="Die nächste Evidenzlücke steht oben; Trends, Qualität und Analyse bleiben klar erreichbar."
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Daten Bereiche" idPrefix="data" wrap />}
       />
       {tab === 'heute' && <TabPanel tab="heute"><DataHeuteTab onOpen={setTab} focus={focus} /></TabPanel>}
