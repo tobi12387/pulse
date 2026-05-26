@@ -269,6 +269,33 @@ test('iphone pwa field handoffs treat app runtime as observed Settings App-Stand
   assert.match(nextPrompt, /Record Device, iOS version, Server commit under test and observed Settings App-Stand as App runtime commit under test/);
 });
 
+test('iphone pwa gate audit rejects unreplaced App-Stand scaffold placeholders', () => {
+  const fieldRecord = COMPLETE_FIELD_RECORD.replace(
+    'Server commit under test: `abcdef0`',
+    [
+      'Server commit under test: `abcdef0`',
+      'App runtime commit under test: <copy observed Settings App-Stand; expected runtime1>',
+    ].join('\n- '),
+  );
+  const audit = buildIphonePwaGateAudit(fieldRecord, {
+    evidenceFile: 'field.md',
+    expectedCommit: 'abcdef0',
+    expectedRuntimeCommit: 'runtime1',
+  });
+
+  assert.equal(audit.gate, 'gated');
+  assert.equal(audit.commitStatus, 'current');
+  assert.equal(audit.scope.appRuntimeCommit, '<copy observed Settings App-Stand; expected runtime1>');
+  assert.equal(audit.fieldRuntimeCommit, null);
+  assert.deepEqual(audit.gaps.map(gap => gap.kind), ['app_runtime_evidence']);
+  assert.match(audit.gaps[0].detail, /still contains the App-Stand scaffold placeholder/);
+  assert.match(audit.gaps[0].nextAction, /replace the placeholder with the observed App-Stand commit/);
+
+  const rendered = renderIphonePwaGateAudit(audit);
+  assert.match(rendered, /Observed Settings App-Stand: missing/);
+  assert.doesNotMatch(rendered, /Field app runtime commit: <copy observed/);
+});
+
 test('iphone pwa gate audit evaluates the latest appended field run as one record', () => {
   const audit = buildIphonePwaGateAudit(APPENDED_FRESH_FIELD_RECORD, {
     evidenceFile: 'field.md',

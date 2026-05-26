@@ -92,6 +92,10 @@ function commitsMatch(left, right) {
   return left === right || left.startsWith(right) || right.startsWith(left);
 }
 
+function isAppRuntimePlaceholder(value) {
+  return /^<copy observed settings app-stand/i.test(String(value ?? '').trim());
+}
+
 function commitStatus(serverCommit, expectedCommit, runtime = {}) {
   if (!expectedCommit) return 'unknown';
   if (!serverCommit) return 'missing';
@@ -193,8 +197,10 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
   const scope = parseScope(evidenceRecord);
   const expectedRuntimeCommit = cleanInlineCode(options.expectedRuntimeCommit)
     ?? cleanInlineCode(options.runtimeCommitFor?.(expectedCommit));
+  const scopedAppRuntimeCommit = cleanInlineCode(scope.appRuntimeCommit);
+  const hasAppRuntimePlaceholder = isAppRuntimePlaceholder(scopedAppRuntimeCommit);
   const fieldRuntimeCommit = cleanInlineCode(options.fieldRuntimeCommit)
-    ?? cleanInlineCode(scope.appRuntimeCommit)
+    ?? (hasAppRuntimePlaceholder ? null : scopedAppRuntimeCommit)
     ?? cleanInlineCode(options.runtimeCommitFor?.(scope.serverCommit));
   const fieldCommitStatus = commitStatus(scope.serverCommit, expectedCommit, {
     expectedRuntimeCommit,
@@ -223,6 +229,15 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
         ? `Missing Server commit under test; expected ${expectedCommit}.`
         : `Field record tested ${scope.serverCommit}, expected ${expectedCommit}.`,
       `Verify the server mirror is on ${expectedCommit}, rerun the real iPhone checklist and record Server commit under test: ${expectedCommit}.`,
+    ));
+  }
+  if (hasAppRuntimePlaceholder) {
+    gaps.push(buildGap(
+      'app_runtime_evidence',
+      'Observed Settings App-Stand',
+      'missing',
+      'Field record still contains the App-Stand scaffold placeholder.',
+      'Open Settings on the real iPhone/PWA and replace the placeholder with the observed App-Stand commit.',
     ));
   }
   if (coreMissing.length > 0) {
