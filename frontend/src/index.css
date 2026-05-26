@@ -1310,16 +1310,39 @@
   }
 
   .pulse-activity-header {
-    padding: 18px 0 8px;
+    padding: 14px 0 8px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 14px;
-    align-items: end;
+    align-items: center;
     border-bottom: 1px solid var(--border);
   }
 
   .pulse-activity-header > button {
     justify-self: end;
+  }
+
+  .pulse-activity-back-button {
+    min-width: 44px;
+    min-height: 40px;
+    padding: 0 12px 0 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  .pulse-activity-back-button:hover,
+  .pulse-activity-back-button:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .pulse-activity-title {
@@ -1334,6 +1357,126 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .activity-closure-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 14px;
+    scroll-margin-top: 78px;
+  }
+
+  .activity-closure-card__copy {
+    min-width: 0;
+  }
+
+  .activity-closure-card__eyebrow {
+    margin-bottom: 5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .activity-closure-card__heading-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 7px 10px;
+  }
+
+  .activity-closure-card__heading-row h2 {
+    margin: 0;
+    font-size: 19px;
+    line-height: 1.18;
+    font-weight: 780;
+    color: var(--text);
+  }
+
+  .activity-closure-card__status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .activity-closure-card__copy p {
+    margin: 7px 0 0;
+    max-width: 720px;
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .activity-closure-card__actions {
+    display: flex;
+    align-items: start;
+    gap: 8px;
+  }
+
+  .activity-closure-card__primary-action,
+  .activity-closure-card__secondary-action {
+    min-height: 38px;
+    padding: 0 13px;
+    border-radius: 7px;
+    font-weight: 750;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .activity-closure-card__primary-action {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--accent-contrast);
+  }
+
+  .activity-closure-card__secondary-action {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+  }
+
+  .activity-closure-card__metrics {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+  }
+
+  .activity-closure-card__feedback-note {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .activity-closure-card__rail {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .activity-closure-card__rail span {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
   }
 
   .coverage-mobile-list {
@@ -2322,16 +2465,76 @@
     }
 
     .pulse-activity-header {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 10px;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 9px;
+      align-items: center;
+      padding: 8px 0 6px;
     }
 
     .pulse-activity-header > button {
+      order: -1;
       justify-self: start;
     }
 
+    .pulse-activity-back-button {
+      width: 42px;
+      min-width: 42px;
+      min-height: 42px;
+      padding: 0;
+    }
+
+    .pulse-activity-back-button span {
+      display: none;
+    }
+
     .pulse-activity-title {
-      font-size: 24px;
+      font-size: 23px;
+    }
+
+    .activity-closure-card {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      scroll-margin-top: 92px;
+    }
+
+    .activity-closure-card__heading-row {
+      gap: 5px 8px;
+    }
+
+    .activity-closure-card__heading-row h2 {
+      font-size: 17px;
+    }
+
+    .activity-closure-card__copy p {
+      font-size: 12.5px;
+      line-height: 1.42;
+    }
+
+    .activity-closure-card__actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 7px;
+    }
+
+    .activity-closure-card__primary-action,
+    .activity-closure-card__secondary-action {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 8px;
+      white-space: normal;
+    }
+
+    .activity-closure-card__metrics {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      padding: 8px;
+    }
+
+    .activity-closure-card__rail span {
+      min-height: 24px;
+      font-size: 9.5px;
     }
 
     .data-today-intro-eyebrow,

@@ -66,6 +66,11 @@ test('Activity detail is available under the Plan route namespace', async ({ pag
 
   await expect(page).toHaveURL(/\/plan\/activity\/activity-detail/);
   await expect(page.getByText('Rennrad Tour').first()).toBeVisible();
+  const closure = page.getByTestId('activity-feedback-card');
+  await expect(closure).toContainText('Aktivitätsabschluss');
+  await expect(closure).toContainText('RPE 7/10');
+  await expect(closure).toContainText('Plan/Garmin unverändert');
+  await expect(closure.getByRole('button', { name: 'Fueling prüfen' })).toBeVisible();
 });
 
 test('Today options show compact signal labels for the strongest reason', async ({ page }) => {
