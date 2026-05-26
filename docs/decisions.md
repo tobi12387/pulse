@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Plan-Wochenleiste wird auf Mobile zum kompakten Kontext
+
+- **Decision:** Pulse macht die mobile Plan-Wochenleiste zu einem kompakten Kontextstreifen: kleinere vorige/naechste Controls, ein gemeinsamer Tagesstreifen statt sieben schwerer Mini-Karten und keine wiederholten visuellen `frei`-Labels auf leeren Tagen.
+- **Why:** Nach dem Command-Surface-Pass zeigte frische Route-Evidence, dass Plan-Mobile weiterhin zu viel ersten Viewport an Wochenkontext verlor, bevor die eigentliche Wochenentscheidung sichtbar wurde. Die Wochenleiste soll Orientierung geben, aber nicht die primäre Plan-Handlung dominieren.
+- **Alternatives:** Wochenleiste komplett entfernen (zu wenig Orientierung und schlechter fuer Workout-Auswahl); Plan-Logik oder Routen aendern (nicht noetig fuer diesen UI-Hebel); nur die Wochenentscheidung weiter komprimieren (würde den belegten Hauptverursacher nicht treffen).
+- **Decided by:** Codex, als Plan-Week-Strip-Density im Branch `codex/plan-week-strip-density`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Top-App-Command-Surfaces ersetzen schwere Kartenhierarchie
 
 - **Decision:** Pulse verdichtet Home-, Data- und Plan-Command-Surfaces als flache Arbeitsflaechen: weniger Card-Schatten, kompaktere mobile Aktionen, weniger doppelte Plan-Vorschau und Zeilen statt weiterer Sekundaerkarten fuer Plan-Evidence.
