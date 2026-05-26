@@ -14,6 +14,7 @@ const STRUCTURED_GI_COMFORT_OPTIONS = [
   { value: 'mild_issue', label: 'Magen leicht unruhig' },
   { value: 'issue', label: 'Magenprobleme' },
 ];
+const STRUCTURED_GI_COMFORT_VALUES = new Set(STRUCTURED_GI_COMFORT_OPTIONS.map(option => option.value));
 
 function structuredGiComfortValuesText() {
   return STRUCTURED_GI_COMFORT_OPTIONS.map(option => option.value).join(', ');
@@ -79,6 +80,10 @@ function clean(value) {
   return text.length > 0 ? text : null;
 }
 
+function isStructuredGiComfort(value) {
+  return STRUCTURED_GI_COMFORT_VALUES.has(String(value ?? '').trim());
+}
+
 function formatNumber(value, suffix = '') {
   if (value == null || Number.isNaN(Number(value))) return 'missing';
   const roundedValue = Math.round(Number(value));
@@ -135,13 +140,13 @@ function isComparableLongLog(log) {
 }
 
 function isCompleteComparableLog(log) {
-  return isComparableLongLog(log) && log.carbsG != null && log.giComfort != null;
+  return isComparableLongLog(log) && log.carbsG != null && isStructuredGiComfort(log.giComfort);
 }
 
 function missingFields(log) {
   const fields = [];
   if (log.carbsG == null) fields.push('carbs');
-  if (log.giComfort == null) fields.push('GI comfort');
+  if (!isStructuredGiComfort(log.giComfort)) fields.push('GI comfort');
   return fields;
 }
 
@@ -199,7 +204,7 @@ function candidateContext(log) {
 }
 
 function nextActionFor(comparableLogs) {
-  const giGap = comparableLogs.find(log => log.carbsG != null && log.giComfort == null);
+  const giGap = comparableLogs.find(log => log.carbsG != null && !isStructuredGiComfort(log.giComfort));
   if (giGap) {
     return {
       kind: 'complete_gi_comfort',
@@ -215,7 +220,7 @@ function nextActionFor(comparableLogs) {
     };
   }
 
-  const carbGap = comparableLogs.find(log => log.carbsG == null && log.giComfort != null);
+  const carbGap = comparableLogs.find(log => log.carbsG == null && isStructuredGiComfort(log.giComfort));
   if (carbGap) {
     return {
       kind: 'complete_carbs',

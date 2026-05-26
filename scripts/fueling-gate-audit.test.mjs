@@ -245,6 +245,23 @@ test('fueling gate audit opens after three comparable complete logs', () => {
   assert.match(renderFuelingGateAudit(audit), /trend summaries can be enabled/);
 });
 
+test('fueling gate audit rejects unstructured GI comfort values for trend readiness', () => {
+  const audit = buildFuelingGateAudit([
+    { userId: 'user-a', date: '2026-05-13', context: 'during', activityId: 'valid-1', activityType: 'bike', durationSec: 130 * 60, carbsG: 125, giComfort: 'ok' },
+    { userId: 'user-a', date: '2026-05-10', context: 'during', activityId: 'valid-2', activityType: 'bike', durationSec: 115 * 60, carbsG: 105, giComfort: 'mild_issue' },
+    { userId: 'user-a', date: '2026-05-04', context: 'during', activityId: 'legacy-free-text', activityType: 'run', durationSec: 80 * 60, carbsG: 50, giComfort: 'minor_issues' },
+  ], { today: '2026-05-21' });
+
+  assert.equal(audit.users[0].gate, 'gated');
+  assert.equal(audit.users[0].comparableCompleteLogs, 2);
+  assert.equal(audit.users[0].nextAction.kind, 'complete_gi_comfort');
+  assert.equal(audit.users[0].nextAction.activityId, 'legacy-free-text');
+  assert.deepEqual(audit.users[0].completionCandidates[0].missing, ['GI comfort']);
+  assert.equal(audit.users[0].completionCandidates[0].status, 'can count after GI comfort');
+  assert.match(renderFuelingGateAudit(audit), /minor_issues/);
+  assert.doesNotMatch(renderFuelingGateAudit(audit), /trend summaries can be enabled/);
+});
+
 test('fueling gate audit CLI args accept handoff-only modes', () => {
   assert.deepEqual(parseArgs([
     'node',
