@@ -225,9 +225,9 @@ export default function Settings() {
   return (
     <div className="settings-layout">
       <PageHeader
-        eyebrow="Setup"
-        title="Geräte, Profil und Bereitschaft"
-        mobileTitle="Setup"
+        eyebrow="Bereit"
+        title="Bereitschaft, Geräte und Profil"
+        mobileTitle="Bereit"
         description="Alles, was die tägliche Entscheidung verlässlich macht: Garmin, PWA, Push, Profil und Health-State."
       />
 
@@ -677,7 +677,7 @@ function SettingsDiagnosticsMatrix({
         <div className="settings-status-summary__head">
           <div>
             <div className="label-mono" style={{ color: statusColor, marginBottom: 4 }}>
-              SETUP STATUS
+              Bereitschaft
             </div>
             <h2 className="settings-status-summary__title">
               {statusTitle}

@@ -10,7 +10,7 @@ const routes = [
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
   { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
   { path: '/insights', label: 'Lernen', navHref: '/insights', visibleText: 'Analyse' },
-  { path: '/settings', label: 'Setup', navHref: '/settings', visibleText: 'Setup' },
+  { path: '/settings', label: 'Bereit', navHref: '/settings', visibleText: 'Bereit' },
 ] as const;
 
 const primaryNavRoutes = [
@@ -18,7 +18,7 @@ const primaryNavRoutes = [
   { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
   { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
   { path: '/insights', label: 'Lernen', navHref: '/insights', visibleText: 'Analyse' },
-  { path: '/settings', label: 'Setup', navHref: '/settings', visibleText: 'Setup' },
+  { path: '/settings', label: 'Bereit', navHref: '/settings', visibleText: 'Bereit' },
 ] as const;
 
 const routeReadyTimeoutMs = 15_000;
@@ -36,7 +36,7 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
   await expect(primaryNav.locator('a[href="/data"]')).toContainText('Daten');
   await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Lernen');
-  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Setup');
+  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Bereit');
   await expect(primaryNav.locator('a[href="/coach"]')).toHaveCount(0);
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
@@ -1564,7 +1564,7 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
 
 test('Settings section deep links land near the target section', async ({ page }) => {
   await page.goto('/settings?section=push');
-  await expectHealthyPage(page, 'Setup');
+  await expectHealthyPage(page, 'Bereit');
 
   const pushHeading = page.getByRole('heading', { name: 'Benachrichtigungen' });
   await expect(pushHeading).toBeVisible();
@@ -1575,7 +1575,7 @@ test('Settings section deep links land near the target section', async ({ page }
 
 test('Settings PWA field proof exposes the current manual evidence scope', async ({ page }) => {
   await page.goto('/settings?section=device');
-  await expectHealthyPage(page, 'Setup');
+  await expectHealthyPage(page, 'Bereit');
 
   const fieldProof = page.getByTestId('pwa-field-evidence');
   await expect(fieldProof).toBeVisible();
@@ -2585,7 +2585,7 @@ test('top-level hotkeys follow the Focus navigation order', async ({ page }, tes
 
   await page.keyboard.press('5');
   await expect(page).toHaveURL('/settings');
-  await expectHealthyPage(page, 'Setup');
+  await expectHealthyPage(page, 'Bereit');
 });
 
 test('PWA manifest and service worker endpoints are available', async ({ request }) => {

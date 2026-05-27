@@ -4,6 +4,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   BarChart3,
   CalendarDays,
+  CheckCircle2,
   CircleHelp,
   Command,
   Database,
@@ -19,12 +20,69 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
   { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
   { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
   { to: '/insights', label: 'Lernen', mobileLabel: 'Lernen', description: 'Analyse', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Setup', mobileLabel: 'Setup', description: 'System', intent: 'bereit halten', key: '05', end: false, icon: Settings },
+  { to: '/settings', label: 'Bereit', mobileLabel: 'Bereit', description: 'System', intent: 'bereit halten', key: '05', end: false, icon: Settings },
 ];
+
+function routeContext(pathname: string) {
+  if (pathname.startsWith('/plan/activity') || pathname.startsWith('/activity')) {
+    return {
+      eyebrow: 'Aktivitätsabschluss',
+      title: 'Evidence zuerst',
+      description: 'RPE, Fueling und Folge-Evidence schließen; Plan und Garmin bleiben geschützt.',
+      status: 'Review offen',
+    };
+  }
+  if (pathname.startsWith('/plan')) {
+    return {
+      eyebrow: 'Wochensteuerung',
+      title: 'Vorschau vor Änderung',
+      description: 'Plan, Garmin und Ziele bewusst prüfen, bevor ein Schritt schreibt.',
+      status: 'No hidden write',
+    };
+  }
+  if (pathname.startsWith('/data')) {
+    return {
+      eyebrow: 'Evidenz',
+      title: 'Lücke vor Trend',
+      description: 'Die nächste Datenlücke steht vorne, Analyse bleibt erreichbar.',
+      status: 'Capture first',
+    };
+  }
+  if (pathname.startsWith('/insights')) {
+    return {
+      eyebrow: 'Lernen',
+      title: 'Muster statt Lärm',
+      description: 'Nur belastbare Muster sollen Plan oder Tagesentscheidung verändern.',
+      status: 'Read-only',
+    };
+  }
+  if (pathname.startsWith('/settings')) {
+    return {
+      eyebrow: 'Bereitschaft',
+      title: 'System bereit halten',
+      description: 'Geräte, Profil, Push und Feldnachweise sichern die tägliche Entscheidung.',
+      status: 'Diagnose',
+    };
+  }
+  if (pathname.startsWith('/coach')) {
+    return {
+      eyebrow: 'Coach',
+      title: 'Frage in Kontext',
+      description: 'Prompts starten mit deiner Tageslage, Plan- und Evidenzsignalen.',
+      status: 'Kontext',
+    };
+  }
+  return {
+    eyebrow: 'Tagesentscheidung',
+    title: 'Eine klare Antwort',
+    description: 'Körper, Plan, Alltag und Evidenz laufen in den nächsten sicheren Schritt.',
+    status: 'Jetzt',
+  };
+}
 
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
@@ -40,6 +98,7 @@ export default function Layout() {
     || location.pathname.startsWith('/insights')
     || location.pathname.startsWith('/settings');
   const activeNavItem = NAV_ITEMS.find(item => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)) ?? NAV_ITEMS[0];
+  const activeRouteContext = routeContext(location.pathname);
   const pageShellStyle = isOperationalRoute ? { maxWidth: 1220 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
   useEffect(() => {
@@ -86,8 +145,14 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
             <div className="pulse-brand-title">Pulse</div>
-            <div className="pulse-brand-subtitle">Private Performance OS</div>
+            <div className="pulse-brand-subtitle">Performance Command Center</div>
           </div>
+        </div>
+
+        <div className="pulse-sidebar-focus-card" aria-label="Aktueller Arbeitsmodus">
+          <span className="label-mono">{activeRouteContext.eyebrow}</span>
+          <strong>{activeRouteContext.title}</strong>
+          <p>{activeRouteContext.description}</p>
         </div>
 
         {/* Nav */}
@@ -105,7 +170,8 @@ export default function Layout() {
               <span className="pulse-nav-icon" aria-hidden="true"><Icon size={17} strokeWidth={1.8} /></span>
               <span className="pulse-nav-copy">
                 <span className="pulse-nav-label">{label}</span>
-                <span className="pulse-nav-description">{description} · {intent}</span>
+                <span className="pulse-nav-description">{description}</span>
+                <span className="pulse-nav-intent">{intent}</span>
               </span>
               <span className="pulse-nav-key">{key}</span>
             </NavLink>
@@ -163,12 +229,34 @@ export default function Layout() {
           onClick={() => setCoachOpen(true)}
           aria-label="Coach öffnen"
         >
-          <Sparkles size={17} aria-hidden="true" />
+          <Command size={17} aria-hidden="true" />
         </button>
       </div>
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto">
+        <header className="pulse-workspace-topbar hidden md:grid" aria-label="Arbeitskontext">
+          <div className="pulse-workspace-route">
+            <span className="label-mono">{activeRouteContext.eyebrow}</span>
+            <strong>{activeRouteContext.title}</strong>
+            <em>{activeRouteContext.description}</em>
+          </div>
+          <div className="pulse-workspace-status" aria-label="Workspace Status">
+            <span><CheckCircle2 size={14} aria-hidden="true" /> {activeRouteContext.status}</span>
+            <span><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
+            <span>{today}</span>
+          </div>
+          <button
+            type="button"
+            className="pulse-topbar-command"
+            onClick={() => setCoachOpen(true)}
+            aria-label="Coach Command öffnen"
+          >
+            <Command size={14} aria-hidden="true" />
+            <strong>Coach</strong>
+            <em>Kontext öffnen</em>
+          </button>
+        </header>
         <div className="pulse-page-shell mx-auto px-4 max-w-3xl" style={pageShellStyle} data-route-width={isOperationalRoute ? 'operational' : 'standard'}>
           <Outlet />
         </div>

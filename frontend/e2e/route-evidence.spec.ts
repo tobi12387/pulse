@@ -13,7 +13,7 @@ const routes = [
   { path: '/plan', label: 'plan', visibleText: 'Plan' },
   { path: '/plan/activity/activity-detail', label: 'activity-detail', visibleText: 'Rennrad Tour' },
   { path: '/insights', label: 'insights', visibleText: 'Analyse' },
-  { path: '/settings', label: 'settings', visibleText: 'Setup' },
+  { path: '/settings', label: 'settings', visibleText: 'Bereit' },
 ] as const;
 
 const fuelingLearningOutcomeBaseline = {
