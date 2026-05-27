@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Clarity-Redesign reduziert redundante Chrome statt neue Karten zu addieren
+
+- **Decision:** Der naechste UI/UX-Pass entfernt die doppelte Desktop-Orientierung aus Sidebar-Focus-Card und Hauptnavigation, kuerzt die globale Navigation auf klare Bereichslabels, nutzt die Topbar als einzigen Arbeitskontext und flacht die Basis-Karten weiter ab.
+- **Why:** Tobi hat nach den bisherigen Top-App-Paessen weiter Unuebersichtlichkeit gemeldet. Die neue explizite Priorisierung spricht gegen weitere Erklaerkarten; die App soll weniger konkurrierende Labels, weniger abgeschnittene Intent-Chips und eine klarere erste Hierarchie pro Route haben.
+- **Alternatives:** Weitere route-spezifische Cards bauen (mehr visuelles Gewicht); nur mobile Spacing polishen (zu wenig fuer die gemeldete Strukturkritik); URLs brechen (nicht noetig, weil die aktuelle Friktion in Chrome/Surface-Hierarchie liegt).
+- **Decided by:** Tobi und Codex, als Clarity-Redesign im Branch `codex/clarity-redesign-20260527`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Command-Center-Redesign macht Orientierung route-uebergreifend
 
 - **Decision:** Pulse nutzt fuer den erneuten UI/UX-Redesign-Pass eine dunkle Desktop-Workspace-Navigation, eine route-uebergreifende Arbeitskontext-Leiste, klarere Arbeitsbereich-Labels (`Bereit` statt `Setup`) und flachere Karten-/Segment-Control-Basics statt noch mehr einzelner Erklaerkarten.

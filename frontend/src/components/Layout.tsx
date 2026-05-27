@@ -20,11 +20,11 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
-  { to: '/insights', label: 'Lernen', mobileLabel: 'Lernen', description: 'Analyse', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Bereit', mobileLabel: 'Bereit', description: 'System', intent: 'bereit halten', key: '05', end: false, icon: Settings },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', end: true, icon: Home },
+  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', end: false, icon: Database },
+  { to: '/insights', label: 'Lernen', mobileLabel: 'Lernen', description: 'Analyse', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'Bereit', mobileLabel: 'Bereit', description: 'System', end: false, icon: Settings },
 ];
 
 function routeContext(pathname: string) {
@@ -99,7 +99,7 @@ export default function Layout() {
     || location.pathname.startsWith('/settings');
   const activeNavItem = NAV_ITEMS.find(item => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)) ?? NAV_ITEMS[0];
   const activeRouteContext = routeContext(location.pathname);
-  const pageShellStyle = isOperationalRoute ? { maxWidth: 1220 } : undefined;
+  const pageShellStyle = isOperationalRoute ? { maxWidth: 1160 } : undefined;
   const today = new Date().toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase();
   useEffect(() => {
     function handleCommand(event: globalThis.KeyboardEvent) {
@@ -149,15 +149,9 @@ export default function Layout() {
           </div>
         </div>
 
-        <div className="pulse-sidebar-focus-card" aria-label="Aktueller Arbeitsmodus">
-          <span className="label-mono">{activeRouteContext.eyebrow}</span>
-          <strong>{activeRouteContext.title}</strong>
-          <p>{activeRouteContext.description}</p>
-        </div>
-
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px" aria-label="Hauptbereiche">
-          {NAV_ITEMS.map(({ to, label, description, intent, key, end, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label, description, end, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -171,9 +165,7 @@ export default function Layout() {
               <span className="pulse-nav-copy">
                 <span className="pulse-nav-label">{label}</span>
                 <span className="pulse-nav-description">{description}</span>
-                <span className="pulse-nav-intent">{intent}</span>
               </span>
-              <span className="pulse-nav-key">{key}</span>
             </NavLink>
           ))}
         </nav>
@@ -220,7 +212,7 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <span className="pulse-mobile-route-copy">
             <span className="pulse-mobile-route-title">{activeNavItem.mobileLabel ?? activeNavItem.label}</span>
-            <span className="pulse-mobile-route-subtitle">Pulse · {activeNavItem.intent}</span>
+            <span className="pulse-mobile-route-subtitle">{activeRouteContext.status}</span>
           </span>
         </span>
         <button
@@ -237,7 +229,7 @@ export default function Layout() {
       <main className="flex-1 overflow-y-auto">
         <header className="pulse-workspace-topbar hidden md:grid" aria-label="Arbeitskontext">
           <div className="pulse-workspace-route">
-            <span className="label-mono">{activeRouteContext.eyebrow}</span>
+            <span className="label-mono">{activeNavItem.label}</span>
             <strong>{activeRouteContext.title}</strong>
             <em>{activeRouteContext.description}</em>
           </div>
