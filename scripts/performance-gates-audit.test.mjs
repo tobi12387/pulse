@@ -179,6 +179,7 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
   nextAction: 'Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234.',
   serverVerifyCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server',
   serverRecoveryPacketCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet',
+  settingsFieldUrl: 'https://192.168.178.46:5175/settings?section=device',
 }));
 
 const READY_IPHONE = commandResult(0, JSON.stringify({
@@ -406,6 +407,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(checklist, /Use the short first-target prompt for a manual capture\/chat handoff: `npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt`/);
   assert.match(checklist, /## 2\. iPhone\/PWA field/);
   assert.match(checklist, /Verify the server mirror before recording current field evidence: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
+  assert.match(checklist, /Open the Settings field proof on the real iPhone\/PWA: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(checklist, /Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold`/);
   assert.match(checklist, /Print the short first-gap field prompt for a manual capture\/chat handoff: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --next-prompt`/);
   assert.match(checklist, /Current main field evidence \(stale\)\. Verify the server mirror is on abc1234/);
@@ -431,6 +433,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(iphoneSessionCard, /Gate: iPhone\/PWA field/);
   assert.match(iphoneSessionCard, /Erste Luecke: Current main field evidence \(stale\)/);
   assert.match(iphoneSessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(iphoneSessionCard, /Settings oeffnen: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(iphoneSessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.doesNotMatch(iphoneSessionCard, /Gate: Fueling learning/);
 
@@ -541,6 +544,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       fieldPacketCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet',
       fieldPromptCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --next-prompt',
       fieldScaffoldCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold',
+      settingsFieldUrl: 'https://192.168.178.46:5175/settings?section=device',
       serverVerifyCommand: 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server',
       serverRecoveryPacketCommand: null,
       firstGap: {
@@ -556,6 +560,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(renderNextUnblock(audit), /Field packet: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet/);
   assert.match(renderNextUnblock(audit), /Field prompt: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --next-prompt/);
   assert.match(renderNextUnblock(audit), /Field scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
+  assert.match(renderNextUnblock(audit), /Settings field URL: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.doesNotMatch(renderNextUnblock(audit), /Server recovery packet:/);
   assert.match(renderNextUnblock(audit), /Manual safety:/);
   assert.match(renderNextUnblock(audit), /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
@@ -566,6 +571,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(sessionCard, /Gate: iPhone\/PWA field/);
   assert.match(sessionCard, /Erste Luecke: Current main field evidence \(stale\)/);
   assert.match(sessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(sessionCard, /Settings oeffnen: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(sessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.match(sessionCard, /Dokumentieren in: docs\/qa\/field\.md/);
   assert.match(sessionCard, /Sicherheit: echte iPhone\/PWA-Feldbeobachtung gegen den erwarteten Commit dokumentieren/);

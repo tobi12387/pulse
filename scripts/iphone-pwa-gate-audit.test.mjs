@@ -27,6 +27,20 @@ function withPulseHost(host, fn) {
   }
 }
 
+function withPulseUrl(url, fn) {
+  const previous = process.env.PULSE_URL;
+  process.env.PULSE_URL = url;
+  try {
+    fn();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.PULSE_URL;
+    } else {
+      process.env.PULSE_URL = previous;
+    }
+  }
+}
+
 const CURRENT_FIELD_RECORD = `# Pulse iPhone / VPN / PWA Real-Device QA - 2026-05-02
 
 ## Scope
@@ -139,6 +153,8 @@ test('iphone pwa gate audit identifies remaining real-device gaps', () => {
   assert.equal(audit.fieldChecklist, 'docs/ai/checklists/iphone-pwa-qa.md');
   assert.equal(audit.scope.serverCommit, '9e05189');
   assert.equal(audit.scope.pulseUrl, 'https://192.168.178.46:5175');
+  assert.equal(audit.pulseUrl, 'https://192.168.178.46:5175');
+  assert.equal(audit.settingsFieldUrl, 'https://192.168.178.46:5175/settings?section=device');
   assert.deepEqual(audit.gaps.map(gap => gap.kind), [
     'certificate_trust',
     'push_activation',
@@ -150,10 +166,31 @@ test('iphone pwa gate audit identifies remaining real-device gaps', () => {
   const rendered = renderIphonePwaGateAudit(audit);
   assert.match(rendered, /Gate: gated/);
   assert.match(rendered, /Field checklist: docs\/ai\/checklists\/iphone-pwa-qa\.md/);
+  assert.match(rendered, /Settings field URL: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(rendered, /Warning-free certificate trust: needs_followup/);
   assert.match(rendered, /Push activation and test push: partial/);
   assert.match(rendered, /Real iPhone VPN\/network offline fallback: pending/);
   assert.match(rendered, /Device and iOS metadata: missing/);
+});
+
+test('iphone pwa field handoff respects the configured Pulse URL', () => {
+  withPulseUrl('https://pulse.local:5175/', () => {
+    const audit = buildIphonePwaGateAudit(CURRENT_FIELD_RECORD, {
+      evidenceFile: 'field.md',
+      expectedCommit: 'abc1234',
+    });
+
+    assert.equal(audit.pulseUrl, 'https://pulse.local:5175/');
+    assert.equal(audit.settingsFieldUrl, 'https://pulse.local:5175/settings?section=device');
+    assert.match(
+      renderIphonePwaFieldScaffold(audit),
+      /Open Settings first: `https:\/\/pulse\.local:5175\/settings\?section=device`/,
+    );
+    assert.match(
+      renderIphonePwaNextPrompt(audit),
+      /Open Settings field proof: https:\/\/pulse\.local:5175\/settings\?section=device/,
+    );
+  });
 });
 
 test('iphone pwa gate audit gates stale field evidence against the expected commit', () => {
@@ -167,6 +204,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.equal(audit.commitStatus, 'stale');
   assert.equal(audit.serverVerifyCommand, 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server');
   assert.equal(audit.serverRecoveryPacketCommand, 'PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet');
+  assert.equal(audit.settingsFieldUrl, 'https://192.168.178.46:5175/settings?section=device');
   assert.deepEqual(audit.gaps.map(gap => gap.kind), [
     'current_commit_evidence',
     'certificate_trust',
@@ -188,6 +226,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(scaffold, /Verify server mirror first: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
   assert.match(scaffold, /If SSH fails before server checks: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
   assert.match(scaffold, /Use a real iPhone over the VPN\/local network path/);
+  assert.match(scaffold, /Open Settings first: `https:\/\/192\.168\.178\.46:5175\/settings\?section=device`; record Device, iOS version, App-Stand, PWA mode, Push state and certificate state/);
   assert.match(scaffold, /Append this field run to field\.md/);
   assert.match(scaffold, /After recording, rerun: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234`/);
   assert.match(scaffold, /Open field gaps to resolve:/);
@@ -199,6 +238,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(scaffold, /- iOS version: <iOS version>/);
   assert.match(scaffold, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);
   assert.match(scaffold, /- Pulse URL: `https:\/\/192\.168\.178\.46:5175`/);
+  assert.match(scaffold, /- Settings field URL: `https:\/\/192\.168\.178\.46:5175\/settings\?section=device`/);
   assert.match(scaffold, /- Server commit under test: `abc1234`/);
   assert.match(scaffold, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
   assert.match(scaffold, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
@@ -207,9 +247,11 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   const nextPrompt = renderIphonePwaNextPrompt(audit);
   assert.match(nextPrompt, /# iPhone \/ PWA Next Field Prompt/);
   assert.match(nextPrompt, /Expected current commit: abc1234/);
+  assert.match(nextPrompt, /Settings field URL: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(nextPrompt, /First open gap: Current main field evidence \(stale\)/);
   assert.match(nextPrompt, /Next action: Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234\./);
   assert.match(nextPrompt, /Verify server mirror first: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(nextPrompt, /Open Settings field proof: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(nextPrompt, /Full field scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.match(nextPrompt, /Use a real iPhone over the VPN\/local network path/);
   assert.match(nextPrompt, /Never transfer rootCA-key\.pem or any \*-key\.pem file to the phone/);
@@ -217,6 +259,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   const packet = renderIphonePwaFieldPacket(audit);
   assert.match(packet, /# iPhone \/ PWA Field Evidence Packet/);
   assert.match(packet, /Expected current commit: abc1234/);
+  assert.match(packet, /Settings field URL: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(packet, /Server commit under test: 9e05189/);
   assert.match(packet, /Server verify command: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(packet, /Server recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
@@ -230,6 +273,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /Follow docs\/ai\/checklists\/deploy-auth-recovery\.md before continuing the iPhone field run/);
   assert.match(packet, /Use a real iPhone over the VPN\/local network path/);
   assert.match(packet, /simulated WebKit or Chromium evidence does not close this gate/);
+  assert.match(packet, /Open Settings first: https:\/\/192\.168\.178\.46:5175\/settings\?section=device; record Device, iOS version, App-Stand, PWA mode, Push state and certificate state/);
   assert.match(packet, /never transfer rootCA-key\.pem or any \*-key\.pem file/);
   assert.match(packet, /Record the run in field\.md, including Server commit under test: abc1234/);
   assert.match(packet, /Rerun after recording: npm run audit:iphone-pwa-gate -- --expected-commit abc1234/);
@@ -240,6 +284,7 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(packet, /- iOS version: <iOS version>/);
   assert.match(packet, /- Browser \/ launch mode: Safari, then Home Screen PWA launch/);
   assert.match(packet, /- Pulse URL: `https:\/\/192\.168\.178\.46:5175`/);
+  assert.match(packet, /- Settings field URL: `https:\/\/192\.168\.178\.46:5175\/settings\?section=device`/);
   assert.match(packet, /- Server commit under test: `abc1234`/);
   assert.match(packet, /\| Push support \| Permission and subscription state recorded when deliberately triggered \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
   assert.match(packet, /\| Offline fallback \| Disconnecting VPN\/network shows local server\/VPN unavailable fallback \| <Pass\/Partial\/Pending\/Needs follow-up\/Fail\/Not applicable> \| <observed result> \|/);
