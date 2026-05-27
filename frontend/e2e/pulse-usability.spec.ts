@@ -185,8 +185,8 @@ test('Data analyses load only after the user opens a card', async ({ page }) => 
   });
 
   await page.goto('/data?tab=analysis');
-  await expect(page.getByRole('heading', { name: 'Analysen', exact: true })).toBeVisible();
-  await expect(page.getByText('Öffne eine Karte, um die Analyse gezielt zu laden.')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Analyse' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('region', { name: 'Analyse Tageswirkung' })).toBeVisible();
   expect(insightRequests).toBe(0);
 
   await page.getByRole('button').filter({ hasText: 'Gesamt' }).click();
@@ -267,14 +267,15 @@ test('Home daily action explains the next step and opens Coach', async ({ page }
   });
 
   await page.goto('/');
-  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByText('WARUM')).toBeVisible();
-  await expect(page.getByText('NÄCHSTER SCHRITT', { exact: true }).first()).toBeVisible();
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision).toContainText('TAGESENTSCHEIDUNG');
+  await expect(decision).toContainText('WARUM');
+  await expect(decision.getByRole('button', { name: 'Zum Coach' })).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Zum Coach' }).click();
+  await decision.getByRole('button', { name: 'Zum Coach' }).click();
   await expect(page).toHaveURL(/\/coach\?focus=daily&prompt=/);
   await expect(page.getByPlaceholder('Frage…')).toHaveValue(/Tagesentscheidung: Check-in eintragen/);
   await expect(page.getByText('GUTE STARTFRAGEN')).toBeVisible();
@@ -300,7 +301,7 @@ test('Home skips empty workout snapshot when no workout or completed activity ex
   await expect(hero.getByText('WORKOUT · HEUTE')).toHaveCount(0);
   await expect(hero.getByText('Heute frei · kein Pflichttraining')).toHaveCount(0);
   await expect(hero.getByRole('button', { name: 'Check-in öffnen' })).toHaveCount(1);
-  await expect(hero.getByTestId('daily-decision-next-steps').getByRole('button', { name: 'Check-in öffnen' })).toBeVisible();
+  await expect(hero.getByTestId('daily-decision-card').getByRole('button', { name: 'Check-in öffnen' })).toBeVisible();
 });
 
 test('Home Focus hero Coach CTA keeps the prepared daily prompt', async ({ page }) => {
@@ -363,7 +364,7 @@ test('Coach command drawer manages focus and ignores command shortcut while typi
   await mockPulseApi(page);
 
   await page.goto('/');
-  await page.locator('.pulse-focus-sidebar').getByRole('button', { name: '⌘K · COACH', exact: true }).click();
+  await page.locator('.pulse-focus-sidebar .pulse-coach-command').click();
   const dialog = page.getByRole('dialog', { name: 'Coach Command' });
   await expect(dialog).toBeVisible();
   await expect.poll(async () => page.evaluate(() => {
@@ -394,8 +395,9 @@ test('Daily loop clarity keeps Home guidance plain and slim support on task rout
   await mockPulseApi(page);
 
   await page.goto('/');
-  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
-  await expect(page.getByText('NÄCHSTER SCHRITT', { exact: true }).first()).toBeVisible();
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision).toContainText('TAGESENTSCHEIDUNG');
+  await expect(decision.getByRole('button').first()).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -1549,9 +1551,10 @@ test('Home owns the full daily decision while Coach carries slim prompt context'
   });
 
   await page.goto('/');
-  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
+  const decision = page.getByTestId('daily-decision-card');
+  await expect(decision).toContainText('TAGESENTSCHEIDUNG');
   await expect(page.getByRole('heading', { name: 'Training heute defensiv entscheiden' })).toBeVisible();
-  await expect(page.getByText('NÄCHSTER SCHRITT', { exact: true }).first()).toBeVisible();
+  await expect(decision.getByRole('button', { name: 'Coach fragen' })).toBeVisible();
   await expect(page.getByText('GRENZE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ALTERNATIVE', { exact: true })).toHaveCount(0);
   await expect(page.getByText('ABSCHLUSS', { exact: true })).toHaveCount(0);
@@ -2345,10 +2348,11 @@ test('Settings edits explicit coach preferences for future recommendations', asy
   await expect(page.getByText('Pulse kontaktiert niemanden automatisch.')).toBeVisible();
   await expect(page.getByText('Rueckzug')).toBeVisible();
 
-  await page.locator('.card').filter({ hasText: 'Coach-Präferenzen' }).getByRole('button', { name: 'Bearbeiten' }).click();
+  const preferencesCard = page.locator('.card').filter({ hasText: 'Coach-Präferenzen' });
+  await preferencesCard.getByRole('button', { name: 'Bearbeiten' }).click();
   await page.getByLabel('Zeitfenster').fill('Werktags vor 07:30 oder nach 18:30.');
   await page.getByLabel('Unbeliebte Muster').fill('lange Sweetspot-Blöcke\nzu viele harte Tage');
-  await page.getByRole('button', { name: 'Fr' }).click();
+  await preferencesCard.getByRole('button', { name: 'Fr', exact: true }).click();
   await page.getByLabel('Vorsicht / Constraints').fill('Achillessehne vorsichtig steigern');
   await page.getByLabel('Kommunikation').selectOption('direct');
   await page.getByLabel('Warnzeichen').fill('Rueckzug\nmehrere Tage sehr wenig Energie');
@@ -2492,7 +2496,7 @@ test('Home evidence chips deep-link to Data evidence sections', async ({ page })
   await mockPulseApi(page);
 
   await page.goto('/');
-  await expect(page.getByText('TAGESENTSCHEIDUNG')).toBeVisible();
+  await expect(page.getByTestId('daily-decision-card')).toContainText('TAGESENTSCHEIDUNG');
 
   await page.getByRole('button', { name: 'Details & Evidenz anzeigen' }).click();
   await page.getByRole('button', { name: 'Readiness 78/100', exact: true }).click();
@@ -2561,8 +2565,11 @@ test('Data overview exposes provenance shortcuts', async ({ page }, testInfo) =>
     await expect(page.getByTestId('data-today-intro-eyebrow')).toBeHidden();
     await expect(page.getByTestId('data-today-intro-summary')).toBeHidden();
   } else {
-    await expect(page.getByText('DATA · HEUTE RELEVANT')).toBeVisible();
+    await expect(page.getByTestId('data-today-intro-eyebrow')).toContainText('Evidenz heute');
+    await expect(page.getByRole('heading', { name: 'Nächste Datenlücke', exact: true })).toBeVisible();
   }
+  await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('data-primary-action')).toContainText('Daten-Aktion');
   await page.getByRole('button', { name: 'Weitere Datenbereiche anzeigen' }).click();
   const triage = page.getByTestId('data-evidence-triage');
   await expect(triage).toContainText('Readiness 78/100');
@@ -2681,8 +2688,9 @@ test('Data ignores malformed hashes and stays usable', async ({ page }) => {
   await mockPulseApi(page);
 
   await page.goto('/data#%');
-  await expect(page.getByRole('heading', { name: 'Heute relevant', exact: true })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('data-primary-action')).toContainText('Daten-Aktion');
+  await expect(page.getByRole('heading', { name: 'Nächste Datenlücke', exact: true })).toBeVisible();
 });
 
 test('Data, Plan and Settings preserve URL-backed UI state', async ({ page }) => {
@@ -2718,7 +2726,7 @@ test('Tablet navigation and segmented panels expose accessible targets', async (
     expect(box, `sidebar nav target ${index} should render`).not.toBeNull();
     expect(box!.height, `sidebar nav target ${index} should be at least 44px tall`).toBeGreaterThanOrEqual(44);
   }
-  const logoutBox = await page.getByRole('button', { name: 'out' }).boundingBox();
+  const logoutBox = await page.getByRole('button', { name: 'Abmelden' }).boundingBox();
   expect(logoutBox, 'desktop logout should render').not.toBeNull();
   expect(logoutBox!.height, 'desktop logout should be at least 44px tall').toBeGreaterThanOrEqual(44);
   expect(logoutBox!.width, 'desktop logout should be at least 44px wide').toBeGreaterThanOrEqual(44);
