@@ -18,6 +18,12 @@ handoff, run `npm run audit:iphone-pwa-gate -- --next-prompt`.
 For paste-ready Markdown for a new field run, including the server preflight and
 the current open gap targets before the `## Scope` record, run
 `npm run audit:iphone-pwa-gate -- --scaffold`.
+The audit packet, scaffold, next prompt and combined Performance session card
+print the direct Settings field-proof URL, currently
+`https://192.168.178.46:5175/settings?section=device`. Open that URL first on
+the real iPhone/PWA and record Device, iOS version, `App-Stand`, launch mode,
+Push state and certificate state from Settings before testing the rest of the
+field checklist.
 When the scaffold prints an expected app-runtime commit, replace the
 `App runtime commit under test` placeholder with the observed Settings
 `App-Stand`. This lets docs/tooling-only server commits stay auditable without
@@ -71,7 +77,7 @@ If Safari reports "Connection is not private", record it as certificate trust fr
 
 ## PWA
 
-- Open Settings and check the top diagnostics matrix first: Zugriff, PWA, Service Worker, Push, Garmin and Zertifikat.
+- Open the Settings field-proof URL printed by the audit and check the top diagnostics matrix first: Zugriff, PWA, Service Worker, Push, Garmin and Zertifikat.
 - Use the diagnostics shortcuts to jump to Device, Push and Garmin sections.
 - Check the iPhone/PWA readiness block.
 - Add Pulse to the Home Screen from Safari.
