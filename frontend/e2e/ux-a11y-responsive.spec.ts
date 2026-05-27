@@ -123,7 +123,7 @@ test('mobile top-level headers use compact route titles before the work surface'
   const routes = [
     { path: '/data', title: 'Daten' },
     { path: '/plan', title: 'Plan' },
-    { path: '/settings', title: 'Setup' },
+    { path: '/settings', title: 'Bereit' },
   ] as const;
 
   for (const route of routes) {

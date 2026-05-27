@@ -20,7 +20,7 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Tagesentscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', intent: 'eine Antwort', key: '01', end: true, icon: Home },
   { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', intent: 'bewusst ändern', key: '02', end: false, icon: CalendarDays },
   { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', intent: 'Lücken schließen', key: '03', end: false, icon: Database },
   { to: '/insights', label: 'Lernen', mobileLabel: 'Lernen', description: 'Analyse', intent: 'Muster prüfen', key: '04', end: false, icon: BarChart3 },
@@ -77,7 +77,7 @@ function routeContext(pathname: string) {
     };
   }
   return {
-    eyebrow: 'Tagesentscheidung',
+    eyebrow: 'Heute',
     title: 'Eine klare Antwort',
     description: 'Körper, Plan, Alltag und Evidenz laufen in den nächsten sicheren Schritt.',
     status: 'Jetzt',
