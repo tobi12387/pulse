@@ -185,7 +185,10 @@ test('Plan renders completed planned workout today options as a closed decision'
 test('Home renders exactly one main daily decision card', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByText('TAGESENTSCHEIDUNG')).toHaveCount(1);
+  const decisionCard = page.getByTestId('daily-decision-card');
+  await expect(page.getByTestId('focus-decision-hero')).toHaveCount(1);
+  await expect(decisionCard).toHaveCount(1);
+  await expect(decisionCard).toContainText('TAGESENTSCHEIDUNG');
 });
 
 test('Home daily decision details expose top signals goal impact Garmin state and safest option', async ({ page }) => {
