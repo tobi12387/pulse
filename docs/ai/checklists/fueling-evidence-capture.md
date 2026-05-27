@@ -67,6 +67,13 @@ parallel, pin the card explicitly:
 npm run audit:performance-session -- --today <YYYY-MM-DD> --gate fueling
 ```
 
+For a compact session sheet that includes Fueling plus every other currently
+open manual gate, run:
+
+```bash
+npm run audit:performance-session -- --today <YYYY-MM-DD> --all
+```
+
 When these handoff commands run from a Codex feature branch, the audit
 automatically uses local-planning mode for packet/checklist/next-target output
 and defers the server mirror check to avoid a feature-branch false blocker.

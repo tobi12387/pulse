@@ -47,6 +47,9 @@ manual run needs the most compact copy/paste card for the next gate action.
 Use `npm run audit:performance-session -- --today <YYYY-MM-DD> --gate iphone_pwa`
 when Fueling is still the first unblock but the iPhone/PWA field run is being
 prepared in parallel.
+Use `npm run audit:performance-session -- --today <YYYY-MM-DD> --all` when the
+field run should sit next to the compact Fueling card in one manual session
+sheet.
 
 From feature branches, packet/checklist/next-target handoff modes auto-apply
 local-planning behavior so a local branch does not create a phantom server

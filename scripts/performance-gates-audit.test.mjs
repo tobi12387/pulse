@@ -433,6 +433,16 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(iphoneSessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(iphoneSessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.doesNotMatch(iphoneSessionCard, /Gate: Fueling learning/);
+
+  const allSessionCards = renderPerformanceSessionCard(audit, { sessionAll: true });
+  assert.match(allSessionCards, /Auswahl: alle offenen Gates/);
+  assert.match(allSessionCards, /## Jetzt 1\/3/);
+  assert.match(allSessionCards, /Gate: Fueling learning/);
+  assert.match(allSessionCards, /## Danach 2\/3/);
+  assert.match(allSessionCards, /Gate: iPhone\/PWA field/);
+  assert.match(allSessionCards, /## Danach 3\/3/);
+  assert.match(allSessionCards, /Gate: Server deploy mirror/);
+  assert.match(allSessionCards, /Recovery-Packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
 });
 
 test('performance gate packet respects a configured Pulse URL for Fueling targets', () => {
@@ -706,6 +716,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     packet: true,
     manualChecklist: false,
     sessionCard: false,
+    sessionAll: false,
     sessionGate: null,
     json: false,
   });
@@ -736,6 +747,7 @@ test('performance gate audit CLI args accept target-url mode', () => {
     packet: false,
     manualChecklist: false,
     sessionCard: false,
+    sessionAll: false,
     sessionGate: null,
     json: false,
   });
@@ -760,6 +772,7 @@ test('performance gate audit CLI args accept target-urls mode', () => {
     packet: false,
     manualChecklist: false,
     sessionCard: false,
+    sessionAll: false,
     sessionGate: null,
     json: false,
   });
@@ -784,12 +797,13 @@ test('performance gate audit CLI args accept manual checklist mode', () => {
     packet: false,
     manualChecklist: true,
     sessionCard: false,
+    sessionAll: false,
     sessionGate: null,
     json: false,
   });
 });
 
-test('performance gate audit CLI args accept targeted session card mode', () => {
+test('performance gate audit CLI args accept targeted and all session card modes', () => {
   assert.deepEqual(parseArgs([
     'node',
     'scripts/performance-gates-audit.mjs',
@@ -810,13 +824,42 @@ test('performance gate audit CLI args accept targeted session card mode', () => 
     packet: false,
     manualChecklist: false,
     sessionCard: true,
+    sessionAll: false,
     sessionGate: 'iphone_pwa',
+    json: false,
+  });
+
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--session-card',
+    '--all',
+    '--today',
+    '2026-05-21',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: null,
+    skipServer: false,
+    localPlanning: false,
+    failOnGated: false,
+    nextUnblock: false,
+    targetUrl: false,
+    targetUrls: false,
+    packet: false,
+    manualChecklist: false,
+    sessionCard: true,
+    sessionAll: true,
+    sessionGate: null,
     json: false,
   });
 
   assert.throws(
     () => parseArgs(['node', 'scripts/performance-gates-audit.mjs', '--session-card', '--gate', 'unknown']),
     /--gate must be one of: fueling, iphone_pwa, server/,
+  );
+  assert.throws(
+    () => parseArgs(['node', 'scripts/performance-gates-audit.mjs', '--session-card', '--all', '--gate', 'fueling']),
+    /--all and --gate cannot be combined/,
   );
 });
 
@@ -840,6 +883,7 @@ test('performance gate audit CLI args accept local planning mode', () => {
     packet: true,
     manualChecklist: false,
     sessionCard: false,
+    sessionAll: false,
     sessionGate: null,
     json: false,
   });
@@ -850,6 +894,7 @@ test('performance gate audit help documents feature-branch auto planning for han
   assert.match(text, /--local-planning/);
   assert.match(text, /--session-card/);
   assert.match(text, /--gate <key>/);
+  assert.match(text, /--all/);
   assert.match(text, /Handoff modes auto-apply this behavior on feature branches/);
   assert.match(text, /unless --expected-commit or --skip-server is passed/);
 });
