@@ -5,6 +5,19 @@ import { pathToFileURL } from 'node:url';
 const FUELING_EVIDENCE_CHECKLIST = 'docs/ai/checklists/fueling-evidence-capture.md';
 const IPHONE_FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
 const DEFAULT_PULSE_URL = 'https://192.168.178.46:5175';
+const SESSION_GATE_ALIASES = new Map([
+  ['fueling', 'fueling'],
+  ['fuel', 'fueling'],
+  ['nutrition', 'fueling'],
+  ['iphone_pwa', 'iphone_pwa'],
+  ['iphone-pwa', 'iphone_pwa'],
+  ['iphone', 'iphone_pwa'],
+  ['pwa', 'iphone_pwa'],
+  ['field', 'iphone_pwa'],
+  ['server', 'server'],
+  ['deploy', 'server'],
+]);
+const SESSION_GATE_KEYS = [...new Set(SESSION_GATE_ALIASES.values())];
 const APP_RUNTIME_PATHS = [
   'frontend',
   'backend',
@@ -69,6 +82,7 @@ export function usage() {
     '  --packet             Print one manual handoff packet for all open gates.',
     '  --manual-checklist   Print a concise checkbox checklist for the manual gate session.',
     '  --session-card       Print a compact copyable card for the next manual gate session.',
+    '  --gate <key>         With --session-card, choose a specific open gate: fueling, iphone_pwa, server.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -1327,7 +1341,28 @@ function renderGenericSessionCard(next) {
   ];
 }
 
-export function renderPerformanceSessionCard(audit) {
+function sessionTargetFromAudit(audit, sessionGate) {
+  if (!sessionGate) return audit.nextUnblock;
+  const gate = audit.gates.find(candidate => candidate.key === sessionGate);
+  if (!gate || !isOpenGate(gate)) return null;
+  const metadata = nextUnblockMetadata(gate);
+  return {
+    key: gate.key,
+    label: gate.label,
+    command: gate.command,
+    action: nextUnblockAction(gate, metadata),
+    detail: gate.detail,
+    metadata,
+  };
+}
+
+function openGateKeyText(audit) {
+  const keys = audit.gates.filter(isOpenGate).map(gate => gate.key);
+  return keys.length > 0 ? keys.join(', ') : 'keine';
+}
+
+export function renderPerformanceSessionCard(audit, options = {}) {
+  const sessionGate = options.sessionGate ?? null;
   const lines = [
     '# Performance-OS Session Card',
     '',
@@ -1336,10 +1371,21 @@ export function renderPerformanceSessionCard(audit) {
     `Offen: ${audit.openGates}`,
     `Server-Commit: ${audit.expectedCommit}`,
     ...planningModeLines(audit),
-    '',
   ];
+  if (sessionGate) lines.push(`Auswahl: ${sessionGate}`);
+  lines.push('');
 
-  if (!audit.nextUnblock) {
+  const next = sessionTargetFromAudit(audit, sessionGate);
+
+  if (!next && sessionGate) {
+    lines.push(`Kein offenes Gate fuer: ${sessionGate}.`);
+    lines.push(`Offene Gates: ${openGateKeyText(audit)}`);
+    lines.push(`Nach manuellen Saves erneut pruefen: ${rerunPerformanceGateCommand(audit)}`);
+    lines.push('Fuer die Standard-Prioritaet ohne --gate erneut ausfuehren.');
+    return lines.join('\n');
+  }
+
+  if (!next) {
     if (audit.deferredGates) {
       lines.push('Keine offenen manuellen Gates in diesem lokalen Planungssnapshot.');
       lines.push(`Nach manuellen Saves erneut pruefen: ${rerunPerformanceGateCommand(audit)}`);
@@ -1351,7 +1397,6 @@ export function renderPerformanceSessionCard(audit) {
     return lines.join('\n');
   }
 
-  const next = audit.nextUnblock;
   lines.push('## Jetzt');
   lines.push(`Gate: ${next.label}`);
   lines.push(`Status: ${nextDetailText(next)}`);
@@ -1408,6 +1453,15 @@ function assertCommitish(value, label) {
   return text;
 }
 
+function assertSessionGate(value, label) {
+  const text = String(value ?? '').trim().toLowerCase();
+  const normalized = SESSION_GATE_ALIASES.get(text);
+  if (!normalized) {
+    throw new Error(`${label} must be one of: ${SESSION_GATE_KEYS.join(', ')}`);
+  }
+  return normalized;
+}
+
 export function parseArgs(argv) {
   const result = {
     today: isoDate(new Date()),
@@ -1421,6 +1475,7 @@ export function parseArgs(argv) {
     packet: false,
     manualChecklist: false,
     sessionCard: false,
+    sessionGate: null,
     json: false,
   };
   const args = argv.slice(2);
@@ -1469,6 +1524,11 @@ export function parseArgs(argv) {
     }
     if (arg === '--session-card') {
       result.sessionCard = true;
+      continue;
+    }
+    if (arg === '--gate') {
+      result.sessionGate = assertSessionGate(args[index + 1], '--gate');
+      index += 1;
       continue;
     }
     if (arg === '--today') {
@@ -1520,7 +1580,7 @@ function main(argv) {
     : args.packet
       ? renderPerformanceGatePacket(audit)
       : args.sessionCard
-        ? renderPerformanceSessionCard(audit)
+        ? renderPerformanceSessionCard(audit, args)
         : args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit);
   console.log(output);
   process.exitCode = exitCodeForAudit(audit, args);
