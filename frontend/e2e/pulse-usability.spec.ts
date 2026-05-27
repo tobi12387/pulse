@@ -6026,25 +6026,27 @@ test('Settings groups actions by risk and daily maintenance area', async ({ page
   await expect(page.getByText('Health-State setzt harte Trainingsgrenzen und ist bewusst separat.')).toBeVisible();
 });
 
-test('Mobile navigation and tabs keep core labels readable', async ({ page }) => {
+test('Mobile shell keeps core labels readable without stage-strip overflow', async ({ page }) => {
   const viewport = page.viewportSize();
   test.skip(!viewport || viewport.width > 600, 'mobile density check');
 
   await mockPulseApi(page);
 
   await page.goto('/');
-  const activeStage = page.getByTestId('stage-strip-decide');
-  const activeStageStatus = page.getByTestId('stage-strip-active-status');
-  await expect(activeStage).toContainText('Jetzt');
-  const activeStageBox = await activeStage.boundingBox();
-  const activeStageStatusBox = await activeStageStatus.boundingBox();
-  expect(activeStageBox).not.toBeNull();
-  expect(activeStageStatusBox).not.toBeNull();
-  expect(activeStageStatusBox!.x).toBeGreaterThanOrEqual(activeStageBox!.x);
-  expect(activeStageStatusBox!.x + activeStageStatusBox!.width).toBeLessThanOrEqual(activeStageBox!.x + activeStageBox!.width + 1);
+  const hero = page.getByTestId('focus-decision-hero');
+  await expect(hero).toBeVisible();
+  const heroBox = await hero.boundingBox();
+  expect(heroBox).not.toBeNull();
+  expect(heroBox!.x).toBeGreaterThanOrEqual(0);
+  expect(heroBox!.x + heroBox!.width).toBeLessThanOrEqual(viewport.width + 1);
+
+  const decisionCard = page.getByTestId('daily-decision-card');
+  await expect(decisionCard).toContainText('TAGESENTSCHEIDUNG');
+  await expect(decisionCard).toContainText('HEUTE ENTSCHEIDET');
+  await expect(page.getByTestId('stage-strip')).toBeHidden();
 
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
-  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Analyse');
+  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Lernen');
   await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Setup');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
