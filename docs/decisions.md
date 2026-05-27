@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Performance-Gate-Audit bekommt kompakte Session Card
+
+- **Decision:** `npm run audit:performance-session -- --today <date>` rendert eine kompakte, deutschsprachige Copy/Paste-Karte fuer die naechste manuelle Gate-Aktion, waehrend `--packet`, `--manual-checklist` und `--next-unblock` als ausfuehrlichere Handoffs bestehen bleiben.
+- **Why:** Die aktuellen Produktpakete sind durch manuelle Fueling- und iPhone/PWA-Evidence gegated. Die bestehende Audit-Ausgabe war korrekt, aber fuer eine schnelle Feldsession noch zu stark als Diagnosebericht strukturiert; die Session Card reduziert den ersten Schritt, Sicherheitsregel, Rerun und naechste Kandidaten auf einen Block, ohne Daten zu schreiben oder Gates zu lockern.
+- **Alternatives:** Neue Produktlogik trotz geschlossener Gates implementieren (verworfen); nur Chat-Handoff nutzen (nicht dauerhaft und nicht testbar); bestehende Packet-Ausgabe kuerzen (zu riskant fuer vollstaendige Audit-/Recovery-Kontexte).
+- **Decided by:** Codex, als Manual-Gate-Session-Card im Branch `codex/manual-gate-session-card`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Data Fueling-Gate-Handoff fuehrt zuerst zur GI-Auswahl
 
 - **Decision:** Data zeigt beim Fueling-Gate das Ziel-Log und die CTA `GI-Komfort ergänzen` vor der Detailerklaerung; die erlaubten GI-Optionen werden als kompakte Auswahlchips gezeigt, waehrend die eigentliche Auswahl weiter erst in Activity Detail geschrieben wird.

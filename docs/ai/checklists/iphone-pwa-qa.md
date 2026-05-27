@@ -42,6 +42,8 @@ intentionally pinned to a known deployed/runtime commit.
 Use `npm run audit:performance-checklist -- --today <YYYY-MM-DD>` when the
 manual run needs a shorter checkbox checklist instead of the full handoff
 packet.
+Use `npm run audit:performance-session -- --today <YYYY-MM-DD>` when the
+manual run needs the most compact copy/paste card for the next gate action.
 
 From feature branches, packet/checklist/next-target handoff modes auto-apply
 local-planning behavior so a local branch does not create a phantom server

@@ -12,6 +12,7 @@ import {
   renderNextUnblock,
   renderPerformanceGatePacket,
   renderPerformanceManualChecklist,
+  renderPerformanceSessionCard,
   renderPerformanceGateAudit,
   usage,
 } from './performance-gates-audit.mjs';
@@ -411,6 +412,19 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(checklist, /## 3\. Server deploy mirror/);
   assert.match(checklist, /read-only recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);
   assert.match(checklist, /## Manual Safety/);
+
+  const sessionCard = renderPerformanceSessionCard(audit);
+  assert.match(sessionCard, /# Performance-OS Session Card/);
+  assert.match(sessionCard, /Gate: Fueling learning/);
+  assert.match(sessionCard, /Status: 0\/3 comparable complete logs; 2 existing logs completable now; 1 new complete long-session log still needed after candidates\./);
+  assert.match(sessionCard, /Oeffnen: https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-a#activity-fueling-log/);
+  assert.match(sessionCard, /Eintragen: GI-Komfort aus der echten Magenreaktion waehlen/);
+  assert.match(sessionCard, /Optionen: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.match(sessionCard, /Nicht ableiten aus: Notizen, Route, RPE, g\/h, Ergebnis oder Pace/);
+  assert.match(sessionCard, /Direkt schliessbare Logs:/);
+  assert.match(sessionCard, /2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log; fehlt: GI-Komfort/);
+  assert.match(sessionCard, /Danach: 1 neues vollstaendiges Long-Session-Log mit Aktivitaet\/Dauer, During-Carbs und strukturiertem GI-Komfort erfassen/);
+  assert.match(sessionCard, /Vollstaendige Checkliste: npm run audit:performance-checklist -- --today 2026-05-21/);
 });
 
 test('performance gate packet respects a configured Pulse URL for Fueling targets', () => {
@@ -455,6 +469,26 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.match(renderNextUnblock(audit), /Next unblock: none/);
   assert.match(renderPerformanceGatePacket(audit), /No open Performance-OS gates/);
   assert.match(renderPerformanceManualChecklist(audit), /No open Performance-OS gates/);
+});
+
+test('performance session card keeps audit command failures actionable', () => {
+  const audit = buildPerformanceGateAudit({ today: '2026-05-21' }, makeRunner({
+    fueling: commandResult(1, '', [
+      'node:internal/modules/package_json_reader:314',
+      "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg'",
+      'Node.js v22.22.1',
+    ].join('\n')),
+    iphone: READY_IPHONE,
+    server: commandResult(0, '==> server verification complete: abc1234\n'),
+  }));
+
+  assert.equal(audit.nextUnblock.key, 'fueling');
+  assert.match(audit.nextUnblock.detail, /Cannot find package 'pg'/);
+  const sessionCard = renderPerformanceSessionCard(audit);
+  assert.match(sessionCard, /Aktion: Restore local DB access or pass the expected database env/);
+  assert.match(sessionCard, /Detail: Error \[ERR_MODULE_NOT_FOUND\]: Cannot find package 'pg'/);
+  assert.match(sessionCard, /Ausfuehren: npm run audit:fueling-gate -- --today 2026-05-21/);
+  assert.doesNotMatch(sessionCard, /Eintragen: GI-Komfort/);
 });
 
 test('performance gate audit exposes structured next-unblock metadata for iPhone field gates', () => {
@@ -503,6 +537,15 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(renderNextUnblock(audit), /Manual safety:/);
   assert.match(renderNextUnblock(audit), /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
   assert.match(renderNextUnblock(audit), /The server is a GitHub main mirror; do not edit, branch or commit on the server/);
+
+  const sessionCard = renderPerformanceSessionCard(audit);
+  assert.match(sessionCard, /# Performance-OS Session Card/);
+  assert.match(sessionCard, /Gate: iPhone\/PWA field/);
+  assert.match(sessionCard, /Erste Luecke: Current main field evidence \(stale\)/);
+  assert.match(sessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(sessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
+  assert.match(sessionCard, /Dokumentieren in: docs\/qa\/field\.md/);
+  assert.match(sessionCard, /Sicherheit: echte iPhone\/PWA-Feldbeobachtung gegen den erwarteten Commit dokumentieren/);
 });
 
 test('performance gate audit preserves configured server SSH host in gate handoffs', () => {
@@ -649,6 +692,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     targetUrls: false,
     packet: true,
     manualChecklist: false,
+    sessionCard: false,
     json: false,
   });
 
@@ -677,6 +721,7 @@ test('performance gate audit CLI args accept target-url mode', () => {
     targetUrls: false,
     packet: false,
     manualChecklist: false,
+    sessionCard: false,
     json: false,
   });
 });
@@ -699,6 +744,7 @@ test('performance gate audit CLI args accept target-urls mode', () => {
     targetUrls: true,
     packet: false,
     manualChecklist: false,
+    sessionCard: false,
     json: false,
   });
 });
@@ -721,6 +767,30 @@ test('performance gate audit CLI args accept manual checklist mode', () => {
     targetUrls: false,
     packet: false,
     manualChecklist: true,
+    sessionCard: false,
+    json: false,
+  });
+});
+
+test('performance gate audit CLI args accept session card mode', () => {
+  assert.deepEqual(parseArgs([
+    'node',
+    'scripts/performance-gates-audit.mjs',
+    '--session-card',
+    '--today',
+    '2026-05-21',
+  ]), {
+    today: '2026-05-21',
+    expectedCommit: null,
+    skipServer: false,
+    localPlanning: false,
+    failOnGated: false,
+    nextUnblock: false,
+    targetUrl: false,
+    targetUrls: false,
+    packet: false,
+    manualChecklist: false,
+    sessionCard: true,
     json: false,
   });
 });
@@ -744,6 +814,7 @@ test('performance gate audit CLI args accept local planning mode', () => {
     targetUrls: false,
     packet: true,
     manualChecklist: false,
+    sessionCard: false,
     json: false,
   });
 });
@@ -751,6 +822,7 @@ test('performance gate audit CLI args accept local planning mode', () => {
 test('performance gate audit help documents feature-branch auto planning for handoffs', () => {
   const text = usage();
   assert.match(text, /--local-planning/);
+  assert.match(text, /--session-card/);
   assert.match(text, /Handoff modes auto-apply this behavior on feature branches/);
   assert.match(text, /unless --expected-commit or --skip-server is passed/);
 });
@@ -810,6 +882,9 @@ test('performance gate manual handoffs auto-defer server verification on feature
   assert.match(checklist, /Planning mode: auto-local from feature branch codex\/manual-evidence-handoff/);
   assert.match(checklist, /## Deferred Gates/);
   assert.doesNotMatch(checklist, /## 2\. Server deploy mirror/);
+  const sessionCard = renderPerformanceSessionCard(audit);
+  assert.match(sessionCard, /Planning mode: auto-local from feature branch codex\/manual-evidence-handoff/);
+  assert.match(sessionCard, /Vollstaendige Checkliste: npm run audit:performance-checklist -- --today 2026-05-21 --local-planning/);
 });
 
 test('performance gate audit local planning can finish manual gates while server stays deferred', () => {
@@ -881,5 +956,6 @@ test('performance gate audit can fail automation when gates are open', () => {
 test('package exposes performance gate audit as the standard command', () => {
   assert.equal(packageJson.scripts['audit:performance-gates'], 'node scripts/performance-gates-audit.mjs');
   assert.equal(packageJson.scripts['audit:performance-checklist'], 'node scripts/performance-gates-audit.mjs --manual-checklist');
+  assert.equal(packageJson.scripts['audit:performance-session'], 'node scripts/performance-gates-audit.mjs --session-card');
   assert.equal(packageJson.scripts['audit:performance-next'], 'node scripts/performance-gates-audit.mjs --next-unblock');
 });

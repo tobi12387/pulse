@@ -68,6 +68,7 @@ export function usage() {
     '  --target-urls        Print all first open gate target URLs, one per line; exits 1 if unavailable.',
     '  --packet             Print one manual handoff packet for all open gates.',
     '  --manual-checklist   Print a concise checkbox checklist for the manual gate session.',
+    '  --session-card       Print a compact copyable card for the next manual gate session.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -116,6 +117,7 @@ function compactCommandError(result) {
     .map(line => line.trim())
     .filter(Boolean);
   return stderrLines.find(line => line.startsWith('ERROR:'))
+    ?? stderrLines.find(line => /^Error \[|Cannot find package|ERR_/i.test(line))
     ?? stderrLines.find(line => /Permission denied|denied|failed/i.test(line))
     ?? stderrLines.at(-1)
     ?? stdoutLines.at(-1)
@@ -436,6 +438,7 @@ function resolveLocalBranch(runner) {
 function wantsManualHandoff(options) {
   return Boolean(options.packet
     || options.manualChecklist
+    || options.sessionCard
     || options.nextUnblock
     || options.targetUrl
     || options.targetUrls);
@@ -1225,6 +1228,153 @@ export function renderPerformanceManualChecklist(audit) {
   return lines.join('\n');
 }
 
+function performanceChecklistCommand(audit) {
+  const modeFlag = audit.localPlanning ? ' --local-planning' : '';
+  return commandWithServerEnv(`npm run audit:performance-checklist -- --today ${audit.date}${modeFlag}`);
+}
+
+function renderFuelingSessionCard(next, audit) {
+  const metadata = next.metadata ?? {};
+  const lines = [];
+  const target = targetSummary(metadata);
+  const targetUrl = targetUrlValue(metadata);
+  const options = compactOptionsText(metadata);
+  const candidates = metadata.completionCandidates ?? [];
+  const hasFuelingContext = Boolean(target || targetUrl || metadata.status || candidates.length > 0);
+
+  if (!hasFuelingContext) {
+    lines.push(`Aktion: ${next.action}`);
+    if (next.detail) lines.push(`Detail: ${next.detail}`);
+    lines.push(`Ausfuehren: ${next.command}`);
+    lines.push(`Gesamt-Rerun: ${rerunPerformanceGateCommand(audit)}`);
+    return lines;
+  }
+
+  if (target) lines.push(`Ziel: ${target}`);
+  if (targetUrl) lines.push(`Oeffnen: ${targetUrl}`);
+  lines.push('Eintragen: GI-Komfort aus der echten Magenreaktion waehlen.');
+  lines.push(`Optionen: ${options}`);
+  lines.push('Nicht ableiten aus: Notizen, Route, RPE, g/h, Ergebnis oder Pace.');
+  lines.push('Speichern: Activity Fueling UI benutzen; keine Datenbankzeile direkt aendern.');
+  lines.push(`Rerun: ${next.command}`);
+
+  if (candidates.length > 0) {
+    lines.push('');
+    lines.push('Direkt schliessbare Logs:');
+    for (const candidate of candidates) {
+      const summary = candidate.summary ?? completionCandidateText(candidate);
+      const candidateTarget = candidate.targetUrl ?? candidate.targetPath;
+      const missing = (candidate.missing ?? []).length > 0 ? `; fehlt: ${sessionMissingText(candidate.missing)}` : '';
+      lines.push(`- ${summary}${candidateTarget ? ` -> ${candidateTarget}` : ''}${missing}`);
+    }
+  }
+
+  const newLogsStillNeeded = Number(metadata.status?.newLogsStillNeeded ?? 0);
+  if (newLogsStillNeeded > 0) {
+    lines.push('');
+    lines.push(`Danach: ${germanLongSessionLogText(newLogsStillNeeded)} mit Aktivitaet/Dauer, During-Carbs und strukturiertem GI-Komfort erfassen.`);
+    if (metadata.newLogChecklistCommand) lines.push(`Future-log scaffold: ${metadata.newLogChecklistCommand}`);
+  }
+
+  if (metadata.nextPromptCommand) lines.push(`Kurzprompt: ${metadata.nextPromptCommand}`);
+  if (metadata.capturePacketCommand) lines.push(`Voller Fueling-Packet: ${metadata.capturePacketCommand}`);
+  lines.push(`Gesamt-Rerun: ${rerunPerformanceGateCommand(audit)}`);
+  return lines;
+}
+
+function sessionMissingText(missing) {
+  return missing.map(item => item === 'GI comfort' ? 'GI-Komfort' : item).join(', ');
+}
+
+function germanLongSessionLogText(count) {
+  return count === 1
+    ? '1 neues vollstaendiges Long-Session-Log'
+    : `${count} neue vollstaendige Long-Session-Logs`;
+}
+
+function renderIphoneSessionCard(next) {
+  const metadata = next.metadata ?? {};
+  const lines = [];
+  if (metadata.firstGap?.label) {
+    lines.push(`Erste Luecke: ${metadata.firstGap.label} (${metadata.firstGap.status ?? 'unknown'})`);
+  }
+  if (metadata.firstGap?.nextAction) lines.push(`Aktion: ${metadata.firstGap.nextAction}`);
+  if (metadata.serverVerifyCommand) lines.push(`Vorher Server pruefen: ${metadata.serverVerifyCommand}`);
+  if (metadata.fieldScaffoldCommand) lines.push(`Feld-Scaffold: ${metadata.fieldScaffoldCommand}`);
+  if (metadata.fieldPromptCommand) lines.push(`Kurzprompt: ${metadata.fieldPromptCommand}`);
+  if (metadata.evidenceFile) lines.push(`Dokumentieren in: ${metadata.evidenceFile}`);
+  lines.push(`Rerun: ${next.command}`);
+  lines.push('Sicherheit: echte iPhone/PWA-Feldbeobachtung gegen den erwarteten Commit dokumentieren; Server bleibt GitHub-main-Mirror.');
+  return lines;
+}
+
+function renderServerSessionCard(next) {
+  const metadata = next.metadata ?? {};
+  const lines = [
+    `Aktion: ${next.action}`,
+    `Ausfuehren: ${next.command}`,
+  ];
+  if (metadata.recoveryRunbook) lines.push(`Runbook: ${metadata.recoveryRunbook}`);
+  if (metadata.recoveryPacketCommand) lines.push(`Recovery-Packet: ${metadata.recoveryPacketCommand}`);
+  lines.push('Sicherheit: Server nicht direkt editieren, branchen oder committen.');
+  return lines;
+}
+
+function renderGenericSessionCard(next) {
+  return [
+    `Aktion: ${next.action}`,
+    `Ausfuehren: ${next.command}`,
+  ];
+}
+
+export function renderPerformanceSessionCard(audit) {
+  const lines = [
+    '# Performance-OS Session Card',
+    '',
+    `Stand: ${audit.date}`,
+    `Gate: ${audit.gate}`,
+    `Offen: ${audit.openGates}`,
+    `Server-Commit: ${audit.expectedCommit}`,
+    ...planningModeLines(audit),
+    '',
+  ];
+
+  if (!audit.nextUnblock) {
+    if (audit.deferredGates) {
+      lines.push('Keine offenen manuellen Gates in diesem lokalen Planungssnapshot.');
+      lines.push(`Nach manuellen Saves erneut pruefen: ${rerunPerformanceGateCommand(audit)}`);
+      lines.push('Vor deploy- oder iPhone-relevanten Aussagen den normalen Audit von clean main rerunnen.');
+      return lines.join('\n');
+    }
+    lines.push('Keine offenen Performance-OS Gates.');
+    lines.push('Vor dem naechsten Produktpaket den normalen Audit erneut ausfuehren.');
+    return lines.join('\n');
+  }
+
+  const next = audit.nextUnblock;
+  lines.push('## Jetzt');
+  lines.push(`Gate: ${next.label}`);
+  lines.push(`Status: ${nextDetailText(next)}`);
+  lines.push('');
+
+  if (next.key === 'fueling') {
+    lines.push(...renderFuelingSessionCard(next, audit));
+  } else if (next.key === 'iphone_pwa') {
+    lines.push(...renderIphoneSessionCard(next));
+  } else if (next.key === 'server') {
+    lines.push(...renderServerSessionCard(next));
+  } else {
+    lines.push(...renderGenericSessionCard(next));
+  }
+
+  lines.push('');
+  lines.push('## Wenn unklar');
+  lines.push(`Vollstaendige Checkliste: ${performanceChecklistCommand(audit)}`);
+  lines.push('Keine Werte erfinden und keine versteckten Writes ausloesen.');
+
+  return lines.join('\n');
+}
+
 export function exitCodeForAudit(audit, options = {}) {
   return options.failOnGated && audit.openGates > 0 ? 1 : 0;
 }
@@ -1270,6 +1420,7 @@ export function parseArgs(argv) {
     targetUrls: false,
     packet: false,
     manualChecklist: false,
+    sessionCard: false,
     json: false,
   };
   const args = argv.slice(2);
@@ -1314,6 +1465,10 @@ export function parseArgs(argv) {
     }
     if (arg === '--manual-checklist') {
       result.manualChecklist = true;
+      continue;
+    }
+    if (arg === '--session-card') {
+      result.sessionCard = true;
       continue;
     }
     if (arg === '--today') {
@@ -1364,7 +1519,9 @@ function main(argv) {
     ? renderPerformanceManualChecklist(audit)
     : args.packet
       ? renderPerformanceGatePacket(audit)
-      : args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit);
+      : args.sessionCard
+        ? renderPerformanceSessionCard(audit)
+        : args.nextUnblock ? renderNextUnblock(audit) : renderPerformanceGateAudit(audit);
   console.log(output);
   process.exitCode = exitCodeForAudit(audit, args);
 }
