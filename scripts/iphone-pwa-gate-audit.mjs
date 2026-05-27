@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url';
 
 const DEFAULT_EVIDENCE_FILE = 'docs/qa/2026-05-02-iphone-pwa-real-device.md';
 const FIELD_CHECKLIST = 'docs/ai/checklists/iphone-pwa-qa.md';
+const DEFAULT_PULSE_URL = 'https://192.168.178.46:5175';
+const SETTINGS_FIELD_PATH = '/settings?section=device';
 const APP_RUNTIME_PATHS = [
   'frontend',
   'backend',
@@ -74,6 +76,18 @@ function shellEnvValue(value) {
 function serverEnvPrefix() {
   const host = shellEnvValue(process.env.PULSE_HOST);
   return host ? `PULSE_HOST=${host} ` : '';
+}
+
+function configuredPulseUrl(scopePulseUrl) {
+  return clean(process.env.PULSE_URL) ?? scopePulseUrl ?? DEFAULT_PULSE_URL;
+}
+
+function pulseTargetUrl(path, scopePulseUrl) {
+  const cleanPath = clean(path);
+  if (!cleanPath) return null;
+  if (/^https?:\/\//i.test(cleanPath)) return cleanPath;
+  const baseUrl = configuredPulseUrl(scopePulseUrl);
+  return `${baseUrl.replace(/\/+$/, '')}/${cleanPath.replace(/^\/+/, '')}`;
 }
 
 function parseStatus(value) {
@@ -207,6 +221,8 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
   const expectedCommit = cleanInlineCode(options.expectedCommit);
   const evidenceRecord = latestEvidenceRecord(markdown);
   const scope = parseScope(evidenceRecord);
+  const pulseUrl = configuredPulseUrl(scope.pulseUrl);
+  const settingsFieldUrl = pulseTargetUrl(SETTINGS_FIELD_PATH, pulseUrl);
   const expectedRuntimeCommit = cleanInlineCode(options.expectedRuntimeCommit)
     ?? cleanInlineCode(options.runtimeCommitFor?.(expectedCommit));
   const scopedAppRuntimeCommit = cleanInlineCode(scope.appRuntimeCommit);
@@ -315,6 +331,8 @@ export function buildIphonePwaGateAudit(markdown, options = {}) {
     commitStatus: fieldCommitStatus,
     serverVerifyCommand: serverVerifyCommand(expectedCommit),
     serverRecoveryPacketCommand: serverRecoveryPacketCommand(expectedCommit),
+    pulseUrl,
+    settingsFieldUrl,
     scope,
     results,
     issues,
@@ -329,6 +347,7 @@ export function renderIphonePwaGateAudit(audit) {
     '',
     `Evidence file: ${audit.evidenceFile}`,
     `Field checklist: ${audit.fieldChecklist}`,
+    `Settings field URL: ${audit.settingsFieldUrl}`,
     `Gate: ${audit.gate}`,
     `Server commit under test: ${audit.scope.serverCommit ?? 'missing'}`,
     audit.expectedCommit ? `Expected current commit: ${audit.expectedCommit}` : null,
@@ -395,7 +414,7 @@ export function renderIphonePwaFieldScaffold(audit) {
     `- Verify server mirror first: \`${serverVerifyCommand(audit.expectedCommit)}\`.`,
     `- If SSH fails before server checks: \`${serverRecoveryPacketCommand(audit.expectedCommit)}\`.`,
     '- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.',
-    '- Open Settings first and record Device, iOS version, App-Stand, PWA mode, Push state and certificate state.',
+    `- Open Settings first: \`${audit.settingsFieldUrl}\`; record Device, iOS version, App-Stand, PWA mode, Push state and certificate state.`,
     '- Install and trust only `frontend/certs/rootCA.pem` if warning-free certificate behavior is required; never transfer `rootCA-key.pem` or any `*-key.pem` file.',
     '- Deliberately enable Push and send a test push only when testing notifications.',
     '- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.',
@@ -414,7 +433,8 @@ export function renderIphonePwaFieldScaffold(audit) {
     `- iOS version: ${scaffoldValue(audit.scope.iosVersion, '<iOS version>')}`,
     `- Browser / launch mode: ${scaffoldValue(audit.scope.launchMode, 'Safari, then Home Screen PWA launch')}`,
     `- VPN profile: ${scaffoldValue(audit.scope.vpnProfile, '<VPN profile/name>')}`,
-    `- Pulse URL: \`${scaffoldValue(audit.scope.pulseUrl, 'https://192.168.178.46:5175')}\``,
+    `- Pulse URL: \`${scaffoldValue(audit.pulseUrl, DEFAULT_PULSE_URL)}\``,
+    `- Settings field URL: \`${audit.settingsFieldUrl}\``,
     `- Server commit under test: \`${expectedCommit}\``,
     ...(audit.expectedRuntimeCommit
       ? [`- App runtime commit under test: ${observedRuntimePlaceholder(audit)}`]
@@ -445,6 +465,7 @@ export function renderIphonePwaFieldPacket(audit) {
     '',
     `Evidence file: ${audit.evidenceFile}`,
     `Field checklist: ${audit.fieldChecklist}`,
+    `Settings field URL: ${audit.settingsFieldUrl}`,
     `Expected current commit: ${audit.expectedCommit ?? 'missing'}`,
     audit.expectedRuntimeCommit ? `Expected app runtime commit: ${audit.expectedRuntimeCommit}` : null,
     audit.fieldRuntimeCommit ? `Field app runtime commit: ${audit.fieldRuntimeCommit}` : null,
@@ -477,7 +498,7 @@ export function renderIphonePwaFieldPacket(audit) {
   lines.push(`- If SSH fails before server Git/PM2/health checks, run the read-only recovery packet first: ${serverRecoveryPacketCommand(audit.expectedCommit)}.`);
   lines.push('- Follow docs/ai/checklists/deploy-auth-recovery.md before continuing the iPhone field run.');
   lines.push('- Use a real iPhone over the VPN/local network path; simulated WebKit or Chromium evidence does not close this gate.');
-  lines.push('- Open Settings first and record Device, iOS version, App-Stand, PWA mode, Push state and certificate state.');
+  lines.push(`- Open Settings first: ${audit.settingsFieldUrl}; record Device, iOS version, App-Stand, PWA mode, Push state and certificate state.`);
   lines.push('- Install and trust only frontend/certs/rootCA.pem if warning-free certificate behavior is required; never transfer rootCA-key.pem or any *-key.pem file.');
   lines.push('- Deliberately enable Push and send a test push only when testing notifications.');
   lines.push('- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.');
@@ -498,6 +519,7 @@ export function renderIphonePwaNextPrompt(audit) {
     '',
     `Evidence file: ${audit.evidenceFile}`,
     `Field checklist: ${audit.fieldChecklist}`,
+    `Settings field URL: ${audit.settingsFieldUrl}`,
     `Expected current commit: ${expectedCommit}`,
     audit.expectedRuntimeCommit ? `Expected app runtime commit: ${audit.expectedRuntimeCommit}` : null,
     audit.fieldRuntimeCommit ? `Field app runtime commit: ${audit.fieldRuntimeCommit}` : null,
@@ -520,6 +542,7 @@ export function renderIphonePwaNextPrompt(audit) {
   lines.push('Commands:');
   lines.push(`- Verify server mirror first: ${serverVerifyCommand(audit.expectedCommit)}`);
   lines.push(`- If SSH fails before server checks: ${serverRecoveryPacketCommand(audit.expectedCommit)}`);
+  lines.push(`- Open Settings field proof: ${audit.settingsFieldUrl}`);
   lines.push(`- Full field scaffold: ${iphonePwaGateAuditCommand(audit.expectedCommit)} --scaffold`);
   lines.push(`- Rerun after recording: ${iphonePwaGateAuditCommand(audit.expectedCommit)}`);
   lines.push('');

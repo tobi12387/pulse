@@ -380,6 +380,7 @@ function summarizeIphone(expectedCommit, runner) {
     fieldScaffoldCommand: ready ? null : fieldScaffoldCommand,
     serverVerifyCommand: audit.serverVerifyCommand ?? serverVerifyCommand(expectedCommit),
     serverRecoveryPacketCommand: ready ? null : (audit.serverRecoveryPacketCommand ?? serverRecoveryPacketCommand(expectedCommit)),
+    settingsFieldUrl: audit.settingsFieldUrl ?? null,
     evidenceFile: audit.evidenceFile,
     expectedCommit: audit.expectedCommit ?? null,
     commitStatus: audit.commitStatus ?? null,
@@ -632,6 +633,7 @@ function nextUnblockMetadata(gate) {
       fieldPacketCommand: gate.fieldPacketCommand ?? null,
       fieldPromptCommand: gate.fieldPromptCommand ?? null,
       fieldScaffoldCommand: gate.fieldScaffoldCommand ?? null,
+      settingsFieldUrl: gate.settingsFieldUrl ?? null,
       serverVerifyCommand: gate.serverVerifyCommand ?? null,
       serverRecoveryPacketCommand: gate.serverRecoveryPacketCommand ?? null,
       firstGap: firstGap ? {
@@ -758,6 +760,7 @@ export function renderPerformanceGateAudit(audit) {
     if (gate.fieldPacketCommand) lines.push(`- Field packet: \`${gate.fieldPacketCommand}\``);
     if (gate.fieldPromptCommand) lines.push(`- Field prompt: \`${gate.fieldPromptCommand}\``);
     if (gate.fieldScaffoldCommand) lines.push(`- Field scaffold: \`${gate.fieldScaffoldCommand}\``);
+    if (gate.settingsFieldUrl) lines.push(`- Settings field URL: ${gate.settingsFieldUrl}`);
     if (gate.serverRecoveryPacketCommand) lines.push(`- Server recovery packet: \`${gate.serverRecoveryPacketCommand}\``);
     if (gate.recoveryRunbook) lines.push(`- Recovery runbook: ${gate.recoveryRunbook}`);
     if (gate.recoveryPacketCommand) lines.push(`- Recovery packet: \`${gate.recoveryPacketCommand}\``);
@@ -810,6 +813,10 @@ function fieldPromptLine(metadata) {
 
 function fieldScaffoldLine(metadata) {
   return metadata?.fieldScaffoldCommand ? `Field scaffold: ${metadata.fieldScaffoldCommand}` : null;
+}
+
+function settingsFieldLine(metadata) {
+  return metadata?.settingsFieldUrl ? `Settings field URL: ${metadata.settingsFieldUrl}` : null;
 }
 
 function recoveryPacketLine(metadata) {
@@ -921,6 +928,8 @@ export function renderNextUnblock(audit) {
   if (pathOrRunbook) lines.push(pathOrRunbook);
   const targetUrl = targetUrlLine(next.metadata);
   if (targetUrl) lines.push(targetUrl);
+  const settingsField = settingsFieldLine(next.metadata);
+  if (settingsField) lines.push(settingsField);
   const checklist = checklistLine(next.metadata);
   if (checklist) lines.push(checklist);
   const packet = packetLine(next.metadata);
@@ -961,6 +970,7 @@ function packetGateLines(gate, index) {
   if (metadata?.targetPath) lines.push(`   Target path: ${metadata.targetPath}`);
   const targetUrl = targetUrlLine(metadata);
   if (targetUrl) lines.push(`   ${targetUrl}`);
+  if (metadata?.settingsFieldUrl) lines.push(`   Settings field URL: ${metadata.settingsFieldUrl}`);
   if (metadata?.evidenceChecklist) lines.push(`   Evidence checklist: ${metadata.evidenceChecklist}`);
   if (metadata?.capturePacketCommand) lines.push(`   Evidence packet: ${metadata.capturePacketCommand}`);
   if (metadata?.nextPromptCommand) lines.push(`   Next prompt: ${metadata.nextPromptCommand}`);
@@ -1162,6 +1172,9 @@ function renderIphoneManualChecklist(gate, index) {
   if (metadata?.serverRecoveryPacketCommand) {
     lines.push(checkbox(`If SSH fails before server checks, use the read-only recovery packet: ${commandText(metadata.serverRecoveryPacketCommand)}.`));
   }
+  if (metadata?.settingsFieldUrl) {
+    lines.push(checkbox(`Open the Settings field proof on the real iPhone/PWA: ${metadata.settingsFieldUrl}.`));
+  }
   if (metadata?.fieldScaffoldCommand) {
     lines.push(checkbox(`Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: ${commandText(metadata.fieldScaffoldCommand)}.`));
   }
@@ -1315,6 +1328,7 @@ function renderIphoneSessionCard(next) {
   }
   if (metadata.firstGap?.nextAction) lines.push(`Aktion: ${metadata.firstGap.nextAction}`);
   if (metadata.serverVerifyCommand) lines.push(`Vorher Server pruefen: ${metadata.serverVerifyCommand}`);
+  if (metadata.settingsFieldUrl) lines.push(`Settings oeffnen: ${metadata.settingsFieldUrl}`);
   if (metadata.fieldScaffoldCommand) lines.push(`Feld-Scaffold: ${metadata.fieldScaffoldCommand}`);
   if (metadata.fieldPromptCommand) lines.push(`Kurzprompt: ${metadata.fieldPromptCommand}`);
   if (metadata.evidenceFile) lines.push(`Dokumentieren in: ${metadata.evidenceFile}`);
