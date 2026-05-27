@@ -222,16 +222,16 @@
 
   /* Card shell */
   .card {
-    background: var(--surface);
-    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
     border-radius: var(--radius-lg);
-    padding: 16px;
+    padding: 14px;
     box-shadow: none;
   }
 
   .card .card {
-    background: color-mix(in srgb, var(--surface) 84%, var(--surface-2));
-    border-color: color-mix(in srgb, var(--border) 62%, transparent);
+    background: color-mix(in srgb, var(--surface-2) 52%, var(--surface));
+    border-color: color-mix(in srgb, var(--border) 58%, transparent);
     box-shadow: none;
   }
 
@@ -323,11 +323,11 @@
   }
 
   .pulse-focus-sidebar {
-    width: 276px;
-    background: #151A22;
+    width: 244px;
+    background: #111821;
     border-color: rgba(255,255,255,0.08);
-    padding: 18px 14px 14px;
-    gap: 14px;
+    padding: 16px 12px 12px;
+    gap: 12px;
   }
 
   .pulse-sidebar-brand {
@@ -335,7 +335,7 @@
     align-items: center;
     gap: 10px;
     min-width: 0;
-    padding: 0 6px 14px;
+    padding: 0 6px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
@@ -485,11 +485,11 @@
   }
 
   .pulse-workspace-topbar {
-    min-height: 66px;
-    grid-template-columns: minmax(280px, 1fr) auto auto;
-    gap: 14px;
+    min-height: 58px;
+    grid-template-columns: minmax(260px, 1fr) auto auto;
+    gap: 12px;
     align-items: center;
-    padding: 0 22px;
+    padding: 0 18px;
     background: rgba(255,255,255,0.88);
     border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
     backdrop-filter: blur(18px) saturate(1.2);
@@ -498,7 +498,7 @@
   .pulse-workspace-route {
     min-width: 0;
     display: grid;
-    gap: 2px;
+    gap: 1px;
   }
 
   .pulse-workspace-route .label-mono {
@@ -507,7 +507,7 @@
 
   .pulse-workspace-route strong {
     color: var(--text);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 780;
     line-height: 1.15;
   }
@@ -516,7 +516,7 @@
     max-width: 720px;
     overflow: hidden;
     color: var(--text-2);
-    font-size: 12px;
+    font-size: 11.5px;
     font-style: normal;
     line-height: 1.25;
     text-overflow: ellipsis;
@@ -526,18 +526,18 @@
   .pulse-workspace-status {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     color: var(--text-3);
     font-size: 11px;
     white-space: nowrap;
   }
 
   .pulse-workspace-status span {
-    min-height: 30px;
+    min-height: 28px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 0 9px;
+    padding: 0 8px;
     border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--surface-2) 42%, transparent);
@@ -567,13 +567,13 @@
   }
 
   .pulse-nav-link {
-    min-height: 60px;
+    min-height: 50px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     justify-items: stretch;
     gap: 10px;
     align-items: center;
-    padding: 9px 10px;
+    padding: 8px 9px;
     border: 1px solid transparent;
     border-radius: var(--radius-lg);
     color: rgba(231,237,245,0.68);
@@ -589,12 +589,12 @@
     background: #FFFFFF;
     border-color: transparent;
     color: var(--text);
-    box-shadow: 0 16px 30px rgba(0,0,0,0.18);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.16);
   }
 
   .pulse-nav-icon {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -611,7 +611,7 @@
   .pulse-nav-copy {
     display: grid;
     min-width: 0;
-    gap: 2px;
+    gap: 1px;
     justify-items: stretch;
     text-align: left;
   }
@@ -624,46 +624,13 @@
 
   .pulse-nav-description {
     display: block;
-    font-size: 11px;
+    font-size: 10.5px;
     color: currentColor;
     opacity: 0.76;
     line-height: 1.25;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .pulse-nav-intent {
-    display: inline-flex;
-    width: fit-content;
-    max-width: 100%;
-    margin-top: 2px;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.08);
-    color: rgba(231,237,245,0.72);
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1.1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .pulse-nav-link--active .pulse-nav-intent {
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    color: var(--accent);
-  }
-
-  .pulse-nav-key {
-    display: inline-flex;
-    justify-content: flex-end;
-    font-family: var(--font-sans);
-    font-size: 9.5px;
-    font-weight: 700;
-    color: currentColor;
-    opacity: 0.58;
-    font-variant-numeric: tabular-nums;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .pulse-sidebar-utilities {
@@ -672,13 +639,13 @@
   }
 
   .pulse-coach-command {
-    min-height: 52px;
+    min-height: 48px;
     width: 100%;
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
-    padding: 10px;
+    padding: 9px;
     border: 1px solid rgba(255,255,255,0.14);
     border-radius: var(--radius-lg);
     background: rgba(255,255,255,0.08);
@@ -1116,10 +1083,10 @@
   }
 
   .focus-decision-body {
-    padding: 20px;
+    padding: 16px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(250px, 290px);
-    gap: 22px;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 270px);
+    gap: 18px;
   }
 
   .focus-decision-main {
@@ -1146,8 +1113,8 @@
 
   .focus-decision-hero {
     position: relative;
-    border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
-    background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+    border-color: color-mix(in srgb, var(--accent) 10%, var(--border));
+    background: var(--surface);
     box-shadow: none;
   }
 
@@ -1263,8 +1230,8 @@
   }
 
   .focus-recovery-panel {
-    border-left: 1px solid var(--border);
-    padding-left: 20px;
+    border-left: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+    padding-left: 16px;
     min-width: 0;
   }
 
@@ -1294,7 +1261,7 @@
   .focus-readiness-score span:first-child {
     color: var(--accent);
     font-family: var(--font-mono);
-    font-size: 40px;
+    font-size: 34px;
     font-weight: 520;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0;
@@ -1308,7 +1275,7 @@
   }
 
   .focus-factor-list {
-    margin-top: 14px;
+    margin-top: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1319,8 +1286,8 @@
     justify-content: space-between;
     align-items: baseline;
     gap: 8px;
-    padding-bottom: 7px;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   }
 
   .focus-factor-row > span:first-child {
