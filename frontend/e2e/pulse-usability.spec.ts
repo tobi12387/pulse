@@ -6047,7 +6047,7 @@ test('Mobile shell keeps core labels readable without stage-strip overflow', asy
 
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
   await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Lernen');
-  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Setup');
+  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Bereit');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);
