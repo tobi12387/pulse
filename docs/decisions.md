@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Command-Center-Redesign macht Orientierung route-uebergreifend
+
+- **Decision:** Pulse nutzt fuer den erneuten UI/UX-Redesign-Pass eine dunkle Desktop-Workspace-Navigation, eine route-uebergreifende Arbeitskontext-Leiste, klarere Arbeitsbereich-Labels (`Bereit` statt `Setup`) und flachere Karten-/Segment-Control-Basics statt noch mehr einzelner Erklaerkarten.
+- **Why:** Tobi hat erneut volle Freiheit fuer ein auch breaking UI/UX-Redesign gegeben, weil die App weiterhin unuebersichtlich wirkt. Frische Route-Evidence zeigte keinen horizontalen Overflow, aber die Strukturursache blieb: jede Route erklaerte ihren ersten Viewport separat, Tabs konkurrierten mit der naechsten Handlung, und schwere Karten machten Fokus und Kontext visuell zu aehnlich.
+- **Alternatives:** Nur Abstaende oder Farben polieren (zu wenig Strukturgewinn); alle URLs brechen (hohes Deep-Link-/QA-Risiko ohne noetigen Nutzen); weitere route-spezifische Karten hinzufuegen (mehr Unruhe statt weniger).
+- **Decided by:** Tobi und Codex, als UI/UX-Command-Center-Redesign im Branch `codex/ui-ux-redesign-20260527`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Session Card kann alle offenen Gates kompakt buendeln
 
 - **Decision:** `npm run audit:performance-session -- --today <date> --all` rendert eine kompakte Karte pro offenem Gate in Audit-Reihenfolge. Ohne `--all` bleibt die Standardkarte beim ersten offenen Gate, und `--gate <fueling|iphone_pwa|server>` bleibt die gezielte Einzelkarte.
