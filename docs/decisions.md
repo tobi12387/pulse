@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Session Card kann alle offenen Gates kompakt buendeln
+
+- **Decision:** `npm run audit:performance-session -- --today <date> --all` rendert eine kompakte Karte pro offenem Gate in Audit-Reihenfolge. Ohne `--all` bleibt die Standardkarte beim ersten offenen Gate, und `--gate <fueling|iphone_pwa|server>` bleibt die gezielte Einzelkarte.
+- **Why:** Manuelle Gate-Sessions brauchen oft beide aktuellen Aufgaben nebeneinander: zuerst Fueling-GI-Komfort, danach iPhone/PWA-Feldevidence. Das optionale Buendel macht diese Reihenfolge kopierbar, ohne die Prioritaet zu veraendern, Daten zu schreiben oder immer alle Karten in die Standardausgabe zu druecken.
+- **Alternatives:** Immer alle Karten ausgeben (zu laut fuer den schnellen ersten Unblock); nur `--gate` nutzen und mehrere Befehle kopieren (mehr Reibung bei Feldsessions); das lange `--packet` als einzige Gesamtansicht verwenden (vollstaendig, aber weniger copy/paste-tauglich).
+- **Decided by:** Codex, als Performance-Session-All-Cards im Branch `codex/performance-session-all-cards`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Session Card kann gezielt offene Gates anzeigen
 
 - **Decision:** `npm run audit:performance-session -- --today <date> --gate <fueling|iphone_pwa|server>` rendert die kompakte Karte fuer ein bestimmtes offenes Gate; ohne `--gate` bleibt die erste offene Standard-Prioritaet unveraendert.

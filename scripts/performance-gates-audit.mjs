@@ -83,6 +83,7 @@ export function usage() {
     '  --manual-checklist   Print a concise checkbox checklist for the manual gate session.',
     '  --session-card       Print a compact copyable card for the next manual gate session.',
     '  --gate <key>         With --session-card, choose a specific open gate: fueling, iphone_pwa, server.',
+    '  --all                With --session-card, print compact cards for all open gates in audit order.',
     '  --json               Print machine-readable JSON.',
     '  -h, --help           Show this help.',
   ].join('\n');
@@ -1341,10 +1342,7 @@ function renderGenericSessionCard(next) {
   ];
 }
 
-function sessionTargetFromAudit(audit, sessionGate) {
-  if (!sessionGate) return audit.nextUnblock;
-  const gate = audit.gates.find(candidate => candidate.key === sessionGate);
-  if (!gate || !isOpenGate(gate)) return null;
+function sessionTargetFromGate(gate) {
   const metadata = nextUnblockMetadata(gate);
   return {
     key: gate.key,
@@ -1356,6 +1354,21 @@ function sessionTargetFromAudit(audit, sessionGate) {
   };
 }
 
+function sessionTargetFromAudit(audit, sessionGate) {
+  if (!sessionGate) return audit.nextUnblock;
+  const gate = audit.gates.find(candidate => candidate.key === sessionGate);
+  if (!gate || !isOpenGate(gate)) return null;
+  return sessionTargetFromGate(gate);
+}
+
+function sessionTargetsFromAudit(audit, options) {
+  if (options.sessionAll) {
+    return audit.gates.filter(isOpenGate).map(sessionTargetFromGate);
+  }
+  const target = sessionTargetFromAudit(audit, options.sessionGate ?? null);
+  return target ? [target] : [];
+}
+
 function openGateKeyText(audit) {
   const keys = audit.gates.filter(isOpenGate).map(gate => gate.key);
   return keys.length > 0 ? keys.join(', ') : 'keine';
@@ -1363,6 +1376,7 @@ function openGateKeyText(audit) {
 
 export function renderPerformanceSessionCard(audit, options = {}) {
   const sessionGate = options.sessionGate ?? null;
+  const sessionAll = Boolean(options.sessionAll);
   const lines = [
     '# Performance-OS Session Card',
     '',
@@ -1372,12 +1386,13 @@ export function renderPerformanceSessionCard(audit, options = {}) {
     `Server-Commit: ${audit.expectedCommit}`,
     ...planningModeLines(audit),
   ];
+  if (sessionAll) lines.push('Auswahl: alle offenen Gates');
   if (sessionGate) lines.push(`Auswahl: ${sessionGate}`);
   lines.push('');
 
-  const next = sessionTargetFromAudit(audit, sessionGate);
+  const targets = sessionTargetsFromAudit(audit, { sessionAll, sessionGate });
 
-  if (!next && sessionGate) {
+  if (targets.length === 0 && sessionGate) {
     lines.push(`Kein offenes Gate fuer: ${sessionGate}.`);
     lines.push(`Offene Gates: ${openGateKeyText(audit)}`);
     lines.push(`Nach manuellen Saves erneut pruefen: ${rerunPerformanceGateCommand(audit)}`);
@@ -1385,7 +1400,7 @@ export function renderPerformanceSessionCard(audit, options = {}) {
     return lines.join('\n');
   }
 
-  if (!next) {
+  if (targets.length === 0) {
     if (audit.deferredGates) {
       lines.push('Keine offenen manuellen Gates in diesem lokalen Planungssnapshot.');
       lines.push(`Nach manuellen Saves erneut pruefen: ${rerunPerformanceGateCommand(audit)}`);
@@ -1397,20 +1412,28 @@ export function renderPerformanceSessionCard(audit, options = {}) {
     return lines.join('\n');
   }
 
-  lines.push('## Jetzt');
-  lines.push(`Gate: ${next.label}`);
-  lines.push(`Status: ${nextDetailText(next)}`);
-  lines.push('');
+  targets.forEach((next, index) => {
+    if (targets.length > 1) {
+      lines.push(index === 0 ? `## Jetzt ${index + 1}/${targets.length}` : `## Danach ${index + 1}/${targets.length}`);
+    } else {
+      lines.push('## Jetzt');
+    }
+    lines.push(`Gate: ${next.label}`);
+    lines.push(`Status: ${nextDetailText(next)}`);
+    lines.push('');
 
-  if (next.key === 'fueling') {
-    lines.push(...renderFuelingSessionCard(next, audit));
-  } else if (next.key === 'iphone_pwa') {
-    lines.push(...renderIphoneSessionCard(next));
-  } else if (next.key === 'server') {
-    lines.push(...renderServerSessionCard(next));
-  } else {
-    lines.push(...renderGenericSessionCard(next));
-  }
+    if (next.key === 'fueling') {
+      lines.push(...renderFuelingSessionCard(next, audit));
+    } else if (next.key === 'iphone_pwa') {
+      lines.push(...renderIphoneSessionCard(next));
+    } else if (next.key === 'server') {
+      lines.push(...renderServerSessionCard(next));
+    } else {
+      lines.push(...renderGenericSessionCard(next));
+    }
+
+    if (index < targets.length - 1) lines.push('');
+  });
 
   lines.push('');
   lines.push('## Wenn unklar');
@@ -1475,6 +1498,7 @@ export function parseArgs(argv) {
     packet: false,
     manualChecklist: false,
     sessionCard: false,
+    sessionAll: false,
     sessionGate: null,
     json: false,
   };
@@ -1526,6 +1550,10 @@ export function parseArgs(argv) {
       result.sessionCard = true;
       continue;
     }
+    if (arg === '--all') {
+      result.sessionAll = true;
+      continue;
+    }
     if (arg === '--gate') {
       result.sessionGate = assertSessionGate(args[index + 1], '--gate');
       index += 1;
@@ -1537,6 +1565,9 @@ export function parseArgs(argv) {
       continue;
     }
     throw new Error(`Unknown argument: ${arg}`);
+  }
+  if (result.sessionAll && result.sessionGate) {
+    throw new Error('--all and --gate cannot be combined');
   }
   return result;
 }
