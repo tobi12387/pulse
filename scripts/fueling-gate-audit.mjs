@@ -406,6 +406,18 @@ function packetCandidateLines(candidate, index) {
   return lines;
 }
 
+function giComfortReplyTemplateLines(candidates) {
+  const giCandidates = (candidates ?? [])
+    .filter(candidate => (candidate.missing ?? []).includes('GI comfort'));
+  if (giCandidates.length === 0) return [];
+  return [
+    'GI answer template:',
+    ...giCandidates.map(candidate =>
+      `- ${candidate.summary ?? candidateSummary(candidate)}: <ok|mild_issue|issue>`
+    ),
+  ];
+}
+
 export function renderFuelingEvidencePacket(audit) {
   const lines = [
     '# Fueling Evidence Packet',
@@ -451,6 +463,11 @@ export function renderFuelingEvidencePacket(audit) {
       user.completionCandidates.forEach((candidate, index) => {
         lines.push(...packetCandidateLines(candidate, index));
       });
+      const replyTemplate = giComfortReplyTemplateLines(user.completionCandidates);
+      if (replyTemplate.length > 0) {
+        lines.push('');
+        lines.push(...replyTemplate);
+      }
     } else {
       lines.push('Existing candidates to close first: none');
     }
@@ -583,6 +600,12 @@ export function renderFuelingNextPrompt(audit) {
     lines.push('');
     lines.push('Options:');
     lines.push(renderOptions(action.options));
+    const replyTemplate = giComfortReplyTemplateLines(user.completionCandidates);
+    if (replyTemplate.length > 0) {
+      lines.push('');
+      lines.push('If you know the existing candidate responses, answer once with:');
+      lines.push(...replyTemplate);
+    }
   } else if (action.kind === 'complete_carbs') {
     lines.push('Question: Welche tatsaechlichen During-Carbs hast du bei diesem vorhandenen langen GI-Komfort-Log erfasst?');
     lines.push('');
@@ -671,6 +694,11 @@ export function renderFuelingCaptureChecklist(audit) {
         lines.push(checkbox('Save through the Activity Fueling UI; do not edit database rows directly.'));
         lines.push(checkbox(`Rerun after this save: ${commandText(`npm run audit:fueling-gate -- --today ${audit.today}`)}.`));
       });
+      const replyTemplate = giComfortReplyTemplateLines(candidates);
+      if (replyTemplate.length > 0) {
+        lines.push('');
+        lines.push(...replyTemplate);
+      }
     } else {
       lines.push(checkbox('No existing completion candidate is currently available; use the next long-session capture step below.'));
     }

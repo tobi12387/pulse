@@ -146,6 +146,9 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(packet, /2\. 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\)/);
   assert.match(packet, /Missing: GI comfort/);
   assert.match(packet, /GI comfort options: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
+  assert.match(packet, /GI answer template:/);
+  assert.match(packet, /2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\): <ok\|mild_issue\|issue>/);
+  assert.match(packet, /2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\): <ok\|mild_issue\|issue>/);
   assert.match(packet, /Choose GI comfort only from the real stomach response/);
   assert.match(packet, /Rerun after each save: npm run audit:fueling-gate -- --today 2026-05-21/);
   assert.match(packet, /New complete long-session logs still needed: 1/);
@@ -172,6 +175,10 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(nextPrompt, /- ok = Magen ok/);
   assert.match(nextPrompt, /- mild_issue = Magen leicht unruhig/);
   assert.match(nextPrompt, /- issue = Magenprobleme/);
+  assert.match(nextPrompt, /If you know the existing candidate responses, answer once with:/);
+  assert.match(nextPrompt, /GI answer template:/);
+  assert.match(nextPrompt, /2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\): <ok\|mild_issue\|issue>/);
+  assert.match(nextPrompt, /2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\): <ok\|mild_issue\|issue>/);
   assert.match(nextPrompt, /After saving this target, another existing completion candidate remains: 1/);
   assert.match(nextPrompt, /Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward/);
   assert.match(nextPrompt, /Rerun after save: npm run audit:fueling-gate -- --today 2026-05-21/);
@@ -186,6 +193,9 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(captureChecklist, /Do not infer GI comfort from notes, route, RPE, g\/h, result, pace or how the workout looks afterward\./);
   assert.match(captureChecklist, /Save through the Activity Fueling UI; do not edit database rows directly\./);
   assert.match(captureChecklist, /Rerun after this save: `npm run audit:fueling-gate -- --today 2026-05-21`\./);
+  assert.match(captureChecklist, /GI answer template:/);
+  assert.match(captureChecklist, /2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\): <ok\|mild_issue\|issue>/);
+  assert.match(captureChecklist, /2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\): <ok\|mild_issue\|issue>/);
   assert.match(captureChecklist, /After existing candidates, capture 1 complete long-session log with activity\/duration, during carbs and structured GI comfort together\./);
   assert.match(captureChecklist, /Use the future-log scaffold when ready: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`\./);
 });
