@@ -129,7 +129,7 @@ test('mobile top-level headers use compact route titles before the work surface'
   for (const route of routes) {
     await page.goto(route.path);
     await expect(page.getByRole('button', { name: 'Coach öffnen' })).toBeVisible();
-    const title = page.locator('main h1').first();
+    const title = page.locator('.pulse-mobile-route-title');
     await expect(title).toBeVisible();
     await expect.poll(async () => title.evaluate((element) => (element as HTMLElement).innerText.trim()))
       .toBe(route.title);
@@ -156,7 +156,8 @@ test('mobile Data overview skips duplicate intro copy before the daily action', 
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile Data density check');
 
   await page.goto('/data');
-  await expect(page.getByRole('heading', { name: 'Heute relevant', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Heute relevant' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('data-primary-action')).toContainText('Daten-Aktion');
   await expect(page.getByTestId('data-today-intro-eyebrow')).toBeHidden();
   await expect(page.getByTestId('data-today-intro-summary')).toBeHidden();
   await expect(page.getByTestId('data-primary-action')).toBeInViewport();
@@ -193,7 +194,7 @@ test('desktop Focus operational routes share the wide shell', async ({ page }, t
   const homeWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
   await page.goto('/data');
-  await expect(page.getByText('Daten, die heute etwas ändern')).toBeVisible();
+  await expect(page.getByTestId('data-primary-action')).toContainText('Daten-Aktion');
   const dataWidth = await page.locator('.pulse-page-shell').evaluate((element) => Math.round(element.getBoundingClientRect().width));
 
   expect(homeWidth).toBeGreaterThanOrEqual(960);

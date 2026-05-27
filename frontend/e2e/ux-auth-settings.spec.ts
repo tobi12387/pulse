@@ -35,7 +35,7 @@ test('logout navigates to the Pulse login form', async ({ page }, testInfo) => {
   await page.goto('/');
   await expect(page.getByText('READINESS', { exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'out' }).click();
+  await page.getByRole('button', { name: 'Abmelden' }).click();
 
   await expect(page).toHaveURL('/login');
   await expect(page.getByRole('heading', { name: 'Pulse', exact: true })).toBeVisible();
