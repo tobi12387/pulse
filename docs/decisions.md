@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-05-27 — Session Card kann gezielt offene Gates anzeigen
+
+- **Decision:** `npm run audit:performance-session -- --today <date> --gate <fueling|iphone_pwa|server>` rendert die kompakte Karte fuer ein bestimmtes offenes Gate; ohne `--gate` bleibt die erste offene Standard-Prioritaet unveraendert.
+- **Why:** Fueling bleibt der erste Performance-OS-Unblock, aber iPhone/PWA-Feldevidence kann als manuelle Feldrunde vorbereitet werden, ohne die Gate-Reihenfolge umzubauen. Die gezielte Karte macht den Parallel-Handoff kompakt und testbar, ohne Gates zu lockern oder Daten zu schreiben.
+- **Alternatives:** Immer alle Session Cards ausgeben (zu laut fuer schnelle manuelle Sessions); nur das erste Gate erlauben (blockiert iPhone/PWA-Vorbereitung trotz offenem Gate); iPhone/PWA vor Fueling priorisieren (falsche Reihenfolge fuer den aktuellen Performance-OS-Gate-Stand).
+- **Decided by:** Codex, als Targeted-Performance-Session-Card im Branch `codex/targeted-performance-session-card`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Performance-Gate-Audit bekommt kompakte Session Card
 
 - **Decision:** `npm run audit:performance-session -- --today <date>` rendert eine kompakte, deutschsprachige Copy/Paste-Karte fuer die naechste manuelle Gate-Aktion, waehrend `--packet`, `--manual-checklist` und `--next-unblock` als ausfuehrlichere Handoffs bestehen bleiben.

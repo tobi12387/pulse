@@ -44,6 +44,9 @@ manual run needs a shorter checkbox checklist instead of the full handoff
 packet.
 Use `npm run audit:performance-session -- --today <YYYY-MM-DD>` when the
 manual run needs the most compact copy/paste card for the next gate action.
+Use `npm run audit:performance-session -- --today <YYYY-MM-DD> --gate iphone_pwa`
+when Fueling is still the first unblock but the iPhone/PWA field run is being
+prepared in parallel.
 
 From feature branches, packet/checklist/next-target handoff modes auto-apply
 local-planning behavior so a local branch does not create a phantom server

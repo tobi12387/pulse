@@ -425,6 +425,14 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(sessionCard, /2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\) -> https:\/\/192\.168\.178\.46:5175\/plan\/activity\/activity-b#activity-fueling-log; fehlt: GI-Komfort/);
   assert.match(sessionCard, /Danach: 1 neues vollstaendiges Long-Session-Log mit Aktivitaet\/Dauer, During-Carbs und strukturiertem GI-Komfort erfassen/);
   assert.match(sessionCard, /Vollstaendige Checkliste: npm run audit:performance-checklist -- --today 2026-05-21/);
+
+  const iphoneSessionCard = renderPerformanceSessionCard(audit, { sessionGate: 'iphone_pwa' });
+  assert.match(iphoneSessionCard, /Auswahl: iphone_pwa/);
+  assert.match(iphoneSessionCard, /Gate: iPhone\/PWA field/);
+  assert.match(iphoneSessionCard, /Erste Luecke: Current main field evidence \(stale\)/);
+  assert.match(iphoneSessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
+  assert.match(iphoneSessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
+  assert.doesNotMatch(iphoneSessionCard, /Gate: Fueling learning/);
 });
 
 test('performance gate packet respects a configured Pulse URL for Fueling targets', () => {
@@ -469,6 +477,11 @@ test('performance gate audit reports ready when all required gates are ready', (
   assert.match(renderNextUnblock(audit), /Next unblock: none/);
   assert.match(renderPerformanceGatePacket(audit), /No open Performance-OS gates/);
   assert.match(renderPerformanceManualChecklist(audit), /No open Performance-OS gates/);
+
+  const serverSessionCard = renderPerformanceSessionCard(audit, { sessionGate: 'server' });
+  assert.match(serverSessionCard, /Kein offenes Gate fuer: server/);
+  assert.match(serverSessionCard, /Offene Gates: keine/);
+  assert.match(serverSessionCard, /Fuer die Standard-Prioritaet ohne --gate erneut ausfuehren/);
 });
 
 test('performance session card keeps audit command failures actionable', () => {
@@ -693,6 +706,7 @@ test('performance gate audit CLI args accept an explicit expected commit', () =>
     packet: true,
     manualChecklist: false,
     sessionCard: false,
+    sessionGate: null,
     json: false,
   });
 
@@ -722,6 +736,7 @@ test('performance gate audit CLI args accept target-url mode', () => {
     packet: false,
     manualChecklist: false,
     sessionCard: false,
+    sessionGate: null,
     json: false,
   });
 });
@@ -745,6 +760,7 @@ test('performance gate audit CLI args accept target-urls mode', () => {
     packet: false,
     manualChecklist: false,
     sessionCard: false,
+    sessionGate: null,
     json: false,
   });
 });
@@ -768,15 +784,18 @@ test('performance gate audit CLI args accept manual checklist mode', () => {
     packet: false,
     manualChecklist: true,
     sessionCard: false,
+    sessionGate: null,
     json: false,
   });
 });
 
-test('performance gate audit CLI args accept session card mode', () => {
+test('performance gate audit CLI args accept targeted session card mode', () => {
   assert.deepEqual(parseArgs([
     'node',
     'scripts/performance-gates-audit.mjs',
     '--session-card',
+    '--gate',
+    'iphone',
     '--today',
     '2026-05-21',
   ]), {
@@ -791,8 +810,14 @@ test('performance gate audit CLI args accept session card mode', () => {
     packet: false,
     manualChecklist: false,
     sessionCard: true,
+    sessionGate: 'iphone_pwa',
     json: false,
   });
+
+  assert.throws(
+    () => parseArgs(['node', 'scripts/performance-gates-audit.mjs', '--session-card', '--gate', 'unknown']),
+    /--gate must be one of: fueling, iphone_pwa, server/,
+  );
 });
 
 test('performance gate audit CLI args accept local planning mode', () => {
@@ -815,6 +840,7 @@ test('performance gate audit CLI args accept local planning mode', () => {
     packet: true,
     manualChecklist: false,
     sessionCard: false,
+    sessionGate: null,
     json: false,
   });
 });
@@ -823,6 +849,7 @@ test('performance gate audit help documents feature-branch auto planning for han
   const text = usage();
   assert.match(text, /--local-planning/);
   assert.match(text, /--session-card/);
+  assert.match(text, /--gate <key>/);
   assert.match(text, /Handoff modes auto-apply this behavior on feature branches/);
   assert.match(text, /unless --expected-commit or --skip-server is passed/);
 });
