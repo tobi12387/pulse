@@ -18,6 +18,14 @@
 
 ---
 
+## 2026-06-03 — Today Options respektieren Wochenverfuegbarkeit
+
+- **Decision:** `GET /api/pulse/plan/today/options` bezieht die aktuelle `pulse_week_availability` ein. Wenn kein Training geplant ist und der heutige Tag nicht als verfuegbar markiert ist, liefert Pulse den Zustand `availability_protect`, Home zeigt eine ruhige Alltags-Entscheidung statt Quick-Training-Intents und verlinkt gezielt zum Plan-Verfuegbarkeitsbereich.
+- **Why:** Das Performance-OS-Ziel nennt Alltag ausdruecklich als Teil der taeglichen Entscheidung. Die bisherigen Gates fuer Fueling und iPhone/PWA bleiben richtig, aber sie duerfen eine bereits vorhandene, ungenutzte Alltagsevidenz nicht blockieren: Plan und Season Strategy kannten Verfuegbarkeit, spontane Today Options aber nicht.
+- **Alternatives:** Nutrition-/iPhone-Gates weiter als einzige naechste Arbeit behandeln (uebersieht eine unblocked Tagesentscheidungs-Luecke); Quick-Intent-Buttons nur umbenennen (wuerde weiter Umfang anbieten); neue Alltagstab/Route bauen (zu gross, weil die Daten und Plan-Flaeche bereits existieren); Training hart verbieten (zu stark, deshalb bleibt kurze Stabilisierung optional).
+- **Decided by:** Codex, als Today-Options-Availability im Branch `codex/today-options-availability`.
+- **Status:** active.
+
 ## 2026-06-03 — Performance-OS UI bekommt eine helle Arbeitsflaechen-IA
 
 - **Decision:** Pulse nutzt fuer den naechsten Top-App-Redesign-Pass eine helle Performance-OS-Schale, kurze arbeitsorientierte Bereichsnamen (`Heute`, `Woche`, `Evidenz`, `Muster`, `System`), flachere Karten und kompaktere Route-/Tab-Header. URLs bleiben stabil, aber die sichtbare Informationsarchitektur darf sich breaking anfuehlen.

@@ -244,6 +244,72 @@ describe('buildTodayOptions', () => {
     expect(result.options[0]?.evidence).toContain('Capability: Endurance 3.8 -> 4.1');
   });
 
+  it('protects a free day when weekly availability says today is not available', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 78,
+      tsb: 2,
+      availability: {
+        availableDays: [0, 2, 4],
+        weeklyHours: 6,
+        notes: 'Wochenende Familie',
+      },
+      plannedToday: null,
+      completedTodayActivities: [],
+      recentSportMix: { bike: 1, run: 2 },
+      riskSignals: [],
+      mental: { mood: 7, energy: 7, stress: 3, motivation: 8 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: capabilitySummary(),
+    });
+
+    expect(result.state).toBe('availability_protect');
+    expect(result.summary).toContain('Wochenverfügbarkeit');
+    expect(result.options[0]).toMatchObject({
+      kind: 'rest',
+      priority: 'primary',
+      title: 'Heute frei halten',
+      cta: 'Verfügbarkeit prüfen',
+      targetPath: '/plan?tab=training#plan-availability',
+    });
+    expect(result.options[0]?.detail).toContain('Mo/Mi/Fr');
+    expect(result.options[0]?.evidence).toEqual(expect.arrayContaining([
+      'Verfügbarkeit: Mo/Mi/Fr · 6 h/Wo',
+      'Alltag: Wochenende Familie',
+    ]));
+    expect(result.options[0]?.signalLabels?.[0]).toMatchObject({
+      label: 'Alltag schützen',
+      tone: 'green',
+    });
+    expect(result.options[0]?.targetPath).not.toContain('scenario=workout');
+  });
+
+  it('keeps trainable free-day options when today is inside weekly availability', () => {
+    const result = buildTodayOptions({
+      date: '2026-05-09',
+      readinessScore: 78,
+      tsb: 2,
+      availability: {
+        availableDays: [0, 2, 5],
+        weeklyHours: 7.5,
+      },
+      plannedToday: null,
+      completedTodayActivities: [],
+      recentSportMix: { bike: 1, run: 2 },
+      riskSignals: [],
+      mental: { mood: 7, energy: 7, stress: 3, motivation: 8 },
+      fueling: { recentGiIssue: false, loggedToday: true },
+      capabilitySummary: null,
+    });
+
+    expect(result.state).toBe('unplanned_trainable');
+    expect(result.options[0]).toMatchObject({
+      kind: 'workout',
+      priority: 'primary',
+    });
+    expect(result.options[0]?.evidence).toContain('Verfügbarkeit: Mo/Mi/Sa · 7.5 h/Wo');
+  });
+
   it('does not offer a hard planned VO2 workout after recent GI discomfort', () => {
     const result = buildTodayOptions({
       date: '2026-05-09',

@@ -218,6 +218,7 @@ export type PulseTodayOptionsState =
   | 'completed_activity'
   | 'planned_workout'
   | 'unplanned_trainable'
+  | 'availability_protect'
   | 'recovery_protect';
 
 export type PulseTodayOptionKind =

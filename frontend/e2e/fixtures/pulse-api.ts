@@ -46,7 +46,7 @@ type MockPulseApiOptions = {
   coachHistory?: unknown[];
   coachPreferences?: unknown;
   todayOptions?: unknown;
-  todayOptionsState?: 'completed_activity' | 'planned_workout' | 'unplanned_trainable' | 'recovery_protect';
+  todayOptionsState?: 'completed_activity' | 'planned_workout' | 'unplanned_trainable' | 'availability_protect' | 'recovery_protect';
   todayProposal?: unknown;
   backfillResult?: unknown | ((body: unknown) => unknown);
   onPlanWorkoutUpdate?: (workoutId: string, body: unknown) => void;
@@ -453,6 +453,33 @@ function todayOptionsFixture(state: NonNullable<MockPulseApiOptions['todayOption
           cta: 'Feedback oeffnen',
           targetPath: '/data?tab=analysis',
           evidence: ['Aktivitaet erkannt'],
+        }],
+      },
+    };
+  }
+
+  if (state === 'availability_protect') {
+    return {
+      todayOptions: {
+        date: today,
+        state,
+        summary: 'Heute ist laut Wochenverfügbarkeit kein Trainingstag. Pulse hält den Alltag zuerst stabil und macht Training nur optional.',
+        signature: `${today}|availability-protect`,
+        options: [{
+          id: 'availability-rest-day',
+          kind: 'rest',
+          priority: 'primary',
+          title: 'Heute frei halten',
+          detail: 'Heute ist nicht als Trainingstag markiert. Pulse respektiert die Wochenverfügbarkeit (Mo/Mi/Fr, 6 h/Wo), statt spontan Umfang in den Alltag zu drücken.',
+          cta: 'Verfügbarkeit prüfen',
+          targetPath: '/plan?tab=training#plan-availability',
+          evidence: ['Readiness 78/100', 'TSB 2.0', 'Verfügbarkeit: Mo/Mi/Fr · 6 h/Wo'],
+          signalLabels: [{
+            kind: 'recovery',
+            label: 'Alltag schützen',
+            detail: 'Wochenverfügbarkeit hat heute Vorrang vor spontanem Umfang',
+            tone: 'green',
+          }],
         }],
       },
     };

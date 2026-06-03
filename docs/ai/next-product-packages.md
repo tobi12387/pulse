@@ -38,14 +38,14 @@ The first two passes through all three Performance-OS tracks are shipped, and th
 
 Shipped track baselines:
 
-- **Tagesentscheidung:** Home/Heute can already combine readiness, load, recovery, mental boundary, data trust, Garmin execution, goal progress, adaptation, response, fueling, analysis, feedback, receipt trust and continuity into one daily action, safe option, explanation and routed CTA.
+- **Tagesentscheidung:** Home/Heute can already combine readiness, load, recovery, mental boundary, weekly availability/alltag, data trust, Garmin execution, goal progress, adaptation, response, fueling, analysis, feedback, receipt trust and continuity into one daily action, safe option, explanation and routed CTA. On free days outside weekly availability, Today Options protects the day instead of offering quick training intents.
 - **Trainingsanpassung:** Plan can already show a shared weekly decision contract, preview-only accept/adapt/defer controls, Home/Data handoffs, local weekly receipts, learning calibration, tradeoff/source-trend continuity, receipt trust and quiet goal-progress confidence without hidden Plan/Garmin writes.
 - **Lernschleifen:** Data can already classify evidence as Home action, Plan decision, watch context or evidence gap; show Data action contracts, training-risk contracts, learning calibration, tradeoff/source-trend confidence, receipt trust, renewal checks and motivating goal-progress evidence.
 - **UI/UX:** Route-wide top-app shell, command surfaces, mobile chrome, compact Plan/Activity/Data follow-ups and desktop focus surface are shipped with current route evidence showing 0 horizontal overflow through 2026-06-03.
 
 ## Current Package Order
 
-No ungated product package is currently queued. The remaining named roadmap themes are still manual gates, not implementation cards:
+No ungated product package is currently queued after the Today Options availability bridge. The remaining named roadmap themes are still manual gates, not implementation cards:
 
 1. **Fueling/Nutrition trend summaries** remain gated until at least three comparable complete `during` logs exist with activity/duration context, carbs and structured GI comfort.
 2. **iPhone/PWA field reliability** remains gated until current-commit real-device iPhone/VPN/PWA evidence shows a recurring reliability gap or a required pass/fail gap.

@@ -2373,6 +2373,25 @@ test('mobile Home free-day intent opens reduce-volume preview without creating a
   expect(requests).not.toContain('POST /api/pulse/plan/workout');
 });
 
+test('Home protects unavailable free days without quick training intents', async ({ page }) => {
+  await mockPulseApi(page, {
+    todayOptionsState: 'availability_protect',
+    home: { todayWorkout: null, nextWorkout: null },
+  });
+
+  await page.goto('/');
+  const card = page.getByTestId('today-options-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Alltag zählt');
+  await expect(card).toContainText('Heute frei halten');
+  await expect(card).toContainText('Wochenverfügbarkeit');
+  await expect(page.getByTestId('today-availability-intent')).toHaveCount(0);
+
+  await card.getByRole('button', { name: 'Verfügbarkeit prüfen' }).click();
+  await expect(page).toHaveURL(/\/plan\?tab=training#plan-availability$/);
+  await expect(page.locator('#plan-availability')).toBeVisible();
+});
+
 test('mobile Home planned workout state shows the concrete plan option without availability intents', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile intent is a narrow viewport affordance');
 
