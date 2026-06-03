@@ -2908,7 +2908,9 @@ function TrainingTab({
       )}
 
       {/* Availability */}
-      <AvailabilityEditor open={showAvailability} onOpenChange={setShowAvailability} />
+      <div id="plan-availability" tabIndex={-1} style={{ scrollMarginTop: 88 }}>
+        <AvailabilityEditor open={showAvailability} onOpenChange={setShowAvailability} />
+      </div>
 
       {/* Plan-Generator */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -3871,6 +3873,7 @@ function tabFromQuery(value: string | null): Tab {
 
 const HASH_TAB: Record<string, Tab> = {
   'plan-weekly-decision': 'training',
+  'plan-availability': 'training',
   'plan-refresh-preview-card': 'training',
   'plan-scenario-preview': 'training',
   'plan-adaptation-review': 'training',

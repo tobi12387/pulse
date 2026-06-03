@@ -1542,6 +1542,7 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       activeGoals,
       fitnessLoad,
       capabilitySummary,
+      weekAvailability,
     ] = await Promise.all([
       db.select().from(pulseDailyMetrics)
         .where(and(eq(pulseDailyMetrics.userId, userId), eq(pulseDailyMetrics.date, today))),
@@ -1597,6 +1598,13 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
         app.log.warn(`[today-options] Training capability summary failed (non-fatal): ${err}`);
         return null;
       }),
+      db.select({
+        availableDays: pulseWeekAvailability.availableDays,
+        weeklyHours: pulseWeekAvailability.weeklyHours,
+        notes: pulseWeekAvailability.notes,
+      }).from(pulseWeekAvailability)
+        .where(and(eq(pulseWeekAvailability.userId, userId), eq(pulseWeekAvailability.weekStart, currentWeekStartIso())))
+        .limit(1),
     ]);
 
     const mentalScore = mental
@@ -1627,6 +1635,11 @@ export async function registerPulseTrainingRoutes(app: FastifyInstance) {
       date: today,
       readinessScore: readiness.score,
       tsb: fitnessLoad.tsb,
+      availability: weekAvailability[0] ? {
+        availableDays: weekAvailability[0].availableDays as number[],
+        weeklyHours: weekAvailability[0].weeklyHours,
+        notes: weekAvailability[0].notes,
+      } : null,
       plannedToday: plannedToday ? {
         id: plannedToday.id,
         activityType: plannedToday.activityType as PulseActivityType,

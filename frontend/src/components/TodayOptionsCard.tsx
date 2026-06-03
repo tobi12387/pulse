@@ -29,6 +29,7 @@ const STATE_LABEL: Record<PulseTodayOptionsResponse['state'], string> = {
   completed_activity: 'Nach der Einheit',
   planned_workout: 'Heute trainieren',
   unplanned_trainable: 'TrainNow',
+  availability_protect: 'Alltag zählt',
   recovery_protect: 'Erholung zählt',
 };
 
@@ -159,6 +160,7 @@ export function TodayOptionsCard({
   if (!data) return null;
   if (variant === 'compact' && !dailyCommandAllowsTodayOptions(commandKind)) return null;
   const showMobileIntent = variant === 'compact'
+    && data.state === 'unplanned_trainable'
     && (commandKind === 'free_trainable' || (commandKind == null && data.state === 'unplanned_trainable'));
   if (!showMobileIntent && data.options.length === 0) return null;
 

@@ -14,6 +14,11 @@ export interface TodayOptionsInput {
   date: string;
   readinessScore: number;
   tsb: number;
+  availability?: {
+    availableDays: number[];
+    weeklyHours?: number | null;
+    notes?: string | null;
+  } | null;
   plannedToday: {
     id: string;
     activityType: PulseActivityType;
@@ -49,8 +54,36 @@ const SPORT_LABEL: Record<PulseActivityType, string> = {
   other: 'Training',
 };
 
+const DAY_LABEL: Record<number, string> = {
+  0: 'Mo',
+  1: 'Di',
+  2: 'Mi',
+  3: 'Do',
+  4: 'Fr',
+  5: 'Sa',
+  6: 'So',
+};
+
 function fixed(value: number): string {
   return value.toFixed(1);
+}
+
+function dayOffsetFromIsoDate(date: string): number {
+  const jsDay = new Date(`${date}T00:00:00.000Z`).getUTCDay();
+  return (jsDay + 6) % 7;
+}
+
+function availabilityDaysLabel(days: number[]): string {
+  const unique = [...new Set(days)]
+    .filter(day => day >= 0 && day <= 6)
+    .sort((a, b) => a - b);
+  return unique.length > 0 ? unique.map(day => DAY_LABEL[day]).join('/') : 'keine Tage';
+}
+
+function todayIsAvailable(input: TodayOptionsInput): boolean | null {
+  const availability = input.availability ?? null;
+  if (!availability) return null;
+  return availability.availableDays.includes(dayOffsetFromIsoDate(input.date));
 }
 
 const FIT_SIGNAL: Partial<Record<PulseWorkoutFitLabel, PulseTodayOptionSignalLabel>> = {
@@ -169,6 +202,13 @@ function baseEvidence(input: TodayOptionsInput): string[] {
     `Readiness ${input.readinessScore}/100`,
     `TSB ${fixed(input.tsb)}`,
   ];
+  if (input.availability) {
+    const parts = [
+      `Verfügbarkeit: ${availabilityDaysLabel(input.availability.availableDays)}`,
+      input.availability.weeklyHours != null ? `${input.availability.weeklyHours} h/Wo` : null,
+    ].filter(Boolean);
+    evidence.push(parts.join(' · '));
+  }
   if (input.plannedToday?.capabilityFit) {
     evidence.push(`Level-Fit: ${FIT_EVIDENCE_LABEL[input.plannedToday.capabilityFit]}`);
   }
@@ -336,6 +376,52 @@ function restOption(input: TodayOptionsInput, priority: PulseTodayOption['priori
     targetPath: '/',
     evidence,
     signalLabels: compactSignals(input, { capabilityFit, recovery: true }),
+  };
+}
+
+function availabilityProtectOptions(input: TodayOptionsInput): PulseTodayOptionsResponse {
+  const days = availabilityDaysLabel(input.availability?.availableDays ?? []);
+  const hours = input.availability?.weeklyHours != null ? `${input.availability.weeklyHours} h/Wo` : null;
+  const note = input.availability?.notes?.trim();
+  const evidence = [
+    ...baseEvidence(input),
+    ...(note ? [`Alltag: ${note}`] : []),
+  ];
+  const options: PulseTodayOption[] = [
+    {
+      id: 'availability-rest-day',
+      kind: 'rest',
+      priority: 'primary',
+      title: 'Heute frei halten',
+      detail: `Heute ist nicht als Trainingstag markiert. Pulse respektiert die Wochenverfügbarkeit (${days}${hours ? `, ${hours}` : ''}), statt spontan Umfang in den Alltag zu drücken.`,
+      cta: 'Verfügbarkeit prüfen',
+      targetPath: '/plan?tab=training#plan-availability',
+      evidence,
+      signalLabels: [{
+        kind: 'recovery',
+        label: 'Alltag schützen',
+        detail: 'Wochenverfügbarkeit hat heute Vorrang vor spontanem Umfang',
+        tone: 'green',
+      }],
+    },
+    {
+      ...skillsOption(input),
+      priority: 'secondary',
+      title: input.readinessScore < 60 ? 'Nur sehr leicht bewegen' : 'Optional kurz stabilisieren',
+      detail: input.readinessScore < 60
+        ? 'Wenn Bewegung hilft: 15-20 min Mobility, kein Trainingsstress.'
+        : 'Nur wenn es wirklich in den Tag passt: kurze Mobility/Core-Einheit statt Ausdauerumfang.',
+      cta: 'Kurz prüfen',
+      signalLabels: compactSignals(input, { recovery: true }),
+    },
+  ];
+  return {
+    date: input.date,
+    state: 'availability_protect',
+    summary: 'Heute ist laut Wochenverfügbarkeit kein Trainingstag. Pulse hält den Alltag zuerst stabil und macht Training nur optional.',
+    options,
+    signature: signature(input, options),
+    fuelingDebt: input.fueling.debtSummary ?? null,
   };
 }
 
@@ -541,6 +627,9 @@ function signature(input: TodayOptionsInput, options: PulseTodayOption[]): strin
     input.date,
     input.readinessScore,
     fixed(input.tsb),
+    input.availability
+      ? `availability:${availabilityDaysLabel(input.availability.availableDays)}:${input.availability.weeklyHours ?? 'hours-open'}:${input.availability.notes ?? 'no-notes'}`
+      : 'availability:unknown',
     input.plannedToday?.id ?? 'none',
     input.completedTodayActivities.map(activity => activity.id).join(',') || 'no-activity',
     input.riskSignals.map(signal => `${signal.severity}:${signal.title}`).join(',') || 'no-risk',
@@ -559,6 +648,10 @@ export function buildTodayOptions(input: TodayOptionsInput): PulseTodayOptionsRe
 
   if (input.plannedToday) {
     return plannedWorkoutOptions(input);
+  }
+
+  if (todayIsAvailable(input) === false) {
+    return availabilityProtectOptions(input);
   }
 
   return unplannedTrainableOptions(input);

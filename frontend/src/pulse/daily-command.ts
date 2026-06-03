@@ -7,6 +7,7 @@ export type DailyCommandKind =
   | 'completed_off_plan'
   | 'planned'
   | 'recovery'
+  | 'availability'
   | 'free_trainable'
   | 'free_rest';
 
@@ -40,10 +41,11 @@ export function resolveDailyCommand(
   }
 
   if (options?.state === 'recovery_protect') return 'recovery';
+  if (options?.state === 'availability_protect') return 'availability';
   if (options?.state === 'unplanned_trainable') return 'free_trainable';
   return 'free_rest';
 }
 
 export function dailyCommandAllowsTodayOptions(kind: DailyCommandKind | null | undefined): boolean {
-  return kind == null || kind === 'planned' || kind === 'free_trainable';
+  return kind == null || kind === 'planned' || kind === 'availability' || kind === 'free_trainable';
 }
