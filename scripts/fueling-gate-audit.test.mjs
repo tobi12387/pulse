@@ -179,7 +179,11 @@ test('fueling gate audit names existing long carb logs before new logs', () => {
   assert.match(nextPrompt, /GI answer template:/);
   assert.match(nextPrompt, /2026-05-09 - Datteln Graveln - bike - 398 min - 356 g carbs \(54 g\/h\): <ok\|mild_issue\|issue>/);
   assert.match(nextPrompt, /2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\): <ok\|mild_issue\|issue>/);
-  assert.match(nextPrompt, /After saving this target, another existing completion candidate remains: 1/);
+  assert.match(nextPrompt, /After saving this target, existing completion candidates remain: 1/);
+  assert.match(nextPrompt, /Remaining targets after this save:/);
+  assert.match(nextPrompt, /1\. 2026-05-04 - Datteln - Radfahren - Z2 - bike - 80 min - 30 g carbs \(23 g\/h\)/);
+  assert.match(nextPrompt, /URL: https?:\/\/[^\s]+\/plan\/activity\/activity-z2-ride#activity-fueling-log/);
+  assert.match(nextPrompt, /Missing: GI comfort/);
   assert.match(nextPrompt, /Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward/);
   assert.match(nextPrompt, /Rerun after save: npm run audit:fueling-gate -- --today 2026-05-21/);
 
