@@ -563,6 +563,23 @@ function renderOptions(options) {
     .join('\n');
 }
 
+function remainingCandidatePromptLines(candidates) {
+  const remainingCandidates = (candidates ?? []).slice(1);
+  if (remainingCandidates.length === 0) return [];
+
+  const lines = [
+    `- After saving this target, existing completion candidates remain: ${remainingCandidates.length}.`,
+    '- Remaining targets after this save:',
+  ];
+  remainingCandidates.forEach((candidate, index) => {
+    lines.push(`  ${index + 1}. ${candidate.summary ?? candidateSummary(candidate)}`);
+    const target = candidate.targetUrl ?? pulseTargetUrl(candidate.targetPath) ?? candidate.targetPath;
+    if (target) lines.push(`     URL: ${target}`);
+    lines.push(`     Missing: ${candidateMissingText(candidate)}`);
+  });
+  return lines;
+}
+
 export function renderFuelingNextPrompt(audit) {
   const user = fuelingNextPromptUser(audit);
   const lines = [
@@ -619,9 +636,7 @@ export function renderFuelingNextPrompt(audit) {
   lines.push('- Use the Activity Fueling UI; do not edit database rows directly for normal evidence capture.');
   lines.push('- GI comfort must come from the real stomach response.');
   lines.push('- Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward.');
-  if (Number(user.completionCandidates?.length ?? 0) > 1) {
-    lines.push(`- After saving this target, another existing completion candidate remains: ${user.completionCandidates.length - 1}.`);
-  }
+  lines.push(...remainingCandidatePromptLines(user.completionCandidates));
   lines.push(`- Rerun after save: npm run audit:fueling-gate -- --today ${audit.today}`);
 
   return lines.join('\n').trimEnd();
