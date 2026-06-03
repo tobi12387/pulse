@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-06-03 — Performance-OS Backlog bleibt Arbeitsordnung statt Shipped-Archiv
+
+- **Decision:** `docs/ai/next-product-packages.md` wird auf aktuelle Package-Order, offene Gates, Gate-Open-Seeds und Support-Regeln verdichtet; detaillierte shipped Package-Historie lebt in PRs, completed plans, QA-Records und `docs/decisions.md`.
+- **Why:** Die Datei wird in jeder AI-Session gelesen und soll die naechste erlaubte Arbeit bestimmen. Lange shipped Package-Abschnitte erhoehen Replanungszeit und das Risiko, bereits gelieferte Pakete erneut als Backlog zu behandeln.
+- **Alternatives:** Shipped Historie weiter in der Backlog-Datei behalten (zu laut fuer Session-Start); alles nur in `current-focus.md` kuerzen (laesst die hard-order-Datei weiter als Archiv wirken); eine neue dritte Backlog-Datei einfuehren (mehr Kontextsplit ohne Produktgewinn).
+- **Decided by:** Codex, als Compact-Product-Packages im Branch `codex/compact-product-packages`.
+- **Status:** active.
+
+---
+
 ## 2026-06-03 — Desktop-Arbeitsflaeche startet ohne zweite Kontextleiste
 
 - **Decision:** Die Desktop-Workspace-Topbar wird entfernt; globale Navigation, Sync, Nutzerstand und Coach bleiben in der Sidebar, waehrend die Route selbst mit ihrem PageHeader und der primaeren Arbeitskarte startet.
