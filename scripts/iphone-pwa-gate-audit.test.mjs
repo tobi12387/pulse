@@ -306,8 +306,9 @@ test('iphone pwa field handoffs treat app runtime as observed Settings App-Stand
   assert.equal(audit.fieldRuntimeCommit, 'oldruntime');
 
   const scaffold = renderIphonePwaFieldScaffold(audit);
-  assert.match(scaffold, /Expected app-runtime commit for this audit: `runtime1`; record the observed Settings `App-Stand` in Scope\./);
-  assert.match(scaffold, /- App runtime commit under test: <copy observed Settings App-Stand; expected runtime1>/);
+  assert.match(scaffold, /App-runtime comparison target: `runtime1`; record the observed Settings `App-Stand` in Scope\./);
+  assert.match(scaffold, /Do not copy the comparison target into `App runtime commit under test` unless Settings shows that exact `App-Stand`\./);
+  assert.match(scaffold, /- App runtime commit under test: <copy observed Settings App-Stand; comparison target runtime1>/);
   assert.doesNotMatch(scaffold, /- App runtime commit under test: `runtime1`/);
 
   const packet = renderIphonePwaFieldPacket(audit);
@@ -327,7 +328,7 @@ test('iphone pwa gate audit rejects unreplaced App-Stand scaffold placeholders',
     'Server commit under test: `abcdef0`',
     [
       'Server commit under test: `abcdef0`',
-      'App runtime commit under test: <copy observed Settings App-Stand; expected runtime1>',
+      'App runtime commit under test: <copy observed Settings App-Stand; comparison target runtime1>',
     ].join('\n- '),
   );
   const audit = buildIphonePwaGateAudit(fieldRecord, {
@@ -338,7 +339,7 @@ test('iphone pwa gate audit rejects unreplaced App-Stand scaffold placeholders',
 
   assert.equal(audit.gate, 'gated');
   assert.equal(audit.commitStatus, 'current');
-  assert.equal(audit.scope.appRuntimeCommit, '<copy observed Settings App-Stand; expected runtime1>');
+  assert.equal(audit.scope.appRuntimeCommit, '<copy observed Settings App-Stand; comparison target runtime1>');
   assert.equal(audit.fieldRuntimeCommit, null);
   assert.deepEqual(audit.gaps.map(gap => gap.kind), ['app_runtime_evidence']);
   assert.match(audit.gaps[0].detail, /still contains the App-Stand scaffold placeholder/);
@@ -421,7 +422,7 @@ test('iphone pwa gate audit accepts docs-only server drift when app runtime matc
   assert.match(packet, /All manual iPhone\/PWA field gates are recorded as pass for the expected commit/);
 
   const scaffold = renderIphonePwaFieldScaffold(audit);
-  assert.match(scaffold, /- App runtime commit under test: <copy observed Settings App-Stand; expected runtime1>/);
+  assert.match(scaffold, /- App runtime commit under test: <copy observed Settings App-Stand; comparison target runtime1>/);
 
   const nextPrompt = renderIphonePwaNextPrompt(audit);
   assert.match(nextPrompt, /Expected app runtime commit: runtime1/);

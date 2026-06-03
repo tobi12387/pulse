@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-06-03 — iPhone-Scaffold nennt App-Runtime nur als Vergleichsziel
+
+- **Decision:** iPhone/PWA-Feldlauf-Scaffolds bezeichnen den erwarteten App-Runtime-Commit als Vergleichsziel und warnen direkt, ihn nur dann in `App runtime commit under test` zu kopieren, wenn Settings exakt diesen `App-Stand` zeigt.
+- **Why:** Nach docs/tooling-only Main-Commits kann der Server-Commit aktueller sein als der zuletzt gebaute App-Runtime-Commit. Der Feldnachweis muss deshalb den beobachteten Settings-Stand erfassen und darf das Vergleichsziel nicht als ungepruefte Evidence uebernehmen.
+- **Alternatives:** Den bisherigen `expected`-Platzhalter belassen (zu leicht blind zu kopieren); Runtime-Vergleich aus dem Scaffold entfernen (weniger hilfreich bei docs-only Drift); jeden docs-only Commit als neuen Runtime-Test verlangen (unnötige manuelle Reibung).
+- **Decided by:** Codex, als iPhone-Runtime-Scaffold-Clarity im Branch `codex/iphone-runtime-scaffold-clarity`.
+- **Status:** active.
+
+---
+
 ## 2026-06-03 — Fueling-GI-Handoffs bleiben UI-Capture statt Chat-Write
 
 - **Decision:** Fueling-Gate-Handoffs duerfen GI-Komfort-Werte als UI-Arbeitsblatt vorbereiten, zaehlen aber erst als Evidence, wenn Tobi sie im Activity-Fueling-UI speichert.

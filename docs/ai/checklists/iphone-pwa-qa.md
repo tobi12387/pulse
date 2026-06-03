@@ -13,8 +13,8 @@ can remain current when the app-runtime commit is unchanged; frontend, backend,
 shared or package changes still require fresh real-device evidence.
 For a live packet of the current field gaps and recording steps, run
 `npm run audit:iphone-pwa-gate -- --packet`.
-For the shortest first-gap field prompt to use in a manual capture/chat
-handoff, run `npm run audit:iphone-pwa-gate -- --next-prompt`.
+For the shortest first-gap field prompt to use in a manual field handoff, run
+`npm run audit:iphone-pwa-gate -- --next-prompt`.
 For paste-ready Markdown for a new field run, including the server preflight and
 the current open gap targets before the `## Scope` record, run
 `npm run audit:iphone-pwa-gate -- --scaffold`.
@@ -24,10 +24,11 @@ print the direct Settings field-proof URL, currently
 the real iPhone/PWA and record Device, iOS version, `App-Stand`, launch mode,
 Push state and certificate state from Settings before testing the rest of the
 field checklist.
-When the scaffold prints an expected app-runtime commit, replace the
+When the scaffold prints an app-runtime comparison target, replace the
 `App runtime commit under test` placeholder with the observed Settings
-`App-Stand`. This lets docs/tooling-only server commits stay auditable without
-pretending an old app runtime was newly tested.
+`App-Stand`. Do not copy the comparison target into the evidence field unless
+Settings shows that exact `App-Stand`. This lets docs/tooling-only server
+commits stay auditable without pretending an old app runtime was newly tested.
 The audit keeps the field gate open if that placeholder is still present. The
 same applies to the scaffold placeholders for `Device` and `iOS version`: they
 must be replaced with the real tested iPhone model and iOS version before the
