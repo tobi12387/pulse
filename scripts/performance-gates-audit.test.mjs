@@ -406,12 +406,12 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(checklist, /Choose exactly one real GI comfort value: ok=Magen ok, mild_issue=Magen leicht unruhig, issue=Magenprobleme/);
   assert.match(checklist, /After existing candidates, capture 1 new complete long-session log with activity\/duration, during carbs and structured GI comfort together/);
   assert.match(checklist, /Use the future-log scaffold when ready: `npm run audit:fueling-gate -- --today 2026-05-21 --new-log-checklist`/);
-  assert.match(checklist, /Use the short first-target prompt for a manual capture\/chat handoff: `npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt`/);
+  assert.match(checklist, /Use the short first-target prompt for a manual UI capture handoff: `npm run audit:fueling-gate -- --today 2026-05-21 --next-prompt`/);
   assert.match(checklist, /## 2\. iPhone\/PWA field/);
   assert.match(checklist, /Verify the server mirror before recording current field evidence: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server`/);
   assert.match(checklist, /Open the Settings field proof on the real iPhone\/PWA: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(checklist, /Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold`/);
-  assert.match(checklist, /Print the short first-gap field prompt for a manual capture\/chat handoff: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --next-prompt`/);
+  assert.match(checklist, /Print the short first-gap field prompt for a manual field handoff: `npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --next-prompt`/);
   assert.match(checklist, /Current main field evidence \(stale\)\. Verify the server mirror is on abc1234/);
   assert.match(checklist, /## 3\. Server deploy mirror/);
   assert.match(checklist, /read-only recovery packet: `PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet`/);

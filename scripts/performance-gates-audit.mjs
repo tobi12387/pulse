@@ -1161,7 +1161,7 @@ function renderFuelingManualChecklist(gate, index) {
     lines.push(checkbox(`Use the detailed Fueling packet if anything changed: ${commandText(metadata.capturePacketCommand)}.`));
   }
   if (metadata?.nextPromptCommand) {
-    lines.push(checkbox(`Use the short first-target prompt for a manual capture/chat handoff: ${commandText(metadata.nextPromptCommand)}.`));
+    lines.push(checkbox(`Use the short first-target prompt for a manual UI capture handoff: ${commandText(metadata.nextPromptCommand)}.`));
   }
   lines.push(checkbox(`Rerun the Fueling gate after each save: ${commandText(gate.command)}.`));
   return lines;
@@ -1184,7 +1184,7 @@ function renderIphoneManualChecklist(gate, index) {
     lines.push(checkbox(`Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: ${commandText(metadata.fieldScaffoldCommand)}.`));
   }
   if (metadata?.fieldPromptCommand) {
-    lines.push(checkbox(`Print the short first-gap field prompt for a manual capture/chat handoff: ${commandText(metadata.fieldPromptCommand)}.`));
+    lines.push(checkbox(`Print the short first-gap field prompt for a manual field handoff: ${commandText(metadata.fieldPromptCommand)}.`));
   }
   for (const gap of gate.gaps ?? []) {
     const nextAction = gap.nextAction ? ` ${gap.nextAction}` : '';

@@ -406,12 +406,12 @@ function packetCandidateLines(candidate, index) {
   return lines;
 }
 
-function giComfortReplyTemplateLines(candidates) {
+function giComfortUiEntryTemplateLines(candidates) {
   const giCandidates = (candidates ?? [])
     .filter(candidate => (candidate.missing ?? []).includes('GI comfort'));
   if (giCandidates.length === 0) return [];
   return [
-    'GI answer template:',
+    'GI UI entry worksheet:',
     ...giCandidates.map(candidate =>
       `- ${candidate.summary ?? candidateSummary(candidate)}: <ok|mild_issue|issue>`
     ),
@@ -463,10 +463,11 @@ export function renderFuelingEvidencePacket(audit) {
       user.completionCandidates.forEach((candidate, index) => {
         lines.push(...packetCandidateLines(candidate, index));
       });
-      const replyTemplate = giComfortReplyTemplateLines(user.completionCandidates);
-      if (replyTemplate.length > 0) {
+      const uiEntryTemplate = giComfortUiEntryTemplateLines(user.completionCandidates);
+      if (uiEntryTemplate.length > 0) {
         lines.push('');
-        lines.push(...replyTemplate);
+        lines.push('Use this only as a worksheet while saving each Activity Fueling target in the UI:');
+        lines.push(...uiEntryTemplate);
       }
     } else {
       lines.push('Existing candidates to close first: none');
@@ -617,11 +618,11 @@ export function renderFuelingNextPrompt(audit) {
     lines.push('');
     lines.push('Options:');
     lines.push(renderOptions(action.options));
-    const replyTemplate = giComfortReplyTemplateLines(user.completionCandidates);
-    if (replyTemplate.length > 0) {
+    const uiEntryTemplate = giComfortUiEntryTemplateLines(user.completionCandidates);
+    if (uiEntryTemplate.length > 0) {
       lines.push('');
-      lines.push('If you know the existing candidate responses, answer once with:');
-      lines.push(...replyTemplate);
+      lines.push('If you already remember the real GI responses for existing candidates, use this as a UI entry worksheet while opening each target:');
+      lines.push(...uiEntryTemplate);
     }
   } else if (action.kind === 'complete_carbs') {
     lines.push('Question: Welche tatsaechlichen During-Carbs hast du bei diesem vorhandenen langen GI-Komfort-Log erfasst?');
@@ -634,6 +635,7 @@ export function renderFuelingNextPrompt(audit) {
   lines.push('');
   lines.push('Rules:');
   lines.push('- Use the Activity Fueling UI; do not edit database rows directly for normal evidence capture.');
+  lines.push('- A chat answer or worksheet is not evidence capture until the value is saved in Pulse.');
   lines.push('- GI comfort must come from the real stomach response.');
   lines.push('- Do not infer it from notes, route, RPE, carbs per hour, result, pace or how the workout looks afterward.');
   lines.push(...remainingCandidatePromptLines(user.completionCandidates));
@@ -709,10 +711,11 @@ export function renderFuelingCaptureChecklist(audit) {
         lines.push(checkbox('Save through the Activity Fueling UI; do not edit database rows directly.'));
         lines.push(checkbox(`Rerun after this save: ${commandText(`npm run audit:fueling-gate -- --today ${audit.today}`)}.`));
       });
-      const replyTemplate = giComfortReplyTemplateLines(candidates);
-      if (replyTemplate.length > 0) {
+      const uiEntryTemplate = giComfortUiEntryTemplateLines(candidates);
+      if (uiEntryTemplate.length > 0) {
         lines.push('');
-        lines.push(...replyTemplate);
+        lines.push('Use this only as a worksheet while saving each Activity Fueling target in the UI:');
+        lines.push(...uiEntryTemplate);
       }
     } else {
       lines.push(checkbox('No existing completion candidate is currently available; use the next long-session capture step below.'));

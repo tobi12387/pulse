@@ -28,6 +28,16 @@
 
 ---
 
+## 2026-06-03 — Fueling-GI-Handoffs bleiben UI-Capture statt Chat-Write
+
+- **Decision:** Fueling-Gate-Handoffs duerfen GI-Komfort-Werte als UI-Arbeitsblatt vorbereiten, zaehlen aber erst als Evidence, wenn Tobi sie im Activity-Fueling-UI speichert.
+- **Why:** GI-Komfort ist echte Koerperreaktion und darf weder von Codex noch aus Chat-Templates als Datenwrite behandelt werden. Die Handoffs sollen die manuelle Eingabe beschleunigen, ohne den no-hidden-write- und Evidence-Vertrag aufzuweichen.
+- **Alternatives:** Chat-Antworten als Capture-Pfad akzeptieren (verworfen, weil das normale Evidence-Capture ohne UI-Save verwischt); Templates komplett entfernen (mehr Reibung bei mehreren Kandidaten); Datenbankzeilen direkt schreiben (gegen die Capture-Regel).
+- **Decided by:** Codex, als Fueling-UI-Capture-Handoff im Branch `codex/fueling-ui-capture-handoff`.
+- **Status:** active.
+
+---
+
 ## 2026-06-03 — Performance-OS Backlog bleibt Arbeitsordnung statt Shipped-Archiv
 
 - **Decision:** `docs/ai/next-product-packages.md` wird auf aktuelle Package-Order, offene Gates, Gate-Open-Seeds und Support-Regeln verdichtet; detaillierte shipped Package-Historie lebt in PRs, completed plans, QA-Records und `docs/decisions.md`.
