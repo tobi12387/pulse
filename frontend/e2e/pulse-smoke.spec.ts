@@ -7,18 +7,18 @@ import { mockPulseApi } from './fixtures/pulse-api';
 const routes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
   { path: '/coach', label: 'Coach', navHref: '/coach', visibleText: 'Frage klären' },
-  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
-  { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
-  { path: '/insights', label: 'Lernen', navHref: '/insights', visibleText: 'Analyse' },
-  { path: '/settings', label: 'Bereit', navHref: '/settings', visibleText: 'Bereit' },
+  { path: '/plan', label: 'Woche', navHref: '/plan', visibleText: 'Diese Woche' },
+  { path: '/data', label: 'Evidenz', navHref: '/data', visibleText: 'Nächste Datenlücke' },
+  { path: '/insights', label: 'Muster', navHref: '/insights', visibleText: 'Muster' },
+  { path: '/settings', label: 'System', navHref: '/settings', visibleText: 'System' },
 ] as const;
 
 const primaryNavRoutes = [
   { path: '/', label: 'Heute', navHref: '/', visibleText: 'TAGESENTSCHEIDUNG' },
-  { path: '/plan', label: 'Plan', navHref: '/plan', visibleText: 'Plan' },
-  { path: '/data', label: 'Daten', navHref: '/data', visibleText: 'Daten' },
-  { path: '/insights', label: 'Lernen', navHref: '/insights', visibleText: 'Analyse' },
-  { path: '/settings', label: 'Bereit', navHref: '/settings', visibleText: 'Bereit' },
+  { path: '/plan', label: 'Woche', navHref: '/plan', visibleText: 'Diese Woche' },
+  { path: '/data', label: 'Evidenz', navHref: '/data', visibleText: 'Nächste Datenlücke' },
+  { path: '/insights', label: 'Muster', navHref: '/insights', visibleText: 'Muster' },
+  { path: '/settings', label: 'System', navHref: '/settings', visibleText: 'System' },
 ] as const;
 
 const routeReadyTimeoutMs = 15_000;
@@ -33,10 +33,10 @@ async function expectPrimaryNavigationWithoutCoach(page: Page) {
   await expect(primaryNav).toHaveCount(1);
   await expect(primaryNav.locator('a')).toHaveCount(primaryNavRoutes.length);
   await expect(primaryNav.locator('a[href="/"]')).toContainText('Heute');
-  await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Plan');
-  await expect(primaryNav.locator('a[href="/data"]')).toContainText('Daten');
-  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Lernen');
-  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('Bereit');
+  await expect(primaryNav.locator('a[href="/plan"]')).toContainText('Woche');
+  await expect(primaryNav.locator('a[href="/data"]')).toContainText('Evidenz');
+  await expect(primaryNav.locator('a[href="/insights"]')).toContainText('Muster');
+  await expect(primaryNav.locator('a[href="/settings"]')).toContainText('System');
   await expect(primaryNav.locator('a[href="/coach"]')).toHaveCount(0);
   await expect(primaryNav.getByText('Coach', { exact: true })).toHaveCount(0);
 }
@@ -1564,7 +1564,7 @@ test('primary navigation reaches every Pulse page', async ({ page }) => {
 
 test('Settings section deep links land near the target section', async ({ page }) => {
   await page.goto('/settings?section=push');
-  await expectHealthyPage(page, 'Bereit');
+  await expectHealthyPage(page, 'System');
 
   const pushHeading = page.getByRole('heading', { name: 'Benachrichtigungen' });
   await expect(pushHeading).toBeVisible();
@@ -1575,7 +1575,7 @@ test('Settings section deep links land near the target section', async ({ page }
 
 test('Settings PWA field proof exposes the current manual evidence scope', async ({ page }) => {
   await page.goto('/settings?section=device');
-  await expectHealthyPage(page, 'Bereit');
+  await expectHealthyPage(page, 'System');
 
   const fieldProof = page.getByTestId('pwa-field-evidence');
   await expect(fieldProof).toBeVisible();
@@ -2421,7 +2421,7 @@ test('mobile Home planned workout state shows the concrete plan option without a
 test('/insights renders as a top-level evidence route', async ({ page }) => {
   await page.goto('/insights');
   await expect(page).toHaveURL('/insights');
-  await expect(page.locator('main h1').first()).toHaveText(/Analyse/);
+  await expect(page.locator('main h1').first()).toHaveText(/Muster/);
   await expect(page.getByTestId('insights-synthesis-hero')).toBeVisible();
   await expect(page.getByTestId('data-analysis-decision-quality-card')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Tiefe Analyse anzeigen' })).toBeVisible();
@@ -2440,16 +2440,16 @@ test('Data mobile subnavigation keeps every section tab in the visible viewport'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data');
-  await expectHealthyPage(page, 'Daten');
+  await expectHealthyPage(page, 'Nächste Datenlücke');
 
-  await expectTabsVisibleWithinViewport(page, ['Heute relevant', 'Trends', 'Datenqualität', 'Analyse']);
+  await expectTabsVisibleWithinViewport(page, ['Heute', 'Trends', 'Qualität', 'Analyse']);
 });
 
 test('Data mobile deep links do not clip the tab row', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/data?tab=mental');
-  await expectHealthyPage(page, 'Daten');
+  await expectHealthyPage(page, 'Mental Check-in');
 
   const overflow = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
@@ -2472,9 +2472,9 @@ test('Plan mobile subnavigation keeps every section tab in the visible viewport'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile tab visibility is a narrow viewport affordance');
 
   await page.goto('/plan');
-  await expectHealthyPage(page, 'Plan');
+  await expectHealthyPage(page, 'Diese Woche');
 
-  await expectTabsVisibleWithinViewport(page, ['Training', 'Ausführung', 'Ziele', 'Review', 'Statistik']);
+  await expectTabsVisibleWithinViewport(page, ['Woche', 'Sync', 'Ziele', 'Review', 'Stats']);
 });
 
 test('Plan mobile week strip fits seven days without hidden horizontal scrolling', async ({ page }, testInfo) => {
@@ -2573,19 +2573,19 @@ test('top-level hotkeys follow the Focus navigation order', async ({ page }, tes
 
   await page.keyboard.press('2');
   await expect(page).toHaveURL('/plan');
-  await expectHealthyPage(page, 'Plan');
+  await expectHealthyPage(page, 'Diese Woche');
 
   await page.keyboard.press('3');
   await expect(page).toHaveURL('/data');
-  await expectHealthyPage(page, 'Daten');
+  await expectHealthyPage(page, 'Nächste Datenlücke');
 
   await page.keyboard.press('4');
   await expect(page).toHaveURL('/insights');
-  await expectHealthyPage(page, 'Analyse');
+  await expectHealthyPage(page, 'Muster');
 
   await page.keyboard.press('5');
   await expect(page).toHaveURL('/settings');
-  await expectHealthyPage(page, 'Bereit');
+  await expectHealthyPage(page, 'System');
 });
 
 test('PWA manifest and service worker endpoints are available', async ({ request }) => {

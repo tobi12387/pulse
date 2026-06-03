@@ -51,6 +51,7 @@ npm run delivery:manifest
 npm run verify:lernschleifen
 npm run verify:trainingsanpassung
 npm run verify:tagesentscheidung
+npm run test:e2e:smoke
 ```
 
 Final summary:
@@ -62,6 +63,7 @@ Final summary:
 - `verify:lernschleifen`: 55 contracts, frontend build, 12 rendered Data analysis smokes passed.
 - `verify:trainingsanpassung`: 33 contracts, frontend build, 12 rendered Plan/Data smokes passed.
 - `verify:tagesentscheidung`: 39 contracts, frontend build, Home smoke set passed with 14 passed and 2 desktop-only mobile tests skipped as expected.
+- `test:e2e:smoke`: 108 passed, 14 expected viewport-affordance skips.
 
 Manual screenshots inspected after the final run:
 
