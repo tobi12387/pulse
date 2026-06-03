@@ -12,6 +12,8 @@ The checklist is for evidence capture only. Do not infer GI comfort from notes, 
 - Free-text, legacy or placeholder GI comfort values do not count as structured
   evidence; the app and audit keep the Fueling trend gate closed until one of
   the accepted values is recorded from the real stomach response.
+- Chat answers, templates and worksheets are not evidence capture by themselves;
+  values count only after Tobi saves them through Pulse's Activity Fueling UI.
 - Do not edit database rows directly for normal evidence capture.
 - Do not invent GI comfort; Tobi must choose the value from actual experience.
 - Sodium, heat and sweat-rate remain measured-only evidence gaps until they are explicitly recorded.
@@ -92,7 +94,7 @@ For a live manual capture packet with all current candidates and rerun steps, ru
 npm run audit:fueling-gate -- --today <YYYY-MM-DD> --packet
 ```
 
-For the shortest first-target prompt to use in a manual capture/chat handoff, run:
+For the shortest first-target prompt to use in a manual UI capture handoff, run:
 
 ```bash
 npm run audit:fueling-gate -- --today <YYYY-MM-DD> --next-prompt
@@ -133,6 +135,7 @@ On the Activity Fueling section:
   - `mild_issue` = Magen leicht unruhig;
   - `issue` = Magenprobleme;
 - save through the Activity Fueling UI;
+- treat any CLI template as a worksheet only, not as a write path;
 - rerun `npm run audit:fueling-gate -- --today <YYYY-MM-DD>`.
 
 If the audit still lists another existing completion candidate, repeat this checklist for that target.
