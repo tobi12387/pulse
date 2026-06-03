@@ -383,6 +383,8 @@ function summarizeIphone(expectedCommit, runner) {
     settingsFieldUrl: audit.settingsFieldUrl ?? null,
     evidenceFile: audit.evidenceFile,
     expectedCommit: audit.expectedCommit ?? null,
+    expectedRuntimeCommit: audit.expectedRuntimeCommit ?? null,
+    fieldRuntimeCommit: audit.fieldRuntimeCommit ?? null,
     commitStatus: audit.commitStatus ?? null,
     serverCommitUnderTest: audit.scope?.serverCommit ?? null,
     gaps: audit.gaps ?? [],
@@ -628,6 +630,8 @@ function nextUnblockMetadata(gate) {
       evidenceChecklist: gate.evidenceChecklist ?? IPHONE_FIELD_CHECKLIST,
       evidenceFile: gate.evidenceFile ?? null,
       expectedCommit: gate.expectedCommit ?? null,
+      expectedRuntimeCommit: gate.expectedRuntimeCommit ?? null,
+      fieldRuntimeCommit: gate.fieldRuntimeCommit ?? null,
       commitStatus: gate.commitStatus ?? null,
       serverCommitUnderTest: gate.serverCommitUnderTest ?? null,
       fieldPacketCommand: gate.fieldPacketCommand ?? null,
@@ -1330,7 +1334,16 @@ function renderIphoneSessionCard(next) {
   if (metadata.firstGap?.nextAction) lines.push(`Aktion: ${metadata.firstGap.nextAction}`);
   if (metadata.serverVerifyCommand) lines.push(`Vorher Server pruefen: ${metadata.serverVerifyCommand}`);
   if (metadata.settingsFieldUrl) lines.push(`Settings oeffnen: ${metadata.settingsFieldUrl}`);
+  if (metadata.expectedCommit) lines.push(`Aufnahmeziel: Server commit under test = ${metadata.expectedCommit}.`);
   if (metadata.settingsFieldUrl) lines.push('App-Stand erfassen: beobachteten Settings App-Stand als App runtime commit under test kopieren.');
+  if (metadata.expectedRuntimeCommit) {
+    lines.push(`Runtime-Vergleich: erwarteter App runtime commit ${metadata.expectedRuntimeCommit} ist nur Vergleichsziel; nicht blind eintragen.`);
+  }
+  const previousEvidence = [
+    metadata.serverCommitUnderTest ? `Server ${metadata.serverCommitUnderTest}` : null,
+    metadata.fieldRuntimeCommit ? `App-Stand ${metadata.fieldRuntimeCommit}` : null,
+  ].filter(Boolean).join(', ');
+  if (previousEvidence) lines.push(`Alte Field-Werte: ${previousEvidence} nur als vorherige Evidence behandeln.`);
   if (metadata.fieldScaffoldCommand) lines.push(`Feld-Scaffold: ${metadata.fieldScaffoldCommand}`);
   if (metadata.fieldPromptCommand) lines.push(`Kurzprompt: ${metadata.fieldPromptCommand}`);
   if (metadata.evidenceFile) lines.push(`Dokumentieren in: ${metadata.evidenceFile}`);
