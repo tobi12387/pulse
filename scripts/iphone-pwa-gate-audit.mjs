@@ -393,7 +393,7 @@ function scaffoldValue(value, fallback) {
 }
 
 function observedRuntimePlaceholder(audit) {
-  const expected = audit.expectedRuntimeCommit ? `; expected ${audit.expectedRuntimeCommit}` : '';
+  const expected = audit.expectedRuntimeCommit ? `; comparison target ${audit.expectedRuntimeCommit}` : '';
   return `<copy observed Settings App-Stand${expected}>`;
 }
 
@@ -443,7 +443,10 @@ export function renderIphonePwaFieldScaffold(audit) {
     '- Deliberately enable Push and send a test push only when testing notifications.',
     '- Disconnect VPN or network for the offline fallback check, then reopen the Home Screen PWA.',
     ...(audit.expectedRuntimeCommit
-      ? [`- Expected app-runtime commit for this audit: \`${audit.expectedRuntimeCommit}\`; record the observed Settings \`App-Stand\` in Scope.`]
+      ? [
+        `- App-runtime comparison target: \`${audit.expectedRuntimeCommit}\`; record the observed Settings \`App-Stand\` in Scope.`,
+        '- Do not copy the comparison target into `App runtime commit under test` unless Settings shows that exact `App-Stand`.',
+      ]
       : []),
     `- Append this field run to ${scaffoldValue(audit.evidenceFile, 'docs/qa/2026-05-02-iphone-pwa-real-device.md')}.`,
     `- After recording, rerun: \`${iphonePwaGateAuditCommand(audit.expectedCommit)}\`.`,
