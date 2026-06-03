@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-06-03 — Desktop-Arbeitsflaeche startet ohne zweite Kontextleiste
+
+- **Decision:** Die Desktop-Workspace-Topbar wird entfernt; globale Navigation, Sync, Nutzerstand und Coach bleiben in der Sidebar, waehrend die Route selbst mit ihrem PageHeader und der primaeren Arbeitskarte startet.
+- **Why:** Frische Route-Evidence bei `4b3e11f` zeigte keinen Overflow, aber Desktop hatte vor jeder Route drei konkurrierende Orientierungsebenen: Sidebar, Workspace-Topbar und PageHeader. Fuer eine Top-App-Performance-OS-Schale soll die erste Arbeitsflaeche schneller zur taeglichen Entscheidung, Evidence-Queue oder Wochensteuerung kommen, statt denselben Kontext doppelt zu erklaeren.
+- **Alternatives:** Noch eine kompaktere Topbar bauen (haelt die Doppelchrome-Reibung); PageHeader je Route entfernen (zu riskant, weil Tabs und route-spezifische Arbeitssteuerung dort liegen); Mobile ebenfalls umbauen (keine neue Mobile-Reibung in der Evidence).
+- **Decided by:** Codex, als Desktop-Focus-Surface-Pass im Branch `codex/desktop-focus-surface`.
+- **Status:** active.
+
+---
+
 ## 2026-06-03 — Mobile Chrome bleibt opak ueber Arbeitscontent
 
 - **Decision:** Die mobile Topbar und Bottom-Navigation nutzen eine solide Surface-Farbe statt halbtransparenter Hintergruende.

@@ -311,17 +311,6 @@
     display: none;
   }
 
-  .pulse-shell-topbar {
-    height: 56px;
-    min-height: 56px;
-    padding: 0 18px;
-    grid-template-columns: minmax(178px, 0.65fr) minmax(220px, 1fr) minmax(250px, 0.85fr);
-    align-items: center;
-    background: rgba(252,253,254,0.92);
-    border-color: var(--border);
-    backdrop-filter: blur(20px) saturate(1.25);
-  }
-
   .pulse-focus-sidebar {
     width: 244px;
     background: #111821;
@@ -433,115 +422,6 @@
     color: rgba(231,237,245,0.68);
     font-size: 11.5px;
     line-height: 1.45;
-  }
-
-  .pulse-topbar-command {
-    min-height: 30px;
-    display: grid;
-    grid-template-columns: auto auto auto;
-    align-items: center;
-    gap: 8px;
-    justify-self: center;
-    padding: 6px 10px;
-    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--surface) 80%, var(--surface-2));
-    color: var(--text-2);
-    font-size: 11px;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  .pulse-topbar-command span {
-    color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 760;
-  }
-
-  .pulse-topbar-command strong {
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 760;
-  }
-
-  .pulse-topbar-command em {
-    color: var(--text-2);
-    font-style: normal;
-  }
-
-  .pulse-topbar-context {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 14px;
-    color: var(--text-2);
-    font-size: 12px;
-  }
-
-  .pulse-topbar-context > span:last-child {
-    color: var(--text);
-    font-weight: 650;
-  }
-
-  .pulse-workspace-topbar {
-    min-height: 58px;
-    grid-template-columns: minmax(260px, 1fr) auto auto;
-    gap: 12px;
-    align-items: center;
-    padding: 0 18px;
-    background: rgba(255,255,255,0.88);
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-    backdrop-filter: blur(18px) saturate(1.2);
-  }
-
-  .pulse-workspace-route {
-    min-width: 0;
-    display: grid;
-    gap: 1px;
-  }
-
-  .pulse-workspace-route .label-mono {
-    color: var(--accent);
-  }
-
-  .pulse-workspace-route strong {
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 780;
-    line-height: 1.15;
-  }
-
-  .pulse-workspace-route em {
-    max-width: 720px;
-    overflow: hidden;
-    color: var(--text-2);
-    font-size: 11.5px;
-    font-style: normal;
-    line-height: 1.25;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .pulse-workspace-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-3);
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
-  .pulse-workspace-status span {
-    min-height: 28px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 8px;
-    border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--surface-2) 42%, transparent);
-    color: var(--text-2);
   }
 
   .pulse-status-chip {
@@ -799,6 +679,10 @@
 
   .pulse-mobile-nav-label--active {
     color: var(--accent);
+  }
+
+  .pulse-main-surface {
+    background: var(--bg);
   }
 
   .pulse-page-header {
@@ -2251,7 +2135,7 @@
 
   @media (min-width: 768px) {
     .pulse-page-shell {
-      padding-top: 1.75rem;
+      padding-top: 1.25rem;
       padding-bottom: 2rem;
     }
 

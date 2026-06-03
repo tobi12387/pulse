@@ -4,7 +4,6 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   BarChart3,
   CalendarDays,
-  CheckCircle2,
   CircleHelp,
   Command,
   Database,
@@ -226,29 +225,7 @@ export default function Layout() {
       </div>
 
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-y-auto">
-        <header className="pulse-workspace-topbar hidden md:grid" aria-label="Arbeitskontext">
-          <div className="pulse-workspace-route">
-            <span className="label-mono">{activeNavItem.label}</span>
-            <strong>{activeRouteContext.title}</strong>
-            <em>{activeRouteContext.description}</em>
-          </div>
-          <div className="pulse-workspace-status" aria-label="Workspace Status">
-            <span><CheckCircle2 size={14} aria-hidden="true" /> {activeRouteContext.status}</span>
-            <span><Wifi size={14} aria-hidden="true" /> Sync bereit</span>
-            <span>{today}</span>
-          </div>
-          <button
-            type="button"
-            className="pulse-topbar-command"
-            onClick={() => setCoachOpen(true)}
-            aria-label="Coach Command öffnen"
-          >
-            <Command size={14} aria-hidden="true" />
-            <strong>Coach</strong>
-            <em>Kontext öffnen</em>
-          </button>
-        </header>
+      <main className="pulse-main-surface flex-1 overflow-y-auto" aria-label="Arbeitsfläche">
         <div className="pulse-page-shell mx-auto px-4 max-w-3xl" style={pageShellStyle} data-route-width={isOperationalRoute ? 'operational' : 'standard'}>
           <Outlet />
         </div>
@@ -317,7 +294,7 @@ function KeyboardHelpDialog({ open, onClose }: { open: boolean; onClose: () => v
     ['2', 'Plan'],
     ['3', 'Daten'],
     ['4', 'Analyse'],
-    ['5', 'Setup'],
+    ['5', 'Bereit'],
     ['⌘K', 'Coach'],
     ['?', 'Tastaturhilfe'],
     ['Esc', 'Schließen'],
