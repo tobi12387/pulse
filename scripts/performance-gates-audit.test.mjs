@@ -159,6 +159,8 @@ const GATED_IPHONE = commandResult(0, JSON.stringify({
   fieldChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
   gate: 'gated',
   expectedCommit: 'abc1234',
+  expectedRuntimeCommit: 'runtime1',
+  fieldRuntimeCommit: 'oldruntime',
   commitStatus: 'stale',
   scope: { serverCommit: '9e05189' },
   gaps: [
@@ -539,6 +541,8 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
       evidenceChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
       evidenceFile: 'docs/qa/field.md',
       expectedCommit: 'abc1234',
+      expectedRuntimeCommit: 'runtime1',
+      fieldRuntimeCommit: 'oldruntime',
       commitStatus: 'stale',
       serverCommitUnderTest: '9e05189',
       fieldPacketCommand: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --packet',
@@ -572,7 +576,10 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(sessionCard, /Erste Luecke: Current main field evidence \(stale\)/);
   assert.match(sessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(sessionCard, /Settings oeffnen: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
+  assert.match(sessionCard, /Aufnahmeziel: Server commit under test = abc1234\./);
   assert.match(sessionCard, /App-Stand erfassen: beobachteten Settings App-Stand als App runtime commit under test kopieren/);
+  assert.match(sessionCard, /Runtime-Vergleich: erwarteter App runtime commit runtime1 ist nur Vergleichsziel; nicht blind eintragen\./);
+  assert.match(sessionCard, /Alte Field-Werte: Server 9e05189, App-Stand oldruntime nur als vorherige Evidence behandeln\./);
   assert.match(sessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.match(sessionCard, /Dokumentieren in: docs\/qa\/field\.md/);
   assert.match(sessionCard, /Aktion: Rerun the real iPhone checklist, record Server commit under test: abc1234, and copy the observed Settings App-Stand as App runtime commit under test\./);
