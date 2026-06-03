@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-06-03 — Mobile Chrome bleibt opak ueber Arbeitscontent
+
+- **Decision:** Die mobile Topbar und Bottom-Navigation nutzen eine solide Surface-Farbe statt halbtransparenter Hintergruende.
+- **Why:** Frische Route-Evidence zeigte kein horizontales Overflow, aber auf Home, Data Fueling, Activity Fueling und Plan schien Text unter den festen Chrome-Elementen durch. Fuer eine ruhige taegliche Entscheidung muss Navigation den Arbeitscontent klar begrenzen, nicht visuell darueber liegen.
+- **Alternatives:** Mehr Bottom-Padding addieren (loest das Durchscheinen bei fixed Chrome nicht); Bottom-Nav entfernen oder in den Flow setzen (zu grosser Navigationsumbau ohne neue Route-Evidence); halbtransparent lassen (zu unruhig fuer mobile Lesbarkeit).
+- **Decided by:** Codex, als Mobile-Chrome-Safe-Pass im Branch `codex/mobile-bottom-safe`.
+- **Status:** active.
+
+---
+
 ## 2026-05-27 — Clarity-Redesign reduziert redundante Chrome statt neue Karten zu addieren
 
 - **Decision:** Der naechste UI/UX-Pass entfernt die doppelte Desktop-Orientierung aus Sidebar-Focus-Card und Hauptnavigation, kuerzt die globale Navigation auf klare Bereichslabels, nutzt die Topbar als einzigen Arbeitskontext und flacht die Basis-Karten weiter ab.
