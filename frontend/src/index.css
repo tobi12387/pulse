@@ -287,7 +287,7 @@
   .pulse-mobile-topbar {
     height: calc(var(--mobile-topbar-height) + var(--safe-top));
     padding-top: var(--safe-top);
-    background: rgba(255,255,255,0.94);
+    background: color-mix(in srgb, var(--surface) 98%, var(--bg));
     border-color: var(--border);
     box-shadow: 0 1px 0 rgba(33,43,54,0.04);
     backdrop-filter: blur(20px) saturate(1.25);
@@ -296,7 +296,7 @@
   .pulse-mobile-bottom-nav {
     height: calc(var(--mobile-bottomnav-height) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);
-    background: rgba(255,255,255,0.95);
+    background: color-mix(in srgb, var(--surface) 98%, var(--bg));
     border-color: var(--border);
     box-shadow: 0 -1px 0 rgba(33,43,54,0.04);
     backdrop-filter: blur(20px) saturate(1.25);
