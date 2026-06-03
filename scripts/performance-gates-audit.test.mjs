@@ -392,7 +392,7 @@ test('performance gate audit summarizes current gated blockers', () => {
   assert.match(packet, /Detail: ERROR: SSH access to root@192\.168\.178\.46 failed before server checks\./);
   assert.match(packet, /Recovery packet: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server -- --packet/);
   assert.match(packet, /Fueling GI comfort must come from the real stomach response/);
-  assert.match(packet, /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
+  assert.match(packet, /Real iPhone\/PWA field evidence must record the expected server commit and the observed Settings App-Stand for this run/);
   assert.match(packet, /If the run is intentionally pinned to a known deployed\/runtime commit, pass --expected-commit <short> so server and iPhone checks use that commit/);
   assert.match(packet, /Rerun after any manual save or deploy: npm run audit:performance-gates -- --today 2026-05-21/);
 
@@ -533,7 +533,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
     key: 'iphone_pwa',
     label: 'iPhone/PWA field',
     command: 'npm run audit:iphone-pwa-gate -- --expected-commit abc1234',
-    action: 'Rerun the real iPhone checklist and record Server commit under test: abc1234.',
+    action: 'Rerun the real iPhone checklist, record Server commit under test: abc1234, and copy the observed Settings App-Stand as App runtime commit under test.',
     detail: '3 open gaps: Current main field evidence: stale, Warning-free certificate trust: needs_followup, Push activation and test push: partial',
     metadata: {
       evidenceChecklist: 'docs/ai/checklists/iphone-pwa-qa.md',
@@ -551,7 +551,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
         kind: 'current_commit_evidence',
         label: 'Current main field evidence',
         status: 'stale',
-        nextAction: 'Rerun the real iPhone checklist and record Server commit under test: abc1234.',
+        nextAction: 'Rerun the real iPhone checklist, record Server commit under test: abc1234, and copy the observed Settings App-Stand as App runtime commit under test.',
       },
     },
   });
@@ -563,7 +563,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(renderNextUnblock(audit), /Settings field URL: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.doesNotMatch(renderNextUnblock(audit), /Server recovery packet:/);
   assert.match(renderNextUnblock(audit), /Manual safety:/);
-  assert.match(renderNextUnblock(audit), /Real iPhone\/PWA field evidence must be recorded against the expected commit for this run/);
+  assert.match(renderNextUnblock(audit), /Real iPhone\/PWA field evidence must record the expected server commit and the observed Settings App-Stand for this run/);
   assert.match(renderNextUnblock(audit), /The server is a GitHub main mirror; do not edit, branch or commit on the server/);
 
   const sessionCard = renderPerformanceSessionCard(audit);
@@ -572,9 +572,11 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(sessionCard, /Erste Luecke: Current main field evidence \(stale\)/);
   assert.match(sessionCard, /Vorher Server pruefen: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(sessionCard, /Settings oeffnen: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
+  assert.match(sessionCard, /App-Stand erfassen: beobachteten Settings App-Stand als App runtime commit under test kopieren/);
   assert.match(sessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.match(sessionCard, /Dokumentieren in: docs\/qa\/field\.md/);
-  assert.match(sessionCard, /Sicherheit: echte iPhone\/PWA-Feldbeobachtung gegen den erwarteten Commit dokumentieren/);
+  assert.match(sessionCard, /Aktion: Rerun the real iPhone checklist, record Server commit under test: abc1234, and copy the observed Settings App-Stand as App runtime commit under test\./);
+  assert.match(sessionCard, /Sicherheit: echte iPhone\/PWA-Feldbeobachtung mit Server-Commit und beobachtetem Settings App-Stand dokumentieren/);
 });
 
 test('performance gate audit preserves configured server SSH host in gate handoffs', () => {
@@ -691,7 +693,7 @@ test('performance gate audit accepts docs-only server drift when app runtime mat
   assert.equal(audit.openGates, 1);
   assert.equal(audit.nextUnblock.key, 'iphone_pwa');
   assert.equal(audit.gates[1].serverRecoveryPacketCommand, null);
-  assert.equal(audit.gates[1].nextAction, 'Rerun the real iPhone checklist and record Server commit under test: abc1234.');
+  assert.equal(audit.gates[1].nextAction, 'Rerun the real iPhone checklist, record Server commit under test: abc1234, and copy the observed Settings App-Stand as App runtime commit under test.');
   assert.equal(audit.gates[2].gate, 'ready');
   assert.equal(audit.gates[2].commitStatus, 'current_runtime');
   assert.equal(audit.gates[2].serverCommit, 'docsnew');
