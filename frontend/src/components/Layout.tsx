@@ -19,52 +19,52 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheidung', end: true, icon: Home },
-  { to: '/plan', label: 'Plan', mobileLabel: 'Plan', description: 'Steuerung', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Daten', mobileLabel: 'Daten', description: 'Evidenz', end: false, icon: Database },
-  { to: '/insights', label: 'Lernen', mobileLabel: 'Lernen', description: 'Analyse', end: false, icon: BarChart3 },
-  { to: '/settings', label: 'Bereit', mobileLabel: 'Bereit', description: 'System', end: false, icon: Settings },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Next Action', end: true, icon: Home },
+  { to: '/plan', label: 'Woche', mobileLabel: 'Woche', description: 'Training', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Evidenz', mobileLabel: 'Evidenz', description: 'Daten', end: false, icon: Database },
+  { to: '/insights', label: 'Muster', mobileLabel: 'Muster', description: 'Lernen', end: false, icon: BarChart3 },
+  { to: '/settings', label: 'System', mobileLabel: 'System', description: 'Bereit', end: false, icon: Settings },
 ];
 
 function routeContext(pathname: string) {
   if (pathname.startsWith('/plan/activity') || pathname.startsWith('/activity')) {
     return {
       eyebrow: 'Aktivitätsabschluss',
-      title: 'Evidence zuerst',
+      title: 'Abschluss sichern',
       description: 'RPE, Fueling und Folge-Evidence schließen; Plan und Garmin bleiben geschützt.',
-      status: 'Review offen',
+      status: 'Evidence',
     };
   }
   if (pathname.startsWith('/plan')) {
     return {
-      eyebrow: 'Wochensteuerung',
-      title: 'Vorschau vor Änderung',
+      eyebrow: 'Woche',
+      title: 'Training steuern',
       description: 'Plan, Garmin und Ziele bewusst prüfen, bevor ein Schritt schreibt.',
-      status: 'No hidden write',
+      status: 'Preview',
     };
   }
   if (pathname.startsWith('/data')) {
     return {
       eyebrow: 'Evidenz',
-      title: 'Lücke vor Trend',
+      title: 'Daten klären',
       description: 'Die nächste Datenlücke steht vorne, Analyse bleibt erreichbar.',
-      status: 'Capture first',
+      status: 'Capture',
     };
   }
   if (pathname.startsWith('/insights')) {
     return {
-      eyebrow: 'Lernen',
-      title: 'Muster statt Lärm',
+      eyebrow: 'Muster',
+      title: 'Lernen prüfen',
       description: 'Nur belastbare Muster sollen Plan oder Tagesentscheidung verändern.',
-      status: 'Read-only',
+      status: 'Read only',
     };
   }
   if (pathname.startsWith('/settings')) {
     return {
-      eyebrow: 'Bereitschaft',
-      title: 'System bereit halten',
+      eyebrow: 'System',
+      title: 'Bereit halten',
       description: 'Geräte, Profil, Push und Feldnachweise sichern die tägliche Entscheidung.',
-      status: 'Diagnose',
+      status: 'Ready',
     };
   }
   if (pathname.startsWith('/coach')) {
@@ -72,12 +72,12 @@ function routeContext(pathname: string) {
       eyebrow: 'Coach',
       title: 'Frage in Kontext',
       description: 'Prompts starten mit deiner Tageslage, Plan- und Evidenzsignalen.',
-      status: 'Kontext',
+      status: 'Coach',
     };
   }
   return {
     eyebrow: 'Heute',
-    title: 'Eine klare Antwort',
+    title: 'Tagesentscheidung',
     description: 'Körper, Plan, Alltag und Evidenz laufen in den nächsten sicheren Schritt.',
     status: 'Jetzt',
   };
@@ -144,7 +144,7 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
             <div className="pulse-brand-title">Pulse</div>
-            <div className="pulse-brand-subtitle">Performance Command Center</div>
+            <div className="pulse-brand-subtitle">Private Performance OS</div>
           </div>
         </div>
 
@@ -291,10 +291,10 @@ function KeyboardHelpDialog({ open, onClose }: { open: boolean; onClose: () => v
 
   const shortcuts = [
     ['1', 'Heute'],
-    ['2', 'Plan'],
-    ['3', 'Daten'],
-    ['4', 'Analyse'],
-    ['5', 'Bereit'],
+    ['2', 'Woche'],
+    ['3', 'Evidenz'],
+    ['4', 'Muster'],
+    ['5', 'System'],
     ['⌘K', 'Coach'],
     ['?', 'Tastaturhilfe'],
     ['Esc', 'Schließen'],

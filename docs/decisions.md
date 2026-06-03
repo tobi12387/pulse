@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-06-03 — Performance-OS UI bekommt eine helle Arbeitsflaechen-IA
+
+- **Decision:** Pulse nutzt fuer den naechsten Top-App-Redesign-Pass eine helle Performance-OS-Schale, kurze arbeitsorientierte Bereichsnamen (`Heute`, `Woche`, `Evidenz`, `Muster`, `System`), flachere Karten und kompaktere Route-/Tab-Header. URLs bleiben stabil, aber die sichtbare Informationsarchitektur darf sich breaking anfuehlen.
+- **Why:** Tobi hat erneut ein komplettes UI/UX-Redesign mit allen Freiheiten priorisiert. Frische Route-Evidence zeigte zwar 0 Overflow, aber die Friktion lag in konkurrierenden Navigations- und Kartenhierarchien: dunkle Command-Center-Schale, route-spezifische Titelmodelle und lange Tabs machten die taegliche Entscheidung unnoetig laut.
+- **Alternatives:** Dunkle Command-Center-Schale behalten (zu schwer fuer eine ruhige Daily-App); weitere Erklaerkarten hinzufuegen (mehr Strukturrauschen); URLs sofort brechen (kein belegter Gewinn gegenueber sichtbarer IA-Umbenennung); nur Farben polieren (zu wenig fuer die gemeldete Unuebersichtlichkeit).
+- **Decided by:** Tobi und Codex, als UI/UX-Top-App-Redesign im Branch `codex/ui-ux-top-app-redesign-20260603`.
+- **Status:** active.
+
+---
+
 ## 2026-06-03 — Performance-OS Backlog bleibt Arbeitsordnung statt Shipped-Archiv
 
 - **Decision:** `docs/ai/next-product-packages.md` wird auf aktuelle Package-Order, offene Gates, Gate-Open-Seeds und Support-Regeln verdichtet; detaillierte shipped Package-Historie lebt in PRs, completed plans, QA-Records und `docs/decisions.md`.

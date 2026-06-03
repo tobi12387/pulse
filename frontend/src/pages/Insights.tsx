@@ -582,14 +582,24 @@ export function DataAnalysenTab({ mode = 'data' }: { mode?: 'data' | 'insights' 
 
   return (
     <div className="flex flex-col gap-3">
-      <PageHeader
-        eyebrow={mode === 'insights' ? 'ANALYSE · 90T' : 'DATEN · ANALYSEN'}
-        title={mode === 'insights' ? 'Analyse' : 'Analysen'}
-        description={mode === 'insights'
-          ? 'Trends, Korrelationen und belastbare Muster aus deinen Pulse-Daten.'
-          : 'Öffne eine Karte, um die Analyse gezielt zu laden.'}
-        action={<RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />}
-      />
+      {mode === 'insights' ? (
+        <PageHeader
+          eyebrow="Muster"
+          title="Muster prüfen"
+          mobileTitle="Muster"
+          description="Trends, Korrelationen und belastbare Muster aus deinen Pulse-Daten."
+          action={<RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />}
+        />
+      ) : (
+        <div className="embedded-section-header">
+          <div>
+            <div className="label-mono">Analyse</div>
+            <h2>Was darf heute wirklich zählen?</h2>
+            <p>Nur belastbare Muster wandern zurück in Home oder Plan.</p>
+          </div>
+          <RangeControl value={days} onChange={setDays} options={RANGE_OPTIONS} />
+        </div>
+      )}
 
       <AnalysisTranslationCard
         decisionQuality={decisionQuality}
@@ -761,9 +771,9 @@ function InsightsSynthesis() {
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        eyebrow="Analyse"
-        title="Analyse: Muster, nicht mehr Lärm"
-        mobileTitle="Analyse"
+        eyebrow="Muster"
+        title="Muster prüfen"
+        mobileTitle="Muster"
         description="Pulse zeigt zuerst die eine lernende Aussage, die Plan oder Alltag wirklich verändern kann. Tiefe Analyse bleibt bewusst hinter Disclosure."
       />
 
