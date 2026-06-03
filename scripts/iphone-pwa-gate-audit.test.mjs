@@ -250,6 +250,10 @@ test('iphone pwa gate audit gates stale field evidence against the expected comm
   assert.match(nextPrompt, /Settings field URL: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(nextPrompt, /First open gap: Current main field evidence \(stale\)/);
   assert.match(nextPrompt, /Next action: Verify the server mirror is on abc1234, rerun the real iPhone checklist and record Server commit under test: abc1234\./);
+  assert.match(nextPrompt, /Recording target:/);
+  assert.match(nextPrompt, /In the new Scope, set Server commit under test to abc1234\./);
+  assert.match(nextPrompt, /Copy App runtime commit under test from the observed Settings App-Stand on the real iPhone\/PWA\./);
+  assert.match(nextPrompt, /Treat previous Server commit 9e05189 as previous evidence, not as values for the new field run\./);
   assert.match(nextPrompt, /Verify server mirror first: PULSE_EXPECTED_COMMIT=abc1234 npm run verify:server/);
   assert.match(nextPrompt, /Open Settings field proof: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(nextPrompt, /Full field scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
@@ -295,9 +299,11 @@ test('iphone pwa field handoffs treat app runtime as observed Settings App-Stand
     evidenceFile: 'field.md',
     expectedCommit: 'abc1234',
     expectedRuntimeCommit: 'runtime1',
+    fieldRuntimeCommit: 'oldruntime',
   });
 
   assert.equal(audit.expectedRuntimeCommit, 'runtime1');
+  assert.equal(audit.fieldRuntimeCommit, 'oldruntime');
 
   const scaffold = renderIphonePwaFieldScaffold(audit);
   assert.match(scaffold, /Expected app-runtime commit for this audit: `runtime1`; record the observed Settings `App-Stand` in Scope\./);
@@ -310,6 +316,8 @@ test('iphone pwa field handoffs treat app runtime as observed Settings App-Stand
 
   const nextPrompt = renderIphonePwaNextPrompt(audit);
   assert.match(nextPrompt, /expected app runtime commit: runtime1/);
+  assert.match(nextPrompt, /Expected app runtime commit runtime1 is only the comparison target; do not paste it unless Settings shows that exact App-Stand\./);
+  assert.match(nextPrompt, /Treat previous Server commit 9e05189, previous Settings App-Stand oldruntime as previous evidence, not as values for the new field run\./);
   assert.match(nextPrompt, /Record the observed Settings App-Stand as App runtime commit under test/);
   assert.match(nextPrompt, /Record Device, iOS version, Server commit under test and observed Settings App-Stand as App runtime commit under test/);
 });
