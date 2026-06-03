@@ -225,10 +225,10 @@ export default function Settings() {
   return (
     <div className="settings-layout">
       <PageHeader
-        eyebrow="Bereit"
-        title="Bereitschaft, Geräte und Profil"
-        mobileTitle="Bereit"
-        description="Alles, was die tägliche Entscheidung verlässlich macht: Garmin, PWA, Push, Profil und Health-State."
+        eyebrow="System"
+        title="System bereit"
+        mobileTitle="System"
+        description="Garmin, PWA, Push, Profil und Health-State halten die tägliche Entscheidung verlässlich."
       />
 
       <div className="settings-primary-grid">

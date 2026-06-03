@@ -42,9 +42,9 @@ type DataPrimaryActionCandidateLog = {
 };
 
 const TABS = [
-  { id: 'heute', label: 'Heute relevant' },
+  { id: 'heute', label: 'Heute' },
   { id: 'trends', label: 'Trends' },
-  { id: 'qualitaet', label: 'Datenqualität' },
+  { id: 'qualitaet', label: 'Qualität' },
   { id: 'analyse', label: 'Analyse' },
 ];
 
@@ -936,10 +936,10 @@ export default function Data() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        eyebrow="Daten"
-        title="Evidenz-Queue"
-        mobileTitle="Daten"
-        description="Die nächste Evidenzlücke steht oben; Trends, Qualität und Analyse bleiben klar erreichbar."
+        eyebrow="Evidenz"
+        title="Daten klären"
+        mobileTitle="Evidenz"
+        description="Ein Capture-Schritt zuerst; Trends, Qualität und Analyse bleiben darunter erreichbar."
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Daten Bereiche" idPrefix="data" wrap />}
       />
       {tab === 'heute' && <TabPanel tab="heute"><DataHeuteTab onOpen={setTab} focus={focus} /></TabPanel>}

@@ -3831,11 +3831,11 @@ function StatistikTab() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'training', label: 'Training' },
-  { id: 'ausfuehrung', label: 'Ausführung' },
+  { id: 'training', label: 'Woche' },
+  { id: 'ausfuehrung', label: 'Sync' },
   { id: 'ziele',    label: 'Ziele'    },
   { id: 'review',   label: 'Review'   },
-  { id: 'statistik', label: 'Statistik' },
+  { id: 'statistik', label: 'Stats' },
 ];
 
 function TabPanel({ tab, children }: { tab: Tab; children: React.ReactNode }) {
@@ -3932,9 +3932,9 @@ export default function Plan() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
-        eyebrow="Plan"
-        title="Wochensteuerung"
-        mobileTitle="Plan"
+        eyebrow="Woche"
+        title="Training steuern"
+        mobileTitle="Woche"
         description="Woche, Garmin und Zielsignale laufen in eine bewusste Vorschau-Entscheidung."
         action={<SegmentedControl items={TABS} active={tab} onChange={setTab} ariaLabel="Plan Bereiche" idPrefix="plan" />}
       />
