@@ -390,7 +390,7 @@ function summarizeIphone(expectedCommit, runner) {
 }
 
 function iphoneServerReadyAction(expectedCommit) {
-  return `Rerun the real iPhone checklist and record Server commit under test: ${expectedCommit}.`;
+  return `Rerun the real iPhone checklist, record Server commit under test: ${expectedCommit}, and copy the observed Settings App-Stand as App runtime commit under test.`;
 }
 
 function refineIphoneGateForServer(gate, serverGate, expectedCommit) {
@@ -887,7 +887,7 @@ function manualSafetyLinesForNext(next) {
   if (next.key === 'iphone_pwa') {
     return [
       'Manual safety:',
-      '- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.',
+      '- Real iPhone/PWA field evidence must record the expected server commit and the observed Settings App-Stand for this run.',
       '- The server is a GitHub main mirror; do not edit, branch or commit on the server.',
     ];
   }
@@ -1070,7 +1070,7 @@ export function renderPerformanceGatePacket(audit) {
   lines.push('## Manual Safety');
   lines.push('- Fueling GI comfort must come from the real stomach response; do not infer it from notes, route, RPE, g/h, result or pace.');
   lines.push('- Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly.');
-  lines.push('- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.');
+  lines.push('- Real iPhone/PWA field evidence must record the expected server commit and the observed Settings App-Stand for this run.');
   lines.push('- If the run is intentionally pinned to a known deployed/runtime commit, pass --expected-commit <short> so server and iPhone checks use that commit.');
   lines.push('- The server is a GitHub main mirror; do not edit, branch or commit on the server.');
   lines.push(`- Rerun after any manual save or deploy: ${rerunPerformanceGateCommand(audit)}`);
@@ -1174,6 +1174,7 @@ function renderIphoneManualChecklist(gate, index) {
   }
   if (metadata?.settingsFieldUrl) {
     lines.push(checkbox(`Open the Settings field proof on the real iPhone/PWA: ${metadata.settingsFieldUrl}.`));
+    lines.push(checkbox('Record Device, iOS, launch mode and observed Settings App-Stand as App runtime commit under test.'));
   }
   if (metadata?.fieldScaffoldCommand) {
     lines.push(checkbox(`Print the self-contained field scaffold with server preflight, open gaps and paste-ready evidence record: ${commandText(metadata.fieldScaffoldCommand)}.`));
@@ -1249,7 +1250,7 @@ export function renderPerformanceManualChecklist(audit) {
   lines.push('## Manual Safety');
   lines.push('- GI comfort must come from the real stomach response; do not infer it from notes, route, RPE, g/h, result or pace.');
   lines.push('- Use the Activity Fueling UI for normal evidence capture; do not edit database rows directly.');
-  lines.push('- Real iPhone/PWA field evidence must be recorded against the expected commit for this run.');
+  lines.push('- Real iPhone/PWA field evidence must record the expected server commit and the observed Settings App-Stand for this run.');
   lines.push('- The server is a GitHub main mirror; do not edit, branch or commit on the server.');
   lines.push(`- Rerun after any manual save or deploy: ${rerunPerformanceGateCommand(audit)}`);
 
@@ -1329,11 +1330,12 @@ function renderIphoneSessionCard(next) {
   if (metadata.firstGap?.nextAction) lines.push(`Aktion: ${metadata.firstGap.nextAction}`);
   if (metadata.serverVerifyCommand) lines.push(`Vorher Server pruefen: ${metadata.serverVerifyCommand}`);
   if (metadata.settingsFieldUrl) lines.push(`Settings oeffnen: ${metadata.settingsFieldUrl}`);
+  if (metadata.settingsFieldUrl) lines.push('App-Stand erfassen: beobachteten Settings App-Stand als App runtime commit under test kopieren.');
   if (metadata.fieldScaffoldCommand) lines.push(`Feld-Scaffold: ${metadata.fieldScaffoldCommand}`);
   if (metadata.fieldPromptCommand) lines.push(`Kurzprompt: ${metadata.fieldPromptCommand}`);
   if (metadata.evidenceFile) lines.push(`Dokumentieren in: ${metadata.evidenceFile}`);
   lines.push(`Rerun: ${next.command}`);
-  lines.push('Sicherheit: echte iPhone/PWA-Feldbeobachtung gegen den erwarteten Commit dokumentieren; Server bleibt GitHub-main-Mirror.');
+  lines.push('Sicherheit: echte iPhone/PWA-Feldbeobachtung mit Server-Commit und beobachtetem Settings App-Stand dokumentieren; Server bleibt GitHub-main-Mirror.');
   return lines;
 }
 
