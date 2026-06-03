@@ -397,6 +397,30 @@ function observedRuntimePlaceholder(audit) {
   return `<copy observed Settings App-Stand${expected}>`;
 }
 
+function previousFieldRuntimeText(audit) {
+  const parts = [
+    audit.scope.serverCommit ? `previous Server commit ${audit.scope.serverCommit}` : null,
+    audit.fieldRuntimeCommit ? `previous Settings App-Stand ${audit.fieldRuntimeCommit}` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : null;
+}
+
+function nextPromptRecordingTargetLines(audit, expectedCommit) {
+  const lines = [
+    'Recording target:',
+    `- In the new Scope, set Server commit under test to ${expectedCommit}.`,
+    '- Copy App runtime commit under test from the observed Settings App-Stand on the real iPhone/PWA.',
+  ];
+  if (audit.expectedRuntimeCommit) {
+    lines.push(`- Expected app runtime commit ${audit.expectedRuntimeCommit} is only the comparison target; do not paste it unless Settings shows that exact App-Stand.`);
+  }
+  const previous = previousFieldRuntimeText(audit);
+  if (previous) {
+    lines.push(`- Treat ${previous} as previous evidence, not as values for the new field run.`);
+  }
+  return lines;
+}
+
 function scaffoldGapLines(audit) {
   if (audit.gaps.length === 0) {
     return ['- Current audit has no open field gaps for the expected commit.'];
@@ -538,6 +562,8 @@ export function renderIphonePwaNextPrompt(audit) {
   lines.push('');
   lines.push('Prompt:');
   lines.push(`Run a real iPhone/PWA field check for Server commit under test: ${expectedCommit}${audit.expectedRuntimeCommit ? ` and expected app runtime commit: ${audit.expectedRuntimeCommit}` : ''}. Record the observed Settings App-Stand as App runtime commit under test, then use the scaffold if the run needs a full evidence record.`);
+  lines.push('');
+  lines.push(...nextPromptRecordingTargetLines(audit, expectedCommit));
   lines.push('');
   lines.push('Commands:');
   lines.push(`- Verify server mirror first: ${serverVerifyCommand(audit.expectedCommit)}`);
