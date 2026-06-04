@@ -578,7 +578,7 @@ test('performance gate audit exposes structured next-unblock metadata for iPhone
   assert.match(sessionCard, /Settings oeffnen: https:\/\/192\.168\.178\.46:5175\/settings\?section=device/);
   assert.match(sessionCard, /Aufnahmeziel: Server commit under test = abc1234\./);
   assert.match(sessionCard, /App-Stand erfassen: beobachteten Settings App-Stand als App runtime commit under test kopieren/);
-  assert.match(sessionCard, /Runtime-Vergleich: erwarteter App runtime commit runtime1 ist nur Vergleichsziel; nicht blind eintragen\./);
+  assert.match(sessionCard, /App-Runtime-Vergleichsziel: runtime1; nur ein Sollwert\. App-Stand im Feldlauf in Settings beobachten und nur dann eintragen, wenn Settings exakt diesen Wert zeigt\./);
   assert.match(sessionCard, /Alte Field-Werte: Server 9e05189, App-Stand oldruntime nur als vorherige Evidence behandeln\./);
   assert.match(sessionCard, /Feld-Scaffold: npm run audit:iphone-pwa-gate -- --expected-commit abc1234 --scaffold/);
   assert.match(sessionCard, /Dokumentieren in: docs\/qa\/field\.md/);
