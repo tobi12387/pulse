@@ -1337,7 +1337,7 @@ function renderIphoneSessionCard(next) {
   if (metadata.expectedCommit) lines.push(`Aufnahmeziel: Server commit under test = ${metadata.expectedCommit}.`);
   if (metadata.settingsFieldUrl) lines.push('App-Stand erfassen: beobachteten Settings App-Stand als App runtime commit under test kopieren.');
   if (metadata.expectedRuntimeCommit) {
-    lines.push(`Runtime-Vergleich: erwarteter App runtime commit ${metadata.expectedRuntimeCommit} ist nur Vergleichsziel; nicht blind eintragen.`);
+    lines.push(`App-Runtime-Vergleichsziel: ${metadata.expectedRuntimeCommit}; nur ein Sollwert. App-Stand im Feldlauf in Settings beobachten und nur dann eintragen, wenn Settings exakt diesen Wert zeigt.`);
   }
   const previousEvidence = [
     metadata.serverCommitUnderTest ? `Server ${metadata.serverCommitUnderTest}` : null,
