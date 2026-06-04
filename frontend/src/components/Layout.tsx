@@ -19,12 +19,14 @@ import { useNavHotkeys } from '@/hooks/useHotkeys';
 import { focusCssVars } from '@/lib/theme';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Next Action', end: true, icon: Home },
-  { to: '/plan', label: 'Woche', mobileLabel: 'Woche', description: 'Training', end: false, icon: CalendarDays },
-  { to: '/data', label: 'Evidenz', mobileLabel: 'Evidenz', description: 'Daten', end: false, icon: Database },
+  { to: '/', label: 'Heute', mobileLabel: 'Heute', description: 'Entscheiden', end: true, icon: Home },
+  { to: '/plan', label: 'Woche', mobileLabel: 'Woche', description: 'Steuern', end: false, icon: CalendarDays },
+  { to: '/data', label: 'Evidenz', mobileLabel: 'Evidenz', description: 'Belegen', end: false, icon: Database },
   { to: '/insights', label: 'Muster', mobileLabel: 'Muster', description: 'Lernen', end: false, icon: BarChart3 },
   { to: '/settings', label: 'System', mobileLabel: 'System', description: 'Bereit', end: false, icon: Settings },
 ];
+
+const LOOP_STEPS = ['Heute', 'Woche', 'Evidenz', 'Muster', 'System'];
 
 function routeContext(pathname: string) {
   if (pathname.startsWith('/plan/activity') || pathname.startsWith('/activity')) {
@@ -33,6 +35,7 @@ function routeContext(pathname: string) {
       title: 'Abschluss sichern',
       description: 'RPE, Fueling und Folge-Evidence schließen; Plan und Garmin bleiben geschützt.',
       status: 'Evidence',
+      loopIndex: 2,
     };
   }
   if (pathname.startsWith('/plan')) {
@@ -41,6 +44,7 @@ function routeContext(pathname: string) {
       title: 'Training steuern',
       description: 'Plan, Garmin und Ziele bewusst prüfen, bevor ein Schritt schreibt.',
       status: 'Preview',
+      loopIndex: 1,
     };
   }
   if (pathname.startsWith('/data')) {
@@ -49,6 +53,7 @@ function routeContext(pathname: string) {
       title: 'Daten klären',
       description: 'Die nächste Datenlücke steht vorne, Analyse bleibt erreichbar.',
       status: 'Capture',
+      loopIndex: 2,
     };
   }
   if (pathname.startsWith('/insights')) {
@@ -57,6 +62,7 @@ function routeContext(pathname: string) {
       title: 'Lernen prüfen',
       description: 'Nur belastbare Muster sollen Plan oder Tagesentscheidung verändern.',
       status: 'Read only',
+      loopIndex: 3,
     };
   }
   if (pathname.startsWith('/settings')) {
@@ -65,6 +71,7 @@ function routeContext(pathname: string) {
       title: 'Bereit halten',
       description: 'Geräte, Profil, Push und Feldnachweise sichern die tägliche Entscheidung.',
       status: 'Ready',
+      loopIndex: 4,
     };
   }
   if (pathname.startsWith('/coach')) {
@@ -73,6 +80,7 @@ function routeContext(pathname: string) {
       title: 'Frage in Kontext',
       description: 'Prompts starten mit deiner Tageslage, Plan- und Evidenzsignalen.',
       status: 'Coach',
+      loopIndex: 0,
     };
   }
   return {
@@ -80,6 +88,7 @@ function routeContext(pathname: string) {
     title: 'Tagesentscheidung',
     description: 'Körper, Plan, Alltag und Evidenz laufen in den nächsten sicheren Schritt.',
     status: 'Jetzt',
+    loopIndex: 0,
   };
 }
 
@@ -144,13 +153,31 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <div>
             <div className="pulse-brand-title">Pulse</div>
-            <div className="pulse-brand-subtitle">Private Performance OS</div>
+            <div className="pulse-brand-subtitle">Performance OS</div>
           </div>
         </div>
 
+        <section className="pulse-command-deck" aria-label="Aktueller Arbeitskontext">
+          <div className="pulse-command-deck__meta">
+            <span>{today}</span>
+            <span>{activeRouteContext.status}</span>
+          </div>
+          <strong>{activeRouteContext.title}</strong>
+          <p>{activeRouteContext.description}</p>
+          <div className="pulse-loop-rail" aria-label="Performance Loop">
+            {LOOP_STEPS.map((step, index) => (
+              <span
+                key={step}
+                className={`pulse-loop-dot ${index === activeRouteContext.loopIndex ? 'pulse-loop-dot--active' : ''}`}
+                aria-label={`${step}${index === activeRouteContext.loopIndex ? ' aktiv' : ''}`}
+              />
+            ))}
+          </div>
+        </section>
+
         {/* Nav */}
         <nav className="flex-1 flex flex-col gap-px" aria-label="Hauptbereiche">
-          {NAV_ITEMS.map(({ to, label, description, end, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label, description, end, icon: Icon }, index) => (
             <NavLink
               key={to}
               to={to}
@@ -165,6 +192,7 @@ export default function Layout() {
                 <span className="pulse-nav-label">{label}</span>
                 <span className="pulse-nav-description">{description}</span>
               </span>
+              <span className="pulse-nav-key" aria-hidden="true">{index + 1}</span>
             </NavLink>
           ))}
         </nav>
@@ -211,7 +239,7 @@ export default function Layout() {
           <span className="pulse-brand-mark" aria-hidden="true" />
           <span className="pulse-mobile-route-copy">
             <span className="pulse-mobile-route-title">{activeNavItem.mobileLabel ?? activeNavItem.label}</span>
-            <span className="pulse-mobile-route-subtitle">{activeRouteContext.status}</span>
+            <span className="pulse-mobile-route-subtitle">{activeRouteContext.title}</span>
           </span>
         </span>
         <button

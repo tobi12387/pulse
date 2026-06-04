@@ -6054,14 +6054,14 @@ test('Mobile shell keeps core labels readable without stage-strip overflow', asy
   await expect(page.getByTestId('stage-strip')).toBeHidden();
 
   const bottomNav = page.locator('nav').filter({ has: page.locator('a[href="/settings"]') }).last();
-  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Lernen');
-  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('Bereit');
+  await expect(bottomNav.locator('a[href="/insights"]')).toContainText('Muster');
+  await expect(bottomNav.locator('a[href="/settings"]')).toContainText('System');
   const bottomNavBox = await bottomNav.boundingBox();
   expect(bottomNavBox).not.toBeNull();
   expect(bottomNavBox!.y + bottomNavBox!.height).toBeLessThanOrEqual(viewport.height);
 
   await page.goto('/data');
-  const overviewTab = page.getByRole('tab', { name: 'Heute relevant', exact: true });
+  const overviewTab = page.getByRole('tab', { name: 'Heute', exact: true });
   await expect(overviewTab).toBeVisible();
   const box = await overviewTab.boundingBox();
   expect(box).not.toBeNull();
@@ -6078,7 +6078,7 @@ test('Mobile shell keeps core labels readable without stage-strip overflow', asy
   expect(dataTabs.scrollWidth).toBeLessThanOrEqual(dataTabs.clientWidth + 1);
 
   await page.goto('/plan');
-  await expect(page.getByRole('tab', { name: 'Statistik' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Stats' })).toBeVisible();
 
   await page.goto('/coach');
   const coachInput = page.getByPlaceholder('Frage…');

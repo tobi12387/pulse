@@ -121,9 +121,9 @@ test('mobile top-level headers use compact route titles before the work surface'
   test.skip(testInfo.project.name !== 'mobile-chromium', 'mobile header density check');
 
   const routes = [
-    { path: '/data', title: 'Daten' },
-    { path: '/plan', title: 'Plan' },
-    { path: '/settings', title: 'Bereit' },
+    { path: '/data', title: 'Evidenz' },
+    { path: '/plan', title: 'Woche' },
+    { path: '/settings', title: 'System' },
   ] as const;
 
   for (const route of routes) {
