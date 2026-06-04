@@ -18,6 +18,16 @@
 
 ---
 
+## 2026-06-04 — Command Deck macht den Performance Loop sichtbar
+
+- **Decision:** Pulse nutzt im naechsten UI/UX-Pass ein desktopweites `Command Deck` in der Sidebar, das den aktiven Arbeitskontext und den fuenfstufigen Performance Loop (`Heute`, `Woche`, `Evidenz`, `Muster`, `System`) sichtbar macht. Home startet als `Heute zuerst`, waehrend offene Nebenpunkte als `Arbeitsqueue` laufen; die Haupt-URLs bleiben stabil.
+- **Why:** Tobi hat erneut explizit ein komplettes, auch breaking UI/UX-Redesign priorisiert. Frische Route-Evidence auf `01bd54d` zeigte 0 Overflow, aber die Struktur war noch zu gleichgewichtig: Navigation, Route-Header, Home-Header, Entscheidungskarte und Nebenqueue konkurrierten statt eine klare Tageshierarchie zu bilden.
+- **Alternatives:** Nur Farben polieren (zu wenig Strukturwirkung); weitere Erklaerkarten hinzufuegen (mehr Laerm); Coach wieder als Haupttab aufnehmen (widerspricht der Fokusnavigation); URLs sofort brechen (kein belegter Gewinn gegenueber sichtbarer IA und Shell-Neugewichtung).
+- **Decided by:** Tobi und Codex, als Command-Deck-Redesign im Branch `codex/ui-ux-command-deck`.
+- **Status:** active.
+
+---
+
 ## 2026-06-03 — Today Options respektieren Wochenverfuegbarkeit
 
 - **Decision:** `GET /api/pulse/plan/today/options` bezieht die aktuelle `pulse_week_availability` ein. Wenn kein Training geplant ist und der heutige Tag nicht als verfuegbar markiert ist, liefert Pulse den Zustand `availability_protect`, Home zeigt eine ruhige Alltags-Entscheidung statt Quick-Training-Intents und verlinkt gezielt zum Plan-Verfuegbarkeitsbereich.

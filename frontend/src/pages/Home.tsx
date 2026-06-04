@@ -1111,13 +1111,13 @@ export default function Home() {
       <div className="pulse-home-header">
         <div>
           <div className="label-mono" style={{ marginBottom: 5 }}>
-            {fmtDate(data.date)}
+            {fmtDate(data.date)} · Daily Command
           </div>
           <h1 className="pulse-page-heading" style={{ margin: 0 }}>
-            Tagesentscheidung
+            Heute zuerst
           </h1>
           <p className="pulse-home-subtitle">
-            Ein führender Schritt aus Körper, Plan, Alltag und Evidenz; offene Punkte bleiben sekundär.
+            Eine klare nächste Handlung. Alles Weitere bleibt als Arbeitsqueue daneben, nicht darüber.
           </p>
           <div className="pulse-home-context-pills" aria-label="Tageskontext">
             <span className="pulse-context-pill">Readiness <strong>{readiness.score}/100</strong></span>
@@ -1126,7 +1126,7 @@ export default function Home() {
           </div>
         </div>
         <div className="pulse-home-status-chip">
-          Trainingsfenster <span>offen</span>
+          Fokus <span>ruhig</span>
         </div>
       </div>
 
@@ -1248,8 +1248,8 @@ export default function Home() {
             <aside className="home-command-stack home-command-stack--rail" data-testid="home-command-stack" aria-label="Offene Tagespunkte">
               <div className="home-command-stack__header">
                 <div>
-                  <div className="label-mono">Nächste Ebene</div>
-                  <h2>Nur was offen ist</h2>
+                  <div className="label-mono">Arbeitsqueue</div>
+                  <h2>Neben der Entscheidung</h2>
                 </div>
                 <span>{commandItems.length} aktiv</span>
               </div>
@@ -1265,8 +1265,8 @@ export default function Home() {
         <section className="home-command-stack" data-testid="home-command-stack">
           <div className="home-command-stack__header">
             <div>
-              <div className="label-mono">Nächste Ebene</div>
-              <h2>Nur was heute noch offen ist</h2>
+              <div className="label-mono">Arbeitsqueue</div>
+              <h2>Neben der Entscheidung</h2>
             </div>
             <span>{commandItems.length} aktiv</span>
           </div>
